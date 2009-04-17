@@ -1,9 +1,9 @@
-#if !defined(__SWL_SERIAL_COMM__SERIAL_PORT_H_)
-#define __SWL_SERIAL_COMM__SERIAL_PORT_H_ 1
+#if !defined(__SWL_WIN_COMM__SERIAL_PORT__H_)
+#define __SWL_WIN_COMM__SERIAL_PORT__H_ 1
 
 
-#include "swl/serialcomm/ExportSerialComm.h"
-
+#include "swl/wincomm/ExportWinComm.h"
+#include <windows.h>
 
 namespace swl {
 
@@ -12,7 +12,7 @@ class ByteBuffer;
 //-----------------------------------------------------------------------------------
 //	serial port
 
-class SWL_SERIAL_COMM_API SerialPort
+class SWL_WIN_COMM_API SerialPort
 {
 public:
 	enum EState { E_ERROR = 0, E_OK, E_TIMEOUT };
@@ -46,4 +46,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_SERIAL_COMM__SERIAL_PORT_H_
+#endif  // __SWL_WIN_COMM__SERIAL_PORT__H_

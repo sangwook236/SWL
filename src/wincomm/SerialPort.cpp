@@ -1,6 +1,7 @@
-#include "swl/serialcomm/SerialPort.h"
+#include "swl/wincomm/SerialPort.h"
 #include "swl/common/ByteBuffer.h"
 #include <vector>
+#include <iostream>
 
 #if defined(WIN32) && defined(_DEBUG)
 void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
@@ -55,7 +56,7 @@ bool SerialPort::connect(const wchar_t* portName, const int baudRate, const size
 bool SerialPort::connect(const char *portName, const int baudRate, const size_t inQueueSize, const size_t outQueueSize)
 #endif
 {
-	hComPort_ = ::CreateFile(
+	hComPort_ = CreateFile(
 		portName,
 		GENERIC_READ | GENERIC_WRITE,
 		0,    // exclusive access 
@@ -67,25 +68,25 @@ bool SerialPort::connect(const char *portName, const int baudRate, const size_t 
 	if (INVALID_HANDLE_VALUE == hComPort_)
 	{
 		// Handle the error. 
-		TRACE(_T("CreateFile failed with error %d: Port:%s, BaudRate:%d, Parity:None, Stop bits:1\n"), ::GetLastError(), portName, baudRate);
+		std::cerr << "CreateFile failed with error, " << GetLastError() << ": Port:" << portName << ", BaudRate:" << baudRate << ", Parity:None, Stop bits:1" << std::endl;
 		//::CloseHandle(hComPort_);
 		return false;
 	}
 
 	// Set the event mask. 
-	//if (!::SetCommMask(hComPort_, EV_CTS | EV_DSR))
-	if (!::SetCommMask(hComPort_, EV_RXCHAR))
+	//if (!SetCommMask(hComPort_, EV_CTS | EV_DSR))
+	if (!SetCommMask(hComPort_, EV_RXCHAR))
 	{
 		// Handle the error. 
-		TRACE(_T("SetCommMask failed with error %d.\n"), ::GetLastError());
+		std::cerr << "SetCommMask failed with error: " << GetLastError() << std::endl;
 		return false;
 	}
 	
 	// set sizes of inqueue & outqueue
-	::SetupComm(hComPort_, (DWORD)inQueueSize, (DWORD)outQueueSize);	
+	SetupComm(hComPort_, (DWORD)inQueueSize, (DWORD)outQueueSize);	
 	
 	// purse port
-	::PurgeComm(hComPort_, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
+	PurgeComm(hComPort_, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
 	
 	// set timeouts
 	COMMTIMEOUTS timeouts;
@@ -94,12 +95,12 @@ bool SerialPort::connect(const char *portName, const int baudRate, const size_t 
 	timeouts.ReadTotalTimeoutConstant = 0;
 	timeouts.WriteTotalTimeoutMultiplier = 2 * CBR_9600 / baudRate;
 	timeouts.WriteTotalTimeoutConstant = 0;
-	::SetCommTimeouts(hComPort_, &timeouts);
+	SetCommTimeouts(hComPort_, &timeouts);
 	
 	// set dcb
 	DCB dcb;
 	dcb.DCBlength = sizeof(DCB);
-	::GetCommState(hComPort_, &dcb);
+	GetCommState(hComPort_, &dcb);
 	//dcb.fBinary = TRUE;  // Windows does not support nonbinary mode transfers, so this member must be TRUE
 	dcb.BaudRate = baudRate;
 	dcb.ByteSize = 8;
@@ -112,7 +113,7 @@ bool SerialPort::connect(const char *portName, const int baudRate, const size_t 
 	//dcb.XoffLim = 100;
 	if (!::SetCommState(hComPort_, &dcb))
 	{
-		TRACE(_T("SetCommState failed with error %d.\n"), ::GetLastError());
+		std::cerr << "SetCommState failed with error: " << GetLastError() << std::endl;
 		return false;
 	}
 
@@ -123,14 +124,14 @@ void SerialPort::disconnect()
 {
 	if (INVALID_HANDLE_VALUE != hComPort_)
 	{
-		::SetCommMask(hComPort_, 0);
-		::PurgeComm(hComPort_, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
-		::CloseHandle(hComPort_);
+		SetCommMask(hComPort_, 0);
+		PurgeComm(hComPort_, PURGE_TXABORT | PURGE_TXCLEAR | PURGE_RXABORT | PURGE_RXCLEAR);
+		CloseHandle(hComPort_);
 		hComPort_ = INVALID_HANDLE_VALUE;
 	}
 
-	::ResetEvent(ovSend_.hEvent);
-	::ResetEvent(ovRecv_.hEvent);
+	ResetEvent(ovSend_.hEvent);
+	ResetEvent(ovRecv_.hEvent);
 }
 
 SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long timeoutInterval, const bool isSending, size_t& transferredBytes)
@@ -139,8 +140,8 @@ SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long t
 	if (!::GetOverlappedResult(hComPort_, &ovWait, (DWORD *)&transferredBytes, TRUE))
 	//if (!::GetOverlappedResult(hComPort_, &ovWait, (DWORD *)&transferredBytes, FALSE))
 	{
-		const DWORD err = ::GetLastError();
-		TRACE(isSending ? _T("send error: %d\n") : _T("recv error: %d\n"), err);
+		const DWORD err = GetLastError();
+		std::cerr << (isSending ? "send error: " : "recv error: ") << err << std::endl;
 		if (ERROR_IO_INCOMPLETE != err)
 		{
 			clearError();
@@ -153,10 +154,10 @@ SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long t
 	switch(::WaitForSingleObject(ovWait.hEvent, timeoutInterval))
 	{
 	case WAIT_OBJECT_0:
-		if (!::GetOverlappedResult(hComPort_, &ovWait, (DWORD *)&transferredBytes, FALSE))
+		if (!GetOverlappedResult(hComPort_, &ovWait, (DWORD *)&transferredBytes, FALSE))
 		{
-			const DWORD err = ::GetLastError();
-			TRACE(isSending ? _T("sending wait error: %d\n") : _T("receiving wait error: %d\n"), err);
+			const DWORD err = GetLastError();
+			std::cerr << (isSending ? "sending wait error: " : "receiving wait error: ") << err << std::endl;
 			if (ERROR_IO_INCOMPLETE != err)
 			{
 				clearError();
@@ -177,25 +178,25 @@ SerialPort::EState SerialPort::send(const unsigned char* data, const size_t data
 	while (totalSentBytes < dataSize)
 	{
 		sentBytes = 0;
-		if (::WriteFile(hComPort_, data, (DWORD)dataSize, (DWORD *)&sentBytes, &ovSend_))
+		if (WriteFile(hComPort_, data, (DWORD)dataSize, (DWORD *)&sentBytes, &ovSend_))
 		{
 			if (0 == sentBytes)
 			{
 				// FIXME [check] >>
-				TRACE(_T("send 0 byte\n"));
+				std::cout << "send 0 byte" << std::endl;
 				continue;
 			}
 		}
 		else
 		{
-			if (ERROR_IO_PENDING == ::GetLastError())  // I/O operation pending
+			if (ERROR_IO_PENDING == GetLastError())  // I/O operation pending
 			{
 				const SerialPort::EState state = waitFor(ovSend_, timeoutInterval_msec, true, sentBytes);
 				if (SerialPort::E_OK != state) return state;
 			}
 			else
 			{
-				TRACE(_T("Wait failed with error %d\n"), ::GetLastError());
+				std::cerr << "wait failed with error: " << GetLastError() << std::endl;
 				clearError();
 				return SerialPort::E_ERROR;
 			}
@@ -211,27 +212,27 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 {
 	//
 	DWORD eventMask = 0L;
-	if (::WaitCommEvent(hComPort_, &eventMask, &ovRecv_))
+	if (WaitCommEvent(hComPort_, &eventMask, &ovRecv_))
 	{
 		if ((EV_DSR & eventMask) == EV_DSR)
 		{
-			TRACE(_T("DSR\n"));
+			std::cout << "DSR" << std::endl;
 			// TODO [add] >>
 		}
 		if ((EV_CTS & eventMask) == EV_CTS)
 		{
-			TRACE(_T("CTS\n"));
+			std::cout << "CTS" << std::endl;
 			// TODO [add] >>
 		}
 		if ((EV_RXCHAR & eventMask) == EV_RXCHAR)
 		{
-			TRACE(_T("RXCHAR\n"));
+			std::cout << "RXCHAR" << std::endl;
 			// TODO [add] >>
 		}
 	}
 	else
 	{
-		if (ERROR_IO_PENDING == ::GetLastError())  // I/O operation pending
+		if (ERROR_IO_PENDING == GetLastError())  // I/O operation pending
 		{
 			size_t recvBytes = 0;
 			const SerialPort::EState state = waitFor(ovRecv_, timeoutInterval_msec, false, recvBytes);
@@ -239,7 +240,7 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 		}
 		else
 		{
-			TRACE(_T("Wait failed with error %d\n"), ::GetLastError());
+			std::cerr << "wait failed with error: " << GetLastError() << std::endl;
 			//clearError();
 			return SerialPort::E_ERROR;
 		}
@@ -255,13 +256,13 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 		if (0 == recvBytes)
 		{
 			// FIXME [check] >>
-			TRACE(_T("receive 0 byte\n"));
+			std::cout << "receive 0 byte" << std::endl;
 			return SerialPort::E_OK;
 		}
 	}
 	else
 	{
-		switch (::GetLastError())
+		switch (GetLastError())
 		{
 		case ERROR_HANDLE_EOF:
 			return SerialPort::E_OK;
@@ -272,7 +273,7 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 			}
 			break;
 		default:
-			TRACE(_T("Wait failed with error %d\n"), ::GetLastError());
+			std::cerr << "wait failed with error: " << GetLastError() << std::endl;;
 			clearError();
 			return SerialPort::E_ERROR;
 		}
@@ -290,7 +291,7 @@ void SerialPort::clearError()
 {
 	DWORD errorFlags;
 	COMSTAT	comstat;
-	::ClearCommError(hComPort_, &errorFlags, &comstat);
+	ClearCommError(hComPort_, &errorFlags, &comstat);
 }
 
 }  // namespace swl

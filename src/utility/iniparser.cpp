@@ -20,7 +20,7 @@
                                 Includes
  ---------------------------------------------------------------------------*/
 
-#include "swl/utility/iniparser.h"
+#include "iniparser.h"
 #include "dictionary.h"
 #include "strlib.h"
 
