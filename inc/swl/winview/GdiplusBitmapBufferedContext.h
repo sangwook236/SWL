@@ -37,6 +37,8 @@ private:
 public:
 	/// swap buffers
 	/*virtual*/ bool swapBuffer();
+	/// resize the context
+	/*virtual*/ bool resize(const int x1, const int y1, const int x2, const int y2);
 
 	/// activate the context
 	/*virtual*/ bool activate();
@@ -49,7 +51,6 @@ public:
 
 private:
 	bool createOffScreen();
-	void releaseOffScreenResources();
 
 private:
 	/// a window handle

@@ -34,7 +34,10 @@ public:
 	/*virtual*/ bool deactivate();
 
 private:
-	void releaseWglResources();
+	/// re-create an OpenGL display list
+	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
+
+	bool createOffScreen();
 
 private:
 	/// a window handle

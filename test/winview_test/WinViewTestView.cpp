@@ -32,11 +32,13 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_TIMER()
 	ON_WM_SIZE()
+	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
 
 CWinViewTestView::CWinViewTestView()
+: viewContext_(), viewCamera_()
 {
 	// TODO: add construction code here
 
@@ -147,11 +149,43 @@ void CWinViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
+	// create a context
 	if (5 == drawMode_)
 	{
-		// create a context
 		viewContext_.reset(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, false));
 	}
+
+	// create a camera
+	//viewCamera_.reset(new swl::ViewCamera2());
+
+	// initialize a view
+	{
+	}
+}
+
+void CWinViewTestView::OnPaint()
+{
+	CPaintDC dc(this); // device context for painting
+
+	if (1 <= drawMode_ && drawMode_ <= 4)
+	{
+		raiseDrawEvent(true);
+	}
+	else if (5 == drawMode_)
+	{
+		if (viewContext_.get())
+		{
+			if (viewContext_->isOffScreenUsed())
+			{
+				viewContext_->activate();
+				viewContext_->swapBuffer();
+				viewContext_->deactivate();
+			}
+			else raiseDrawEvent(true);
+		}
+	}
+
+	// Do not call CView::OnPaint() for painting messages
 }
 
 void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
@@ -163,7 +197,14 @@ void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
 
 	++idx_;
 
-	raiseDrawEvent(true);
+	if (1 <= drawMode_ && drawMode_ <= 4)
+	{
+		OnDraw(0L);
+	}
+	else if (5 == drawMode_)
+	{
+		raiseDrawEvent(true);
+	}
 
 	CView::OnTimer(nIDEvent);
 }
@@ -186,42 +227,31 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 
 bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
-	if (1 <= drawMode_ && drawMode_ <= 4)
-	{
-		OnDraw(0L);
-	}
-	else if (5 == drawMode_)
-	{
-		if (NULL == viewContext_ || viewContext_->isDrawing())
-			return false;
+	if (NULL == viewContext_.get() || viewContext_->isDrawing())
+		return false;
 
-		if (isContextActivated)
+	if (isContextActivated)
+	{
+		if (viewContext_.get())
 		{
-			if (viewContext_)
-			{
-				viewContext_->activate();
-				OnDraw(0L);
-				viewContext_->deactivate();
-			}
+			viewContext_->activate();
+			OnDraw(0L);
+			viewContext_->deactivate();
 		}
-		else OnDraw(0L);
 	}
+	else OnDraw(0L);
 
 	return true;
 }
 
 bool CWinViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
 {
-	//if (NULL == viewContext_ || NULL == viewCamera_)
-	if (NULL == viewContext_)
-		return false;
-
-	if (viewContext_->resize(x1, y1, x2, y2))
+	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
 	{
-		viewContext_->activate();
-		//viewCamera_->setViewport(x1, y1, x2, y2);	
+		//viewContext_->activate();
+		//if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
 		//raiseDrawEvent(false);
-		viewContext_->deactivate();
+		//viewContext_->deactivate();
 
 		return true;
 	}
@@ -291,8 +321,8 @@ void CWinViewTestView::test2()
 		CDC *pDC = CDC::FromHandle(*dc);
 
 		// clear the background
-		//pDC->SetBkColor(RGB(192, 192, 192));  // not working ???
-		//pDC->FillRect(rect, &CBrush(RGB(192, 192, 192)));
+		//pDC->SetBkColor(RGB(255, 255, 255));  // not working ???
+		pDC->FillRect(rect, &CBrush(RGB(255, 255, 255)));
 		//pDC->FillRect(rect, &CBrush(GetSysColor(COLOR_WINDOW)));
 
 		// draw contents

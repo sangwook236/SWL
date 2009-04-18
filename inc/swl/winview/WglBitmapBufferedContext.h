@@ -27,17 +27,22 @@ private:
 public:
 	/// swap buffers
 	/*virtual*/ bool swapBuffer();
+	/// resize the context
+	/*virtual*/ bool resize(const int x1, const int y1, const int x2, const int y2);
 
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
 
+protected :
+	/// re-create an OpenGL display list
+	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
+
 private:
 	bool createOffScreen();
 	bool createOffScreenBitmap();
-	void releaseWglResources();
-	void releaseOffScreenResources(const bool areWglResourcesDeleted = true);
+	void releaseResources();
 
 private:
 	/// a window handle

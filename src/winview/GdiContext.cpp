@@ -11,16 +11,16 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 GdiContext::GdiContext(HWND hWnd, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>()),
+: base_type(Region2<int>(), false),
   hWnd_(hWnd), hDC_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// get DC for window
-	hDC_ = GetDC(hWnd_);
-	if (NULL == hDC_) return;
-
-	if (isAutomaticallyActivated) activate();
+	if (hWnd_)
+	{
+		// get DC for window
+		hDC_ = GetDC(hWnd_);
+		if (hDC_ && isAutomaticallyActivated)
+			activate();
+	}
 }
 
 GdiContext::~GdiContext()
@@ -38,7 +38,7 @@ GdiContext::~GdiContext()
 bool GdiContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == hDC_ || NULL == hWnd_) return false;
 
 	setActivation(true);
 
@@ -50,7 +50,7 @@ bool GdiContext::activate()
 bool GdiContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == hDC_ || NULL == hWnd_) return false;
 
 	setActivation(false);
 

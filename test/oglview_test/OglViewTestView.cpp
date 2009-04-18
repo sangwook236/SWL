@@ -30,12 +30,13 @@ BEGIN_MESSAGE_MAP(COglViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_DESTROY()
 	ON_WM_SIZE()
+	ON_WM_PAINT()
 END_MESSAGE_MAP()
 
 // COglViewTestView construction/destruction
 
 COglViewTestView::COglViewTestView()
-: viewCamera_(NULL), viewContext_(NULL)
+: viewContext_(), viewCamera_()
 {
 	// TODO: add construction code here
 
@@ -63,8 +64,8 @@ void COglViewTestView::OnDraw(CDC* /*pDC*/)
 		return;
 
 	// TODO: add draw code for native data here
-	if (viewContext_ && viewContext_->isActivated())
-		draw(*viewContext_);
+	if (viewContext_.get() && viewCamera_.get() && viewContext_->isActivated())
+		draw(*viewContext_, *viewCamera_);
 }
 
 
@@ -115,43 +116,47 @@ void COglViewTestView::OnInitialUpdate()
 	CView::OnInitialUpdate();
 
 	// TODO: Add your specialized code here and/or call the base class
-	const int drawMode = 0x02;
+	const int drawMode = 0x01;
 
 	// use double-buffered OpenGL context
 	CRect rect;
 	GetClientRect(&rect);
 
-	if (NULL == viewContext_)
+	if (NULL == viewContext_.get())
 	{
 		if ((0x01 & drawMode) == 0x01)
-			viewContext_ = new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false);
+			viewContext_.reset(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false));
 		if ((0x02 & drawMode) == 0x02)
-			viewContext_ = new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false);
+			viewContext_.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false));
 	}
 
-	if (NULL == viewCamera_) viewCamera_ = new swl::OglCamera;
+	if (NULL == viewCamera_.get())
+		viewCamera_.reset(new swl::OglCamera());
 
-	assert(viewContext_ && viewCamera_);
+	assert(viewContext_.get() && viewCamera_.get());
 
-	// activate a context
-	viewContext_->activate();
+	// initialize a view
+	{
+		// activate a context
+		viewContext_->activate();
 
-	initializeView();
-	//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
-	viewCamera_->setViewBound(-2000.0, -2000.0, 2000.0, 2000.0, 4000.0, 12000.0);
-	//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
+		initializeView();
+		//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
+		viewCamera_->setViewBound(-2000.0, -2000.0, 2000.0, 2000.0, 4000.0, 12000.0);
+		//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
-	viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
-	viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
-	viewCamera_->setEyeDistance(8000.0, false);
-	viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
-	//viewCamera_->setEyeDistance(1000.0, false);
-	//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
+		viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
+		viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
+		viewCamera_->setEyeDistance(8000.0, false);
+		viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
+		//viewCamera_->setEyeDistance(1000.0, false);
+		//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
 
-	raiseDrawEvent(false);
+		raiseDrawEvent(false);
 
-	// de-activate the context
-	viewContext_->deactivate();
+		// de-activate the context
+		viewContext_->deactivate();
+	}
 }
 
 void COglViewTestView::OnDestroy()
@@ -159,17 +164,24 @@ void COglViewTestView::OnDestroy()
 	CView::OnDestroy();
 
 	// TODO: Add your message handler code here
-	if (viewCamera_)
+}
+
+void COglViewTestView::OnPaint()
+{
+	CPaintDC dc(this); // device context for painting
+
+	if (viewContext_.get())
 	{
-		delete viewCamera_;
-		viewCamera_ = NULL;
+		if (viewContext_->isOffScreenUsed())
+		{
+			viewContext_->activate();
+			viewContext_->swapBuffer();
+			viewContext_->deactivate();
+		}
+		else raiseDrawEvent(true);
 	}
 
-	if (viewContext_)
-	{
-		delete viewContext_;
-		viewContext_ = NULL;
-	}
+	// Do not call CView::OnPaint() for painting messages
 }
 
 void COglViewTestView::OnSize(UINT nType, int cx, int cy)
@@ -182,12 +194,12 @@ void COglViewTestView::OnSize(UINT nType, int cx, int cy)
 
 bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
-	if (NULL == viewContext_ || viewContext_->isDrawing())
+	if (NULL == viewContext_.get() || viewContext_->isDrawing())
 		return false;
 
 	if (isContextActivated)
 	{
-		if (viewContext_)
+		if (viewContext_.get())
 		{
 			viewContext_->activate();
 			OnDraw(0L);
@@ -201,15 +213,12 @@ bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 
 bool COglViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
 {
-	if (NULL == viewContext_ || NULL == viewCamera_)
-		return false;
-
-	if (viewContext_->resize(x1, y1, x2, y2))
+	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
 	{
-		viewContext_->activate();
-		viewCamera_->setViewport(x1, y1, x2, y2);	
-		raiseDrawEvent(false);
-		viewContext_->deactivate();
+		//viewContext_->activate();
+		//if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
+		//raiseDrawEvent(false);
+		//viewContext_->deactivate();
 
 		return true;
 	}
@@ -219,7 +228,7 @@ bool COglViewTestView::resize(const int x1, const int y1, const int x2, const in
 bool COglViewTestView::initializeView()
 {
 	// Can we put this in the constructor?
-	// specify black as clear color
+	// specify black(0.0f, 0.0f, 0.0f, 0.0f) or white(1.0f, 1.0f, 1.0f, 1.0f) as clear color
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// specify the back of the buffer as clear depth
     glClearDepth(1.0f);
@@ -255,7 +264,7 @@ bool COglViewTestView::doRenderScene()
     return true;
 }
 
-void COglViewTestView::draw(swl::WglContextBase &ctx)
+void COglViewTestView::draw(swl::WglContextBase &context, swl::ViewCamera3 &camera)
 {
 #ifdef _DEBUG
 	{
@@ -274,7 +283,7 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 		glPushMatrix();
 			//
 			glLoadIdentity();
-			if (viewCamera_) viewCamera_->lookAt();
+			camera.lookAt();
 
 			//
 			glPushMatrix();
@@ -292,7 +301,7 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 	glFlush();
 
 	// swap buffers
-	ctx.swapBuffer();
+	context.swapBuffer();
 
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 

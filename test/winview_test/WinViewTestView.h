@@ -9,6 +9,7 @@
 
 namespace swl {
 class GdiplusBitmapBufferedContext;
+class ViewCamera2;
 }  // namespace swl
 
 
@@ -58,6 +59,7 @@ private:
 	typedef std::deque<datum_type> data_type;
 
 	boost::scoped_ptr<swl::GdiplusBitmapBufferedContext> viewContext_;
+	boost::scoped_ptr<swl::ViewCamera2> viewCamera_;
 
 	data_type data1_;
 	data_type data2_;
@@ -73,6 +75,7 @@ public:
 	virtual void OnInitialUpdate();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnPaint();
 };
 
 #ifndef _DEBUG  // debug version in WinViewTestView.cpp

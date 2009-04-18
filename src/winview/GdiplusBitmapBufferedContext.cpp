@@ -11,34 +11,36 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
-: base_type(drawRegion),
+: base_type(drawRegion, true),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// create graphics for window
-	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
-	if (NULL == graphics_) return;
-
-	if (isAutomaticallyActivated) activate();
+	if (createOffScreen() && isAutomaticallyActivated)
+		activate();
 }
 
 GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom)),
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// create graphics for window
-	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
-	if (NULL == graphics_) return;
-
-	if (isAutomaticallyActivated) activate();
+	if (createOffScreen() && isAutomaticallyActivated)
+		activate();
 }
 
 GdiplusBitmapBufferedContext::~GdiplusBitmapBufferedContext()
 {
 	deactivate();
+
+	// free-up the off-screen graphics
+	if (canvas_)
+	{
+		delete canvas_;
+		canvas_ = NULL;
+	}
+	if (memBmp_)
+	{
+		delete memBmp_;
+		memBmp_ = NULL;
+	}
 
 	// delete graphics
 	if (graphics_)
@@ -50,9 +52,8 @@ GdiplusBitmapBufferedContext::~GdiplusBitmapBufferedContext()
 
 bool GdiplusBitmapBufferedContext::swapBuffer()
 {
-	if (!isActivated() || isDrawing())
-		return false;
-	if (NULL == graphics_ || NULL == memBmp_) return false;
+	if (!isActivated() || isDrawing()) 	return false;
+	if (NULL == memBmp_ || NULL == graphics_ || NULL == hWnd_) return false;
 	setDrawing(true);
 
 	// when all drawing has been completed, a new graphics canvas should be created,
@@ -67,21 +68,40 @@ bool GdiplusBitmapBufferedContext::swapBuffer()
 	return ret;
 }
 
+bool GdiplusBitmapBufferedContext::resize(const int x1, const int y1, const int x2, const int y2)
+{
+	if (isActivated()) return false;
+	drawRegion_ = Region2<int>(x1, y1, x2, y2);
+
+	// free-up the off-screen graphics
+	if (canvas_)
+	{
+		delete canvas_;
+		canvas_ = NULL;
+	}
+	if (memBmp_)
+	{
+		delete memBmp_;
+		memBmp_ = NULL;
+	}
+
+	// delete graphics
+	if (graphics_)
+	{
+		delete graphics_;
+		graphics_ = NULL;
+	}
+
+	return createOffScreen();
+}
+
 bool GdiplusBitmapBufferedContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == memBmp_ || NULL == graphics_ || NULL == hWnd_) return false;
 
-	if (createOffScreen())
-	{
-		setActivation(true);
-		return true;
-	}
-	else
-	{
-		releaseOffScreenResources();
-		return false;
-	}
+	setActivation(true);
+	return true;
 
 	// draw something into canvas_
 }
@@ -89,38 +109,40 @@ bool GdiplusBitmapBufferedContext::activate()
 bool GdiplusBitmapBufferedContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == memBmp_ || NULL == graphics_ || NULL == hWnd_) return false;
 
 	setActivation(false);
-
-	releaseOffScreenResources();
-
 	return true;
 }
 
 bool GdiplusBitmapBufferedContext::createOffScreen()
 {
+	if (NULL == hWnd_) return false;
+
+	// create graphics for window
+	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
+	if (NULL == graphics_) return false;
+
 	// create an off-screen graphics for double-buffering
 	memBmp_ = new Gdiplus::Bitmap(drawRegion_.getWidth(), drawRegion_.getHeight(), graphics_);
 	if (NULL == memBmp_)
+	{
+		delete graphics_;
+		graphics_ = NULL;
 		return false;
+	}
 
 	canvas_ = Gdiplus::Graphics::FromImage(memBmp_);
 	if (NULL == canvas_)
 	{
+		delete graphics_;
+		graphics_ = NULL;
 		delete memBmp_;
 		memBmp_ = NULL;
 		return false;
 	}
-}
 
-void GdiplusBitmapBufferedContext::releaseOffScreenResources()
-{
-	// free-up the off-screen graphics
-	delete canvas_;
-	canvas_ = NULL;
-	delete memBmp_;
-	memBmp_ = NULL;
+	return true;
 }
 
 }  // namespace swl

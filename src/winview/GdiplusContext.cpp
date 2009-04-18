@@ -11,16 +11,16 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 GdiplusContext::GdiplusContext(HWND hWnd, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>()),
+: base_type(Region2<int>(), false),
   hWnd_(hWnd), graphics_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// create graphics for window
-	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
-	if (NULL == graphics_) return;
-
-	if (isAutomaticallyActivated) activate();
+	if (hWnd_)
+	{
+		// create graphics for window
+		graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
+		if (graphics_ && isAutomaticallyActivated)
+			activate();
+	}
 }
 
 GdiplusContext::~GdiplusContext()
@@ -38,10 +38,9 @@ GdiplusContext::~GdiplusContext()
 bool GdiplusContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == graphics_ && NULL == hWnd_) return false;
 
 	setActivation(true);
-
 	return true;
 
 	// draw something into graphics_
@@ -50,10 +49,9 @@ bool GdiplusContext::activate()
 bool GdiplusContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == graphics_ && NULL == hWnd_) return false;
 
 	setActivation(false);
-
 	return true;
 }
 

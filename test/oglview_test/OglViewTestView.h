@@ -4,8 +4,11 @@
 
 #pragma once
 
+#include <boost/smart_ptr.hpp>
+
 namespace swl {
 class WglContextBase;
+class ViewCamera3;
 class OglCamera;
 }
 
@@ -43,18 +46,18 @@ public:
 	virtual bool raiseDrawEvent(const bool isContextActivated);
 	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
 
-private:
-	void draw(swl::WglContextBase &ctx);
-
 	virtual bool initializeView();
+
+private:
+	void draw(swl::WglContextBase &ctx, swl::ViewCamera3 &camera);
 
 	virtual bool doPrepareRendering();
 	virtual bool doRenderStockScene();
 	virtual bool doRenderScene();
 
 private:
-	swl::OglCamera *viewCamera_;
-	swl::WglContextBase *viewContext_;
+	boost::scoped_ptr<swl::WglContextBase> viewContext_;
+	boost::scoped_ptr<swl::OglCamera> viewCamera_;
 
 // Generated message map functions
 protected:
@@ -63,6 +66,7 @@ public:
 	virtual void OnInitialUpdate();
 	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnPaint();
 };
 
 #ifndef _DEBUG  // debug version in OglViewTestView.cpp

@@ -1,5 +1,4 @@
 #include "swl/winview/WglBitmapBufferedContext.h"
-#include <iostream>
 
 #if defined(WIN32) && defined(_DEBUG)
 void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
@@ -11,73 +10,39 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 WglBitmapBufferedContext::WglBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
-: base_type(drawRegion),
+: base_type(drawRegion, true),
   hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// get DC for window
-	hDC_ = GetDC(hWnd_);
-	if (NULL == hDC_) return;
-
-	// create an off-screen DC for double-buffering
-	memDC_ = CreateCompatibleDC(hDC_);
-	if (NULL == memDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
-		return;
-	}
-
-	if (isAutomaticallyActivated) activate();
+	if (createOffScreen() && isAutomaticallyActivated)
+		activate();
 }
 
 WglBitmapBufferedContext::WglBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom)),
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
   hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
 {
-	if (NULL == hWnd_) return;
-
-	// get DC for window
-	hDC_ = GetDC(hWnd_);
-	if (NULL == hDC_) return;
-
-	// create an off-screen DC for double-buffering
-	memDC_ = CreateCompatibleDC(hDC_);
-	if (NULL == memDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
-		return;
-	}
-
-	if (isAutomaticallyActivated) activate();
+	if (createOffScreen() && isAutomaticallyActivated)
+		activate();
 }
 
 WglBitmapBufferedContext::~WglBitmapBufferedContext()
 {
 	deactivate();
 
-	if (memDC_)
+	// delete rendering context
+	if (wglRC_)
 	{
-		DeleteDC(memDC_);
-		memDC_ = NULL;
+		wglDeleteContext(wglRC_);
+		wglRC_ = NULL;
 	}
 
-	// release DC
-	if (hDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-	}
+	releaseResources();
 }
 
 bool WglBitmapBufferedContext::swapBuffer()
 {
 	if (!isActivated() || isDrawing()) return false;
-	if (NULL == hDC_ || NULL == memDC_ || NULL == memBmp_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_ || NULL == hWnd_) return false;
 	setDrawing(true);
 
 	// copy off-screen buffer to window's DC
@@ -94,24 +59,33 @@ bool WglBitmapBufferedContext::swapBuffer()
 	return ret;
 }
 
+bool WglBitmapBufferedContext::resize(const int x1, const int y1, const int x2, const int y2)
+{
+	if (isActivated()) return false;
+	drawRegion_ = Region2<int>(x1, y1, x2, y2);
+
+	// delete rendering context
+	if (wglRC_)
+	{
+		wglDeleteContext(wglRC_);
+		wglRC_ = NULL;
+	}
+
+	releaseResources();
+
+	return createOffScreen();
+}
+
 bool WglBitmapBufferedContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_ || NULL == hWnd_) return false;
 
-	if (createOffScreen())
+	const bool ret = (wglGetCurrentContext() == wglRC_) ? true : (wglMakeCurrent(memDC_, wglRC_) == TRUE);
+	if (ret)
 	{
-		const bool ret = (wglGetCurrentContext() == wglRC_) ? true : (wglMakeCurrent(memDC_, wglRC_) == TRUE);
-		if (ret)
-		{
-			setActivation(true);
-			return true;
-		}
-		else
-		{
-			releaseOffScreenResources(true);
-			return false;
-		}
+		setActivation(true);
+		return true;
 	}
 	else return false;
 
@@ -121,21 +95,39 @@ bool WglBitmapBufferedContext::activate()
 bool WglBitmapBufferedContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hWnd_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_ || NULL == hWnd_) return false;
 
 	setActivation(false);
 
-	const bool ret = wglMakeCurrent(NULL, NULL) == TRUE;
-
-	releaseOffScreenResources(true);
-
-	return ret;
+	return wglMakeCurrent(NULL, NULL) == TRUE;
 }
 
 bool WglBitmapBufferedContext::createOffScreen()
 {
-	if (!createOffScreenBitmap())
+	if (NULL == hWnd_) return false;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return false;
+
+	// create an off-screen DC for double-buffering
+	memDC_ = CreateCompatibleDC(hDC_);
+	if (NULL == memDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
 		return false;
+	}
+
+	if (!createOffScreenBitmap())
+	{
+		DeleteObject(memBmp_);
+		memBmp_ = NULL;
+
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+		return false;
+	}
 
 	// create OpenGL pixel format descriptor
     PIXELFORMATDESCRIPTOR pfd;
@@ -178,7 +170,6 @@ bool WglBitmapBufferedContext::createOffScreen()
 	//	2. off-screen을 위한 bitmap은 CreateCompatibleBitmap()이 아닌 CreateDIBSection()으로 생성하여야 한다.
 	//		그렇지 않을 경우, SetPixelFormat() 실행시 error가 발생한다.
 
-
 	// choose pixel format
 	int nPixelFormat = ChoosePixelFormat(memDC_, &pfd);
 	if (0 == nPixelFormat)  // choose default
@@ -186,14 +177,14 @@ bool WglBitmapBufferedContext::createOffScreen()
 		nPixelFormat = 1;
 		if (DescribePixelFormat(memDC_, nPixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd) == 0)
 		{
-			releaseOffScreenResources(false);
+			releaseResources();
 			return false;
 		}
 	}
 
 	if (FALSE == SetPixelFormat(memDC_, nPixelFormat, &pfd))
 	{
-		releaseOffScreenResources(false);
+		releaseResources();
 		return false;
 	}
 
@@ -201,114 +192,17 @@ bool WglBitmapBufferedContext::createOffScreen()
     wglRC_ = wglCreateContext(memDC_);
 	if (NULL == wglRC_)
 	{
-		releaseOffScreenResources(false);
+		releaseResources();
 		return false;
 	}
 
-	// caution:
-	//	OpenGL에서 display list를 share하고자 하는 경우 source RC와 destination RC가 동일하여야 한다.
-	//	예를 들어, source RC의 flag 속성이 PFD_DRAW_TO_WINDOW이고 destination RC의 flag 속성이
-	//	PFD_DRAW_TO_BITMAP이라면, display list의 share는 실패한다.
+	// create & share a display list
+	createDisplayList(memDC_);
 
-	// share display list
-	if (!shareDisplayList(wglRC_))
-	{
-#if defined(WIN32) && defined(_DEBUG)
-		LPVOID lpMsgBuf;
-		FormatMessage( 
-			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-			NULL,
-			GetLastError(),
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  //  Default language
-			(LPTSTR) &lpMsgBuf,
-			0,
-			NULL 
-		);
-		// display the string
-#if defined(_UNICODE) || defined(UNICODE)
-		std::wcout << L"error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << L") at " << __LINE__ << L" in " << __FILE__ << std::endl;
-#else
-		std::cerr << "error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << ") at " << __LINE__ << " in " << __FILE__ << std::endl;
-#endif
-		// free the buffer
-		LocalFree(lpMsgBuf);
-#endif
-		// need to add the code that the display lists are created
-		if (wglMakeCurrent(memDC_, wglRC_) == TRUE)
-		{
-			doRecreateDisplayList();
-			wglMakeCurrent(NULL, NULL);
-		}
-	}
-/*
-	// when using 256 color
-    int nColorBit = GetDeviceCaps(memDC_, BITSPIXEL);
-    if (nColorBit <= 8 && !ms_hPalette)
-	{
-        // following routines are originated from ogl2 sdk made by Sillicon Graphics and modified for glext
-        int nPalette = 1 << nColorBit;
-        LOGPALETTE* pLogPalette = NULL;
-		pLogPalette = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + nPalette*sizeof(PALETTEENTRY));
-		
-        if (pLogPalette)
-		{
-            pLogPalette->palVersion = 0x300;
-            pLogPalette->palNumEntries = nPalette;
-			
-            // start with a copy of the current system palette examples/rb/rb.c
-            // in ogl2 toolkit made by Sillicon Graphics
-            GetSystemPaletteEntries(memDC_, 0, nPalette, pLogPalette->palPalEntry);
-			
-            // fill in a rgba color palette
-            int rmask = (1 << pfd.cRedBits) - 1;
-            int gmask = (1 << pfd.cGreenBits) - 1;
-            int bmask = (1 << pfd.cBlueBits) - 1;
-			
-            for (int i=0 ; i<nPalette ; ++i)
-			{
-                pLogPalette->palPalEntry[i].peRed = (((i >> pfd.cRedShift) & rmask) * 255) / rmask;
-                pLogPalette->palPalEntry[i].peGreen = (((i >> pfd.cGreenShift) & gmask) * 255) / gmask;
-                pLogPalette->palPalEntry[i].peBlue = (((i >> pfd.cBlueShift) & bmask) * 255) / bmask;
-                pLogPalette->palPalEntry[i].peFlags = 0;
-            }
-			
-            ms_hPalette = CreatePalette(pLogPalette);
-            if (pLogPalette)
-			{
-				free(pLogPalette);
-				pLogPalette = NULL;
-			}
-        }
-    }
-	
-    if (ms_hPalette)
-	{
-        SelectPalette(memDC_, ms_hPalette, FALSE);
-        RealizePalette(memDC_);
-        ++ms_nUsedPalette;
-    }
-*/
-}
+	// use a palette in 256 color mode
+	usePalette(memDC_, pfd);
 
-void WglBitmapBufferedContext::releaseWglResources()
-{
-	// delete rendering context
-	if (wglRC_)
-	{
-		wglDeleteContext(wglRC_);
-		wglRC_ = NULL;
-	}
-}
-
-void WglBitmapBufferedContext::releaseOffScreenResources(const bool areWglResourcesDeleted /*= true*/)
-{
-	if (areWglResourcesDeleted) releaseWglResources();
-
-	// free-up the off-screen DC
-	SelectObject(memDC_, oldBmp_);
-	oldBmp_ = NULL;
-	DeleteObject(memBmp_);
-	memBmp_ = NULL;
+	return true;
 }
 
 bool WglBitmapBufferedContext::createOffScreenBitmap()
@@ -344,7 +238,8 @@ bool WglBitmapBufferedContext::createOffScreenBitmap()
 	PALETTEENTRY aPaletteEntry[256];
 	GetPaletteEntries(ms_hPalette, 0, 256, aPaletteEntry);
 	
-	for (int i=0 ; i<256 ; ++i) {
+	for (int i=0 ; i<256 ; ++i)
+	{
 		bmiDIB.bmiColors[i].rgbRed		= aPaletteEntry[i].peRed;
 		bmiDIB.bmiColors[i].rgbGreen	= aPaletteEntry[i].peGreen;
 		bmiDIB.bmiColors[i].rgbBlue		= aPaletteEntry[i].peBlue;
@@ -357,6 +252,28 @@ bool WglBitmapBufferedContext::createOffScreenBitmap()
 	oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
 
 	return true;
+}
+
+void WglBitmapBufferedContext::releaseResources()
+{
+	// free-up the off-screen DC
+	SelectObject(memDC_, oldBmp_);
+	oldBmp_ = NULL;
+	DeleteObject(memBmp_);
+	memBmp_ = NULL;
+
+	if (memDC_)
+	{
+		DeleteDC(memDC_);
+		memDC_ = NULL;
+	}
+
+	// release DC
+	if (hDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+	}
 }
 
 }  // namespace swl
