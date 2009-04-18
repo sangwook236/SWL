@@ -159,7 +159,21 @@ void CWinViewTestView::OnInitialUpdate()
 	//viewCamera_.reset(new swl::ViewCamera2());
 
 	// initialize a view
+	//if (viewContext_.get() && viewCamera_.get())
+	if (viewContext_.get())
 	{
+		// activate the context
+		viewContext_->activate();
+
+		// set the view
+		initializeView();
+
+		// set the camera
+
+		raiseDrawEvent(false);
+
+		// de-activate the context
+		viewContext_->deactivate();
 	}
 }
 
@@ -177,9 +191,9 @@ void CWinViewTestView::OnPaint()
 		{
 			if (viewContext_->isOffScreenUsed())
 			{
-				viewContext_->activate();
+				//viewContext_->activate();
 				viewContext_->swapBuffer();
-				viewContext_->deactivate();
+				//viewContext_->deactivate();
 			}
 			else raiseDrawEvent(true);
 		}
@@ -232,12 +246,9 @@ bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 
 	if (isContextActivated)
 	{
-		if (viewContext_.get())
-		{
-			viewContext_->activate();
-			OnDraw(0L);
-			viewContext_->deactivate();
-		}
+		viewContext_->activate();
+		OnDraw(0L);
+		viewContext_->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -248,14 +259,20 @@ bool CWinViewTestView::resize(const int x1, const int y1, const int x2, const in
 {
 	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
 	{
-		//viewContext_->activate();
-		//if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
-		//raiseDrawEvent(false);
-		//viewContext_->deactivate();
+		viewContext_->activate();
+		initializeView();
+		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
+		raiseDrawEvent(false);
+		viewContext_->deactivate();
 
 		return true;
 	}
 	else return false;
+}
+
+bool CWinViewTestView::initializeView()
+{
+	return true;
 }
 
 // use single-buffered GDI context

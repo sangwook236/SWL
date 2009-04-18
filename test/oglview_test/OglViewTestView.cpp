@@ -115,13 +115,12 @@ void COglViewTestView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
-	// TODO: Add your specialized code here and/or call the base class
-	const int drawMode = 0x01;
-
-	// use double-buffered OpenGL context
+	//
 	CRect rect;
 	GetClientRect(&rect);
 
+	// create a context
+	const int drawMode = 0x02;
 	if (NULL == viewContext_.get())
 	{
 		if ((0x01 & drawMode) == 0x01)
@@ -130,19 +129,22 @@ void COglViewTestView::OnInitialUpdate()
 			viewContext_.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false));
 	}
 
+	// create a camera
 	if (NULL == viewCamera_.get())
 		viewCamera_.reset(new swl::OglCamera());
 
-	assert(viewContext_.get() && viewCamera_.get());
-
 	// initialize a view
+	if (viewContext_.get() && viewCamera_.get())
 	{
-		// activate a context
+		// activate the context
 		viewContext_->activate();
 
+		// set the view
 		initializeView();
+
+		// set the camera
 		//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
-		viewCamera_->setViewBound(-2000.0, -2000.0, 2000.0, 2000.0, 4000.0, 12000.0);
+		viewCamera_->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
 		//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
 		viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
@@ -174,9 +176,9 @@ void COglViewTestView::OnPaint()
 	{
 		if (viewContext_->isOffScreenUsed())
 		{
-			viewContext_->activate();
+			//viewContext_->activate();
 			viewContext_->swapBuffer();
-			viewContext_->deactivate();
+			//viewContext_->deactivate();
 		}
 		else raiseDrawEvent(true);
 	}
@@ -199,12 +201,9 @@ bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 
 	if (isContextActivated)
 	{
-		if (viewContext_.get())
-		{
-			viewContext_->activate();
-			OnDraw(0L);
-			viewContext_->deactivate();
-		}
+		viewContext_->activate();
+		OnDraw(0L);
+		viewContext_->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -215,10 +214,11 @@ bool COglViewTestView::resize(const int x1, const int y1, const int x2, const in
 {
 	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
 	{
-		//viewContext_->activate();
-		//if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
-		//raiseDrawEvent(false);
-		//viewContext_->deactivate();
+		viewContext_->activate();
+		initializeView();
+		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);
+		raiseDrawEvent(false);
+		viewContext_->deactivate();
 
 		return true;
 	}
@@ -254,11 +254,18 @@ bool COglViewTestView::doRenderScene()
 {
 	glPushMatrix();
 		//glLoadIdentity();
-		//glTranslatef(100.0f, 100.0f, 100.0f);
+		glTranslatef(-250.0f, 250.0f, -250.0f);
 		glColor3f(1.0f, 0.0f, 0.0f);
 		glutWireSphere(500.0, 20, 20);
+		//glutSolidSphere(500.0, 20, 20);
+	glPopMatrix();
+
+	glPushMatrix();
+		//glLoadIdentity();
+		glTranslatef(250.0f, -250.0f, 250.0f);
 		glColor3f(0.5f, 0.5f, 1.0f);
 		glutWireCube(500.0);
+		//glutSolidCube(500.0);
 	glPopMatrix();
 
     return true;

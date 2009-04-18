@@ -58,7 +58,8 @@ GdiBitmapBufferedContext::~GdiBitmapBufferedContext()
 
 bool GdiBitmapBufferedContext::swapBuffer()
 {
-	if (!isActivated() || isDrawing()) return false;
+	//if (!isActivated() || isDrawing()) return false;
+	if (isDrawing()) return false;
 	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
 	setDrawing(true);
 

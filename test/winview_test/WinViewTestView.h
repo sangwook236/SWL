@@ -47,6 +47,8 @@ public:
 	virtual bool raiseDrawEvent(const bool isContextActivated);
 	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
 
+	virtual bool initializeView();
+
 private:
 	void test1();
 	void test2();

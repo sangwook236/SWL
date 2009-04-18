@@ -46,7 +46,8 @@ WglDoubleBufferedContext::~WglDoubleBufferedContext()
 
 bool WglDoubleBufferedContext::swapBuffer()
 {
-	if (!isActivated() || isDrawing()) return false;
+	//if (!isActivated() || isDrawing()) return false;
+	if (isDrawing()) return false;
 	if (NULL == hDC_ || NULL == hWnd_) return false;
 	setDrawing(true);
 

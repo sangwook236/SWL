@@ -41,7 +41,8 @@ WglBitmapBufferedContext::~WglBitmapBufferedContext()
 
 bool WglBitmapBufferedContext::swapBuffer()
 {
-	if (!isActivated() || isDrawing()) return false;
+	//if (!isActivated() || isDrawing()) return false;
+	if (isDrawing()) return false;
 	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_ || NULL == hWnd_) return false;
 	setDrawing(true);
 
