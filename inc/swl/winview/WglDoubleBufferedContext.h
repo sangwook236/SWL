@@ -25,13 +25,16 @@ private:
 	WglDoubleBufferedContext & operator=(const WglDoubleBufferedContext &);
 
 public:
-	/// redraw the context
-	/*virtual*/ bool redraw();
+	/// swap buffers
+	/*virtual*/ bool swapBuffer();
 
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
+
+private:
+	void releaseWglResources();
 
 private:
 	/// a window handle

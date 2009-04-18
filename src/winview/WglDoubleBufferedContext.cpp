@@ -14,6 +14,12 @@ WglDoubleBufferedContext::WglDoubleBufferedContext(HWND hWnd, const Region2<int>
 : base_type(drawRegion),
   hWnd_(hWnd), hDC_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
@@ -21,15 +27,28 @@ WglDoubleBufferedContext::WglDoubleBufferedContext(HWND hWnd, const RECT& drawRe
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom)),
   hWnd_(hWnd), hDC_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
 WglDoubleBufferedContext::~WglDoubleBufferedContext()
 {
 	deactivate();
+
+	// release DC
+	if (hDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+	}
 }
 
-bool WglDoubleBufferedContext::redraw()
+bool WglDoubleBufferedContext::swapBuffer()
 {
 	if (!isActivated() || isDrawing()) return false;
 	if (NULL == hDC_) return false;
@@ -46,10 +65,6 @@ bool WglDoubleBufferedContext::activate()
 	if (isActivated()) return true;
 	if (NULL == hWnd_) return false;
 
-	// get DC for window
-	hDC_ = ::GetDC(hWnd_);
-	if (NULL == hDC_) return false;
-
 	// create OpenGL pixel format descriptor
     PIXELFORMATDESCRIPTOR pfd;
     // clear OpenGL pixel format descriptor
@@ -65,82 +80,66 @@ bool WglDoubleBufferedContext::activate()
 	pfd.cColorBits			= GetDeviceCaps(hDC_, BITSPIXEL);
 	pfd.cDepthBits			= 32;
 
-	// caution:
-	//	OpenGL에서 PFD_DRAW_TO_BITMAP flag을 사용하여 bitmap에 drawing할 경우
-	//	pixel format을 설정하기 전에 OpenGL RC와 연결된 DC에 bitmap이 선택되어져 있어야 한다
-
 	// choose pixel format
-	int nPixelFormat = ::ChoosePixelFormat(hDC_, &pfd);
-	if (nPixelFormat == 0)  // choose default
+	int nPixelFormat = ChoosePixelFormat(hDC_, &pfd);
+	if (0 == nPixelFormat)  // choose default
 	{
 		nPixelFormat = 1;
-		if (::DescribePixelFormat(hDC_, nPixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd) == 0)
-		{
-			// release DC
-			ReleaseDC(hWnd_, hDC_);
-			hDC_ = NULL;
-
+		if (DescribePixelFormat(hDC_, nPixelFormat, sizeof(PIXELFORMATDESCRIPTOR), &pfd) == 0)
 			return false;
-		}
 	}
 
-	if (!::SetPixelFormat(hDC_, nPixelFormat, &pfd))
-	{
-		// release DC
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
+	if (FALSE == SetPixelFormat(hDC_, nPixelFormat, &pfd))
 		return false;
-	}
 
 	// create rendering context
-    wglRC_ = ::wglCreateContext(hDC_);
+    wglRC_ = wglCreateContext(hDC_);
 	if (NULL == wglRC_)
-	{
-		// release DC
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
 		return false;
-	}
 
 	// caution:
-	//	OpenGL에서 display list를 share하고자 하는 경우 source RC와 destination RC가 동일하여야 한다
+	//	OpenGL에서 display list를 share하고자 하는 경우 source RC와 destination RC가 동일하여야 한다.
 	//	예를 들어, source RC의 flag 속성이 PFD_DRAW_TO_WINDOW이고 destination RC의 flag 속성이
-	//	PFD_DRAW_TO_BITMAP이라면, display list의 share는 실패할 것이다
+	//	PFD_DRAW_TO_BITMAP이라면, display list의 share는 실패한다.
 
 	// share display list
 	if (!shareDisplayList(wglRC_))
 	{
 #if defined(WIN32) && defined(_DEBUG)
 		LPVOID lpMsgBuf;
-		::FormatMessage( 
+		FormatMessage( 
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
-			::GetLastError(),
+			GetLastError(),
 			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  //  Default language
 			(LPTSTR) &lpMsgBuf,
 			0,
 			NULL 
 		);
 		// display the string
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wcout << L"error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << L") at " << __LINE__ << L" in " << __FILE__ << std::endl;
+#else
 		std::cout << "Error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << ") at " << __LINE__ << " in " << __FILE__ << std::endl;
+#endif
 		// free the buffer
-		::LocalFree(lpMsgBuf);
+		LocalFree(lpMsgBuf);
 #endif
 		// need to add the code that the display lists are created
-		activate();
-		doRecreateDisplayList();
-		deactivate();
+		if (wglMakeCurrent(hDC_, wglRC_) == TRUE)
+		{
+			doRecreateDisplayList();
+			wglMakeCurrent(NULL, NULL);
+		}
 	}
 /*
 	// when using 256 color
-    int nColorBit = ::GetDeviceCaps(hDC_, BITSPIXEL);
+    int nColorBit = GetDeviceCaps(hDC_, BITSPIXEL);
     if (nColorBit <= 8 && !ms_hPalette)
 	{
         // following routines are originated from ogl2 sdk made by Sillicon Graphics and modified for glext
         int nPalette = 1 << nColorBit;
-        LOGPALETTE* pLogPalette = 0L;
+        LOGPALETTE* pLogPalette = NULL;
 		pLogPalette = (LOGPALETTE*)malloc(sizeof(LOGPALETTE) + nPalette*sizeof(PALETTEENTRY));
 		
         if (pLogPalette)
@@ -165,28 +164,33 @@ bool WglDoubleBufferedContext::activate()
                 pLogPalette->palPalEntry[i].peFlags = 0;
             }
 			
-            ms_hPalette = ::CreatePalette(pLogPalette);
+            ms_hPalette = CreatePalette(pLogPalette);
             if (pLogPalette)
 			{
 				free(pLogPalette);
-				pLogPalette = 0L;
+				pLogPalette = NULL;
 			}
         }
     }
 	
     if (ms_hPalette)
 	{
-        ::SelectPalette(hDC_, ms_hPalette, FALSE);
-        ::RealizePalette(hDC_);
+        SelectPalette(hDC_, ms_hPalette, FALSE);
+        RealizePalette(hDC_);
         ++ms_nUsedPalette;
     }
 */
-
-	const bool ret = (::wglGetCurrentContext() != wglRC_) ? (::wglMakeCurrent(hDC_, wglRC_) == TRUE) : true;
-
-	setActivation(true);
-
-	return ret;
+	const bool ret = (wglGetCurrentContext() == wglRC_) ? true : (wglMakeCurrent(hDC_, wglRC_) == TRUE);
+	if (ret)
+	{
+		setActivation(true);
+		return true;
+	}
+	else
+	{
+		releaseWglResources();
+		return false;
+	}
 
 	// draw something into rendering context
 }
@@ -197,20 +201,21 @@ bool WglDoubleBufferedContext::deactivate()
 
 	setActivation(false);
 
-	const bool ret = ::wglMakeCurrent(0L, 0L) == TRUE;
+	const bool ret = wglMakeCurrent(NULL, NULL) == TRUE;
 
-    // delete rendering context
-    if (wglRC_)
+	releaseWglResources();
+
+	return ret;
+}
+
+void WglDoubleBufferedContext::releaseWglResources()
+{
+	// delete rendering context
+	if (wglRC_)
 	{
-        ::wglDeleteContext(wglRC_);
-        wglRC_ = 0L;
-    }
-
-	// release DC
-	ReleaseDC(hWnd_, hDC_);
-	hDC_ = NULL;
-
-	return true;
+		wglDeleteContext(wglRC_);
+		wglRC_ = NULL;
+	}
 }
 
 }  // namespace swl

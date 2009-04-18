@@ -14,6 +14,22 @@ GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const Region2<int>
 : base_type(drawRegion),
   hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return;
+
+	// create an off-screen DC for double-buffering
+	memDC_ = CreateCompatibleDC(hDC_);
+	if (NULL == memDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+
+		return;
+	}
+
 	if (isAutomaticallyActivated) activate();
 }
 
@@ -21,15 +37,44 @@ GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const RECT& drawRe
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom)),
   hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return;
+
+	// create an off-screen DC for double-buffering
+	memDC_ = CreateCompatibleDC(hDC_);
+	if (NULL == memDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+
+		return;
+	}
+
 	if (isAutomaticallyActivated) activate();
 }
 
 GdiBitmapBufferedContext::~GdiBitmapBufferedContext()
 {
 	deactivate();
+
+	if (memDC_)
+	{
+		DeleteDC(memDC_);
+		memDC_ = NULL;
+	}
+
+	// release DC
+	if (hDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+	}
 }
 
-bool GdiBitmapBufferedContext::redraw()
+bool GdiBitmapBufferedContext::swapBuffer()
 {
 	if (!isActivated() || isDrawing()) return false;
 	if (NULL == memDC_ || NULL == memBmp_) return false;
@@ -54,30 +99,37 @@ bool GdiBitmapBufferedContext::activate()
 	if (isActivated()) return true;
 	if (NULL == hWnd_) return false;
 
-	// get DC for window
-	hDC_ = ::GetDC(hWnd_);
-	if (NULL == hDC_) return false;
-
-	// create an off-screen DC for double-buffering
-	memDC_ = CreateCompatibleDC(hDC_);
-	if (NULL == memDC_)
+	if (createOffScreen())
 	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
+		setActivation(true);
+		return true;
+	}
+	else
+	{
+		releaseOffScreenResources();
 		return false;
 	}
+
+	// draw something into memDC_
+}
+
+bool GdiBitmapBufferedContext::deactivate()
+{
+	if (!isActivated()) return true;
+	if (NULL == hWnd_) return false;
+
+	setActivation(false);
+
+	releaseOffScreenResources();
+
+	return true;
+}
+
+bool GdiBitmapBufferedContext::createOffScreen()
+{
 	memBmp_ = CreateCompatibleBitmap(hDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
 	if (NULL == memBmp_)
-	{
-		DeleteDC(memDC_);
-		memDC_ = NULL;
-
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
 		return false;
-	}
 	oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
 /*
     // create dib section
@@ -98,7 +150,7 @@ bool GdiBitmapBufferedContext::activate()
 	bmiDIB.bmiHeader.biHeight		= viewHeight;
 	bmiDIB.bmiHeader.biPlanes		= 1;
 	//bmiDIB.bmiHeader.biBitCount	= 32;
-	bmiDIB.bmiHeader.biBitCount		= ::GetDeviceCaps(memDC_, BITSPIXEL);
+	bmiDIB.bmiHeader.biBitCount		= GetDeviceCaps(memDC_, BITSPIXEL);
 	bmiDIB.bmiHeader.biCompression	= BI_RGB;
 	bmiDIB.bmiHeader.biSizeImage	= 0;  //  for BI_RGB
 	//bmiDIB.bmiHeader.biSizeImage	= viewWidth * viewHeight * 3;
@@ -119,17 +171,9 @@ bool GdiBitmapBufferedContext::activate()
     void* offScreen;
     HBITMAP memBmp_ = CreateDIBSection(memDC_, &bmiDIB, DIB_RGB_COLORS, &offScreen, 0L, 0);
     if (NULL == memBmp_)
-	{
-		DeleteDC(memDC_);
-		memDC_ = NULL;
-
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
-
 		return false;
-	}
     // select create dib section and reserve old bitmap
-    oldBmp_ = (HBITMAP)::SelectObject(memDC_, memBmp_);
+    oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
 */
 	// clear the background
 	RECT rect;
@@ -139,32 +183,16 @@ bool GdiBitmapBufferedContext::activate()
 	rect.bottom = drawRegion_.top;
 	FillRect(memDC_, &rect, CreateSolidBrush(GetSysColor(COLOR_WINDOW)));
 
-	setActivation(true);
-
 	return true;
-
-	// draw something into memDC_
 }
 
-bool GdiBitmapBufferedContext::deactivate()
+void GdiBitmapBufferedContext::releaseOffScreenResources()
 {
-	if (!isActivated()) return true;
-
-	setActivation(false);
-
 	// free-up the off-screen DC
 	SelectObject(memDC_, oldBmp_);
 	oldBmp_ = NULL;
     DeleteObject(memBmp_);
 	memBmp_ = NULL;
-    DeleteDC(memDC_);
-	memDC_ = NULL;
-
-	// release DC
-	ReleaseDC(hWnd_, hDC_);
-	hDC_ = NULL;
-
-	return true;
 }
 
 }  // namespace swl

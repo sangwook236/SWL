@@ -31,6 +31,7 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_TIMER()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
@@ -63,8 +64,24 @@ void CWinViewTestView::OnDraw(CDC* /*pDC*/)
 		return;
 
 	// TODO: add draw code for native data here
-	//runTest1();
-	runTest2();
+	switch (drawMode_)
+	{
+	case 1:
+		test1();
+		break;
+	case 2:
+		test2();
+		break;
+	case 3:
+		test3();
+		break;
+	case 4:
+		test4();
+		break;
+	case 5:
+		test5();
+		break;
+	}
 }
 
 
@@ -114,307 +131,332 @@ void CWinViewTestView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
+	drawMode_ = 5;  // [1, 5]
+
 	idx_ = 0;
 	timeInterval_ = 50;
 	SetTimer(1, timeInterval_, NULL);
 
 	for (int i = 0; i < 5000; ++i)
 	{
-		const double x = (double)idx_ * timeInterval_ / 1000.0;
+		const double x = (double)i * timeInterval_ / 1000.0;
 		const double y = std::sin(x) * 100.0 + 100.0;
-		data_.push_back(std::make_pair(idx_, (int)std::floor(y + 0.5)));
-
-		++idx_;
+		data1_.push_back(std::make_pair(i, (int)std::floor(y + 0.5)));
 	}
 
 	CRect rect;
 	GetClientRect(&rect);
 
-	// create a context
-	viewContext_.reset(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, true));
+	if (5 == drawMode_)
+	{
+		// create a context
+		viewContext_.reset(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, false));
+	}
 }
 
 void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: Add your message handler code here and/or call default
-/*
 	const double x = (double)idx_ * timeInterval_ / 1000.0;
-	const double y = std::sin(x) * 100.0 + 100.0;
-	data_.push_back(std::make_pair(idx_, (int)std::floor(y + 0.5)));
+	const double y = std::cos(x) * 100.0 + 100.0;
+	data2_.push_back(std::make_pair(idx_, (int)std::floor(y + 0.5)));
 
 	++idx_;
-*/
-	if (viewContext_ && !viewContext_->isDrawing())
-		Invalidate();
+
+	raiseDrawEvent(true);
 
 	CView::OnTimer(nIDEvent);
 }
 
-void CWinViewTestView::runTest1()
+void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 {
-	CRect rect;
-	GetClientRect(&rect);
+	CView::OnSize(nType, cx, cy);
 
-	const int drawMode = 0x10;
+	if (cx <= 0 || cy <= 0) return;
 
-	// use double(bitmap)-buffered GDI context
-	if ((0x02 & drawMode) == 0x02)
+	if (1 <= drawMode_ && drawMode_ <= 4)
 	{
-		// create a context
-		swl::GdiBitmapBufferedContext ctx(GetSafeHwnd(), rect);
+		// do nothing
+	}
+	else if (5 == drawMode_)
+	{
+		resize(0, 0, cx, cy);
+	}
+}
 
-		HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
-		if (dc)
+bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
+{
+	if (1 <= drawMode_ && drawMode_ <= 4)
+	{
+		OnDraw(0L);
+	}
+	else if (5 == drawMode_)
+	{
+		if (NULL == viewContext_ || viewContext_->isDrawing())
+			return false;
+
+		if (isContextActivated)
 		{
-			CDC *pDC = CDC::FromHandle(*dc);
-
-			// clear the background
-			//pDC->SetBkColor(RGB(192, 192, 192));  // not working ???
-			//pDC->FillRect(rect, &CBrush(RGB(192, 192, 192)));
-			//pDC->FillRect(rect, &CBrush(GetSysColor(COLOR_WINDOW)));
-
-			// draw contents
-			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
-			pDC->SelectObject(&pen);
-			pDC->MoveTo(100, 150);
-			pDC->LineTo(300, 350);
-
-			// redraw the context
-			ctx.redraw();
+			if (viewContext_)
+			{
+				viewContext_->activate();
+				OnDraw(0L);
+				viewContext_->deactivate();
+			}
 		}
+		else OnDraw(0L);
 	}
 
-	// use single-buffered GDI context
-	if ((0x01 & drawMode) == 0x01)
+	return true;
+}
+
+bool CWinViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
+{
+	//if (NULL == viewContext_ || NULL == viewCamera_)
+	if (NULL == viewContext_)
+		return false;
+
+	if (viewContext_->resize(x1, y1, x2, y2))
 	{
-		// create a context
-		swl::GdiContext ctx(GetSafeHwnd());
+		viewContext_->activate();
+		//viewCamera_->setViewport(x1, y1, x2, y2);	
+		//raiseDrawEvent(false);
+		viewContext_->deactivate();
 
-		HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
-		if (dc)
+		return true;
+	}
+	else return false;
+}
+
+// use single-buffered GDI context
+void CWinViewTestView::test1()
+{
+	// create a context
+	swl::GdiContext ctx(GetSafeHwnd());
+	HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
+
+	if (dc)
+	{
+		CDC *pDC = CDC::FromHandle(*dc);
+
+		// clear the background
+		//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
+		//pDC->FillRect(rect, &CBrush(RGB(192, 192, 0)));
+
+		// draw contents
 		{
-			CDC *pDC = CDC::FromHandle(*dc);
-
-			// clear the background
-			//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
-			//pDC->FillRect(rect, &CBrush(RGB(192, 192, 0)));
-
-			// draw contents
 			CPen pen(PS_SOLID, 2, RGB(255, 0, 0));
 			pDC->SelectObject(&pen);
 			pDC->MoveTo(100, 100);
 			pDC->LineTo(300, 300);
-
-			// redraw the context
-			ctx.redraw();
 		}
-	}
 
-	// use single-buffered GDI+ context
-	if ((0x04 & drawMode) == 0x04)
-	{
-		// create a context
-		swl::GdiplusContext ctx(GetSafeHwnd());
-
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
-		if (graphics)
+		if (data1_.size() > 1)
 		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 192, 0, 192));
-
-			// draw contents
-			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), 4.0f);
-			graphics->DrawLine(&pen, 100, 200, 300, 400);
-
-			// redraw the context
-			ctx.redraw();
+			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
+			pDC->SelectObject(&pen);
+			data_type::iterator it = data1_.begin();
+			pDC->MoveTo(it->first, it->second);
+			for (++it; it != data1_.end(); ++it)
+				pDC->LineTo(it->first, it->second);
 		}
-	}
 
-	// use double(bitmap)-buffered GDI+ context
-	if ((0x08 & drawMode) == 0x08)
-	{
-		// create a context
-		swl::GdiplusBitmapBufferedContext ctx(GetSafeHwnd(), rect);
-
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
-		if (graphics)
+		if (data2_.size() > 1)
 		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
-
-			// draw contents
-			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 255, 0), 5.0f);
-			graphics->DrawLine(&pen, 100, 250, 300, 450);
-
-			// redraw the context
-			ctx.redraw();
+			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
+			pDC->SelectObject(&pen);
+			data_type::iterator it = data2_.begin();
+			pDC->MoveTo(it->first, it->second);
+			for (++it; it != data2_.end(); ++it)
+				pDC->LineTo(it->first, it->second);
 		}
 	}
 
-	// use double(bitmap)-buffered GDI+ context
-	if ((0x10 & drawMode) == 0x10)
-	{
-		// activate a context
-		viewContext_->activate();
-
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
-		if (graphics)
-		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
-
-			// draw contents
-			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), 5.0f);
-			graphics->DrawLine(&pen, 100, 300, 300, 500);
-
-			// redraw the context
-			viewContext_->redraw();
-		}
-
-		// de-activate the context
-		viewContext_->deactivate();
-	}
+	// swap buffers
+	ctx.swapBuffer();
 }
 
-void CWinViewTestView::runTest2()
+// use double(bitmap)-buffered GDI context
+void CWinViewTestView::test2()
 {
 	CRect rect;
 	GetClientRect(&rect);
 
-	const int drawMode = 0x10;
+	// create a context
+	swl::GdiBitmapBufferedContext ctx(GetSafeHwnd(), rect);
+	HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
 
-	// use double(bitmap)-buffered GDI context
-	if ((0x02 & drawMode) == 0x02)
+	if (dc)
 	{
-		// create a context
-		swl::GdiBitmapBufferedContext ctx(GetSafeHwnd(), rect);
+		CDC *pDC = CDC::FromHandle(*dc);
 
-		HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
-		if (dc && data_.size() > 1)
+		// clear the background
+		//pDC->SetBkColor(RGB(192, 192, 192));  // not working ???
+		//pDC->FillRect(rect, &CBrush(RGB(192, 192, 192)));
+		//pDC->FillRect(rect, &CBrush(GetSysColor(COLOR_WINDOW)));
+
+		// draw contents
 		{
-			CDC *pDC = CDC::FromHandle(*dc);
+			CPen pen(PS_SOLID, 3, RGB(255, 0, 0));
+			pDC->SelectObject(&pen);
+			pDC->MoveTo(100, 150);
+			pDC->LineTo(300, 350);
+		}
 
-			// clear the background
-			//pDC->SetBkColor(RGB(192, 192, 192));  // not working ???
-			//pDC->FillRect(rect, &CBrush(RGB(192, 192, 192)));
-			//pDC->FillRect(rect, &CBrush(GetSysColor(COLOR_WINDOW)));
-
-			// draw contents
+		if (data1_.size() > 1)
+		{
 			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
-			data_type::iterator it = data_.begin();
+			pDC->SelectObject(&pen);
+			data_type::iterator it = data1_.begin();
 			pDC->MoveTo(it->first, it->second);
-			for (++it; it != data_.end(); ++it)
+			for (++it; it != data1_.end(); ++it)
 				pDC->LineTo(it->first, it->second);
+		}
 
-			// redraw the context
-			ctx.redraw();
+		if (data2_.size() > 1)
+		{
+			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
+			pDC->SelectObject(&pen);
+			data_type::iterator it = data2_.begin();
+			pDC->MoveTo(it->first, it->second);
+			for (++it; it != data2_.end(); ++it)
+				pDC->LineTo(it->first, it->second);
 		}
 	}
 
-	// use single-buffered GDI context
-	if ((0x01 & drawMode) == 0x01)
+	// swap buffers
+	ctx.swapBuffer();
+}
+
+// use single-buffered GDI+ context
+void CWinViewTestView::test3()
+{
+	// create a context
+	swl::GdiplusContext ctx(GetSafeHwnd());
+	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+
+	if (graphics)
 	{
-		// create a context
-		swl::GdiContext ctx(GetSafeHwnd());
+		// clear the background
+		//graphics->Clear(Gdiplus::Color(255, 192, 0, 192));
 
-		HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
-		if (dc && data_.size() > 1)
+		// draw contents
 		{
-			CDC *pDC = CDC::FromHandle(*dc);
-
-			// clear the background
-			//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
-			//pDC->FillRect(rect, &CBrush(RGB(192, 192, 0)));
-
-			// draw contents
-			CPen pen(PS_SOLID, 2, RGB(255, 0, 0));
-			data_type::iterator it = data_.begin();
-			pDC->MoveTo(it->first, it->second);
-			for (++it; it != data_.end(); ++it)
-				pDC->LineTo(it->first, it->second);
-
-			// redraw the context
-			ctx.redraw();
+			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 4.0f);
+			graphics->DrawLine(&pen, 100, 200, 300, 400);
 		}
-	}
 
-	// use single-buffered GDI+ context
-	if ((0x04 & drawMode) == 0x04)
-	{
-		// create a context
-		swl::GdiplusContext ctx(GetSafeHwnd());
-
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
-		if (graphics && data_.size() > 1)
+		if (data1_.size() > 1)
 		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 192, 0, 192));
+			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), 4.0f);
+			data_type::iterator prevIt = data1_.begin();
+			data_type::iterator it = data1_.begin();
+			for (++it; it != data1_.end(); ++prevIt, ++it)
+				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+		}
 
-			// draw contents
+		if (data2_.size() > 1)
+		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), 4.0f);
-			data_type::iterator prevIt = data_.begin();
-			data_type::iterator it = data_.begin();
-			for (++it; it != data_.end(); ++prevIt, ++it)
+			data_type::iterator prevIt = data2_.begin();
+			data_type::iterator it = data2_.begin();
+			for (++it; it != data2_.end(); ++prevIt, ++it)
 				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
-
-			// redraw the context
-			ctx.redraw();
 		}
 	}
 
-	// use double(bitmap)-buffered GDI+ context
-	if ((0x08 & drawMode) == 0x08)
+	// swap buffers
+	ctx.swapBuffer();
+}
+
+// use double(bitmap)-buffered GDI+ context
+void CWinViewTestView::test4()
+{
+	CRect rect;
+	GetClientRect(&rect);
+
+	// create a context
+	swl::GdiplusBitmapBufferedContext ctx(GetSafeHwnd(), rect);
+	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+
+	if (graphics)
 	{
-		// create a context
-		swl::GdiplusBitmapBufferedContext ctx(GetSafeHwnd(), rect);
+		// clear the background
+		//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
 
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
-		if (graphics && data_.size() > 1)
+		// draw contents
 		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
+			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 5.0f);
+			graphics->DrawLine(&pen, 100, 250, 300, 450);
+		}
 
-			// draw contents
-			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 255, 0), 5.0f);
-			data_type::iterator prevIt = data_.begin();
-			data_type::iterator it = data_.begin();
-			for (++it; it != data_.end(); ++prevIt, ++it)
+		if (data1_.size() > 1)
+		{
+			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), 5.0f);
+			data_type::iterator prevIt = data1_.begin();
+			data_type::iterator it = data1_.begin();
+			for (++it; it != data1_.end(); ++prevIt, ++it)
 				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+		}
 
-			// redraw the context
-			ctx.redraw();
+		if (data2_.size() > 1)
+		{
+			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), 5.0f);
+			data_type::iterator prevIt = data2_.begin();
+			data_type::iterator it = data2_.begin();
+			for (++it; it != data2_.end(); ++prevIt, ++it)
+				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
 		}
 	}
 
-	// use double(bitmap)-buffered GDI+ context
-	if ((0x10 & drawMode) == 0x10)
+	// swap buffers
+	ctx.swapBuffer();
+}
+
+// use double(bitmap)-buffered GDI+ context
+void CWinViewTestView::test5()
+{
+	CRect rect;
+	GetClientRect(&rect);
+
+	// activate a context
+	viewContext_->activate();
+
+	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
+
+	if (graphics)
 	{
-		swl::WinTimer timer;
+		// clear the background
+		//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
 
-		// activate a context
-		//viewContext_->activate();
-
-		Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
-		if (graphics && data_.size() > 1)
+		// draw contents
 		{
-			// clear the background
-			//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
-
-			// draw contents
-			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), 5.0f);
-			data_type::iterator prevIt = data_.begin();
-			data_type::iterator it = data_.begin();
-			for (++it; it != data_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
-
-			// redraw the context
-			viewContext_->redraw();
+			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 6.0f);
+			graphics->DrawLine(&pen, 100, 300, 300, 500);
 		}
 
-		// de-activate the context
-		//viewContext_->deactivate();
+		if (data1_.size() > 1)
+		{
+			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), 6.0f);
+			data_type::iterator prevIt = data1_.begin();
+			data_type::iterator it = data1_.begin();
+			for (++it; it != data1_.end(); ++prevIt, ++it)
+				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+		}
 
-		TRACE(_T("***** elapsed time: %ld, %ld\n"), (long)timer.getElapsedTimeInMilliSecond(), (long)timer.getElapsedTimeInMicroSecond());
+		if (data2_.size() > 1)
+		{
+			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), 6.0f);
+			data_type::iterator prevIt = data2_.begin();
+			data_type::iterator it = data2_.begin();
+			for (++it; it != data2_.end(); ++prevIt, ++it)
+				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+		}
 	}
+
+	// swap buffers
+	viewContext_->swapBuffer();
+
+	// de-activate the context
+	viewContext_->deactivate();
 }

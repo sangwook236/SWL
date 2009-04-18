@@ -14,6 +14,12 @@ GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const Regi
 : base_type(drawRegion),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// create graphics for window
+	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
+	if (NULL == graphics_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
@@ -21,15 +27,28 @@ GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const RECT
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom)),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// create graphics for window
+	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
+	if (NULL == graphics_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
 GdiplusBitmapBufferedContext::~GdiplusBitmapBufferedContext()
 {
 	deactivate();
+
+	// delete graphics
+	if (graphics_)
+	{
+		delete graphics_;
+		graphics_ = NULL;
+	}
 }
 
-bool GdiplusBitmapBufferedContext::redraw()
+bool GdiplusBitmapBufferedContext::swapBuffer()
 {
 	if (!isActivated() || isDrawing())
 		return false;
@@ -53,32 +72,16 @@ bool GdiplusBitmapBufferedContext::activate()
 	if (isActivated()) return true;
 	if (NULL == hWnd_) return false;
 
-	// create graphics for window
-	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
-	if (NULL == graphics_) return false;
-
-	// create an off-screen graphics for double-buffering
-	memBmp_ = new Gdiplus::Bitmap(drawRegion_.getWidth(), drawRegion_.getHeight(), graphics_);
-	if (NULL == memBmp_)
+	if (createOffScreen())
 	{
-		delete graphics_;
-		graphics_ = NULL;
+		setActivation(true);
+		return true;
+	}
+	else
+	{
+		releaseOffScreenResources();
 		return false;
 	}
-
-	canvas_ = Gdiplus::Graphics::FromImage(memBmp_);
-	if (NULL == canvas_)
-	{
-		delete memBmp_;
-		memBmp_ = NULL;
-		delete graphics_;
-		graphics_ = NULL;
-		return false;
-	}
-
-	setActivation(true);
-
-	return true;
 
 	// draw something into canvas_
 }
@@ -86,20 +89,38 @@ bool GdiplusBitmapBufferedContext::activate()
 bool GdiplusBitmapBufferedContext::deactivate()
 {
 	if (!isActivated()) return true;
+	if (NULL == hWnd_) return false;
 
 	setActivation(false);
 
+	releaseOffScreenResources();
+
+	return true;
+}
+
+bool GdiplusBitmapBufferedContext::createOffScreen()
+{
+	// create an off-screen graphics for double-buffering
+	memBmp_ = new Gdiplus::Bitmap(drawRegion_.getWidth(), drawRegion_.getHeight(), graphics_);
+	if (NULL == memBmp_)
+		return false;
+
+	canvas_ = Gdiplus::Graphics::FromImage(memBmp_);
+	if (NULL == canvas_)
+	{
+		delete memBmp_;
+		memBmp_ = NULL;
+		return false;
+	}
+}
+
+void GdiplusBitmapBufferedContext::releaseOffScreenResources()
+{
 	// free-up the off-screen graphics
 	delete canvas_;
 	canvas_ = NULL;
 	delete memBmp_;
 	memBmp_ = NULL;
-
-	// delete graphics
-	delete graphics_;
-	graphics_ = NULL;
-
-	return true;
 }
 
 }  // namespace swl

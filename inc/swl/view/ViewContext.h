@@ -28,12 +28,13 @@ private:
 	ViewContext& operator=(const ViewContext&);
 
 public:
-	/// redraw the context
-	virtual bool redraw() = 0;
+	/// swap buffers
+	virtual bool swapBuffer() = 0;
 	/// resize the context
-	virtual bool resize(const Region2<int>& drawRegion)
+	virtual bool resize(const int x1, const int y1, const int x2, const int y2)
 	{
-		drawRegion_ = drawRegion;
+		if (isActivated()) return false;
+		drawRegion_ = Region2<int>(x1, y1, x2, y2);
 		return true;
 	}
 

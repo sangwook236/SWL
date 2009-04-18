@@ -27,8 +27,8 @@ private:
 	GdiContext & operator=(const GdiContext &);
 
 public:
-	/// redraw the context
-	/*virtual*/ bool redraw()  {  return true;  }
+	/// swap buffers
+	/*virtual*/ bool swapBuffer()  {  return true;  }
 
 	/// activate the context
 	/*virtual*/ bool activate();
@@ -41,7 +41,7 @@ public:
 
 private:
 	/// a window handle
-	HWND hWnd_;
+	const HWND hWnd_;
 	/// a target context
 	HDC hDC_;
 };

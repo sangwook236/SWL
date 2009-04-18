@@ -42,9 +42,16 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
+public:
+	virtual bool raiseDrawEvent(const bool isContextActivated);
+	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
+
 private:
-	void runTest1();
-	void runTest2();
+	void test1();
+	void test2();
+	void test3();
+	void test4();
+	void test5();
 
 private:
 	typedef std::pair<int, int> datum_type;
@@ -52,9 +59,12 @@ private:
 
 	boost::scoped_ptr<swl::GdiplusBitmapBufferedContext> viewContext_;
 
-	data_type data_;
+	data_type data1_;
+	data_type data2_;
 	size_t idx_;
 	UINT timeInterval_;
+
+	int drawMode_;
 
 // Generated message map functions
 protected:
@@ -62,6 +72,7 @@ protected:
 public:
 	virtual void OnInitialUpdate();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
 #ifndef _DEBUG  // debug version in WinViewTestView.cpp

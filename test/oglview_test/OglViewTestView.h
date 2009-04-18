@@ -39,7 +39,9 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
-protected:
+public:
+	virtual bool raiseDrawEvent(const bool isContextActivated);
+	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
 
 private:
 	void draw(swl::WglContextBase &ctx);
@@ -51,8 +53,8 @@ private:
 	virtual bool doRenderScene();
 
 private:
-	swl::OglCamera *camera_;
-	swl::WglContextBase *context_;
+	swl::OglCamera *viewCamera_;
+	swl::WglContextBase *viewContext_;
 
 // Generated message map functions
 protected:
@@ -60,6 +62,7 @@ protected:
 public:
 	virtual void OnInitialUpdate();
 	afx_msg void OnDestroy();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
 };
 
 #ifndef _DEBUG  // debug version in OglViewTestView.cpp

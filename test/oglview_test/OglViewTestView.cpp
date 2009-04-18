@@ -11,6 +11,7 @@
 #include "swl/winview/WglBitmapBufferedContext.h"
 #include "swl/oglview/OglCamera.h"
 #include <GL/glut.h>
+#include <iostream>
 #include <cassert>
 
 #ifdef _DEBUG
@@ -28,12 +29,13 @@ BEGIN_MESSAGE_MAP(COglViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
 	ON_WM_DESTROY()
+	ON_WM_SIZE()
 END_MESSAGE_MAP()
 
 // COglViewTestView construction/destruction
 
 COglViewTestView::COglViewTestView()
-: camera_(NULL), context_(NULL)
+: viewCamera_(NULL), viewContext_(NULL)
 {
 	// TODO: add construction code here
 
@@ -61,12 +63,8 @@ void COglViewTestView::OnDraw(CDC* /*pDC*/)
 		return;
 
 	// TODO: add draw code for native data here
-	if (context_)
-	{
-		context_->activate();
-		draw(*context_);
-		context_->deactivate();
-	}
+	if (viewContext_ && viewContext_->isActivated())
+		draw(*viewContext_);
 }
 
 
@@ -123,37 +121,37 @@ void COglViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
-	if (NULL == context_)
+	if (NULL == viewContext_)
 	{
 		if ((0x01 & drawMode) == 0x01)
-			context_ = new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false);
+			viewContext_ = new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false);
 		if ((0x02 & drawMode) == 0x02)
-			context_ = new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false);
+			viewContext_ = new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false);
 	}
 
-	if (NULL == camera_) camera_ = new swl::OglCamera;
+	if (NULL == viewCamera_) viewCamera_ = new swl::OglCamera;
 
-	assert(context_ && camera_);
+	assert(viewContext_ && viewCamera_);
 
 	// activate a context
-	context_->activate();
+	viewContext_->activate();
 
 	initializeView();
-	//camera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
-	camera_->setViewBound(-2000.0, -2000.0, 2000.0, 2000.0, 4000.0, 12000.0);
-	//camera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
+	//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
+	viewCamera_->setViewBound(-2000.0, -2000.0, 2000.0, 2000.0, 4000.0, 12000.0);
+	//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
-	//context_->resize(rect.Width(), rect.Height());
-	camera_->setViewport(0, 0, rect.Width(), rect.Height());
-	camera_->setEyeDistance(8000.0, false);
-	camera_->setObjectPosition(400.0, 900.0, 500.0);
-	camera_->setEyeDistance(1000.0, false);
-	camera_->setObjectPosition(110.0, 110.0, 150.0);
+	viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
+	viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
+	viewCamera_->setEyeDistance(8000.0, false);
+	viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
+	//viewCamera_->setEyeDistance(1000.0, false);
+	//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
 
-	context_->redraw();
+	raiseDrawEvent(false);
 
 	// de-activate the context
-	context_->deactivate();
+	viewContext_->deactivate();
 }
 
 void COglViewTestView::OnDestroy()
@@ -161,17 +159,61 @@ void COglViewTestView::OnDestroy()
 	CView::OnDestroy();
 
 	// TODO: Add your message handler code here
-	if (camera_)
+	if (viewCamera_)
 	{
-		delete camera_;
-		camera_ = NULL;
+		delete viewCamera_;
+		viewCamera_ = NULL;
 	}
 
-	if (context_)
+	if (viewContext_)
 	{
-		delete context_;
-		context_ = NULL;
+		delete viewContext_;
+		viewContext_ = NULL;
 	}
+}
+
+void COglViewTestView::OnSize(UINT nType, int cx, int cy)
+{
+	CView::OnSize(nType, cx, cy);
+
+	if (cx <= 0 || cy <= 0) return;
+	resize(0, 0, cx, cy);
+}
+
+bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
+{
+	if (NULL == viewContext_ || viewContext_->isDrawing())
+		return false;
+
+	if (isContextActivated)
+	{
+		if (viewContext_)
+		{
+			viewContext_->activate();
+			OnDraw(0L);
+			viewContext_->deactivate();
+		}
+	}
+	else OnDraw(0L);
+
+	return true;
+}
+
+bool COglViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
+{
+	if (NULL == viewContext_ || NULL == viewCamera_)
+		return false;
+
+	if (viewContext_->resize(x1, y1, x2, y2))
+	{
+		viewContext_->activate();
+		viewCamera_->setViewport(x1, y1, x2, y2);	
+		raiseDrawEvent(false);
+		viewContext_->deactivate();
+
+		return true;
+	}
+	else return false;
 }
 
 bool COglViewTestView::initializeView()
@@ -205,9 +247,9 @@ bool COglViewTestView::doRenderScene()
 		//glLoadIdentity();
 		//glTranslatef(100.0f, 100.0f, 100.0f);
 		glColor3f(1.0f, 0.0f, 0.0f);
-		glutWireSphere(50.0, 20, 20);
+		glutWireSphere(500.0, 20, 20);
 		glColor3f(0.5f, 0.5f, 1.0f);
-		glutWireCube(100.0);
+		glutWireCube(500.0);
 	glPopMatrix();
 
     return true;
@@ -219,9 +261,8 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 	{
 		// error-checking routine of OpenGL
 		const GLenum glErrorCode = glGetError();
-		const CString msg(gluErrorString(glErrorCode));
 		if (GL_NO_ERROR != glErrorCode)
-			TRACE(_T("OpenGL error at %d in %s: %s\n"), __LINE__, __FILE__, (LPCTSTR)CString(gluErrorString(glErrorCode)));
+			std::cerr << "OpenGL error at " << __LINE__ << " in " << __FILE__ << ": " << gluErrorString(glErrorCode) << std::endl;
 	}
 #endif
 
@@ -233,7 +274,7 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 		glPushMatrix();
 			//
 			glLoadIdentity();
-			if (camera_) camera_->lookAt();
+			if (viewCamera_) viewCamera_->lookAt();
 
 			//
 			glPushMatrix();
@@ -250,7 +291,8 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 
 	glFlush();
 
-	ctx.redraw();
+	// swap buffers
+	ctx.swapBuffer();
 
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 
@@ -259,7 +301,7 @@ void COglViewTestView::draw(swl::WglContextBase &ctx)
 		// error-checking routine of OpenGL
 		const GLenum glErrorCode = glGetError();
 		if (GL_NO_ERROR != glErrorCode)
-			TRACE(_T("OpenGL error at %d in %s: %s\n"), __LINE__, __FILE__, (LPCTSTR)CString(gluErrorString(glErrorCode)));
+			std::cerr << "OpenGL error at " << __LINE__ << " in " << __FILE__ << ": " << gluErrorString(glErrorCode) << std::endl;
 	}
 #endif
 }

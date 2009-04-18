@@ -33,8 +33,8 @@ private:
 	GdiplusContext & operator=(const GdiplusContext &);
 
 public:
-	/// redraw the context
-	/*virtual*/ bool redraw()  {  return true;  }
+	/// swap buffers
+	/*virtual*/ bool swapBuffer()  {  return true;  }
 
 	/// activate the context
 	/*virtual*/ bool activate();

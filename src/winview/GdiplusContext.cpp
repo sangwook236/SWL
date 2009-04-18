@@ -14,22 +14,31 @@ GdiplusContext::GdiplusContext(HWND hWnd, const bool isAutomaticallyActivated /*
 : base_type(Region2<int>()),
   hWnd_(hWnd), graphics_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// create graphics for window
+	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
+	if (NULL == graphics_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
 GdiplusContext::~GdiplusContext()
 {
 	deactivate();
+
+	// delete graphics
+	if (graphics_)
+	{
+		delete graphics_;
+		graphics_ = NULL;
+	}
 }
 
 bool GdiplusContext::activate()
 {
 	if (isActivated()) return true;
 	if (NULL == hWnd_) return false;
-
-	// create graphics for window
-	graphics_ = new Gdiplus::Graphics(hWnd_, FALSE);
-	if (NULL == graphics_) return false;
 
 	setActivation(true);
 
@@ -41,12 +50,9 @@ bool GdiplusContext::activate()
 bool GdiplusContext::deactivate()
 {
 	if (!isActivated()) return true;
+	if (NULL == hWnd_) return false;
 
 	setActivation(false);
-
-	// delete graphics
-	delete graphics_;
-	graphics_ = NULL;
 
 	return true;
 }

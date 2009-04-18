@@ -25,13 +25,19 @@ private:
 	WglBitmapBufferedContext & operator=(const WglBitmapBufferedContext &);
 
 public:
-	/// redraw the context
-	/*virtual*/ bool redraw();
+	/// swap buffers
+	/*virtual*/ bool swapBuffer();
 
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
+
+private:
+	bool createOffScreen();
+	bool createOffScreenBitmap();
+	void releaseWglResources();
+	void releaseOffScreenResources(const bool areWglResourcesDeleted = true);
 
 private:
 	/// a window handle

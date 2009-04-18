@@ -14,22 +14,31 @@ GdiContext::GdiContext(HWND hWnd, const bool isAutomaticallyActivated /*= true*/
 : base_type(Region2<int>()),
   hWnd_(hWnd), hDC_(NULL)
 {
+	if (NULL == hWnd_) return;
+
+	// get DC for window
+	hDC_ = GetDC(hWnd_);
+	if (NULL == hDC_) return;
+
 	if (isAutomaticallyActivated) activate();
 }
 
 GdiContext::~GdiContext()
 {
 	deactivate();
+
+	// release DC
+	if (hDC_)
+	{
+		ReleaseDC(hWnd_, hDC_);
+		hDC_ = NULL;
+	}
 }
 
 bool GdiContext::activate()
 {
 	if (isActivated()) return true;
 	if (NULL == hWnd_) return false;
-
-	// get DC for window
-	hDC_ = ::GetDC(hWnd_);
-	if (NULL == hDC_) return false;
 
 	setActivation(true);
 
@@ -41,12 +50,9 @@ bool GdiContext::activate()
 bool GdiContext::deactivate()
 {
 	if (!isActivated()) return true;
+	if (NULL == hWnd_) return false;
 
 	setActivation(false);
-
-	// release DC
-	ReleaseDC(hWnd_, hDC_);
-	hDC_ = NULL;
 
 	return true;
 }

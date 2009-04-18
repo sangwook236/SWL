@@ -28,8 +28,8 @@ private:
 	GdiBitmapBufferedContext & operator=(const GdiBitmapBufferedContext &);
 
 public:
-	/// redraw the context
-	/*virtual*/ bool redraw();
+	/// swap buffers
+	/*virtual*/ bool swapBuffer();
 
 	/// activate the context
 	/*virtual*/ bool activate();
@@ -39,6 +39,10 @@ public:
 	/// get the native context
 	/*virtual*/ void * getNativeContext()  {  return isActivated() ? (void *)&memDC_ : NULL;  }
 	/*virtual*/ const void * const getNativeContext() const  {  return isActivated() ? (void *)&memDC_ : NULL;  }
+
+private:
+	bool createOffScreen();
+	void releaseOffScreenResources();
 
 private:
 	/// a window handle
