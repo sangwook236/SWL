@@ -7,10 +7,13 @@
 #include "WinViewTestDoc.h"
 #include "WinViewTestView.h"
 
+#include "ViewEventHandler.h"
 #include "swl/winview/GdiContext.h"
 #include "swl/winview/GdiBitmapBufferedContext.h"
 #include "swl/winview/GdiplusContext.h"
 #include "swl/winview/GdiplusBitmapBufferedContext.h"
+#include "swl/view/MouseEvent.h"
+#include "swl/view/KeyEvent.h"
 #include "swl/view/ViewCamera2.h"
 #include "swl/winutil/WinTimer.h"
 #include <gdiplus.h>
@@ -33,6 +36,17 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_WM_TIMER()
 	ON_WM_SIZE()
 	ON_WM_PAINT()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_LBUTTONDBLCLK()
+	ON_WM_MBUTTONDOWN()
+	ON_WM_MBUTTONUP()
+	ON_WM_MBUTTONDBLCLK()
+	ON_WM_RBUTTONDOWN()
+	ON_WM_RBUTTONUP()
+	ON_WM_RBUTTONDBLCLK()
+	ON_WM_KEYDOWN()
+	ON_WM_KEYUP()
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
@@ -58,31 +72,40 @@ BOOL CWinViewTestView::PreCreateWindow(CREATESTRUCT& cs)
 
 // CWinViewTestView drawing
 
-void CWinViewTestView::OnDraw(CDC* /*pDC*/)
+void CWinViewTestView::OnDraw(CDC* pDC)
 {
 	CWinViewTestDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
 		return;
 
-	// TODO: add draw code for native data here
-	switch (drawMode_)
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
+
+	if (pDC && pDC->IsPrinting())
 	{
-	case 1:
-		test1();
-		break;
-	case 2:
-		test2();
-		break;
-	case 3:
-		test3();
-		break;
-	case 4:
-		test4();
-		break;
-	case 5:
-		test5();
-		break;
+		// FIXME [add] >>
+	}
+	else
+	{
+		switch (drawMode_)
+		{
+		case 1:
+			test1();
+			break;
+		case 2:
+			test2();
+			break;
+		case 3:
+			test3();
+			break;
+		case 4:
+			test4();
+			break;
+		case 5:
+			test5();
+			break;
+		}
 	}
 }
 
@@ -133,11 +156,12 @@ void CWinViewTestView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
 
+	//
 	drawMode_ = 5;  // [1, 5]
 
 	idx_ = 0;
 	timeInterval_ = 50;
-	SetTimer(1, timeInterval_, NULL);
+	//SetTimer(1, timeInterval_, NULL);
 
 	for (int i = 0; i < 5000; ++i)
 	{
@@ -149,6 +173,20 @@ void CWinViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+
+	viewController_.addMousePressHandler(swl::MousePressHandler());
+	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
+	viewController_.addMouseMoveHandler(swl::MouseMoveHandler());
+	viewController_.addMouseClickHandler(swl::MouseClickHandler());
+	viewController_.addMouseDoubleClickHandler(swl::MouseDoubleClickHandler());
+	viewController_.addKeyPressHandler(swl::KeyPressHandler());
+	viewController_.addKeyReleaseHandler(swl::KeyReleaseHandler());
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
+
 	// create a context
 	if (5 == drawMode_)
 	{
@@ -159,7 +197,6 @@ void CWinViewTestView::OnInitialUpdate()
 	//viewCamera_.reset(new swl::ViewCamera2());
 
 	// initialize a view
-	//if (viewContext_.get() && viewCamera_.get())
 	if (viewContext_.get())
 	{
 		// activate the context
@@ -169,6 +206,10 @@ void CWinViewTestView::OnInitialUpdate()
 		initializeView();
 
 		// set the camera
+		if (viewCamera_.get())
+		{
+			//viewCamera_->;
+		}
 
 		raiseDrawEvent(false);
 
@@ -180,6 +221,9 @@ void CWinViewTestView::OnInitialUpdate()
 void CWinViewTestView::OnPaint()
 {
 	CPaintDC dc(this); // device context for painting
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
 
 	if (1 <= drawMode_ && drawMode_ <= 4)
 	{
@@ -227,6 +271,9 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
 
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
+
 	if (cx <= 0 || cy <= 0) return;
 
 	if (1 <= drawMode_ && drawMode_ <= 4)
@@ -235,9 +282,12 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 	}
 	else if (5 == drawMode_)
 	{
-		resize(0, 0, cx, cy);
+		resizeView(0, 0, cx, cy);
 	}
 }
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView
 
 bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
@@ -255,7 +305,18 @@ bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 	return true;
 }
 
-bool CWinViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView
+
+bool CWinViewTestView::initializeView()
+{
+	return true;
+}
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView
+
+bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
 	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
 	{
@@ -268,11 +329,6 @@ bool CWinViewTestView::resize(const int x1, const int y1, const int x2, const in
 		return true;
 	}
 	else return false;
-}
-
-bool CWinViewTestView::initializeView()
-{
-	return true;
 }
 
 // use single-buffered GDI context
@@ -506,4 +562,103 @@ void CWinViewTestView::test5()
 
 	// de-activate the context
 	viewContext_->deactivate();
+}
+
+void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CWinViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
+void CWinViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonDblClk(nFlags, point);
+}
+
+void CWinViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonDown(nFlags, point);
+}
+
+void CWinViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonUp(nFlags, point);
+}
+
+void CWinViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonDblClk(nFlags, point);
+}
+
+void CWinViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonDown(nFlags, point);
+}
+
+void CWinViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonUp(nFlags, point);
+}
+
+void CWinViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonDblClk(nFlags, point);
+}
+
+void CWinViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressKey(swl::KeyEvent(nChar));
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+void CWinViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseKey(swl::KeyEvent(nChar));
+
+	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }

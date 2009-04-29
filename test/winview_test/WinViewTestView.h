@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "swl/view/ViewEventController.h"
 #include <boost/smart_ptr.hpp>
 #include <deque>
 
@@ -44,10 +45,13 @@ public:
 #endif
 
 public:
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
+
 	virtual bool raiseDrawEvent(const bool isContextActivated);
-	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
 
 	virtual bool initializeView();
+	virtual bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
 private:
 	void test1();
@@ -57,11 +61,14 @@ private:
 	void test5();
 
 private:
-	typedef std::pair<int, int> datum_type;
-	typedef std::deque<datum_type> data_type;
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
 
 	boost::scoped_ptr<swl::GdiplusBitmapBufferedContext> viewContext_;
 	boost::scoped_ptr<swl::ViewCamera2> viewCamera_;
+
+	typedef std::pair<int, int> datum_type;
+	typedef std::deque<datum_type> data_type;
 
 	data_type data1_;
 	data_type data2_;
@@ -69,6 +76,11 @@ private:
 	UINT timeInterval_;
 
 	int drawMode_;
+
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+
+	swl::ViewEventController viewController_;
 
 // Generated message map functions
 protected:
@@ -78,6 +90,17 @@ public:
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnPaint();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 #ifndef _DEBUG  // debug version in WinViewTestView.cpp

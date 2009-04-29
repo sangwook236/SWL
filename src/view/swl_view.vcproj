@@ -211,11 +211,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\view\IKeyEventable.h"
+				RelativePath="..\..\inc\swl\view\KeyEvent.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\view\IMouseEventable.h"
+				RelativePath="..\..\inc\swl\view\MouseEvent.h"
 				>
 			</File>
 			<File

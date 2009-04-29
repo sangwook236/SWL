@@ -224,6 +224,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\ViewEventHandler.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WinViewTest.cpp"
 				>
 			</File>
@@ -255,6 +259,10 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ViewEventHandler.h"
 				>
 			</File>
 			<File

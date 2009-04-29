@@ -9,6 +9,10 @@
 
 namespace swl {
 
+struct MouseEvent;
+struct KeyEvent;
+
+
 //-----------------------------------------------------------------------------------
 // 
 
@@ -18,25 +22,7 @@ public:
 	typedef MvcController base_type;
 
 public:
-	enum EControlKey { CK_NONE = 0x0000, CK_CTRL = 0x0001, CK_ALT = 0x0002, CK_SHIFT = 0x0003 };
-	enum EMouseButton { MB_NONE = 0x0000, MB_LEFT = 0x0001, MB_MIDDLE = 0x0002, MB_RIGHT = 0x0004 };
-
-public:
-	typedef boost::signal<void (const int x, const int y, const EMouseButton button, const EControlKey controlKey, const void * const msg)> mouse_event_publisher_type;
-	typedef boost::signal<void (const int x, const int y, const EControlKey controlKey, const void * const msg)> mouse_move_event_publisher_type;
-	typedef boost::signal<void (const int key, const EControlKey controlKey, const void * const msg)> key_event_publisher_type;
-
-	//typedef mouse_event_publisher_type::slot_function_type mouse_event_handler_type;
-	//typedef mouse_move_event_publisher_type::slot_function_type mouse_move_event_handler_type;
-	//typedef key_event_publisher_type::slot_function_type key_event_handler_type;
-
-	typedef void (*mouse_event_handler_type)(const int x, const int y, const EMouseButton button, const EControlKey controlKey, const void * const msg);
-	typedef void (*mouse_move_event_handler_type)(const int x, const int y, const EControlKey controlKey, const void * const msg);
-	typedef void (*key_event_handler_type)(const int key, const EControlKey controlKey, const void * const msg);
-
-protected:
 	ViewEventController()  {}
-public:
 	virtual ~ViewEventController()  {}
 
 private:
@@ -44,48 +30,118 @@ private:
 	ViewEventController& operator=(const ViewEventController&);
 
 public:
-	bool addMousePressHandler(const mouse_event_handler_type &handler);
-	bool removeMousePressHandler(const mouse_event_handler_type &handler);
+	template<typename Functor>
+	bool addMousePressHandler(const Functor &handler)
+	{
+		pressMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMousePressHandler(const Functor &handler)
+	{
+		pressMouse_.disconnect(handler);
+		return true;
+	}
 
-	bool addMouseReleaseHandler(const mouse_event_handler_type &handler);
-	bool removeMouseReleaseHandler(const mouse_event_handler_type &handler);
+	template<typename Functor>
+	bool addMouseReleaseHandler(const Functor &handler)
+	{
+		releaseMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMouseReleaseHandler(const Functor &handler)
+	{
+		releaseMouse_.disconnect(handler);
+		return true;
+	}
 
-	bool addMouseMoveHandler(const mouse_move_event_handler_type &handler);
-	bool removeMouseMoveHandler(const mouse_move_event_handler_type &handler);
+	template<typename Functor>
+	bool addMouseMoveHandler(const Functor &handler)
+	{
+		moveMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMouseMoveHandler(const Functor &handler)
+	{
+		moveMouse_.disconnect(handler);
+		return true;
+	}
 
-	bool addMouseClickHandler(const mouse_event_handler_type &handler);
-	bool removeMouseClickHandler(const mouse_event_handler_type &handler);
+	template<typename Functor>
+	bool addMouseClickHandler(const Functor &handler)
+	{
+		clickMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMouseClickHandler(const Functor &handler)
+	{
+		clickMouse_.disconnect(handler);
+		return true;
+	}
 
-	bool addMouseDoubleClickHandler(const mouse_event_handler_type &handler);
-	bool removeMouseDoubleClickHandler(const mouse_event_handler_type &handler);
+	template<typename Functor>
+	bool addMouseDoubleClickHandler(const Functor &handler)
+	{
+		doubleClickMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMouseDoubleClickHandler(const Functor &handler)
+	{
+		doubleClickMouse_.disconnect(handler);
+		return true;
+	}
 
-	bool addKeyPressHandler(const key_event_handler_type &handler);
-	bool removeKeyPressHandler(const key_event_handler_type &handler);
+	template<typename Functor>
+	bool addKeyPressHandler(const Functor &handler)
+	{
+		pressKey_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeKeyPressHandler(const Functor &handler)
+	{
+		pressKey_.disconnect(handler);
+		return true;
+	}
 
-	bool addKeyReleaseHandler(const key_event_handler_type &handler);
-	bool removeKeyReleaseHandler(const key_event_handler_type &handler);
+	template<typename Functor>
+	bool addKeyReleaseHandler(const Functor &handler)
+	{
+		releaseKey_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeKeyReleaseHandler(const Functor &handler)
+	{
+		releaseKey_.disconnect(handler);
+		return true;
+	}
 
 	//
-	virtual void pressMouse(const int x, const int y, const EMouseButton button = MB_LEFT, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
-	virtual void releaseMouse(const int x, const int y, const EMouseButton button = MB_LEFT, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
-	virtual void moveMouse(const int x, const int y, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
+	virtual void pressMouse(const MouseEvent &evt) const;
+	virtual void releaseMouse(const MouseEvent &evt) const;
+	virtual void moveMouse(const MouseEvent &evt) const;
 
-	virtual void clickMouse(const int x, const int y, const EMouseButton button = MB_LEFT, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
-	virtual void doubleClickMouse(const int x, const int y, const EMouseButton button = MB_LEFT, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
+	virtual void clickMouse(const MouseEvent &evt) const;
+	virtual void doubleClickMouse(const MouseEvent &evt) const;
 
-	virtual void pressKey(const int key, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
-	virtual void releaseKey(const int key, const EControlKey controlKey = CK_NONE, const void * const msg = 0L) const;
+	virtual void pressKey(const KeyEvent &evt) const;
+	virtual void releaseKey(const KeyEvent &evt) const;
 
 protected:
-	mouse_event_publisher_type pressMouse_;
-	mouse_event_publisher_type releaseMouse_;
-	mouse_move_event_publisher_type moveMouse_;
+	boost::signal<void (const MouseEvent &)> pressMouse_;
+	boost::signal<void (const MouseEvent &)> releaseMouse_;
+	boost::signal<void (const MouseEvent &)> moveMouse_;
 
-	mouse_event_publisher_type clickMouse_;
-	mouse_event_publisher_type doubleClickMouse_;
+	boost::signal<void (const MouseEvent &)> clickMouse_;
+	boost::signal<void (const MouseEvent &)> doubleClickMouse_;
 
-	key_event_publisher_type pressKey_;
-	key_event_publisher_type releaseKey_;
+	boost::signal<void (const KeyEvent &)> pressKey_;
+	boost::signal<void (const KeyEvent &)> releaseKey_;
 };
 
 }  // namespace swl

@@ -7,9 +7,12 @@
 #include "OglViewTestDoc.h"
 #include "OglViewTestView.h"
 
+#include "ViewEventHandler.h"
 #include "swl/winview/WglDoubleBufferedContext.h"
 #include "swl/winview/WglBitmapBufferedContext.h"
 #include "swl/oglview/OglCamera.h"
+#include "swl/view/MouseEvent.h"
+#include "swl/view/KeyEvent.h"
 #include <GL/glut.h>
 #include <iostream>
 #include <cassert>
@@ -28,9 +31,19 @@ BEGIN_MESSAGE_MAP(COglViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
-	ON_WM_DESTROY()
 	ON_WM_SIZE()
 	ON_WM_PAINT()
+	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONUP()
+	ON_WM_LBUTTONDBLCLK()
+	ON_WM_MBUTTONDOWN()
+	ON_WM_MBUTTONUP()
+	ON_WM_MBUTTONDBLCLK()
+	ON_WM_RBUTTONDOWN()
+	ON_WM_RBUTTONUP()
+	ON_WM_RBUTTONDBLCLK()
+	ON_WM_KEYDOWN()
+	ON_WM_KEYUP()
 END_MESSAGE_MAP()
 
 // COglViewTestView construction/destruction
@@ -56,16 +69,25 @@ BOOL COglViewTestView::PreCreateWindow(CREATESTRUCT& cs)
 
 // COglViewTestView drawing
 
-void COglViewTestView::OnDraw(CDC* /*pDC*/)
+void COglViewTestView::OnDraw(CDC* pDC)
 {
 	COglViewTestDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	if (!pDoc)
 		return;
 
-	// TODO: add draw code for native data here
-	if (viewContext_.get() && viewCamera_.get() && viewContext_->isActivated())
-		draw(*viewContext_, *viewCamera_);
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
+
+	if (pDC && pDC->IsPrinting())
+	{
+		// FIXME [add] >>
+	}
+	else
+	{
+		if (viewContext_.get() && viewCamera_.get() && viewContext_->isActivated())
+			renderScene(*viewContext_, *viewCamera_);
+	}
 }
 
 
@@ -119,8 +141,23 @@ void COglViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
-	// create a context
 	const int drawMode = 0x02;
+
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+
+	viewController_.addMousePressHandler(swl::MousePressHandler());
+	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
+	viewController_.addMouseMoveHandler(swl::MouseMoveHandler());
+	viewController_.addMouseClickHandler(swl::MouseClickHandler());
+	viewController_.addMouseDoubleClickHandler(swl::MouseDoubleClickHandler());
+	viewController_.addKeyPressHandler(swl::KeyPressHandler());
+	viewController_.addKeyReleaseHandler(swl::KeyReleaseHandler());
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
+
+	// create a context
 	if (NULL == viewContext_.get())
 	{
 		if ((0x01 & drawMode) == 0x01)
@@ -134,7 +171,7 @@ void COglViewTestView::OnInitialUpdate()
 		viewCamera_.reset(new swl::OglCamera());
 
 	// initialize a view
-	if (viewContext_.get() && viewCamera_.get())
+	if (viewContext_.get())
 	{
 		// activate the context
 		viewContext_->activate();
@@ -143,16 +180,19 @@ void COglViewTestView::OnInitialUpdate()
 		initializeView();
 
 		// set the camera
-		//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
-		viewCamera_->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
-		//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
+		if (viewCamera_.get())
+		{
+			//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
+			viewCamera_->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
+			//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
-		viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
-		viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
-		viewCamera_->setEyeDistance(8000.0, false);
-		viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
-		//viewCamera_->setEyeDistance(1000.0, false);
-		//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
+			viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
+			viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
+			viewCamera_->setEyeDistance(8000.0, false);
+			viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
+			//viewCamera_->setEyeDistance(1000.0, false);
+			//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
+		}
 
 		raiseDrawEvent(false);
 
@@ -161,16 +201,12 @@ void COglViewTestView::OnInitialUpdate()
 	}
 }
 
-void COglViewTestView::OnDestroy()
-{
-	CView::OnDestroy();
-
-	// TODO: Add your message handler code here
-}
-
 void COglViewTestView::OnPaint()
 {
 	CPaintDC dc(this); // device context for painting
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
 
 	if (viewContext_.get())
 	{
@@ -190,9 +226,15 @@ void COglViewTestView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
 
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
+
 	if (cx <= 0 || cy <= 0) return;
-	resize(0, 0, cx, cy);
+	resizeView(0, 0, cx, cy);
 }
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
 
 bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
@@ -210,20 +252,8 @@ bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 	return true;
 }
 
-bool COglViewTestView::resize(const int x1, const int y1, const int x2, const int y2)
-{
-	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
-	{
-		viewContext_->activate();
-		initializeView();
-		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);
-		raiseDrawEvent(false);
-		viewContext_->deactivate();
-
-		return true;
-	}
-	else return false;
-}
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
 
 bool COglViewTestView::initializeView()
 {
@@ -238,6 +268,27 @@ bool COglViewTestView::initializeView()
 	return true;
 }
 
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
+
+bool COglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
+{
+	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
+	{
+		viewContext_->activate();
+		initializeView();
+		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);
+		raiseDrawEvent(false);
+		viewContext_->deactivate();
+
+		return true;
+	}
+	else return false;
+}
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
+
 bool COglViewTestView::doPrepareRendering()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -245,10 +296,16 @@ bool COglViewTestView::doPrepareRendering()
     return true;
 }
 
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
+
 bool COglViewTestView::doRenderStockScene()
 {
     return true;
 }
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
 
 bool COglViewTestView::doRenderScene()
 {
@@ -271,7 +328,10 @@ bool COglViewTestView::doRenderScene()
     return true;
 }
 
-void COglViewTestView::draw(swl::WglContextBase &context, swl::ViewCamera3 &camera)
+//-------------------------------------------------------------------------
+// This code is required for SWL.OglView
+
+void COglViewTestView::renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera)
 {
 #ifdef _DEBUG
 	{
@@ -320,4 +380,103 @@ void COglViewTestView::draw(swl::WglContextBase &context, swl::ViewCamera3 &came
 			std::cerr << "OpenGL error at " << __LINE__ << " in " << __FILE__ << ": " << gluErrorString(glErrorCode) << std::endl;
 	}
 #endif
+}
+
+void COglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void COglViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonUp(nFlags, point);
+}
+
+void COglViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+
+	CView::OnLButtonDblClk(nFlags, point);
+}
+
+void COglViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonDown(nFlags, point);
+}
+
+void COglViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonUp(nFlags, point);
+}
+
+void COglViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+
+	CView::OnMButtonDblClk(nFlags, point);
+}
+
+void COglViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonDown(nFlags, point);
+}
+
+void COglViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonUp(nFlags, point);
+}
+
+void COglViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+
+	CView::OnRButtonDblClk(nFlags, point);
+}
+
+void COglViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.pressKey(swl::KeyEvent(nChar));
+
+	CView::OnKeyDown(nChar, nRepCnt, nFlags);
+}
+
+void COglViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+	viewController_.releaseKey(swl::KeyEvent(nChar));
+
+	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }

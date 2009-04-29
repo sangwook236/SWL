@@ -18,7 +18,7 @@ WinFileLocker::WinFileLocker(const std::wstring &filename)
 #else
 WinFileLocker::WinFileLocker(const std::string &filename)
 #endif
-: filename_(filename), hFile_(NULL), isLocked_(false)
+: filename_(filename), hFile_(INVALID_HANDLE_VALUE), isLocked_(false)
 {
 	lock();
 }
@@ -49,7 +49,7 @@ bool WinFileLocker::lock()
 		if (FALSE == LockFile(hFile_, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF))
 		{
 			CloseHandle(hFile_);
-			hFile_ = NULL;
+			hFile_ = INVALID_HANDLE_VALUE;
 
 			return false;
 		}
@@ -67,7 +67,7 @@ bool WinFileLocker::unlock()
 	// unlock the file
 	const BOOL isUnlocked = UnlockFile(hFile_, 0, 0, 0xFFFFFFFF, 0xFFFFFFFF);
 	CloseHandle(hFile_);
-	hFile_ = NULL;
+	hFile_ = INVALID_HANDLE_VALUE;
 
 	// delete the lock file
 	const BOOL isDeleted = DeleteFile(generateLockFilename().c_str());

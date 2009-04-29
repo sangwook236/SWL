@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "swl/view/ViewEventController.h"
 #include <boost/smart_ptr.hpp>
 
 namespace swl {
@@ -43,30 +44,54 @@ public:
 #endif
 
 public:
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
+
 	virtual bool raiseDrawEvent(const bool isContextActivated);
-	virtual bool resize(const int x1, const int y1, const int x2, const int y2);
 
 	virtual bool initializeView();
+	virtual bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
 private:
-	void draw(swl::WglContextBase &ctx, swl::ViewCamera3 &camera);
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView
+
+	void renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera);
 
 	virtual bool doPrepareRendering();
 	virtual bool doRenderStockScene();
 	virtual bool doRenderScene();
 
 private:
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView
+
 	boost::scoped_ptr<swl::WglContextBase> viewContext_;
 	boost::scoped_ptr<swl::OglCamera> viewCamera_;
+
+	//-------------------------------------------------------------------------
+	// This code is required for event handling
+
+	swl::ViewEventController viewController_;
 
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual void OnInitialUpdate();
-	afx_msg void OnDestroy();
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnPaint();
+	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnMButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 };
 
 #ifndef _DEBUG  // debug version in OglViewTestView.cpp
