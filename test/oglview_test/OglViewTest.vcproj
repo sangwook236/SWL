@@ -277,6 +277,10 @@
 				RelativePath=".\ViewEventHandler.h"
 				>
 			</File>
+			<File
+				RelativePath=".\ViewStateMachine.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"

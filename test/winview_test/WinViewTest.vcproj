@@ -266,6 +266,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ViewStateMachine.h"
+				>
+			</File>
+			<File
 				RelativePath=".\WinViewTest.h"
 				>
 			</File>
@@ -310,5 +314,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="WinViewTest.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

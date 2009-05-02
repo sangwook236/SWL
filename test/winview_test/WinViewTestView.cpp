@@ -7,6 +7,7 @@
 #include "WinViewTestDoc.h"
 #include "WinViewTestView.h"
 
+#include "ViewStateMachine.h"
 #include "ViewEventHandler.h"
 #include "swl/winview/GdiContext.h"
 #include "swl/winview/GdiBitmapBufferedContext.h"
@@ -52,10 +53,12 @@ END_MESSAGE_MAP()
 // CWinViewTestView construction/destruction
 
 CWinViewTestView::CWinViewTestView()
-: viewContext_(), viewCamera_()
+: viewContext_(), viewCamera_(), viewStateFsm_(new swl::ViewStateMachine)
 {
-	// TODO: add construction code here
+	//-------------------------------------------------------------------------
+	// This code is required for view state
 
+	if (viewStateFsm_.get()) viewStateFsm_->initiate();
 }
 
 CWinViewTestView::~CWinViewTestView()
@@ -661,4 +664,46 @@ void CWinViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	viewController_.releaseKey(swl::KeyEvent(nChar));
 
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+void CWinViewTestView::triggerPanEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
+}
+
+void CWinViewTestView::triggerRotateEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
+}
+
+void CWinViewTestView::triggerZoomAllEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
+}
+
+void CWinViewTestView::triggerZoomRegionEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
+}
+
+void CWinViewTestView::triggerZoomInEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
+}
+
+void CWinViewTestView::triggerZoomOutEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
 }

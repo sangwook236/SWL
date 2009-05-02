@@ -4,6 +4,8 @@
 #include "WinViewTest.h"
 
 #include "ChildFrm.h"
+#include "WinViewTestDoc.h"
+#include "WinViewTestView.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -15,6 +17,12 @@
 IMPLEMENT_DYNCREATE(CChildFrame, CMDIChildWnd)
 
 BEGIN_MESSAGE_MAP(CChildFrame, CMDIChildWnd)
+	ON_COMMAND(ID_VIEWMODE_PAN, &CChildFrame::OnViewmodePan)
+	ON_COMMAND(ID_VIEWMODE_ROTATE, &CChildFrame::OnViewmodeRotate)
+	ON_COMMAND(ID_VIEWMODE_ZOOMREGION, &CChildFrame::OnViewmodeZoomregion)
+	ON_COMMAND(ID_VIEWMODE_ZOOMALL, &CChildFrame::OnViewmodeZoomall)
+	ON_COMMAND(ID_VIEWMODE_ZOOMIN, &CChildFrame::OnViewmodeZoomin)
+	ON_COMMAND(ID_VIEWMODE_ZOOMOUT, &CChildFrame::OnViewmodeZoomout)
 END_MESSAGE_MAP()
 
 
@@ -57,3 +65,51 @@ void CChildFrame::Dump(CDumpContext& dc) const
 
 
 // CChildFrame message handlers
+
+void CChildFrame::OnViewmodePan()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerPanEvent();
+}
+
+void CChildFrame::OnViewmodeRotate()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerRotateEvent();
+}
+
+void CChildFrame::OnViewmodeZoomregion()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerZoomRegionEvent();
+}
+
+void CChildFrame::OnViewmodeZoomall()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerZoomAllEvent();
+}
+
+void CChildFrame::OnViewmodeZoomin()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerZoomInEvent();
+}
+
+void CChildFrame::OnViewmodeZoomout()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (GetActiveView())
+		((CWinViewTestView*)GetActiveView())->triggerZoomOutEvent();
+}

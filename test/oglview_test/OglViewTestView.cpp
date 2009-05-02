@@ -7,6 +7,7 @@
 #include "OglViewTestDoc.h"
 #include "OglViewTestView.h"
 
+#include "ViewStateMachine.h"
 #include "ViewEventHandler.h"
 #include "swl/winview/WglDoubleBufferedContext.h"
 #include "swl/winview/WglBitmapBufferedContext.h"
@@ -49,10 +50,12 @@ END_MESSAGE_MAP()
 // COglViewTestView construction/destruction
 
 COglViewTestView::COglViewTestView()
-: viewContext_(), viewCamera_()
+: viewContext_(), viewCamera_(), viewStateFsm_(new swl::ViewStateMachine)
 {
-	// TODO: add construction code here
+	//-------------------------------------------------------------------------
+	// This code is required for view state
 
+	if (viewStateFsm_.get()) viewStateFsm_->initiate();
 }
 
 COglViewTestView::~COglViewTestView()
@@ -479,4 +482,46 @@ void COglViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	viewController_.releaseKey(swl::KeyEvent(nChar));
 
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
+}
+
+void COglViewTestView::triggerPanEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
+}
+
+void COglViewTestView::triggerRotateEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
+}
+
+void COglViewTestView::triggerZoomAllEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
+}
+
+void COglViewTestView::triggerZoomRegionEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
+}
+
+void COglViewTestView::triggerZoomInEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
+}
+
+void COglViewTestView::triggerZoomOutEvent()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
 }

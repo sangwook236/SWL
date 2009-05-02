@@ -6,11 +6,13 @@
 
 #include "swl/view/ViewEventController.h"
 #include <boost/smart_ptr.hpp>
+#include <memory>
 
 namespace swl {
 class WglContextBase;
 class ViewCamera3;
 class OglCamera;
+struct ViewStateMachine;
 }
 
 class COglViewTestView : public CView
@@ -52,6 +54,16 @@ public:
 	virtual bool initializeView();
 	virtual bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+
+	void triggerPanEvent();
+	void triggerRotateEvent();
+	void triggerZoomAllEvent();
+	void triggerZoomRegionEvent();
+	void triggerZoomInEvent();
+	void triggerZoomOutEvent();
+
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.OglView
@@ -73,6 +85,11 @@ private:
 	// This code is required for event handling
 
 	swl::ViewEventController viewController_;
+
+	//-------------------------------------------------------------------------
+	// This code is required for view state
+
+	const std::auto_ptr<swl::ViewStateMachine> viewStateFsm_;
 
 // Generated message map functions
 protected:
