@@ -214,7 +214,7 @@ bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 	//--E [] 2001/08/08
 */
 	double dNCx, dNCy;
-	if (rctViewRegion.isValid() && base_type::VCtoNC(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
+	if (rctViewRegion.isValid() && base_type::mapVcToNc(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
 	{
 		// if perspective, -1.0 <= x, y <= 1.0 at near plane
 		// if orthographic, -1.0 <= x, y <= 1.0

@@ -220,6 +220,14 @@
 				RelativePath=".\WglDoubleBufferedContext.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\WglViewBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WinViewBase.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -264,6 +272,14 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\WglDoubleBufferedContext.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WglViewBase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WinViewBase.h"
 				>
 			</File>
 		</Filter>
