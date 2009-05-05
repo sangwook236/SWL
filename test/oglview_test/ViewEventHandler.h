@@ -47,6 +47,18 @@ public:
 //-----------------------------------------------------------------------------------
 // 
 
+struct MouseWheelHandler
+{
+public:
+	//typedef MouseWheelHandler base_type;
+
+public:
+	void operator()(const MouseEvent &evt) const;
+};
+
+//-----------------------------------------------------------------------------------
+// 
+
 struct MouseClickHandler
 {
 public:
@@ -87,6 +99,18 @@ struct KeyReleaseHandler
 {
 public:
 	//typedef KeyReleaseHandler base_type;
+
+public:
+	void operator()(const KeyEvent &evt) const;
+};
+
+//-----------------------------------------------------------------------------------
+// 
+
+struct KeyHitHandler
+{
+public:
+	//typedef KeyHitHandler base_type;
 
 public:
 	void operator()(const KeyEvent &evt) const;

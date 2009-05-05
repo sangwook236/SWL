@@ -167,15 +167,15 @@ BEGIN
     BEGIN
         MENUITEM "&About WinViewTest...",       ID_APP_ABOUT
     END
-    POPUP "View Mode"
+    POPUP "View State"
     BEGIN
-        MENUITEM "Pan",                         ID_VIEWMODE_PAN
-        MENUITEM "Rotate",                      ID_VIEWMODE_ROTATE
+        MENUITEM "Pan",                         ID_VIEWSTATE_PAN
+        MENUITEM "Rotate",                      ID_VIEWSTATE_ROTATE
         MENUITEM SEPARATOR
-        MENUITEM "Zoom Region",                 ID_VIEWMODE_ZOOMREGION
-        MENUITEM "Zoom All",                    ID_VIEWMODE_ZOOMALL
-        MENUITEM "Zoom In",                     ID_VIEWMODE_ZOOMIN
-        MENUITEM "Zoom Out",                    ID_VIEWMODE_ZOOMOUT
+        MENUITEM "Zoom Region",                 ID_VIEWSTATE_ZOOMREGION
+        MENUITEM "Zoom All",                    ID_VIEWSTATE_ZOOMALL
+        MENUITEM "Zoom In",                     ID_VIEWSTATE_ZOOMIN
+        MENUITEM "Zoom Out",                    ID_VIEWSTATE_ZOOMOUT
     END
 END
 

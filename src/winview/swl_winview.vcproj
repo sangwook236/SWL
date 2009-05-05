@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GdiCaptureContext.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GdiContext.cpp"
 				>
 			</File>
@@ -198,6 +202,10 @@
 			</File>
 			<File
 				RelativePath=".\GdiplusContext.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GdiPrintContext.cpp"
 				>
 			</File>
 			<File
@@ -227,6 +235,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\winview\GdiCaptureContext.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\winview\GdiContext.h"
 				>
 			</File>
@@ -236,6 +248,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\GdiplusContext.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\GdiPrintContext.h"
 				>
 			</File>
 			<File

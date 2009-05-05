@@ -43,19 +43,30 @@ BEGIN_MESSAGE_MAP(COglViewTestView, CView)
 	ON_WM_RBUTTONDOWN()
 	ON_WM_RBUTTONUP()
 	ON_WM_RBUTTONDBLCLK()
+	ON_WM_MOUSEMOVE()
+	ON_WM_MOUSEWHEEL()
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
+	ON_WM_CHAR()
+	ON_COMMAND(ID_VIEWSTATE_PAN, &COglViewTestView::OnViewstatePan)
+	ON_COMMAND(ID_VIEWSTATE_ROTATE, &COglViewTestView::OnViewstateRotate)
+	ON_COMMAND(ID_VIEWSTATE_ZOOMREGION, &COglViewTestView::OnViewstateZoomregion)
+	ON_COMMAND(ID_VIEWSTATE_ZOOMALL, &COglViewTestView::OnViewstateZoomall)
+	ON_COMMAND(ID_VIEWSTATE_ZOOMIN, &COglViewTestView::OnViewstateZoomin)
+	ON_COMMAND(ID_VIEWSTATE_ZOOMOUT, &COglViewTestView::OnViewstateZoomout)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_PAN, &COglViewTestView::OnUpdateViewstatePan)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ROTATE, &COglViewTestView::OnUpdateViewstateRotate)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMREGION, &COglViewTestView::OnUpdateViewstateZoomregion)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMALL, &COglViewTestView::OnUpdateViewstateZoomall)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMIN, &COglViewTestView::OnUpdateViewstateZoomin)
+	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMOUT, &COglViewTestView::OnUpdateViewstateZoomout)
 END_MESSAGE_MAP()
 
 // COglViewTestView construction/destruction
 
 COglViewTestView::COglViewTestView()
-: viewContext_(), viewCamera_(), viewStateFsm_(new swl::ViewStateMachine)
+: viewContext_(), viewCamera_(), viewStateFsm_()
 {
-	//-------------------------------------------------------------------------
-	// This code is required for view state
-
-	if (viewStateFsm_.get()) viewStateFsm_->initiate();
 }
 
 COglViewTestView::~COglViewTestView()
@@ -80,7 +91,7 @@ void COglViewTestView::OnDraw(CDC* pDC)
 		return;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
 	if (pDC && pDC->IsPrinting())
 	{
@@ -147,18 +158,20 @@ void COglViewTestView::OnInitialUpdate()
 	const int drawMode = 0x02;
 
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
+	// This code is required for SWL.OglView: event handling
 
 	viewController_.addMousePressHandler(swl::MousePressHandler());
 	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
 	viewController_.addMouseMoveHandler(swl::MouseMoveHandler());
+	viewController_.addMouseWheelHandler(swl::MouseWheelHandler());
 	viewController_.addMouseClickHandler(swl::MouseClickHandler());
 	viewController_.addMouseDoubleClickHandler(swl::MouseDoubleClickHandler());
 	viewController_.addKeyPressHandler(swl::KeyPressHandler());
 	viewController_.addKeyReleaseHandler(swl::KeyReleaseHandler());
+	viewController_.addKeyHitHandler(swl::KeyHitHandler());
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
 	// create a context
 	if (NULL == viewContext_.get())
@@ -172,6 +185,18 @@ void COglViewTestView::OnInitialUpdate()
 	// create a camera
 	if (NULL == viewCamera_.get())
 		viewCamera_.reset(new swl::OglCamera());
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView: view state
+
+	if (NULL == viewStateFsm_.get() && NULL != viewContext_.get() && NULL != viewCamera_.get())
+	{
+		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext_, *viewCamera_));
+		if (viewStateFsm_.get()) viewStateFsm_->initiate();
+	}
+
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView: basic routine
 
 	// initialize a view
 	if (viewContext_.get())
@@ -209,7 +234,7 @@ void COglViewTestView::OnPaint()
 	CPaintDC dc(this); // device context for painting
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
 	if (viewContext_.get())
 	{
@@ -230,14 +255,14 @@ void COglViewTestView::OnSize(UINT nType, int cx, int cy)
 	CView::OnSize(nType, cx, cy);
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
 	if (cx <= 0 || cy <= 0) return;
 	resizeView(0, 0, cx, cy);
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
@@ -256,7 +281,7 @@ bool COglViewTestView::raiseDrawEvent(const bool isContextActivated)
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::initializeView()
 {
@@ -272,7 +297,7 @@ bool COglViewTestView::initializeView()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
@@ -290,7 +315,7 @@ bool COglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::doPrepareRendering()
 {
@@ -300,7 +325,7 @@ bool COglViewTestView::doPrepareRendering()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::doRenderStockScene()
 {
@@ -308,7 +333,7 @@ bool COglViewTestView::doRenderStockScene()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 bool COglViewTestView::doRenderScene()
 {
@@ -332,7 +357,7 @@ bool COglViewTestView::doRenderScene()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.OglView
+// This code is required for SWL.OglView: basic routine
 
 void COglViewTestView::renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera)
 {
@@ -388,8 +413,15 @@ void COglViewTestView::renderScene(swl::WglContextBase &context, swl::ViewCamera
 void COglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+	// This code is required for SWL.OglView: event handling
+	SetCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDown(nFlags, point);
 }
@@ -397,8 +429,15 @@ void COglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 void COglViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+	// This code is required for SWL.OglView: event handling
+	ReleaseCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonUp(nFlags, point);
 }
@@ -406,8 +445,13 @@ void COglViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 void COglViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT));
+	// This code is required for SWL.OglView: event handling
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDblClk(nFlags, point);
 }
@@ -415,8 +459,15 @@ void COglViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 void COglViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+	// This code is required for SWL.OglView: event handling
+	SetCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDown(nFlags, point);
 }
@@ -424,8 +475,15 @@ void COglViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 void COglViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+	// This code is required for SWL.OglView: event handling
+	ReleaseCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonUp(nFlags, point);
 }
@@ -433,8 +491,13 @@ void COglViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 void COglViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE));
+	// This code is required for SWL.OglView: event handling
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDblClk(nFlags, point);
 }
@@ -442,8 +505,15 @@ void COglViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 void COglViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+	// This code is required for SWL.OglView: event handling
+	SetCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDown(nFlags, point);
 }
@@ -451,8 +521,15 @@ void COglViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 void COglViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+	// This code is required for SWL.OglView: event handling
+	ReleaseCapture();
+
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonUp(nFlags, point);
 }
@@ -460,17 +537,51 @@ void COglViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 void COglViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT));
+	// This code is required for SWL.OglView: event handling
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDblClk(nFlags, point);
+}
+
+void COglViewTestView::OnMouseMove(UINT nFlags, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: event handling
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.moveMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+
+	CView::OnMouseMove(nFlags, point);
+}
+
+BOOL COglViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: event handling
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey, swl::MouseEvent::SC_HORIZONTAL, zDelta));
+	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey, swl::MouseEvent::SC_VERTICAL, zDelta));
+
+	return CView::OnMouseWheel(nFlags, zDelta, point);
 }
 
 void COglViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.pressKey(swl::KeyEvent(nChar));
+	// This code is required for SWL.OglView: event handling
+	//viewController_.pressKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_.get()) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
@@ -478,50 +589,134 @@ void COglViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void COglViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
-	viewController_.releaseKey(swl::KeyEvent(nChar));
+	// This code is required for SWL.OglView: event handling
+	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }
 
-void COglViewTestView::triggerPanEvent()
+void COglViewTestView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: event handling
+	const swl::KeyEvent::EControlKey ckey = ((nFlags >> 28) & 0x01) == 0x01 ? swl::KeyEvent::CK_ALT : swl::KeyEvent::CK_NONE;
+	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
+
+	CView::OnChar(nChar, nRepCnt, nFlags);
+}
+
+void COglViewTestView::OnViewstatePan()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
 }
 
-void COglViewTestView::triggerRotateEvent()
+void COglViewTestView::OnViewstateRotate()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
-void COglViewTestView::triggerZoomAllEvent()
+void COglViewTestView::OnViewstateZoomregion()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
-}
-
-void COglViewTestView::triggerZoomRegionEvent()
-{
-	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
-void COglViewTestView::triggerZoomInEvent()
+void COglViewTestView::OnViewstateZoomall()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
+}
+
+void COglViewTestView::OnViewstateZoomin()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
-void COglViewTestView::triggerZoomOutEvent()
+void COglViewTestView::OnViewstateZoomout()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
+}
+
+void COglViewTestView::OnUpdateViewstatePan(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::PanState *active = viewStateFsm_->state_cast<const swl::PanState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
+}
+
+void COglViewTestView::OnUpdateViewstateRotate(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::RotateState *active = viewStateFsm_->state_cast<const swl::RotateState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
+}
+
+void COglViewTestView::OnUpdateViewstateZoomregion(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::ZoomRegionState *active = viewStateFsm_->state_cast<const swl::ZoomRegionState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
+}
+
+void COglViewTestView::OnUpdateViewstateZoomall(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::ZoomAllState *active = viewStateFsm_->state_cast<const swl::ZoomAllState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
+}
+
+void COglViewTestView::OnUpdateViewstateZoomin(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::ZoomInState *active = viewStateFsm_->state_cast<const swl::ZoomInState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
+}
+
+void COglViewTestView::OnUpdateViewstateZoomout(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.OglView: view state
+	if (viewStateFsm_.get())
+	{
+		const swl::ZoomOutState *active = viewStateFsm_->state_cast<const swl::ZoomOutState *>();
+		pCmdUI->SetCheck(active ? 1 : 0);
+	}
+	else pCmdUI->SetCheck(0);
 }

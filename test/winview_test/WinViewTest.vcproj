@@ -228,6 +228,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ViewStateMachine.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WinViewTest.cpp"
 				>
 			</File>

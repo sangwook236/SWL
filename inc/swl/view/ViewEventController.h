@@ -70,6 +70,19 @@ public:
 	}
 
 	template<typename Functor>
+	bool addMouseWheelHandler(const Functor &handler)
+	{
+		wheelMouse_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeMouseWheelHandler(const Functor &handler)
+	{
+		wheelMouse_.disconnect(handler);
+		return true;
+	}
+
+	template<typename Functor>
 	bool addMouseClickHandler(const Functor &handler)
 	{
 		clickMouse_.connect(handler);
@@ -121,27 +134,45 @@ public:
 		return true;
 	}
 
+	template<typename Functor>
+	bool addKeyHitHandler(const Functor &handler)
+	{
+		hitKey_.connect(handler);
+		return true;
+	}
+	template<typename Functor>
+	bool removeKeyHitHandler(const Functor &handler)
+	{
+		hitKey_.disconnect(handler);
+		return true;
+	}
+
 	//
 	virtual void pressMouse(const MouseEvent &evt) const;
 	virtual void releaseMouse(const MouseEvent &evt) const;
 	virtual void moveMouse(const MouseEvent &evt) const;
+	virtual void wheelMouse(const MouseEvent &evt) const;
 
 	virtual void clickMouse(const MouseEvent &evt) const;
 	virtual void doubleClickMouse(const MouseEvent &evt) const;
 
 	virtual void pressKey(const KeyEvent &evt) const;
 	virtual void releaseKey(const KeyEvent &evt) const;
+	virtual void hitKey(const KeyEvent &evt) const;
 
 protected:
 	boost::signal<void (const MouseEvent &)> pressMouse_;
 	boost::signal<void (const MouseEvent &)> releaseMouse_;
 	boost::signal<void (const MouseEvent &)> moveMouse_;
+	boost::signal<void (const MouseEvent &)> wheelMouse_;
 
 	boost::signal<void (const MouseEvent &)> clickMouse_;
 	boost::signal<void (const MouseEvent &)> doubleClickMouse_;
 
 	boost::signal<void (const KeyEvent &)> pressKey_;
 	boost::signal<void (const KeyEvent &)> releaseKey_;
+
+	boost::signal<void (const KeyEvent &)> hitKey_;
 };
 
 }  // namespace swl

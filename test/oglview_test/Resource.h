@@ -6,12 +6,12 @@
 #define IDP_OLE_INIT_FAILED             100
 #define IDR_MAINFRAME                   128
 #define IDR_OglViewTestTYPE             129
-#define ID_VIEWMODE_PAN                 32771
-#define ID_VIEWMODE_ROTATE              32772
-#define ID_VIEWMODE_ZOOMREGION          32773
-#define ID_VIEWMODE_ZOOMALL             32774
-#define ID_VIEWMODE_ZOOMIN              32775
-#define ID_VIEWMODE_ZOOMOUT             32776
+#define ID_VIEWSTATE_PAN                 32771
+#define ID_VIEWSTATE_ROTATE              32772
+#define ID_VIEWSTATE_ZOOMREGION          32773
+#define ID_VIEWSTATE_ZOOMALL             32774
+#define ID_VIEWSTATE_ZOOMIN              32775
+#define ID_VIEWSTATE_ZOOMOUT             32776
 
 // Next default values for new objects
 // 

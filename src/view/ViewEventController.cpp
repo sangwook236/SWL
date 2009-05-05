@@ -26,6 +26,11 @@ void ViewEventController::moveMouse(const MouseEvent &evt) const
 	moveMouse_(evt);
 }
 
+void ViewEventController::wheelMouse(const MouseEvent &evt) const
+{
+	wheelMouse_(evt);
+}
+
 void ViewEventController::clickMouse(const MouseEvent &evt) const
 {
 	clickMouse_(evt);
@@ -44,6 +49,11 @@ void ViewEventController::pressKey(const KeyEvent &evt) const
 void ViewEventController::releaseKey(const KeyEvent &evt) const
 {
 	releaseKey_(evt);
+}
+
+void ViewEventController::hitKey(const KeyEvent &evt) const
+{
+	hitKey_(evt);
 }
 
 }  // namespace swl

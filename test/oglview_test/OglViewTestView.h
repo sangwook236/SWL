@@ -5,8 +5,8 @@
 #pragma once
 
 #include "swl/view/ViewEventController.h"
+#include "swl/view/ViewBase.h"
 #include <boost/smart_ptr.hpp>
-#include <memory>
 
 namespace swl {
 class WglContextBase;
@@ -15,7 +15,7 @@ class OglCamera;
 struct ViewStateMachine;
 }
 
-class COglViewTestView : public CView
+class COglViewTestView : public CView, public swl::ViewBase
 {
 protected: // create from serialization only
 	COglViewTestView();
@@ -47,26 +47,16 @@ public:
 
 public:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
-	virtual bool raiseDrawEvent(const bool isContextActivated);
+	/*virtual*/ bool raiseDrawEvent(const bool isContextActivated);
 
-	virtual bool initializeView();
-	virtual bool resizeView(const int x1, const int y1, const int x2, const int y2);
-
-	//-------------------------------------------------------------------------
-	// This code is required for view state
-
-	void triggerPanEvent();
-	void triggerRotateEvent();
-	void triggerZoomAllEvent();
-	void triggerZoomRegionEvent();
-	void triggerZoomInEvent();
-	void triggerZoomOutEvent();
+	/*virtual*/ bool initializeView();
+	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
 private:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.OglView
+	// This code is required for SWL.OglView: basic routine
 
 	void renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera);
 
@@ -76,20 +66,20 @@ private:
 
 private:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView
+	// This code is required for SWL.OglView: basic routine
 
 	boost::scoped_ptr<swl::WglContextBase> viewContext_;
 	boost::scoped_ptr<swl::OglCamera> viewCamera_;
 
 	//-------------------------------------------------------------------------
-	// This code is required for event handling
+	// This code is required for SWL.OglView: event handling
 
 	swl::ViewEventController viewController_;
 
 	//-------------------------------------------------------------------------
-	// This code is required for view state
+	// This code is required for SWL.OglView: view state
 
-	const std::auto_ptr<swl::ViewStateMachine> viewStateFsm_;
+	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
 
 // Generated message map functions
 protected:
@@ -107,8 +97,23 @@ public:
 	afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnRButtonDblClk(UINT nFlags, CPoint point);
+	afx_msg void OnMouseMove(UINT nFlags, CPoint point);
+	afx_msg BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint point);
 	afx_msg void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	afx_msg void OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+	afx_msg void OnViewstatePan();
+	afx_msg void OnViewstateRotate();
+	afx_msg void OnViewstateZoomregion();
+	afx_msg void OnViewstateZoomall();
+	afx_msg void OnViewstateZoomin();
+	afx_msg void OnViewstateZoomout();
+	afx_msg void OnUpdateViewstatePan(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewstateRotate(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewstateZoomregion(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewstateZoomall(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewstateZoomin(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewstateZoomout(CCmdUI *pCmdUI);
 };
 
 #ifndef _DEBUG  // debug version in OglViewTestView.cpp

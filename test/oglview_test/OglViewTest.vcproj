@@ -239,6 +239,10 @@
 				RelativePath=".\ViewEventHandler.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\ViewStateMachine.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

@@ -31,11 +31,4 @@ public:
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
-public:
-	afx_msg void OnViewmodePan();
-	afx_msg void OnViewmodeRotate();
-	afx_msg void OnViewmodeZoomregion();
-	afx_msg void OnViewmodeZoomall();
-	afx_msg void OnViewmodeZoomin();
-	afx_msg void OnViewmodeZoomout();
 };

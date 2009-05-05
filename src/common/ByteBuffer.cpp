@@ -20,6 +20,7 @@ ByteBuffer::ByteBuffer()
 
 ByteBuffer::~ByteBuffer()
 {
+	boost::mutex::scoped_lock lock(mutex_);
 	bufData_.clear();
 }
 

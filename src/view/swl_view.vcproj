@@ -219,7 +219,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\view\ViewActionState.h"
+				RelativePath="..\..\inc\swl\view\ViewBase.h"
 				>
 			</File>
 			<File

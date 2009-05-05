@@ -26,16 +26,16 @@ public:
 	};
 	enum EScroll {
 		SC_NONE = 0x0000,
-		SC_HORZ_LEFT = 0x0001, SC_HORZ_RIGHT = 0x0002,
-		SC_VERT_UP = 0x0010, SC_VERT_DOWN = 0x0020,
+		SC_VERTICAL = 0x0001,
+		SC_HORIZONTAL = 0x0002,
 	};
 
 public:
-	MouseEvent(const int _x, const int _y, const EButton _button = BT_NONE, const EControlKey _controlKey = CK_NONE, const EScroll _scroll = SC_NONE)
-	: x(_x), y(_y), button(_button), controlKey(_controlKey), scroll(_scroll)
+	MouseEvent(const int _x, const int _y, const EButton _button = BT_NONE, const EControlKey _controlKey = CK_NONE, const EScroll _scroll = SC_NONE, const int _scrollAmount = 0)
+	: x(_x), y(_y), button(_button), controlKey(_controlKey), scroll(_scroll), scrollAmount(_scrollAmount)
 	{}
 	explicit MouseEvent(const MouseEvent &rhs)
-	: x(rhs.x), y(rhs.y), button(rhs.button), controlKey(rhs.controlKey), scroll(rhs.scroll)
+	: x(rhs.x), y(rhs.y), button(rhs.button), controlKey(rhs.controlKey), scroll(rhs.scroll), scrollAmount(rhs.scrollAmount)
 	{}
 	virtual ~MouseEvent()  {}
 
@@ -48,6 +48,7 @@ public:
 	const EButton button;
 	const EControlKey controlKey;
 	const EScroll scroll;
+	const int scrollAmount;
 };
 
 }  // namespace swl

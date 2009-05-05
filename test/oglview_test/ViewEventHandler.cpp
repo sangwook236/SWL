@@ -53,6 +53,19 @@ void MouseMoveHandler::operator()(const MouseEvent &evt) const
 //-----------------------------------------------------------------------------------
 // 
 
+void MouseWheelHandler::operator()(const MouseEvent &evt) const
+{
+	if (swl::MouseEvent::BT_LEFT == evt.button)
+	{
+	}
+	else if (swl::MouseEvent::BT_RIGHT == evt.button)
+	{
+	}
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
 void MouseClickHandler::operator()(const MouseEvent &evt) const
 {
 	if (swl::MouseEvent::BT_LEFT == evt.button)
@@ -87,6 +100,13 @@ void KeyPressHandler::operator()(const KeyEvent &evt) const
 // 
 
 void KeyReleaseHandler::operator()(const KeyEvent &evt) const
+{
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+void KeyHitHandler::operator()(const KeyEvent &evt) const
 {
 }
 
