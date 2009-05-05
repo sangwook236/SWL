@@ -39,8 +39,8 @@ public:
 	/*virtual*/ bool deactivate();
 
 	/// get the native context
-	/*virtual*/ void * getNativeContext()  {  return isActivated() ? (void *)&memDC_ : NULL;  }
-	/*virtual*/ const void * const getNativeContext() const  {  return isActivated() ? (void *)&memDC_ : NULL;  }
+	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 
 private:
 	bool createOffScreen();

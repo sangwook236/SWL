@@ -122,12 +122,12 @@ public:
 	/// VC: viewport coordinates, NC: normalized coordinates
     /// VC ==> NC: convert a viewport coordinates to a normalized coordinates
     ///			   i.e. convert a screen coordinates to a canvas coordinates
-    virtual bool VCtoNC(int iVCx, int iVCy, double& rNCx, double& rNCy) const;
-    virtual bool VCtoNC(const Point2<int>& rVC, Point2<double>& rNC) const;
+    virtual bool mapVcToNc(int iVCx, int iVCy, double& rNCx, double& rNCy) const;
+    virtual bool mapVcToNc(const Point2<int>& rVC, Point2<double>& rNC) const;
     /// NC ==> VC: convert a normalized coordinates to a viewport coordinates
     ///			   i.e. convert a canvas coordinates to a screen coordinates
-    virtual bool NCtoVC(double dNCx, double dNCy, int& rVCx, int& rVCy) const;
-    virtual bool NCtoVC(const Point2<double>& rNC, Point2<int>& rVC) const;
+    virtual bool mapNcToVc(double dNCx, double dNCy, int& rVCx, int& rVCy) const;
+    virtual bool mapNcToVc(const Point2<double>& rNC, Point2<int>& rVC) const;
 
 	/// for scrolling window
 	virtual bool getHorizontalRatio(float& rfPosRatio, float& rfWidthRatio);

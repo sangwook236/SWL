@@ -13,18 +13,21 @@ public:
 	//typedef MouseEvent base_type;
 
 public:
-	enum EControlKey {
-		CK_NONE = 0x0000,
-		CK_LEFT_CTRL = 0x0001, CK_RIGHT_CTRL = 0x0002, CK_CTRL = 0x0003,
-		CK_LEFT_ALT = 0x0004, CK_RIGHT_ALT = 0x0008, CK_ALT = 0x000C,
-		CK_LEFT_SHIFT = 0x0010, CK_RIGHT_SHIFT = 0x0020, CK_SHIFT = 0x0030
-	};
-	enum EButton {
+	enum EButton
+	{
 		BT_NONE = 0x0000,
 		BT_LEFT = 0x0001, BT_MIDDLE = 0x0002, BT_RIGHT = 0x0004,
 		BT_FORWARD = 0x0010, BT_BACKWARD = 0x0020,
 	};
-	enum EScroll {
+	enum EControlKey
+	{
+		CK_NONE = 0x0000,
+		CK_LEFT_CTRL = 0x0001, CK_RIGHT_CTRL = 0x0002, CK_CTRL = 0x0003,
+		CK_LEFT_SHIFT = 0x0004, CK_RIGHT_SHIFT = 0x0008, CK_SHIFT = 0x000C,
+		CK_LEFT_ALT = 0x0010, CK_RIGHT_ALT = 0x0020, CK_ALT = 0x0030,
+	};
+	enum EScroll
+	{
 		SC_NONE = 0x0000,
 		SC_VERTICAL = 0x0001,
 		SC_HORIZONTAL = 0x0002,

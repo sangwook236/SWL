@@ -36,8 +36,8 @@ public:
 	/*virtual*/ bool deactivate();
 
 	/// get the native context
-	/*virtual*/ void * getNativeContext()  {  return isActivated() ? (void *)&hDC_ : NULL;  }
-	/*virtual*/ const void * const getNativeContext() const  {  return isActivated() ? (void *)&hDC_ : NULL;  }
+	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
 
 private:
 	/// a window handle

@@ -2,12 +2,10 @@
 #include "ViewStateMachine.h"
 #include "swl/view/ViewBase.h"
 #include "swl/view/ViewContext.h"
-#include "swl/view/ViewCamera2.h"
+#include "swl/view/ViewCamera3.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
-#include <gdiplus.h>
 #include <iostream>
-
 
 #if defined(WIN32) && defined(_DEBUG)
 #include "swl/common/Config.h"
@@ -20,7 +18,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 // 
 
-ViewStateMachine::ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera2 &camera)
+ViewStateMachine::ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera3 &camera)
 : view_(view), context_(context), camera_(camera)
 {
 }
@@ -166,15 +164,15 @@ void PanState::releaseMouse(const MouseEvent &evt)
 	isDragging_ = false;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
-	//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
-	const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+	const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+	//const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
 
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		ViewBase &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
-		ViewCamera2 &camera = fsm.getViewCamera();
+		ViewCamera3 &camera = fsm.getViewCamera();
 
 		context.activate();
 			camera.moveView(dX, dY);
@@ -193,20 +191,94 @@ void PanState::moveMouse(const MouseEvent &evt)
 	if (!isDragging_) return;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
-	//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
-	const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+	const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+	//const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
 
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		ViewBase &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
-		ViewCamera2 &camera = fsm.getViewCamera();
+		ViewCamera3 &camera = fsm.getViewCamera();
 
 		context.activate();
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+RotateState::RotateState()
+: isDragging_(false), prevX_(0), prevY_(0)
+{
+}
+
+RotateState::~RotateState()
+{
+}
+
+void RotateState::pressMouse(const MouseEvent &evt)
+{
+	isDragging_ = true;
+	prevX_ = evt.x;
+	prevY_ = evt.y;
+}
+
+void RotateState::releaseMouse(const MouseEvent &evt)
+{
+	isDragging_ = false;
+	if (evt.x == prevX_ && evt.y == prevY_) return;
+
+	const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+	//const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera3 &camera = fsm.getViewCamera();
+
+		context.activate();
+			camera.rotateView(dX, dY);
+			view.raiseDrawEvent(false);
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void RotateState::moveMouse(const MouseEvent &evt)
+{
+	if (!isDragging_) return;
+	if (evt.x == prevX_ && evt.y == prevY_) return;
+
+	const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+	//const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera3 &camera = fsm.getViewCamera();
+
+		context.activate();
+			camera.rotateView(dX, dY);
+			view.raiseDrawEvent(false);
 		context.deactivate();
 	}
 	catch (const std::bad_cast &)
@@ -240,7 +312,6 @@ void ZoomRegionState::pressMouse(const MouseEvent &evt)
 void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 {
 	isDragging_ = false;
-	if (evt.x == initX_ && evt.y == initY_) return;
 
 	try
 	{
@@ -250,7 +321,8 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		context.activate();
-			camera.setView(initX_, initY_, evt.x, evt.y);
+			const swl::Region2<int> vp = camera.getViewport();
+			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
 		context.deactivate();
@@ -264,7 +336,6 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 void ZoomRegionState::moveMouse(const MouseEvent &evt)
 {
 	if (!isDragging_) return;
-	if (evt.x == prevX_ && evt.y == prevY_) return;
 
 	try
 	{
@@ -284,7 +355,6 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		context.activate();
 		boost::any &nativeCtx = context.getNativeContext();
 		context.deactivate();
-
 		if (!nativeCtx.empty())
 		{
 			try

@@ -13,11 +13,12 @@ public:
 	//typedef KeyEvent base_type;
 
 public:
-	enum EControlKey {
+	enum EControlKey
+	{
 		CK_NONE = 0x0000,
 		CK_LEFT_CTRL = 0x0001, CK_RIGHT_CTRL = 0x0002, CK_CTRL = 0x0003,
-		CK_LEFT_ALT = 0x0004, CK_RIGHT_ALT = 0x0008, CK_ALT = 0x000C,
-		CK_LEFT_SHIFT = 0x0010, CK_RIGHT_SHIFT = 0x0020, CK_SHIFT = 0x0030
+		CK_LEFT_SHIFT = 0x0004, CK_RIGHT_SHIFT = 0x0008, CK_SHIFT = 0x000C,
+		CK_LEFT_ALT = 0x0010, CK_RIGHT_ALT = 0x0020, CK_ALT = 0x0030,
 	};
 
 public:

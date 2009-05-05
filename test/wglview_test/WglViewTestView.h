@@ -1,30 +1,29 @@
-// WinViewTestView.h : interface of the CWinViewTestView class
+// WglViewTestView.h : interface of the CWglViewTestView class
 //
 
 
 #pragma once
 
-#include "swl/winview/WinViewBase.h"
+#include "swl/winview/WglViewBase.h"
 #include "swl/view/ViewEventController.h"
 #include <boost/smart_ptr.hpp>
-#include <deque>
 
 namespace swl {
-class GdiplusBitmapBufferedContext;
-class ViewCamera2;
+class WglContextBase;
+class ViewCamera3;
+class OglCamera;
 struct ViewStateMachine;
-}  // namespace swl
+}
 
-
-class CWinViewTestView : public CView, public swl::WinViewBase
+class CWglViewTestView : public CView, public swl::WglViewBase
 {
 protected: // create from serialization only
-	CWinViewTestView();
-	DECLARE_DYNCREATE(CWinViewTestView)
+	CWglViewTestView();
+	DECLARE_DYNCREATE(CWglViewTestView)
 
 // Attributes
 public:
-	CWinViewTestDoc* GetDocument() const;
+	CWglViewTestDoc* GetDocument() const;
 
 // Operations
 public:
@@ -40,7 +39,7 @@ protected:
 
 // Implementation
 public:
-	virtual ~CWinViewTestView();
+	virtual ~CWglViewTestView();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -48,7 +47,7 @@ public:
 
 public:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WglView: basic routine
 
 	/*virtual*/ bool raiseDrawEvent(const bool isContextActivated);
 
@@ -57,55 +56,34 @@ public:
 
 private:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WglView: basic routine
 
 	/*virtual*/ bool doPrepareRendering();
 	/*virtual*/ bool doRenderStockScene();
 	/*virtual*/ bool doRenderScene();
 
 private:
-	void test1();
-	void test2();
-	void test3();
-	void test4();
-	void test5();
-
-private:
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WglView: basic routine
 
-	boost::scoped_ptr<swl::GdiplusBitmapBufferedContext> viewContext_;
-	boost::scoped_ptr<swl::ViewCamera2> viewCamera_;
+	boost::scoped_ptr<swl::WglContextBase> viewContext_;
+	boost::scoped_ptr<swl::OglCamera> viewCamera_;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WglView: event handling
 
 	//swl::ViewEventController viewController_;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WglView: view state
 
 	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
-
-	//-------------------------------------------------------------------------
-	//
-
-	typedef std::pair<int, int> datum_type;
-	typedef std::deque<datum_type> data_type;
-
-	data_type data1_;
-	data_type data2_;
-	size_t idx_;
-	UINT timeInterval_;
-
-	int drawMode_;
 
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual void OnInitialUpdate();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnSize(UINT nType, int cx, int cy);
 	afx_msg void OnPaint();
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
@@ -136,8 +114,8 @@ public:
 	afx_msg void OnUpdateViewstateZoomout(CCmdUI *pCmdUI);
 };
 
-#ifndef _DEBUG  // debug version in WinViewTestView.cpp
-inline CWinViewTestDoc* CWinViewTestView::GetDocument() const
-   { return reinterpret_cast<CWinViewTestDoc*>(m_pDocument); }
+#ifndef _DEBUG  // debug version in WglViewTestView.cpp
+inline CWglViewTestDoc* CWglViewTestView::GetDocument() const
+   { return reinterpret_cast<CWglViewTestDoc*>(m_pDocument); }
 #endif
 

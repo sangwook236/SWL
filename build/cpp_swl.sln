@@ -64,19 +64,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinViewTest", "..\test\winv
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OglViewTest", "..\test\oglview_test\OglViewTest.vcproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-	ProjectSection(ProjectDependencies) = postProject
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
 		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winutil\swl_winutil.vcproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
@@ -89,6 +78,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wincomm", "..\src\winco
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WglViewTest", "..\test\wglview_test\WglViewTest.vcproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
+		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
 	EndProjectSection
 EndProject
 Global
@@ -133,10 +133,6 @@ Global
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Debug|Win32.Build.0 = Debug|Win32
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Release|Win32.ActiveCfg = Release|Win32
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Release|Win32.Build.0 = Release|Win32
-		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.ActiveCfg = Debug|Win32
-		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.Build.0 = Debug|Win32
-		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Release|Win32.ActiveCfg = Release|Win32
-		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Release|Win32.Build.0 = Release|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Debug|Win32.Build.0 = Debug|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Release|Win32.ActiveCfg = Release|Win32
@@ -145,6 +141,10 @@ Global
 		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Debug|Win32.Build.0 = Debug|Win32
 		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Release|Win32.ActiveCfg = Release|Win32
 		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Release|Win32.Build.0 = Release|Win32
+		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.Build.0 = Debug|Win32
+		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Release|Win32.ActiveCfg = Release|Win32
+		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

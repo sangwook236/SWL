@@ -1,5 +1,5 @@
-#if !defined(__SWL_WIN_VIEW_TEST__VIEW_STATE_MACHINE__H_)
-#define __SWL_WIN_VIEW_TEST__VIEW_STATE_MACHINE__H_ 1
+#if !defined(__SWL_OGL_VIEW_TEST__VIEW_STATE_MACHINE__H_)
+#define __SWL_OGL_VIEW_TEST__VIEW_STATE_MACHINE__H_ 1
 
 
 #include <boost/statechart/state_machine.hpp>
@@ -51,13 +51,13 @@ struct EvtZoomOut: public boost::statechart::event<EvtZoomOut> {};
 
 struct ViewBase;
 struct ViewContext;
-class ViewCamera2;
+class ViewCamera3;
 
 struct IdleState;
 struct ViewStateMachine: public boost::statechart::state_machine<ViewStateMachine, IdleState>
 {
 public:
-	ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera2 &camera);
+	ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera3 &camera);
 
 private:
 	ViewStateMachine(const ViewStateMachine &);
@@ -81,13 +81,13 @@ public:
 	const ViewBase & getView() const  {  return view_;  }
 	ViewContext & getViewContext()  {  return context_;  }
 	const ViewContext & getViewContext() const  {  return context_;  }
-	ViewCamera2 & getViewCamera()  {  return camera_;  }
-	const ViewCamera2 & getViewCamera() const  {  return camera_;  }
+	ViewCamera3 & getViewCamera()  {  return camera_;  }
+	const ViewCamera3 & getViewCamera() const  {  return camera_;  }
 	
 private:
 	ViewBase &view_;
 	ViewContext &context_;
-	ViewCamera2 &camera_;
+	ViewCamera3 &camera_;
 };
 
 //-----------------------------------------------------------------------------
@@ -176,17 +176,13 @@ public:
 	> reactions;
 
 public:
-	RotateState()
-	{
-	}
-	~RotateState()
-	{
-	}
+	RotateState();
+	~RotateState();
 
 public:
-	/*virtual*/ void pressMouse(const MouseEvent &evt)  {}
-	/*virtual*/ void releaseMouse(const MouseEvent &evt)  {}
-	/*virtual*/ void moveMouse(const MouseEvent &evt)  {}
+	/*virtual*/ void pressMouse(const MouseEvent &evt);
+	/*virtual*/ void releaseMouse(const MouseEvent &evt);
+	/*virtual*/ void moveMouse(const MouseEvent &evt);
 	/*virtual*/ void wheelMouse(const MouseEvent &evt)  {}
 
 	/*virtual*/ void clickMouse(const MouseEvent &evt)  {}
@@ -196,6 +192,10 @@ public:
 	/*virtual*/ void releaseKey(const KeyEvent &evt)  {}
 
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
+
+private:
+	bool isDragging_;
+	int prevX_, prevY_;
 };
 
 //-----------------------------------------------------------------------------
@@ -261,4 +261,4 @@ struct ZoomOutState: public IViewEventHandler, public boost::statechart::simple_
 }  // namespace swl
 
 
-#endif  // __SWL_WIN_VIEW_TEST__VIEW_STATE_MACHINE__H_
+#endif  // __SWL_OGL_VIEW_TEST__VIEW_STATE_MACHINE__H_

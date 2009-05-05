@@ -3,6 +3,7 @@
 
 
 #include "swl/common/Region.h"
+#include <boost/any.hpp>
 
 
 namespace swl {
@@ -53,8 +54,8 @@ public:
 	bool isDrawing() const  {  return isDrawing_;  }
 
 	/// get the native context
-	virtual void * getNativeContext() = 0;
-	virtual const void * const getNativeContext() const = 0;
+	virtual boost::any getNativeContext() = 0;
+	virtual const boost::any getNativeContext() const = 0;
 
 	/// get the drawing region
 	const Region2<int> & getRegion() const  {  return drawRegion_;  }

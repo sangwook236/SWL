@@ -34,13 +34,13 @@ public:
 	void createDisplayList(const HDC hDC);
 
 	/// get the OpenGL shared display list
-	static HGLRC& getSharedRC()  {  return sSharedRC_;  }
+	static HGLRC & getSharedRenderingContext()  {  return sSharedRC_;  }
 	/// reset the OpenGL shared display list
-	static void resetSharedRC()  {  sSharedRC_ = 0L;  }
+	static void resetSharedRenderingContext()  {  sSharedRC_ = 0L;  }
 
-	/// get the native context
-	/*virtual*/ void * getNativeContext()  {  return isActivated() ? (void *)&wglRC_ : NULL;  }
-	/*virtual*/ const void * const getNativeContext() const  {  return isActivated() ? (void *)&wglRC_ : NULL;  }
+	/// get the OpenGL rendering context
+	HGLRC & getRenderingContext()  {  return wglRC_;  }
+	const HGLRC & getRenderingContext() const  {  return wglRC_;  }
 
 protected:
 	/// share an OpenGL display list

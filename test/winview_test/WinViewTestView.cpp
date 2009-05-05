@@ -102,24 +102,7 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 	}
 	else
 	{
-		switch (drawMode_)
-		{
-		case 1:
-			test1();
-			break;
-		case 2:
-			test2();
-			break;
-		case 3:
-			test3();
-			break;
-		case 4:
-			test4();
-			break;
-		case 5:
-			test5();
-			break;
-		}
+		renderScene();
 	}
 }
 
@@ -189,7 +172,7 @@ void CWinViewTestView::OnInitialUpdate()
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
-
+/*
 	viewController_.addMousePressHandler(swl::MousePressHandler());
 	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
 	viewController_.addMouseMoveHandler(swl::MouseMoveHandler());
@@ -199,7 +182,7 @@ void CWinViewTestView::OnInitialUpdate()
 	viewController_.addKeyPressHandler(swl::KeyPressHandler());
 	viewController_.addKeyReleaseHandler(swl::KeyReleaseHandler());
 	viewController_.addKeyHitHandler(swl::KeyHitHandler());
-
+*/
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
@@ -238,7 +221,7 @@ void CWinViewTestView::OnInitialUpdate()
 		if (viewCamera_.get())
 		{
 			// TODO [check] >>
-			viewCamera_->setViewBound(0, 0, rect.Width(), rect.Height());
+			viewCamera_->setViewBound(rect.left - 100, rect.top - 100, rect.right + 100, rect.bottom + 100);
 			viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
 		}
 
@@ -362,27 +345,85 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 	else return false;
 }
 
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView: basic routine
+
+bool CWinViewTestView::doPrepareRendering()
+{
+
+    return true;
+}
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView: basic routine
+
+bool CWinViewTestView::doRenderStockScene()
+{
+    return true;
+}
+
+//-------------------------------------------------------------------------
+// This code is required for SWL.WinView: basic routine
+
+bool CWinViewTestView::doRenderScene()
+{
+	switch (drawMode_)
+	{
+	case 1:
+		test1();
+		break;
+	case 2:
+		test2();
+		break;
+	case 3:
+		test3();
+		break;
+	case 4:
+		test4();
+		break;
+	case 5:
+		test5();
+		break;
+	}
+
+    return true;
+}
+
 // use single-buffered GDI context
 void CWinViewTestView::test1()
 {
+	CRect rect;
+	GetClientRect(&rect);
+
 	// create a context
 	swl::GdiContext ctx(GetSafeHwnd());
-	HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
+	HDC *dc = NULL;
+	try
+	{
+		dc = boost::any_cast<HDC *>(ctx.getNativeContext());
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-	if (dc)
+	if (dc && viewCamera_.get())
 	{
 		CDC *pDC = CDC::FromHandle(*dc);
 
 		// clear the background
 		//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
-		//pDC->FillRect(rect, &CBrush(RGB(192, 192, 0)));
+		pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
 
 		// draw contents
+		int vx, vy;
+
 		{
 			CPen pen(PS_SOLID, 2, RGB(255, 0, 0));
 			pDC->SelectObject(&pen);
-			pDC->MoveTo(100, 100);
-			pDC->LineTo(300, 300);
+			viewCamera_->mapNcToVc(100, 100, vx, vy);
+			pDC->MoveTo(vx, vy);
+			viewCamera_->mapNcToVc(300, 300, vx, vy);
+			pDC->LineTo(vx, vy);
 		}
 
 		if (data1_.size() > 1)
@@ -390,9 +431,13 @@ void CWinViewTestView::test1()
 			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data1_.begin();
-			pDC->MoveTo(it->first, it->second);
+			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			pDC->MoveTo(vx, vy);
 			for (++it; it != data1_.end(); ++it)
-				pDC->LineTo(it->first, it->second);
+			{
+				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->LineTo(vx, vy);
+			}
 		}
 
 		if (data2_.size() > 1)
@@ -400,9 +445,13 @@ void CWinViewTestView::test1()
 			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data2_.begin();
-			pDC->MoveTo(it->first, it->second);
+			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			pDC->MoveTo(vx, vy);
 			for (++it; it != data2_.end(); ++it)
-				pDC->LineTo(it->first, it->second);
+			{
+				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->LineTo(vx, vy);
+			}
 		}
 	}
 
@@ -418,23 +467,34 @@ void CWinViewTestView::test2()
 
 	// create a context
 	swl::GdiBitmapBufferedContext ctx(GetSafeHwnd(), rect);
-	HDC *dc = static_cast<HDC *>(ctx.getNativeContext());
+	HDC *dc = NULL;
+	try
+	{
+		dc = boost::any_cast<HDC *>(ctx.getNativeContext());
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-	if (dc)
+	if (dc && viewCamera_.get())
 	{
 		CDC *pDC = CDC::FromHandle(*dc);
 
 		// clear the background
 		//pDC->SetBkColor(RGB(255, 255, 255));  // not working ???
-		pDC->FillRect(rect, &CBrush(RGB(255, 255, 255)));
+		pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
 		//pDC->FillRect(rect, &CBrush(GetSysColor(COLOR_WINDOW)));
 
 		// draw contents
+		int vx, vy;
+
 		{
 			CPen pen(PS_SOLID, 3, RGB(255, 0, 0));
 			pDC->SelectObject(&pen);
-			pDC->MoveTo(100, 150);
-			pDC->LineTo(300, 350);
+			viewCamera_->mapNcToVc(100, 150, vx, vy);
+			pDC->MoveTo(vx, vy);
+			viewCamera_->mapNcToVc(300, 350, vx, vy);
+			pDC->LineTo(vx, vy);
 		}
 
 		if (data1_.size() > 1)
@@ -442,9 +502,13 @@ void CWinViewTestView::test2()
 			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data1_.begin();
-			pDC->MoveTo(it->first, it->second);
+			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			pDC->MoveTo(vx, vy);
 			for (++it; it != data1_.end(); ++it)
-				pDC->LineTo(it->first, it->second);
+			{
+				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->LineTo(vx, vy);
+			}
 		}
 
 		if (data2_.size() > 1)
@@ -452,9 +516,13 @@ void CWinViewTestView::test2()
 			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data2_.begin();
-			pDC->MoveTo(it->first, it->second);
+			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			pDC->MoveTo(vx, vy);
 			for (++it; it != data2_.end(); ++it)
-				pDC->LineTo(it->first, it->second);
+			{
+				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->LineTo(vx, vy);
+			}
 		}
 	}
 
@@ -467,17 +535,28 @@ void CWinViewTestView::test3()
 {
 	// create a context
 	swl::GdiplusContext ctx(GetSafeHwnd());
-	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+	Gdiplus::Graphics *graphics = NULL;
+	try
+	{
+		graphics = boost::any_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-	if (graphics)
+	if (graphics && viewCamera_.get())
 	{
 		// clear the background
-		//graphics->Clear(Gdiplus::Color(255, 192, 0, 192));
+		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
 
 		// draw contents
+		int vx1, vy1, vx2, vy2;
+
 		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 4.0f);
-			graphics->DrawLine(&pen, 100, 200, 300, 400);
+			viewCamera_->mapNcToVc(100, 200, vx1, vy1);
+			viewCamera_->mapNcToVc(300, 400, vx2, vy2);
+			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 		}
 
 		if (data1_.size() > 1)
@@ -486,7 +565,11 @@ void CWinViewTestView::test3()
 			data_type::iterator prevIt = data1_.begin();
 			data_type::iterator it = data1_.begin();
 			for (++it; it != data1_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 
 		if (data2_.size() > 1)
@@ -495,7 +578,11 @@ void CWinViewTestView::test3()
 			data_type::iterator prevIt = data2_.begin();
 			data_type::iterator it = data2_.begin();
 			for (++it; it != data2_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 	}
 
@@ -511,17 +598,28 @@ void CWinViewTestView::test4()
 
 	// create a context
 	swl::GdiplusBitmapBufferedContext ctx(GetSafeHwnd(), rect);
-	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+	Gdiplus::Graphics *graphics = NULL;
+	try
+	{
+		graphics = boost::any_cast<Gdiplus::Graphics *>(ctx.getNativeContext());
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-	if (graphics)
+	if (graphics && viewCamera_.get())
 	{
 		// clear the background
-		//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
+		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
 
 		// draw contents
+		int vx1, vy1, vx2, vy2;
+
 		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 5.0f);
-			graphics->DrawLine(&pen, 100, 250, 300, 450);
+			viewCamera_->mapNcToVc(100, 250, vx1, vy1);
+			viewCamera_->mapNcToVc(300, 450, vx2, vy2);
+			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 		}
 
 		if (data1_.size() > 1)
@@ -530,7 +628,11 @@ void CWinViewTestView::test4()
 			data_type::iterator prevIt = data1_.begin();
 			data_type::iterator it = data1_.begin();
 			for (++it; it != data1_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 
 		if (data2_.size() > 1)
@@ -539,7 +641,11 @@ void CWinViewTestView::test4()
 			data_type::iterator prevIt = data2_.begin();
 			data_type::iterator it = data2_.begin();
 			for (++it; it != data2_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 	}
 
@@ -554,19 +660,30 @@ void CWinViewTestView::test5()
 	GetClientRect(&rect);
 
 	// activate a context
-	viewContext_->activate();
+	//viewContext_->activate();
 
-	Gdiplus::Graphics *graphics = static_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
+	Gdiplus::Graphics *graphics = NULL;
+	try
+	{
+		graphics = boost::any_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-	if (graphics)
+	if (graphics && viewCamera_.get())
 	{
 		// clear the background
-		//graphics->Clear(Gdiplus::Color(255, 0, 192, 192));
+		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
 
 		// draw contents
+		int vx1, vy1, vx2, vy2;
+
 		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 6.0f);
-			graphics->DrawLine(&pen, 100, 300, 300, 500);
+			viewCamera_->mapNcToVc(100, 300, vx1, vy1);
+			viewCamera_->mapNcToVc(300, 500, vx2, vy2);
+			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 		}
 
 		if (data1_.size() > 1)
@@ -575,7 +692,11 @@ void CWinViewTestView::test5()
 			data_type::iterator prevIt = data1_.begin();
 			data_type::iterator it = data1_.begin();
 			for (++it; it != data1_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 
 		if (data2_.size() > 1)
@@ -584,7 +705,11 @@ void CWinViewTestView::test5()
 			data_type::iterator prevIt = data2_.begin();
 			data_type::iterator it = data2_.begin();
 			for (++it; it != data2_.end(); ++prevIt, ++it)
-				graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+			{
+				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
 		}
 	}
 
@@ -592,7 +717,7 @@ void CWinViewTestView::test5()
 	viewContext_->swapBuffer();
 
 	// de-activate the context
-	viewContext_->deactivate();
+	//viewContext_->deactivate();
 }
 
 void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
@@ -602,8 +727,8 @@ void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
@@ -618,8 +743,8 @@ void CWinViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
@@ -632,8 +757,8 @@ void CWinViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
@@ -648,8 +773,8 @@ void CWinViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
@@ -664,8 +789,8 @@ void CWinViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
@@ -678,8 +803,8 @@ void CWinViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
@@ -694,8 +819,8 @@ void CWinViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
@@ -710,8 +835,8 @@ void CWinViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
@@ -724,8 +849,8 @@ void CWinViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
@@ -737,12 +862,17 @@ void CWinViewTestView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
-	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
+		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
+		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
+		((nFlags & MK_RBUTTON) == MK_RBUTTON ? swl::MouseEvent::BT_RIGHT : swl::MouseEvent::BT_NONE)
 	);
-	//viewController_.moveMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
+	if (viewStateFsm_.get()) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
 
 	CView::OnMouseMove(nFlags, point);
 }
@@ -751,13 +881,17 @@ BOOL CWinViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
-	// TODO [check] >>
-	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
-		((nFlags | MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
-		((nFlags | MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
+		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
+		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
+		((nFlags & MK_RBUTTON) == MK_RBUTTON ? swl::MouseEvent::BT_RIGHT : swl::MouseEvent::BT_NONE)
 	);
-	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey, swl::MouseEvent::SC_HORIZONTAL, zDelta));
-	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey, swl::MouseEvent::SC_VERTICAL, zDelta));
+	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
+		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
+		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
+	);
+	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
+	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
 
 	return CView::OnMouseWheel(nFlags, zDelta, point);
 }
@@ -841,10 +975,7 @@ void CWinViewTestView::OnUpdateViewstatePan(CCmdUI *pCmdUI)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
-	{
-		const swl::PanState *active = viewStateFsm_->state_cast<const swl::PanState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PanState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
@@ -852,11 +983,10 @@ void CWinViewTestView::OnUpdateViewstateRotate(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
+	pCmdUI->Enable(FALSE);
+
 	if (viewStateFsm_.get())
-	{
-		const swl::RotateState *active = viewStateFsm_->state_cast<const swl::RotateState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::RotateState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
@@ -865,10 +995,7 @@ void CWinViewTestView::OnUpdateViewstateZoomregion(CCmdUI *pCmdUI)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
-	{
-		const swl::ZoomRegionState *active = viewStateFsm_->state_cast<const swl::ZoomRegionState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomRegionState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
@@ -877,10 +1004,7 @@ void CWinViewTestView::OnUpdateViewstateZoomall(CCmdUI *pCmdUI)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
-	{
-		const swl::ZoomAllState *active = viewStateFsm_->state_cast<const swl::ZoomAllState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomAllState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
@@ -889,10 +1013,7 @@ void CWinViewTestView::OnUpdateViewstateZoomin(CCmdUI *pCmdUI)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
-	{
-		const swl::ZoomInState *active = viewStateFsm_->state_cast<const swl::ZoomInState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomInState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
@@ -901,9 +1022,6 @@ void CWinViewTestView::OnUpdateViewstateZoomout(CCmdUI *pCmdUI)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
-	{
-		const swl::ZoomOutState *active = viewStateFsm_->state_cast<const swl::ZoomOutState *>();
-		pCmdUI->SetCheck(active ? 1 : 0);
-	}
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
