@@ -75,10 +75,10 @@ void OglCamera::read20021008(std::istream& stream)
 
 bool OglCamera::doUpdateFrustum()
 {
-	int iOldMatrixMode;
-	::glGetIntegerv(GL_MATRIX_MODE, &iOldMatrixMode);
-	if (iOldMatrixMode != GL_PROJECTION) ::glMatrixMode(GL_PROJECTION);
-	::glLoadIdentity();
+	int oldMatrixMode;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+	if (oldMatrixMode != GL_PROJECTION) glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
 
 	const Region2<double> rctViewRegion = getRevisedRegion();
 
@@ -93,7 +93,7 @@ bool OglCamera::doUpdateFrustum()
 		if (nearPlane_ > 0.0 && farPlane_ > 0.0 && nearPlane_ < farPlane_)
 		{
 			double dRatio = calcResizingRatio();
-			::glFrustum(
+			glFrustum(
 				rctViewRegion.left * dRatio, rctViewRegion.right * dRatio,
 				rctViewRegion.bottom * dRatio, rctViewRegion.top * dRatio,
 				nearPlane_, farPlane_
@@ -104,7 +104,7 @@ bool OglCamera::doUpdateFrustum()
 	else
 	{
 		if (nearPlane_ < farPlane_)
-			::glOrtho(
+			glOrtho(
 				rctViewRegion.left, rctViewRegion.right,
 				rctViewRegion.bottom, rctViewRegion.top,
 				nearPlane_, farPlane_
@@ -114,20 +114,20 @@ bool OglCamera::doUpdateFrustum()
 
 	//lookAt();
 
-	if (iOldMatrixMode != GL_PROJECTION) ::glMatrixMode(iOldMatrixMode);
+	if (oldMatrixMode != GL_PROJECTION) glMatrixMode(oldMatrixMode);
 	return true;
 }
 
 inline bool OglCamera::doUpdateViewport()
 {
-	::glViewport(viewport_.left, viewport_.bottom, viewport_.getWidth(), viewport_.getHeight());
+	glViewport(viewport_.left, viewport_.bottom, viewport_.getWidth(), viewport_.getHeight());
 	return doUpdateFrustum();
 }
 
 inline void OglCamera::lookAt()
 {
 	//doUpdateFrustum();
-	::gluLookAt(eyePosX_, eyePosY_, eyePosZ_, eyePosX_+eyeDirX_, eyePosY_+eyeDirY_, eyePosZ_+eyeDirZ_, upDirX_, upDirY_, upDirZ_);
+	gluLookAt(eyePosX_, eyePosY_, eyePosZ_, eyePosX_+eyeDirX_, eyePosY_+eyeDirY_, eyePosZ_+eyeDirZ_, upDirX_, upDirY_, upDirZ_);
 }
 
 // projection transformation: an eye coordinates(before projection)  ==>  a clip coordinates(after projection)
@@ -149,7 +149,7 @@ bool OglCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 	// from OpenGL Red Book
 	if (isPerspective_)
 	{
-		double dW = -ptEye[2];
+		const double dW = -ptEye[2];
 		if (dW <= 0.0 || nearPlane_ <= 0.0) return false;
 
 		ptClip[0] = (2.0*nearPlane_*ptEye[0] + (rctViewRegion.right+rctViewRegion.left)*ptEye[2]) / (rctViewRegion.right - rctViewRegion.left);
@@ -187,8 +187,8 @@ bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 		rctViewRegion *= calcResizingRatio();
 	//--E [] 2001/08/08
 */
-	double dNCx = ptClip[0] * rctViewRegion.getWidth() * 0.5 + rctViewRegion.getCenterX();
-	double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5 + rctViewRegion.getCenterY();
+	const double dNCx = ptClip[0] * rctViewRegion.getWidth() * 0.5 + rctViewRegion.getCenterX();
+	const double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5 + rctViewRegion.getCenterY();
 
 	int iX, iY;
 	if (base_type::mapNcToVc(dNCx, dNCy, iX, iY))
@@ -208,7 +208,7 @@ bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 	const Region2<double> rctViewRegion = getRevisedRegion();
 /*
 	//--S [] 2001/08/08: Sang-Wook Lee
-	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
+	// doUpdateFrustum()에서 glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
 	if (isPerspective())
 		rctViewRegion *= calcResizingRatio();
 	//--E [] 2001/08/08

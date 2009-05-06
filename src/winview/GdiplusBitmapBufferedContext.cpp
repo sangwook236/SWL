@@ -59,9 +59,14 @@ bool GdiplusBitmapBufferedContext::swapBuffer()
 
 	// when all drawing has been completed, a new graphics canvas should be created,
 	// but this time it should be associated with the actual output screen or window
-	// (1)
+	// method #1
 	//return Gdiplus::Ok == graphics_->DrawImage(memBmp_, drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight());
-	// (2)
+	// method #2
+	// FIXME [modify] >>
+	//Gdiplus::RectF rctSrc(drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight());
+	//Gdiplus::RectF rctDst(drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight());
+	//return Gdiplus::Ok == graphics_->DrawImage(memBmp_, rctDst, rctSrc, Gdiplus::UnitPixel, NULL);
+	// method #3
 	Gdiplus::CachedBitmap cachedBmp(memBmp_, graphics_);
 	const bool ret = Gdiplus::Ok == graphics_->DrawCachedBitmap(&cachedBmp, drawRegion_.left, drawRegion_.bottom);
 

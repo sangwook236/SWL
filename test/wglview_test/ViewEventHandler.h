@@ -1,5 +1,5 @@
-#if !defined(__SWL_OGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_)
-#define __SWL_OGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_ 1
+#if !defined(__SWL_WGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_)
+#define __SWL_WGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_ 1
 
 
 namespace swl {
@@ -119,4 +119,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_OGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_
+#endif  // __SWL_WGL_VIEW_TEST__VIEW_EVENT_HANDLER__H_
