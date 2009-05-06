@@ -528,6 +528,7 @@ BOOL CWglViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 	);
 	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
 	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
+	TRACE(_T("***** %d, %d\n"), zDelta, zDelta / WHEEL_DELTA);
 
 	return CView::OnMouseWheel(nFlags, zDelta, point);
 }

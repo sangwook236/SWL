@@ -396,6 +396,32 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 	prevY_ = evt.y;
 }
 
+void ZoomRegionState::wheelMouse(const MouseEvent &evt)
+{
+	if (0 == evt.scrollAmount) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera2 &camera = fsm.getViewCamera();
+
+		context.activate();
+			if (evt.scrollAmount > 0)
+				camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25 * evt.scrollAmount);  // zoom-out
+			else
+				camera.scaleViewRegion(0.8 * -evt.scrollAmount);  // zoom-in
+			view.raiseDrawEvent(false);
+			//view.updateScrollBar();
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
 void ZoomRegionState::drawRubberBand(const MouseEvent &evt, HDC hdc) const
 {
 	{
@@ -414,6 +440,99 @@ void ZoomRegionState::drawRubberBand(const MouseEvent &evt, HDC hdc) const
 		const int bottom = evt.y > initY_ ? evt.y : initY_;  // downward y-axis
 
 		DrawFocusRect(hdc, &CRect(left, top, right, bottom));
+	}
+}
+
+//-----------------------------------------------------------------------------
+//
+
+ZoomAllState::ZoomAllState(my_context ctx)
+: my_base(ctx)
+{
+	handleEvent();
+	post_event(EvtBackToPreviousState());
+}
+
+void ZoomAllState::handleEvent()
+{
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera2 &camera = fsm.getViewCamera();
+
+		context.activate();
+			camera.restoreViewRegion();
+			view.raiseDrawEvent(false);
+			//view.updateScrollBar();
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+//-----------------------------------------------------------------------------
+//
+
+ZoomInState::ZoomInState(my_context ctx)
+: my_base(ctx)
+{
+	handleEvent();
+	post_event(EvtBackToPreviousState());
+}
+
+void ZoomInState::handleEvent()
+{
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera2 &camera = fsm.getViewCamera();
+
+		context.activate();
+			camera.scaleViewRegion(0.8);
+			view.raiseDrawEvent(false);
+			//view.updateScrollBar();
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+//-----------------------------------------------------------------------------
+//
+
+ZoomOutState::ZoomOutState(my_context ctx)
+: my_base(ctx)
+{
+	handleEvent();
+	post_event(EvtBackToPreviousState());
+}
+
+void ZoomOutState::handleEvent()
+{
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		ViewBase &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera2 &camera = fsm.getViewCamera();
+
+		context.activate();
+			camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25);
+			view.raiseDrawEvent(false);
+			//view.updateScrollBar();
+		context.deactivate();
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 	}
 }
 

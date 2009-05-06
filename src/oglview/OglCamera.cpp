@@ -191,7 +191,7 @@ bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 	double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5 + rctViewRegion.getCenterY();
 
 	int iX, iY;
-	if (base_type::NCtoVC(dNCx, dNCy, iX, iY))
+	if (base_type::mapNcToVc(dNCx, dNCy, iX, iY))
 	{
 		ptWin[0] = double(iX);
 		ptWin[1] = double(iY);

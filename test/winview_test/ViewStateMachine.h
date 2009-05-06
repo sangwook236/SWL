@@ -8,6 +8,7 @@
 #include <boost/statechart/event.hpp>
 #include <boost/statechart/transition.hpp>
 #include <boost/statechart/custom_reaction.hpp>
+#include <boost/statechart/deep_history.hpp>
 #include <boost/mpl/list.hpp>
 
 
@@ -41,10 +42,11 @@ struct IViewEventHandler
 struct EvtIdle: public boost::statechart::event<EvtIdle> {};
 struct EvtPan: public boost::statechart::event<EvtPan> {};
 struct EvtRotate: public boost::statechart::event<EvtRotate> {};
-struct EvtZoomAll: public boost::statechart::event<EvtZoomAll> {};
 struct EvtZoomRegion: public boost::statechart::event<EvtZoomRegion> {};
+struct EvtZoomAll: public boost::statechart::event<EvtZoomAll> {};
 struct EvtZoomIn: public boost::statechart::event<EvtZoomIn> {};
 struct EvtZoomOut: public boost::statechart::event<EvtZoomOut> {};
+struct EvtBackToPreviousState: public boost::statechart::event<EvtBackToPreviousState> {};
 
 //-----------------------------------------------------------------------------------
 // 
@@ -53,8 +55,8 @@ struct ViewBase;
 struct ViewContext;
 class ViewCamera2;
 
-struct IdleState;
-struct ViewStateMachine: public boost::statechart::state_machine<ViewStateMachine, IdleState>
+struct NotTransientState;
+struct ViewStateMachine: public boost::statechart::state_machine<ViewStateMachine, NotTransientState>
 {
 public:
 	ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera2 &camera);
@@ -93,10 +95,28 @@ private:
 //-----------------------------------------------------------------------------
 //
 
+struct IdleState;
 struct PanState;
 struct RotateState;
 struct ZoomRegionState;
-struct IdleState: public IViewEventHandler, public boost::statechart::simple_state<IdleState, ViewStateMachine>
+struct ZoomAllState;
+struct ZoomInState;
+struct ZoomOutState;
+
+struct NotTransientState: public boost::statechart::simple_state<NotTransientState, ViewStateMachine, IdleState, boost::statechart::has_deep_history>
+{
+public:
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtZoomAll, ZoomAllState>,
+		boost::statechart::transition<EvtZoomIn, ZoomInState>,
+		boost::statechart::transition<EvtZoomOut, ZoomOutState>
+	> reactions;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+struct IdleState: public IViewEventHandler, public boost::statechart::simple_state<IdleState, NotTransientState>
 {
 public:
 	typedef boost::mpl::list<
@@ -106,12 +126,8 @@ public:
 	> reactions;
 
 public:
-	IdleState()
-	{
-	}
-	~IdleState()
-	{
-	}
+	IdleState()  {}
+	~IdleState()  {}
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt)  {}
@@ -131,7 +147,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-struct PanState: public IViewEventHandler, public boost::statechart::simple_state<PanState, ViewStateMachine>
+struct PanState: public IViewEventHandler, public boost::statechart::simple_state<PanState, NotTransientState>
 {
 public:
 	typedef boost::mpl::list<
@@ -166,7 +182,7 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct RotateState: public IViewEventHandler, public boost::statechart::simple_state<RotateState, ViewStateMachine>
+struct RotateState: public IViewEventHandler, public boost::statechart::simple_state<RotateState, NotTransientState>
 {
 public:
 	typedef boost::mpl::list<
@@ -176,12 +192,8 @@ public:
 	> reactions;
 
 public:
-	RotateState()
-	{
-	}
-	~RotateState()
-	{
-	}
+	RotateState()  {}
+	~RotateState()  {}
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt)  {}
@@ -201,7 +213,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-struct ZoomRegionState: public IViewEventHandler, public boost::statechart::simple_state<ZoomRegionState, ViewStateMachine>
+struct ZoomRegionState: public IViewEventHandler, public boost::statechart::simple_state<ZoomRegionState, NotTransientState>
 {
 public:
 	typedef boost::mpl::list<
@@ -218,7 +230,7 @@ public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt);
 	/*virtual*/ void releaseMouse(const MouseEvent &evt);
 	/*virtual*/ void moveMouse(const MouseEvent &evt);
-	/*virtual*/ void wheelMouse(const MouseEvent &evt)  {}
+	/*virtual*/ void wheelMouse(const MouseEvent &evt);
 
 	/*virtual*/ void clickMouse(const MouseEvent &evt)  {}
 	/*virtual*/ void doubleClickMouse(const MouseEvent &evt)  {}
@@ -240,22 +252,46 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct ZoomAllState: public IViewEventHandler, public boost::statechart::simple_state<ZoomAllState, ViewStateMachine>
+struct ZoomAllState: public boost::statechart::state<ZoomAllState, ViewStateMachine>
 {
+public:
+	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+
+public:
+	ZoomAllState(my_context ctx);
+
+private:
+	void handleEvent();
 };
 
 //-----------------------------------------------------------------------------
 //
 
-struct ZoomInState: public IViewEventHandler, public boost::statechart::simple_state<ZoomInState, ViewStateMachine>
+struct ZoomInState: public boost::statechart::state<ZoomInState, ViewStateMachine>
 {
+public:
+	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+
+public:
+	ZoomInState(my_context ctx);
+
+private:
+	void handleEvent();
 };
 
 //-----------------------------------------------------------------------------
 //
 
-struct ZoomOutState: public IViewEventHandler, public boost::statechart::simple_state<ZoomOutState, ViewStateMachine>
+struct ZoomOutState: public boost::statechart::state<ZoomOutState, ViewStateMachine>
 {
+public:
+	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+
+public:
+	ZoomOutState(my_context ctx);
+
+private:
+	void handleEvent();
 };
 
 }  // namespace swl
