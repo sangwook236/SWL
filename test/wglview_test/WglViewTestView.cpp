@@ -100,10 +100,34 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 	}
 	else
 	{
-		const boost::shared_ptr<context_type> &viewContext = topContext();
-		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
-		if (viewContext.get() && viewCamera.get() && viewContext->isActivated())
-			renderScene(*viewContext, *viewCamera);
+		const boost::shared_ptr<camera_type> &camera = topCamera();
+		if (!camera) return;
+
+		// using a locally-created context
+		if (useLocallyCreatedContext_)
+		{
+			CRect rect;
+			GetClientRect(&rect);
+
+			boost::scoped_ptr<context_type> context;
+			if (1 == drawMode_)
+				context.reset(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect));
+			else if (2 == drawMode_)
+				context.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect));
+
+			if (context.get() && context->isActivated())
+			{
+				initializeView();
+				camera->setViewport(0, 0, rect.Width(), rect.Height());
+				renderScene(*context, *camera);
+			}
+		}
+		else
+		{
+			const boost::shared_ptr<context_type> &context = topContext();
+			if (context.get() && context->isActivated())
+				renderScene(*context, *camera);
+		}
 	}
 }
 
@@ -158,7 +182,8 @@ void CWglViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
-	const int drawMode = 0x02;
+	drawMode_ = 2;  // [1, 2]
+	useLocallyCreatedContext_ = false;
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
@@ -177,9 +202,9 @@ void CWglViewTestView::OnInitialUpdate()
 	// This code is required for SWL.WglView: basic routine
 
 	// create a context
-	if ((0x01 & drawMode) == 0x01)
+	if (1 == drawMode_)
 		pushContext(boost::shared_ptr<context_type>(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false)));
-	else if ((0x02 & drawMode) == 0x02)
+	else if (2 == drawMode_)
 		pushContext(boost::shared_ptr<context_type>(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
 	// create a camera
@@ -191,7 +216,7 @@ void CWglViewTestView::OnInitialUpdate()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 
-	if (NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
+	if (!useLocallyCreatedContext_ && NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
 	{
 		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
 		if (viewStateFsm_.get()) viewStateFsm_->initiate();
@@ -229,6 +254,10 @@ void CWglViewTestView::OnInitialUpdate()
 		// de-activate the context
 		viewContext->deactivate();
 	}
+
+	// using a locally-created context
+	if (useLocallyCreatedContext_)
+		popContext();
 }
 
 void CWglViewTestView::OnDestroy()
@@ -246,16 +275,22 @@ void CWglViewTestView::OnPaint()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
 
-	const boost::shared_ptr<context_type> &viewContext = topContext();
-	if (viewContext.get())
+	// using a locally-created context
+	if (useLocallyCreatedContext_)
+		raiseDrawEvent(false);
+	else
 	{
-		if (viewContext->isOffScreenUsed())
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (context.get())
 		{
-			//viewContext->activate();
-			viewContext->swapBuffer();
-			//viewContext->deactivate();
+			if (context->isOffScreenUsed())
+			{
+				//context->activate();
+				context->swapBuffer();
+				//context->deactivate();
+			}
+			else raiseDrawEvent(true);
 		}
-		else raiseDrawEvent(true);
 	}
 
 	// Do not call CView::OnPaint() for painting messages
@@ -277,15 +312,15 @@ void CWglViewTestView::OnSize(UINT nType, int cx, int cy)
 
 bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
-	const boost::shared_ptr<context_type> &viewContext = topContext();
-	if (!viewContext.get() || viewContext->isDrawing())
-		return false;
-
 	if (isContextActivated)
 	{
-		viewContext->activate();
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (!context.get() || context->isDrawing())
+			return false;
+
+		context->activate();
 		OnDraw(0L);
-		viewContext->deactivate();
+		context->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -331,7 +366,7 @@ bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doPrepareRendering(const context_type &, const camera_type &)
+bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const camera_type &/*camera*/)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -341,7 +376,7 @@ bool CWglViewTestView::doPrepareRendering(const context_type &, const camera_typ
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderStockScene(const context_type &, const camera_type &)
+bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
     return true;
 }
@@ -349,7 +384,7 @@ bool CWglViewTestView::doRenderStockScene(const context_type &, const camera_typ
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderScene(const context_type &, const camera_type &)
+bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
 	glPushMatrix();
 		//glLoadIdentity();

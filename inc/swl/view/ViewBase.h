@@ -53,7 +53,8 @@ public:
 	}
 	void popContext()
 	{
-		contextStack_.pop();
+		if (!contextStack_.empty())
+			contextStack_.pop();
 	}
 	const boost::shared_ptr<context_type> & topContext() const
 	{
@@ -81,7 +82,8 @@ public:
 	}
 	void popCamera()
 	{
-		cameraStack_.pop();
+		if (!cameraStack_.empty())
+			cameraStack_.pop();
 	}
 	const boost::shared_ptr<camera_type> & topCamera() const
 	{

@@ -24,12 +24,12 @@ public:
 	virtual ~WinViewBase()  {}
 
 protected:
-	void renderScene(context_type &viewContext, camera_type &viewCamera);
+	void renderScene(context_type &context, camera_type &camera);
 
 private:
-	virtual bool doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera) = 0;
-	virtual bool doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera) = 0;
-	virtual bool doRenderScene(const context_type &viewContext, const camera_type &viewCamera) = 0;
+	virtual bool doPrepareRendering(const context_type &context, const camera_type &camera) = 0;
+	virtual bool doRenderStockScene(const context_type &context, const camera_type &camera) = 0;
+	virtual bool doRenderScene(const context_type &context, const camera_type &camera) = 0;
 };
 
 }  // namespace swl

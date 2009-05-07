@@ -164,8 +164,8 @@ public:
 	/// ==> OpenGL Red Book(p. 96)
 	bool mapWindowToObject(const double ptWin[3], double ptObj[3]) const;
 
-	/// update view frustum
-	bool updateFrustum()  {  return doUpdateFrustum();  }
+	/// update the camera
+	/*virtual*/ bool update()  {  return doUpdateFrustum();  }
 
 protected:
 	///

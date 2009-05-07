@@ -16,7 +16,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class WglViewBase
 
-void WglViewBase::renderScene(context_type &viewContext, camera_type &viewCamera)
+void WglViewBase::renderScene(context_type &context, camera_type &camera)
 {
 #ifdef _DEBUG
 	{
@@ -35,25 +35,25 @@ void WglViewBase::renderScene(context_type &viewContext, camera_type &viewCamera
 		glPushMatrix();
 			//
 			glLoadIdentity();
-			viewCamera.lookAt();
+			camera.lookAt();
 
 			//
 			glPushMatrix();
-				doPrepareRendering(viewContext, viewCamera);
+				doPrepareRendering(context, camera);
 			glPopMatrix();
 
 			glPushMatrix();
-				doRenderStockScene(viewContext, viewCamera);
+				doRenderStockScene(context, camera);
 			glPopMatrix();
 
-			doRenderScene(viewContext, viewCamera);
+			doRenderScene(context, camera);
 		glPopMatrix();
 	}
 
 	glFlush();
 
 	// swap buffers
-	viewContext.swapBuffer();
+	context.swapBuffer();
 
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 

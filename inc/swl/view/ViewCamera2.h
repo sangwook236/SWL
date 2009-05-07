@@ -136,6 +136,9 @@ public:
 	virtual bool scrollHorizontally(float fRatio);
 	virtual bool scrollVertically(float fRatio);
 
+	/// update the camera
+	virtual bool update()  {  return true;  }
+
 protected:
 	///
 	virtual bool doUpdateZoomFactor();

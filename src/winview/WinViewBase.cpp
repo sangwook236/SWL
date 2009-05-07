@@ -13,20 +13,20 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class WinViewBase
 
-void WinViewBase::renderScene(context_type &viewContext, camera_type &viewCamera)
+void WinViewBase::renderScene(context_type &context, camera_type &camera)
 {
 	// activate a context
-	//viewContext.activate();
+	//context.activate();
 
-	doPrepareRendering(viewContext, viewCamera);
-	doRenderStockScene(viewContext, viewCamera);
-	doRenderScene(viewContext, viewCamera);
+	doPrepareRendering(context, camera);
+	doRenderStockScene(context, camera);
+	doRenderScene(context, camera);
 
 	// swap buffers
-	viewContext.swapBuffer();
+	context.swapBuffer();
 
 	// de-activate the context
-	//viewContext.deactivate();
+	//context.deactivate();
 }
 
 }  // namespace swl

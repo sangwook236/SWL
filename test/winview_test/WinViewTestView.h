@@ -59,15 +59,9 @@ private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
-	/*virtual*/ bool doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera);
-	/*virtual*/ bool doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera);
-	/*virtual*/ bool doRenderScene(const context_type &viewContext, const camera_type &viewCamera);
-
-private:
-	void testGdiContext(const camera_type &viewCamera);
-	void testGdiBitmapBufferedContext(const camera_type &viewCamera);
-	void testGdiplusContext(const camera_type &viewCamera);
-	void testGdiplusBitmapBufferedContext(const camera_type &viewCamera);
+	/*virtual*/ bool doPrepareRendering(const context_type &context, const camera_type &camera);
+	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
+	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
 private:
 	//-------------------------------------------------------------------------
@@ -90,6 +84,9 @@ private:
 	data_type data2_;
 	size_t idx_;
 	UINT timeInterval_;
+
+	int drawMode_;
+	bool useLocallyCreatedContext_;
 
 // Generated message map functions
 protected:

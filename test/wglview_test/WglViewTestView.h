@@ -57,9 +57,9 @@ private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
 
-	/*virtual*/ bool doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera);
-	/*virtual*/ bool doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera);
-	/*virtual*/ bool doRenderScene(const context_type &viewContext, const camera_type &viewCamera);
+	/*virtual*/ bool doPrepareRendering(const context_type &context, const camera_type &camera);
+	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
+	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
 private:
 	//-------------------------------------------------------------------------
@@ -71,6 +71,12 @@ private:
 	// This code is required for SWL.WglView: view state
 
 	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
+
+	//-------------------------------------------------------------------------
+	//
+
+	int drawMode_;
+	bool useLocallyCreatedContext_;
 
 // Generated message map functions
 protected:
