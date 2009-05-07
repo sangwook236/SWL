@@ -1,6 +1,6 @@
 #include "swl/winview/WglViewBase.h"
 #include "swl/winview/WglContextBase.h"
-#include "swl/view/ViewCamera3.h"
+#include "swl/oglview/OglCamera.h"
 #include <GL/glut.h>
 #include <iostream>
 
@@ -16,7 +16,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class WglViewBase
 
-void WglViewBase::renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera)
+void WglViewBase::renderScene(context_type &context, camera_type &camera)
 {
 #ifdef _DEBUG
 	{

@@ -1,5 +1,5 @@
 #include "swl/view/ViewMatrix.h"
-#include <memory.h>
+#include <memory>
 #include <cmath>
 
 #if defined(WIN32) && defined(_DEBUG)

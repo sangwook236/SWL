@@ -7,7 +7,6 @@
 #include <boost/statechart/state.hpp>
 #include <boost/statechart/event.hpp>
 #include <boost/statechart/transition.hpp>
-#include <boost/statechart/custom_reaction.hpp>
 #include <boost/statechart/deep_history.hpp>
 #include <boost/mpl/list.hpp>
 
@@ -51,7 +50,7 @@ struct EvtBackToPreviousState: public boost::statechart::event<EvtBackToPrevious
 //-----------------------------------------------------------------------------------
 // 
 
-struct ViewBase;
+struct IView;
 struct ViewContext;
 class ViewCamera2;
 
@@ -59,7 +58,7 @@ struct NotTransientState;
 struct ViewStateMachine: public boost::statechart::state_machine<ViewStateMachine, NotTransientState>
 {
 public:
-	ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera2 &camera);
+	ViewStateMachine(IView &view, ViewContext &context, ViewCamera2 &camera);
 
 private:
 	ViewStateMachine(const ViewStateMachine &);
@@ -79,15 +78,15 @@ public:
 
 	void hitKey(const KeyEvent &evt);
 
-	ViewBase & getView()  {  return view_;  }
-	const ViewBase & getView() const  {  return view_;  }
+	IView & getView()  {  return view_;  }
+	const IView & getView() const  {  return view_;  }
 	ViewContext & getViewContext()  {  return context_;  }
 	const ViewContext & getViewContext() const  {  return context_;  }
 	ViewCamera2 & getViewCamera()  {  return camera_;  }
 	const ViewCamera2 & getViewCamera() const  {  return camera_;  }
 	
 private:
-	ViewBase &view_;
+	IView &view_;
 	ViewContext &context_;
 	ViewCamera2 &camera_;
 };

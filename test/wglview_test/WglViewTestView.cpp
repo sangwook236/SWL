@@ -32,8 +32,9 @@ BEGIN_MESSAGE_MAP(CWglViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
-	ON_WM_SIZE()
+	ON_WM_DESTROY()
 	ON_WM_PAINT()
+	ON_WM_SIZE()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
@@ -65,7 +66,7 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-: viewContext_(), viewCamera_(), viewStateFsm_()
+: viewStateFsm_()
 {
 }
 
@@ -99,8 +100,10 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 	}
 	else
 	{
-		if (viewContext_.get() && viewCamera_.get() && viewContext_->isActivated())
-			renderScene(*viewContext_, *viewCamera_);
+		const boost::shared_ptr<context_type> &viewContext = topContext();
+		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
+		if (viewContext.get() && viewCamera.get() && viewContext->isActivated())
+			renderScene(*viewContext, *viewCamera);
 	}
 }
 
@@ -174,24 +177,23 @@ void CWglViewTestView::OnInitialUpdate()
 	// This code is required for SWL.WglView: basic routine
 
 	// create a context
-	if (NULL == viewContext_.get())
-	{
-		if ((0x01 & drawMode) == 0x01)
-			viewContext_.reset(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false));
-		if ((0x02 & drawMode) == 0x02)
-			viewContext_.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false));
-	}
+	if ((0x01 & drawMode) == 0x01)
+		pushContext(boost::shared_ptr<context_type>(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false)));
+	else if ((0x02 & drawMode) == 0x02)
+		pushContext(boost::shared_ptr<context_type>(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
 	// create a camera
-	if (NULL == viewCamera_.get())
-		viewCamera_.reset(new swl::OglCamera());
+	pushCamera(boost::shared_ptr<camera_type>(new swl::OglCamera()));
+
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 
-	if (NULL == viewStateFsm_.get() && NULL != viewContext_.get() && NULL != viewCamera_.get())
+	if (NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
 	{
-		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext_, *viewCamera_));
+		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
 		if (viewStateFsm_.get()) viewStateFsm_->initiate();
 	}
 
@@ -199,34 +201,42 @@ void CWglViewTestView::OnInitialUpdate()
 	// This code is required for SWL.WinView: basic routine
 
 	// initialize a view
-	if (viewContext_.get())
+	if (viewContext.get())
 	{
 		// activate the context
-		viewContext_->activate();
+		viewContext->activate();
 
 		// set the view
 		initializeView();
 
 		// set the camera
-		if (viewCamera_.get())
+		if (viewCamera.get())
 		{
-			//viewCamera_->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
-			viewCamera_->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
-			//viewCamera_->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
+			//viewCamera->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
+			viewCamera->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
+			//viewCamera->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
-			viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
-			viewCamera_->setEyePosition(1000.0, 1000.0, 1000.0, false);
-			viewCamera_->setEyeDistance(8000.0, false);
-			viewCamera_->setObjectPosition(0.0, 0.0, 0.0);
-			//viewCamera_->setEyeDistance(1000.0, false);
-			//viewCamera_->setObjectPosition(110.0, 110.0, 150.0);
+			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
+			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
+			viewCamera->setEyeDistance(8000.0, false);
+			viewCamera->setObjectPosition(0.0, 0.0, 0.0);
+			//viewCamera->setEyeDistance(1000.0, false);
+			//viewCamera->setObjectPosition(110.0, 110.0, 150.0);
 		}
 
 		raiseDrawEvent(false);
 
 		// de-activate the context
-		viewContext_->deactivate();
+		viewContext->deactivate();
 	}
+}
+
+void CWglViewTestView::OnDestroy()
+{
+	CView::OnDestroy();
+
+	popContext();
+	popCamera();
 }
 
 void CWglViewTestView::OnPaint()
@@ -236,13 +246,14 @@ void CWglViewTestView::OnPaint()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
 
-	if (viewContext_.get())
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (viewContext.get())
 	{
-		if (viewContext_->isOffScreenUsed())
+		if (viewContext->isOffScreenUsed())
 		{
-			//viewContext_->activate();
-			viewContext_->swapBuffer();
-			//viewContext_->deactivate();
+			//viewContext->activate();
+			viewContext->swapBuffer();
+			//viewContext->deactivate();
 		}
 		else raiseDrawEvent(true);
 	}
@@ -266,14 +277,15 @@ void CWglViewTestView::OnSize(UINT nType, int cx, int cy)
 
 bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
-	if (NULL == viewContext_.get() || viewContext_->isDrawing())
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (!viewContext.get() || viewContext->isDrawing())
 		return false;
 
 	if (isContextActivated)
 	{
-		viewContext_->activate();
+		viewContext->activate();
 		OnDraw(0L);
-		viewContext_->deactivate();
+		viewContext->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -301,13 +313,15 @@ bool CWglViewTestView::initializeView()
 
 bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
-	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (viewContext.get() && viewContext->resize(x1, y1, x2, y2))
 	{
-		viewContext_->activate();
+		viewContext->activate();
 		initializeView();
-		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);
+		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
+		if (viewCamera.get()) viewCamera->setViewport(x1, y1, x2, y2);
 		raiseDrawEvent(false);
-		viewContext_->deactivate();
+		viewContext->deactivate();
 
 		return true;
 	}

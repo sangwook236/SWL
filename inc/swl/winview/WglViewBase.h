@@ -9,21 +9,22 @@
 namespace swl {
 
 class WglContextBase;
-class ViewCamera3;
+class OglCamera;
 
 //-----------------------------------------------------------------------------------
 // 
 
-struct SWL_WIN_VIEW_API WglViewBase: public ViewBase
+struct SWL_WIN_VIEW_API WglViewBase: public ViewBase<WglContextBase, OglCamera>
 {
 public:
-	typedef ViewBase base_type;
+	typedef ViewBase<context_type, camera_type> base_type;
 
 public:
+	WglViewBase()  {}
 	virtual ~WglViewBase()  {}
 
 protected:
-	void renderScene(swl::WglContextBase &context, swl::ViewCamera3 &camera);
+	void renderScene(context_type &context, camera_type &camera);
 
 private:
 	virtual bool doPrepareRendering() = 0;

@@ -64,19 +64,12 @@ private:
 	/*virtual*/ bool doRenderScene();
 
 private:
-	void test1();
-	void test2();
-	void test3();
-	void test4();
-	void test5();
+	void testGdiContext(const camera_type &viewCamera);
+	void testGdiBitmapBufferedContext(const camera_type &viewCamera);
+	void testGdiplusContext(const camera_type &viewCamera);
+	void testGdiplusBitmapBufferedContext(const camera_type &viewCamera);
 
 private:
-	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
-
-	boost::scoped_ptr<swl::GdiplusBitmapBufferedContext> viewContext_;
-	boost::scoped_ptr<swl::ViewCamera2> viewCamera_;
-
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: event handling
 
@@ -98,16 +91,15 @@ private:
 	size_t idx_;
 	UINT timeInterval_;
 
-	int drawMode_;
-
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	virtual void OnInitialUpdate();
-	afx_msg void OnTimer(UINT_PTR nIDEvent);
-	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnDestroy();
 	afx_msg void OnPaint();
+	afx_msg void OnSize(UINT nType, int cx, int cy);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonUp(UINT nFlags, CPoint point);
 	afx_msg void OnLButtonDblClk(UINT nFlags, CPoint point);

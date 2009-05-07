@@ -20,7 +20,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 // 
 
-ViewStateMachine::ViewStateMachine(ViewBase &view, ViewContext &context, ViewCamera2 &camera)
+ViewStateMachine::ViewStateMachine(IView &view, ViewContext &context, ViewCamera2 &camera)
 : view_(view), context_(context), camera_(camera)
 {
 }
@@ -172,7 +172,7 @@ void PanState::releaseMouse(const MouseEvent &evt)
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -199,7 +199,7 @@ void PanState::moveMouse(const MouseEvent &evt)
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -245,7 +245,7 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -269,7 +269,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -333,7 +333,7 @@ void ZoomRegionState::wheelMouse(const MouseEvent &evt)
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -388,7 +388,7 @@ void ZoomAllState::handleEvent()
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -419,7 +419,7 @@ void ZoomInState::handleEvent()
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
@@ -450,7 +450,7 @@ void ZoomOutState::handleEvent()
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
-		ViewBase &view = fsm.getView();
+		IView &view = fsm.getView();
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 

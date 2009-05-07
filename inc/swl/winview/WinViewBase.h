@@ -14,12 +14,13 @@ class ViewCamera2;
 //-----------------------------------------------------------------------------------
 // 
 
-struct SWL_WIN_VIEW_API WinViewBase: public ViewBase
+struct SWL_WIN_VIEW_API WinViewBase: public ViewBase<ViewContext, ViewCamera2>
 {
 public:
-	typedef ViewBase base_type;
+	typedef ViewBase<context_type, camera_type> base_type;
 
 public:
+	WinViewBase()  {}
 	virtual ~WinViewBase()  {}
 
 protected:

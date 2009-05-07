@@ -34,9 +34,10 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
-	ON_WM_TIMER()
-	ON_WM_SIZE()
+	ON_WM_DESTROY()
 	ON_WM_PAINT()
+	ON_WM_SIZE()
+	ON_WM_TIMER()
 	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_LBUTTONDBLCLK()
@@ -68,7 +69,7 @@ END_MESSAGE_MAP()
 // CWinViewTestView construction/destruction
 
 CWinViewTestView::CWinViewTestView()
-: viewContext_(), viewCamera_(), viewStateFsm_()
+: viewStateFsm_()
 {
 }
 
@@ -154,11 +155,9 @@ void CWinViewTestView::OnInitialUpdate()
 	CView::OnInitialUpdate();
 
 	//
-	drawMode_ = 5;  // [1, 5]
-
 	idx_ = 0;
 	timeInterval_ = 50;
-	//SetTimer(1, timeInterval_, NULL);
+	SetTimer(1, timeInterval_, NULL);
 
 	for (int i = 0; i < 5000; ++i)
 	{
@@ -185,23 +184,30 @@ void CWinViewTestView::OnInitialUpdate()
 */
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
-
+	
 	// create a context
-	if (5 == drawMode_ && NULL == viewContext_.get())
-	{
-		viewContext_.reset(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, false));
-	}
+	const int drawMode = 2;  // [1, 4]
+	if (1 == drawMode)
+		pushContext(boost::shared_ptr<context_type>(new swl::GdiContext(GetSafeHwnd(), false)));
+	else if (2 == drawMode)
+		pushContext(boost::shared_ptr<context_type>(new swl::GdiBitmapBufferedContext(GetSafeHwnd(), rect, false)));
+	else if (3 == drawMode)
+		pushContext(boost::shared_ptr<context_type>(new swl::GdiplusContext(GetSafeHwnd(), false)));
+	else if (4 == drawMode)
+		pushContext(boost::shared_ptr<context_type>(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
 	// create a camera
-	if (NULL == viewCamera_.get())
-		viewCamera_.reset(new swl::ViewCamera2());
+	pushCamera(boost::shared_ptr<camera_type>(new swl::ViewCamera2()));
+
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 
-	if (NULL == viewStateFsm_.get() && NULL != viewContext_.get() && NULL != viewCamera_.get())
+	if (NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
 	{
-		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext_, *viewCamera_));
+		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
 		if (viewStateFsm_.get()) viewStateFsm_->initiate();
 	}
 
@@ -209,27 +215,35 @@ void CWinViewTestView::OnInitialUpdate()
 	// This code is required for SWL.WinView: basic routine
 
 	// initialize a view
-	if (viewContext_.get())
+	if (viewContext.get())
 	{
 		// activate the context
-		viewContext_->activate();
+		viewContext->activate();
 
 		// set the view
 		initializeView();
 
 		// set the camera
-		if (viewCamera_.get())
+		if (viewCamera.get())
 		{
 			// TODO [check] >>
-			viewCamera_->setViewBound(rect.left - 100, rect.top - 100, rect.right + 100, rect.bottom + 100);
-			viewCamera_->setViewport(0, 0, rect.Width(), rect.Height());
+			viewCamera->setViewBound(rect.left - 100, rect.top - 100, rect.right + 100, rect.bottom + 100);
+			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
 		}
 
 		raiseDrawEvent(false);
 
 		// de-activate the context
-		viewContext_->deactivate();
+		viewContext->deactivate();
 	}
+}
+
+void CWinViewTestView::OnDestroy()
+{
+	CView::OnDestroy();
+
+	popContext();
+	popCamera();
 }
 
 void CWinViewTestView::OnPaint()
@@ -239,46 +253,19 @@ void CWinViewTestView::OnPaint()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
-	if (1 <= drawMode_ && drawMode_ <= 4)
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (viewContext.get())
 	{
-		raiseDrawEvent(true);
-	}
-	else if (5 == drawMode_)
-	{
-		if (viewContext_.get())
+		if (viewContext->isOffScreenUsed())
 		{
-			if (viewContext_->isOffScreenUsed())
-			{
-				//viewContext_->activate();
-				viewContext_->swapBuffer();
-				//viewContext_->deactivate();
-			}
-			else raiseDrawEvent(true);
+			//viewContext->activate();
+			viewContext->swapBuffer();
+			//viewContext->deactivate();
 		}
+		else raiseDrawEvent(true);
 	}
 
 	// Do not call CView::OnPaint() for painting messages
-}
-
-void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
-{
-	// TODO: Add your message handler code here and/or call default
-	const double x = (double)idx_ * timeInterval_ / 1000.0;
-	const double y = std::cos(x) * 100.0 + 100.0;
-	data2_.push_back(std::make_pair(idx_, (int)std::floor(y + 0.5)));
-
-	++idx_;
-
-	if (1 <= drawMode_ && drawMode_ <= 4)
-	{
-		OnDraw(0L);
-	}
-	else if (5 == drawMode_)
-	{
-		raiseDrawEvent(true);
-	}
-
-	CView::OnTimer(nIDEvent);
 }
 
 void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
@@ -290,14 +277,21 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 
 	if (cx <= 0 || cy <= 0) return;
 
-	if (1 <= drawMode_ && drawMode_ <= 4)
-	{
-		// do nothing
-	}
-	else if (5 == drawMode_)
-	{
-		resizeView(0, 0, cx, cy);
-	}
+	resizeView(0, 0, cx, cy);
+}
+
+void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
+{
+	// TODO: Add your message handler code here and/or call default
+	const double x = (double)idx_ * timeInterval_ / 1000.0;
+	const double y = std::cos(x) * 100.0 + 100.0;
+	data2_.push_back(std::make_pair(idx_, (int)std::floor(y + 0.5)));
+
+	++idx_;
+
+	raiseDrawEvent(true);
+
+	CView::OnTimer(nIDEvent);
 }
 
 //-------------------------------------------------------------------------
@@ -305,14 +299,15 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 
 bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
-	if (NULL == viewContext_.get() || viewContext_->isDrawing())
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (!viewContext.get() || viewContext->isDrawing())
 		return false;
 
 	if (isContextActivated)
 	{
-		viewContext_->activate();
+		viewContext->activate();
 		OnDraw(0L);
-		viewContext_->deactivate();
+		viewContext->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -332,13 +327,15 @@ bool CWinViewTestView::initializeView()
 
 bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
-	if (viewContext_.get() && viewContext_->resize(x1, y1, x2, y2))
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	if (viewContext.get() && viewContext->resize(x1, y1, x2, y2))
 	{
-		viewContext_->activate();
+		viewContext->activate();
 		initializeView();
-		if (viewCamera_.get()) viewCamera_->setViewport(x1, y1, x2, y2);	
+		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
+		if (viewCamera.get()) viewCamera->setViewport(x1, y1, x2, y2);	
 		raiseDrawEvent(false);
-		viewContext_->deactivate();
+		viewContext->deactivate();
 
 		return true;
 	}
@@ -367,30 +364,147 @@ bool CWinViewTestView::doRenderStockScene()
 
 bool CWinViewTestView::doRenderScene()
 {
-	switch (drawMode_)
+	const boost::shared_ptr<context_type> &viewContext = topContext();
+	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
+
+	//
+	if (viewCamera.get())
 	{
-	case 1:
-		test1();
-		break;
-	case 2:
-		test2();
-		break;
-	case 3:
-		test3();
-		break;
-	case 4:
-		test4();
-		break;
-	case 5:
-		test5();
-		break;
+		//testGdiContext(*viewCamera);
+		//testGdiBitmapBufferedContext(*viewCamera);
+		//testGdiplusContext(*viewCamera);
+		//testGdiplusBitmapBufferedContext(*viewCamera);
 	}
+
+	//
+	CRect rect;
+	GetClientRect(&rect);
+
+	// activate a context
+	//viewContext->activate();
+
+	const int lineWidth1 = 6;
+	const int lineWidth2 = 4;
+	const int lineWidth3 = 2;
+
+	try
+	{
+		HDC *dc = boost::any_cast<HDC *>(viewContext->getNativeContext());
+
+		if (dc && viewCamera.get())
+		{
+			CDC *pDC = CDC::FromHandle(*dc);
+
+			// clear the background
+			//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
+			pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
+
+			// draw contents
+			int vx, vy;
+
+			{
+				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
+				pDC->SelectObject(&pen);
+				viewCamera->mapNcToVc(100, 100, vx, vy);
+				pDC->MoveTo(vx, vy);
+				viewCamera->mapNcToVc(300, 300, vx, vy);
+				pDC->LineTo(vx, vy);
+			}
+
+			if (data1_.size() > 1)
+			{
+				CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
+				pDC->SelectObject(&pen);
+				data_type::iterator it = data1_.begin();
+				viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->MoveTo(vx, vy);
+				for (++it; it != data1_.end(); ++it)
+				{
+					viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+					pDC->LineTo(vx, vy);
+				}
+			}
+
+			if (data2_.size() > 1)
+			{
+				CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
+				pDC->SelectObject(&pen);
+				data_type::iterator it = data2_.begin();
+				viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+				pDC->MoveTo(vx, vy);
+				for (++it; it != data2_.end(); ++it)
+				{
+					viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+					pDC->LineTo(vx, vy);
+				}
+			}
+		}
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
+
+	try
+	{
+		Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(viewContext->getNativeContext());
+
+		if (graphics && viewCamera.get())
+		{
+			// clear the background
+			graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
+
+			// draw contents
+			int vx1, vy1, vx2, vy2;
+
+			{
+				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
+				viewCamera->mapNcToVc(100, 300, vx1, vy1);
+				viewCamera->mapNcToVc(300, 500, vx2, vy2);
+				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+			}
+
+			if (data1_.size() > 1)
+			{
+				Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
+				data_type::iterator prevIt = data1_.begin();
+				data_type::iterator it = data1_.begin();
+				for (++it; it != data1_.end(); ++prevIt, ++it)
+				{
+					viewCamera->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+					viewCamera->mapNcToVc(it->first, it->second, vx2, vy2);
+					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+				}
+			}
+
+			if (data2_.size() > 1)
+			{
+				Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
+				data_type::iterator prevIt = data2_.begin();
+				data_type::iterator it = data2_.begin();
+				for (++it; it != data2_.end(); ++prevIt, ++it)
+				{
+					viewCamera->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+					viewCamera->mapNcToVc(it->first, it->second, vx2, vy2);
+					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+				}
+			}
+		}
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
+
+	// swap buffers
+	viewContext->swapBuffer();
+
+	// de-activate the context
+	//viewContext->deactivate();
 
     return true;
 }
 
 // use single-buffered GDI context
-void CWinViewTestView::test1()
+void CWinViewTestView::testGdiContext(const camera_type &viewCamera)
 {
 	CRect rect;
 	GetClientRect(&rect);
@@ -406,7 +520,7 @@ void CWinViewTestView::test1()
 	{
 	}
 
-	if (dc && viewCamera_.get())
+	if (dc)
 	{
 		CDC *pDC = CDC::FromHandle(*dc);
 
@@ -420,9 +534,9 @@ void CWinViewTestView::test1()
 		{
 			CPen pen(PS_SOLID, 2, RGB(255, 0, 0));
 			pDC->SelectObject(&pen);
-			viewCamera_->mapNcToVc(100, 100, vx, vy);
+			viewCamera.mapNcToVc(100, 100, vx, vy);
 			pDC->MoveTo(vx, vy);
-			viewCamera_->mapNcToVc(300, 300, vx, vy);
+			viewCamera.mapNcToVc(300, 300, vx, vy);
 			pDC->LineTo(vx, vy);
 		}
 
@@ -431,11 +545,11 @@ void CWinViewTestView::test1()
 			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data1_.begin();
-			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 			pDC->MoveTo(vx, vy);
 			for (++it; it != data1_.end(); ++it)
 			{
-				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->LineTo(vx, vy);
 			}
 		}
@@ -445,11 +559,11 @@ void CWinViewTestView::test1()
 			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data2_.begin();
-			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 			pDC->MoveTo(vx, vy);
 			for (++it; it != data2_.end(); ++it)
 			{
-				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->LineTo(vx, vy);
 			}
 		}
@@ -460,7 +574,7 @@ void CWinViewTestView::test1()
 }
 
 // use double(bitmap)-buffered GDI context
-void CWinViewTestView::test2()
+void CWinViewTestView::testGdiBitmapBufferedContext(const camera_type &viewCamera)
 {
 	CRect rect;
 	GetClientRect(&rect);
@@ -476,7 +590,7 @@ void CWinViewTestView::test2()
 	{
 	}
 
-	if (dc && viewCamera_.get())
+	if (dc)
 	{
 		CDC *pDC = CDC::FromHandle(*dc);
 
@@ -491,9 +605,9 @@ void CWinViewTestView::test2()
 		{
 			CPen pen(PS_SOLID, 3, RGB(255, 0, 0));
 			pDC->SelectObject(&pen);
-			viewCamera_->mapNcToVc(100, 150, vx, vy);
+			viewCamera.mapNcToVc(100, 150, vx, vy);
 			pDC->MoveTo(vx, vy);
-			viewCamera_->mapNcToVc(300, 350, vx, vy);
+			viewCamera.mapNcToVc(300, 350, vx, vy);
 			pDC->LineTo(vx, vy);
 		}
 
@@ -502,11 +616,11 @@ void CWinViewTestView::test2()
 			CPen pen(PS_SOLID, 3, RGB(0, 255, 0));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data1_.begin();
-			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 			pDC->MoveTo(vx, vy);
 			for (++it; it != data1_.end(); ++it)
 			{
-				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->LineTo(vx, vy);
 			}
 		}
@@ -516,11 +630,11 @@ void CWinViewTestView::test2()
 			CPen pen(PS_SOLID, 3, RGB(0, 0, 255));
 			pDC->SelectObject(&pen);
 			data_type::iterator it = data2_.begin();
-			viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+			viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 			pDC->MoveTo(vx, vy);
 			for (++it; it != data2_.end(); ++it)
 			{
-				viewCamera_->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->LineTo(vx, vy);
 			}
 		}
@@ -531,7 +645,7 @@ void CWinViewTestView::test2()
 }
 
 // use single-buffered GDI+ context
-void CWinViewTestView::test3()
+void CWinViewTestView::testGdiplusContext(const camera_type &viewCamera)
 {
 	// create a context
 	swl::GdiplusContext ctx(GetSafeHwnd());
@@ -544,7 +658,7 @@ void CWinViewTestView::test3()
 	{
 	}
 
-	if (graphics && viewCamera_.get())
+	if (graphics)
 	{
 		// clear the background
 		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
@@ -554,8 +668,8 @@ void CWinViewTestView::test3()
 
 		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 4.0f);
-			viewCamera_->mapNcToVc(100, 200, vx1, vy1);
-			viewCamera_->mapNcToVc(300, 400, vx2, vy2);
+			viewCamera.mapNcToVc(100, 200, vx1, vy1);
+			viewCamera.mapNcToVc(300, 400, vx2, vy2);
 			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 		}
 
@@ -566,8 +680,8 @@ void CWinViewTestView::test3()
 			data_type::iterator it = data1_.begin();
 			for (++it; it != data1_.end(); ++prevIt, ++it)
 			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 		}
@@ -579,8 +693,8 @@ void CWinViewTestView::test3()
 			data_type::iterator it = data2_.begin();
 			for (++it; it != data2_.end(); ++prevIt, ++it)
 			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 		}
@@ -591,7 +705,7 @@ void CWinViewTestView::test3()
 }
 
 // use double(bitmap)-buffered GDI+ context
-void CWinViewTestView::test4()
+void CWinViewTestView::testGdiplusBitmapBufferedContext(const camera_type &viewCamera)
 {
 	CRect rect;
 	GetClientRect(&rect);
@@ -607,7 +721,7 @@ void CWinViewTestView::test4()
 	{
 	}
 
-	if (graphics && viewCamera_.get())
+	if (graphics)
 	{
 		// clear the background
 		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
@@ -617,8 +731,8 @@ void CWinViewTestView::test4()
 
 		{
 			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 5.0f);
-			viewCamera_->mapNcToVc(100, 250, vx1, vy1);
-			viewCamera_->mapNcToVc(300, 450, vx2, vy2);
+			viewCamera.mapNcToVc(100, 250, vx1, vy1);
+			viewCamera.mapNcToVc(300, 450, vx2, vy2);
 			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 		}
 
@@ -629,8 +743,8 @@ void CWinViewTestView::test4()
 			data_type::iterator it = data1_.begin();
 			for (++it; it != data1_.end(); ++prevIt, ++it)
 			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 		}
@@ -642,8 +756,8 @@ void CWinViewTestView::test4()
 			data_type::iterator it = data2_.begin();
 			for (++it; it != data2_.end(); ++prevIt, ++it)
 			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
+				viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+				viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 		}
@@ -651,73 +765,6 @@ void CWinViewTestView::test4()
 
 	// swap buffers
 	ctx.swapBuffer();
-}
-
-// use double(bitmap)-buffered GDI+ context
-void CWinViewTestView::test5()
-{
-	CRect rect;
-	GetClientRect(&rect);
-
-	// activate a context
-	//viewContext_->activate();
-
-	Gdiplus::Graphics *graphics = NULL;
-	try
-	{
-		graphics = boost::any_cast<Gdiplus::Graphics *>(viewContext_->getNativeContext());
-	}
-	catch (const boost::bad_any_cast &)
-	{
-	}
-
-	if (graphics && viewCamera_.get())
-	{
-		// clear the background
-		graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
-
-		// draw contents
-		int vx1, vy1, vx2, vy2;
-
-		{
-			Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), 6.0f);
-			viewCamera_->mapNcToVc(100, 300, vx1, vy1);
-			viewCamera_->mapNcToVc(300, 500, vx2, vy2);
-			graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
-		}
-
-		if (data1_.size() > 1)
-		{
-			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), 6.0f);
-			data_type::iterator prevIt = data1_.begin();
-			data_type::iterator it = data1_.begin();
-			for (++it; it != data1_.end(); ++prevIt, ++it)
-			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
-				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
-			}
-		}
-
-		if (data2_.size() > 1)
-		{
-			Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), 6.0f);
-			data_type::iterator prevIt = data2_.begin();
-			data_type::iterator it = data2_.begin();
-			for (++it; it != data2_.end(); ++prevIt, ++it)
-			{
-				viewCamera_->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-				viewCamera_->mapNcToVc(it->first, it->second, vx2, vy2);
-				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
-			}
-		}
-	}
-
-	// swap buffers
-	viewContext_->swapBuffer();
-
-	// de-activate the context
-	//viewContext_->deactivate();
 }
 
 void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
