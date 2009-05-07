@@ -191,7 +191,7 @@ bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 	const double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5 + rctViewRegion.getCenterY();
 
 	int iX, iY;
-	if (base_type::mapNcToVc(dNCx, dNCy, iX, iY))
+	if (base_type::mapCanvasToWindow(dNCx, dNCy, iX, iY))
 	{
 		ptWin[0] = double(iX);
 		ptWin[1] = double(iY);
@@ -214,7 +214,7 @@ bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 	//--E [] 2001/08/08
 */
 	double dNCx, dNCy;
-	if (rctViewRegion.isValid() && base_type::mapVcToNc(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
+	if (rctViewRegion.isValid() && base_type::mapWindowToCanvas(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
 	{
 		// if perspective, -1.0 <= x, y <= 1.0 at near plane
 		// if orthographic, -1.0 <= x, y <= 1.0

@@ -50,7 +50,7 @@ public:
 		rdLeft = viewBound_.left;  rdBottom = viewBound_.bottom;
 		rdRight = viewBound_.right;  rdTop = viewBound_.top;
 	}
-    virtual Region2<double> getViewBound()  {  return viewBound_;  }
+    virtual Region2<double> getViewBound() const  {  return viewBound_;  }
 
 	///
     virtual bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar)
@@ -119,15 +119,12 @@ public:
 	/// this function is needed usually in 3D, but not 2D 
 	virtual void lookAt()  {}
 
-	/// VC: viewport coordinates, NC: normalized coordinates
-    /// VC ==> NC: convert a viewport coordinates to a normalized coordinates
-    ///			   i.e. convert a screen coordinates to a canvas coordinates
-    virtual bool mapVcToNc(int iVCx, int iVCy, double& rNCx, double& rNCy) const;
-    virtual bool mapVcToNc(const Point2<int>& rVC, Point2<double>& rNC) const;
-    /// NC ==> VC: convert a normalized coordinates to a viewport coordinates
-    ///			   i.e. convert a canvas coordinates to a screen coordinates
-    virtual bool mapNcToVc(double dNCx, double dNCy, int& rVCx, int& rVCy) const;
-    virtual bool mapNcToVc(const Point2<double>& rNC, Point2<int>& rVC) const;
+	/// map a window(screen, viewport) coordinates to a canvas(normalized, object) coordinates
+    virtual bool mapWindowToCanvas(int iVCx, int iVCy, double& rNCx, double& rNCy) const;
+    virtual bool mapWindowToCanvas(const Point2<int>& rVC, Point2<double>& rNC) const;
+    /// map a canvas(normalized, object) coordinates to a window(screen, viewport) coordinates
+    virtual bool mapCanvasToWindow(double dNCx, double dNCy, int& rVCx, int& rVCy) const;
+    virtual bool mapCanvasToWindow(const Point2<double>& rNC, Point2<int>& rVC) const;
 
 	/// for scrolling window
 	virtual bool getHorizontalRatio(float& rfPosRatio, float& rfWidthRatio);

@@ -192,7 +192,7 @@ void CWinViewTestView::OnInitialUpdate()
 
 	for (int i = 0; i < 5000; ++i)
 	{
-		const double x = (double)i * timeInterval_ / 1000.0;
+		const double x = (double)i * timeInterval_ / 10000.0;
 		const double y = std::sin(x) * 100.0 + 100.0;
 		data1_.push_back(std::make_pair(i, (int)std::floor(y + 0.5)));
 	}
@@ -427,40 +427,54 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			int vx, vy;
 
 			{
+				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
+				CPen *oldPen = pDC->SelectObject(&pen);
+				const swl::Region2<double> bound = camera.getViewBound();
+				int vx0, vy0;
+				camera.mapCanvasToWindow(bound.left, bound.bottom, vx0, vy0);
+				camera.mapCanvasToWindow(bound.right, bound.top, vx, vy);
+				pDC->Rectangle(vx0, vy0, vx, vy);
+				pDC->SelectObject(oldPen);
+			}
+
+			{
 				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
-				pDC->SelectObject(&pen);
-				camera.mapNcToVc(100, 100, vx, vy);
+				CPen *oldPen = pDC->SelectObject(&pen);
+				camera.mapCanvasToWindow(100, 100, vx, vy);
 				pDC->MoveTo(vx, vy);
-				camera.mapNcToVc(300, 300, vx, vy);
+				camera.mapCanvasToWindow(300, 300, vx, vy);
 				pDC->LineTo(vx, vy);
+				pDC->SelectObject(oldPen);
 			}
 
 			if (data1_.size() > 1)
 			{
 				CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
-				pDC->SelectObject(&pen);
+				CPen *oldPen = pDC->SelectObject(&pen);
 				data_type::iterator it = data1_.begin();
-				camera.mapNcToVc(it->first, it->second, vx, vy);
+				camera.mapCanvasToWindow(it->first, it->second, vx, vy);
 				pDC->MoveTo(vx, vy);
 				for (++it; it != data1_.end(); ++it)
 				{
-					camera.mapNcToVc(it->first, it->second, vx, vy);
+					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
 					pDC->LineTo(vx, vy);
 				}
+				pDC->SelectObject(oldPen);
 			}
 
 			if (data2_.size() > 1)
 			{
 				CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
-				pDC->SelectObject(&pen);
+				CPen *oldPen = pDC->SelectObject(&pen);
 				data_type::iterator it = data2_.begin();
-				camera.mapNcToVc(it->first, it->second, vx, vy);
+				camera.mapCanvasToWindow(it->first, it->second, vx, vy);
 				pDC->MoveTo(vx, vy);
 				for (++it; it != data2_.end(); ++it)
 				{
-					camera.mapNcToVc(it->first, it->second, vx, vy);
+					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
 					pDC->LineTo(vx, vy);
 				}
+				pDC->SelectObject(oldPen);
 			}
 		}
 	}
@@ -480,9 +494,17 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			int vx1, vy1, vx2, vy2;
 
 			{
+				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+				const swl::Region2<double> bound = camera.getViewBound();
+				camera.mapCanvasToWindow(bound.left, bound.bottom, vx1, vy1);
+				camera.mapCanvasToWindow(bound.right, bound.top, vx2, vy2);
+				graphics->DrawRectangle(&pen, vx1, vy1, vx2 - vx1, vy2 - vy1);
+			}
+
+			{
 				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
-				camera.mapNcToVc(100, 300, vx1, vy1);
-				camera.mapNcToVc(300, 500, vx2, vy2);
+				camera.mapCanvasToWindow(100, 300, vx1, vy1);
+				camera.mapCanvasToWindow(300, 500, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 
@@ -493,8 +515,8 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				data_type::iterator it = data1_.begin();
 				for (++it; it != data1_.end(); ++prevIt, ++it)
 				{
-					camera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-					camera.mapNcToVc(it->first, it->second, vx2, vy2);
+					camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
+					camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 				}
 			}
@@ -506,8 +528,8 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				data_type::iterator it = data2_.begin();
 				for (++it; it != data2_.end(); ++prevIt, ++it)
 				{
-					camera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-					camera.mapNcToVc(it->first, it->second, vx2, vy2);
+					camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
+					camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 				}
 			}

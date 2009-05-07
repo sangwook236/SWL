@@ -180,7 +180,7 @@ inline bool ViewCamera2::setView(int iX1, int iY1, int iX2, int iY2)
 	if (!rctView.isValid())  return false;
 
 	Point2<double> ptNC1, ptNC2;
-	if (!mapVcToNc(Point2<int>(rctView.left, rctView.bottom), ptNC1) || !mapVcToNc(Point2<int>(rctView.right, rctView.top), ptNC2))
+	if (!mapWindowToCanvas(Point2<int>(rctView.left, rctView.bottom), ptNC1) || !mapWindowToCanvas(Point2<int>(rctView.right, rctView.top), ptNC2))
 		return false;
 
 	// move the center of a viewing region
@@ -198,7 +198,7 @@ inline bool ViewCamera2::rotateView(int iDeltaX, int iDeltaY)
 	return rotateViewRegion(double(iDeltaX)/zoomFactor_, double(iDeltaY)/zoomFactor_);
 }
 
-inline bool ViewCamera2::mapVcToNc(int iVCx, int iVCy, double& rNCx, double& rNCy) const
+inline bool ViewCamera2::mapWindowToCanvas(int iVCx, int iVCy, double& rNCx, double& rNCy) const
 {
 	rNCx = double(iVCx-viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
 
@@ -215,7 +215,7 @@ inline bool ViewCamera2::mapVcToNc(int iVCx, int iVCy, double& rNCx, double& rNC
 	return true;
 }
 
-inline bool ViewCamera2::mapVcToNc(const Point2<int>& rVC, Point2<double>& rNC) const
+inline bool ViewCamera2::mapWindowToCanvas(const Point2<int>& rVC, Point2<double>& rNC) const
 {
 	rNC.x = double(rVC.x-viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
 	
@@ -232,7 +232,7 @@ inline bool ViewCamera2::mapVcToNc(const Point2<int>& rVC, Point2<double>& rNC) 
 	return true;
 }
 
-inline bool ViewCamera2::mapNcToVc(double dNCx, double dNCy, int& rVCx, int& rVCy) const
+inline bool ViewCamera2::mapCanvasToWindow(double dNCx, double dNCy, int& rVCx, int& rVCy) const
 {
 	rVCx = (int)round((dNCx-viewRegion_.getCenterX())*zoomFactor_) + viewport_.getCenterX();
 
@@ -249,7 +249,7 @@ inline bool ViewCamera2::mapNcToVc(double dNCx, double dNCy, int& rVCx, int& rVC
     return true;
 }
 
-inline bool ViewCamera2::mapNcToVc(const Point2<double>& rNC, Point2<int>& rVC) const
+inline bool ViewCamera2::mapCanvasToWindow(const Point2<double>& rNC, Point2<int>& rVC) const
 {
 	rVC.x = (int)round((rNC.x-viewRegion_.getCenterX())*zoomFactor_) + viewport_.getCenterX();
 

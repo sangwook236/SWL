@@ -37,7 +37,7 @@ public:
 	/// set the size of viewing volume: (left, bottom, right, top) is set wrt a eye coordinates frame
     /*virtual*/ bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar);
 	/// get the size of viewing volume
-    /*virtual*/ void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop, double& rdNear, double& rdFar)
+    /*virtual*/ void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop, double& rdNear, double& rdFar) const
 	{
 		base_type::getViewBound(rdLeft, rdBottom, rdRight, rdTop);
 		rdNear = nearPlane_;  rdFar = farPlane_;

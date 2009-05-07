@@ -66,13 +66,29 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	// copy off-screen buffer to window's DC
 	const bool ret = TRUE == BitBlt(
 		hDC_,
-		drawRegion_.left, drawRegion_.bottom,
-		drawRegion_.getWidth(), drawRegion_.getHeight(), 
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(), 
 		memDC_,
 		0, 0,  //drawRegion_.left, drawRegion_.bottom,
 		SRCCOPY
 	);
-
+/*
+	const bool ret = TRUE == StretchBlt(
+		hDC_,
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
+		memDC_,
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
+		SRCCOPY
+	);
+	const bool ret = TRUE == StretchDIBits(
+		hDC_,
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
+		(void *)bits_,
+		&bitsInfo_,
+		DIB_RGB_COLORS, //DIB_PAL_COLORS
+		SRCCOPY
+	);
+*/
 	setDrawing(false);
 	return ret;
 }

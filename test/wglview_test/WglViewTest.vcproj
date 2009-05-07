@@ -129,6 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				AdditionalOptions="/Gm"
 				AdditionalIncludeDirectories="../../inc"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
 				MinimalRebuild="false"
@@ -204,18 +205,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\WglViewTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestDoc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestView.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -243,6 +232,18 @@
 				RelativePath=".\ViewStateMachine.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\WglViewTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WglViewTestDoc.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WglViewTestView.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -255,18 +256,6 @@
 			</File>
 			<File
 				RelativePath=".\MainFrm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTest.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestDoc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestView.h"
 				>
 			</File>
 			<File
@@ -285,12 +274,28 @@
 				RelativePath=".\ViewStateMachine.h"
 				>
 			</File>
+			<File
+				RelativePath=".\WglViewTest.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WglViewTestDoc.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WglViewTestView.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\res\Toolbar.bmp"
+				>
+			</File>
 			<File
 				RelativePath=".\res\WglViewTest.ico"
 				>
@@ -305,10 +310,6 @@
 			</File>
 			<File
 				RelativePath=".\res\WglViewTestDoc.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\res\Toolbar.bmp"
 				>
 			</File>
 		</Filter>
