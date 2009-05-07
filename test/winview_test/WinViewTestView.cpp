@@ -103,7 +103,10 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 	}
 	else
 	{
-		renderScene();
+		const boost::shared_ptr<context_type> &viewContext = topContext();
+		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
+		if (viewContext.get() && viewCamera.get() && viewContext->isActivated())
+			renderScene(*viewContext, *viewCamera);
 	}
 }
 
@@ -186,7 +189,7 @@ void CWinViewTestView::OnInitialUpdate()
 	// This code is required for SWL.WinView: basic routine
 	
 	// create a context
-	const int drawMode = 2;  // [1, 4]
+	const int drawMode = 4;  // [1, 4]
 	if (1 == drawMode)
 		pushContext(boost::shared_ptr<context_type>(new swl::GdiContext(GetSafeHwnd(), false)));
 	else if (2 == drawMode)
@@ -345,7 +348,7 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 //-------------------------------------------------------------------------
 // This code is required for SWL.WinView: basic routine
 
-bool CWinViewTestView::doPrepareRendering()
+bool CWinViewTestView::doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera)
 {
 
     return true;
@@ -354,7 +357,7 @@ bool CWinViewTestView::doPrepareRendering()
 //-------------------------------------------------------------------------
 // This code is required for SWL.WinView: basic routine
 
-bool CWinViewTestView::doRenderStockScene()
+bool CWinViewTestView::doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera)
 {
     return true;
 }
@@ -362,26 +365,17 @@ bool CWinViewTestView::doRenderStockScene()
 //-------------------------------------------------------------------------
 // This code is required for SWL.WinView: basic routine
 
-bool CWinViewTestView::doRenderScene()
+bool CWinViewTestView::doRenderScene(const context_type &viewContext, const camera_type &viewCamera)
 {
-	const boost::shared_ptr<context_type> &viewContext = topContext();
-	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
-
-	//
-	if (viewCamera.get())
-	{
-		//testGdiContext(*viewCamera);
-		//testGdiBitmapBufferedContext(*viewCamera);
-		//testGdiplusContext(*viewCamera);
-		//testGdiplusBitmapBufferedContext(*viewCamera);
-	}
+	// using a locally-created context
+	//testGdiContext(viewCamera);
+	//testGdiBitmapBufferedContext(viewCamera);
+	//testGdiplusContext(viewCamera);
+	//testGdiplusBitmapBufferedContext(viewCamera);
 
 	//
 	CRect rect;
 	GetClientRect(&rect);
-
-	// activate a context
-	//viewContext->activate();
 
 	const int lineWidth1 = 6;
 	const int lineWidth2 = 4;
@@ -389,9 +383,8 @@ bool CWinViewTestView::doRenderScene()
 
 	try
 	{
-		HDC *dc = boost::any_cast<HDC *>(viewContext->getNativeContext());
-
-		if (dc && viewCamera.get())
+		HDC *dc = boost::any_cast<HDC *>(viewContext.getNativeContext());
+		if (dc)
 		{
 			CDC *pDC = CDC::FromHandle(*dc);
 
@@ -405,9 +398,9 @@ bool CWinViewTestView::doRenderScene()
 			{
 				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
 				pDC->SelectObject(&pen);
-				viewCamera->mapNcToVc(100, 100, vx, vy);
+				viewCamera.mapNcToVc(100, 100, vx, vy);
 				pDC->MoveTo(vx, vy);
-				viewCamera->mapNcToVc(300, 300, vx, vy);
+				viewCamera.mapNcToVc(300, 300, vx, vy);
 				pDC->LineTo(vx, vy);
 			}
 
@@ -416,11 +409,11 @@ bool CWinViewTestView::doRenderScene()
 				CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
 				pDC->SelectObject(&pen);
 				data_type::iterator it = data1_.begin();
-				viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->MoveTo(vx, vy);
 				for (++it; it != data1_.end(); ++it)
 				{
-					viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+					viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 					pDC->LineTo(vx, vy);
 				}
 			}
@@ -430,11 +423,11 @@ bool CWinViewTestView::doRenderScene()
 				CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
 				pDC->SelectObject(&pen);
 				data_type::iterator it = data2_.begin();
-				viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+				viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 				pDC->MoveTo(vx, vy);
 				for (++it; it != data2_.end(); ++it)
 				{
-					viewCamera->mapNcToVc(it->first, it->second, vx, vy);
+					viewCamera.mapNcToVc(it->first, it->second, vx, vy);
 					pDC->LineTo(vx, vy);
 				}
 			}
@@ -446,9 +439,8 @@ bool CWinViewTestView::doRenderScene()
 
 	try
 	{
-		Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(viewContext->getNativeContext());
-
-		if (graphics && viewCamera.get())
+		Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(viewContext.getNativeContext());
+		if (graphics)
 		{
 			// clear the background
 			graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
@@ -458,8 +450,8 @@ bool CWinViewTestView::doRenderScene()
 
 			{
 				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
-				viewCamera->mapNcToVc(100, 300, vx1, vy1);
-				viewCamera->mapNcToVc(300, 500, vx2, vy2);
+				viewCamera.mapNcToVc(100, 300, vx1, vy1);
+				viewCamera.mapNcToVc(300, 500, vx2, vy2);
 				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 			}
 
@@ -470,8 +462,8 @@ bool CWinViewTestView::doRenderScene()
 				data_type::iterator it = data1_.begin();
 				for (++it; it != data1_.end(); ++prevIt, ++it)
 				{
-					viewCamera->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-					viewCamera->mapNcToVc(it->first, it->second, vx2, vy2);
+					viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+					viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 				}
 			}
@@ -483,8 +475,8 @@ bool CWinViewTestView::doRenderScene()
 				data_type::iterator it = data2_.begin();
 				for (++it; it != data2_.end(); ++prevIt, ++it)
 				{
-					viewCamera->mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
-					viewCamera->mapNcToVc(it->first, it->second, vx2, vy2);
+					viewCamera.mapNcToVc(prevIt->first, prevIt->second, vx1, vy1);
+					viewCamera.mapNcToVc(it->first, it->second, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 				}
 			}
@@ -493,12 +485,6 @@ bool CWinViewTestView::doRenderScene()
 	catch (const boost::bad_any_cast &)
 	{
 	}
-
-	// swap buffers
-	viewContext->swapBuffer();
-
-	// de-activate the context
-	//viewContext->deactivate();
 
     return true;
 }

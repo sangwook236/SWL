@@ -331,7 +331,7 @@ bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doPrepareRendering()
+bool CWglViewTestView::doPrepareRendering(const context_type &, const camera_type &)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -341,7 +341,7 @@ bool CWglViewTestView::doPrepareRendering()
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderStockScene()
+bool CWglViewTestView::doRenderStockScene(const context_type &, const camera_type &)
 {
     return true;
 }
@@ -349,7 +349,7 @@ bool CWglViewTestView::doRenderStockScene()
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderScene()
+bool CWglViewTestView::doRenderScene(const context_type &, const camera_type &)
 {
 	glPushMatrix();
 		//glLoadIdentity();

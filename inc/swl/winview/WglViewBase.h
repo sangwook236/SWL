@@ -24,12 +24,12 @@ public:
 	virtual ~WglViewBase()  {}
 
 protected:
-	void renderScene(context_type &context, camera_type &camera);
+	void renderScene(context_type &viewContext, camera_type &viewCamera);
 
 private:
-	virtual bool doPrepareRendering() = 0;
-	virtual bool doRenderStockScene() = 0;
-	virtual bool doRenderScene() = 0;
+	virtual bool doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera) = 0;
+	virtual bool doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera) = 0;
+	virtual bool doRenderScene(const context_type &viewContext, const camera_type &viewCamera) = 0;
 };
 
 }  // namespace swl

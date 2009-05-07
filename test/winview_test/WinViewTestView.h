@@ -59,9 +59,9 @@ private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
-	/*virtual*/ bool doPrepareRendering();
-	/*virtual*/ bool doRenderStockScene();
-	/*virtual*/ bool doRenderScene();
+	/*virtual*/ bool doPrepareRendering(const context_type &viewContext, const camera_type &viewCamera);
+	/*virtual*/ bool doRenderStockScene(const context_type &viewContext, const camera_type &viewCamera);
+	/*virtual*/ bool doRenderScene(const context_type &viewContext, const camera_type &viewCamera);
 
 private:
 	void testGdiContext(const camera_type &viewCamera);
