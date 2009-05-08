@@ -412,131 +412,234 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 	const int lineWidth2 = 4;
 	const int lineWidth3 = 2;
 
-	try
+	if (context.isOffScreenUsed())
 	{
-		const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
-		if (dc)
+		try
 		{
-			CDC *pDC = CDC::FromHandle(*dc);
-
-			// clear the background
-			//pDC->SetBkColor(RGB(192, 192, 0));  // not working ???
-			pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
-
-			// draw contents
-			int vx, vy;
-
+			const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+			if (dc)
 			{
-				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
-				CPen *oldPen = pDC->SelectObject(&pen);
-				const swl::Region2<double> bound = camera.getViewBound();
-				int vx0, vy0;
-				camera.mapCanvasToWindow(bound.left, bound.bottom, vx0, vy0);
-				camera.mapCanvasToWindow(bound.right, bound.top, vx, vy);
-				pDC->Rectangle(vx0, vy0, vx, vy);
-				pDC->SelectObject(oldPen);
-			}
+				CDC *pDC = CDC::FromHandle(*dc);
 
-			{
-				CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
-				CPen *oldPen = pDC->SelectObject(&pen);
-				camera.mapCanvasToWindow(100, 100, vx, vy);
-				pDC->MoveTo(vx, vy);
-				camera.mapCanvasToWindow(300, 300, vx, vy);
-				pDC->LineTo(vx, vy);
-				pDC->SelectObject(oldPen);
-			}
+				// clear the background
+				//pDC->SetBkColor(RGB(240, 240, 240));  // not working ???
+				pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
 
-			if (data1_.size() > 1)
-			{
-				CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
-				CPen *oldPen = pDC->SelectObject(&pen);
-				data_type::iterator it = data1_.begin();
-				camera.mapCanvasToWindow(it->first, it->second, vx, vy);
-				pDC->MoveTo(vx, vy);
-				for (++it; it != data1_.end(); ++it)
+				// draw contents
 				{
-					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
-					pDC->LineTo(vx, vy);
+					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					const swl::Region2<double> bound = camera.getViewBound();
+					pDC->Rectangle(bound.left, bound.bottom, bound.right, bound.top);
+					pDC->SelectObject(oldPen);
 				}
-				pDC->SelectObject(oldPen);
-			}
 
-			if (data2_.size() > 1)
-			{
-				CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
-				CPen *oldPen = pDC->SelectObject(&pen);
-				data_type::iterator it = data2_.begin();
-				camera.mapCanvasToWindow(it->first, it->second, vx, vy);
-				pDC->MoveTo(vx, vy);
-				for (++it; it != data2_.end(); ++it)
 				{
-					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
-					pDC->LineTo(vx, vy);
+					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					pDC->MoveTo(100, 100);
+					pDC->LineTo(300, 300);
+					pDC->SelectObject(oldPen);
 				}
-				pDC->SelectObject(oldPen);
-			}
-		}
-	}
-	catch (const boost::bad_any_cast &)
-	{
-	}
 
-	try
-	{
-		Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
-		if (graphics)
-		{
-			// clear the background
-			graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
-
-			// draw contents
-			int vx1, vy1, vx2, vy2;
-
-			{
-				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
-				const swl::Region2<double> bound = camera.getViewBound();
-				camera.mapCanvasToWindow(bound.left, bound.bottom, vx1, vy1);
-				camera.mapCanvasToWindow(bound.right, bound.top, vx2, vy2);
-				graphics->DrawRectangle(&pen, vx1, vy1, vx2 - vx1, vy2 - vy1);
-			}
-
-			{
-				Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
-				camera.mapCanvasToWindow(100, 300, vx1, vy1);
-				camera.mapCanvasToWindow(300, 500, vx2, vy2);
-				graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
-			}
-
-			if (data1_.size() > 1)
-			{
-				Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
-				data_type::iterator prevIt = data1_.begin();
-				data_type::iterator it = data1_.begin();
-				for (++it; it != data1_.end(); ++prevIt, ++it)
+				if (data1_.size() > 1)
 				{
-					camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
-					camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
-					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+					CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					data_type::iterator it = data1_.begin();
+					pDC->MoveTo(it->first, it->second);
+					for (++it; it != data1_.end(); ++it)
+						pDC->LineTo(it->first, it->second);
+					pDC->SelectObject(oldPen);
 				}
-			}
 
-			if (data2_.size() > 1)
-			{
-				Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
-				data_type::iterator prevIt = data2_.begin();
-				data_type::iterator it = data2_.begin();
-				for (++it; it != data2_.end(); ++prevIt, ++it)
+				if (data2_.size() > 1)
 				{
-					camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
-					camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
-					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+					CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					data_type::iterator it = data2_.begin();
+					pDC->MoveTo(it->first, it->second);
+					for (++it; it != data2_.end(); ++it)
+						pDC->LineTo(it->first, it->second);
+					pDC->SelectObject(oldPen);
 				}
 			}
 		}
+		catch (const boost::bad_any_cast &)
+		{
+		}
+
+		try
+		{
+			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
+			if (graphics)
+			{
+				// clear the background
+				graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
+
+				// draw contents
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+					const swl::Region2<double> bound = camera.getViewBound();
+					graphics->DrawRectangle(&pen, (Gdiplus::REAL)bound.left, (Gdiplus::REAL)bound.bottom, (Gdiplus::REAL)bound.getWidth(), (Gdiplus::REAL)bound.getHeight());
+				}
+
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
+					graphics->DrawLine(&pen, 100, 200, 300, 400);
+				}
+
+				if (data1_.size() > 1)
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
+					data_type::iterator prevIt = data1_.begin();
+					data_type::iterator it = data1_.begin();
+					for (++it; it != data1_.end(); ++prevIt, ++it)
+						graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+				}
+
+				if (data2_.size() > 1)
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
+					data_type::iterator prevIt = data2_.begin();
+					data_type::iterator it = data2_.begin();
+					for (++it; it != data2_.end(); ++prevIt, ++it)
+						graphics->DrawLine(&pen, (Gdiplus::REAL)prevIt->first, (Gdiplus::REAL)prevIt->second, (Gdiplus::REAL)it->first, (Gdiplus::REAL)it->second);
+				}
+			}
+		}
+		catch (const boost::bad_any_cast &)
+		{
+		}
 	}
-	catch (const boost::bad_any_cast &)
+	else
 	{
+		try
+		{
+			const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+			if (dc)
+			{
+				CDC *pDC = CDC::FromHandle(*dc);
+
+				// clear the background
+				//pDC->SetBkColor(RGB(240, 240, 240));  // not working ???
+				pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
+
+				// draw contents
+				int vx, vy;
+
+				{
+					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					const swl::Region2<double> bound = camera.getViewBound();
+					int vx0, vy0;
+					camera.mapCanvasToWindow(bound.left, bound.bottom, vx0, vy0);
+					camera.mapCanvasToWindow(bound.right, bound.top, vx, vy);
+					pDC->Rectangle(vx0, vy0, vx, vy);
+					pDC->SelectObject(oldPen);
+				}
+
+				{
+					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					camera.mapCanvasToWindow(100, 100, vx, vy);
+					pDC->MoveTo(vx, vy);
+					camera.mapCanvasToWindow(300, 300, vx, vy);
+					pDC->LineTo(vx, vy);
+					pDC->SelectObject(oldPen);
+				}
+
+				if (data1_.size() > 1)
+				{
+					CPen pen(PS_SOLID, lineWidth2, RGB(0, 255, 0));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					data_type::iterator it = data1_.begin();
+					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
+					pDC->MoveTo(vx, vy);
+					for (++it; it != data1_.end(); ++it)
+					{
+						camera.mapCanvasToWindow(it->first, it->second, vx, vy);
+						pDC->LineTo(vx, vy);
+					}
+					pDC->SelectObject(oldPen);
+				}
+
+				if (data2_.size() > 1)
+				{
+					CPen pen(PS_SOLID, lineWidth3, RGB(0, 0, 255));
+					CPen *oldPen = pDC->SelectObject(&pen);
+					data_type::iterator it = data2_.begin();
+					camera.mapCanvasToWindow(it->first, it->second, vx, vy);
+					pDC->MoveTo(vx, vy);
+					for (++it; it != data2_.end(); ++it)
+					{
+						camera.mapCanvasToWindow(it->first, it->second, vx, vy);
+						pDC->LineTo(vx, vy);
+					}
+					pDC->SelectObject(oldPen);
+				}
+			}
+		}
+		catch (const boost::bad_any_cast &)
+		{
+		}
+
+		try
+		{
+			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
+			if (graphics)
+			{
+				// clear the background
+				graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
+
+				// draw contents
+				int vx1, vy1, vx2, vy2;
+
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+					const swl::Region2<double> bound = camera.getViewBound();
+					camera.mapCanvasToWindow(bound.left, bound.bottom, vx1, vy1);
+					camera.mapCanvasToWindow(bound.right, bound.top, vx2, vy2);
+					graphics->DrawRectangle(&pen, vx1, vy1, vx2 - vx1, vy2 - vy1);
+				}
+
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
+					camera.mapCanvasToWindow(100, 300, vx1, vy1);
+					camera.mapCanvasToWindow(300, 500, vx2, vy2);
+					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+				}
+
+				if (data1_.size() > 1)
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
+					data_type::iterator prevIt = data1_.begin();
+					data_type::iterator it = data1_.begin();
+					for (++it; it != data1_.end(); ++prevIt, ++it)
+					{
+						camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
+						camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
+						graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+					}
+				}
+
+				if (data2_.size() > 1)
+				{
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
+					data_type::iterator prevIt = data2_.begin();
+					data_type::iterator it = data2_.begin();
+					for (++it; it != data2_.end(); ++prevIt, ++it)
+					{
+						camera.mapCanvasToWindow(prevIt->first, prevIt->second, vx1, vy1);
+						camera.mapCanvasToWindow(it->first, it->second, vx2, vy2);
+						graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
+					}
+				}
+			}
+		}
+		catch (const boost::bad_any_cast &)
+		{
+		}
 	}
 
     return true;

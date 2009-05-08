@@ -10,9 +10,12 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 
 namespace swl {
 
+///*static*/ HPALETTE GdiBitmapBufferedContext::shPalette_ = NULL;
+///*static*/ int GdiBitmapBufferedContext::sUsedPaletteCount_ = 0;
+
 GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
 : base_type(drawRegion, true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
+  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
@@ -20,7 +23,7 @@ GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const Region2<int>
 
 GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL)
+  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
@@ -35,6 +38,7 @@ GdiBitmapBufferedContext::~GdiBitmapBufferedContext()
 	{
 		SelectObject(memDC_, oldBmp_);
 		oldBmp_ = NULL;
+		dibBits_ = NULL;
 	}
 	if (memBmp_)
 	{
@@ -44,6 +48,15 @@ GdiBitmapBufferedContext::~GdiBitmapBufferedContext()
 
 	if (memDC_)
 	{
+		//// delete palette
+		//SelectPalette(memDC_, (HPALETTE)GetStockObject(DEFAULT_PALETTE), FALSE);
+		//if (shPalette_ && --sUsedPaletteCount_ <= 0)
+		//{
+		//	DeleteObject(shPalette_);
+		//	shPalette_ = NULL;
+		//	sUsedPaletteCount_ = 0;
+		//}
+
 		DeleteDC(memDC_);
 		memDC_ = NULL;
 	}
@@ -63,7 +76,14 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
 	setDrawing(true);
 
+	//if (shPalette_)
+	//{
+	//	SelectPalette(hDC_, shPalette_, FALSE);
+	//	RealizePalette(hDC_);
+	//}
+
 	// copy off-screen buffer to window's DC
+	// method #1: use DDB
 	const bool ret = TRUE == BitBlt(
 		hDC_,
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(), 
@@ -79,12 +99,24 @@ bool GdiBitmapBufferedContext::swapBuffer()
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
 		SRCCOPY
 	);
+*/
+	// method #2: use DIB
+/*
+	const bool ret = TRUE == BitBlt(
+		hDC_,
+		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(), 
+		memDC_,
+		0, 0,  //drawRegion_.left, drawRegion_.bottom,
+		SRCCOPY
+	);
+*/
+/*
 	const bool ret = TRUE == StretchDIBits(
 		hDC_,
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
-		(void *)bits_,
-		&bitsInfo_,
+		dibBits_,
+		&bmiDIB_,
 		DIB_RGB_COLORS, //DIB_PAL_COLORS
 		SRCCOPY
 	);
@@ -103,6 +135,7 @@ bool GdiBitmapBufferedContext::resize(const int x1, const int y1, const int x2, 
 	{
 		SelectObject(memDC_, oldBmp_);
 		oldBmp_ = NULL;
+		dibBits_ = NULL;
 	}
 	if (memBmp_)
 	{
@@ -112,6 +145,15 @@ bool GdiBitmapBufferedContext::resize(const int x1, const int y1, const int x2, 
 
 	if (memDC_)
 	{
+		//// delete palette
+		//SelectPalette(memDC_, (HPALETTE)GetStockObject(DEFAULT_PALETTE), FALSE);
+		//if (shPalette_ && --sUsedPaletteCount_ <= 0)
+		//{
+		//	DeleteObject(shPalette_);
+		//	shPalette_ = NULL;
+		//	sUsedPaletteCount_ = 0;
+		//}
+
 		DeleteDC(memDC_);
 		memDC_ = NULL;
 	}
@@ -168,14 +210,14 @@ bool GdiBitmapBufferedContext::createOffScreen()
 
 bool GdiBitmapBufferedContext::createOffScreenBitmap()
 {
-	// method #1
+	// method #1: use DDB
 	memBmp_ = CreateCompatibleBitmap(hDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
 
-	// method #2
+	// method #2: use DIB
 /*
-    // create dib section
-	BITMAPINFO bmiDIB;
-	memset(&bmiDIB, 0, sizeof(BITMAPINFO));
+    // create DIB section
+	BITMAPINFO bmiDIB_;
+	memset(&bmiDIB_, 0, sizeof(BITMAPINFO));
 
 	// when using 256 color
 	//RGBQUAD rgb[255];
@@ -186,31 +228,30 @@ bool GdiBitmapBufferedContext::createOffScreenBitmap()
 	const int width = ((drawRegion_.getWidth()+3)/4*4 > 0) ? drawRegion_.getWidth() : 4;
 	const int height = (0 == drawRegion_.getHeight()) ? 1 : drawRegion_.getHeight();
 
-	bmiDIB.bmiHeader.biSize			= sizeof(BITMAPINFOHEADER);
-	bmiDIB.bmiHeader.biWidth		= width;
-	bmiDIB.bmiHeader.biHeight		= height;
-	bmiDIB.bmiHeader.biPlanes		= 1;
-	//bmiDIB.bmiHeader.biBitCount	= 32;
-	bmiDIB.bmiHeader.biBitCount		= GetDeviceCaps(memDC_, BITSPIXEL);
-	bmiDIB.bmiHeader.biCompression	= BI_RGB;
-	bmiDIB.bmiHeader.biSizeImage	= 0;  //  for BI_RGB
-	//bmiDIB.bmiHeader.biSizeImage	= width * height * 3;
+	bmiDIB_.bmiHeader.biSize		= sizeof(BITMAPINFOHEADER);
+	bmiDIB_.bmiHeader.biWidth		= width;
+	bmiDIB_.bmiHeader.biHeight		= height;
+	bmiDIB_.bmiHeader.biPlanes		= 1;
+	//bmiDIB_.bmiHeader.biBitCount	= 32;
+	bmiDIB_.bmiHeader.biBitCount	= GetDeviceCaps(memDC_, BITSPIXEL);
+	bmiDIB_.bmiHeader.biCompression	= BI_RGB;
+	bmiDIB_.bmiHeader.biSizeImage	= 0;  // for BI_RGB
+	//bmiDIB_.bmiHeader.biSizeImage	= width * height * 3;
 
 	//// when using 256 color
 	//PALETTEENTRY aPaletteEntry[256];
-	//GetPaletteEntries(ms_hPalette, 0, 256, aPaletteEntry);
+	//GetPaletteEntries(shPalette_, 0, 256, aPaletteEntry);
 	//
 	//for (int i = 0; i < 256; ++i)
 	//{
-	//	bmiDIB.bmiColors[i].rgbRed		= aPaletteEntry[i].peRed;
-	//	bmiDIB.bmiColors[i].rgbGreen	= aPaletteEntry[i].peGreen;
-	//	bmiDIB.bmiColors[i].rgbBlue		= aPaletteEntry[i].peBlue;
-	//	bmiDIB.bmiColors[i].rgbReserved = 0;
+	//	bmiDIB_.bmiColors[i].rgbRed			= aPaletteEntry[i].peRed;
+	//	bmiDIB_.bmiColors[i].rgbGreen		= aPaletteEntry[i].peGreen;
+	//	bmiDIB_.bmiColors[i].rgbBlue		= aPaletteEntry[i].peBlue;
+	//	bmiDIB_.bmiColors[i].rgbReserved	= 0;
 	//}
 
-    // offscreen surface generated by the dib section
-    void* offScreen;
-    HBITMAP memBmp_ = CreateDIBSection(memDC_, &bmiDIB, DIB_RGB_COLORS, &offScreen, 0L, 0);
+    // offscreen surface generated by the DIB section
+	memBmp_ = CreateDIBSection(memDC_, &bmiDIB_, DIB_RGB_COLORS, &dibBits_, NULL, 0);
 */
 	if (NULL == memBmp_)
 	{
@@ -219,7 +260,51 @@ bool GdiBitmapBufferedContext::createOffScreenBitmap()
 		return false;
 	}
 	oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
+/*	
+	// when using 256 color
+	const int nColorBit = GetDeviceCaps(memDC_, BITSPIXEL);
+	if (nColorBit <= 8 && !shPalette_)
+	{
+		// following routines are originated from ogl2 sdk made by Sillicon Graphics and modified for glext
+		const int nPalette = 1 << nColorBit;
+		LOGPALETTE *logPalette = (LOGPALETTE *)new char [sizeof(LOGPALETTE) + nPalette * sizeof(PALETTEENTRY)];
+		
+		if (logPalette)
+		{
+			logPalette->palVersion = 0x300;
+			logPalette->palNumEntries = nPalette;
+			
+			// start with a copy of the current system palette examples/rb/rb.c
+			// in ogl2 toolkit made by Sillicon Graphics
+			GetSystemPaletteEntries(memDC_, 0, nPalette, logPalette->palPalEntry);
 
+			// fill in a RGBA color palette
+			const int rmask = (1 << pfd.cRedBits) - 1;
+			const int gmask = (1 << pfd.cGreenBits) - 1;
+			const int bmask = (1 << pfd.cBlueBits) - 1;
+			
+			for (int i = 0; i < nPalette; ++i)
+			{
+				logPalette->palPalEntry[i].peRed = (((i >> pfd.cRedShift) & rmask) * 255) / rmask;
+				logPalette->palPalEntry[i].peGreen = (((i >> pfd.cGreenShift) & gmask) * 255) / gmask;
+				logPalette->palPalEntry[i].peBlue = (((i >> pfd.cBlueShift) & bmask) * 255) / bmask;
+				logPalette->palPalEntry[i].peFlags = 0;
+			}
+
+			shPalette_ = CreatePalette(logPalette);
+
+			delete [] (char *)logPalette;
+			logPalette = NULL;
+		}
+	}
+
+	if (shPalette_)
+	{
+		SelectPalette(memDC_, shPalette_, FALSE);
+		RealizePalette(memDC_);
+		++sUsedPaletteCount_;
+	}
+*/
 	return true;
 }
 
