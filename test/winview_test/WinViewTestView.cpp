@@ -13,6 +13,9 @@
 #include "swl/winview/GdiBitmapBufferedContext.h"
 #include "swl/winview/GdiplusContext.h"
 #include "swl/winview/GdiplusBitmapBufferedContext.h"
+#include "swl/winview/GdiPrintContext.h"
+#include "swl/winview/WinViewPrintApi.h"
+#include "swl/winview/WinViewCaptureApi.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/view/ViewCamera2.h"
@@ -64,6 +67,9 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMALL, &CWinViewTestView::OnUpdateViewstateZoomall)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMIN, &CWinViewTestView::OnUpdateViewstateZoomin)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMOUT, &CWinViewTestView::OnUpdateViewstateZoomout)
+	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWinViewTestView::OnPrintandcapturePrintviewusinggdi)
+	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi)
+	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
@@ -99,7 +105,27 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 
 	if (pDC && pDC->IsPrinting())
 	{
-		// FIXME [add] >>
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+		const boost::shared_ptr<camera_type> &camera = topCamera();
+		if (!camera) return;
+
+		const int oldMapMode = pDC->SetMapMode(MM_TEXT);
+		const CRect rctPage(0, 0, pDC->GetDeviceCaps(HORZRES), pDC->GetDeviceCaps(VERTRES));
+
+		swl::GdiPrintContext printContext(pDC->GetSafeHdc(), rctPage);
+		const std::auto_ptr<camera_type> printCamera(camera->cloneCamera());
+		if (printCamera.get() && printContext.isActivated())
+		{
+			initializeView();
+			printCamera->setViewRegion(camera->getRevisedRegion());
+			printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
+			renderScene(printContext, *printCamera);
+		}
+
+		pDC->SetMapMode(oldMapMode);
+
+		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
 	else
 	{
@@ -197,7 +223,7 @@ void CWinViewTestView::OnInitialUpdate()
 		data1_.push_back(std::make_pair(i, (int)std::floor(y + 0.5)));
 	}
 
-	drawMode_ = 4;  // [1, 4]
+	drawMode_ = 2;  // [1, 4]
 	useLocallyCreatedContext_ = false;
 
 	CRect rect;
@@ -259,8 +285,8 @@ void CWinViewTestView::OnInitialUpdate()
 		// set the camera
 		if (viewCamera.get())
 		{
-			// TODO [check] >>
-			viewCamera->setViewBound(rect.left - 100, rect.top - 100, rect.right + 100, rect.bottom + 100);
+			//viewCamera->setViewBound(-500, -500, 1500, 1500);
+			viewCamera->setViewBound(0, 0, rect.Width(), rect.Height());
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
 		}
 
@@ -388,8 +414,41 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 
 bool CWinViewTestView::doPrepareRendering(const context_type &context, const camera_type &camera)
 {
+	// clear the background
+	try
+	{
+		const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+		if (dc)
+		{
+			CDC *pDC = CDC::FromHandle(*dc);
+/*
+			const swl::Region2<double> &viewRgn = context.getViewingRegion();
+			//const CRect rect((int)std::floor(viewRgn.left + 0.5), (int)std::floor(viewRgn.bottom + 0.5), (int)std::floor(viewRgn.right + 0.5), (int)std::floor(viewRgn.top + 0.5));
+			const CRect rect(0, 0, (int)std::floor(viewRgn.getWidth() + 0.5), (int)std::floor(viewRgn.getHeight() + 0.5));
+/*
+			CRect rect;
+			GetClientRect(&rect);
+*/
+			const swl::Region2<int> &viewport = camera.getViewport();
+			const CRect rect(0, 0, viewport.getWidth(), viewport.getHeight());
+			pDC->FillRect(rect, &CBrush(RGB(255, 255, 255)));
+		}
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
 
-    return true;
+	try
+	{
+		Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
+		if (graphics)
+			graphics->Clear(Gdiplus::Color(255, 255, 255, 255));
+	}
+	catch (const boost::bad_any_cast &)
+	{
+	}
+
+	return true;
 }
 
 //-------------------------------------------------------------------------
@@ -405,14 +464,11 @@ bool CWinViewTestView::doRenderStockScene(const context_type &context, const cam
 
 bool CWinViewTestView::doRenderScene(const context_type &context, const camera_type &camera)
 {
-	CRect rect;
-	GetClientRect(&rect);
-
 	const int lineWidth1 = 6;
 	const int lineWidth2 = 4;
 	const int lineWidth3 = 2;
 
-	if (context.isOffScreenUsed())
+	if (false)  //if (context.isOffScreenUsed())
 	{
 		try
 		{
@@ -421,25 +477,33 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
 
-				// clear the background
-				//pDC->SetBkColor(RGB(240, 240, 240));  // not working ???
-				pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
-
 				// draw contents
 				{
 					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
 					CPen *oldPen = pDC->SelectObject(&pen);
+					CBrush brush(RGB(240, 240, 240));
+					CBrush *oldBrush = pDC->SelectObject(&brush);
 					const swl::Region2<double> bound = camera.getViewBound();
 					pDC->Rectangle(bound.left, bound.bottom, bound.right, bound.top);
+					pDC->SelectObject(oldBrush);
 					pDC->SelectObject(oldPen);
 				}
-
+/*
+				const swl::Region2<double> bound = camera.getViewBound();
+				CRgn rgn;
+				const BOOL ret = rgn.CreateRectRgn(bound.left, bound.bottom, bound.right, bound.top);
+				//rgn.SetRectRgn(bound.left, bound.bottom, bound.right, bound.top);
+				const int ret1 = pDC->SelectClipRgn(&rgn);
+				const int ret2 = pDC->GetClipBox(&rc);
+				//const UINT ret2 = pDC->GetBoundsRect(&rc, 0);
+*/
 				{
 					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
 					CPen *oldPen = pDC->SelectObject(&pen);
-					pDC->MoveTo(100, 100);
+					pDC->MoveTo(100, 200);
 					pDC->LineTo(300, 300);
-					pDC->SelectObject(oldPen);
+					pDC->MoveTo(-500, -500);
+					pDC->LineTo(1500, 1500);
 				}
 
 				if (data1_.size() > 1)
@@ -474,19 +538,21 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
 			if (graphics)
 			{
-				// clear the background
-				graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
-
 				// draw contents
 				{
 					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+					Gdiplus::SolidBrush brush(Gdiplus::Color(255, 240, 240, 240));
 					const swl::Region2<double> bound = camera.getViewBound();
 					graphics->DrawRectangle(&pen, (Gdiplus::REAL)bound.left, (Gdiplus::REAL)bound.bottom, (Gdiplus::REAL)bound.getWidth(), (Gdiplus::REAL)bound.getHeight());
+					graphics->FillRectangle(&brush, (Gdiplus::REAL)bound.left, (Gdiplus::REAL)bound.bottom, (Gdiplus::REAL)bound.getWidth(), (Gdiplus::REAL)bound.getHeight());
 				}
+
+				const swl::Region2<double> rgn = camera.getRevisedRegion();
 
 				{
 					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
 					graphics->DrawLine(&pen, 100, 200, 300, 400);
+					graphics->DrawLine(&pen, -500, -500, 1500, 1500);
 				}
 
 				if (data1_.size() > 1)
@@ -521,10 +587,6 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
 
-				// clear the background
-				//pDC->SetBkColor(RGB(240, 240, 240));  // not working ???
-				pDC->FillRect(rect, &CBrush(RGB(240, 240, 240)));
-
 				// draw contents
 				int vx, vy;
 
@@ -542,9 +604,9 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				{
 					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 0));
 					CPen *oldPen = pDC->SelectObject(&pen);
-					camera.mapCanvasToWindow(100, 100, vx, vy);
+					camera.mapCanvasToWindow(100, 200, vx, vy);
 					pDC->MoveTo(vx, vy);
-					camera.mapCanvasToWindow(300, 300, vx, vy);
+					camera.mapCanvasToWindow(300, 400, vx, vy);
 					pDC->LineTo(vx, vy);
 					pDC->SelectObject(oldPen);
 				}
@@ -589,9 +651,6 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
 			if (graphics)
 			{
-				// clear the background
-				graphics->Clear(Gdiplus::Color(255, 240, 240, 240));
-
 				// draw contents
 				int vx1, vy1, vx2, vy2;
 
@@ -605,8 +664,8 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 
 				{
 					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
-					camera.mapCanvasToWindow(100, 300, vx1, vy1);
-					camera.mapCanvasToWindow(300, 500, vx2, vy2);
+					camera.mapCanvasToWindow(100, 200, vx1, vy1);
+					camera.mapCanvasToWindow(300, 400, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
 				}
 
@@ -949,4 +1008,90 @@ void CWinViewTestView::OnUpdateViewstateZoomout(CCmdUI *pCmdUI)
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
+}
+
+void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
+{
+	// initialize a PRINTDLG structure
+	PRINTDLG pd;
+	memset(&pd, 0, sizeof(pd));
+	pd.lStructSize = sizeof(pd);
+	pd.hwndOwner = GetSafeHwnd();
+	pd.Flags = PD_RETURNDC | PD_DISABLEPRINTTOFILE;
+	pd.hInstance = NULL;
+	if (!PrintDlg(&pd)) return;
+	if (!pd.hDC) return;
+
+	//
+	const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+	// each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
+	SetMapMode(pd.hDC, MM_TEXT);
+
+	DOCINFO di;
+	di.cbSize = sizeof(DOCINFO);
+#if defined(_UNICODE) || defined(UNICODE)
+	di.lpszDocName = L"GDI Print";
+#else
+	di.lpszDocName = "GDI Print";
+#endif
+	di.lpszOutput = NULL;
+
+	// start the print job
+	StartDoc(pd.hDC, &di);
+	StartPage(pd.hDC);
+
+	//
+	if (!printWinViewUsingGdi(*this, pd.hDC))
+		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
+
+	// end the print job
+	EndPage(pd.hDC);
+	EndDoc(pd.hDC);
+	DeleteDC(pd.hDC);
+
+	DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
+}
+
+void CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi()
+{
+	CFileDialog dlg(FALSE, _T("bmp"), _T("*.bmp"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("BMP Files (*.bmp)|*.bmp||"), NULL);
+	dlg.m_ofn.lpstrTitle = _T("Capture View As");
+	if (dlg.DoModal() == IDOK)
+	{
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+#if defined(_UNICODE) || defined(UNICODE)
+		const std::wstring filePathName((wchar_t *)(LPCTSTR)dlg.GetPathName());
+#else
+		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
+#endif
+		if (!captureWinViewUsingGdi(filePathName, *this, GetSafeHwnd()))
+			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
+
+		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
+	}
+}
+
+void CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus()
+{
+	CFileDialog dlg(FALSE, _T("bmp"), _T("*.bmp"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("BMP Files (*.bmp)|*.bmp|JPEG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|PNG Files (*.png)|*.png|TIFF Files (*.tif)|*.tif|EMF Files (*.emf)|*.emf|WMF Files (*.wmf)|*.wmf||"), NULL);
+	//CFileDialog dlg(FALSE, _T("bmp"), _T("*.bmp"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("BMP Files (*.bmp)|*.bmp|JPEG Files (*.jpg)|*.jpg|GIF Files (*.gif)|*.gif|PNG Files (*.png)|*.png|TIFF Files (*.tif)||"), NULL);
+	dlg.m_ofn.lpstrTitle = _T("Capture View As");
+	if (dlg.DoModal() == IDOK)
+	{
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+#if defined(_UNICODE) || defined(UNICODE)
+		const std::wstring filePathName((wchar_t *)(LPCTSTR)dlg.GetPathName());
+		const std::wstring fileExtName((wchar_t *)(LPCTSTR)dlg.GetFileExt());
+#else
+		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
+		const std::string fileExtName((char *)(LPCTSTR)dlg.GetFileExt());
+#endif
+		if (!captureWinViewUsingGdiplus(filePathName, fileExtName, *this, GetSafeHwnd()))
+			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
+
+		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
+	}
 }

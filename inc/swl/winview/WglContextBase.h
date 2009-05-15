@@ -20,8 +20,8 @@ public:
 	typedef HGLRC context_type;
 
 protected:
-	explicit WglContextBase(const Region2<int>& drawRegion, const bool isOffScreenUsed);
-	explicit WglContextBase(const RECT& drawRect, const bool isOffScreenUsed);
+	explicit WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed);
+	explicit WglContextBase(const RECT &drawRect, const bool isOffScreenUsed);
 public:
 	virtual ~WglContextBase();
 
@@ -45,8 +45,10 @@ public:
 protected:
 	/// share an OpenGL display list
 	static bool shareDisplayList(HGLRC &glRC);
-	// use a palette k
-	static void usePalette(const HDC hDC, const PIXELFORMATDESCRIPTOR &pfd);
+	/// create a palette
+	static void createPalette(HDC hDC, const PIXELFORMATDESCRIPTOR &pfd, const int colorBitCount);
+	/// delete a palette
+	static void deletePalette(HDC hDC);
 
 private:
 	/// re-create an OpenGL display list
@@ -56,14 +58,14 @@ protected:
 	/// an OpenGL rendering context
     HGLRC wglRC_;
 
-private:
-	/// a sharing OpenGL rendering context
-    static HGLRC sSharedRC_;
-
 	/// a palette handle for the index mode graphics hardware
     static HPALETTE shPalette_;
 	/// a palette usage count
     static size_t sUsedPaletteCount_;
+
+private:
+	/// a sharing OpenGL rendering context
+    static HGLRC sSharedRC_;
 };
 
 }  // namespace swl

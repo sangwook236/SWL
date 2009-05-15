@@ -18,18 +18,18 @@ public :
 
 public :
 	OglCamera();
-	OglCamera(const OglCamera& rhs);
+	OglCamera(const OglCamera &rhs);
 	virtual ~OglCamera();
 	
-	OglCamera& operator=(const OglCamera& rhs);
+	OglCamera & operator=(const OglCamera &rhs);
 
 public :
 	/// virtual copy constructor
-	/*virtual*/ ViewCamera2* cloneCamera() const
+	/*virtual*/ ViewCamera2 * cloneCamera() const
 	{  return new OglCamera(*this);  }
 
-	///*virtual*/ void Write(::std::ostream& stream);
-	///*virtual*/ void Read(::std::istream& stream);
+	///*virtual*/ void Write(std::ostream &stream);
+	///*virtual*/ void Read(std::istream &stream);
 
 	/// look at the view region from the eye position along the eye direction and up direction
 	/*virtual*/ void lookAt();

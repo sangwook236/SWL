@@ -11,6 +11,9 @@
 #include "ViewEventHandler.h"
 #include "swl/winview/WglDoubleBufferedContext.h"
 #include "swl/winview/WglBitmapBufferedContext.h"
+#include "swl/winview/WglPrintContext.h"
+#include "swl/winview/WglViewPrintApi.h"
+#include "swl/winview/WglViewCaptureApi.h"
 #include "swl/oglview/OglCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
@@ -61,6 +64,9 @@ BEGIN_MESSAGE_MAP(CWglViewTestView, CView)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMALL, &CWglViewTestView::OnUpdateViewstateZoomall)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMIN, &CWglViewTestView::OnUpdateViewstateZoomin)
 	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMOUT, &CWglViewTestView::OnUpdateViewstateZoomout)
+	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWglViewTestView::OnPrintandcapturePrintviewusinggdi)
+	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi)
+	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
 END_MESSAGE_MAP()
 
 // CWglViewTestView construction/destruction
@@ -96,7 +102,27 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 
 	if (pDC && pDC->IsPrinting())
 	{
-		// FIXME [add] >>
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+		const boost::shared_ptr<camera_type> &camera = topCamera();
+		if (!camera) return;
+
+		const int oldMapMode = pDC->SetMapMode(MM_TEXT);
+		const CRect rctPage(0, 0, pDC->GetDeviceCaps(HORZRES), pDC->GetDeviceCaps(VERTRES));
+
+		swl::WglPrintContext printContext(pDC->GetSafeHdc(), rctPage);
+		const std::auto_ptr<camera_type> printCamera(dynamic_cast<WglViewBase::camera_type *>(camera->cloneCamera()));
+		if (printCamera.get() && printContext.isActivated())
+		{
+			initializeView();
+			printCamera->setViewRegion(camera->getRevisedRegion());
+			printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
+			renderScene(printContext, *printCamera);
+		}
+
+		pDC->SetMapMode(oldMapMode);
+
+		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
 	else
 	{
@@ -706,4 +732,72 @@ void CWglViewTestView::OnUpdateViewstateZoomout(CCmdUI *pCmdUI)
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
+}
+
+void CWglViewTestView::OnPrintandcapturePrintviewusinggdi()
+{
+	// initialize a PRINTDLG structure
+	PRINTDLG pd;
+	memset(&pd, 0, sizeof(pd));
+	pd.lStructSize = sizeof(pd);
+	pd.hwndOwner = GetSafeHwnd();
+	pd.Flags = PD_RETURNDC | PD_DISABLEPRINTTOFILE;
+	pd.hInstance = NULL;
+	if (!PrintDlg(&pd)) return;
+	if (!pd.hDC) return;
+
+	//
+	const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+	// each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
+	SetMapMode(pd.hDC, MM_TEXT);
+
+	DOCINFO di;
+	di.cbSize = sizeof(DOCINFO);
+#if defined(_UNICODE) || defined(UNICODE)
+	di.lpszDocName = L"OpenGL Print";
+#else
+	di.lpszDocName = "OpenGL Print";
+#endif
+	di.lpszOutput = NULL;
+
+	// start the print job
+	StartDoc(pd.hDC, &di);
+	StartPage(pd.hDC);
+
+	//
+	if (!printWglViewUsingGdi(*this, pd.hDC))
+		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
+
+	// end the print job
+	EndPage(pd.hDC);
+	EndDoc(pd.hDC);
+	DeleteDC(pd.hDC);
+
+	DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
+}
+
+void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi()
+{
+	CFileDialog dlg(FALSE, _T("bmp"), _T("*.bmp"), OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, _T("BMP Files (*.bmp)|*.bmp||"), NULL);
+	dlg.m_ofn.lpstrTitle = _T("Capture View As");
+	if (dlg.DoModal() == IDOK)
+	{
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
+
+#if defined(_UNICODE) || defined(UNICODE)
+		const std::wstring filePathName((wchar_t *)(LPCTSTR)dlg.GetPathName());
+#else
+		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
+#endif
+		if (!captureWglViewUsingGdi(filePathName, *this, GetSafeHwnd()))
+			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
+
+		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
+	}
+}
+
+void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus()
+{
+	// TODO: Add your command handler code here
 }

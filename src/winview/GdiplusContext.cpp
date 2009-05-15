@@ -38,7 +38,7 @@ GdiplusContext::~GdiplusContext()
 bool GdiplusContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == graphics_ && NULL == hWnd_) return false;
+	if (NULL == graphics_) return false;
 
 	setActivation(true);
 	return true;
@@ -49,7 +49,7 @@ bool GdiplusContext::activate()
 bool GdiplusContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == graphics_ && NULL == hWnd_) return false;
+	if (NULL == graphics_) return false;
 
 	setActivation(false);
 	return true;

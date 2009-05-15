@@ -14,13 +14,13 @@ namespace swl  {
 /*static*/ HPALETTE WglContextBase::shPalette_ = NULL;
 /*static*/ size_t WglContextBase::sUsedPaletteCount_ = 0;
 
-WglContextBase::WglContextBase(const Region2<int>& drawRegion, const bool isOffScreenUsed)
+WglContextBase::WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed)
 : base_type(drawRegion, isOffScreenUsed),
   wglRC_(NULL)
 {
 }
 
-WglContextBase::WglContextBase(const RECT& drawRect, const bool isOffScreenUsed)
+WglContextBase::WglContextBase(const RECT &drawRect, const bool isOffScreenUsed)
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed),
   wglRC_(NULL)
 {
@@ -81,54 +81,60 @@ void WglContextBase::createDisplayList(const HDC hDC)
 	else return wglShareLists(sSharedRC_, wglRC) == TRUE;
 }
 
-/*static*/ void WglContextBase::usePalette(const HDC hDC, const PIXELFORMATDESCRIPTOR &pfd)
+/*static*/ void WglContextBase::createPalette(HDC hDC, const PIXELFORMATDESCRIPTOR &pfd, const int colorBitCount)
 {
-	// when using 256 color
-    int nColorBit = GetDeviceCaps(hDC, BITSPIXEL);
-    if (nColorBit <= 8 && !shPalette_)
+	// FIXME [check] >> this implementation is not tested
+	if (colorBitCount <= 8 && !shPalette_)
 	{
-        // following routines are originated from ogl2 sdk made by Sillicon Graphics and modified for glext
-        int nPalette = 1 << nColorBit;
-        LOGPALETTE *pLogPalette = NULL;
-		pLogPalette = (LOGPALETTE *)malloc(sizeof(LOGPALETTE) + nPalette * sizeof(PALETTEENTRY));
+		// following routines are originated from ogl2 sdk made by Sillicon Graphics and modified for glext
+		const int paletteSize = 1 << colorBitCount;
+		LOGPALETTE *logPalette = (LOGPALETTE *)new char [sizeof(LOGPALETTE) + paletteSize * sizeof(PALETTEENTRY)];
 		
-        if (pLogPalette)
+		if (logPalette)
 		{
-            pLogPalette->palVersion = 0x300;
-            pLogPalette->palNumEntries = nPalette;
+			logPalette->palVersion = 0x300;
+			// start with a copy of the current system palette examples/rb/rb.c
+			// in ogl2 toolkit made by Sillicon Graphics
+			logPalette->palNumEntries = GetSystemPaletteEntries(hDC, 0, paletteSize, logPalette->palPalEntry);
+
+			// fill in a RGBA color palette
+			const int rmask = (1 << pfd.cRedBits) - 1;
+			const int gmask = (1 << pfd.cGreenBits) - 1;
+			const int bmask = (1 << pfd.cBlueBits) - 1;
 			
-            // start with a copy of the current system palette examples/rb/rb.c
-            // in ogl2 toolkit made by Sillicon Graphics
-            GetSystemPaletteEntries(hDC, 0, nPalette, pLogPalette->palPalEntry);
-			
-            // fill in a rgba color palette
-            const int rmask = (1 << pfd.cRedBits) - 1;
-            const int gmask = (1 << pfd.cGreenBits) - 1;
-            const int bmask = (1 << pfd.cBlueBits) - 1;
-			
-            for (int i = 0; i < nPalette; ++i)
+			for (int i = 0; i < paletteSize; ++i)
 			{
-                pLogPalette->palPalEntry[i].peRed = (((i >> pfd.cRedShift) & rmask) * 255) / rmask;
-                pLogPalette->palPalEntry[i].peGreen = (((i >> pfd.cGreenShift) & gmask) * 255) / gmask;
-                pLogPalette->palPalEntry[i].peBlue = (((i >> pfd.cBlueShift) & bmask) * 255) / bmask;
-                pLogPalette->palPalEntry[i].peFlags = 0;
-            }
-			
-            shPalette_ = CreatePalette(pLogPalette);
-            if (pLogPalette)
-			{
-				free(pLogPalette);
-				pLogPalette = NULL;
+				logPalette->palPalEntry[i].peRed = (((i >> pfd.cRedShift) & rmask) * 255) / rmask;
+				logPalette->palPalEntry[i].peGreen = (((i >> pfd.cGreenShift) & gmask) * 255) / gmask;
+				logPalette->palPalEntry[i].peBlue = (((i >> pfd.cBlueShift) & bmask) * 255) / bmask;
+				logPalette->palPalEntry[i].peFlags = 0;
 			}
-        }
-    }
-	
-    if (shPalette_)
+
+			shPalette_ = CreatePalette(logPalette);
+
+			delete [] (char *)logPalette;
+			logPalette = NULL;
+		}
+	}
+
+	if (shPalette_)
 	{
-        SelectPalette(hDC, shPalette_, FALSE);
-        RealizePalette(hDC);
-        ++sUsedPaletteCount_;
-    }
+		SelectPalette(hDC, shPalette_, FALSE);
+		RealizePalette(hDC);
+		++sUsedPaletteCount_;
+	}
+}
+
+/*static*/ void WglContextBase::deletePalette(HDC hDC)
+{
+	// delete palette
+	SelectPalette(hDC, (HPALETTE)GetStockObject(DEFAULT_PALETTE), FALSE);
+	if (shPalette_ && --sUsedPaletteCount_ <= 0)
+	{
+		DeleteObject(shPalette_);
+		shPalette_ = NULL;
+		sUsedPaletteCount_ = 0;
+	}
 }
 
 }  // namespace swl

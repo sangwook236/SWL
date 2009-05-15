@@ -112,6 +112,9 @@ public:
 	afx_msg void OnUpdateViewstateZoomall(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewstateZoomin(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewstateZoomout(CCmdUI *pCmdUI);
+	afx_msg void OnPrintandcapturePrintviewusinggdi();
+	afx_msg void OnPrintandcaptureCaptureviewusinggdi();
+	afx_msg void OnPrintandcaptureCaptureviewusinggdiplus();
 };
 
 #ifndef _DEBUG  // debug version in WglViewTestView.cpp

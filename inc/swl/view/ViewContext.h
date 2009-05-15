@@ -17,7 +17,7 @@ public:
 	//typedef ViewContext base_type;
 
 protected:
-	explicit ViewContext(const Region2<int>& drawRegion, const bool isOffScreenUsed)
+	explicit ViewContext(const Region2<int> &drawRegion, const bool isOffScreenUsed)
 	: drawRegion_(drawRegion), isOffScreenUsed_(isOffScreenUsed), isActivated_(false), isDrawing_(false)
 	{}
 public:
@@ -57,8 +57,13 @@ public:
 	virtual boost::any getNativeContext() = 0;
 	virtual const boost::any getNativeContext() const = 0;
 
-	/// get the drawing region
+	/// get the drawing context region
 	const Region2<int> & getRegion() const  {  return drawRegion_;  }
+
+	/// set the viewing region
+	void setViewingRegion(const Region2<double> &viewingRegion)  {  viewingRegion_ = viewingRegion;  }
+	/// get the viewing region
+	const Region2<double> & getViewingRegion() const  {  return viewingRegion_;  }
 
 protected:
 	/// set the context activation flag
@@ -68,8 +73,10 @@ protected:
 	void setDrawing(const bool isDrawing)  {  isDrawing_ = isDrawing;  }
 
 protected:
-	/// a drawing region
+	/// a drawing context region
 	Region2<int> drawRegion_;
+	/// a viewing region
+	Region2<double> viewingRegion_;
 
 private:
 	// a flag to check whether off-screen buffer is used

@@ -2,27 +2,18 @@
 #define __SWL_WIN_VIEW__GDI_PLUS_CONTEXT__H_ 1
 
 
-#include "swl/winview/ExportWinView.h"
-#include "swl/view/ViewContext.h"
-#include <windows.h>
+#include "swl/winview/GdiplusContextBase.h"
 
-
-namespace Gdiplus {
-
-class Graphics;
-
-}  // namespace Gdiplus
 
 namespace swl {
 
 //-----------------------------------------------------------------------------------
 //  Single-buffered Context for GDI+ in Microsoft Windows
 
-class SWL_WIN_VIEW_API GdiplusContext: public ViewContext
+class SWL_WIN_VIEW_API GdiplusContext: public GdiplusContextBase
 {
 public:
-	typedef ViewContext base_type;
-	typedef Gdiplus::Graphics context_type;
+	typedef GdiplusContextBase base_type;
 
 public:
 	GdiplusContext(HWND hWnd, const bool isAutomaticallyActivated = true);

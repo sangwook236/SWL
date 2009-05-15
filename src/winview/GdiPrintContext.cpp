@@ -1,6 +1,7 @@
-#include "swl/winview/GdiBitmapBufferedContext.h"
+#include "swl/winview/GdiPrintContext.h"
 #include <boost/smart_ptr.hpp>
 #include <wingdi.h>
+#include <stdexcept>
 #include <cmath>
 
 #if defined(WIN32) && defined(_DEBUG)
@@ -12,40 +13,39 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 
 namespace swl {
 
-GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
+GdiPrintContext::GdiPrintContext(HDC printDC, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
 : base_type(drawRegion, true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
+  printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
 }
 
-GdiBitmapBufferedContext::GdiBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
+GdiPrintContext::GdiPrintContext(HDC printDC, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
+  printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
 }
 
-GdiBitmapBufferedContext::~GdiBitmapBufferedContext()
+GdiPrintContext::~GdiPrintContext()
 {
 	deactivate();
 
-	deleteOffScreen();
 }
 
-bool GdiBitmapBufferedContext::swapBuffer()
+bool GdiPrintContext::swapBuffer()
 {
 	//if (!isActivated() || isDrawing()) return false;
 	if (isDrawing()) return false;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 	setDrawing(true);
 
 	// copy off-screen buffer to window's DC
 	// method #1: [use DDB & DIB] the image is not scaled to fit the rectangle
 	const bool ret = TRUE == BitBlt(
-		hDC_,
+		printDC_,
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(), 
 		memDC_,
 		0, 0,  //drawRegion_.left, drawRegion_.bottom,
@@ -57,7 +57,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	// all negative coordinate values are ignored.
 	// instead, these values are regarded as absolute(positive) values.
 	const bool ret = TRUE == StretchBlt(
-		hDC_,
+		printDC_,
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
 		memDC_,
 		//(int)std::floor(viewingRegion_.left + 0.5), (int)std::floor(viewingRegion_.bottom + 0.5), (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5),
@@ -71,7 +71,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	// all negative coordinate values are ignored.
 	// instead, these values are regarded as absolute(positive) values.
 	const bool ret = TRUE == StretchDIBits(
-		hDC_,
+		printDC_,
 		drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight(),
 		//(int)std::floor(viewingRegion_.left + 0.5), (int)std::floor(viewingRegion_.bottom + 0.5), (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5),
 		0, 0, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5),
@@ -85,20 +85,23 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	return ret;
 }
 
-bool GdiBitmapBufferedContext::resize(const int x1, const int y1, const int x2, const int y2)
+bool GdiPrintContext::resize(const int x1, const int y1, const int x2, const int y2)
 {
+/*
 	if (isActivated()) return false;
 	drawRegion_ = Region2<int>(x1, y1, x2, y2);
 
-	deleteOffScreen();
+	deleteOffScreenBitmap();
 
 	return createOffScreen();
+*/
+	throw std::runtime_error("GdiPrintContext::resize() must not to be called"); 
 }
 
-bool GdiBitmapBufferedContext::activate()
+bool GdiPrintContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 
 	setActivation(true);
 	return true;
@@ -106,32 +109,25 @@ bool GdiBitmapBufferedContext::activate()
 	// draw something into memDC_
 }
 
-bool GdiBitmapBufferedContext::deactivate()
+bool GdiPrintContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 
 	setActivation(false);
 	return true;
 }
 
-bool GdiBitmapBufferedContext::createOffScreen()
+bool GdiPrintContext::createOffScreen()
 {
-	if (NULL == hWnd_) return false;
-
-	// get DC for window
-	hDC_ = GetDC(hWnd_);
-	if (NULL == hDC_) return false;
+	if (NULL == printDC_) return false;
 
 	// create an off-screen DC for double-buffering
-	memDC_ = CreateCompatibleDC(hDC_);
+	memDC_ = CreateCompatibleDC(printDC_);
 	if (NULL == memDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 		return false;
-	}
 
+	// caution: in case of monochrone printer, the number of color bits is 1.
 	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL) <= 8 ? 32 : GetDeviceCaps(memDC_, BITSPIXEL);
 	const int colorPlaneCount = GetDeviceCaps(memDC_, PLANES);
 	const bool isPaletteUsed = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
@@ -145,19 +141,16 @@ bool GdiBitmapBufferedContext::createOffScreen()
 	{
 		DeleteDC(memDC_);
 		memDC_ = NULL;
-
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 		return false;
 	}
 }
 
-bool GdiBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed)
+bool GdiPrintContext::createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed)
 {
 	// method #1: use DDB
 /*
-	memBmp_ = CreateCompatibleBitmap(hDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
-	//memBmp_ = CreateCompatibleBitmap(hDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
+	memBmp_ = CreateCompatibleBitmap(printDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
+	//memBmp_ = CreateCompatibleBitmap(printDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
 */
 	// method #2: use DIB
 	const size_t bufSize = !isPaletteUsed ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
@@ -213,7 +206,7 @@ bool GdiBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	return true;
 }
 
-void GdiBitmapBufferedContext::deleteOffScreen()
+void GdiPrintContext::deleteOffScreen()
 {
 	// free-up the off-screen DC
 	if (oldBmp_)
@@ -236,13 +229,6 @@ void GdiBitmapBufferedContext::deleteOffScreen()
 
 		DeleteDC(memDC_);
 		memDC_ = NULL;
-	}
-
-	// release DC
-	if (hDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 	}
 }
 

@@ -30,7 +30,7 @@ ViewCamera3::ViewCamera3()
 	updateEyePosition();
 }
 
-ViewCamera3::ViewCamera3(const ViewCamera3& rhs)
+ViewCamera3::ViewCamera3(const ViewCamera3 &rhs)
 : base_type(rhs),
   isValid_(rhs.isValid_), isPerspective_(rhs.isPerspective_),
   eyeDistance_(rhs.eyeDistance_),
@@ -43,7 +43,7 @@ ViewCamera3::ViewCamera3(const ViewCamera3& rhs)
 
 ViewCamera3::~ViewCamera3()  {}
 
-ViewCamera3& ViewCamera3::operator=(const ViewCamera3& rhs)
+ViewCamera3 & ViewCamera3::operator=(const ViewCamera3 &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type&>(*this) = rhs;
@@ -65,7 +65,7 @@ ViewCamera3& ViewCamera3::operator=(const ViewCamera3& rhs)
 }
 
 /*
-void ViewCamera3::write(::std::ostream& stream)
+void ViewCamera3::write(::std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
@@ -112,7 +112,7 @@ void ViewCamera3::read(::std::istream& stream)
 	endAssert(stream);
 }
 
-void ViewCamera3::Read20021008(::std::istream& stream)
+void ViewCamera3::Read20021008(::std::istream &stream)
 {
 	stream >> isValid_ >> isPerspective_ >>
 		eyeDistance_ >> nearPlane_ >> farPlane_ >>
@@ -137,13 +137,13 @@ bool ViewCamera3::setViewBound(double dLeft, double dBottom, double dRight, doub
 */
 }
 
-bool ViewCamera3::setViewport(const Region2<int>& rViewport)
+bool ViewCamera3::setViewport(const Region2<int> &rViewport)
 {
 	return base_type::setViewport(rViewport)
 		   && doUpdateViewport();
 }
 
-inline bool ViewCamera3::setViewRegion(const Region2<double>& rRct)
+inline bool ViewCamera3::setViewRegion(const Region2<double> &rRct)
 {
 	// resize a viewing region && move the position of eye point
 #if defined(_TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_)
@@ -208,7 +208,7 @@ bool ViewCamera3::setEyePose(double dDirX, double dDirY, double dDirZ, double dU
 	return bUpdateViewpoint ? doUpdateFrustum() : true;
 }
 
-bool ViewCamera3::setEyeFrame(const ViewMatrix3& rFrame, const bool bUpdateViewpoint /*= true*/)
+bool ViewCamera3::setEyeFrame(const ViewMatrix3 &rFrame, const bool bUpdateViewpoint /*= true*/)
 {
 	double mat[12] = { 0., };
 	rFrame.get(mat);
@@ -234,7 +234,7 @@ ViewMatrix3 ViewCamera3::getEyeFrame() const
 	return ViewMatrix3(vXe, vYe, vZe, vTe);
 }
 
-bool ViewCamera3::transform(const ViewMatrix3& rdT, const bool bUpdateViewpoint /*= true*/)
+bool ViewCamera3::transform(const ViewMatrix3 &rdT, const bool bUpdateViewpoint /*= true*/)
 {
 	return setEyeFrame(rdT * getEyeFrame(), bUpdateViewpoint);
 }

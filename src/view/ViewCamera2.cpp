@@ -18,14 +18,14 @@ ViewCamera2::ViewCamera2()
 : viewBound_(), viewport_(), viewRegion_(), zoomFactor_(1.0)
 {}
 
-ViewCamera2::ViewCamera2(const ViewCamera2& rhs)
+ViewCamera2::ViewCamera2(const ViewCamera2 &rhs)
 : viewBound_(rhs.viewBound_), viewport_(rhs.viewport_),
   viewRegion_(rhs.viewRegion_), zoomFactor_(rhs.zoomFactor_)
 {}
 
 ViewCamera2::~ViewCamera2()  {}
 
-ViewCamera2& ViewCamera2::operator=(const ViewCamera2& rhs)
+ViewCamera2 & ViewCamera2::operator=(const ViewCamera2 &rhs)
 {
 	if (this == &rhs) return *this;
 
@@ -38,7 +38,7 @@ ViewCamera2& ViewCamera2::operator=(const ViewCamera2& rhs)
 }
 
 /*
-void ViewCamera2::write(::std::ostream& stream)
+void ViewCamera2::write(::std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
@@ -54,7 +54,7 @@ void ViewCamera2::write(::std::ostream& stream)
 	endWriteEndl(stream);
 }
 
-void ViewCamera2::read(::std::istream& stream)
+void ViewCamera2::read(::std::istream &stream)
 {
 	beginAssert(stream);
 		// read version
@@ -91,7 +91,7 @@ void ViewCamera2::read20021008(::std::istream& stream)
 	doUpdateZoomFactor();
 }
 */
-inline bool ViewCamera2::setViewBound(const Region2<double>& rViewBound)
+inline bool ViewCamera2::setViewBound(const Region2<double> &rViewBound)
 {
 	if (!rViewBound.isValid())  return false;
 
@@ -101,7 +101,7 @@ inline bool ViewCamera2::setViewBound(const Region2<double>& rViewBound)
 	return doUpdateZoomFactor();
 }
 
-inline bool ViewCamera2::setViewport(const Region2<int>& rViewport)
+inline bool ViewCamera2::setViewport(const Region2<int> &rViewport)
 {
 	if (!rViewport.isValid())  return false;
 
@@ -128,7 +128,7 @@ bool ViewCamera2::doUpdateZoomFactor()
 	return true;
 }
 
-inline bool ViewCamera2::setViewRegion(const Region2<double>& rRct)
+inline bool ViewCamera2::setViewRegion(const Region2<double> &rRct)
 {
 	if (!rRct.isValid())  return false;
 
@@ -162,7 +162,7 @@ inline bool ViewCamera2::scaleViewRegion(double dFactor)
 
 	return true;
 */
-	viewRegion_.changeSize(viewRegion_.getWidth()*dFactor, viewRegion_.getHeight()*dFactor);
+	viewRegion_.changeSize(viewRegion_.getWidth() * dFactor, viewRegion_.getHeight() * dFactor);
 	// update zoom factor
 	return doUpdateZoomFactor();
 }
@@ -198,75 +198,75 @@ inline bool ViewCamera2::rotateView(int iDeltaX, int iDeltaY)
 	return rotateViewRegion(double(iDeltaX)/zoomFactor_, double(iDeltaY)/zoomFactor_);
 }
 
-inline bool ViewCamera2::mapWindowToCanvas(int iVCx, int iVCy, double& rNCx, double& rNCy) const
+inline bool ViewCamera2::mapWindowToCanvas(const int iVCx, const int iVCy, double &rNCx, double &rNCy) const
 {
-	rNCx = double(iVCx-viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
+	rNCx = double(iVCx - viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
 
 	// upward y-axis
-	rNCy = double(iVCy-viewport_.getCenterY()) / zoomFactor_ + viewRegion_.getCenterY();
-	//rNCy = double(iVCy-viewport_.top) / zoomFactor_ + viewRegion_.top;
-	//rNCy = double(iVCy-viewport_.bottom) / zoomFactor_ + viewRegion_.bottom;
+	rNCy = double(iVCy - viewport_.getCenterY()) / zoomFactor_ + viewRegion_.getCenterY();
+	//rNCy = double(iVCy - viewport_.top) / zoomFactor_ + viewRegion_.top;
+	//rNCy = double(iVCy - viewport_.bottom) / zoomFactor_ + viewRegion_.bottom;
 
 	// downward y-axis
-	//rNCy = double(viewport_.getCenterY()-iVCy) / zoomFactor_ + viewRegion_.getCenterY();
-	//rNCy = double(viewport_.top-iVCy) / zoomFactor_ + viewRegion_.top;
-	//rNCy = double(viewport_.bottom-iVCy) / zoomFactor_ + viewRegion_.bottom;
+	//rNCy = double(viewport_.getCenterY() - iVCy) / zoomFactor_ + viewRegion_.getCenterY();
+	//rNCy = double(viewport_.top - iVCy) / zoomFactor_ + viewRegion_.top;
+	//rNCy = double(viewport_.bottom - iVCy) / zoomFactor_ + viewRegion_.bottom;
 
 	return true;
 }
 
-inline bool ViewCamera2::mapWindowToCanvas(const Point2<int>& rVC, Point2<double>& rNC) const
+inline bool ViewCamera2::mapWindowToCanvas(const Point2<int> &rVC, Point2<double> &rNC) const
 {
-	rNC.x = double(rVC.x-viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
+	rNC.x = double(rVC.x - viewport_.getCenterX()) / zoomFactor_ + viewRegion_.getCenterX();
 	
 	// upward y-axis
-	rNC.y = double(rVC.y-viewport_.getCenterY()) / zoomFactor_ + viewRegion_.getCenterY();
-	//rNC.y = double(rVC.y-viewport_.top) / zoomFactor_ + viewRegion_.top;
-	//rNC.y = double(rVC.y-viewport_.bottom) / zoomFactor_ + viewRegion_.bottom;
+	rNC.y = double(rVC.y - viewport_.getCenterY()) / zoomFactor_ + viewRegion_.getCenterY();
+	//rNC.y = double(rVC.y - viewport_.top) / zoomFactor_ + viewRegion_.top;
+	//rNC.y = double(rVC.y - viewport_.bottom) / zoomFactor_ + viewRegion_.bottom;
 	
 	// downward y-axis
-	//rNC.y = double(viewport_.getCenterY()-rVC.y) / zoomFactor_ + viewRegion_.getCenterY();
-	//rNC.y = double(viewport_.top-rVC.y) / zoomFactor_ + viewRegion_.top;
-	//rNC.y = double(viewport_.bottom-rVC.y) / zoomFactor_ + viewRegion_.bottom;
+	//rNC.y = double(viewport_.getCenterY() - rVC.y) / zoomFactor_ + viewRegion_.getCenterY();
+	//rNC.y = double(viewport_.top - rVC.y) / zoomFactor_ + viewRegion_.top;
+	//rNC.y = double(viewport_.bottom - rVC.y) / zoomFactor_ + viewRegion_.bottom;
 
 	return true;
 }
 
-inline bool ViewCamera2::mapCanvasToWindow(double dNCx, double dNCy, int& rVCx, int& rVCy) const
+inline bool ViewCamera2::mapCanvasToWindow(const double dNCx, const double dNCy, int &rVCx, int &rVCy) const
 {
-	rVCx = (int)round((dNCx-viewRegion_.getCenterX())*zoomFactor_) + viewport_.getCenterX();
+	rVCx = (int)round((dNCx - viewRegion_.getCenterX()) * zoomFactor_) + viewport_.getCenterX();
 
 	// upward y-axis
-	rVCy = (int)round((dNCy-viewRegion_.getCenterY())*zoomFactor_) + viewport_.getCenterY();
-	//rVCy = int((dNCy-viewRegion_.top)*zoomFactor_) + viewport_.top;
-	//rVCy = int((dNCy-viewRegion_.bottom)*zoomFactor_) + viewport_.bottom;
+	rVCy = (int)round((dNCy - viewRegion_.getCenterY()) * zoomFactor_) + viewport_.getCenterY();
+	//rVCy = (int)round((dNCy - viewRegion_.top) * zoomFactor_) + viewport_.top;
+	//rVCy = (int)round((dNCy - viewRegion_.bottom) * zoomFactor_) + viewport_.bottom;
 
 	// downward y-axis
-	//rVCy = int((viewRegion_.getCenterY()-dNCy)*zoomFactor_) + viewport_.getCenterY();
-	//rVCy = int((viewRegion_.top-dNCy)*zoomFactor_) + viewport_.top;
-	//rVCy = int((viewRegion_.bottom-dNCy)*zoomFactor_) + viewport_.bottom;
+	//rVCy = (int)round((viewRegion_.getCenterY() - dNCy) * zoomFactor_) + viewport_.getCenterY();
+	//rVCy = (int)round((viewRegion_.top - dNCy) * zoomFactor_) + viewport_.top;
+	//rVCy = (int)round((viewRegion_.bottom - dNCy) * zoomFactor_) + viewport_.bottom;
 
     return true;
 }
 
-inline bool ViewCamera2::mapCanvasToWindow(const Point2<double>& rNC, Point2<int>& rVC) const
+inline bool ViewCamera2::mapCanvasToWindow(const Point2<double> &rNC, Point2<int> &rVC) const
 {
-	rVC.x = (int)round((rNC.x-viewRegion_.getCenterX())*zoomFactor_) + viewport_.getCenterX();
+	rVC.x = (int)round((rNC.x - viewRegion_.getCenterX()) * zoomFactor_) + viewport_.getCenterX();
 
 	// upward y-axis 
-	rVC.y = (int)round((rNC.y-viewRegion_.getCenterY())*zoomFactor_) + viewport_.getCenterY();
-	//rVC.y = int((rNC.y-viewRegion_.top)*zoomFactor_); + viewport_.top;
-	//rVC.y = int((rNC.y-viewRegion_.bottom)*zoomFactor_) + viewport_.bottom;
+	rVC.y = (int)round((rNC.y - viewRegion_.getCenterY()) * zoomFactor_) + viewport_.getCenterY();
+	//rVC.y = (int)round((rNC.y - viewRegion_.top) * zoomFactor_) + viewport_.top;
+	//rVC.y = (int)round((rNC.y - viewRegion_.bottom) * zoomFactor_) + viewport_.bottom;
 
 	// downward y-axis
-	//rVC.y = int((viewRegion_.getCenterY()-rNC.y)*zoomFactor_) + viewport_.getCenterY();
-	//rVC.y = int((viewRegion_.top-rNC.y)*zoomFactor_) + viewport_.top;
-	//rVC.y = int((viewRegion_.bottom-rNC.y)*zoomFactor_) + viewport_.bottom;
+	//rVC.y = (int)round((viewRegion_.getCenterY() - rNC.y) * zoomFactor_) + viewport_.getCenterY();
+	//rVC.y = (int)round((viewRegion_.top - rNC.y) * zoomFactor_) + viewport_.top;
+	//rVC.y = (int)round((viewRegion_.bottom - rNC.y) * zoomFactor_) + viewport_.bottom;
 
     return true;
 }
 
-bool ViewCamera2::getHorizontalRatio(float& rfPosRatio, float& rfWidthRatio)
+bool ViewCamera2::getHorizontalRatio(float &rfPosRatio, float &rfWidthRatio)
 // 0 <= rfPosRatio <= 1  &&  0 <= rfWidthRatio <= 1
 // 0 <= rfPosRatio-rfWidthRatio/2 <= 1  &&  0 <= rfPosRatio+rfWidthRatio/2 <= 1
 {
@@ -322,7 +322,7 @@ bool ViewCamera2::getHorizontalRatio(float& rfPosRatio, float& rfWidthRatio)
 	return true;
 }
 
-bool ViewCamera2::getVerticalRatio(float& rfPosRatio, float& rfHeightRatio)
+bool ViewCamera2::getVerticalRatio(float &rfPosRatio, float &rfHeightRatio)
 {
 	if (!viewBound_.isValid() || !viewRegion_.isValid())
 	{
@@ -383,7 +383,7 @@ inline bool ViewCamera2::scrollHorizontally(float fRatio)
 //               = 1, scroll one page 
 //               > 1, scroll more a page 
 {
-	viewRegion_.moveCenter(viewRegion_.getWidth()*double(fRatio), 0.0);
+	viewRegion_.moveCenter(viewRegion_.getWidth() * double(fRatio), 0.0);
 	return true;
 }
 
@@ -394,38 +394,37 @@ inline bool ViewCamera2::scrollVertically(float fRatio)
 //               = 1, scroll one page 
 //               > 1, scroll more a page 
 {
-	viewRegion_.moveCenter(0.0, viewRegion_.getHeight()*double(fRatio));
+	viewRegion_.moveCenter(0.0, viewRegion_.getHeight() * double(fRatio));
 	return true;
 }
 
-inline void ViewCamera2::checkLimit(double& rdValue) const
+inline void ViewCamera2::checkLimit(double &rdValue) const
 {
-	double dEPS = 1.0e-7;
-	if (rdValue < dEPS)  rdValue = dEPS;
+	const double dEPS = 1.0e-7;
+	if (rdValue < dEPS) rdValue = dEPS;
 	else if (rdValue > std::numeric_limits<double>::max())
 		rdValue = std::numeric_limits<double>::max();
 }
 
 inline double ViewCamera2::round(double dValue) const
-//{  return dValue > 0.0 ? floor(dValue + 0.5) : ceil(dValue - 0.5);  }
-{	return static_cast<int>(dValue + 0.5);}
+{	return (int)std::floor(dValue + 0.5);  }
 
 Region2<double> ViewCamera2::getRevisedRegion() const
 {
 	if (!viewport_.isValid() || !viewRegion_.isValid())
 		return viewRegion_;
 
-	double dWidthVP = double(viewport_.getWidth()), dHeightVP = double(viewport_.getHeight());
-	double dWidthVR = viewRegion_.getWidth(), dHeightVR = viewRegion_.getHeight();
+	const double dWidthVP = double(viewport_.getWidth()), dHeightVP = double(viewport_.getHeight());
+	const double dWidthVR = viewRegion_.getWidth(), dHeightVR = viewRegion_.getHeight();
     double dRatioAR = (dWidthVP / dHeightVP) / (dWidthVR / dHeightVR);
 	checkLimit(dRatioAR);
 
 	// resize viewing region
 	Region2<double> rctViewRegion(viewRegion_);
 	if (dRatioAR > 1.0)
-		rctViewRegion.changeSize(dWidthVR*dRatioAR, dHeightVR);
+		rctViewRegion.changeSize(dWidthVR * dRatioAR, dHeightVR);
 	else
-		rctViewRegion.changeSize(dWidthVR, dHeightVR/dRatioAR);
+		rctViewRegion.changeSize(dWidthVR, dHeightVR / dRatioAR);
 
 	return rctViewRegion;
 }

@@ -21,14 +21,14 @@ public:
 
 public:
 	ViewCamera3();
-	ViewCamera3(const ViewCamera3& rhs);
+	ViewCamera3(const ViewCamera3 &rhs);
 	virtual ~ViewCamera3();
 
-	ViewCamera3& operator=(const ViewCamera3& rhs);
+	ViewCamera3 & operator=(const ViewCamera3 &rhs);
 
 public:
 	/// virtual copy constructor
-	/*virtual*/ ViewCamera2* cloneCamera() const
+	/*virtual*/ ViewCamera2 * cloneCamera() const
 	{  return new ViewCamera3(*this);  }
 
 	///*virtual*/ void write(::std::ostream& stream);
@@ -46,16 +46,16 @@ public:
 	/// set the size of viewport
     /*virtual*/ bool setViewport(int iLeft, int iBottom, int iRight, int iTop)
 	{  return setViewport(Region2<int>(iLeft, iBottom, iRight, iTop));  }
-    /*virtual*/ bool setViewport(const Point2<int>& rPt1, Point2<int>& rPt2)
+    /*virtual*/ bool setViewport(const Point2<int> &rPt1, Point2<int> &rPt2)
 	{  return setViewport(Region2<int>(rPt1, rPt2));  }
-    /*virtual*/ bool setViewport(const Region2<int>& rViewport);
+    /*virtual*/ bool setViewport(const Region2<int> &rViewport);
 
 	/// set a viewing region
 	/*virtual */ bool setViewRegion(double dX1, double dY1, double dX2, double dY2)
 	{  return setViewRegion(Region2<double>(dX1, dY1, dX2, dY2));  }
-    /*virtual */ bool setViewRegion(const Point2<double>& rPt1, Point2<double>& rPt2)
+    /*virtual */ bool setViewRegion(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewRegion(Region2<double>(rPt1, rPt2));  }
-	/*virtual */ bool setViewRegion(const Region2<double>& rRct);
+	/*virtual */ bool setViewRegion(const Region2<double> &rRct);
 
 	/// move a viewing region
 	/*virtual*/ bool moveViewRegion(double dDeltaX, double dDeltaY);

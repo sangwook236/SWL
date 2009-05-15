@@ -38,7 +38,7 @@ GdiContext::~GdiContext()
 bool GdiContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hDC_ || NULL == hWnd_) return false;
+	if (NULL == hDC_) return false;
 
 	setActivation(true);
 
@@ -50,7 +50,7 @@ bool GdiContext::activate()
 bool GdiContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hDC_ || NULL == hWnd_) return false;
+	if (NULL == hDC_) return false;
 
 	setActivation(false);
 

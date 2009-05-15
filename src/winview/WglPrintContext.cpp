@@ -1,5 +1,6 @@
-#include "swl/winview/WglBitmapBufferedContext.h"
+#include "swl/winview/WglPrintContext.h"
 #include <boost/smart_ptr.hpp>
+#include <stdexcept>
 
 #if defined(WIN32) && defined(_DEBUG)
 void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
@@ -10,23 +11,23 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 
 namespace swl {
 
-WglBitmapBufferedContext::WglBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
+WglPrintContext::WglPrintContext(HDC printDC, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
 : base_type(drawRegion, true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
+  printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
 }
 
-WglBitmapBufferedContext::WglBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
+WglPrintContext::WglPrintContext(HDC printDC, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
-  hWnd_(hWnd), hDC_(NULL), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
+  printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
 		activate();
 }
 
-WglBitmapBufferedContext::~WglBitmapBufferedContext()
+WglPrintContext::~WglPrintContext()
 {
 	deactivate();
 
@@ -40,16 +41,16 @@ WglBitmapBufferedContext::~WglBitmapBufferedContext()
 	deleteOffScreen();
 }
 
-bool WglBitmapBufferedContext::swapBuffer()
+bool WglPrintContext::swapBuffer()
 {
 	//if (!isActivated() || isDrawing()) return false;
 	if (isDrawing()) return false;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 	setDrawing(true);
 
 	// copy off-screen buffer to window's DC
 	const bool ret = TRUE == BitBlt(
-		hDC_,
+		printDC_,
 		drawRegion_.left, drawRegion_.bottom,
 		drawRegion_.getWidth(), drawRegion_.getHeight(), 
 		memDC_,
@@ -61,8 +62,9 @@ bool WglBitmapBufferedContext::swapBuffer()
 	return ret;
 }
 
-bool WglBitmapBufferedContext::resize(const int x1, const int y1, const int x2, const int y2)
+bool WglPrintContext::resize(const int x1, const int y1, const int x2, const int y2)
 {
+/*
 	if (isActivated()) return false;
 	drawRegion_ = Region2<int>(x1, y1, x2, y2);
 
@@ -76,12 +78,14 @@ bool WglBitmapBufferedContext::resize(const int x1, const int y1, const int x2, 
 	deleteOffScreen();
 
 	return createOffScreen();
+*/
+	throw std::runtime_error("WglPrintContext::resize() must not to be called"); 
 }
 
-bool WglBitmapBufferedContext::activate()
+bool WglPrintContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 
 	const bool ret = (wglGetCurrentContext() == wglRC_) ? true : (wglMakeCurrent(memDC_, wglRC_) == TRUE);
 	if (ret)
@@ -94,33 +98,26 @@ bool WglBitmapBufferedContext::activate()
 	// draw something into rendering context
 }
 
-bool WglBitmapBufferedContext::deactivate()
+bool WglPrintContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == memBmp_ || NULL == memDC_ || NULL == hDC_) return false;
+	if (NULL == memBmp_ || NULL == memDC_ || NULL == printDC_) return false;
 
 	setActivation(false);
 
 	return wglMakeCurrent(NULL, NULL) == TRUE;
 }
 
-bool WglBitmapBufferedContext::createOffScreen()
+bool WglPrintContext::createOffScreen()
 {
-	if (NULL == hWnd_) return false;
-
-	// get DC for window
-	hDC_ = GetDC(hWnd_);
-	if (NULL == hDC_) return false;
+	if (NULL == printDC_) return false;
 
 	// create an off-screen DC for double-buffering
-	memDC_ = CreateCompatibleDC(hDC_);
+	memDC_ = CreateCompatibleDC(printDC_);
 	if (NULL == memDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 		return false;
-	}
 
+	// caution: in case of monochrone printer, the number of color bits is 1.
 	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL) <= 8 ? 32 : GetDeviceCaps(memDC_, BITSPIXEL);
 	const int colorPlaneCount = GetDeviceCaps(memDC_, PLANES);
 	const bool isPaletteUsed = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
@@ -170,9 +167,6 @@ bool WglBitmapBufferedContext::createOffScreen()
 
 		DeleteDC(memDC_);
 		memDC_ = NULL;
-
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 		return false;
 	}
 
@@ -214,12 +208,12 @@ bool WglBitmapBufferedContext::createOffScreen()
 	return true;
 }
 
-bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed)
+bool WglPrintContext::createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed)
 {
 	// method #1
 /*
-	memBmp_ = CreateCompatibleBitmap(hDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
-	//memBmp_ = CreateCompatibleBitmap(hDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
+	memBmp_ = CreateCompatibleBitmap(printDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
+	//memBmp_ = CreateCompatibleBitmap(printDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
 */
 	// method #2
 	const size_t bufSize = !isPaletteUsed ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
@@ -275,7 +269,7 @@ bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	return true;
 }
 
-void WglBitmapBufferedContext::deleteOffScreen()
+void WglPrintContext::deleteOffScreen()
 {
 	// free-up the off-screen DC
 	if (oldBmp_)
@@ -298,13 +292,6 @@ void WglBitmapBufferedContext::deleteOffScreen()
 
 		DeleteDC(memDC_);
 		memDC_ = NULL;
-	}
-
-	// release DC
-	if (hDC_)
-	{
-		ReleaseDC(hWnd_, hDC_);
-		hDC_ = NULL;
 	}
 }
 

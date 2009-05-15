@@ -23,7 +23,7 @@ public:
 	WinViewBase()  {}
 	virtual ~WinViewBase()  {}
 
-protected:
+public:
 	void renderScene(context_type &context, camera_type &camera);
 
 private:

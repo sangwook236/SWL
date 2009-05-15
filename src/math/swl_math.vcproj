@@ -265,6 +265,18 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4C7AA9CB-17C2-4b39-ACE5-7A1DDF1E4CE1}"
 			>
+			<File
+				RelativePath=".\MathConstant.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MathExt.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\MathUtil.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -273,6 +285,18 @@
 			>
 			<File
 				RelativePath="..\..\inc\swl\math\ExportMath.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\MathConstant.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\MathExt.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\MathUtil.h"
 				>
 			</File>
 		</Filter>

@@ -48,7 +48,7 @@ bool WglDoubleBufferedContext::swapBuffer()
 {
 	//if (!isActivated() || isDrawing()) return false;
 	if (isDrawing()) return false;
-	if (NULL == hDC_ || NULL == hWnd_) return false;
+	if (NULL == hDC_) return false;
 	setDrawing(true);
 
 	const bool ret = TRUE == SwapBuffers(hDC_);
@@ -60,7 +60,7 @@ bool WglDoubleBufferedContext::swapBuffer()
 bool WglDoubleBufferedContext::activate()
 {
 	if (isActivated()) return true;
-	if (NULL == hDC_ || NULL == hWnd_) return false;
+	if (NULL == hDC_) return false;
 
 	const bool ret = (wglGetCurrentContext() == wglRC_) ? true : (wglMakeCurrent(hDC_, wglRC_) == TRUE);
 	if (ret)
@@ -76,7 +76,7 @@ bool WglDoubleBufferedContext::activate()
 bool WglDoubleBufferedContext::deactivate()
 {
 	if (!isActivated()) return true;
-	if (NULL == hDC_ || NULL == hWnd_) return false;
+	if (NULL == hDC_) return false;
 
 	setActivation(false);
 
@@ -97,14 +97,33 @@ bool WglDoubleBufferedContext::createOffScreen()
     memset(&pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
 
     pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
-    pfd.nVersion = 1;
-    pfd.iPixelType = PFD_TYPE_RGBA;
-    pfd.iLayerType = PFD_MAIN_PLANE;
+    pfd.nVersion			= 1;
+    pfd.iPixelType			= PFD_TYPE_RGBA;
+    pfd.iLayerType			= PFD_MAIN_PLANE;
 
 	pfd.dwFlags				= PFD_DRAW_TO_WINDOW | PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_STEREO_DONTCARE;
 	//pfd.cColorBits		= 32;
 	pfd.cColorBits			= GetDeviceCaps(hDC_, BITSPIXEL);
+	pfd.cRedBits			= 8;
+	pfd.cRedShift			= 16;
+	pfd.cGreenBits			= 8;
+	pfd.cGreenShift			= 8;
+	pfd.cBlueBits			= 8;
+	pfd.cBlueShift			= 0;
+	pfd.cAlphaBits			= 0;
+	pfd.cAlphaShift			= 0;
+	//pfd.cAccumBits		= 64;  // consider more flexible configuration
+	//pfd.cAccumRedBits		= 16;
+	//pfd.cAccumGreenBits	= 16;
+	//pfd.cAccumBlueBits	= 16;
+	//pfd.cAccumAlphaBits	= 0;
 	pfd.cDepthBits			= 32;
+	pfd.cStencilBits		= 8;
+	pfd.cAuxBuffers			= 0;
+	pfd.bReserved			= 0;
+	pfd.dwLayerMask			= 0;
+	pfd.dwVisibleMask		= 0;
+	pfd.dwDamageMask		= 0;
 
 	// choose pixel format
 	int nPixelFormat = ChoosePixelFormat(hDC_, &pfd);
@@ -137,9 +156,6 @@ bool WglDoubleBufferedContext::createOffScreen()
 
 	// create & share a display list
 	createDisplayList(hDC_);
-
-	// use a palette in 256 color mode
-	usePalette(hDC_, pfd);
 
 	return true;
 }

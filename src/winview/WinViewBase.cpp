@@ -1,5 +1,6 @@
 #include "swl/winview/WinViewBase.h"
 #include "swl/view/ViewContext.h"
+#include "swl/view/ViewCamera2.h"
 
 #if defined(WIN32) && defined(_DEBUG)
 void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
@@ -18,6 +19,10 @@ void WinViewBase::renderScene(context_type &context, camera_type &camera)
 	// activate a context
 	//context.activate();
 
+	//
+	context.setViewingRegion(camera.getRevisedRegion());
+
+	//
 	doPrepareRendering(context, camera);
 	doRenderStockScene(context, camera);
 	doRenderScene(context, camera);

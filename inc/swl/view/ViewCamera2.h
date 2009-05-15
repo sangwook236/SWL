@@ -22,14 +22,14 @@ public:
 
 public:
 	ViewCamera2();
-	ViewCamera2(const ViewCamera2& rhs);
+	ViewCamera2(const ViewCamera2 &rhs);
 	virtual ~ViewCamera2();
 
-	ViewCamera2& operator=(const ViewCamera2& rhs);
+	ViewCamera2 & operator=(const ViewCamera2 &rhs);
 
 public:
 	/// virtual copy constructor
-	virtual ViewCamera2* cloneCamera() const
+	virtual ViewCamera2 * cloneCamera() const
 	{  return new ViewCamera2(*this);  }
 
 	///*virtual*/ void write(::std::ostream& stream);
@@ -41,11 +41,11 @@ public:
 	/// set the size of viewing bound
     virtual bool setViewBound(double dLeft, double dBottom, double dRight, double dTop)
 	{  return setViewBound(Region2<double>(dLeft, dBottom, dRight, dTop) );  }
-    virtual bool setViewBound(const Point2<double>& rPt1, Point2<double>& rPt2)
+    virtual bool setViewBound(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewBound(Region2<double>(rPt1, rPt2));  }
-    virtual bool setViewBound(const Region2<double>& rViewBound);
+    virtual bool setViewBound(const Region2<double> &rViewBound);
 	/// get the size of viewing bound
-    virtual void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop) const
+    virtual void getViewBound(double &rdLeft, double &rdBottom, double &rdRight, double &rdTop) const
 	{
 		rdLeft = viewBound_.left;  rdBottom = viewBound_.bottom;
 		rdRight = viewBound_.right;  rdTop = viewBound_.top;
@@ -55,7 +55,7 @@ public:
 	///
     virtual bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar)
 	{  return setViewBound(Region2<double>(dLeft, dBottom, dRight, dTop));  }
-    virtual void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop, double& rdNear, double& rdFar) const
+    virtual void getViewBound(double &rdLeft, double &rdBottom, double &rdRight, double &rdTop, double &rdNear, double &rdFar) const
 	{
 		getViewBound(rdLeft, rdBottom, rdRight, rdTop);
 		rdNear = rdFar = 0.0;
@@ -64,11 +64,11 @@ public:
 	/// set the size of viewport
     virtual bool setViewport(int iLeft, int iBottom, int iRight, int iTop)
 	{  return setViewport(Region2<int>(iLeft, iBottom, iRight, iTop));  }
-    virtual bool setViewport(const Point2<int>& rPt1, Point2<int>& rPt2)
+    virtual bool setViewport(const Point2<int> &rPt1, Point2<int> &rPt2)
 	{  return setViewport(Region2<int>(rPt1, rPt2));  }
-    virtual bool setViewport(const Region2<int>& rViewport);
+    virtual bool setViewport(const Region2<int> &rViewport);
 	/// get the size of viewport
-    virtual void getViewport(int& riLeft, int& riBottom, int& riRight, int& riTop) const
+    virtual void getViewport(int &riLeft, int &riBottom, int &riRight, int &riTop) const
 	{
 		riLeft = viewport_.left;  riBottom = viewport_.bottom;
 		riRight = viewport_.right;  riTop = viewport_.top;
@@ -78,11 +78,11 @@ public:
 	/// set a viewing region
 	virtual bool setViewRegion(double dX1, double dY1, double dX2, double dY2)
 	{  return setViewRegion(Region2<double>(dX1, dY1, dX2, dY2));  }
-    virtual bool setViewRegion(const Point2<double>& rPt1, Point2<double>& rPt2)
+    virtual bool setViewRegion(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewRegion(Region2<double>(rPt1, rPt2));  }
-	virtual bool setViewRegion(const Region2<double>& rRct);
+	virtual bool setViewRegion(const Region2<double> &rRct);
 	/// get the size of viewport
-    virtual void getViewRegion(double& rdX1, double& rdY1, double& rdX2, double& rdY2) const
+    virtual void getViewRegion(double &rdX1, double &rdY1, double &rdX2, double &rdY2) const
 	{
 		rdX1 = viewRegion_.left;  rdY1 = viewRegion_.bottom;
 		rdX2 = viewRegion_.right;  rdY2 = viewRegion_.top;
@@ -96,11 +96,11 @@ public:
 	virtual bool resizeViewRegion(double dWidth, double dHeight);
 	/// move a viewing region
 	virtual bool moveViewRegion(double dDeltaX, double dDeltaY);
-	virtual bool moveViewRegion(const Point2<double>& rDelta)
+	virtual bool moveViewRegion(const Point2<double> &rDelta)
 	{  return moveViewRegion(rDelta.x, rDelta.y);  }
 	/// rotate a viewing region
 	virtual bool rotateViewRegion(double dDeltaX, double dDeltaY)  {  return true;  }
-	virtual bool rotateViewRegion(const Point2<double>& rDelta)
+	virtual bool rotateViewRegion(const Point2<double> &rDelta)
 	{  return rotateViewRegion(rDelta.x, rDelta.y);  }
 	/// scale a viewing region
 	virtual bool scaleViewRegion(double dFactor);
@@ -120,15 +120,15 @@ public:
 	virtual void lookAt()  {}
 
 	/// map a window(screen, viewport) coordinates to a canvas(normalized, object) coordinates
-    virtual bool mapWindowToCanvas(int iVCx, int iVCy, double& rNCx, double& rNCy) const;
-    virtual bool mapWindowToCanvas(const Point2<int>& rVC, Point2<double>& rNC) const;
+    virtual bool mapWindowToCanvas(const int iVCx, const int iVCy, double &rNCx, double &rNCy) const;
+    virtual bool mapWindowToCanvas(const Point2<int> &rVC, Point2<double> &rNC) const;
     /// map a canvas(normalized, object) coordinates to a window(screen, viewport) coordinates
-    virtual bool mapCanvasToWindow(double dNCx, double dNCy, int& rVCx, int& rVCy) const;
-    virtual bool mapCanvasToWindow(const Point2<double>& rNC, Point2<int>& rVC) const;
+    virtual bool mapCanvasToWindow(const double dNCx, const double dNCy, int& rVCx, int& rVCy) const;
+    virtual bool mapCanvasToWindow(const Point2<double> &rNC, Point2<int> &rVC) const;
 
 	/// for scrolling window
-	virtual bool getHorizontalRatio(float& rfPosRatio, float& rfWidthRatio);
-	virtual bool getVerticalRatio(float& rfPosRatio, float& rfHeightRatio);
+	virtual bool getHorizontalRatio(float &rfPosRatio, float &rfWidthRatio);
+	virtual bool getVerticalRatio(float &rfPosRatio, float &rfHeightRatio);
 
 	virtual bool scrollHorizontally(float fRatio);
 	virtual bool scrollVertically(float fRatio);
@@ -141,7 +141,7 @@ protected:
 	virtual bool doUpdateZoomFactor();
 
 	///
-	void checkLimit(double& rdValue) const;
+	void checkLimit(double &rdValue) const;
 
 	///
 	double round(double dValue) const;

@@ -17,13 +17,13 @@ OglCamera::OglCamera()
 : base_type()
 {}
 
-OglCamera::OglCamera(const OglCamera& rhs)
+OglCamera::OglCamera(const OglCamera &rhs)
 : base_type(rhs)
 {}
 
 OglCamera::~OglCamera()  {}
 
-OglCamera& OglCamera::operator=(const OglCamera& rhs)
+OglCamera & OglCamera::operator=(const OglCamera &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type&>(*this) = rhs;
@@ -31,7 +31,7 @@ OglCamera& OglCamera::operator=(const OglCamera& rhs)
 }
 
 /*
-void OglCamera::write(std::ostream& stream)
+void OglCamera::write(std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
@@ -44,7 +44,7 @@ void OglCamera::write(std::ostream& stream)
 	endWriteEndl(stream);
 }
 
-void OglCamera::read(std::istream& stream)
+void OglCamera::read(std::istream &stream)
 {
 	beginAssert(stream);
 		// read version

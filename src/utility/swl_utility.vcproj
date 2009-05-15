@@ -302,6 +302,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\StringUtil.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\strlib.cpp"
 				>
 			</File>
@@ -353,6 +357,10 @@
 			</File>
 			<File
 				RelativePath=".\iniparser.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\utility\StringUtil.h"
 				>
 			</File>
 			<File

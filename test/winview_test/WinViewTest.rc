@@ -177,6 +177,12 @@ BEGIN
         MENUITEM "Zoom In",                     ID_VIEWSTATE_ZOOMIN
         MENUITEM "Zoom Out",                    ID_VIEWSTATE_ZOOMOUT
     END
+    POPUP "Print and Capture"
+    BEGIN
+        MENUITEM "Print View using GDI...",     ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI
+        MENUITEM "Capture View using GDI...",   ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI
+        MENUITEM "Capture View using GDI+...",  ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS
+    END
 END
 
 

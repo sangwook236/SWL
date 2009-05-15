@@ -2,9 +2,7 @@
 #define __SWL_WIN_VIEW__GDI_CONTEXT__H_ 1
 
 
-#include "swl/winview/ExportWinView.h"
-#include "swl/view/ViewContext.h"
-#include <windows.h>
+#include "swl/winview/GdiContextBase.h"
 
 
 namespace swl {
@@ -12,11 +10,10 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //  Single-buffered Context for GDI in Microsoft Windows
 
-class SWL_WIN_VIEW_API GdiContext: public ViewContext
+class SWL_WIN_VIEW_API GdiContext: public GdiContextBase
 {
 public:
-	typedef ViewContext base_type;
-	typedef HDC context_type;
+	typedef GdiContextBase base_type;
 
 public:
 	GdiContext(HWND hWnd, const bool isAutomaticallyActivated = true);

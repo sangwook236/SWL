@@ -2,14 +2,12 @@
 #define __SWL_WIN_VIEW__GDI_PLUS_BITMAP_BUFFERED_CONTEXT__H_ 1
 
 
-#include "swl/winview/ExportWinView.h"
-#include "swl/view/ViewContext.h"
-#include <windows.h>
+#include "swl/winview/GdiplusContextBase.h"
 
 
 namespace Gdiplus {
 
-class Graphics;
+class Image;
 class Bitmap;
 
 }  // namespace Gdiplus
@@ -19,15 +17,14 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //  Bitmap-buffered Context for GDI+ in Microsoft Windows
 
-class SWL_WIN_VIEW_API GdiplusBitmapBufferedContext: public ViewContext
+class SWL_WIN_VIEW_API GdiplusBitmapBufferedContext: public GdiplusContextBase
 {
 public:
-	typedef ViewContext base_type;
-	typedef Gdiplus::Graphics context_type;
+	typedef GdiplusContextBase base_type;
 
 public:
-	GdiplusBitmapBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated = true);
-	GdiplusBitmapBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated = true);
+	GdiplusBitmapBufferedContext(HWND hWnd, const Region2<int> &drawRegion, const bool isAutomaticallyActivated = true);
+	GdiplusBitmapBufferedContext(HWND hWnd, const RECT &drawRect, const bool isAutomaticallyActivated = true);
 	virtual ~GdiplusBitmapBufferedContext();
 
 private:
@@ -49,8 +46,13 @@ public:
 	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(canvas_) : boost::any();  }
 	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(canvas_) : boost::any();  }
 
+    /// get the off-screen surface
+	Gdiplus::Image * getOffScreen();
+	const Gdiplus::Image * getOffScreen() const;
+
 private:
 	bool createOffScreen();
+	void deleteOffScreen();
 
 private:
 	/// a window handle

@@ -272,11 +272,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GdiCaptureContext.cpp"
+				RelativePath=".\GdiContext.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\GdiContext.cpp"
+				RelativePath=".\GdiContextBase.cpp"
 				>
 			</File>
 			<File
@@ -285,6 +285,10 @@
 			</File>
 			<File
 				RelativePath=".\GdiplusContext.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GdiplusContextBase.cpp"
 				>
 			</File>
 			<File
@@ -304,11 +308,31 @@
 				>
 			</File>
 			<File
+				RelativePath=".\WglPrintContext.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WglViewBase.cpp"
 				>
 			</File>
 			<File
+				RelativePath=".\WglViewCaptureApi.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WglViewPrintApi.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WinViewBase.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WinViewCaptureApi.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WinViewPrintApi.cpp"
 				>
 			</File>
 		</Filter>
@@ -326,11 +350,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\winview\GdiCaptureContext.h"
+				RelativePath="..\..\inc\swl\winview\GdiContext.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\winview\GdiContext.h"
+				RelativePath="..\..\inc\swl\winview\GdiContextBase.h"
 				>
 			</File>
 			<File
@@ -339,6 +363,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\GdiplusContext.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\GdiplusContextBase.h"
 				>
 			</File>
 			<File
@@ -358,11 +386,31 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\winview\WglPrintContext.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\winview\WglViewBase.h"
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\winview\WglViewCaptureApi.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WglViewPrintApi.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\winview\WinViewBase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WinViewCaptureApi.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WinViewPrintApi.h"
 				>
 			</File>
 		</Filter>
