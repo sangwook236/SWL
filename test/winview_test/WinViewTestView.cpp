@@ -223,7 +223,7 @@ void CWinViewTestView::OnInitialUpdate()
 		data1_.push_back(std::make_pair(i, (int)std::floor(y + 0.5)));
 	}
 
-	drawMode_ = 2;  // [1, 4]
+	drawMode_ = 4;  // [1, 4]
 	useLocallyCreatedContext_ = false;
 
 	CRect rect;
@@ -1030,11 +1030,7 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 
 	DOCINFO di;
 	di.cbSize = sizeof(DOCINFO);
-#if defined(_UNICODE) || defined(UNICODE)
-	di.lpszDocName = L"GDI Print";
-#else
-	di.lpszDocName = "GDI Print";
-#endif
+	di.lpszDocName = _T("GDI Print");
 	di.lpszOutput = NULL;
 
 	// start the print job

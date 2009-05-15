@@ -754,11 +754,7 @@ void CWglViewTestView::OnPrintandcapturePrintviewusinggdi()
 
 	DOCINFO di;
 	di.cbSize = sizeof(DOCINFO);
-#if defined(_UNICODE) || defined(UNICODE)
-	di.lpszDocName = L"OpenGL Print";
-#else
-	di.lpszDocName = "OpenGL Print";
-#endif
+	di.lpszDocName = _T("OpenGL Print");
 	di.lpszOutput = NULL;
 
 	// start the print job
