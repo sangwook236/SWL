@@ -8,18 +8,6 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-//
-
-SWL_MATH_API double round(const double x);
-SWL_MATH_API double round(const double x, const int decimalPlace);
-
-SWL_MATH_API double logb(double base, const double x);
-SWL_MATH_API double asinh(const double x);
-SWL_MATH_API double acosh(const double x);  // x >= 1
-SWL_MATH_API double atanh(const double x);  // -1 < x < 1
-
-
-//-----------------------------------------------------------------------------------------
 // struct MathExt
 
 struct SWL_MATH_API MathExt
@@ -28,11 +16,17 @@ public :
 	///
 	static double mantissa(const double x, double *pow = 0L);
 	static double saturate(const double x)
-	{
-		if (x >= 1.0) return 1.0;
-		else if (x <= -1.0) return -1.0;
-		else return x;
-	}
+	{  return x >= 1.0 ? 1.0 : (x <= -1.0 ? -1.0 : x);  }
+
+	///
+	static double round(const double x);
+	double round(const double x, const int decimalPlace);
+
+	///
+	static double logb(double base, const double x);
+	static double asinh(const double x);
+	static double acosh(const double x);  // x >= 1
+	static double atanh(const double x);  // -1 < x < 1
 
 	/// GCD: greatest common divisor
 	static unsigned long gcd(const unsigned long lhs, const unsigned long rhs);
