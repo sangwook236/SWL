@@ -62,7 +62,7 @@ private:
 
 	/// a buffered context
 	Gdiplus::Graphics *canvas_;
-	/// a buffered bitmaps
+	/// a buffered bitmap
 	Gdiplus::Bitmap *memBmp_;
 };
 

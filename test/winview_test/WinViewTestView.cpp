@@ -70,6 +70,7 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWinViewTestView::OnPrintandcapturePrintviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
+	ON_COMMAND(ID_PRINTANDCAPTURE_COPYTOCLIPBOARD, &CWinViewTestView::OnPrintandcaptureCopytoclipboard)
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
@@ -1038,7 +1039,7 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 	StartPage(pd.hDC);
 
 	//
-	if (!printWinViewUsingGdi(*this, pd.hDC))
+	if (!swl::printWinViewUsingGdi(*this, pd.hDC))
 		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
 
 	// end the print job
@@ -1062,7 +1063,7 @@ void CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi()
 #else
 		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
 #endif
-		if (!captureWinViewUsingGdi(filePathName, *this, GetSafeHwnd()))
+		if (!swl::captureWinViewUsingGdi(filePathName, *this, GetSafeHwnd()))
 			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
 
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
@@ -1085,9 +1086,37 @@ void CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus()
 		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
 		const std::string fileExtName((char *)(LPCTSTR)dlg.GetFileExt());
 #endif
-		if (!captureWinViewUsingGdiplus(filePathName, fileExtName, *this, GetSafeHwnd()))
+		if (!swl::captureWinViewUsingGdiplus(filePathName, fileExtName, *this, GetSafeHwnd()))
 			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
 
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
+}
+
+void CWinViewTestView::OnPrintandcaptureCopytoclipboard()
+{
+	CClientDC dc(this);
+
+	CDC memDC;
+	memDC.CreateCompatibleDC(&dc);
+
+	CRect rect;
+	GetWindowRect(&rect);
+
+	CBitmap bitmap;
+	bitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+
+	CBitmap *oldBitmap = memDC.SelectObject(&bitmap);
+	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, 0, 0, SRCCOPY);
+
+	// clipboard
+	if (OpenClipboard())
+	{
+		EmptyClipboard();
+		SetClipboardData(CF_BITMAP, bitmap.GetSafeHandle());
+		CloseClipboard();
+	}
+
+	memDC.SelectObject(oldBitmap);
+	bitmap.Detach();
 }

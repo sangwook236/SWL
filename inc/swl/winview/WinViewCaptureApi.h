@@ -21,7 +21,6 @@ SWL_WIN_VIEW_API bool captureWinViewUsingGdiplus(const std::wstring &filePathNam
 SWL_WIN_VIEW_API bool captureWinViewUsingGdi(const std::string &filePathName, WinViewBase &view, HWND hWnd);
 SWL_WIN_VIEW_API bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::string &fileExtName, WinViewBase &view, HWND hWnd);
 #endif
-
 }  // namespace swl
 
 

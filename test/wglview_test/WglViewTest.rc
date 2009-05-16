@@ -179,9 +179,12 @@ BEGIN
     END
     POPUP "Print and Capture"
     BEGIN
-        MENUITEM "Print View using GDI...",     32780
+        MENUITEM "Print View using GDI...",     ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI
+        MENUITEM SEPARATOR
         MENUITEM "Capture View using GDI...",   ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI
-        MENUITEM "Capture View using GDI+...",  32781, INACTIVE
+        MENUITEM "Capture View using GDI+...",  ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, INACTIVE
+        MENUITEM SEPARATOR
+        MENUITEM "Copy to Clipboard",           ID_PRINTANDCAPTURE_COPYTOCLIPBOARD
     END
 END
 

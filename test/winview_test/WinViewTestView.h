@@ -126,6 +126,7 @@ public:
 	afx_msg void OnPrintandcapturePrintviewusinggdi();
 	afx_msg void OnPrintandcaptureCaptureviewusinggdi();
 	afx_msg void OnPrintandcaptureCaptureviewusinggdiplus();
+	afx_msg void OnPrintandcaptureCopytoclipboard();
 };
 
 #ifndef _DEBUG  // debug version in WinViewTestView.cpp

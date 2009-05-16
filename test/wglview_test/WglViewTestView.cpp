@@ -67,6 +67,7 @@ BEGIN_MESSAGE_MAP(CWglViewTestView, CView)
 	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWglViewTestView::OnPrintandcapturePrintviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
+	ON_COMMAND(ID_PRINTANDCAPTURE_COPYTOCLIPBOARD, &CWglViewTestView::OnPrintandcaptureCopytoclipboard)
 END_MESSAGE_MAP()
 
 // CWglViewTestView construction/destruction
@@ -762,7 +763,7 @@ void CWglViewTestView::OnPrintandcapturePrintviewusinggdi()
 	StartPage(pd.hDC);
 
 	//
-	if (!printWglViewUsingGdi(*this, pd.hDC))
+	if (!swl::printWglViewUsingGdi(*this, pd.hDC))
 		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
 
 	// end the print job
@@ -786,7 +787,7 @@ void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi()
 #else
 		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
 #endif
-		if (!captureWglViewUsingGdi(filePathName, *this, GetSafeHwnd()))
+		if (!swl::captureWglViewUsingGdi(filePathName, *this, GetSafeHwnd()))
 			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
 
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
@@ -795,5 +796,34 @@ void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi()
 
 void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus()
 {
-	// TODO: Add your command handler code here
+	// FIXME [add] >>
+	AfxMessageBox(_T("not yet implemented"), MB_OK | MB_ICONSTOP);
+}
+
+void CWglViewTestView::OnPrintandcaptureCopytoclipboard()
+{
+	CClientDC dc(this);
+
+	CDC memDC;
+	memDC.CreateCompatibleDC(&dc);
+
+	CRect rect;
+	GetWindowRect(&rect);
+
+	CBitmap bitmap;
+	bitmap.CreateCompatibleBitmap(&dc, rect.Width(), rect.Height());
+
+	CBitmap *oldBitmap = memDC.SelectObject(&bitmap);
+	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, 0, 0, SRCCOPY);
+
+	// clipboard
+	if (OpenClipboard())
+	{
+		EmptyClipboard();
+		SetClipboardData(CF_BITMAP, bitmap.GetSafeHandle());
+		CloseClipboard();
+	}
+
+	memDC.SelectObject(oldBitmap);
+	bitmap.Detach();
 }
