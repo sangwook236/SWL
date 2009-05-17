@@ -35,6 +35,9 @@ protected:
 	static void deletePalette(HDC hDC);
 
 protected:
+	// a flag to check if a color palette is used
+	bool isPaletteUsed_;
+
 	/// a palette handle for the index mode graphics hardware
     static HPALETTE shPalette_;
 	/// a palette usage count

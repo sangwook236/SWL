@@ -16,13 +16,13 @@ namespace swl  {
 
 WglContextBase::WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed)
 : base_type(drawRegion, isOffScreenUsed),
-  wglRC_(NULL)
+  wglRC_(NULL), isPaletteUsed_(false)
 {
 }
 
 WglContextBase::WglContextBase(const RECT &drawRect, const bool isOffScreenUsed)
 : base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed),
-  wglRC_(NULL)
+  wglRC_(NULL), isPaletteUsed_(false)
 {
 }
 

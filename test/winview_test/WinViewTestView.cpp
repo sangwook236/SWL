@@ -71,6 +71,7 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
 	ON_COMMAND(ID_PRINTANDCAPTURE_COPYTOCLIPBOARD, &CWinViewTestView::OnPrintandcaptureCopytoclipboard)
+	ON_COMMAND(ID_EDIT_COPY, &CWinViewTestView::OnEditCopy)
 END_MESSAGE_MAP()
 
 // CWinViewTestView construction/destruction
@@ -1119,4 +1120,9 @@ void CWinViewTestView::OnPrintandcaptureCopytoclipboard()
 
 	memDC.SelectObject(oldBitmap);
 	bitmap.Detach();
+}
+
+void CWinViewTestView::OnEditCopy()
+{
+	OnPrintandcaptureCopytoclipboard();
 }

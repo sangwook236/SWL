@@ -45,7 +45,7 @@ public:
 
 private:
 	bool createOffScreen();
-	bool createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed);
+	bool createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount);
 	void deleteOffScreen();
 
 private:

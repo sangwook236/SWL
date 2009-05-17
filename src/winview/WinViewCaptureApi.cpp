@@ -27,10 +27,11 @@ bool writeRgbDib(const std::string &filePathName, const void *pixels, const long
 {
 	if (filePathName.empty() || !pixels) return false;
 
+    FILE *fp = NULL;
 #if defined(_UNICODE) || defined(UNICODE)
-    FILE *fp = _wfopen(filePathName.c_str(), L"wb");
+	_wfopen_s(&fp, filePathName.c_str(), L"wb");
 #else
-    FILE *fp = fopen(filePathName.c_str(), "wb");
+	fopen_s(&fp, filePathName.c_str(), "wb");
 #endif
 	if (!fp) return false;
 
@@ -62,10 +63,9 @@ bool writeRgbDib(const std::string &filePathName, const void *pixels, const long
 	// to be free from structure byte alignment,
 	// member-to-member I/O transport is performed
 	//--S 2002/05/07: Sang-Wook Lee
-	//const DWORD imgSize = width * height * 3;  // file size [ byte ]
-	const DWORD imgSize = width * height * colorByteCount;  // file size [ byte ]
+	//const DWORD imgSize = width * height * 3;  // file size [byte]
+	const DWORD imgSize = width * height * colorByteCount;  // file size [byte]
 	//--E 2002/05/07
-	DWORD dwBuffer;
 
     if (fwrite("BM", 2, 1, fp) != 1)
 	{
@@ -73,7 +73,7 @@ bool writeRgbDib(const std::string &filePathName, const void *pixels, const long
 		return false;
 	}
 
-    dwBuffer = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+    DWORD dwBuffer = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
     if (fwrite(&dwBuffer, 4, 1, fp) != 1)
 	{
 		fclose(fp);

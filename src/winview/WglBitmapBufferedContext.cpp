@@ -120,11 +120,14 @@ bool WglBitmapBufferedContext::createOffScreen()
 		hDC_ = NULL;
 		return false;
 	}
+	//
+	isPaletteUsed_ = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
+	assert(false == isPaletteUsed_);
 
-	assert(GetDeviceCaps(memDC_, BITSPIXEL) > 8);
 	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL) <= 8 ? 32 : GetDeviceCaps(memDC_, BITSPIXEL);
+	assert(GetDeviceCaps(memDC_, BITSPIXEL) > 8);
 	const int colorPlaneCount = GetDeviceCaps(memDC_, PLANES);
-	const bool isPaletteUsed = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
+	assert(1 == colorPlaneCount);
 
 	// create OpenGL pixel format descriptor
     PIXELFORMATDESCRIPTOR pfd;
@@ -161,10 +164,10 @@ bool WglBitmapBufferedContext::createOffScreen()
 	pfd.dwDamageMask		= 0;
 
 	// use palette: when using 256 color
-	if (isPaletteUsed) createPalette(memDC_, pfd, colorBitCount);
+	if (isPaletteUsed_) createPalette(memDC_, pfd, colorBitCount);
 
 	//
-	if (!createOffScreenBitmap(colorBitCount, isPaletteUsed))
+	if (!createOffScreenBitmap(colorBitCount, colorPlaneCount))
 	{
 		DeleteObject(memBmp_);
 		memBmp_ = NULL;
@@ -215,7 +218,7 @@ bool WglBitmapBufferedContext::createOffScreen()
 	return true;
 }
 
-bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, const bool isPaletteUsed)
+bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount)
 {
 	// method #1
 /*
@@ -223,7 +226,7 @@ bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	//memBmp_ = CreateCompatibleBitmap(hDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
 */
 	// method #2
-	const size_t bufSize = !isPaletteUsed ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
+	const size_t bufSize = !isPaletteUsed_ ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
 	const boost::scoped_array<unsigned char> buf(new unsigned char [bufSize]);
 	memset(buf.get(), 0, bufSize);
 	BITMAPINFO &bmiDIB = *(BITMAPINFO *)buf.get();
@@ -241,9 +244,9 @@ bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	bmiDIB.bmiHeader.biSize			= sizeof(BITMAPINFOHEADER);
 	bmiDIB.bmiHeader.biWidth		= width;
 	bmiDIB.bmiHeader.biHeight		= height;
-	bmiDIB.bmiHeader.biPlanes		= 1;
+	bmiDIB.bmiHeader.biPlanes		= colorPlaneCount;
 	bmiDIB.bmiHeader.biBitCount		= colorBitCount;
-	if (!isPaletteUsed)
+	if (!isPaletteUsed_)
 	{
 		bmiDIB.bmiHeader.biCompression	= BI_RGB;
 		bmiDIB.bmiHeader.biSizeImage	= 0;  // for BI_RGB
@@ -253,6 +256,7 @@ bool WglBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	}
 	else
 	{
+		// FIXME [check] >>
 		bmiDIB.bmiHeader.biCompression	= colorBitCount > 4 ? BI_RLE8 : BI_RLE4;
 		bmiDIB.bmiHeader.biSizeImage	= width * height * 3;
 
@@ -294,8 +298,7 @@ void WglBitmapBufferedContext::deleteOffScreen()
 	if (memDC_)
 	{
 		// use palette: when using 256 color
-		if ((GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE)
-			deletePalette(memDC_);
+		if (isPaletteUsed_)	deletePalette(memDC_);
 
 		DeleteDC(memDC_);
 		memDC_ = NULL;

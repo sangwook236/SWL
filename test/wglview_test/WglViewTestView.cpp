@@ -68,6 +68,7 @@ BEGIN_MESSAGE_MAP(CWglViewTestView, CView)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
 	ON_COMMAND(ID_PRINTANDCAPTURE_COPYTOCLIPBOARD, &CWglViewTestView::OnPrintandcaptureCopytoclipboard)
+	ON_COMMAND(ID_EDIT_COPY, &CWglViewTestView::OnEditCopy)
 END_MESSAGE_MAP()
 
 // CWglViewTestView construction/destruction
@@ -826,4 +827,9 @@ void CWglViewTestView::OnPrintandcaptureCopytoclipboard()
 
 	memDC.SelectObject(oldBitmap);
 	bitmap.Detach();
+}
+
+void CWglViewTestView::OnEditCopy()
+{
+	OnPrintandcaptureCopytoclipboard();
 }
