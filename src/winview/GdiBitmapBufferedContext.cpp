@@ -136,8 +136,8 @@ bool GdiBitmapBufferedContext::createOffScreen()
 	isPaletteUsed_ = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
 	assert(false == isPaletteUsed_);
 
-	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL) <= 8 ? 32 : GetDeviceCaps(memDC_, BITSPIXEL);
-	assert(GetDeviceCaps(memDC_, BITSPIXEL) > 8);
+	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL);
+	assert(colorBitCount > 8);
 	const int colorPlaneCount = GetDeviceCaps(memDC_, PLANES);
 	assert(1 == colorPlaneCount);
 

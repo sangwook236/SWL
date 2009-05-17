@@ -120,9 +120,10 @@ bool WglPrintContext::createOffScreen()
 	isPaletteUsed_ = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
 	assert(false == isPaletteUsed_);
 
-	// caution: in case of monochrone printer, the number of color bits is 1.
+	// caution: in case of monochrone printer, the number of color bits is 1
+	//const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL);
 	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL) <= 8 ? 32 : GetDeviceCaps(memDC_, BITSPIXEL);
-	assert(GetDeviceCaps(memDC_, BITSPIXEL) > 8);
+	assert(colorBitCount > 8);
 	const int colorPlaneCount = GetDeviceCaps(memDC_, PLANES);
 	assert(1 == colorPlaneCount);
 
