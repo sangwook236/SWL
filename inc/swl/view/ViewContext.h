@@ -89,6 +89,26 @@ private:
 	bool isDrawing_;
 };
 
+//-----------------------------------------------------------------------------------
+// 
+
+struct ViewContextGuard
+{
+public:
+	//typedef ViewContextGuard base_type;
+	typedef ViewContextGuard base_type;
+
+public:
+	ViewContextGuard(ViewContext &context)
+	: context_(context)
+	{  context_.activate();  }
+	~ViewContextGuard()
+	{  context_.deactivate();  }
+
+private:
+	ViewContext &context_;
+};
+
 }  // namespace swl
 
 

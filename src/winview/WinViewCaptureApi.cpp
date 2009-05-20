@@ -185,11 +185,12 @@ bool captureWinViewUsingGdi(const std::string &filePathName, WinViewBase &view, 
 */
 		GdiBitmapBufferedContext captureContext(hWnd, viewport, false);
 
-		captureContext.activate();
-		view.initializeView();
-		currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
-		view.renderScene(captureContext, *currCamera);
-		captureContext.deactivate();
+		{
+			ViewContextGuard guard(captureContext);
+			view.initializeView();
+			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
+			view.renderScene(captureContext, *currCamera);
+		}
 
 		// write DIB
 		return writeRgbDib(filePathName, captureContext.getOffScreen(), viewport.getWidth(), viewport.getHeight());
@@ -239,11 +240,12 @@ bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::stri
 	//--E [] 2009/05/14
 		GdiplusBitmapBufferedContext captureContext(hWnd, viewport, false);
 
-		captureContext.activate();
-		view.initializeView();
-		currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
-		view.renderScene(captureContext, *currCamera);
-		captureContext.deactivate();
+		{
+			ViewContextGuard guard(captureContext);
+			view.initializeView();
+			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
+			view.renderScene(captureContext, *currCamera);
+		}
 
 		// write DIB
 		if (captureContext.getOffScreen())

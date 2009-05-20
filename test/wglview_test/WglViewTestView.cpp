@@ -256,8 +256,8 @@ void CWglViewTestView::OnInitialUpdate()
 	// initialize a view
 	if (viewContext.get())
 	{
-		// activate the context
-		viewContext->activate();
+		// guard the context
+		swl::ViewContextGuard guard(*viewContext);
 
 		// set the view
 		initializeView();
@@ -278,9 +278,6 @@ void CWglViewTestView::OnInitialUpdate()
 		}
 
 		raiseDrawEvent(false);
-
-		// de-activate the context
-		viewContext->deactivate();
 	}
 
 	// using a locally-created context
@@ -313,9 +310,8 @@ void CWglViewTestView::OnPaint()
 		{
 			if (context->isOffScreenUsed())
 			{
-				//context->activate();
+				//swl::ViewContextGuard guard(*context);
 				context->swapBuffer();
-				//context->deactivate();
 			}
 			else raiseDrawEvent(true);
 		}
@@ -346,9 +342,8 @@ bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 		if (!context.get() || context->isDrawing())
 			return false;
 
-		context->activate();
+		swl::ViewContextGuard guard(*context);
 		OnDraw(0L);
-		context->deactivate();
 	}
 	else OnDraw(0L);
 
@@ -379,12 +374,11 @@ bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 	const boost::shared_ptr<context_type> &viewContext = topContext();
 	if (viewContext.get() && viewContext->resize(x1, y1, x2, y2))
 	{
-		viewContext->activate();
+		swl::ViewContextGuard guard(*viewContext);
 		initializeView();
 		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
 		if (viewCamera.get()) viewCamera->setViewport(x1, y1, x2, y2);
 		raiseDrawEvent(false);
-		viewContext->deactivate();
 
 		return true;
 	}

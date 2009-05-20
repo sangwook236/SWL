@@ -174,11 +174,12 @@ void PanState::releaseMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera3 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -201,11 +202,12 @@ void PanState::moveMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera3 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -250,10 +252,11 @@ void RotateState::releaseMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera3 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.rotateView(dX, dY);
 			view.raiseDrawEvent(false);
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -276,10 +279,11 @@ void RotateState::moveMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera3 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.rotateView(dX, dY);
 			view.raiseDrawEvent(false);
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -320,12 +324,13 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			const swl::Region2<int> vp = camera.getViewport();
 			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -352,9 +357,11 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		}
 /*
 		// this implementation is not working
-		context.activate();
-		boost::any &nativeCtx = context.getNativeContext();
-		context.deactivate();
+		boost::any &nativeCtx;
+		{
+			ViewContextGuard guard(context);
+			nativeCtx = context.getNativeContext();
+		}
 		if (!nativeCtx.empty())
 		{
 			try
@@ -407,14 +414,15 @@ void ZoomRegionState::wheelMouse(const MouseEvent &evt)
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			if (evt.scrollAmount > 0)
 				camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25 * evt.scrollAmount);  // zoom-out
 			else
 				camera.scaleViewRegion(0.8 * -evt.scrollAmount);  // zoom-in
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -462,11 +470,12 @@ void ZoomAllState::handleEvent()
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.restoreViewRegion();
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -493,11 +502,12 @@ void ZoomInState::handleEvent()
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.scaleViewRegion(0.8);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{
@@ -524,11 +534,12 @@ void ZoomOutState::handleEvent()
 		ViewContext &context = fsm.getViewContext();
 		ViewCamera2 &camera = fsm.getViewCamera();
 
-		context.activate();
+		{
+			ViewContextGuard guard(context);
 			camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
-		context.deactivate();
+		}
 	}
 	catch (const std::bad_cast &)
 	{

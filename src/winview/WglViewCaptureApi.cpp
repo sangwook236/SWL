@@ -155,11 +155,12 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 */
 		WglBitmapBufferedContext captureContext(hWnd, viewport, false);
 
-		captureContext.activate();
-		view.initializeView();
-		currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
-		view.renderScene(captureContext, *currCamera);
-		captureContext.deactivate();
+		{
+			ViewContextGuard guard(captureContext);
+			view.initializeView();
+			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
+			view.renderScene(captureContext, *currCamera);
+		}
 
 		// write DIB
 		return writeRgbDib(filePathName, captureContext.getOffScreen(), viewport.getWidth(), viewport.getHeight());
