@@ -55,18 +55,18 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_WM_KEYDOWN()
 	ON_WM_KEYUP()
 	ON_WM_CHAR()
-	ON_COMMAND(ID_VIEWSTATE_PAN, &CWinViewTestView::OnViewstatePan)
-	ON_COMMAND(ID_VIEWSTATE_ROTATE, &CWinViewTestView::OnViewstateRotate)
-	ON_COMMAND(ID_VIEWSTATE_ZOOMREGION, &CWinViewTestView::OnViewstateZoomregion)
-	ON_COMMAND(ID_VIEWSTATE_ZOOMALL, &CWinViewTestView::OnViewstateZoomall)
-	ON_COMMAND(ID_VIEWSTATE_ZOOMIN, &CWinViewTestView::OnViewstateZoomin)
-	ON_COMMAND(ID_VIEWSTATE_ZOOMOUT, &CWinViewTestView::OnViewstateZoomout)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_PAN, &CWinViewTestView::OnUpdateViewstatePan)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ROTATE, &CWinViewTestView::OnUpdateViewstateRotate)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMREGION, &CWinViewTestView::OnUpdateViewstateZoomregion)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMALL, &CWinViewTestView::OnUpdateViewstateZoomall)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMIN, &CWinViewTestView::OnUpdateViewstateZoomin)
-	ON_UPDATE_COMMAND_UI(ID_VIEWSTATE_ZOOMOUT, &CWinViewTestView::OnUpdateViewstateZoomout)
+	ON_COMMAND(ID_VIEWHANDLING_PAN, &CWinViewTestView::OnViewhandlingPan)
+	ON_COMMAND(ID_VIEWHANDLING_ROTATE, &CWinViewTestView::OnViewhandlingRotate)
+	ON_COMMAND(ID_VIEWHANDLING_ZOOMREGION, &CWinViewTestView::OnViewhandlingZoomregion)
+	ON_COMMAND(ID_VIEWHANDLING_ZOOMALL, &CWinViewTestView::OnViewhandlingZoomall)
+	ON_COMMAND(ID_VIEWHANDLING_ZOOMIN, &CWinViewTestView::OnViewhandlingZoomin)
+	ON_COMMAND(ID_VIEWHANDLING_ZOOMOUT, &CWinViewTestView::OnViewhandlingZoomout)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_PAN, &CWinViewTestView::OnUpdateViewhandlingPan)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ROTATE, &CWinViewTestView::OnUpdateViewhandlingRotate)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMREGION, &CWinViewTestView::OnUpdateViewhandlingZoomregion)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMALL, &CWinViewTestView::OnUpdateViewhandlingZoomall)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMIN, &CWinViewTestView::OnUpdateViewhandlingZoomin)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMOUT, &CWinViewTestView::OnUpdateViewhandlingZoomout)
 	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWinViewTestView::OnPrintandcapturePrintviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
@@ -911,49 +911,49 @@ void CWinViewTestView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	CView::OnChar(nChar, nRepCnt, nFlags);
 }
 
-void CWinViewTestView::OnViewstatePan()
+void CWinViewTestView::OnViewhandlingPan()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
 }
 
-void CWinViewTestView::OnViewstateRotate()
+void CWinViewTestView::OnViewhandlingRotate()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
-void CWinViewTestView::OnViewstateZoomregion()
+void CWinViewTestView::OnViewhandlingZoomregion()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
-void CWinViewTestView::OnViewstateZoomall()
+void CWinViewTestView::OnViewhandlingZoomall()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
 }
 
-void CWinViewTestView::OnViewstateZoomin()
+void CWinViewTestView::OnViewhandlingZoomin()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
-void CWinViewTestView::OnViewstateZoomout()
+void CWinViewTestView::OnViewhandlingZoomout()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
-void CWinViewTestView::OnUpdateViewstatePan(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
@@ -962,7 +962,7 @@ void CWinViewTestView::OnUpdateViewstatePan(CCmdUI *pCmdUI)
 	else pCmdUI->SetCheck(0);
 }
 
-void CWinViewTestView::OnUpdateViewstateRotate(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
@@ -973,7 +973,7 @@ void CWinViewTestView::OnUpdateViewstateRotate(CCmdUI *pCmdUI)
 	else pCmdUI->SetCheck(0);
 }
 
-void CWinViewTestView::OnUpdateViewstateZoomregion(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
@@ -982,7 +982,7 @@ void CWinViewTestView::OnUpdateViewstateZoomregion(CCmdUI *pCmdUI)
 	else pCmdUI->SetCheck(0);
 }
 
-void CWinViewTestView::OnUpdateViewstateZoomall(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
@@ -991,7 +991,7 @@ void CWinViewTestView::OnUpdateViewstateZoomall(CCmdUI *pCmdUI)
 	else pCmdUI->SetCheck(0);
 }
 
-void CWinViewTestView::OnUpdateViewstateZoomin(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
@@ -1000,7 +1000,7 @@ void CWinViewTestView::OnUpdateViewstateZoomin(CCmdUI *pCmdUI)
 	else pCmdUI->SetCheck(0);
 }
 
-void CWinViewTestView::OnUpdateViewstateZoomout(CCmdUI *pCmdUI)
+void CWinViewTestView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
