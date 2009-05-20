@@ -289,6 +289,9 @@ void CWglViewTestView::OnDestroy()
 {
 	CView::OnDestroy();
 
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView: basic routine
+
 	popContext();
 	popCamera();
 }
@@ -371,13 +374,13 @@ bool CWglViewTestView::initializeView()
 
 bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
-	const boost::shared_ptr<context_type> &viewContext = topContext();
-	if (viewContext.get() && viewContext->resize(x1, y1, x2, y2))
+	const boost::shared_ptr<context_type> &context = topContext();
+	if (context.get() && context->resize(x1, y1, x2, y2))
 	{
-		swl::ViewContextGuard guard(*viewContext);
+		swl::ViewContextGuard guard(*context);
 		initializeView();
-		const boost::shared_ptr<camera_type> &viewCamera = topCamera();
-		if (viewCamera.get()) viewCamera->setViewport(x1, y1, x2, y2);
+		const boost::shared_ptr<camera_type> &camera = topCamera();
+		if (camera.get()) camera->setViewport(x1, y1, x2, y2);
 		raiseDrawEvent(false);
 
 		return true;
