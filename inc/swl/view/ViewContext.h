@@ -96,17 +96,17 @@ struct ViewContextGuard
 {
 public:
 	//typedef ViewContextGuard base_type;
-	typedef ViewContextGuard base_type;
+	typedef ViewContext context_type;
 
 public:
-	ViewContextGuard(ViewContext &context)
+	ViewContextGuard(context_type &context)
 	: context_(context)
 	{  context_.activate();  }
 	~ViewContextGuard()
 	{  context_.deactivate();  }
 
 private:
-	ViewContext &context_;
+	context_type &context_;
 };
 
 }  // namespace swl
