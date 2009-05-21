@@ -156,7 +156,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 		WglBitmapBufferedContext captureContext(hWnd, viewport, false);
 
 		{
-			ViewContextGuard guard(captureContext);
+			WglBitmapBufferedContext::guard_type guard(captureContext);
 			view.initializeView();
 			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
 			view.renderScene(captureContext, *currCamera);

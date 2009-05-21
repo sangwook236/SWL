@@ -175,7 +175,7 @@ void PanState::releaseMouse(const MouseEvent &evt)
 		ViewCamera3 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
@@ -203,7 +203,7 @@ void PanState::moveMouse(const MouseEvent &evt)
 		ViewCamera3 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
@@ -253,7 +253,7 @@ void RotateState::releaseMouse(const MouseEvent &evt)
 		ViewCamera3 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.rotateView(dX, dY);
 			view.raiseDrawEvent(false);
 		}
@@ -280,7 +280,7 @@ void RotateState::moveMouse(const MouseEvent &evt)
 		ViewCamera3 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.rotateView(dX, dY);
 			view.raiseDrawEvent(false);
 		}
@@ -325,7 +325,7 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			const swl::Region2<int> vp = camera.getViewport();
 			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);
 			view.raiseDrawEvent(false);
@@ -359,7 +359,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		// this implementation is not working
 		boost::any &nativeCtx;
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			nativeCtx = context.getNativeContext();
 		}
 		if (!nativeCtx.empty())
@@ -415,7 +415,7 @@ void ZoomRegionState::wheelMouse(const MouseEvent &evt)
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			if (evt.scrollAmount > 0)
 				camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25 * evt.scrollAmount);  // zoom-out
 			else
@@ -471,7 +471,7 @@ void ZoomAllState::handleEvent()
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.restoreViewRegion();
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
@@ -503,7 +503,7 @@ void ZoomInState::handleEvent()
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.scaleViewRegion(0.8);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();
@@ -535,7 +535,7 @@ void ZoomOutState::handleEvent()
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
-			ViewContextGuard guard(context);
+			ViewContext::guard_type guard(context);
 			camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25);
 			view.raiseDrawEvent(false);
 			//view.updateScrollBar();

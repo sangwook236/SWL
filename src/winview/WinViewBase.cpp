@@ -17,7 +17,7 @@ namespace swl {
 void WinViewBase::renderScene(context_type &context, camera_type &camera)
 {
 	// guard the context
-	//ViewContextGuard guard(context)
+	//context_type::guard_type guard(context)
 
 	//
 	context.setViewingRegion(camera.getRevisedRegion());

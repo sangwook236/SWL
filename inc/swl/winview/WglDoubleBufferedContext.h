@@ -32,12 +32,12 @@ public:
 	/// swap buffers
 	/*virtual*/ bool swapBuffer();
 
+private:
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
 
-private:
 	/// re-create an OpenGL display list
 	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
 

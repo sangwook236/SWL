@@ -27,14 +27,15 @@ public:
 	/// swap buffers
 	/*virtual*/ bool swapBuffer()  {  return true;  }
 
+	/// get the native context
+	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(graphics_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(graphics_) : boost::any();  }
+
+private:
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
-
-	/// get the native context
-	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(graphics_) : boost::any();  }
-	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(graphics_) : boost::any();  }
 
 private:
 	/// a window handle

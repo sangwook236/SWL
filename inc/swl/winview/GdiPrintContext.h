@@ -30,16 +30,16 @@ public:
 	/// resize the context
 	/*virtual*/ bool resize(const int x1, const int y1, const int x2, const int y2);
 
-	/// activate the context
-	/*virtual*/ bool activate();
-	/// de-activate the context
-	/*virtual*/ bool deactivate();
-
 	/// get the native context
 	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 
 private:
+	/// activate the context
+	/*virtual*/ bool activate();
+	/// de-activate the context
+	/*virtual*/ bool deactivate();
+
 	bool createOffScreen();
 	bool createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount);
 	void deleteOffScreen();

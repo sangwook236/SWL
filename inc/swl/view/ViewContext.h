@@ -14,7 +14,28 @@ namespace swl {
 struct ViewContext
 {
 public:
+	struct Guard;
+	friend struct Guard;
+	struct Guard
+	{
+	public:
+		//typedef Guard base_type;
+		typedef ViewContext context_type;
+
+	public:
+		Guard(context_type &context)
+		: context_(context)
+		{  context_.activate();  }
+		~Guard()
+		{  context_.deactivate();  }
+
+	private:
+		context_type &context_;
+	};
+
+public:
 	//typedef ViewContext base_type;
+	typedef Guard guard_type;
 
 protected:
 	explicit ViewContext(const Region2<int> &drawRegion, const bool isOffScreenUsed)
@@ -25,8 +46,8 @@ public:
 	{}
 
 private:
-	ViewContext(const ViewContext&);
-	ViewContext& operator=(const ViewContext&);
+	ViewContext(const ViewContext &);
+	ViewContext & operator=(const ViewContext &);
 
 public:
 	/// swap buffers
@@ -38,11 +59,6 @@ public:
 		drawRegion_ = Region2<int>(x1, y1, x2, y2);
 		return true;
 	}
-
-	/// activate the context
-	virtual bool activate() = 0;
-	/// de-activate the context
-	virtual bool deactivate() = 0;
 
 	/// get the off-screen flag
 	bool isOffScreenUsed() const  {  return isOffScreenUsed_;  }
@@ -72,6 +88,12 @@ protected:
 	/// set the drawing flag
 	void setDrawing(const bool isDrawing)  {  isDrawing_ = isDrawing;  }
 
+private:
+	/// activate the context
+	virtual bool activate() = 0;
+	/// de-activate the context
+	virtual bool deactivate() = 0;
+
 protected:
 	/// a drawing context region
 	Region2<int> drawRegion_;
@@ -87,26 +109,6 @@ private:
 
 	/// a flag to check whether drawing is proceeding
 	bool isDrawing_;
-};
-
-//-----------------------------------------------------------------------------------
-// 
-
-struct ViewContextGuard
-{
-public:
-	//typedef ViewContextGuard base_type;
-	typedef ViewContext context_type;
-
-public:
-	ViewContextGuard(context_type &context)
-	: context_(context)
-	{  context_.activate();  }
-	~ViewContextGuard()
-	{  context_.deactivate();  }
-
-private:
-	context_type &context_;
 };
 
 }  // namespace swl

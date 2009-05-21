@@ -37,11 +37,6 @@ public:
 	/// resize the context
 	/*virtual*/ bool resize(const int x1, const int y1, const int x2, const int y2);
 
-	/// activate the context
-	/*virtual*/ bool activate();
-	/// de-activate the context
-	/*virtual*/ bool deactivate();
-
 	/// get the native context
 	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(canvas_) : boost::any();  }
 	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(canvas_) : boost::any();  }
@@ -51,6 +46,11 @@ public:
 	const Gdiplus::Image * getOffScreen() const;
 
 private:
+	/// activate the context
+	/*virtual*/ bool activate();
+	/// de-activate the context
+	/*virtual*/ bool deactivate();
+
 	bool createOffScreen();
 	void deleteOffScreen();
 

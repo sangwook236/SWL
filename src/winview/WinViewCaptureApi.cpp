@@ -186,7 +186,7 @@ bool captureWinViewUsingGdi(const std::string &filePathName, WinViewBase &view, 
 		GdiBitmapBufferedContext captureContext(hWnd, viewport, false);
 
 		{
-			ViewContextGuard guard(captureContext);
+			GdiBitmapBufferedContext::guard_type guard(captureContext);
 			view.initializeView();
 			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
 			view.renderScene(captureContext, *currCamera);
@@ -241,7 +241,7 @@ bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::stri
 		GdiplusBitmapBufferedContext captureContext(hWnd, viewport, false);
 
 		{
-			ViewContextGuard guard(captureContext);
+			GdiplusBitmapBufferedContext::guard_type guard(captureContext);
 			view.initializeView();
 			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
 			view.renderScene(captureContext, *currCamera);

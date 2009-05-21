@@ -279,7 +279,7 @@ void CWinViewTestView::OnInitialUpdate()
 	if (viewContext.get())
 	{
 		// guard the context
-		swl::ViewContextGuard guard(*viewContext);
+		context_type::guard_type guard(*viewContext);
 
 		// set the view
 		initializeView();
@@ -328,7 +328,7 @@ void CWinViewTestView::OnPaint()
 		{
 			if (context->isOffScreenUsed())
 			{
-				//swl::ViewContextGuard guard(*context);
+				//context_type::guard_type guard(*context);
 				context->swapBuffer();
 			}
 			else raiseDrawEvent(true);
@@ -373,7 +373,7 @@ bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 		if (!context.get() || context->isDrawing())
 			return false;
 
-		swl::ViewContextGuard guard(*context);
+		context_type::guard_type guard(*context);
 		OnDraw(0L);
 	}
 	else OnDraw(0L);
@@ -397,7 +397,7 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 	const boost::shared_ptr<context_type> &context = topContext();
 	if (context.get() && context->resize(x1, y1, x2, y2))
 	{
-		swl::ViewContextGuard guard(*context);
+		context_type::guard_type guard(*context);
 		initializeView();
 		const boost::shared_ptr<camera_type> &camera = topCamera();
 		if (camera.get()) camera->setViewport(x1, y1, x2, y2);	
