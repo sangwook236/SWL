@@ -32,7 +32,7 @@ bool printWinViewUsingGdi(WinViewBase &view, HDC hPrintDC)
 			if (printCamera.get() && printContext.get() && printContext->isActivated())
 			{
 				view.initializeView();
-				printCamera->setViewRegion(currCamera->getRevisedRegion());
+				printCamera->setViewRegion(currCamera->getCurrentViewRegion());
 				printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
 				view.renderScene(*printContext, *printCamera);
 			}

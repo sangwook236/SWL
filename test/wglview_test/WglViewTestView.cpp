@@ -117,7 +117,7 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 		if (printCamera.get() && printContext.isActivated())
 		{
 			initializeView();
-			printCamera->setViewRegion(camera->getRevisedRegion());
+			printCamera->setViewRegion(camera->getCurrentViewRegion());
 			printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
 			renderScene(printContext, *printCamera);
 		}

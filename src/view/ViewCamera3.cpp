@@ -494,7 +494,7 @@ bool ViewCamera3::doMapObjectToEye(const double ptObj[3], double ptEye[3]) const
 bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 {
 	// projection transformation: an eye coordinates  ==>  a clip coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 	if (rctViewRegion.left >= rctViewRegion.right ||
 		rctViewRegion.bottom >= rctViewRegion.top ||
 		nearPlane_ >= farPlane_)
@@ -529,7 +529,7 @@ bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 bool ViewCamera3::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 {
 	// viewport transformation: a clip coordinates  ==>  a window coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 	double dNCx = ptClip[0] * rctViewRegion.getWidth() * 0.5;
 	double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5;
 
@@ -547,7 +547,7 @@ bool ViewCamera3::doMapClipToWindow(const double ptClip[3], double ptWin[3]) con
 bool ViewCamera3::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 {
 	// inverse viewport transformation: a window coordinates  ==>  a clip coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 	double dNCx, dNCy;
 	if (rctViewRegion.isValid() && base_type::mapWindowToCanvas(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
 	{
@@ -564,7 +564,7 @@ bool ViewCamera3::doMapWindowToClip(const double ptWin[3], double ptClip[3]) con
 bool ViewCamera3::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 {
 	// inverse projection transformation: a clip coordinates  ==>  an eye coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 	if (rctViewRegion.left >= rctViewRegion.right
 		|| rctViewRegion.bottom >= rctViewRegion.top
 		|| nearPlane_ >= farPlane_)

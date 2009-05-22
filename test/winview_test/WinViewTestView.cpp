@@ -120,7 +120,7 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 		if (printCamera.get() && printContext.isActivated())
 		{
 			initializeView();
-			printCamera->setViewRegion(camera->getRevisedRegion());
+			printCamera->setViewRegion(camera->getCurrentViewRegion());
 			printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
 			renderScene(printContext, *printCamera);
 		}
@@ -546,7 +546,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 					graphics->FillRectangle(&brush, (Gdiplus::REAL)bound.left, (Gdiplus::REAL)bound.bottom, (Gdiplus::REAL)bound.getWidth(), (Gdiplus::REAL)bound.getHeight());
 				}
 
-				const swl::Region2<double> rgn = camera.getRevisedRegion();
+				const swl::Region2<double> rgn = camera.getCurrentViewRegion();
 
 				{
 					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);

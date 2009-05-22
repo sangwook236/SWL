@@ -80,7 +80,7 @@ bool OglCamera::doUpdateFrustum()
 	if (oldMatrixMode != GL_PROJECTION) glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	const Region2<double> rctViewRegion = getRevisedRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 
 	if (isPerspective_)
 	{
@@ -135,7 +135,7 @@ inline void OglCamera::lookAt()
 bool OglCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 {
 	// rojection transformation: an eye coordinates  ==>  a clip coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 
 	//--S [] 2001/08/08: Sang-Wook Lee
 	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
@@ -179,7 +179,7 @@ bool OglCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 {
 	// viewport transformation: a clip coordinates  ==>  a window coordinates
-	const Region2<double> rctViewRegion = getRevisedRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 /*
 	//--S [] 2001/08/08: Sang-Wook Lee
 	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
@@ -205,7 +205,7 @@ bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 {
 	// inverse viewport transformation: a window coordinates  ==>  a clip coordinates
-	const Region2<double> rctViewRegion = getRevisedRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 /*
 	//--S [] 2001/08/08: Sang-Wook Lee
 	// doUpdateFrustum()에서 glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
@@ -233,7 +233,7 @@ bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 bool OglCamera::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 {
 	// inverse projection transformation: a clip coordinates  ==>  an eye coordinates
-	Region2<double> rctViewRegion = getRevisedRegion();
+	Region2<double> rctViewRegion = getCurrentViewRegion();
 
 	//--S [] 2001/08/08: Sang-Wook Lee
 	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에

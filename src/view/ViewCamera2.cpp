@@ -409,7 +409,7 @@ inline void ViewCamera2::checkLimit(double &rdValue) const
 inline double ViewCamera2::round(double dValue) const
 {	return (int)std::floor(dValue + 0.5);  }
 
-Region2<double> ViewCamera2::getRevisedRegion() const
+Region2<double> ViewCamera2::getCurrentViewRegion() const
 {
 	if (!viewport_.isValid() || !viewRegion_.isValid())
 		return viewRegion_;

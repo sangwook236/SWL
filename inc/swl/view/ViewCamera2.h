@@ -81,7 +81,7 @@ public:
     virtual bool setViewRegion(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewRegion(Region2<double>(rPt1, rPt2));  }
 	virtual bool setViewRegion(const Region2<double> &rRct);
-	/// get the size of viewport
+	/// get a viewing region that was set and/or transformed before
     virtual void getViewRegion(double &rdX1, double &rdY1, double &rdX2, double &rdY2) const
 	{
 		rdX1 = viewRegion_.left;  rdY1 = viewRegion_.bottom;
@@ -89,8 +89,8 @@ public:
 	}
     virtual Region2<double> getViewRegion() const  {  return viewRegion_;  }
 
-	///
-	virtual Region2<double> getRevisedRegion() const;
+	/// get the current(actual) viewing region
+	virtual Region2<double> getCurrentViewRegion() const;
 
 	/// resize a viewing region
 	virtual bool resizeViewRegion(double dWidth, double dHeight);
