@@ -104,12 +104,12 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 
 	if (pDC && pDC->IsPrinting())
 	{
-		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
-
 		const boost::shared_ptr<camera_type> &camera = topCamera();
 		if (!camera) return;
 
+		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
 		const int oldMapMode = pDC->SetMapMode(MM_TEXT);
+
 		const CRect rctPage(0, 0, pDC->GetDeviceCaps(HORZRES), pDC->GetDeviceCaps(VERTRES));
 
 		swl::WglPrintContext printContext(pDC->GetSafeHdc(), rctPage);
@@ -123,7 +123,6 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 		}
 
 		pDC->SetMapMode(oldMapMode);
-
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
 	else

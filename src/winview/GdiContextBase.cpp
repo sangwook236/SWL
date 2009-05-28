@@ -13,14 +13,14 @@ namespace swl  {
 /*static*/ HPALETTE GdiContextBase::shPalette_ = NULL;
 /*static*/ size_t GdiContextBase::sUsedPaletteCount_ = 0;
 
-GdiContextBase::GdiContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed)
-: base_type(drawRegion, isOffScreenUsed),
+GdiContextBase::GdiContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode)
+: base_type(drawRegion, isOffScreenUsed, contextMode),
   isPaletteUsed_(false)
 {
 }
 
-GdiContextBase::GdiContextBase(const RECT &drawRect, const bool isOffScreenUsed)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed),
+GdiContextBase::GdiContextBase(const RECT &drawRect, const bool isOffScreenUsed, const EContextMode contextMode)
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed, contextMode),
   isPaletteUsed_(false)
 {
 }

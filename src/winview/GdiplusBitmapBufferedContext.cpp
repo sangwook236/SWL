@@ -12,7 +12,7 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const Region2<int> &drawRegion, const bool isAutomaticallyActivated /*= true*/)
-: base_type(drawRegion, true),
+: base_type(drawRegion, true, CM_VIEWING),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
@@ -20,7 +20,7 @@ GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const Regi
 }
 
 GdiplusBitmapBufferedContext::GdiplusBitmapBufferedContext(HWND hWnd, const RECT &drawRect, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true, CM_VIEWING),
   hWnd_(hWnd), graphics_(NULL), canvas_(NULL), memBmp_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)

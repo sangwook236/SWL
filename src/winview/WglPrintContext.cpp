@@ -12,7 +12,7 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 WglPrintContext::WglPrintContext(HDC printDC, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
-: base_type(drawRegion, true),
+: base_type(drawRegion, true, CM_PRINTING),
   printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
@@ -20,7 +20,7 @@ WglPrintContext::WglPrintContext(HDC printDC, const Region2<int>& drawRegion, co
 }
 
 WglPrintContext::WglPrintContext(HDC printDC, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true),
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), true, CM_PRINTING),
   printDC_(printDC), memDC_(NULL), memBmp_(NULL), oldBmp_(NULL), dibBits_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)

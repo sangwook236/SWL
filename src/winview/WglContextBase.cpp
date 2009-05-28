@@ -14,14 +14,14 @@ namespace swl  {
 /*static*/ HPALETTE WglContextBase::shPalette_ = NULL;
 /*static*/ size_t WglContextBase::sUsedPaletteCount_ = 0;
 
-WglContextBase::WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed)
-: base_type(drawRegion, isOffScreenUsed),
+WglContextBase::WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode)
+: base_type(drawRegion, isOffScreenUsed, contextMode),
   wglRC_(NULL), isPaletteUsed_(false)
 {
 }
 
-WglContextBase::WglContextBase(const RECT &drawRect, const bool isOffScreenUsed)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed),
+WglContextBase::WglContextBase(const RECT &drawRect, const bool isOffScreenUsed, const EContextMode contextMode)
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), isOffScreenUsed, contextMode),
   wglRC_(NULL), isPaletteUsed_(false)
 {
 }

@@ -20,8 +20,8 @@ public:
 	typedef HGLRC context_type;
 
 protected:
-	explicit WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed);
-	explicit WglContextBase(const RECT &drawRect, const bool isOffScreenUsed);
+	explicit WglContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode);
+	explicit WglContextBase(const RECT &drawRect, const bool isOffScreenUsed, const EContextMode contextMode);
 public:
 	virtual ~WglContextBase();
 

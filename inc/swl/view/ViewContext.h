@@ -14,6 +14,9 @@ namespace swl {
 struct ViewContext
 {
 public:
+	enum EContextMode { CM_VIEWING = 0, CM_PRINTING };
+
+public:
 	struct Guard;
 	friend struct Guard;
 	struct Guard
@@ -38,8 +41,8 @@ public:
 	typedef Guard guard_type;
 
 protected:
-	explicit ViewContext(const Region2<int> &drawRegion, const bool isOffScreenUsed)
-	: drawRegion_(drawRegion), isOffScreenUsed_(isOffScreenUsed), isActivated_(false), isDrawing_(false)
+	explicit ViewContext(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode)
+	: drawRegion_(drawRegion), isOffScreenUsed_(isOffScreenUsed), contextMode_(contextMode), isActivated_(false), isDrawing_(false)
 	{}
 public:
 	virtual ~ViewContext()
@@ -62,6 +65,9 @@ public:
 
 	/// get the off-screen flag
 	bool isOffScreenUsed() const  {  return isOffScreenUsed_;  }
+
+	/// get the context mode
+	EContextMode getContextMode() const  {  return contextMode_;  }
 
 	/// get the context activation flag
 	bool isActivated() const  {  return isActivated_;  }
@@ -101,8 +107,11 @@ protected:
 	Region2<double> viewingRegion_;
 
 private:
-	// a flag to check whether off-screen buffer is used
-	bool isOffScreenUsed_;
+	/// a flag to check whether off-screen buffer is used
+	const bool isOffScreenUsed_;
+
+	/// a context mode
+	const EContextMode contextMode_;
 
 	/// a context activation flag
 	bool isActivated_;

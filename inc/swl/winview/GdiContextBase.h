@@ -19,8 +19,8 @@ public:
 	typedef HDC context_type;
 
 protected:
-	explicit GdiContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed);
-	explicit GdiContextBase(const RECT &drawRect, const bool isOffScreenUsed);
+	explicit GdiContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode);
+	explicit GdiContextBase(const RECT &drawRect, const bool isOffScreenUsed, const EContextMode contextMode);
 public:
 	virtual ~GdiContextBase();
 

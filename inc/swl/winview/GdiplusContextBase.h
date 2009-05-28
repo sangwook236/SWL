@@ -25,8 +25,8 @@ public:
 	typedef Gdiplus::Graphics context_type;
 
 protected:
-	explicit GdiplusContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed);
-	explicit GdiplusContextBase(const RECT &drawRect, const bool isOffScreenUsed);
+	explicit GdiplusContextBase(const Region2<int> &drawRegion, const bool isOffScreenUsed, const EContextMode contextMode);
+	explicit GdiplusContextBase(const RECT &drawRect, const bool isOffScreenUsed, const EContextMode contextMode);
 public:
 	virtual ~GdiplusContextBase();
 
