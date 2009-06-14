@@ -11,7 +11,7 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl {
 
 GdiContext::GdiContext(HWND hWnd, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(), false, CM_VIEWING),
+: base_type(Region2<int>(), false, CM_DEFAULT),
   hWnd_(hWnd), hDC_(NULL)
 {
 	if (hWnd_)

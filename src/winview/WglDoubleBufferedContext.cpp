@@ -10,7 +10,7 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 namespace swl  {
 
 WglDoubleBufferedContext::WglDoubleBufferedContext(HWND hWnd, const Region2<int>& drawRegion, const bool isAutomaticallyActivated /*= true*/)
-: base_type(drawRegion, false, CM_VIEWING),
+: base_type(drawRegion, false, CM_DEFAULT),
   hWnd_(hWnd), hDC_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)
@@ -18,7 +18,7 @@ WglDoubleBufferedContext::WglDoubleBufferedContext(HWND hWnd, const Region2<int>
 }
 
 WglDoubleBufferedContext::WglDoubleBufferedContext(HWND hWnd, const RECT& drawRect, const bool isAutomaticallyActivated /*= true*/)
-: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), false, CM_VIEWING),
+: base_type(Region2<int>(drawRect.left, drawRect.top, drawRect.right, drawRect.bottom), false, CM_DEFAULT),
   hWnd_(hWnd), hDC_(NULL)
 {
 	if (createOffScreen() && isAutomaticallyActivated)

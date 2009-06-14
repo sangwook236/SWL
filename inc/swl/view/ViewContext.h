@@ -14,7 +14,7 @@ namespace swl {
 struct ViewContext
 {
 public:
-	enum EContextMode { CM_VIEWING = 0, CM_PRINTING };
+	enum EContextMode { CM_DEFAULT = 0, CM_PRINTING };
 
 public:
 	struct Guard;
