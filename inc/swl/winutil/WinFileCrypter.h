@@ -21,6 +21,7 @@ class SWL_WIN_UTIL_API WinFileCrypter
 	/**
 	 *	@brief  [ctor] contructor.
 	 *	@param  filename  [in] 파일 암호화 및 복호화가 적용될 파일명을 지정.
+	 *	@param  isEcrypted  [in] 파일을 암호화할 것인지 복호화할 것인지 지정.
 	 */
 public:
 #if defined(_UNICODE) || defined(UNICODE)
