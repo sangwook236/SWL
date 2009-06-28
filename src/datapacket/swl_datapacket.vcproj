@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mfc80ud.lib"
+				AdditionalDependencies="mfc80ud.lib swl_utility.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -140,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_utility.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"

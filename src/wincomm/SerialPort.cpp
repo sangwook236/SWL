@@ -1,5 +1,5 @@
 #include "swl/wincomm/SerialPort.h"
-#include "swl/common/ByteBuffer.h"
+#include "swl/utility/ByteBuffer.h"
 #include <vector>
 #include <iostream>
 

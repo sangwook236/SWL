@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__BYTE_BUFFER__H_)
-#define __SWL_COMMON__BYTE_BUFFER__H_ 1
+#if !defined(__SWL_UTILITY__BYTE_BUFFER__H_)
+#define __SWL_UTILITY__BYTE_BUFFER__H_ 1
 
 
-#include "swl/common/ExportCommon.h"
+#include "swl/utility/ExportUtility.h"
 #include "swl/common/VcWarningDisable.h"
 #include <boost/thread/mutex.hpp>
 #include <deque>
@@ -14,7 +14,7 @@ namespace swl {
 //	byte buffer
 
 //template<class T>
-class SWL_COMMON_API ByteBuffer
+class SWL_UTILITY_API ByteBuffer
 {
 public:
 	//typedef ByteBuffer				base_type;
@@ -48,4 +48,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_COMMON__BYTE_BUFFER__H_
+#endif  // __SWL_UTILITY__BYTE_BUFFER__H_
