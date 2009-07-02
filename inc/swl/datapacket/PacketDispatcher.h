@@ -7,7 +7,8 @@
 
 namespace swl {
 
-class ByteBuffer;
+template<class T> class GuardedBuffer;
+typedef GuardedBuffer<unsigned char> GuardedByteBuffer;
 
 //-----------------------------------------------------------------------------------
 //	packet dispatcher
@@ -23,7 +24,7 @@ public:
 	virtual ~PacketDispatcher();
 
 public:
-	virtual bool dispatch(ByteBuffer& byteBuffer) const = 0;
+	virtual bool dispatch(GuardedByteBuffer& byteBuffer) const = 0;
 };
 
 }  // namespace swl

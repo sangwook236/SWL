@@ -1,12 +1,11 @@
-#include "swl/wincomm/SerialPort.h"
-#include "swl/utility/ByteBuffer.h"
+#include "swl/winutil/WinSerialPort.h"
+#include "swl/util/GuardedBuffer.h"
 #include <vector>
 #include <iostream>
 
-#if defined(WIN32) && defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
-#define new new(__FILE__, __LINE__)
-//#pragma comment(lib, "mfc80ud.lib")
+#if defined(_MSC_VER) && defined(_DEBUG)
+#include "swl/ResourceLeakageCheck.h"
+#define new DEBUG_NEW
 #endif
 
 
@@ -15,7 +14,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //	serial port
 
-SerialPort::SerialPort()
+WinSerialPort::WinSerialPort()
 : hComPort_(INVALID_HANDLE_VALUE)
 {
 	memset(&ovSend_, 0, sizeof(OVERLAPPED));
@@ -34,7 +33,7 @@ SerialPort::SerialPort()
 	);
 }
 
-SerialPort::~SerialPort()
+WinSerialPort::~WinSerialPort()
 {
 	disconnect();
 
@@ -51,9 +50,9 @@ SerialPort::~SerialPort()
 }
 
 #if defined(_UNICODE) || defined(__UNICODE)
-bool SerialPort::connect(const wchar_t* portName, const int baudRate, const size_t inQueueSize, const size_t outQueueSize)
+bool WinSerialPort::connect(const wchar_t* portName, const int baudRate, const size_t inQueueSize, const size_t outQueueSize)
 #else
-bool SerialPort::connect(const char *portName, const int baudRate, const size_t inQueueSize, const size_t outQueueSize)
+bool WinSerialPort::connect(const char *portName, const int baudRate, const size_t inQueueSize, const size_t outQueueSize)
 #endif
 {
 	hComPort_ = CreateFile(
@@ -120,7 +119,7 @@ bool SerialPort::connect(const char *portName, const int baudRate, const size_t 
 	return true;
 }
 
-void SerialPort::disconnect()
+void WinSerialPort::disconnect()
 {
 	if (INVALID_HANDLE_VALUE != hComPort_)
 	{
@@ -134,7 +133,7 @@ void SerialPort::disconnect()
 	ResetEvent(ovRecv_.hEvent);
 }
 
-SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long timeoutInterval, const bool isSending, size_t& transferredBytes)
+WinSerialPort::EState WinSerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long timeoutInterval, const bool isSending, size_t& transferredBytes)
 {
 /*
 	if (!::GetOverlappedResult(hComPort_, &ovWait, (DWORD *)&transferredBytes, TRUE))
@@ -145,11 +144,11 @@ SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long t
 		if (ERROR_IO_INCOMPLETE != err)
 		{
 			clearError();
-			return SerialPort::E_ERROR;
+			return WinSerialPort::E_ERROR;
 		}
 	}
 
-	return SerialPort::E_OK;
+	return WinSerialPort::E_OK;
 */
 	switch(::WaitForSingleObject(ovWait.hEvent, timeoutInterval))
 	{
@@ -161,18 +160,18 @@ SerialPort::EState SerialPort::waitFor(OVERLAPPED& ovWait, const unsigned long t
 			if (ERROR_IO_INCOMPLETE != err)
 			{
 				clearError();
-				return SerialPort::E_ERROR;
+				return WinSerialPort::E_ERROR;
 			}
 		}
-		return SerialPort::E_OK;
+		return WinSerialPort::E_OK;
 	case WAIT_TIMEOUT:
-		return SerialPort::E_TIMEOUT;
+		return WinSerialPort::E_TIMEOUT;
 	default:
-		return SerialPort::E_ERROR;
+		return WinSerialPort::E_ERROR;
 	}
 }
 
-SerialPort::EState SerialPort::send(const unsigned char* data, const size_t dataSize, const unsigned long timeoutInterval_msec /*= 100*/)
+WinSerialPort::EState WinSerialPort::send(const unsigned char* data, const size_t dataSize, const unsigned long timeoutInterval_msec /*= 100*/)
 {
 	size_t sentBytes, totalSentBytes = 0;
 	while (totalSentBytes < dataSize)
@@ -191,24 +190,24 @@ SerialPort::EState SerialPort::send(const unsigned char* data, const size_t data
 		{
 			if (ERROR_IO_PENDING == GetLastError())  // I/O operation pending
 			{
-				const SerialPort::EState state = waitFor(ovSend_, timeoutInterval_msec, true, sentBytes);
-				if (SerialPort::E_OK != state) return state;
+				const WinSerialPort::EState state = waitFor(ovSend_, timeoutInterval_msec, true, sentBytes);
+				if (WinSerialPort::E_OK != state) return state;
 			}
 			else
 			{
 				std::cerr << "wait failed with error: " << GetLastError() << std::endl;
 				clearError();
-				return SerialPort::E_ERROR;
+				return WinSerialPort::E_ERROR;
 			}
 		}
 
 		totalSentBytes += sentBytes;
 	}
 	
-	return SerialPort::E_OK;
+	return WinSerialPort::E_OK;
 }
 
-SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long timeoutInterval_msec /*= 100*/, const size_t bufferLen /*= 0*/)
+WinSerialPort::EState WinSerialPort::receive(GuardedByteBuffer& recvBuf, const unsigned long timeoutInterval_msec /*= 100*/, const size_t bufferLen /*= 0*/)
 {
 	//
 	DWORD eventMask = 0L;
@@ -235,14 +234,14 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 		if (ERROR_IO_PENDING == GetLastError())  // I/O operation pending
 		{
 			size_t recvBytes = 0;
-			const SerialPort::EState state = waitFor(ovRecv_, timeoutInterval_msec, false, recvBytes);
-			if (SerialPort::E_OK != state) return state;
+			const WinSerialPort::EState state = waitFor(ovRecv_, timeoutInterval_msec, false, recvBytes);
+			if (WinSerialPort::E_OK != state) return state;
 		}
 		else
 		{
 			std::cerr << "wait failed with error: " << GetLastError() << std::endl;
 			//clearError();
-			return SerialPort::E_ERROR;
+			return WinSerialPort::E_ERROR;
 		}
 	}
 
@@ -257,7 +256,7 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 		{
 			// FIXME [check] >>
 			std::cout << "receive 0 byte" << std::endl;
-			return SerialPort::E_OK;
+			return WinSerialPort::E_OK;
 		}
 	}
 	else
@@ -265,29 +264,29 @@ SerialPort::EState SerialPort::receive(ByteBuffer& recvBuf, const unsigned long 
 		switch (GetLastError())
 		{
 		case ERROR_HANDLE_EOF:
-			return SerialPort::E_OK;
+			return WinSerialPort::E_OK;
 		case ERROR_IO_PENDING:  // I/O operation pending
 			{
-				const SerialPort::EState state = waitFor(ovRecv_, timeoutInterval_msec, false, recvBytes);
-				if (SerialPort::E_OK != state) return state;
+				const WinSerialPort::EState state = waitFor(ovRecv_, timeoutInterval_msec, false, recvBytes);
+				if (WinSerialPort::E_OK != state) return state;
 			}
 			break;
 		default:
 			std::cerr << "wait failed with error: " << GetLastError() << std::endl;;
 			clearError();
-			return SerialPort::E_ERROR;
+			return WinSerialPort::E_ERROR;
 		}
 	}
 
-	return recvBuf.push((ByteBuffer::value_type *)(&buf[0]), (size_t)recvBytes) ? SerialPort::E_OK : SerialPort::E_ERROR;
+	return recvBuf.push((GuardedByteBuffer::value_type *)(&buf[0]), (size_t)recvBytes) ? WinSerialPort::E_OK : WinSerialPort::E_ERROR;
 }
 
-bool SerialPort::cancelIo()
+bool WinSerialPort::cancelIo()
 {
 	return ::CancelIo(hComPort_) == TRUE;
 }
 
-void SerialPort::clearError()
+void WinSerialPort::clearError()
 {
 	DWORD errorFlags;
 	COMSTAT	comstat;

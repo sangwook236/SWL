@@ -3,7 +3,7 @@
 
 
 #include "swl/datapacket/ExportDataPacket.h"
-#include "swl/common/VcWarningDisable.h"
+#include "swl/CompilerWarning.h"
 #include <list>
 #include <vector>
 

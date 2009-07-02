@@ -3,7 +3,7 @@
 
 
 #include "swl/common/ExportCommon.h"
-#include "swl/common/VcWarningDisable.h"
+#include "swl/CompilerWarning.h"
 #include <boost/any.hpp>
 #include <set>
 

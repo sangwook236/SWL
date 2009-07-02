@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mfc80ud.lib"
+				AdditionalDependencies="Ws2_32.lib swl_util.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -140,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="Ws2_32.lib swl_util.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -184,6 +185,26 @@
 			UniqueIdentifier="{B9680150-F5E5-4bd7-8B51-7B34ACC3B4B3}"
 			>
 			<File
+				RelativePath=".\MfcSockClient.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					ExcludedFromBuild="true"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\WinFileCrypter.cpp"
 				>
 			</File>
@@ -193,6 +214,14 @@
 			</File>
 			<File
 				RelativePath=".\WinRegistrar.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WinSerialPort.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WinSockClient.cpp"
 				>
 			</File>
 		</Filter>
@@ -206,6 +235,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\winutil\MfcSockClient.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\winutil\WinFileCrypter.h"
 				>
 			</File>
@@ -215,6 +248,14 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winutil\WinRegistrar.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winutil\WinSerialPort.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winutil\WinSockClient.h"
 				>
 			</File>
 			<File

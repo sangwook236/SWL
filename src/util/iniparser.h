@@ -23,7 +23,7 @@
    								Includes
  ---------------------------------------------------------------------------*/
 
-#include "swl/utility/ExportUtility.h"
+#include "swl/util/ExportUtil.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,7 +57,7 @@ typedef struct _dictionary_ dictionary;
  */
 /*--------------------------------------------------------------------------*/
 
-SWL_UTILITY_API int iniparser_getnsec(dictionary * d);
+SWL_UTIL_API int iniparser_getnsec(dictionary * d);
 
 
 /*-------------------------------------------------------------------------*/
@@ -75,7 +75,7 @@ SWL_UTILITY_API int iniparser_getnsec(dictionary * d);
  */
 /*--------------------------------------------------------------------------*/
 
-SWL_UTILITY_API char * iniparser_getsecname(dictionary * d, int n);
+SWL_UTIL_API char * iniparser_getsecname(dictionary * d, int n);
 
 
 /*-------------------------------------------------------------------------*/
@@ -90,7 +90,7 @@ SWL_UTILITY_API char * iniparser_getsecname(dictionary * d, int n);
  */
 /*--------------------------------------------------------------------------*/
 
-SWL_UTILITY_API void iniparser_dump_ini(dictionary * d, FILE * f);
+SWL_UTIL_API void iniparser_dump_ini(dictionary * d, FILE * f);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -105,7 +105,7 @@ SWL_UTILITY_API void iniparser_dump_ini(dictionary * d, FILE * f);
   purposes mostly.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API void iniparser_dump(dictionary * d, FILE * f);
+SWL_UTIL_API void iniparser_dump(dictionary * d, FILE * f);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -125,7 +125,7 @@ SWL_UTILITY_API void iniparser_dump(dictionary * d, FILE * f);
   iniparser_getstring() instead.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API char * iniparser_getstr(dictionary * d, const char * key);
+SWL_UTIL_API char * iniparser_getstr(dictionary * d, const char * key);
 
 
 /*-------------------------------------------------------------------------*/
@@ -143,7 +143,7 @@ SWL_UTILITY_API char * iniparser_getstr(dictionary * d, const char * key);
   the dictionary, do not free or modify it.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API char * iniparser_getstring(dictionary * d, const char * key, char * def);
+SWL_UTIL_API char * iniparser_getstring(dictionary * d, const char * key, char * def);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -172,7 +172,7 @@ SWL_UTILITY_API char * iniparser_getstring(dictionary * d, const char * key, cha
   Credits: Thanks to A. Becker for suggesting strtol()
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API int iniparser_getint(dictionary * d, const char * key, int notfound);
+SWL_UTIL_API int iniparser_getint(dictionary * d, const char * key, int notfound);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -187,7 +187,7 @@ SWL_UTILITY_API int iniparser_getint(dictionary * d, const char * key, int notfo
   the notfound value is returned.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API double iniparser_getdouble(dictionary * d, char * key, double notfound);
+SWL_UTIL_API double iniparser_getdouble(dictionary * d, char * key, double notfound);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -221,7 +221,7 @@ SWL_UTILITY_API double iniparser_getdouble(dictionary * d, char * key, double no
   necessarily have to be 0 or 1.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API int iniparser_getboolean(dictionary * d, const char * key, int notfound);
+SWL_UTIL_API int iniparser_getboolean(dictionary * d, const char * key, int notfound);
 
 
 /*-------------------------------------------------------------------------*/
@@ -238,7 +238,7 @@ SWL_UTILITY_API int iniparser_getboolean(dictionary * d, const char * key, int n
  */
 /*--------------------------------------------------------------------------*/
 
-SWL_UTILITY_API int iniparser_setstr(dictionary * ini, char * entry, char * val);
+SWL_UTIL_API int iniparser_setstr(dictionary * ini, char * entry, char * val);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -250,7 +250,7 @@ SWL_UTILITY_API int iniparser_setstr(dictionary * ini, char * entry, char * val)
   If the given entry can be found, it is deleted from the dictionary.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API void iniparser_unset(dictionary * ini, char * entry);
+SWL_UTIL_API void iniparser_unset(dictionary * ini, char * entry);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -264,7 +264,7 @@ SWL_UTILITY_API void iniparser_unset(dictionary * ini, char * entry);
   of querying for the presence of sections in a dictionary.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API int iniparser_find_entry(dictionary * ini, char * entry) ;
+SWL_UTIL_API int iniparser_find_entry(dictionary * ini, char * entry) ;
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -280,7 +280,7 @@ SWL_UTILITY_API int iniparser_find_entry(dictionary * ini, char * entry) ;
   The returned dictionary must be freed using iniparser_freedict().
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API dictionary * iniparser_load(const char * ininame);
+SWL_UTIL_API dictionary * iniparser_load(const char * ininame);
 
 /*-------------------------------------------------------------------------*/
 /**
@@ -293,6 +293,6 @@ SWL_UTILITY_API dictionary * iniparser_load(const char * ininame);
   gets out of the current context.
  */
 /*--------------------------------------------------------------------------*/
-SWL_UTILITY_API void iniparser_freedict(dictionary * d);
+SWL_UTIL_API void iniparser_freedict(dictionary * d);
 
 #endif

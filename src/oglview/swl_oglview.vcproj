@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mfc80ud.lib swl_view.lib opengl32.lib glu32.lib glut32.lib"
+				AdditionalDependencies="swl_view.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"

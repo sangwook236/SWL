@@ -1,14 +1,13 @@
-#include "swl/utility/StringUtil.h"
+#include "swl/util/StringUtil.h"
 #include <boost/smart_ptr.hpp>
 #if defined(WIN32)
 #include <windows.h>
 #endif
 
 
-#if defined(WIN32) && defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
-#define new new(__FILE__, __LINE__)
-//#pragma comment(lib, "mfc80ud.lib")
+#if defined(_MSC_VER) && defined(_DEBUG)
+#include "swl/ResourceLeakageCheck.h"
+#define new DEBUG_NEW
 #endif
 
 

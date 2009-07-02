@@ -15,18 +15,18 @@
 #ifndef XGETOPT_H
 #define XGETOPT_H
 
-#include "swl/utility/ExportUtility.h"
+#include "swl/util/ExportUtil.h"
 
-extern SWL_UTILITY_API int optind, opterr;
+extern SWL_UTIL_API int optind, opterr;
 
 #if defined(UNICODE) || defined(_UNICODE)
-extern SWL_UTILITY_API wchar_t *optarg;
+extern SWL_UTIL_API wchar_t *optarg;
 
-SWL_UTILITY_API int getopt(int argc, wchar_t *argv[], wchar_t *optstring);
+SWL_UTIL_API int getopt(int argc, wchar_t *argv[], wchar_t *optstring);
 #else
-extern SWL_UTILITY_API char *optarg;
+extern SWL_UTIL_API char *optarg;
 
-SWL_UTILITY_API int getopt(int argc, char *argv[], char *optstring);
+SWL_UTIL_API int getopt(int argc, char *argv[], char *optstring);
 #endif
 
 #endif //XGETOPT_H

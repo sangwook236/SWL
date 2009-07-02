@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="swl_utility"
+	Name="swl_util"
 	ProjectGUID="{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
-	RootNamespace="swl_utility"
+	RootNamespace="swl_util"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_UTILITY"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_UTIL"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,7 +62,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mfc80ud.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -122,7 +121,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_UTILITY"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_UTIL"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -184,11 +183,11 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ByteBuffer.cpp"
+				RelativePath=".\dictionary.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\dictionary.cpp"
+				RelativePath=".\GuardedBuffer.cpp"
 				>
 			</File>
 			<File
@@ -221,6 +220,10 @@
 			</File>
 			<File
 				RelativePath=".\iniparser.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\SerialPort.cpp"
 				>
 			</File>
 			<File
@@ -270,15 +273,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\inc\swl\utility\ByteBuffer.h"
-				>
-			</File>
-			<File
 				RelativePath=".\dictionary.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\utility\ExportUtility.h"
+				RelativePath="..\..\inc\swl\util\ExportUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\GuardedBuffer.h"
 				>
 			</File>
 			<File
@@ -286,7 +289,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\utility\StringUtil.h"
+				RelativePath="..\..\inc\swl\util\SerialPort.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\StringUtil.h"
 				>
 			</File>
 			<File

@@ -1,8 +1,8 @@
-#if !defined(__SWL_WIN_COMM__WIN_SOCKET_CLIENT__H_ )
-#define __SWL_WIN_COMM__WIN_SOCKET_CLIENT__H_ 1
+#if !defined(__SWL_WIN_UTIL__WIN_SOCKET_CLIENT__H_ )
+#define __SWL_WIN_UTIL__WIN_SOCKET_CLIENT__H_ 1
 
 
-#include "swl/wincomm/ExportWinComm.h"
+#include "swl/winutil/ExportWinUtil.h"
 #include <winsock2.h>
 #include <string>
 
@@ -11,7 +11,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //
 
-class SWL_WIN_COMM_API WinSockClient
+class SWL_WIN_UTIL_API WinSockClient
 {
 public:
 	WinSockClient(const std::string &hostName, const unsigned int portNum);
@@ -34,4 +34,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_WIN_COMM__WIN_SOCKET_CLIENT__H_ 
+#endif  // __SWL_WIN_UTIL__WIN_SOCKET_CLIENT__H_ 

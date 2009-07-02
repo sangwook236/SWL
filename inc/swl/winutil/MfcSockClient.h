@@ -1,8 +1,8 @@
-#if !defined(__SWL_WIN_COMM__MFC_SOCKET_CLIENT__H_ )
-#define __SWL_WIN_COMM__MFC_SOCKET_CLIENT__H_ 1
+#if !defined(__SWL_WIN_UTIL__MFC_SOCKET_CLIENT__H_ )
+#define __SWL_WIN_UTIL__MFC_SOCKET_CLIENT__H_ 1
 
 
-#include "swl/wincomm/ExportWinComm.h"
+#include "swl/winutil/ExportWinUtil.h"
 #include <string>
 
 namespace swl {
@@ -12,7 +12,7 @@ class CSocket;
 //-----------------------------------------------------------------------------------
 //
 
-class SWL_WIN_COMM_API MfcSockClient
+class SWL_WIN_UTIL_API MfcSockClient
 {
 public:
 	MfcSockClient(const std::string &hostName, const unsigned int portNum);
@@ -35,4 +35,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_WIN_COMM__MFC_SOCKET_CLIENT__H_ 
+#endif  // __SWL_WIN_UTIL__MFC_SOCKET_CLIENT__H_ 

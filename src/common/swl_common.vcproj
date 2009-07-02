@@ -62,7 +62,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="mfc80ud.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -239,10 +238,6 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\common\Tuple.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\common\VcWarningDisable.h"
 				>
 			</File>
 		</Filter>

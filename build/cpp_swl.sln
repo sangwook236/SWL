@@ -13,7 +13,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_datapacket", "..\src\da
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_utility", "..\src\utility\swl_utility.vcproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util.vcproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -76,12 +76,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winut
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wincomm", "..\src\wincomm\swl_wincomm.vcproj", "{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WglViewTest", "..\test\wglview_test\WglViewTest.vcproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
@@ -139,10 +133,6 @@ Global
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Debug|Win32.Build.0 = Debug|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Release|Win32.ActiveCfg = Release|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Release|Win32.Build.0 = Release|Win32
-		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Debug|Win32.Build.0 = Debug|Win32
-		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Release|Win32.ActiveCfg = Release|Win32
-		{C85D50B8-00E8-41A3-A0DD-1F781BA6058A}.Release|Win32.Build.0 = Release|Win32
 		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.ActiveCfg = Debug|Win32
 		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Debug|Win32.Build.0 = Debug|Win32
 		{042FA8D4-C813-4654-94D0-497D5BB6F3D8}.Release|Win32.ActiveCfg = Release|Win32
