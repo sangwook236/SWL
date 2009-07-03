@@ -190,6 +190,14 @@
 				RelativePath=".\IObserver.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\LogException.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StringConversion.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -210,6 +218,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\common\IObserver.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\common\LogException.h"
 				>
 			</File>
 			<File
@@ -234,6 +246,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\common\Size.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\common\StringConversion.h"
 				>
 			</File>
 			<File

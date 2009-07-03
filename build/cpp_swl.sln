@@ -7,12 +7,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_common", "..\src\common
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_datapacket", "..\src\datapacket\swl_datapacket.vcproj", "{4B95E589-D664-4E0C-9335-9398A1DE061F}"
-	ProjectSection(WebsiteProperties) = preProject
-		Debug.AspNetCompiler.Debug = "True"
-		Release.AspNetCompiler.Debug = "False"
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util.vcproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
@@ -97,10 +91,6 @@ Global
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991}.Debug|Win32.Build.0 = Debug|Win32
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991}.Release|Win32.ActiveCfg = Release|Win32
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991}.Release|Win32.Build.0 = Release|Win32
-		{4B95E589-D664-4E0C-9335-9398A1DE061F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{4B95E589-D664-4E0C-9335-9398A1DE061F}.Debug|Win32.Build.0 = Debug|Win32
-		{4B95E589-D664-4E0C-9335-9398A1DE061F}.Release|Win32.ActiveCfg = Release|Win32
-		{4B95E589-D664-4E0C-9335-9398A1DE061F}.Release|Win32.Build.0 = Release|Win32
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875}.Debug|Win32.ActiveCfg = Debug|Win32
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875}.Debug|Win32.Build.0 = Debug|Win32
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875}.Release|Win32.ActiveCfg = Release|Win32

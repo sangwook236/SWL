@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_common.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -139,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_common.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -187,7 +189,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FullDuplexTcpSocketSession.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GuardedBuffer.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\HalfDuplexTcpSocketSession.cpp"
 				>
 			</File>
 			<File
@@ -219,7 +229,19 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\iniparser.cpp"
+				RelativePath=".\IniParser.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\iniparser_impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PacketDispatcher.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PacketPacker.cpp"
 				>
 			</File>
 			<File
@@ -227,11 +249,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\StringUtil.cpp"
+				RelativePath=".\strlib.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\strlib.cpp"
+				RelativePath=".\TcpSocketClient.cpp"
 				>
 			</File>
 			<File
@@ -281,11 +303,31 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\util\FullDuplexTcpSocketSession.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\util\GuardedBuffer.h"
 				>
 			</File>
 			<File
-				RelativePath=".\iniparser.h"
+				RelativePath="..\..\inc\swl\util\HalfDuplexTcpSocketSession.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\IniParser.h"
+				>
+			</File>
+			<File
+				RelativePath=".\iniparser_impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\PacketDispatcher.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\PacketPacker.h"
 				>
 			</File>
 			<File
@@ -293,11 +335,19 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\util\StringUtil.h"
+				RelativePath=".\strlib.h"
 				>
 			</File>
 			<File
-				RelativePath=".\strlib.h"
+				RelativePath="..\..\inc\swl\util\TcpSocketClient.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketConnection.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketServer.h"
 				>
 			</File>
 			<File

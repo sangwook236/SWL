@@ -1,8 +1,8 @@
-#if !defined(__SWL_DATA_PACKET__PACKET_DISPATCHER__H_)
-#define __SWL_DATA_PACKET__PACKET_DISPATCHER__H_ 1
+#if !defined(__SWL_UTIL__PACKET_DISPATCHER__H_)
+#define __SWL_UTIL__PACKET_DISPATCHER__H_ 1
 
 
-#include "swl/datapacket/ExportDataPacket.h"
+#include "swl/util/ExportUtil.h"
 
 
 namespace swl {
@@ -13,7 +13,7 @@ typedef GuardedBuffer<unsigned char> GuardedByteBuffer;
 //-----------------------------------------------------------------------------------
 //	packet dispatcher
 
-struct SWL_DATA_PACKET_API PacketDispatcher
+struct SWL_UTIL_API PacketDispatcher
 {
 public:
 	//typedef PacketDispatcher base_type;
@@ -30,4 +30,4 @@ public:
 }  // namespace swl
 
 
-#endif  //  __SWL_DATA_PACKET__PACKET_DISPATCHER__H_
+#endif  //  __SWL_UTIL__PACKET_DISPATCHER__H_

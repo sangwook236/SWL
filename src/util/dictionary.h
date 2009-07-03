@@ -47,13 +47,13 @@
   hash function.
  */
 /*-------------------------------------------------------------------------*/
-typedef struct _dictionary_ {
+struct dictionary {
 	int				n ;		/** Number of entries in dictionary */
 	int				size ;	/** Storage size */
 	char 		**	val ;	/** List of string values */
 	char 		**  key ;	/** List of string keys */
 	unsigned	 *	hash ;	/** List of hash values for keys */
-} dictionary ;
+};
 
 
 /*---------------------------------------------------------------------------

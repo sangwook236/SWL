@@ -1,4 +1,4 @@
-#include "swl/util/StringUtil.h"
+#include "swl/common/StringConversion.h"
 #include <boost/smart_ptr.hpp>
 #if defined(WIN32)
 #include <windows.h>
@@ -14,9 +14,9 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------
-//	string utility
+//	string conversion
 
-/*static*/ std::string StringUtil::wcs2mbs(const std::wstring &wcstr)
+/*static*/ std::string StringConversion::wcs2mbs(const std::wstring &wcstr)
 {
 	const size_t len = wcstr.length() * 2 + 1;
 	boost::scoped_array<char> mbstr(new char [len]);
@@ -37,7 +37,7 @@ namespace swl {
 	return std::string(mbstr.get());
 }
 
-/*static*/ std::wstring StringUtil::mbs2wcs(const std::string &mbstr)
+/*static*/ std::wstring StringConversion::mbs2wcs(const std::string &mbstr)
 {
 	const size_t len = mbstr.length() * 2 + 1;
 	boost::scoped_array<wchar_t> wcstr(new wchar_t [len]);

@@ -3,7 +3,7 @@
 #include "swl/winview/GdiplusBitmapBufferedContext.h"
 #include "swl/winview/WinViewBase.h"
 #include "swl/view/ViewCamera2.h"
-#include "swl/util/StringUtil.h"
+#include "swl/common/StringConversion.h"
 #include <wingdi.h>
 #include <gdiplus.h>
 
@@ -298,7 +298,7 @@ bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::stri
 #if defined(_UNICODE) || defined(UNICODE)
 				return Gdiplus::Ok == captureContext.getOffScreen()->Save(filePathName.c_str(), &clsId, NULL);
 #else
-				return Gdiplus::Ok == captureContext.getOffScreen()->Save(StringUtil::mbs2wcs(filePathName).c_str(), &clsId, NULL);
+				return Gdiplus::Ok == captureContext.getOffScreen()->Save(StringConversion::mbs2wcs(filePathName).c_str(), &clsId, NULL);
 #endif
 			else return false;
 		}

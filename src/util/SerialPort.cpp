@@ -1,5 +1,5 @@
 #include "swl/util/SerialPort.h"
-#include "swl/util/StringUtil.h"
+#include "swl/common/StringConversion.h"
 #include <boost/bind.hpp>
 #include <iostream>
 
@@ -34,7 +34,7 @@ bool SerialPort::connect(const std::string &portName, const unsigned int baudRat
 #endif
 {
 #if defined(_UNICODE) || defined(UNICODE)
-	port_.open(StringUtil::wcs2mbs(portName));
+	port_.open(StringConversion::wcs2mbs(portName));
 #else
 	port_.open(portName);
 #endif

@@ -1,24 +1,24 @@
-#if !defined(__SWL_UTIL__STRING_UTIL__H_)
-#define __SWL_UTIL__STRING_UTIL__H_ 1
+#if !defined(__SWL_COMMON__STRING_CONVERSION__H_)
+#define __SWL_COMMON__STRING_CONVERSION__H_ 1
 
 
-#include "swl/util/ExportUtil.h"
+#include "swl/common/ExportCommon.h"
 #include <string>
 
 namespace swl {
 
 //-----------------------------------------------------------------------------------
-//	string utility
+//	string conversion
 
 /**
- *	@brief  Unicode 문자열과 multi-byte 문자열을 위한 utility class.
+ *	@brief  Unicode 문자열과 multi-byte 문자열을 위한 conversion class.
  *
- *	unicode string을 multi-byte string으로, multi-byte string을 unicode string으로 변환하는 utility API를 제공한다.
+ *	unicode string을 multi-byte string으로, multi-byte string을 unicode string으로 변환하는 API를 제공한다.
  */
-class SWL_UTIL_API StringUtil
+class SWL_COMMON_API StringConversion
 {
 public:
-	//typedef StringUtil base_type;
+	//typedef StringConversion base_type;
 
 public:
 	/**
@@ -38,4 +38,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_UTIL__STRING_UTIL__H_
+#endif  // __SWL_COMMON__STRING_CONVERSION__H_

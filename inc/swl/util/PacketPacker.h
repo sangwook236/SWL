@@ -1,8 +1,8 @@
-#if !defined(__SWL_DATA_PACKET__PACKET_PACKER__H_ )
-#define __SWL_DATA_PACKET__PACKET_PACKER__H_ 1
+#if !defined(__SWL_UTIL__PACKET_PACKER__H_ )
+#define __SWL_UTIL__PACKET_PACKER__H_ 1
 
 
-#include "swl/datapacket/ExportDataPacket.h"
+#include "swl/util/ExportUtil.h"
 #include "swl/CompilerWarning.h"
 #include <list>
 #include <vector>
@@ -13,17 +13,17 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //  byte data converter
 
-SWL_DATA_PACKET_API unsigned char convDec2Ascii(const unsigned char dec);
-SWL_DATA_PACKET_API unsigned char convAscii2Dec(const unsigned char ascii);
-SWL_DATA_PACKET_API unsigned char convHex2Ascii(const unsigned char hex, const bool doesConvToUpperCase = true);
-SWL_DATA_PACKET_API unsigned char convAscii2Hex(const unsigned char ascii);
+SWL_UTIL_API unsigned char convDec2Ascii(const unsigned char dec);
+SWL_UTIL_API unsigned char convAscii2Dec(const unsigned char ascii);
+SWL_UTIL_API unsigned char convHex2Ascii(const unsigned char hex, const bool doesConvToUpperCase = true);
+SWL_UTIL_API unsigned char convAscii2Hex(const unsigned char ascii);
 
 
 //-----------------------------------------------------------------------------------
 //  byte-based packet packer
 
 //template<class T>
-class SWL_DATA_PACKET_API PacketPacker
+class SWL_UTIL_API PacketPacker
 {
 public:
 	//typedef PacketPacker				base_type;
@@ -85,7 +85,7 @@ private:
 //  byte-based packet packer
 
 //template<class T>
-class SWL_DATA_PACKET_API PacketPacker
+class SWL_UTIL_API PacketPacker
 {
 public:
 	//typedef PacketPacker				base_type;
@@ -154,7 +154,7 @@ private:
 //  byte-based packet unpacker
 
 //template<class T>
-class SWL_DATA_PACKET_API PacketUnpacker
+class SWL_UTIL_API PacketUnpacker
 {
 public:
 	//typedef PacketUnpacker			base_type;
@@ -288,4 +288,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_DATA_PACKET__PACKET_PACKER__H_ 
+#endif  // __SWL_UTIL__PACKET_PACKER__H_ 

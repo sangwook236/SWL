@@ -20,7 +20,7 @@
                                 Includes
  ---------------------------------------------------------------------------*/
 
-#include "iniparser.h"
+#include "iniparser_impl.h"
 #include "dictionary.h"
 #include "strlib.h"
 
