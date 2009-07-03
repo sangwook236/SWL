@@ -1,5 +1,7 @@
 #include "swl/winutil/WinRegistrar.h"
+#include "swl/common/LogException.h"
 #include <winreg.h>
+
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
@@ -82,7 +84,8 @@ bool WinRegistrar::getSubkey(const int index, subkey_type &subkey) const
 		if (ERROR_NO_MORE_ITEMS == ret)
 			return false;  // no more subkeys
 		else
-			throw std::runtime_error("can't find subkey");
+			//throw std::runtime_error("can't find subkey");
+			throw LogException(LogException::L_ERROR, "can't find subkey", __FILE__, __LINE__, __FUNCTION__);
 	}
 }
 

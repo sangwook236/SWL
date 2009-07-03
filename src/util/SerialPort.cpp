@@ -1,4 +1,5 @@
 #include "swl/util/SerialPort.h"
+#include "swl/common/LogException.h"
 #include "swl/common/StringConversion.h"
 #include <boost/bind.hpp>
 #include <iostream>
@@ -181,7 +182,7 @@ void SerialPort::doCloseOperation(const boost::system::error_code &ec)
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	port_.close();
@@ -197,7 +198,7 @@ void SerialPort::doCancelOperation(const boost::system::error_code &ec)
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	port_.cancel();

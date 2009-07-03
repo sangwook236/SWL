@@ -1,6 +1,7 @@
 #include "swl/math/MathExt.h"
 #include "swl/math/MathUtil.h"
-#include <sstream>
+#include "swl/common/LogException.h"
+//#include <sstream>
 #include <limits>
 #include <cmath>
 
@@ -73,15 +74,17 @@ namespace swl {
 	const double dTol = MathConstant::EPS;
 	if (base <= 0.0 || (-dTol <= base - 1.0 && base - 1.0 <= dTol))
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::logb() at " << __LINE__ << " in " << __FILE__;
-		throw std::invalid_argument(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::logb() at " << __LINE__ << " in " << __FILE__;
+		//throw std::invalid_argument(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
 	if (x <= 0.0)
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::logb() at " << __LINE__ << " in " << __FILE__;
-		throw std::domain_error(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::logb() at " << __LINE__ << " in " << __FILE__;
+		//throw std::domain_error(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "domain error", __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	return std::log(x) / std::log(base);
@@ -95,9 +98,10 @@ namespace swl {
 	if (x < 1.0)
 	{
 		// when x < 1.0, a solution is a conmplex number
-		std::ostringstream stream;
-		stream << "swl::MathExt::acosh() at " << __LINE__ << " in " << __FILE__;
-		throw std::domain_error(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::acosh() at " << __LINE__ << " in " << __FILE__;
+		//throw std::domain_error(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "domain error", __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	return std::log(x + std::sqrt(x * x - 1.0));
@@ -109,9 +113,10 @@ namespace swl {
 	if (x <= -1.0 || x >= 1.0)
 	{
 		// when x <= -1.0 || x >= 1.0, a solution is a conmplex number
-		std::ostringstream stream;
-		stream << "swl::MathExt::atanh() at " << __LINE__ << " in " << __FILE__;
-		throw std::domain_error(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::atanh() at " << __LINE__ << " in " << __FILE__;
+		//throw std::domain_error(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "domain error", __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	return std::log(std::sqrt((1.0 + x) / (1.0 - x)));
@@ -167,9 +172,10 @@ namespace swl {
 	{
 		if (std::numeric_limits<unsigned long>::max() / ulFactorial < k)
 		{
-			std::ostringstream stream;
-			stream << "swl::MathExt::factorial() at " << __LINE__ << " in " << __FILE__;
-			throw std::overflow_error(stream.str().c_str());
+			//std::ostringstream stream;
+			//stream << "swl::MathExt::factorial() at " << __LINE__ << " in " << __FILE__;
+			//throw std::overflow_error(stream.str().c_str());
+			throw LogException(LogException::L_ERROR, "overflow error", __FILE__, __LINE__, __FUNCTION__);
 		}
 		ulFactorial *= k;
 	}
@@ -185,9 +191,10 @@ namespace swl {
 	{
 		if (std::numeric_limits<double>::max() / dFactorial < k)
 		{
-			std::ostringstream stream;
-			stream << "swl::MathExt::factorial() at " << __LINE__ << " in " << __FILE__;
-			throw std::overflow_error(stream.str().c_str());
+			//std::ostringstream stream;
+			//stream << "swl::MathExt::factorial() at " << __LINE__ << " in " << __FILE__;
+			//throw std::overflow_error(stream.str().c_str());
+			throw LogException(LogException::L_ERROR, "overflow error", __FILE__, __LINE__, __FUNCTION__);
 		}
 		dFactorial *= k;
 	}
@@ -198,9 +205,10 @@ namespace swl {
 {
 	if (lhs < rhs)
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::permutation() at " << __LINE__ << " in " << __FILE__;
-		throw std::invalid_argument(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::permutation() at " << __LINE__ << " in " << __FILE__;
+		//throw std::invalid_argument(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
 	return factorial(lhs) / factorial(lhs - rhs); 
 }
@@ -209,9 +217,10 @@ namespace swl {
 {
 	if (lhs < rhs)
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::permutation() at " << __LINE__ << " in " << __FILE__;
-		throw std::invalid_argument(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::permutation() at " << __LINE__ << " in " << __FILE__;
+		//throw std::invalid_argument(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
 	return factorial(lhs, dTol) / factorial(lhs - rhs, dTol); 
 }
@@ -220,9 +229,10 @@ namespace swl {
 {
 	if (lhs < rhs)
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::binomial() at " << __LINE__ << " in " << __FILE__;
-		throw std::invalid_argument(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::binomial() at " << __LINE__ << " in " << __FILE__;
+		//throw std::invalid_argument(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
 	return factorial(lhs) / (factorial(lhs - rhs) * factorial(rhs));
 }
@@ -232,9 +242,10 @@ namespace swl {
 {
 	if (lhs < rhs)
 	{
-		std::ostringstream stream;
-		stream << "swl::MathExt::binomial() at " << __LINE__ << " in " << __FILE__;
-		throw std::invalid_argument(stream.str().c_str());
+		//std::ostringstream stream;
+		//stream << "swl::MathExt::binomial() at " << __LINE__ << " in " << __FILE__;
+		//throw std::invalid_argument(stream.str().c_str());
+		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
 	return factorial(lhs, dTol) / (factorial(lhs - rhs, dTol) * factorial(rhs, dTol));
 }

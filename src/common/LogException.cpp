@@ -13,21 +13,32 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //	exception for log
 
+LogException::LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName)
+#if defined(UNICODE) || defined(_UNICODE)
+: level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
+#else
+: level_(level), message_(StringConversion::wcs2mbs(message)), filePath_(StringConversion::wcs2mbs(filePath)), lineNo_(lineNo), methodName_(StringConversion::wcs2mbs(methodName))
+#endif
+{}
+
+LogException::LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName)
+#if defined(UNICODE) || defined(_UNICODE)
+: level_(level), message_(message), filePath_(StringConversion::mbs2wcs(filePath)), lineNo_(lineNo), methodName_(StringConversion::mbs2wcs(methodName))
+#else
+: level_(level), message_(StringConversion::wcs2mbs(message)), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
+#endif
+{}
+
+LogException::LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName)
+#if defined(UNICODE) || defined(_UNICODE)
+: level_(level), message_(StringConversion::mbs2wcs(message)), filePath_(StringConversion::mbs2wcs(filePath)), lineNo_(lineNo), methodName_(StringConversion::mbs2wcs(methodName))
+#else
+: level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
+#endif
+{}
+
 LogException::~LogException()
 {
-}
-
-#if defined(UNICODE) || defined(_UNICODE)
-std::wstring LogException::getFilePath() const
-#else
-std::string LogException::getFilePath() const
-#endif
-{
-#if defined(UNICODE) || defined(_UNICODE)
-	return StringConversion::mbs2wcs(filePath_);
-#else
-	return filePath_;
-#endif
 }
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -37,16 +48,20 @@ std::string LogException::getFileName() const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	const std::wstring filePath(StringConversion::mbs2wcs(filePath_));
+#if defined(WIN32)
+	const std::wstring delim(L"\\");
 #else
-	const std::wstring &filePath = filePath_;
+	const std::wstring delim(L"/");
+#endif
+#else
+#if defined(WIN32)
+	const std::string delim("\\");
+#else
+	const std::string delim("/");
+#endif
 #endif
 
-#if defined(WIN32)
-	return filePath.substr(filePath.find_last_of(std::wstring(L"\\")) + 1);
-#else
-	return filePath.substr(filePath.find_last_of(std::wstring(L"/")) + 1);
-#endif
+	return filePath_.substr(filePath_.find_last_of(delim) + 1);
 }
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -56,13 +71,12 @@ std::string LogException::getClassName() const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	const std::wstring methodName(StringConversion::mbs2wcs(methodName_));
-	const std::wstring::size_type pos = methodName.find_first_of(std::wstring(L"::"));
+	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
+	return (pos == std::wstring::npos) ? std::wstring(L"") : methodName_.substr(0, pos);
 #else
 	const std::string::size_type pos = methodName_.find_first_of(std::string("::"));
+	return (pos == std::string::npos) ? std::string("") : methodName_.substr(0, pos);
 #endif
-
-	return (pos == std::wstring::npos) ? std::wstring(L"") : methodName.substr(0, pos);
 }
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -72,13 +86,12 @@ std::string LogException::getMethodName() const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	const std::wstring methodName(StringConversion::mbs2wcs(methodName_));
-	const std::wstring::size_type pos = methodName.find_first_of(std::wstring(L"::"));
+	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
+	return (pos == std::wstring::npos) ? methodName_ : methodName_.substr(pos + 2);
 #else
 	const std::string::size_type pos = methodName_.find_first_of(std::string("::"));
+	return (pos == std::string::npos) ? methodName_ : methodName_.substr(pos + 2);
 #endif
-
-	return (pos == std::wstring::npos) ? methodName : methodName.substr(pos + 2);
 }
 
 }  // namespace swl

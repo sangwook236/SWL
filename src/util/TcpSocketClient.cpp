@@ -1,4 +1,5 @@
 #include "swl/util/TcpSocketClient.h"
+#include "swl/common/LogException.h"
 #include "swl/common/StringConversion.h"
 #include <boost/bind.hpp>
 
@@ -70,7 +71,7 @@ size_t TcpSocketClient::send(const unsigned char *msg, const size_t len)
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	return sz;
@@ -88,7 +89,7 @@ size_t TcpSocketClient::receive(unsigned char *msg, const size_t len)
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	return sz;
@@ -244,7 +245,7 @@ void AsyncTcpSocketClient::doCancelOperation(const boost::system::error_code &ec
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	socket_.cancel();

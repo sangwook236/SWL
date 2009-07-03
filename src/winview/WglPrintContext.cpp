@@ -1,6 +1,8 @@
 #include "swl/winview/WglPrintContext.h"
+#include "swl/common/LogException.h"
 #include <boost/smart_ptr.hpp>
 #include <stdexcept>
+
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
@@ -78,7 +80,8 @@ bool WglPrintContext::resize(const int x1, const int y1, const int x2, const int
 
 	return createOffScreen();
 */
-	throw std::runtime_error("WglPrintContext::resize() must not to be called"); 
+	//throw std::runtime_error("WglPrintContext::resize() must not to be called"); 
+	throw LogException(LogException::L_ERROR, "this function must not to be called", __FILE__, __LINE__, __FUNCTION__);
 }
 
 bool WglPrintContext::activate()

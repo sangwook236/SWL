@@ -12,6 +12,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view", "..\src\view\swl_view.vcproj", "{756B7445-B468-4814-AB86-41D586225519}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -27,6 +30,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math", "..\src\math\swl
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics", "..\src\graphics\swl_graphics.vcproj", "{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
 	ProjectSection(WebsiteProperties) = preProject
@@ -40,9 +46,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview", "..\src\winvi
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_oglview", "..\src\oglview\swl_oglview.vcproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
@@ -60,8 +66,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WinViewTest", "..\test\winv
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winutil\swl_winutil.vcproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
@@ -76,9 +82,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WglViewTest", "..\test\wglv
 		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
+		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
 	EndProjectSection
 EndProject
 Global

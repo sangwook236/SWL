@@ -1,4 +1,5 @@
 #include "swl/util/FullDuplexTcpSocketSession.h"
+#include "swl/common/LogException.h"
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 
@@ -152,7 +153,7 @@ void FullDuplexTcpSocketSession::doCloseOperation(const boost::system::error_cod
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	socket_.close();
@@ -168,7 +169,7 @@ void FullDuplexTcpSocketSession::doCancelOperation(const boost::system::error_co
 	else if (ec)  // some other error.
 	{
 		//throw boost::system::system_error(ec);
-		throw std::runtime_error(ec.message());
+		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
 	socket_.cancel();

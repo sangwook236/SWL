@@ -72,13 +72,9 @@ public:
 	 *
 	 *	exception 발생시 지정되는 여러 인자값들로부터 log를 위해 필요한 정보를 뽑아내고 관리한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
-	LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName)
-#else
-	LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName)
-#endif
-	: level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
-	{}
+	LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName);
+	LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName);
+	LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	/**
 	 *	@brief  [dtor] default destructor.
 	 *
@@ -116,9 +112,9 @@ public:
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
 #if defined(UNICODE) || defined(_UNICODE)
-	std::wstring getFilePath() const;
+	std::wstring getFilePath() const  {  return filePath_;  }
 #else
-	std::string getFilePath() const;
+	std::string getFilePath() const  {  return filePath_;  }
 #endif
 
 	/**
@@ -175,9 +171,17 @@ private:
 	const std::string message_;
 #endif
 
+#if defined(UNICODE) || defined(_UNICODE)
+	const std::wstring filePath_;
+#else
 	const std::string filePath_;
+#endif
 	const long lineNo_;
+#if defined(UNICODE) || defined(_UNICODE)
+	const std::wstring methodName_;
+#else
 	const std::string methodName_;
+#endif
 };
 
 }  // namespace swl

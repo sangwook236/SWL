@@ -1,8 +1,9 @@
 #include "swl/view/ViewEventController.h"
 
-#if defined(WIN32) && defined(_DEBUG)
-#include "swl/common/Config.h"
-#define new new(__FILE__, __LINE__)
+
+#if defined(_MSC_VER) && defined(_DEBUG)
+#include "swl/ResourceLeakageCheck.h"
+#define new DEBUG_NEW
 #endif
 
 

@@ -7,9 +7,9 @@
 #include "swl/view/KeyEvent.h"
 #include <iostream>
 
-#if defined(WIN32) && defined(_DEBUG)
-#include "swl/common/Config.h"
-#define new new(__FILE__, __LINE__)
+
+#if defined(_MSC_VER) && defined(_DEBUG)
+#define new DEBUG_NEW
 #endif
 
 
