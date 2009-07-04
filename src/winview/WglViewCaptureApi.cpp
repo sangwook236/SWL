@@ -1,12 +1,14 @@
+#include "swl/Config.h"
 #include "swl/winview/WglViewCaptureApi.h"
 #include "swl/winview/WglBitmapBufferedContext.h"
 #include "swl/winview/WglViewBase.h"
 #include "swl/oglview/OglCamera.h"
-#include "swl/common/StringConversion.h"
+#include "swl/base/String.h"
 #include <wingdi.h>
 #include <gdiplus.h>
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

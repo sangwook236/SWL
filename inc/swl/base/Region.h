@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__REGION__H_)
-#define __SWL_COMMON__REGION__H_ 1
+#if !defined(__SWL_BASE__REGION__H_)
+#define __SWL_BASE__REGION__H_ 1
 
 
-#include "swl/common/Point.h"
+#include "swl/base/Point.h"
 
 
 namespace swl {
@@ -439,4 +439,4 @@ public:
 }  // namespace swl
 
 
-#endif  //  __SWL_COMMON__REGION__H_
+#endif  //  __SWL_BASE__REGION__H_

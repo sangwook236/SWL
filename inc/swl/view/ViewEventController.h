@@ -3,7 +3,7 @@
 
 
 #include "swl/view/ExportView.h"
-#include "swl/common/MvcController.h"
+#include "swl/base/MvcController.h"
 #include <boost/signal.hpp>
 
 

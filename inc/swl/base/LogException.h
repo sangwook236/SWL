@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__LOG_EXCEPTION__H_)
-#define __SWL_COMMON__LOG_EXCEPTION__H_ 1
+#if !defined(__SWL_BASE__LOG_EXCEPTION__H_)
+#define __SWL_BASE__LOG_EXCEPTION__H_ 1
 
 
-#include "swl/common/ExportCommon.h"
+#include "swl/base/ExportBase.h"
 #include <string>
 #include <exception>
 
@@ -38,7 +38,7 @@ namespace swl {
  *
  *	exception level의 경우 기본적으로 7가지 수준으로 나뉘어진다.
  */
-class SWL_COMMON_API LogException: public std::exception
+class SWL_BASE_API LogException: public std::exception
 {
 public:
 	/**
@@ -187,4 +187,4 @@ private:
 }  // namespace swl
 
 
-#endif  //  __SWL_COMMON__LOG_EXCEPTION__H_
+#endif  //  __SWL_BASE__LOG_EXCEPTION__H_

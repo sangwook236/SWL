@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__MVC_CONTROLLER__H_)
-#define __SWL_COMMON__MVC_CONTROLLER__H_ 1
+#if !defined(__SWL_BASE__MVC_CONTROLLER__H_)
+#define __SWL_BASE__MVC_CONTROLLER__H_ 1
 
 
-#include "swl/common/INotifier.h"
+#include "swl/base/INotifier.h"
 
 
 namespace swl {
@@ -32,4 +32,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_COMMON__MVC_CONTROLLER__H_
+#endif  // __SWL_BASE__MVC_CONTROLLER__H_

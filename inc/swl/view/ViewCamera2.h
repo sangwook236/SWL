@@ -3,7 +3,7 @@
 
 
 #include "swl/view/ExportView.h"
-#include "swl/common/Region.h"
+#include "swl/base/Region.h"
 
 
 namespace swl {

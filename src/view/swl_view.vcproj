@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_common.lib"
+				AdditionalDependencies="swl_base.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_common.lib"
+				AdditionalDependencies="swl_base.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"

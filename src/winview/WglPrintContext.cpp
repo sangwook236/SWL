@@ -1,10 +1,11 @@
+#include "swl/Config.h"
 #include "swl/winview/WglPrintContext.h"
-#include "swl/common/LogException.h"
+#include "swl/base/LogException.h"
 #include <boost/smart_ptr.hpp>
 #include <stdexcept>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

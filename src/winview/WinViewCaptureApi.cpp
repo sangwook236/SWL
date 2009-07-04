@@ -1,13 +1,15 @@
+#include "swl/Config.h"
 #include "swl/winview/WinViewCaptureApi.h"
 #include "swl/winview/GdiBitmapBufferedContext.h"
 #include "swl/winview/GdiplusBitmapBufferedContext.h"
 #include "swl/winview/WinViewBase.h"
 #include "swl/view/ViewCamera2.h"
-#include "swl/common/StringConversion.h"
+#include "swl/base/String.h"
 #include <wingdi.h>
 #include <gdiplus.h>
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -298,7 +300,7 @@ bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::stri
 #if defined(_UNICODE) || defined(UNICODE)
 				return Gdiplus::Ok == captureContext.getOffScreen()->Save(filePathName.c_str(), &clsId, NULL);
 #else
-				return Gdiplus::Ok == captureContext.getOffScreen()->Save(StringConversion::mbs2wcs(filePathName).c_str(), &clsId, NULL);
+				return Gdiplus::Ok == captureContext.getOffScreen()->Save(String::mbs2wcs(filePathName).c_str(), &clsId, NULL);
 #endif
 			else return false;
 		}

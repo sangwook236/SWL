@@ -2,7 +2,7 @@
 #define __SWL_UTIL__GUARDED_BUFFER__H_ 1
 
 
-#include "swl/CompilerWarning.h"
+#include "swl/DisableCompilerWarning.h"
 #include <boost/thread/mutex.hpp>
 #include <boost/config.hpp>
 #include <deque>
@@ -140,6 +140,9 @@ private:
 typedef GuardedBuffer<unsigned char> GuardedByteBuffer;
 
 }  // namespace swl
+
+
+#include "swl/EnableCompilerWarning.h"
 
 
 #endif  // __SWL_UTIL__GUARDED_BUFFER__H_

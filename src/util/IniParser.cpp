@@ -1,10 +1,11 @@
+#include "swl/Config.h"
 #include "swl/util/IniParser.h"
-#include "swl/common/StringConversion.h"
-#include "swl/common/LogException.h"
+#include "swl/base/String.h"
+#include "swl/base/LogException.h"
 #include "iniparser_impl.h"
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -22,21 +23,13 @@ IniParser::IniParser(const std::string &iniFilePath)
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	ini_ = iniparser_load(StringConversion::wcs2mbs(iniFilePath).c_str());
+	ini_ = iniparser_load(String::wcs2mbs(iniFilePath).c_str());
 #else
 	ini_ = iniparser_load(iniFilePath.c_str());
 #endif
 
 	if (!ini_)
-#if defined(UNICODE) || defined(_UNICODE)
-		throw LogException(LogException::L_ERROR, L"ini file not opened", __FILE__, __LINE__, __FUNCTION__);
-#else
-#if _MSC_VER > 1200
 		throw LogException(LogException::L_ERROR, "ini file not opened", __FILE__, __LINE__, __FUNCTION__);
-#else
-		throw LogException(LogException::L_ERROR, "ini file not opened", __FILE__, __LINE__, _T(""));
-#endif
-#endif
 }
 
 IniParser::~IniParser()
@@ -56,7 +49,7 @@ std::string IniParser::getSectionName(int n) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return StringConversion::mbs2wcs(iniparser_getsecname(ini_, n));
+	return String::mbs2wcs(iniparser_getsecname(ini_, n));
 #else
 	return std::string(iniparser_getsecname(ini_, n));
 #endif
@@ -79,7 +72,7 @@ std::string IniParser::getStr(const std::string &key) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return StringConversion::mbs2wcs(iniparser_getstr(ini_, StringConversion::wcs2mbs(key).c_str()));
+	return String::mbs2wcs(iniparser_getstr(ini_, String::wcs2mbs(key).c_str()));
 #else
 	return iniparser_getstr(ini_, key.c_str());
 #endif
@@ -92,7 +85,7 @@ std::string IniParser::getString(const std::string &key, const std::string &notf
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return StringConversion::mbs2wcs(iniparser_getstring(ini_, StringConversion::wcs2mbs(key).c_str(), const_cast<char *>(StringConversion::wcs2mbs(notfound).c_str())));
+	return String::mbs2wcs(iniparser_getstring(ini_, String::wcs2mbs(key).c_str(), const_cast<char *>(String::wcs2mbs(notfound).c_str())));
 #else
 	return iniparser_getstring(ini_, key.c_str(), const_cast<char *>(notfound.c_str()));
 #endif
@@ -105,7 +98,7 @@ int IniParser::getInt(const std::string &key, const int notfound) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return iniparser_getint(ini_, StringConversion::wcs2mbs(key).c_str(), notfound);
+	return iniparser_getint(ini_, String::wcs2mbs(key).c_str(), notfound);
 #else
 	return iniparser_getint(ini_, key.c_str(), notfound);
 #endif
@@ -118,7 +111,7 @@ double IniParser::getDouble(const std::string &key, const double notfound) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return iniparser_getdouble(ini_, const_cast<char *>(StringConversion::wcs2mbs(key).c_str()), notfound);
+	return iniparser_getdouble(ini_, const_cast<char *>(String::wcs2mbs(key).c_str()), notfound);
 #else
 	return iniparser_getdouble(ini_, const_cast<char *>(key.c_str()), notfound);
 #endif
@@ -131,7 +124,7 @@ bool IniParser::getBool(const std::string &key, const bool notfound) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return iniparser_getboolean(ini_, StringConversion::wcs2mbs(key).c_str(), notfound ? 1 : 0) == 1;
+	return iniparser_getboolean(ini_, String::wcs2mbs(key).c_str(), notfound ? 1 : 0) == 1;
 #else
 	return iniparser_getboolean(ini_, key.c_str(), notfound ? 1 : 0) == 1;
 #endif
@@ -144,7 +137,7 @@ bool IniParser::setStr(const std::string &entry, const std::string &val) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return iniparser_setstr(ini_, const_cast<char *>(StringConversion::wcs2mbs(entry).c_str()), val.empty() ? NULL : const_cast<char *>(StringConversion::wcs2mbs(val).c_str())) == 0;
+	return iniparser_setstr(ini_, const_cast<char *>(String::wcs2mbs(entry).c_str()), val.empty() ? NULL : const_cast<char *>(String::wcs2mbs(val).c_str())) == 0;
 #else
 	return iniparser_setstr(ini_, const_cast<char *>(entry.c_str()), val.empty() ? NULL : const_cast<char *>(val.c_str())) == 0;
 #endif
@@ -157,7 +150,7 @@ void IniParser::unset(const std::string &entry) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	iniparser_unset(ini_, const_cast<char *>(StringConversion::wcs2mbs(entry).c_str()));
+	iniparser_unset(ini_, const_cast<char *>(String::wcs2mbs(entry).c_str()));
 #else
 	iniparser_unset(ini_, const_cast<char *>(entry.c_str()));
 #endif
@@ -170,7 +163,7 @@ bool IniParser::findEntry(const std::string &entry) const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-	return iniparser_find_entry(ini_, const_cast<char *>(StringConversion::wcs2mbs(entry).c_str())) == 1;
+	return iniparser_find_entry(ini_, const_cast<char *>(String::wcs2mbs(entry).c_str())) == 1;
 #else
 	return iniparser_find_entry(ini_, const_cast<char *>(entry.c_str())) == 1;
 #endif

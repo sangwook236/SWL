@@ -2,7 +2,7 @@
 #define __SWL_VIEW__VIEW_CONTEXT__H_ 1
 
 
-#include "swl/common/Region.h"
+#include "swl/base/Region.h"
 #include <boost/any.hpp>
 
 

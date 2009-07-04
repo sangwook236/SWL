@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__MVC_VIEW_H_)
-#define __SWL_COMMON__MVC_VIEW_H_ 1
+#if !defined(__SWL_BASE__MVC_VIEW_H_)
+#define __SWL_BASE__MVC_VIEW_H_ 1
 
 
-#include "swl/common/IObserver.h"
+#include "swl/base/IObserver.h"
 
 
 namespace swl {
@@ -30,4 +30,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_COMMON__MVC_VIEW_H_
+#endif  // __SWL_BASE__MVC_VIEW_H_

@@ -1,62 +1,16 @@
+#include "swl/Config.h"
 #include "swl/util/PacketPacker.h"
 #include <iterator>
 #include <algorithm>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
 
 
 namespace swl {
-
-//-----------------------------------------------------------------------------------
-//  byte data converter
-
-unsigned char convDec2Ascii(const unsigned char dec)
-{
-	//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-
-	if (0x0 <= dec && dec <= 0x9)
-		return dec + '0';
-	else return -1;
-}
-
-unsigned char convAscii2Dec(const unsigned char ascii)
-{
-	//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-
-	if ('0' <= ascii && ascii <= '9')
-		return ascii - '0';
-	else return -1;
-}
-
-unsigned char convHex2Ascii(const unsigned char hex, const bool doesConvToUpperCase /*= true*/)
-{
-	//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-
-	if (0x0 <= hex && hex <= 0x9)
-		return hex + '0';
-	//else if (0xa <= hex && hex <= 0xf)
-	else if (0xA <= hex && hex <= 0xF)
-		return hex - 0xA + (doesConvToUpperCase ? 'A' : 'a');
-	else return -1;
-}
-
-unsigned char convAscii2Hex(const unsigned char ascii)
-{
-	//AFX_MANAGE_STATE(AfxGetStaticModuleState());
-
-	if ('0' <= ascii && ascii <= '9')
-		return ascii - '0';
-	else if ('a' <= ascii && ascii <= 'f')
-		return ascii - 'a' + 10;
-	else if ('A' <= ascii && ascii <= 'F')
-		return ascii - 'A' + 10;
-	else return -1;
-}
-
 
 //-----------------------------------------------------------------------------------
 //  byte-based packet packer

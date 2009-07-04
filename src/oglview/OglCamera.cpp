@@ -1,7 +1,9 @@
+#include "swl/Config.h"
 #include "swl/oglview/OglCamera.h"
 #include <GL/glut.h>
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

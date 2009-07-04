@@ -9,7 +9,7 @@
 #include <iostream>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #define new DEBUG_NEW
 #endif
 

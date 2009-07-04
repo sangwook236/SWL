@@ -1,12 +1,13 @@
+#include "swl/Config.h"
 #include "swl/math/MathExt.h"
 #include "swl/math/MathUtil.h"
-#include "swl/common/LogException.h"
+#include "swl/base/LogException.h"
 //#include <sstream>
 #include <limits>
 #include <cmath>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

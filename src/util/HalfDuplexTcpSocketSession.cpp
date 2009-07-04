@@ -1,8 +1,9 @@
+#include "swl/Config.h"
 #include "swl/util/HalfDuplexTcpSocketSession.h"
 #include <boost/asio.hpp>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

@@ -1,9 +1,10 @@
+#include "swl/Config.h"
 #include "swl/math/MathUtil.h"
 #include <cmath>
 #include <algorithm>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

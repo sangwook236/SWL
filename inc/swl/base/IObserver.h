@@ -1,8 +1,8 @@
-#if !defined(__SWL_COMMON__OBSERVER_INTERFACE__H_)
-#define __SWL_COMMON__OBSERVER_INTERFACE__H_ 1
+#if !defined(__SWL_BASE__OBSERVER_INTERFACE__H_)
+#define __SWL_BASE__OBSERVER_INTERFACE__H_ 1
 
 
-#include "swl/common/INotifier.h"
+#include "swl/base/INotifier.h"
 
 
 namespace swl {
@@ -10,7 +10,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class IObserver
 
-class SWL_COMMON_API IObserver
+class SWL_BASE_API IObserver
 {
 public:
 	//typedef IObserver		base_type;
@@ -31,4 +31,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_COMMON__OBSERVER_INTERFACE__H_
+#endif  // __SWL_BASE__OBSERVER_INTERFACE__H_

@@ -1,5 +1,5 @@
-#if !defined(__SWL_COMMON__TUPLE__H_)
-#define __SWL_COMMON__TUPLE__H_ 1
+#if !defined(__SWL_BASE__TUPLE__H_)
+#define __SWL_BASE__TUPLE__H_ 1
 
 
 namespace swl {
@@ -128,4 +128,4 @@ public:
 }  // namespace swl
 
 
-#endif  //  __SWL_COMMON__TUPLE__H_
+#endif  //  __SWL_BASE__TUPLE__H_

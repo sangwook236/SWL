@@ -1,3 +1,4 @@
+#include "swl/Config.h"
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglPrintContext.h"
 #include "swl/winview/WglViewBase.h"
@@ -5,7 +6,8 @@
 #include <wingdi.h>
 #include <cmath>
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

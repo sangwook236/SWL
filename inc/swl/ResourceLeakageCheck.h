@@ -2,6 +2,8 @@
 #define __SWL__RESOURCE_LEAKAGE_CHECK__H_ 1
 
 
+#if defined(_MSC_VER)
+
 #if (_MSC_VER >= 1500)  // VC2008
 #if defined(_DEBUG)
 void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
@@ -50,6 +52,8 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #elif (_MSC_VER < 1500)  // VC2005
 #elif (_MSC_VER >= 1500)  // VC2008 and higher
 #endif
+
+#endif  // _MSC_VER
 
 
 #endif  // __SWL__RESOURCE_LEAKAGE_CHECK__H_

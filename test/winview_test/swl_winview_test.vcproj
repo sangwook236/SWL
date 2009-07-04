@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib swl_common.lib swl_view.lib swl_winview.lib"
+				AdditionalDependencies="gdiplus.lib swl_base.lib swl_view.lib swl_winview.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib swl_common.lib swl_view.lib swl_winview.lib"
+				AdditionalDependencies="gdiplus.lib swl_base.lib swl_view.lib swl_winview.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"

@@ -3,21 +3,12 @@
 
 
 #include "swl/util/ExportUtil.h"
-#include "swl/CompilerWarning.h"
+#include "swl/DisableCompilerWarning.h"
 #include <list>
 #include <vector>
 
 
 namespace swl {
-
-//-----------------------------------------------------------------------------------
-//  byte data converter
-
-SWL_UTIL_API unsigned char convDec2Ascii(const unsigned char dec);
-SWL_UTIL_API unsigned char convAscii2Dec(const unsigned char ascii);
-SWL_UTIL_API unsigned char convHex2Ascii(const unsigned char hex, const bool doesConvToUpperCase = true);
-SWL_UTIL_API unsigned char convAscii2Hex(const unsigned char ascii);
-
 
 //-----------------------------------------------------------------------------------
 //  byte-based packet packer
@@ -286,6 +277,9 @@ public:
 */
 
 }  // namespace swl
+
+
+#include "swl/EnableCompilerWarning.h"
 
 
 #endif  // __SWL_UTIL__PACKET_PACKER__H_ 

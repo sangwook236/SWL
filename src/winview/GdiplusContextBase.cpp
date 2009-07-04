@@ -1,10 +1,11 @@
+#include "swl/Config.h"
 #include "swl/winview/GdiplusContextBase.h"
-#include "swl/common/LogException.h"
+#include "swl/base/LogException.h"
 #include <gdiplus.h>
 #include <iostream>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

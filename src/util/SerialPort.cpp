@@ -1,11 +1,12 @@
+#include "swl/Config.h"
 #include "swl/util/SerialPort.h"
-#include "swl/common/LogException.h"
-#include "swl/common/StringConversion.h"
+#include "swl/base/LogException.h"
+#include "swl/base/String.h"
 #include <boost/bind.hpp>
 #include <iostream>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -35,7 +36,7 @@ bool SerialPort::connect(const std::string &portName, const unsigned int baudRat
 #endif
 {
 #if defined(_UNICODE) || defined(UNICODE)
-	port_.open(StringConversion::wcs2mbs(portName));
+	port_.open(String::wcs2mbs(portName));
 #else
 	port_.open(portName);
 #endif

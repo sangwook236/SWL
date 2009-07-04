@@ -1,9 +1,9 @@
-#if !defined(__SWL_COMMON__NOTIFIER_INTERFACE__H_)
-#define __SWL_COMMON__NOTIFIER_INTERFACE__H_ 1
+#if !defined(__SWL_BASE__NOTIFIER_INTERFACE__H_)
+#define __SWL_BASE__NOTIFIER_INTERFACE__H_ 1
 
 
-#include "swl/common/ExportCommon.h"
-#include "swl/CompilerWarning.h"
+#include "swl/base/ExportBase.h"
+#include "swl/DisableCompilerWarning.h"
 #include <boost/any.hpp>
 #include <set>
 
@@ -14,7 +14,7 @@ class IObserver;
 //--------------------------------------------------------------------------
 //  class INotifier
 
-class SWL_COMMON_API INotifier
+class SWL_BASE_API INotifier
 {
 public:
 	//typedef INotifier base_type;
@@ -34,7 +34,7 @@ public:
 //--------------------------------------------------------------------------
 //  class Notifier
 
-class SWL_COMMON_API Notifier: public INotifier
+class SWL_BASE_API Notifier: public INotifier
 {
 public:
 	typedef INotifier					base_type;
@@ -76,4 +76,7 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_COMMON__NOTIFIER_INTERFACE__H_
+#include "swl/EnableCompilerWarning.h"
+
+
+#endif  // __SWL_BASE__NOTIFIER_INTERFACE__H_

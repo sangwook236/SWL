@@ -1,10 +1,11 @@
+#include "swl/Config.h"
 #include "swl/util/TcpSocketClient.h"
-#include "swl/common/LogException.h"
-#include "swl/common/StringConversion.h"
+#include "swl/base/LogException.h"
+#include "swl/base/String.h"
 #include <boost/bind.hpp>
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -34,7 +35,7 @@ bool TcpSocketClient::connect(const std::string &hostName, const std::string &se
 {
 	boost::asio::ip::tcp::resolver resolver(socket_.get_io_service());
 #if defined(_UNICODE) || defined(UNICODE)
-	boost::asio::ip::tcp::resolver::query query(StringConversion::wcs2mbs(hostName), StringConversion::wcs2mbs(serviceName));
+	boost::asio::ip::tcp::resolver::query query(String::wcs2mbs(hostName), String::wcs2mbs(serviceName));
 #else
 	boost::asio::ip::tcp::resolver::query query(hostName, serviceName);
 #endif
@@ -118,7 +119,7 @@ bool AsyncTcpSocketClient::connect(const std::string &hostName, const std::strin
 {
 	boost::asio::ip::tcp::resolver resolver(socket_.get_io_service());
 #if defined(_UNICODE) || defined(UNICODE)
-	boost::asio::ip::tcp::resolver::query query(StringConversion::wcs2mbs(hostName), StringConversion::wcs2mbs(serviceName));
+	boost::asio::ip::tcp::resolver::query query(String::wcs2mbs(hostName), String::wcs2mbs(serviceName));
 #else
 	boost::asio::ip::tcp::resolver::query query(hostName, serviceName);
 #endif

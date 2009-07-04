@@ -1,8 +1,9 @@
+#include "swl/Config.h"
 #include "../../UnitTestConfig.h"
 #include "swl/util/TcpSocketClient.h"
 
 
-#if defined(_MSC_VER) && defined(_DEBUG)
+#if defined(_DEBUG)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -121,5 +122,5 @@ public:
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::TcpSocketClientTest);
-//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::TcpSocketClientTest, "SWL.Util.TcpSocketClient");  // not working
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::TcpSocketClientTest, "SWL.Util.TcpSocketClient");  // not working
 #endif

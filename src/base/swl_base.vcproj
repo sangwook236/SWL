@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="swl_math"
-	ProjectGUID="{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}"
-	RootNamespace="swl_math"
+	Name="swl_base"
+	ProjectGUID="{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
+	RootNamespace="swl_base"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -41,8 +41,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_MATH"
+				AdditionalIncludeDirectories="../../inc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_BASE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -62,7 +62,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -121,8 +120,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_MATH"
+				AdditionalIncludeDirectories="../../inc"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_BASE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -140,7 +139,6 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -182,47 +180,83 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4C7AA9CB-17C2-4b39-ACE5-7A1DDF1E4CE1}"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\MathConstant.cpp"
+				RelativePath=".\INotifier.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\MathExt.cpp"
+				RelativePath=".\IObserver.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\MathUtil.cpp"
+				RelativePath=".\LogException.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\String.cpp"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{79049E12-31C3-445b-9BEF-36646D546F77}"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\inc\swl\math\ExportMath.h"
+				RelativePath="..\..\inc\swl\base\ExportBase.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\math\MathConstant.h"
+				RelativePath="..\..\inc\swl\base\INotifier.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\math\MathExt.h"
+				RelativePath="..\..\inc\swl\base\IObserver.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\math\MathUtil.h"
+				RelativePath="..\..\inc\swl\base\LogException.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\MvcController.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\MvcModel.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\MvcView.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\Point.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\Region.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\Size.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\String.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\base\Tuple.h"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{E0823769-8D0C-40e6-B6FD-95F04DA7CAFF}"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
 	</Files>

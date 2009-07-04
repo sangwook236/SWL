@@ -1,6 +1,10 @@
-#if !defined(__SWL__COMPILER_WARNING__H_)
-#define __SWL__COMPILER_WARNING__H_ 1
+#if !defined(__SWL__DISABLE_COMPILER_WARNING__H_)
+#define __SWL__DISABLE_COMPILER_WARNING__H_ 1
 
+
+#if defined(_MSC_VER)
+
+# pragma warning(push)
 
 #if (_MSC_VER < 1200)  // VC5 and before
 #  pragma warning(disable : 4018)  // signed/unsigned mismatch
@@ -45,5 +49,7 @@
 // will have to be fixed one day:
 #pragma warning(disable : 4996)
 
+#endif
 
-#endif  // __SWL__COMPILER_WARNING__H_
+
+#endif  // __SWL__DISABLE_COMPILER_WARNING__H_
