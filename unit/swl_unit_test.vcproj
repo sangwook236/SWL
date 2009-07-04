@@ -2,10 +2,10 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="WglViewTest"
-	ProjectGUID="{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
-	RootNamespace="WglViewTest"
-	Keyword="MFCProj"
+	Name="swl_unit_test"
+	ProjectGUID="{F871854A-3223-4895-A970-180448FC68DA}"
+	RootNamespace="swl_unit_test"
+	Keyword="Win32Proj"
 	>
 	<Platforms>
 		<Platform
@@ -17,10 +17,9 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="../../bin/$(ConfigurationName)"
+			OutputDirectory="../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			UseOfMFC="2"
 			CharacterSet="1"
 			>
 			<Tool
@@ -37,19 +36,16 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="_DEBUG"
-				MkTypLibCompatible="false"
-				ValidateParameters="false"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
+				AdditionalIncludeDirectories="../inc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
@@ -59,20 +55,16 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(IntDir)"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_common.lib swl_view.lib swl_oglview.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
+				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -102,10 +94,9 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="../../bin/$(ConfigurationName)"
+			OutputDirectory="../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
-			UseOfMFC="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -123,17 +114,13 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				PreprocessorDefinitions="NDEBUG"
-				MkTypLibCompatible="false"
-				ValidateParameters="false"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
-				MinimalRebuild="true"
+				AdditionalIncludeDirectories="../inc"
+				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
 				RuntimeLibrary="2"
-				UsePrecompiledHeader="2"
+				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
@@ -143,20 +130,16 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="NDEBUG"
-				Culture="1033"
-				AdditionalIncludeDirectories="$(IntDir)"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_common.lib swl_view.lib swl_oglview.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
+				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
-				SubSystem="2"
+				SubSystem="1"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				TargetMachine="1"
@@ -196,51 +179,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ChildFrm.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MainFrm.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						UsePrecompiledHeader="1"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\ViewEventHandler.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ViewStateMachine.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestDoc.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestView.cpp"
+				RelativePath=".\TextUiUnitTestMain.cpp"
 				>
 			</File>
 		</Filter>
@@ -250,39 +189,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\ChildFrm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\MainFrm.h"
-				>
-			</File>
-			<File
-				RelativePath=".\Resource.h"
-				>
-			</File>
-			<File
-				RelativePath=".\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ViewEventHandler.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ViewStateMachine.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTest.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestDoc.h"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTestView.h"
+				RelativePath=".\UnitTestConfig.h"
 				>
 			</File>
 		</Filter>
@@ -291,36 +198,24 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath=".\res\Toolbar.bmp"
-				>
-			</File>
-			<File
-				RelativePath=".\res\WglViewTest.ico"
-				>
-			</File>
-			<File
-				RelativePath=".\WglViewTest.rc"
-				>
-			</File>
-			<File
-				RelativePath=".\res\WglViewTest.rc2"
-				>
-			</File>
-			<File
-				RelativePath=".\res\WglViewTestDoc.ico"
-				>
-			</File>
 		</Filter>
-		<File
-			RelativePath=".\ReadMe.txt"
+		<Filter
+			Name="testcase"
 			>
-		</File>
+			<Filter
+				Name="util"
+				>
+				<File
+					RelativePath=".\testcase\util\TcpSocketClientTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\util\TcpSocketServerTest.cpp"
+					>
+				</File>
+			</Filter>
+		</Filter>
 	</Files>
 	<Globals>
-		<Global
-			Name="RESOURCE_FILE"
-			Value="WglViewTest.rc"
-		/>
 	</Globals>
 </VisualStudioProject>

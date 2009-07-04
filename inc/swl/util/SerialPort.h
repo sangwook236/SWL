@@ -70,7 +70,7 @@ public:
 #endif
 	/**
 	 *	@brief  serial 통신을 위한 port를 닫음.
-	 *	@throw  std::runtime_error  serial port의 close 과정에서 error가 발생.
+	 *	@throw  LogException  serial port의 close 과정에서 error가 발생.
 	 *
 	 *	serial 통신을 위해 연결하였던 channel을 끊고, 활용한 resource를 반환한다.
 	 */
@@ -106,7 +106,7 @@ public:
 
 	/**
 	 *	@brief  수행 중인 I/O 작업을 취소.
-	 *	@throw  std::runtime_error  송수신 operation을 취소하는 과정에서 error가 발생.
+	 *	@throw  LogException  송수신 operation을 취소하는 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 통해 진행 중인 송수신 operation을 취소한다.
 	 */
@@ -167,7 +167,7 @@ protected:
 	/**
 	 *	@brief  송신 요청된 message의 전송이 완료된 경우 호출되는 completion routine.
 	 *	@param[in]  ec  message를 전송하는 과정에서 발생한 오류의 error code.
-	 *	@throw  std::runtime_error  serial port의 close 과정에서 error가 발생.
+	 *	@throw  LogException  serial port의 close 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 이용하여 송신 요청된 message의 전송이 완료되었을 때 system에 의해 호출되는 completion routine이다.
 	 *	startSending() 함수 내에서 asynchronous 송신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.
@@ -183,7 +183,7 @@ protected:
 	 *	@brief  serial 통신 channel을 통해 수신된 message가 있는 경우 호출되는 completion routine.
 	 *	@param[in]  ec  message를 수신하는 과정에서 발생한 오류의 error code.
 	 *	@param[in]  bytesTransferred  수신된 message의 길이.
-	 *	@throw  std::runtime_error  serial port의 close 과정에서 error가 발생.
+	 *	@throw  LogException  serial port의 close 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 통해 message의 수신되는 경우 system에 의해 호출되는 completion routine이다.
 	 *	startReceiving() 함수 내에서 asynchronous 수신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.

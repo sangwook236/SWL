@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="WinViewTest"
-	ProjectGUID="{40F4C552-5A56-412A-9E00-776A69183EAB}"
-	RootNamespace="WinViewTest"
+	Name="swl_wglview_test"
+	ProjectGUID="{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
+	RootNamespace="swl_wglview_test"
 	Keyword="MFCProj"
 	>
 	<Platforms>
@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib swl_common.lib swl_view.lib swl_winview.lib"
+				AdditionalDependencies="swl_common.lib swl_view.lib swl_oglview.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="gdiplus.lib swl_common.lib swl_view.lib swl_winview.lib"
+				AdditionalDependencies="swl_common.lib swl_view.lib swl_oglview.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -232,15 +232,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTest.cpp"
+				RelativePath=".\WglViewTest.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTestDoc.cpp"
+				RelativePath=".\WglViewTestDoc.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTestView.cpp"
+				RelativePath=".\WglViewTestView.cpp"
 				>
 			</File>
 		</Filter>
@@ -274,15 +274,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTest.h"
+				RelativePath=".\WglViewTest.h"
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTestDoc.h"
+				RelativePath=".\WglViewTestDoc.h"
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTestView.h"
+				RelativePath=".\WglViewTestView.h"
 				>
 			</File>
 		</Filter>
@@ -296,19 +296,19 @@
 				>
 			</File>
 			<File
-				RelativePath=".\res\WinViewTest.ico"
+				RelativePath=".\res\WglViewTest.ico"
 				>
 			</File>
 			<File
-				RelativePath=".\WinViewTest.rc"
+				RelativePath=".\WglViewTest.rc"
 				>
 			</File>
 			<File
-				RelativePath=".\res\WinViewTest.rc2"
+				RelativePath=".\res\WglViewTest.rc2"
 				>
 			</File>
 			<File
-				RelativePath=".\res\WinViewTestDoc.ico"
+				RelativePath=".\res\WglViewTestDoc.ico"
 				>
 			</File>
 		</Filter>
@@ -320,7 +320,7 @@
 	<Globals>
 		<Global
 			Name="RESOURCE_FILE"
-			Value="WinViewTest.rc"
+			Value="WglViewTest.rc"
 		/>
 	</Globals>
 </VisualStudioProject>

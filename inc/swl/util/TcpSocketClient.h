@@ -87,7 +87,7 @@ public:
 	 *	@brief  지정된 message를 연결된 TCP socket 통신 channel을 통해 전송.
 	 *	@param[in]  msg  전송할 message를 지정하는 pointer.
 	 *	@param[in]  len  전송할 message 길이.
-	 *	@throw  std::runtime_error  송신 operation 동안 error가 발생.
+	 *	@throw  LogException  송신 operation 동안 error가 발생.
 	 *	@return  실제로 송신된 message의 길이를 반환. 인자로 지정된 len보다 작거나 같음.
 	 *
 	 *	요청된 message를 TCP socket 통신을 통해 전송한다.
@@ -99,7 +99,7 @@ public:
 	 *	@brief  연결된 TCP socket 통신 channel을 통해 message를 수신.
 	 *	@param[out]  msg  수신된 message를 저장할 pointer.
 	 *	@param[in]  len  synchronous I/O를 통해 수신한 message를 저장할 buffer의 크기를 지정.
-	 *	@throw  std::runtime_error  수신 operation 동안 error가 발생.
+	 *	@throw  LogException  수신 operation 동안 error가 발생.
 	 *	@return  실제로 수신된 message의 길이를 반환. 인자로 지정된 len보다 작거나 같음.
 	 *
 	 *	TCP socket 통신을 통해 수신되는 message를 인자로 지정된 pointer의 객체에 저장한다.
@@ -174,7 +174,7 @@ public:
 #endif
 	/**
 	 *	@brief  TCP socket 통신 channel의 연결을 해제.
-	 *	@throw  std::runtime_error  TCP socket의 close 과정에서 error가 발생.
+	 *	@throw  LogException  TCP socket의 close 과정에서 error가 발생.
 	 *
 	 *	TCP socket 통신 channel의 연결을 끊고, 사용 중인 resource를 반환한다.
 	 */
@@ -222,7 +222,7 @@ public:
 
 	/**
 	 *	@brief  수행 중인 I/O 작업을 취소.
-	 *	@throw  std::runtime_error  송수신 operation을 취소하는 과정에서 error가 발생.
+	 *	@throw  LogException  송수신 operation을 취소하는 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 통해 진행 중인 송수신 operation을 취소한다.
 	 */
