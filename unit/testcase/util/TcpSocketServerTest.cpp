@@ -1,6 +1,11 @@
 #include "swl/Config.h"
 #include "../../UnitTestConfig.h"
+#include "EchoTcpSocketSessionUsingFullDuplex.h"
+#include "EchoTcpSocketSessionUsingHalfDuplex.h"
 #include "swl/util/TcpSocketServer.h"
+#include "swl/util/TcpSocketConnection.h"
+#include <boost/thread.hpp>
+#include <boost/smart_ptr.hpp>
 
 
 #if defined(_DEBUG)
@@ -11,6 +16,27 @@
 
 namespace swl {
 namespace unit_test {
+
+struct tcp_socket_worker_thread_functor
+{
+	void operator()()
+	{
+		boost::asio::io_service ioService;
+		const unsigned short portNum_FullDuplex = 5005;
+		const unsigned short portNum_HalfDuplex = 5006;
+
+		TcpSocketServer<FullDuplexTcpSocketConnection<EchoTcpSocketSessionUsingFullDuplex> > fullDuplexServer(ioService, portNum_FullDuplex);
+		TcpSocketServer<HalfDuplexTcpSocketConnection<EchoTcpSocketSessionUsingHalfDuplex> > halfDuplexServer(ioService, portNum_HalfDuplex);
+
+#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+		BOOST_TEST_MESSAGE("server is started");
+#endif
+		ioService.run();
+#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+		BOOST_TEST_MESSAGE("server is terminated");
+#endif
+	}
+};
 
 //-----------------------------------------------------------------------------
 //
@@ -34,25 +60,11 @@ private:
 	};
 
 public:
-	void test1()
+	void testTcpSocketServer()
 	{
 		Fixture fixture;
 
-		BOOST_TEST_MESSAGE("TcpSocketServerTest::test1() is called");
-	}
-
-	void test2()
-	{
-		Fixture fixture;
-
-		BOOST_TEST_MESSAGE("TcpSocketServerTest::test2() is called");
-	}
-
-	void test3()
-	{
-		Fixture fixture;
-
-		BOOST_TEST_MESSAGE("TcpSocketServerTest::test3() is called");
+		BOOST_TEST_MESSAGE("TcpSocketServerTest::testTcpSocketServer() is called");
 	}
 };
 
@@ -63,15 +75,9 @@ struct TcpSocketServerTestSuite: public boost::unit_test_framework::test_suite
 	{
 		boost::shared_ptr<TcpSocketServerTest> test(new TcpSocketServerTest());
 
-		//add(BOOST_TEST_CASE(boost::bind(&TcpSocketServerTest::test1, test)), 0);
-		//add(BOOST_TEST_CASE(boost::bind(&TcpSocketServerTest::test2, test)), 0);
-		//add(BOOST_TEST_CASE(boost::bind(&TcpSocketServerTest::test3, test)), 0);
-		add(BOOST_CLASS_TEST_CASE(&TcpSocketServerTest::test1, test), 0);
-		add(BOOST_CLASS_TEST_CASE(&TcpSocketServerTest::test2, test), 0);
-		add(BOOST_CLASS_TEST_CASE(&TcpSocketServerTest::test3, test), 0);
-		//add(BOOST_FIXTURE_TEST_CASE(boost::bind(&TcpSocketServerTest::test1, test), Fixture), 0);  // not working
-		//add(BOOST_FIXTURE_TEST_CASE(boost::bind(&TcpSocketServerTest::test2, test), Fixture), 0);  // not working
-		//add(BOOST_FIXTURE_TEST_CASE(boost::bind(&TcpSocketServerTest::test3, test), Fixture), 0);  // not working
+		//add(BOOST_TEST_CASE(boost::bind(&TcpSocketServerTest::testTcpSocketServer, test)), 0);
+		add(BOOST_CLASS_TEST_CASE(&TcpSocketServerTest::testTcpSocketServer, test), 0);
+		//add(BOOST_FIXTURE_TEST_CASE(boost::bind(&TcpSocketServerTest::testTcpSocketServer, test), Fixture), 0);  // not working
 
 		boost::unit_test::framework::master_test_suite().add(this);
 	}
@@ -88,9 +94,7 @@ struct TcpSocketServerTest: public CppUnit::TestFixture
 {
 private:
 	CPPUNIT_TEST_SUITE(TcpSocketServerTest);
-	CPPUNIT_TEST(test1);
-	CPPUNIT_TEST(test2);
-	CPPUNIT_TEST(test3);
+	CPPUNIT_TEST(testTcpSocketServer);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -102,16 +106,10 @@ public:
 	{
 	}
 
-	void test1()
+	void testTcpSocketServer()
 	{
-	}
-
-	void test2()
-	{
-	}
-
-	void test3()
-	{
+		boost::scoped_ptr<boost::thread> thrd(new boost::thread(tcp_socket_worker_thread_functor()));
+		//if (thrd.get()) thrd->join();
 	}
 };
 

@@ -61,6 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_oglview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -136,6 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_oglview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -205,6 +207,22 @@
 			<Filter
 				Name="util"
 				>
+				<File
+					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingFullDuplex.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingFullDuplex.h"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingHalfDuplex.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingHalfDuplex.h"
+					>
+				</File>
 				<File
 					RelativePath=".\testcase\util\TcpSocketClientTest.cpp"
 					>

@@ -69,6 +69,7 @@ public:
 	/**
 	 *	@brief  16진수를 ASCII character code로 변환.
 	 *	@param[in]  hex  변환해야 할 16진수. 0(0x0) <= hex <= 15(0xF) 사이의 16진수.
+	 *	@param[in]  isUpperCase  16진수 중 10(0xA) ~ 15(0xF) 사이의 값이 대문자인 'A' ~ 'F'로 변환하는가를 지정.
 	 *	@return  16진수를 변환한 ASCII character code 반환.
 	 *
 	 *	반환되는 ASCII code는 '0' <= ascii <= '9', 'a' <= ascii <= 'f', 또는 'A' <= ascii <= 'F' 사이의 값이다.

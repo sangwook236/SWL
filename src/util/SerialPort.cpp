@@ -78,10 +78,10 @@ size_t SerialPort::receive(unsigned char *msg, const size_t len)
 {
 	if (receiveBuffer_.isEmpty()) return 0;
 
-	const size_t sz = std::min(len, receiveBuffer_.getSize());
-	receiveBuffer_.top(msg, sz);
-	receiveBuffer_.pop(sz);
-	return sz;
+	const size_t readLen = std::min(len, receiveBuffer_.getSize());
+	receiveBuffer_.top(msg, readLen);
+	receiveBuffer_.pop(readLen);
+	return readLen;
 }
 
 void SerialPort::cancelIo()

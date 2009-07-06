@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/util/TcpSocketClient.h"
+#include "TcpSocketClient.h"
 #include "swl/base/LogException.h"
 #include "swl/base/String.h"
 #include <boost/bind.hpp>
@@ -63,7 +63,7 @@ void TcpSocketClient::disconnect()
 size_t TcpSocketClient::send(const unsigned char *msg, const size_t len)
 {
 	boost::system::error_code ec;
-	const size_t sz = socket_.write_some(boost::asio::buffer(msg, len), ec);
+	const size_t writtenLen = socket_.write_some(boost::asio::buffer(msg, len), ec);
 	if (boost::asio::error::eof == ec)
 	{
 		// connection closed cleanly by peer.
@@ -71,17 +71,19 @@ size_t TcpSocketClient::send(const unsigned char *msg, const size_t len)
 	}
 	else if (ec)  // some other error.
 	{
+		// FIXME [delete] >>
+		const std::string &errMsg = ec.message();
 		//throw boost::system::system_error(ec);
 		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
-	return sz;
+	return writtenLen;
 }
 
 size_t TcpSocketClient::receive(unsigned char *msg, const size_t len)
 {
 	boost::system::error_code ec;
-	const size_t sz = socket_.read_some(boost::asio::buffer(msg, len), ec);
+	const size_t readLen = socket_.read_some(boost::asio::buffer(msg, len), ec);
 	if (boost::asio::error::eof == ec)
 	{
 		// connection closed cleanly by peer.
@@ -89,11 +91,13 @@ size_t TcpSocketClient::receive(unsigned char *msg, const size_t len)
 	}
 	else if (ec)  // some other error.
 	{
+		// FIXME [delete] >>
+		const std::string &errMsg = ec.message();
 		//throw boost::system::system_error(ec);
 		throw LogException(LogException::L_ERROR, ec.message(), __FILE__, __LINE__, __FUNCTION__);
 	}
 
-	return sz;
+	return readLen;
 }
 
 //-----------------------------------------------------------------------------------

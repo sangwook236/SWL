@@ -5,6 +5,7 @@
 #include "swl/base/ExportBase.h"
 #include <string>
 #include <exception>
+#include <iosfwd>
 
 
 #if !defined(__FUNCTION__)
@@ -37,6 +38,9 @@ namespace swl {
  *		- 함수 이름
  *
  *	exception level의 경우 기본적으로 7가지 수준으로 나뉘어진다.
+ *
+ *	exception이 발생한 경우 해당 내용을 log stream을 통해 외부로 출력할 수 있다.
+ *	setLogStream() 함수와 resetLogStream() 함수를 사용하여 log를 출력할 stream을 설정 또는 해제할 수 있다.
  */
 class SWL_BASE_API LogException: public std::exception
 {
@@ -81,6 +85,10 @@ public:
 	 *	해당 class로부터 자식 class 파생이 가능하도록 virtual로 선언되어 있다.
 	 */
 	virtual ~LogException();
+	LogException(const LogException &rhs);
+
+private:
+	LogException & operator=(const LogException &);
 
 public:
 	/**
@@ -163,6 +171,34 @@ public:
 	std::string getMethodName() const;
 #endif
 
+	/**
+	 *	@brief  발생한 exception의 내용을 출력하기 위해 사용할 stream 객체를 설정.
+	 *	@param[in]  logStream  exception의 내용을 출력한 log stream 객체.
+	 *
+	 *	exception이 발생한 경우 해당 내용을 외부로 출력할 log stream 객체를 설정한다.
+	 *
+	 *	log stream를 통해 exception log가 정상적으로 출력되기 위해서는 아래의 조건을 만족시켜야 한다.
+	 *		-# log stream 객체를 사용하는 동안 해당 객체는 valid하여야 한다.
+	 *		-# log stream 객체는 open된 상태이어야 한다.
+	 *	
+	 */
+#if defined(UNICODE) || defined(_UNICODE)
+	static void setLogStream(std::wostream &logStream)
+#else
+	static void setLogStream(std::ostream &logStream)
+#endif
+	{  logStream_ = &logStream;  }
+	/**
+	 *	@brief  exception 내용을 외부로 출력하기 위한 stream 객체의 설정을 해제.
+	 *
+	 *	exception 내용을 외부로 출력하는 stream 객체의 설정을 해제한다.
+	 */
+	static void resetLogStream()
+	{  logStream_ = NULL;  }
+
+private:
+	void report() const;
+
 private:
 	const unsigned int level_;
 #if defined(UNICODE) || defined(_UNICODE)
@@ -181,6 +217,12 @@ private:
 	const std::wstring methodName_;
 #else
 	const std::string methodName_;
+#endif
+
+#if defined(UNICODE) || defined(_UNICODE)
+	static std::wostream *logStream_;
+#else
+	static std::ostream *logStream_;
 #endif
 };
 

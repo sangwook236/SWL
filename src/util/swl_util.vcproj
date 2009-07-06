@@ -189,15 +189,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\FullDuplexTcpSocketSession.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\GuardedBuffer.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\HalfDuplexTcpSocketSession.cpp"
 				>
 			</File>
 			<File
@@ -253,10 +245,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\TcpSocketClient.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\xgetopt.cpp"
 				>
 			</File>
@@ -303,15 +291,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\util\FullDuplexTcpSocketSession.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\inc\swl\util\GuardedBuffer.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\util\HalfDuplexTcpSocketSession.h"
 				>
 			</File>
 			<File
@@ -336,18 +316,6 @@
 			</File>
 			<File
 				RelativePath=".\strlib.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\util\TcpSocketClient.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\util\TcpSocketConnection.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\util\TcpSocketServer.h"
 				>
 			</File>
 			<File

@@ -84,6 +84,7 @@ BOOL CUnitTestMfcApp::InitInstance()
 	CppUnit::MfcUi::TestRunner runner;
 	runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
 
+	//runner.setOutputter();
 	runner.run();
 #endif
 	//--E [] 2009/07/04

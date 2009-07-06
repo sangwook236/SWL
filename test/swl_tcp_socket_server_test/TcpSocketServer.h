@@ -1,5 +1,5 @@
-#if !defined(__SWL_UTIL__TCP_SOCKET_SERVER__H_)
-#define __SWL_UTIL__TCP_SOCKET_SERVER__H_ 1
+#if !defined(__SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_)
+#define __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_ 1
 
 
 #include <boost/asio.hpp>
@@ -23,6 +23,14 @@ namespace swl {
  *		-# [server] connection 객체를 client와 연결
  *		-# [connection] client와의 통신을 시작
  *		-# [server] 다른 client의 접속 요청 대기
+ *
+ *	이 때 client와의 실제적인 통신은 template parameter로 넘겨진 Connection 객체에 의해 수행하게 되는데 Connection 객체는 아래의 요소를 가지고 있어야 한다.
+ *		- type definition
+ *			- pointer;
+ *		- interface
+ *			- static pointer create(boost::asio::io_service &ioService);
+ *			- boost::asio::ip::tcp::socket & getSocket(); and/or const boost::asio::ip::tcp::socket & getSocket() const;
+ *			- void start();
  */
 template<typename Connection>
 class TcpSocketServer
@@ -35,7 +43,7 @@ public:
 	/**
 	 *	@brief  [ctor] contructor.
 	 *	@param[in]  ioService  TCP socket 통신을 위한 Boost.ASIO의 I/O service 객체.
-	 *	@param[in]  portNum  TCP socket 통신을 위한 server가 open할 port 번호.
+	 *	@param[in]  portNum  TCP socket 통신을 위한 server가 open하는 port 번호.
 	 *
 	 *	TCP socket connection 객체의 초기화를 수행하고 지정된 port로 들어되는 client의 접속 요청을 기다린다.
 	 */
@@ -72,4 +80,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_UTIL__TCP_SOCKET_SERVER__H_
+#endif  // __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_

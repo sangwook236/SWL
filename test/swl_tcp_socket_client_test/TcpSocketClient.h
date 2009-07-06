@@ -1,8 +1,7 @@
-#if !defined(__SWL_UTIL__TCP_SOCKET_CLIENT__H_)
-#define __SWL_UTIL__TCP_SOCKET_CLIENT__H_ 1
+#if !defined(__SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_)
+#define __SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_ 1
 
 
-#include "swl/util/ExportUtil.h"
 #include <boost/asio.hpp>
 #include <string>
 #include <vector>
@@ -26,7 +25,7 @@ namespace swl {
  *
  *	synchronous I/O를 사용하여 송수신을 수행한다.
  */
-class SWL_UTIL_API TcpSocketClient
+class TcpSocketClient
 {
 public:
 	//typedef TcpSocketClient base_type;
@@ -130,7 +129,7 @@ private:
  *
  *	asynchronous I/O를 사용하여 송수신을 수행한다.
  */
-class SWL_UTIL_API AsyncTcpSocketClient
+class AsyncTcpSocketClient
 {
 public:
 	//typedef AsyncTcpSocketClient base_type;
@@ -201,7 +200,6 @@ public:
 	void send(const unsigned char *msg, const size_t len);
 	/**
 	 *	@brief  연결된 TCP socket 통신 channel을 통해 message를 수신.
-	 *	@param[out]  msg  수신된 message를 저장할 pointer.
 	 *	@param[in]  len  synchronous I/O를 통해 수신한 message를 저장할 buffer의 크기를 지정.
 	 *	@return  실제로 수신된 message의 길이를 반환. 인자로 지정된 len보다 작거나 같음.
 	 *
@@ -274,4 +272,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_UTIL__TCP_SOCKET_CLIENT__H_
+#endif  // __SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_

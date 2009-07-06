@@ -41,8 +41,8 @@ public:
 	~IniParser();
 
 private:
-	IniParser(const IniParser &rhs);
-	IniParser & operator=(const IniParser &rhs);
+	IniParser(const IniParser &);
+	IniParser & operator=(const IniParser &);
 	
 public:
 	/**
@@ -81,7 +81,7 @@ public:
 
 	/**
 	 *	@brief  Save a dictionary to a loadable ini file
-	 *	@param[in]  f  Opened file pointer to dump to
+	 *	@param[in]  fp  Opened file pointer to dump to
 	 *	@return  void
 	 *
 	 *	This function dumps a given dictionary into a loadable ini file.
