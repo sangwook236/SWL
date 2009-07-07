@@ -181,7 +181,7 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\AsyncEchoTcpSocketSession.cpp"
+				RelativePath=".\EchoTcpSocketConnection.cpp"
 				>
 			</File>
 			<File
@@ -192,14 +192,6 @@
 				RelativePath=".\TcpSocketServerTest.cpp"
 				>
 			</File>
-			<File
-				RelativePath=".\TcpSocketSession_FullDuplex.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\TcpSocketSession_HalfDuplex.cpp"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -207,27 +199,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\AsyncEchoTcpSocketSession.h"
+				RelativePath=".\EchoTcpSocketConnection.h"
 				>
 			</File>
 			<File
 				RelativePath=".\EchoTcpSocketSession.h"
-				>
-			</File>
-			<File
-				RelativePath=".\TcpSocketConnectionUsingSession.h"
-				>
-			</File>
-			<File
-				RelativePath=".\TcpSocketServer.h"
-				>
-			</File>
-			<File
-				RelativePath=".\TcpSocketSession_FullDuplex.h"
-				>
-			</File>
-			<File
-				RelativePath=".\TcpSocketSession_HalfDuplex.h"
 				>
 			</File>
 		</Filter>

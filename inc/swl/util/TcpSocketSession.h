@@ -1,7 +1,8 @@
-#if !defined(__SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SESSION__H_)
-#define __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SESSION__H_ 1
+#if !defined(__SWL_UTIL__TCP_SOCKET_SESSION__H_)
+#define __SWL_UTIL__TCP_SOCKET_SESSION__H_ 1
 
 
+#include "swl/util/ExportUtil.h"
 #include "swl/util/GuardedBuffer.h"
 #include <boost/asio.hpp>
 #include <boost/array.hpp>
@@ -17,25 +18,26 @@ namespace swl {
  *
  *	TCP socket server의 connection 객체 (참고: TcpSocketConnectionUsingSession) 에서 사용하기 위해 설계된 session class이다.
  */
-class EchoTcpSocketSession
+class SWL_UTIL_API TcpSocketSession
 {
 public:
-	//typedef EchoTcpSocketSession base_type;
+	//typedef TcpSocketSession base_type;
 
-public:
+protected:
 	/**
 	 *	@brief  [ctor] contructor.
 	 *	@param[in]  socket  TCP socket 통신을 위한 Boost.ASIO의 socket 객체.
 	 *
 	 *	TCP socket 통신 session을 위해 필요한 설정들을 초기화한다.
 	 */
-	EchoTcpSocketSession(boost::asio::ip::tcp::socket &socket);
+	TcpSocketSession(boost::asio::ip::tcp::socket &socket);
+public:
 	/**
-	 *	@brief  [dtor] default destructor.
+	 *	@brief  [dtor] virtual default destructor.
 	 *
 	 *	TCP socket 통신 session을 종료하기 위해 필요한 절차를 수행한다.
 	 */
-	~EchoTcpSocketSession();
+	virtual ~TcpSocketSession();
 
 public:
 	/**
@@ -55,7 +57,7 @@ public:
 	 *
 	 *	TCP socket 통신을 통해 message를 전송하는 동안 발생한 오류의 error code를 인자로 넘어온다.
 	 */
-	void send(boost::system::error_code &ec);
+	virtual void send(boost::system::error_code &ec) = 0;
 
 	/**
 	 *	@brief  TCP socket session의 message 수신 준비 상태를 확인.
@@ -74,7 +76,7 @@ public:
 	 *
 	 *	TCP socket 통신을 통해 message를 수신하는 동안 발생한 오류의 error code를 인자로 넘어온다.
 	 */
-	void receive(boost::system::error_code &ec);
+	virtual void receive(boost::system::error_code &ec) = 0;
 
 	/**
 	 *	@brief  TCP socket 통신의 송신 buffer를 비움.
@@ -112,16 +114,16 @@ public:
 	 *
 	 *	TCP socket 통신을 통해 전송할 message를 저장하고 있는 송신 buffer의 길이를 반환한다.
 	 */
-	size_t getSendBufferSize() const;
+	std::size_t getSendBufferSize() const;
 	/**
 	 *	@brief  TCP socket 통신을 통해 수신된 message의 길이를 반환.
 	 *	@return  수신된 message의 길이를 반환.
 	 *
 	 *	TCP socket 통신을 통해 수신된 message를 저장하고 있는 수신 buffer의 길이를 반환한다.
 	 */
-	size_t getReceiveBufferSize() const;
+	std::size_t getReceiveBufferSize() const;
 
-private:
+protected:
 	/**
 	 *	@brief  한 번의 송신 과정에서 보낼 수 있는 message의 최대 길이.
 	 */
@@ -169,4 +171,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SESSION__H_
+#endif  // __SWL_UTIL__TCP_SOCKET_SESSION__H_

@@ -208,27 +208,27 @@
 				Name="util"
 				>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingFullDuplex.cpp"
+					RelativePath=".\testcase\util\EchoTcpSocketConnection.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingFullDuplex.h"
+					RelativePath=".\testcase\util\EchoTcpSocketConnection.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingHalfDuplex.cpp"
+					RelativePath=".\testcase\util\EchoTcpSocketServerTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSessionUsingHalfDuplex.h"
+					RelativePath=".\testcase\util\EchoTcpSocketSession.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\TcpSocketClientTest.cpp"
+					RelativePath=".\testcase\util\EchoTcpSocketSession.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\TcpSocketServerTest.cpp"
+					RelativePath=".\testcase\util\EchoTcpSocketTest.cpp"
 					>
 				</File>
 			</Filter>

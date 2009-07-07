@@ -1,8 +1,8 @@
 #include "swl/Config.h"
-#include "AsyncEchoTcpSocketSession.h"
+#include "EchoTcpSocketConnection.h"
 #include "EchoTcpSocketSession.h"
-#include "TcpSocketServer.h"
-#include "TcpSocketConnectionUsingSession.h"
+#include "swl/util/TcpSocketConnectionUsingSession.h"
+#include "swl/util/TcpSocketServer.h"
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
 #include <iostream>
@@ -16,20 +16,20 @@
 
 namespace {
 
-struct tcp_socket_worker_thread_functor
+struct echo_tcp_socket_server_worker_thread_functor
 {
 	void operator()()
 	{
 		boost::asio::io_service ioService;
-		const unsigned short portNum_AsyncServer = 5005;
-		const unsigned short portNum_HalfDuplex = 5006;
+		const unsigned short portNum_withoutSession = 6000;
+		const unsigned short portNum_withSession = 7000;
 
-		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::AsyncEchoTcpSocketSession> > asyncServer(ioService, portNum_AsyncServer);
-		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > syncServer(ioService, portNum_HalfDuplex);
+		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, portNum_withoutSession);
+		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, portNum_withSession);
 
-		std::cout << "start TCP socket servers: sync & async" << std::endl;
+		std::cout << "start TCP socket servers: w/o & w/ session" << std::endl;
 		ioService.run();
-		std::cout << "teminate TCP socket servers: sync & async" << std::endl;
+		std::cout << "finish TCP socket servers: w/o & w/ session" << std::endl;
 	}
 };
 
@@ -42,11 +42,11 @@ int main()
 #endif
 {
 	std::cout << "start thread for TCP socket servers" << std::endl;
-	boost::scoped_ptr<boost::thread> thrd(new boost::thread(tcp_socket_worker_thread_functor()));
+	boost::scoped_ptr<boost::thread> thrd(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
 
 	if (thrd.get())
 		thrd->join();
-	std::cout << "terminate thread for TCP socket servers" << std::endl;
+	std::cout << "finish thread for TCP socket servers" << std::endl;
 
 	std::cout.flush();
 	std::cin.get();

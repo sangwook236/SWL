@@ -80,7 +80,7 @@ public:
 	LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	/**
-	 *	@brief  [dtor] default destructor.
+	 *	@brief  [dtor] virtual default destructor.
 	 *
 	 *	해당 class로부터 자식 class 파생이 가능하도록 virtual로 선언되어 있다.
 	 */

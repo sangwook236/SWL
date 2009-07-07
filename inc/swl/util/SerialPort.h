@@ -5,6 +5,7 @@
 #include "swl/util/ExportUtil.h"
 #include "swl/util/GuardedBuffer.h"
 #include <boost/asio.hpp>
+#include <boost/array.hpp>
 #include <string>
 
 
@@ -46,7 +47,7 @@ public:
 	 */
 	SerialPort(boost::asio::io_service &ioService);
 	/**
-	 *	@brief  [dtor] default destructor.
+	 *	@brief  [dtor] virtual default destructor.
 	 *
 	 *	serial 통신을 종료하기 위해 필요한 절차를 수행한다.
 	 *	통신 port가 열려 있는 경우 disconnect() 함수를 호출하여 이를 닫는다.
@@ -92,7 +93,7 @@ public:
 	 *	요청된 message를 serial 통신을 통해 전송한다.
 	 *	asynchronous I/O를 통해 message를 전송한다.
 	 */
-	void send(const unsigned char *msg, const size_t len);
+	void send(const unsigned char *msg, const std::size_t len);
 	/**
 	 *	@brief  연결된 serial 통신 channel을 통해 message를 수신.
 	 *	@param[out]  msg  수신된 message를 저장할 pointer.
@@ -102,7 +103,7 @@ public:
 	 *	serial 통신을 통해 수신되는 message를 인자로 지정된 pointer의 객체에 저장한다.
 	 *	asynchronous I/O를 통해 message를 수신한다.
 	 */
-	size_t receive(unsigned char *msg, const size_t len);
+	std::size_t receive(unsigned char *msg, const std::size_t len);
 
 	/**
 	 *	@brief  수행 중인 I/O 작업을 취소.
@@ -148,14 +149,14 @@ public:
 	 *
 	 *	serial 통신을 통해 전송할 message를 저장하고 있는 송신 buffer의 길이를 반환한다.
 	 */
-	size_t getSendBufferSize() const;
+	std::size_t getSendBufferSize() const;
 	/**
 	 *	@brief  serial 통신을 통해 수신된 message의 길이를 반환.
 	 *	@return  수신된 message의 길이를 반환.
 	 *
 	 *	serial 통신을 통해 수신된 message를 저장하고 있는 수신 buffer의 길이를 반환한다.
 	 */
-	size_t getReceiveBufferSize() const;
+	std::size_t getReceiveBufferSize() const;
 
 protected:
 	/**
@@ -163,22 +164,22 @@ protected:
 	 *
 	 *	송신 buffer에 저장되어 있는 message를 asynchronous I/O를 통해 송신한다.
 	 */
-	virtual void startSending();
+	virtual void doStartSending();
 	/**
 	 *	@brief  송신 요청된 message의 전송이 완료된 경우 호출되는 completion routine.
 	 *	@param[in]  ec  message를 전송하는 과정에서 발생한 오류의 error code.
 	 *	@throw  LogException  serial port의 close 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 이용하여 송신 요청된 message의 전송이 완료되었을 때 system에 의해 호출되는 completion routine이다.
-	 *	startSending() 함수 내에서 asynchronous 송신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.
+	 *	doStartSending() 함수 내에서 asynchronous 송신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.
 	 */
-	virtual void completeSending(const boost::system::error_code &ec);
+	virtual void doCompleteSending(const boost::system::error_code &ec);
 	/**
 	 *	@brief  serial 통신 channel을 통해 들어오는 message를 receive buffer로 수신 시작.
 	 *
 	 *	serial 통신을 수신되는 message를 asynchronous I/O를 이용하여 수신하기 시작한다.
 	 */
-	virtual void startReceiving();
+	virtual void doStartReceiving();
 	/**
 	 *	@brief  serial 통신 channel을 통해 수신된 message가 있는 경우 호출되는 completion routine.
 	 *	@param[in]  ec  message를 수신하는 과정에서 발생한 오류의 error code.
@@ -186,29 +187,65 @@ protected:
 	 *	@throw  LogException  serial port의 close 과정에서 error가 발생.
 	 *
 	 *	asynchronous I/O를 통해 message의 수신되는 경우 system에 의해 호출되는 completion routine이다.
-	 *	startReceiving() 함수 내에서 asynchronous 수신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.
+	 *	doStartReceiving() 함수 내에서 asynchronous 수신 요청을 하면서 해당 함수를 completion routine으로 지정해 주어야 한다.
 	 */
-	virtual void completeReceiving(const boost::system::error_code &ec, size_t bytesTransferred);
+	virtual void doCompleteReceiving(const boost::system::error_code &ec, std::size_t bytesTransferred);
 
 private:
-	void doSendOperation(const unsigned char *msg, const size_t len);
+	void doSendOperation(const unsigned char *msg, const std::size_t len);
 	void doCloseOperation(const boost::system::error_code &ec);
 	void doCancelOperation(const boost::system::error_code &ec);
 	
-private:
-	static const size_t MAX_SEND_LENGTH_ = 512;
-	static const size_t MAX_RECEIVE_LENGTH_ = 512;
+protected:
+	/**
+	 *	@brief  한 번의 송신 과정에서 보낼 수 있는 message의 최대 길이.
+	 */
+	static const std::size_t MAX_SEND_LENGTH_ = 512;
+	/**
+	 *	@brief  한 번의 수신 과정에서 받을 수 있는 message의 최대 길이.
+	 */
+	static const std::size_t MAX_RECEIVE_LENGTH_ = 512;
 
-	boost::asio::io_service &ioService_;
+	/**
+	 *	@brief  serial 통신을 실제적으로 수행하는 Boost.ASIO의 serial port 객체.
+	 */
 	boost::asio::serial_port port_;
 
+	/**
+	 *	@brief  serial 통신 channel이 연결되어 있고 정상 상태인지를 확인하는 flag 변수.
+	 *
+	 *	serial 통신 channel이 연결되어 있고 정상 상태라면 true를, 그렇지 않다면 false를 표시한다.
+	 */
 	bool isActive_;
 
+	/**
+	 *	@brief  serial 통신을 위한 send buffer.
+	 *
+	 *	GuardedByteBuffer의 객체로 multi-thread 환경에서도 안전하게 사용할 수 있다.
+	 */
 	GuardedByteBuffer sendBuffer_;
+	/**
+	 *	@brief  serial 통신을 위한 send buffer.
+	 *
+	 *	GuardedByteBuffer의 객체로 multi-thread 환경에서도 안전하게 사용할 수 있다.
+	 */
 	GuardedByteBuffer receiveBuffer_;
-	GuardedByteBuffer::value_type sendMsg_[MAX_SEND_LENGTH_];
-	GuardedByteBuffer::value_type receiveMsg_[MAX_RECEIVE_LENGTH_];
-	size_t sentMsgLength_;
+	/**
+	 *	@brief  한 번의 송신 과정에서 전송하게 될 message를 저장하는 buffer.
+	 *
+	 *	buffer의 길이는 MAX_SEND_LENGTH_이다.
+	 */
+	boost::array<GuardedByteBuffer::value_type, MAX_SEND_LENGTH_> sendMsg_;
+	/**
+	 *	@brief  한 번의 수신 과정에서 수신하게 될 message를 저장하는 buffer.
+	 *
+	 *	buffer의 길이는 MAX_RECEIVE_LENGTH_이다.
+	 */
+	boost::array<GuardedByteBuffer::value_type, MAX_RECEIVE_LENGTH_> receiveMsg_;
+	/**
+	 *	@brief  가장 최근 송신 과정에서 전송한 message의 길이.
+	 */
+	std::size_t sentMsgLength_;
 };
 
 }  // namespace swl

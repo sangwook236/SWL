@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "TcpSocketSession.h"
+#include "swl/util/TcpSocketSession.h"
 
 
 #if defined(_DEBUG)
@@ -74,12 +74,12 @@ bool TcpSocketSession::isReceiveBufferEmpty() const
 	return receiveBuffer_.isEmpty();
 }
 
-size_t TcpSocketSession::getSendBufferSize() const
+std::size_t TcpSocketSession::getSendBufferSize() const
 {
 	return sendBuffer_.getSize();
 }
 
-size_t TcpSocketSession::getReceiveBufferSize() const
+std::size_t TcpSocketSession::getReceiveBufferSize() const
 {
 	return receiveBuffer_.getSize();
 }

@@ -1,5 +1,5 @@
-#if !defined(__SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_)
-#define __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_ 1
+#if !defined(__SWL_UTIL__TCP_SOCKET_SERVER__H_)
+#define __SWL_UTIL__TCP_SOCKET_SERVER__H_ 1
 
 
 #include <boost/asio.hpp>
@@ -80,4 +80,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_SERVER__H_
+#endif  // __SWL_UTIL__TCP_SOCKET_SERVER__H_

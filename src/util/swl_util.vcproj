@@ -185,6 +185,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\AsyncTcpSocketClient.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\dictionary.cpp"
 				>
 			</File>
@@ -229,10 +233,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\PacketDispatcher.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\PacketPacker.cpp"
 				>
 			</File>
@@ -242,6 +242,18 @@
 			</File>
 			<File
 				RelativePath=".\strlib.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TcpSocketClient.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TcpSocketConnection.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\TcpSocketSession.cpp"
 				>
 			</File>
 			<File
@@ -283,6 +295,10 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\inc\swl\util\AsyncTcpSocketClient.h"
+				>
+			</File>
+			<File
 				RelativePath=".\dictionary.h"
 				>
 			</File>
@@ -303,7 +319,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\util\PacketDispatcher.h"
+				RelativePath="..\..\inc\swl\util\IPacketDispatcher.h"
 				>
 			</File>
 			<File
@@ -316,6 +332,26 @@
 			</File>
 			<File
 				RelativePath=".\strlib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketClient.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketConnection.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketConnectionUsingSession.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketServer.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\TcpSocketSession.h"
 				>
 			</File>
 			<File

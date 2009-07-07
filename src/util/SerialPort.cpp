@@ -16,10 +16,11 @@
 #undef min
 #endif
 
+
 namespace swl {
 
 SerialPort::SerialPort(boost::asio::io_service &ioService)
-: ioService_(ioService), port_(ioService), isActive_(false),
+: port_(ioService), isActive_(false),
   receiveBuffer_(), sendBuffer_(), sentMsgLength_(0)
 {}
 
@@ -51,9 +52,9 @@ bool SerialPort::connect(const std::string &portName, const unsigned int baudRat
 		port_.set_option(boost::asio::serial_port::stop_bits(boost::asio::serial_port::stop_bits::one));
 		port_.set_option(boost::asio::serial_port::character_size(8));
 
-		startReceiving();
+		doStartReceiving();
 		// TODO [check] >>
-		if (!sendBuffer_.isEmpty()) startSending();
+		if (!sendBuffer_.isEmpty()) doStartSending();
 
 		return true;
 	}
@@ -66,19 +67,19 @@ bool SerialPort::connect(const std::string &portName, const unsigned int baudRat
 
 void SerialPort::disconnect()
 {
-	ioService_.post(boost::bind(&SerialPort::doCloseOperation, this, boost::system::error_code()));
+	port_.get_io_service().post(boost::bind(&SerialPort::doCloseOperation, this, boost::system::error_code()));
 }
 
-void SerialPort::send(const unsigned char *msg, const size_t len)
+void SerialPort::send(const unsigned char *msg, const std::size_t len)
 {
-	ioService_.post(boost::bind(&SerialPort::doSendOperation, this, msg, len));
+	port_.get_io_service().post(boost::bind(&SerialPort::doSendOperation, this, msg, len));
 }
 
-size_t SerialPort::receive(unsigned char *msg, const size_t len)
+std::size_t SerialPort::receive(unsigned char *msg, const std::size_t len)
 {
 	if (receiveBuffer_.isEmpty()) return 0;
 
-	const size_t readLen = std::min(len, receiveBuffer_.getSize());
+	const std::size_t readLen = std::min(len, receiveBuffer_.getSize());
 	receiveBuffer_.top(msg, readLen);
 	receiveBuffer_.pop(readLen);
 	return readLen;
@@ -86,7 +87,7 @@ size_t SerialPort::receive(unsigned char *msg, const size_t len)
 
 void SerialPort::cancelIo()
 {
-	ioService_.post(boost::bind(&SerialPort::doCancelOperation, this, boost::system::error_code()));
+	port_.get_io_service().post(boost::bind(&SerialPort::doCancelOperation, this, boost::system::error_code()));
 }
 
 void SerialPort::clearSendBuffer()
@@ -109,65 +110,65 @@ bool SerialPort::isReceiveBufferEmpty() const
 	return receiveBuffer_.isEmpty();
 }
 
-size_t SerialPort::getSendBufferSize() const
+std::size_t SerialPort::getSendBufferSize() const
 {
 	return sendBuffer_.getSize();
 }
 
-size_t SerialPort::getReceiveBufferSize() const
+std::size_t SerialPort::getReceiveBufferSize() const
 {
 	return receiveBuffer_.getSize();
 }
 
-void SerialPort::doSendOperation(const unsigned char *msg, const size_t len)
-{
-	const bool write_in_progress = !sendBuffer_.isEmpty();
-	sendBuffer_.push(msg, msg + len);
-	if (!write_in_progress)
-		startSending();
-}
-
-void SerialPort::startSending()
+void SerialPort::doStartSending()
 {
 	sentMsgLength_ = std::min(sendBuffer_.getSize(), MAX_SEND_LENGTH_);
-	sendBuffer_.top(sendMsg_, sentMsgLength_);
+	sendBuffer_.top(sendMsg_.c_array(), sentMsgLength_);
 	boost::asio::async_write(
 		port_,
 		boost::asio::buffer(sendMsg_, sentMsgLength_),
-		boost::bind(&SerialPort::completeSending, this, boost::asio::placeholders::error)
+		boost::bind(&SerialPort::doCompleteSending, this, boost::asio::placeholders::error)
 	);
 }
 
-void SerialPort::completeSending(const boost::system::error_code &ec)
+void SerialPort::doCompleteSending(const boost::system::error_code &ec)
 {
 	if (!ec)
 	{
 		sendBuffer_.pop(sentMsgLength_);
 		sentMsgLength_ = 0;
 		if (!sendBuffer_.isEmpty())
-			startSending();
+			doStartSending();
 	}
 	else
 		doCloseOperation(ec);
 }
 
-void SerialPort::startReceiving()
+void SerialPort::doStartReceiving()
 {
 	port_.async_read_some(
-		boost::asio::buffer(receiveMsg_, MAX_RECEIVE_LENGTH_),
-		boost::bind(&SerialPort::completeReceiving, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
+		boost::asio::buffer(receiveMsg_),
+		boost::bind(&SerialPort::doCompleteReceiving, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
 	); 
 } 
 
-void SerialPort::completeReceiving(const boost::system::error_code &ec, size_t bytesTransferred)
+void SerialPort::doCompleteReceiving(const boost::system::error_code &ec, std::size_t bytesTransferred)
 {
 	if (!ec)
 	{
-		receiveBuffer_.push(receiveMsg_, bytesTransferred);
-		startReceiving();
+		receiveBuffer_.push(receiveMsg_.data(), bytesTransferred);
+		doStartReceiving();
 	}
 	else
 		doCloseOperation(ec);
+}
+
+void SerialPort::doSendOperation(const unsigned char *msg, const std::size_t len)
+{
+	const bool write_in_progress = !sendBuffer_.isEmpty();
+	sendBuffer_.push(msg, msg + len);
+	if (!write_in_progress)
+		doStartSending();
 }
 
 void SerialPort::doCloseOperation(const boost::system::error_code &ec)

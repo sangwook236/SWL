@@ -1,5 +1,5 @@
-#if !defined(__SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_CONNECTION_USING_SESSION__H_)
-#define __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_CONNECTION_USING_SESSION__H_ 1
+#if !defined(__SWL_UTIL__TCP_SOCKET_CONNECTION_USING_SESSION__H_)
+#define __SWL_UTIL__TCP_SOCKET_CONNECTION_USING_SESSION__H_ 1
 
 
 #include <boost/asio.hpp>
@@ -89,11 +89,11 @@ public:
 		boost::asio::ip::tcp::socket::non_blocking_io non_blocking_io(true);
 		socket_.io_control(non_blocking_io);
 
-		doStartOperation();
+		startOperation();
 	}
 
 private:
-	void doStartOperation()
+	void startOperation()
 	{
 		// start a read operation if the third party library wants one.
 		if (session_.isReadyToReceive() && !isReceiving_)
@@ -127,7 +127,7 @@ private:
 		// the third party library successfully performed a write on the socket.
 		// start new read or write operations based on what it now wants.
 		if (!ec || boost::asio::error::would_block == ec)
-			doStartOperation();
+			startOperation();
 		// otherwise, an error occurred. Closing the socket cancels any outstanding asynchronous read or write operations.
 		// the TcpSocketConnectionUsingSession object will be destroyed automatically once those outstanding operations complete.
 		else
@@ -145,7 +145,7 @@ private:
 		// the third party library successfully performed a read on the socket.
 		// start new read or write operations based on what it now wants.
 		if (!ec || boost::asio::error::would_block == ec)
-			doStartOperation();
+			startOperation();
 		// otherwise, an error occurred. Closing the socket cancels any outstanding asynchronous read or write operations.
 		// the TcpSocketConnection_FullDuplex object will be destroyed automatically once those outstanding operations complete.
 		else
@@ -164,4 +164,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_TCP_SOCKET_SERVER_TEST__TCP_SOCKET_CONNECTION_USING_SESSION__H_
+#endif  // __SWL_UTIL__TCP_SOCKET_CONNECTION_USING_SESSION__H_
