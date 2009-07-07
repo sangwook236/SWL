@@ -1,5 +1,5 @@
-#if !defined(__SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_)
-#define __SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_ 1
+#if !defined(__SWL_UTIL__TCP_SOCKET_CLIENT__H_)
+#define __SWL_UTIL__TCP_SOCKET_CLIENT__H_ 1
 
 
 #include "swl/util/ExportUtil.h"
@@ -125,4 +125,4 @@ protected:
 }  // namespace swl
 
 
-#endif  // __SWL_TCP_SOCKET_CLIENT_TEST__TCP_SOCKET_CLIENT__H_
+#endif  // __SWL_UTIL__TCP_SOCKET_CLIENT__H_
