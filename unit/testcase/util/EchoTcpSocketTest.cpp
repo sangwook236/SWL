@@ -167,15 +167,6 @@ public:
 				}
 
 				client.disconnect();
-				idx = 0;
-				while (client.isConnected() && idx < MAX_ITER)
-				{
-					boost::asio::deadline_timer timer(ioService);
-					timer.expires_from_now(boost::posix_time::milliseconds(10));
-					timer.wait();
-					++idx;
-				}
-				BOOST_CHECK(MAX_ITER != idx);
 				BOOST_CHECK_EQUAL(client.isConnected(), false);
 			}
 		}
@@ -185,6 +176,9 @@ public:
 	void testAsyncClient()
 	{
 		Fixture fixture;
+
+		const int MAX_ITER = 100;
+		int idx = 0;
 
 		// asynchronous TCP socket client that communicates with TCP socket server w/o session
 		BOOST_TEST_MESSAGE("start asynchronous TCP socket client that communicates with TCP socket server w/o session");
