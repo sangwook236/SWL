@@ -10,7 +10,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class MvcView
 
-class SWL_COMMON_API MvcView: public IObserver
+class SWL_BASE_API MvcView: public IObserver
 {
 public:
 	typedef IObserver base_type;
@@ -21,8 +21,8 @@ public:
 	virtual ~MvcView()  {}
 
 private:
-	MvcView(const MvcView&);
-	MvcView& operator=(const MvcView&);
+	MvcView(const MvcView &);
+	MvcView& operator=(const MvcView &);
 
 public:
 };

@@ -10,7 +10,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //  class MvcModel
 
-class SWL_COMMON_API MvcModel: public IObserver
+class SWL_BASE_API MvcModel: public IObserver
 {
 public:
 	typedef IObserver base_type;
@@ -21,8 +21,8 @@ public:
 	virtual ~MvcModel()  {}
 
 private:
-	MvcModel(const MvcModel&);
-	MvcModel& operator=(const MvcModel&);
+	MvcModel(const MvcModel &);
+	MvcModel& operator=(const MvcModel &);
 
 public:
 };

@@ -23,8 +23,8 @@ public:
 	virtual ~MvcController()  {}
 
 private:
-	MvcController(const MvcController&);
-	MvcController& operator=(const MvcController&);
+	MvcController(const MvcController &);
+	MvcController& operator=(const MvcController &);
 
 public:
 };
