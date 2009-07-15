@@ -365,6 +365,30 @@ bool CWglViewTestView::initializeView()
 	// enable depth testing
     glEnable(GL_DEPTH_TEST);
 
+	// lighting
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+
+	// create light components
+	const GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
+	const GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	const GLfloat position[] = { 0.2f, 0.2f, 1.0f, 0.0f };
+
+	// assign created components to GL_LIGHT0
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+	// polygon winding
+	glFrontFace(GL_CCW);
+
+	// color tracking
+	glEnable(GL_COLOR_MATERIAL);
+	// set material properties which will be assigned by glColor
+	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+
 	return true;
 }
 
@@ -422,8 +446,8 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 		//glLoadIdentity();
 		glTranslatef(250.0f, -250.0f, 250.0f);
 		glColor3f(0.5f, 0.5f, 1.0f);
-		glutWireCube(500.0);
-		//glutSolidCube(500.0);
+		//glutWireCube(500.0);
+		glutSolidCube(500.0);
 	glPopMatrix();
 
     return true;
