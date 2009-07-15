@@ -35,7 +35,7 @@ public:
 
 protected:
 	/**
-	 *	@brief  [ctor] private contructor.
+	 *	@brief  [ctor] protected contructor.
 	 *	@param[in]  ioService  TCP socket 통신을 위한 Boost.ASIO의 I/O service 객체.
 	 *
 	 *	TCP socket connection 객체의 초기화를 수행한다.
@@ -49,15 +49,16 @@ public:
 	 */
 	virtual ~TcpSocketConnection();
 
-public:
+private:
 	/**
 	 *	@brief  [ctor] TCP socket connection 객체의 생성을 위한 factory 함수.
 	 *	@param[in]  ioService  TCP socket 통신을 위한 Boost.ASIO의 I/O service 객체.
 	 *
 	 *	TCP socket connection 객체의 instance를 생성한다.
 	 */
-	//static pointer create(boost::asio::io_service &ioService);
+	static pointer create(boost::asio::io_service &ioService);
 
+public:
 	/**
 	 *	@brief  TCP socket 통신을 수행하는 socket 객체를 반환.
 	 *	@return  실제 TCP socket 통신를 담당하는 socket 객체.

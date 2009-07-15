@@ -76,7 +76,7 @@ public:
 	/**
 	 *	@brief  인자로 넘겨진 여러 data를 data buffer에 push.
 	 *	@param[in]  data  data buffer에 저장될 data의 pointer.
-	 *	@param[in]  dataSize  data 인자에 저장되어 있는 data 개수.
+	 *	@param[in]  len  data 인자에 저장되어 있는 data 개수.
 	 *	@return  data가 정상적으로 buffer에 저장되었다면 true 반환.
 	 *
 	 *	내부 data buffer가 저장할 수 있는 최대 크기보다 많은 수의 data가 저장되는 경우 false를 반환한다.
@@ -125,7 +125,7 @@ public:
 	}
 	/**
 	 *	@brief  data buffer로부터 지정된 개수의 자료를 pop.
-	 *	@param[in]  dataSize  data buffer로부터 pop해야할 자료 개수.
+	 *	@param[in]  len  data buffer로부터 pop해야할 자료 개수.
 	 *	@return  data buffer에 들어있는 자료의 개수가 인자로 넘겨진 dataSize보다 작다면 false 반환.
 	 *
 	 *	내부 data buffer에 저장되어 있는 자료의 개수가 요구되는 개수, dataSize보다 작다면 false를 반환한다.
@@ -165,7 +165,7 @@ public:
 	/**
 	 *	@brief  data buffer에 저장되어 있는 자료중 가장 먼저 저장된 자료를 인자를 통해 반환.
 	 *	@param[out]  data  data buffer로부터 꺼내어져 반환될 자료가 저장되는 변수.
-	 *	@param[in]  dataSize  data buffer로부터 꺼낼 자료의 개수.
+	 *	@param[in]  len  data buffer로부터 꺼낼 자료의 개수.
 	 *	@return  data buffer에 들어있는 자료의 개수가 인자로 넘겨진 dataSize보다 작다면 false 반환.
 	 *
 	 *	data buffer로부터 하나의 자료를 반환하지만 해당 data가 data buffer에서 없어지지는 않는다.
