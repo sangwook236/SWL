@@ -299,6 +299,14 @@
 					>
 				</File>
 			</Filter>
+			<Filter
+				Name="math"
+				>
+				<File
+					RelativePath=".\testcase\math\BaseFieldConversionTest.cpp"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"

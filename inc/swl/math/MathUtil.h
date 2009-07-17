@@ -1,5 +1,5 @@
-#if !defined(__SWL_MATH__MATH_UTILITY__H_)
-#define __SWL_MATH__MATH_UTILITY__H_ 1
+#if !defined(__SWL_MATH__MATH_UTIL__H_)
+#define __SWL_MATH__MATH_UTIL__H_ 1
 
 
 #include "swl/math/MathConstant.h"
@@ -44,28 +44,36 @@ public :
 	{  return lower - tol <= x && x < upper + tol;  }
 
 	///
-	static double toRad(const double deg)
-	{  return deg * MathConstant::TO_RAD;  }
-	static double toDeg(const double rad)
-	{  return rad * MathConstant::TO_DEG;  }
-
-	///
 	static bool isInteger(const double x, const double tol = MathConstant::EPS);
 	static bool isReal(const double x, const double tol = MathConstant::EPS);
 
+	///
+	static double deg2rad(const double deg)
+	{  return deg * MathConstant::TO_RAD;  }
+	static double rad2deg(const double rad)
+	{  return rad * MathConstant::TO_DEG;  }
+
 	/// convert base field
 #if defined(_UNICODE) || defined(UNICODE)
-	std::wstring toBin(const unsigned long dec);
-	std::wstring toOct(const unsigned long dec);
-	std::wstring toHex(const unsigned long dec);
+	static std::wstring dec2bin(const unsigned long dec);
+	static std::wstring dec2oct(const unsigned long dec);
+	static std::wstring dec2hex(const unsigned long dec);
+
+	static unsigned long bin2dec(const std::wstring &bin);
+	static unsigned long oct2dec(const std::wstring &oct);
+	static unsigned long hex2dec(const std::wstring &hex);
 #else
-	std::string toBin(const unsigned long dec);
-	std::string toOct(const unsigned long dec);
-	std::string toHex(const unsigned long dec);
+	static std::string dec2bin(const unsigned long dec);
+	static std::string dec2oct(const unsigned long dec);
+	static std::string dec2hex(const unsigned long dec);
+
+	static unsigned long bin2dec(const std::string &bin);
+	static unsigned long oct2dec(const std::string &oct);
+	static unsigned long hex2dec(const std::string &hex);
 #endif
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_MATH__MATH_UTILITY__H_
+#endif  // __SWL_MATH__MATH_UTIL__H_
