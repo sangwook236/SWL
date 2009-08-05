@@ -108,8 +108,8 @@ bool WinSerialPort::connect(const char *portName, const int baudRate, const size
 	dcb.Parity = NOPARITY;  // no parity
 	dcb.StopBits = ONESTOPBIT;  // 1 stop bit
 	//dcb.fInX = dcb.fOutX = TRUE;  // use Xon & Xoff
-	//dcb.XonChar = PE_SERIAL_PROTOCOL__ASCII_XON;
-	//dcb.XoffChar = PE_SERIAL_PROTOCOL__ASCII_XOFF;
+	//dcb.XonChar = SWL_SERIAL_PROTOCOL__ASCII_XON;
+	//dcb.XoffChar = SWL_SERIAL_PROTOCOL__ASCII_XOFF;
 	//dcb.XonLim = 100;
 	//dcb.XoffLim = 100;
 	if (!::SetCommState(hComPort_, &dcb))
