@@ -205,6 +205,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath=".\WinConsoleWindow.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WinFileCrypter.cpp"
 				>
 			</File>
@@ -236,6 +240,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winutil\MfcSockClient.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winutil\WinConsoleWindow.h"
 				>
 			</File>
 			<File
