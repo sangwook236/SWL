@@ -111,7 +111,7 @@ public:
 struct BaseFieldConversionTestSuite: public boost::unit_test_framework::test_suite
 {
 	BaseFieldConversionTestSuite()
-	: boost::unit_test_framework::test_suite("SWL.Util.BaseFieldConversion")
+	: boost::unit_test_framework::test_suite("SWL.Math.BaseFieldConversion")
 	{
 		boost::shared_ptr<BaseFieldConversionTest> test(new BaseFieldConversionTest());
 

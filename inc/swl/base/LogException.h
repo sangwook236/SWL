@@ -84,7 +84,7 @@ public:
 	 *
 	 *	해당 class로부터 자식 class 파생이 가능하도록 virtual로 선언되어 있다.
 	 */
-	virtual ~LogException();
+	virtual ~LogException() throw();
 	LogException(const LogException &rhs);
 
 private:
@@ -229,4 +229,4 @@ private:
 }  // namespace swl
 
 
-#endif  //  __SWL_BASE__LOG_EXCEPTION__H_
+#endif  // __SWL_BASE__LOG_EXCEPTION__H_

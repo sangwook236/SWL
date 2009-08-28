@@ -13,17 +13,17 @@ namespace swl {
 
 class SWL_OGL_VIEW_API OglCamera: public ViewCamera3
 {
-public :
+public:
 	typedef ViewCamera3 base_type;
 
-public :
+public:
 	OglCamera();
 	OglCamera(const OglCamera &rhs);
 	virtual ~OglCamera();
 	
 	OglCamera & operator=(const OglCamera &rhs);
 
-public :
+public:
 	/// virtual copy constructor
 	/*virtual*/ ViewCamera2 * cloneCamera() const
 	{  return new OglCamera(*this);  }
@@ -51,7 +51,7 @@ protected :
 	/// inverse projection transformation: a clip coordinates  ==>  an eye coordinates
 	/*virtual*/ bool doMapClipToEye(const double ptClip[3], double ptEye[3]) const;
 
-private :
+private:
 	///
 	//void read20021008(::std::istream& stream);
 };

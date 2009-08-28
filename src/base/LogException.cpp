@@ -1,6 +1,7 @@
 #include "swl/Config.h"
 #include "swl/base/LogException.h"
 #include "swl/base/String.h"
+#include <ostream>
 
 
 #if defined(_DEBUG)
@@ -50,7 +51,7 @@ LogException::LogException(const unsigned int level, const std::string &message,
 	 report();
 }
 
-LogException::~LogException()
+LogException::~LogException() throw()
 {
 }
 
@@ -114,7 +115,7 @@ std::string LogException::getMethodName() const
 
 void LogException::report() const
 {
-	if (logStream_)
+	if (LogException::logStream_)
 	{
 		if (getClassName().empty())
 		{

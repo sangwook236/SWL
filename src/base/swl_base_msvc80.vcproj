@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\base\Logger.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\base\MvcController.h"
 				>
 			</File>

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/view/ViewCamera2.h"
+#include <cmath>
 #include <cassert>
 #include <limits>
 
