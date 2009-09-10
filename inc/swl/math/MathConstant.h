@@ -12,7 +12,7 @@ namespace swl {
 
 struct SWL_MATH_API MathConstant
 {
-public :
+public:
 	/// axis & plane
 	enum AXIS { AXIS_NULL = 0x0, AXIS_X = 0x1, AXIS_Y = 0x2, AXIS_Z = 0x4 };
 	enum PLANE { PLANE_NULL = 0x0, PLANE_XY = 0x1, PLANE_YZ = 0x2, PLANE_ZX = 0x4, PLANE_NORMAL = 0x8 };

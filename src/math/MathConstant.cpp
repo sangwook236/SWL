@@ -10,7 +10,7 @@
 #endif
 
 #if defined(PI)  // for djgpp
-#	undef PI
+#undef PI
 #endif
 
 

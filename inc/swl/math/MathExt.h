@@ -12,7 +12,7 @@ namespace swl {
 
 struct SWL_MATH_API MathExt
 {
-public :
+public:
 	///
 	static double mantissa(const double x, double *pow = 0L);
 	static double saturate(const double x)
@@ -25,8 +25,10 @@ public :
 	///
 	static double logb(double base, const double x);
 	static double asinh(const double x);
-	static double acosh(const double x);  // x >= 1
-	static double atanh(const double x);  // -1 < x < 1
+	/// x >= 1
+	static double acosh(const double x);
+	/// -1 < x < 1
+	static double atanh(const double x);
 
 	/// GCD: greatest common divisor
 	static unsigned long gcd(const unsigned long lhs, const unsigned long rhs);

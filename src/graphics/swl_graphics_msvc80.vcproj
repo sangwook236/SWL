@@ -62,6 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_base.lib swl_math.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -139,6 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
+				AdditionalDependencies="swl_base.lib swl_math.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -182,6 +184,26 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{5E760451-1E17-4050-84F7-38656AFDD5AC}"
 			>
+			<File
+				RelativePath=".\Appearance.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\CoordinateFrame.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Geometry.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GraphicsObj.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Shape.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -189,7 +211,59 @@
 			UniqueIdentifier="{A137C959-F0A6-428f-896C-69ED694D2FB9}"
 			>
 			<File
+				RelativePath="..\..\inc\swl\graphics\Appearance.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\BoundingBox.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\Color.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\CoordinateFrame.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\graphics\ExportGraphics.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\Geometry.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\GraphicsObj.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\IDrawable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\IMovable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\ITransformable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\PickableAttrib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\Shape.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\TransparentAttrib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\VisibleAttrib.h"
 				>
 			</File>
 		</Filter>

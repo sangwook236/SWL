@@ -185,6 +185,10 @@
 			UniqueIdentifier="{4C7AA9CB-17C2-4b39-ACE5-7A1DDF1E4CE1}"
 			>
 			<File
+				RelativePath=".\Coordinates.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\MathConstant.cpp"
 				>
 			</File>
@@ -196,12 +200,36 @@
 				RelativePath=".\MathUtil.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\Rational.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RootFinder.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Rotation.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{79049E12-31C3-445b-9BEF-36646D546F77}"
 			>
+			<File
+				RelativePath="..\..\inc\swl\math\Complex.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Coordinates.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Duplex.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\inc\swl\math\ExportMath.h"
 				>
@@ -216,6 +244,42 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\math\MathUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Matrix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\QMatrix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Quaternion.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Rational.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\RMatrix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\RootFinder.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Rotation.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\TMatrix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\TVector.h"
 				>
 			</File>
 		</Filter>

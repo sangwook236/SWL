@@ -13,7 +13,7 @@ namespace swl {
 
 struct SWL_MATH_API MathUtil
 {
-public :
+public:
 	///
 	static bool isZero(const double x, const double tol = MathConstant::EPS)
 	{  return -tol <= x && x <= tol;  }
