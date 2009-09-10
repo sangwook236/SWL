@@ -11,7 +11,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<double>;
+SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API RGBAColor<double>;
 #endif
 
 
@@ -46,7 +46,7 @@ public:
 
 private:
 	///
-	Color4<double> color_;
+	RGBAColor<double> color_;
 	TransparentAttrib transparent_;
 };
 

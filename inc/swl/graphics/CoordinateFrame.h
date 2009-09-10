@@ -51,6 +51,9 @@ public:
 	const std::string& getName() const  {  return name_;  }
 #endif
 
+	void setFrame(const frame_type &frame)  {  frame_ = frame;  }
+	frame_type getFrame() const  {  return frame_;  }
+
 private:
 	/// frame name
 #if defined(_UNICODE) || defined(UNICODE)
