@@ -1,10 +1,11 @@
 #include "stdafx.h"
+#include "swl/Config.h"
 #include "ViewEventHandler.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #define new DEBUG_NEW
 #endif
 

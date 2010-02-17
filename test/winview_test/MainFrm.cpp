@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "swl/Config.h"
 #include "WinViewTest.h"
 
 #include "MainFrm.h"

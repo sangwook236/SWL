@@ -1,3 +1,4 @@
+#include "swl/Config.h"
 #include "swl/math/Rational.h"
 #include "swl/math/MathExt.h"
 #include "swl/math/MathUtil.h"
@@ -6,7 +7,7 @@
 #include <cmath>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

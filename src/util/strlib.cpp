@@ -23,12 +23,13 @@
    								Includes
  ---------------------------------------------------------------------------*/
 
+#include "swl/Config.h"
 #include "strlib.h"
 #include <string.h>
 #include <ctype.h>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

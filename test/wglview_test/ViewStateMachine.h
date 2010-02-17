@@ -262,7 +262,9 @@ private:
 struct ZoomAllState: public boost::statechart::state<ZoomAllState, ViewStateMachine>
 {
 public:
-	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> >
+	> reactions;
 
 public:
 	ZoomAllState(my_context ctx);
@@ -277,7 +279,9 @@ private:
 struct ZoomInState: public boost::statechart::state<ZoomInState, ViewStateMachine>
 {
 public:
-	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> >
+	> reactions;
 
 public:
 	ZoomInState(my_context ctx);
@@ -292,7 +296,9 @@ private:
 struct ZoomOutState: public boost::statechart::state<ZoomOutState, ViewStateMachine>
 {
 public:
-	typedef boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> > reactions;
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtBackToPreviousState, boost::statechart::deep_history<IdleState> >
+	> reactions;
 
 public:
 	ZoomOutState(my_context ctx);

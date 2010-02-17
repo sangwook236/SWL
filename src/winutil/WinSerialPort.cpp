@@ -5,7 +5,7 @@
 #include <iostream>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -183,8 +183,9 @@ WinSerialPort::EState WinSerialPort::send(const unsigned char* data, const size_
 		{
 			if (0 == sentBytes)
 			{
-				// FIXME [check] >>
+#if defined(_DEBUG)
 				std::cout << "send 0 byte" << std::endl;
+#endif
 				continue;
 			}
 		}
@@ -217,17 +218,23 @@ WinSerialPort::EState WinSerialPort::receive(GuardedByteBuffer& recvBuf, const u
 	{
 		if ((EV_DSR & eventMask) == EV_DSR)
 		{
+#if defined(_DEBUG)
 			std::cout << "DSR" << std::endl;
+#endif
 			// TODO [add] >>
 		}
 		if ((EV_CTS & eventMask) == EV_CTS)
 		{
+#if defined(_DEBUG)
 			std::cout << "CTS" << std::endl;
+#endif
 			// TODO [add] >>
 		}
 		if ((EV_RXCHAR & eventMask) == EV_RXCHAR)
 		{
+#if defined(_DEBUG)
 			std::cout << "RXCHAR" << std::endl;
+#endif
 			// TODO [add] >>
 		}
 	}
@@ -256,8 +263,9 @@ WinSerialPort::EState WinSerialPort::receive(GuardedByteBuffer& recvBuf, const u
 	{
 		if (0 == recvBytes)
 		{
-			// FIXME [check] >>
+#if defined(_DEBUG)
 			std::cout << "receive 0 byte" << std::endl;
+#endif
 			return WinSerialPort::E_OK;
 		}
 	}

@@ -12,7 +12,7 @@
 #include <cstdlib>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -139,7 +139,7 @@ private:
 
 		std::cout << msg << std::endl;
 
-		std::ofstream stream("test_result\\tcp_socket_client_test_result.txt", std::ios::out | std::ios::app);
+		std::ofstream stream("..\\data\\test_result\\tcp_socket_client_test_result.txt", std::ios::out | std::ios::app);
 		if (stream.is_open())
 		{
 			stream << "TCP socket client worker thread, " << boost::this_thread::get_id() << " is terminated" << std::endl;

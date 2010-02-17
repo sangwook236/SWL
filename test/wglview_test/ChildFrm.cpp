@@ -1,6 +1,7 @@
 // ChildFrm.cpp : implementation of the CChildFrame class
 //
 #include "stdafx.h"
+#include "swl/Config.h"
 #include "WglViewTest.h"
 
 #include "ChildFrm.h"

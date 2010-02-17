@@ -2,6 +2,7 @@
 //
 
 #include "stdafx.h"
+#include "swl/Config.h"
 #include "WglViewTest.h"
 
 #include "WglViewTestDoc.h"
@@ -17,14 +18,367 @@
 #include "swl/oglview/OglCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
+#include <boost/smart_ptr.hpp>
+#include <boost/multi_array.hpp>
 #include <GL/glut.h>
+#include <limits>
 #include <iostream>
+#include <fstream>
 #include <cassert>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
 
+#if defined(max)
+#undef max
+#endif
+
+
+namespace {
+
+typedef boost::multi_array<float, 2> mesh_array_type;
+boost::scoped_ptr<mesh_array_type> mesh;
+int mesh_row = 0, mesh_col = 0;
+float mesh_z_min = std::numeric_limits<float>::max(), mesh_z_max = 0.0f;
+const float mesh_max_color_r = 1.0f, mesh_max_color_g = 1.0f, mesh_max_color_b = 0.0f;
+const float mesh_min_color_r = 0.5f, mesh_min_color_g = 0.5f, mesh_min_color_b = 0.0f;
+
+void loadMesh()
+{
+	const std::string filename("..\\data\\mesh.txt");
+
+	std::ifstream stream(filename.c_str());
+	stream >> mesh_row >> mesh_col;
+
+	mesh.reset(new mesh_array_type(boost::extents[mesh_row][mesh_col]));
+
+	float dat;
+	for (int i = 0; i < mesh_row; ++i)
+		for (int j = 0; j < mesh_col; ++j)
+		{
+			stream >> dat;
+			(*mesh)[i][j] = dat;
+
+			if (dat < mesh_z_min)
+				mesh_z_min = dat;
+			if (dat > mesh_z_max)
+				mesh_z_max = dat;
+		}
+}
+
+void calculateNormal(const float vx1, const float vy1, const float vz1, const float vx2, const float vy2, const float vz2, float &nx, float &ny, float &nz)
+{
+	nx = vy1 * vz2 - vz1 * vy2;
+	ny = vz1 * vx2 - vx1 * vz2;
+	nz = vx1 * vy2 - vy1 * vx2;
+
+	const float norm = std::sqrt(nx*nx + ny*ny + nz*nz);
+	nx /= norm;
+	ny /= norm;
+	nz /= norm;
+}
+
+void drawMesh()
+{
+	if (mesh.get())
+	{
+		const float factor = 50.0f;
+
+		const GLfloat material_none[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const GLfloat material_white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		const GLfloat shininess_none[] = { 0.0f };
+		GLfloat material_diffuse[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+		float nx, ny, nz;
+		float r, g, b;
+		float ratio;
+
+#if 0
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
+		glBegin(GL_TRIANGLES);
+			for (int i = 0; i < mesh_row - 1; ++i)
+				for (int j = 0; j < mesh_col - 1; ++j)
+				{
+					x1 = float(i) * factor;
+					y1 = float(j) * factor;
+					z1 = (*mesh)[i][j] * factor;
+					x2 = float(i+1) * factor;
+					y2 = float(j) * factor;
+					z2 = (*mesh)[i+1][j] * factor;
+					x3 = float(i) * factor;
+					y3 = float(j+1) * factor;
+					z3 = (*mesh)[i][j+1] * factor;
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+					//
+					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+
+					//
+					x1 = float(i+1) * factor;
+					y1 = float(j+1) * factor;
+					z1 = (*mesh)[i+1][j+1] * factor;
+					x2 = float(i) * factor;
+					y2 = float(j+1) * factor;
+					z2 = (*mesh)[i][j+1] * factor;
+					x3 = float(i+1) * factor;
+					y3 = float(j) * factor;
+					z3 = (*mesh)[i+1][j] * factor;
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+					//
+					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+				}
+		glEnd();
+#elif 0
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
+		glBegin(GL_TRIANGLES);
+			for (int i = 0; i < mesh_row - 1; ++i)
+				for (int j = 0; j < mesh_col - 1; ++j)
+				{
+					x1 = float(i) * factor;
+					y1 = float(j) * factor;
+					z1 = (*mesh)[i][j] * factor;
+					x2 = float(i+1) * factor;
+					y2 = float(j) * factor;
+					z2 = (*mesh)[i+1][j] * factor;
+					x3 = float(i+1) * factor;
+					y3 = float(j+1) * factor;
+					z3 = (*mesh)[i+1][j+1] * factor;
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+					//
+					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+
+					//
+					x1 = float(i) * factor;
+					y1 = float(j) * factor;
+					z1 = (*mesh)[i][j] * factor;
+					x2 = float(i+1) * factor;
+					y2 = float(j+1) * factor;
+					z2 = (*mesh)[i+1][j+1] * factor;
+					x3 = float(i) * factor;
+					y3 = float(j+1) * factor;
+					z3 = (*mesh)[i][j+1] * factor;
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+					//
+					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+				}
+		glEnd();
+#else
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
+		glBegin(GL_QUADS);
+			for (int i = 0; i < mesh_row - 1; ++i)
+				for (int j = 0; j < mesh_col - 1; ++j)
+				{
+					x1 = float(i) * factor;
+					y1 = float(j) * factor;
+					z1 = (*mesh)[i][j] * factor;
+					x2 = float(i+1) * factor;
+					y2 = float(j) * factor;
+					z2 = (*mesh)[i+1][j] * factor;
+					x3 = float(i+1) * factor;
+					y3 = float(j+1) * factor;
+					z3 = (*mesh)[i+1][j+1] * factor;
+					x4 = float(i) * factor;
+					y4 = float(j+1) * factor;
+					z4 = (*mesh)[i][j+1] * factor;
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+					//
+					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+					//
+					ratio = (z4 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
+					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
+					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
+					glEdgeFlag(GL_TRUE);
+					glColor3f(r, g, b);
+					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
+					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					glNormal3f(nx, ny, nz);
+					glVertex3f(x4, y4, z4);
+				}
+		glEnd();
+#endif
+	}
+}
+
+}  // unnamed namespace
 
 // CWglViewTestView
 
@@ -76,6 +430,7 @@ END_MESSAGE_MAP()
 CWglViewTestView::CWglViewTestView()
 : viewStateFsm_()
 {
+	loadMesh();
 }
 
 CWglViewTestView::~CWglViewTestView()
@@ -209,7 +564,7 @@ void CWglViewTestView::OnInitialUpdate()
 	CRect rect;
 	GetClientRect(&rect);
 
-	drawMode_ = 2;  // [1, 2]
+	drawMode_ = 1;  // [1, 2]
 	useLocallyCreatedContext_ = false;
 
 	//-------------------------------------------------------------------------
@@ -274,6 +629,8 @@ void CWglViewTestView::OnInitialUpdate()
 			viewCamera->setObjectPosition(0.0, 0.0, 0.0);
 			//viewCamera->setEyeDistance(1000.0, false);
 			//viewCamera->setObjectPosition(110.0, 110.0, 150.0);
+
+			viewCamera->setPerspective(true);
 		}
 
 		raiseDrawEvent(false);
@@ -357,7 +714,7 @@ bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 
 bool CWglViewTestView::initializeView()
 {
-	// Can we put this in the constructor?
+	// can we put this in the constructor?
 	// specify black(0.0f, 0.0f, 0.0f, 0.0f) or white(1.0f, 1.0f, 1.0f, 1.0f) as clear color
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	// specify the back of the buffer as clear depth
@@ -368,26 +725,41 @@ bool CWglViewTestView::initializeView()
 	// lighting
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
 
 	// create light components
 	const GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8, 1.0f };
+	const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8f, 1.0f };
 	const GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
-	const GLfloat position[] = { 0.2f, 0.2f, 1.0f, 0.0f };
+	const GLfloat position0[] = { 0.2f, 0.2f, 1.0f, 0.0f };
+	const GLfloat position1[] = { 0.2f, 0.2f, -1.0f, 0.0f };
 
 	// assign created components to GL_LIGHT0
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
-	glLightfv(GL_LIGHT0, GL_POSITION, position);
+	glLightfv(GL_LIGHT0, GL_POSITION, position0);
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT1, GL_POSITION, position1);
 
 	// polygon winding
 	glFrontFace(GL_CCW);
+	glCullFace(GL_FRONT_AND_BACK);
+
+	// surface normal
+	glEnable(GL_NORMALIZE);
+	glEnable(GL_AUTO_NORMAL);
+
+	// shading model
+	//glShadeModel(GL_FLAT);
+	glShadeModel(GL_SMOOTH);
 
 	// color tracking
 	glEnable(GL_COLOR_MATERIAL);
 	// set material properties which will be assigned by glColor
-	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
 	return true;
 }
@@ -434,6 +806,7 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
+#if 1
 	glPushMatrix();
 		//glLoadIdentity();
 		glTranslatef(-250.0f, 250.0f, -250.0f);
@@ -449,6 +822,13 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 		//glutWireCube(500.0);
 		glutSolidCube(500.0);
 	glPopMatrix();
+#endif
+
+#if 0
+	glPushMatrix();
+		drawMesh();
+	glPopMatrix();
+#endif
 
     return true;
 }

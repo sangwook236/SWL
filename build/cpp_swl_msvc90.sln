@@ -90,6 +90,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test"
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_serial_port_test", "..\test\swl_serial_port_test\swl_serial_port_test_msvc90.vcproj", "{4B163450-0DC8-4839-92C9-D3754D62DEFE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -152,6 +154,10 @@ Global
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Debug|Win32.Build.0 = Debug|Win32
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Release|Win32.ActiveCfg = Release|Win32
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Release|Win32.Build.0 = Release|Win32
+		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Debug|Win32.Build.0 = Debug|Win32
+		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Release|Win32.ActiveCfg = Release|Win32
+		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

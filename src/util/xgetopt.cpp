@@ -37,6 +37,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 
+#include "swl/Config.h"
 #include "xgetopt.h"
 #include <cstdio>
 
@@ -154,7 +155,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 #include <tchar.h>
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif

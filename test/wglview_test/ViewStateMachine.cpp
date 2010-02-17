@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include "swl/Config.h"
 #include "ViewStateMachine.h"
 #include "swl/view/ViewBase.h"
 #include "swl/view/ViewContext.h"
@@ -8,7 +9,7 @@
 #include <iostream>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #define new DEBUG_NEW
 #endif
 

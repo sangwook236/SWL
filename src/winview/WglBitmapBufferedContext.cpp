@@ -3,7 +3,7 @@
 #include <boost/smart_ptr.hpp>
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -124,6 +124,9 @@ bool WglBitmapBufferedContext::createOffScreen()
 	//
 	isPaletteUsed_ = (GetDeviceCaps(memDC_, RASTERCAPS) & RC_PALETTE) == RC_PALETTE;
 	assert(false == isPaletteUsed_);
+
+	// without this line, wglCreateContext will fail
+	wglMakeCurrent(memDC_, 0);
 
 	const int colorBitCount = GetDeviceCaps(memDC_, BITSPIXEL);
 	assert(colorBitCount > 8);

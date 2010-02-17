@@ -2,7 +2,7 @@
 #include "swl/winview/WglDoubleBufferedContext.h"
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -91,6 +91,9 @@ bool WglDoubleBufferedContext::createOffScreen()
 	// get DC for window
 	hDC_ = GetDC(hWnd_);
 	if (NULL == hDC_) return false;
+
+	// without this line, wglCreateContext will fail
+	wglMakeCurrent(hDC_, 0);
 
 	// create OpenGL pixel format descriptor
     PIXELFORMATDESCRIPTOR pfd;

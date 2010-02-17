@@ -1,3 +1,4 @@
+#include "swl/Config.h"
 #include "swl/winutil/WinConsoleWindow.h"
 #include <windows.h>
 #include <cstdio>
