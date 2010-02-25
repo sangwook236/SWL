@@ -86,6 +86,7 @@ void drawMesh()
 		const float factor = 50.0f;
 
 		const GLfloat material_none[] = { 0.0f, 0.0f, 0.0f, 1.0f };
+		const GLfloat material_half[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 		const GLfloat material_white[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 		const GLfloat shininess_none[] = { 0.0f };
 		GLfloat material_diffuse[] = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -95,11 +96,11 @@ void drawMesh()
 		float ratio;
 
 #if 0
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -118,7 +119,7 @@ void drawMesh()
 					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
 					//
-					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z1 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -129,7 +130,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
-					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z2 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -140,7 +141,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
-					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z3 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -164,7 +165,7 @@ void drawMesh()
 					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
 					//
-					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z1 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -175,7 +176,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
-					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z2 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -186,7 +187,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
-					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z3 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -199,11 +200,11 @@ void drawMesh()
 				}
 		glEnd();
 #elif 0
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -222,7 +223,7 @@ void drawMesh()
 					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
 					//
-					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z1 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -233,7 +234,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
-					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z2 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -244,7 +245,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
-					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z3 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -268,7 +269,7 @@ void drawMesh()
 					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
 					//
-					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z1 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -279,7 +280,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
-					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z2 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -290,7 +291,7 @@ void drawMesh()
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
-					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z3 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
@@ -303,11 +304,11 @@ void drawMesh()
 				}
 		glEnd();
 #else
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
+		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
 		glBegin(GL_QUADS);
@@ -329,44 +330,44 @@ void drawMesh()
 					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
 					//
-					ratio = (z1 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z1 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
-					glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
 					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
-					ratio = (z2 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z2 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
-					glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
 					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
-					ratio = (z3 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z3 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
-					glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
 					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 					//
-					ratio = (z4 - mesh_z_min) / (mesh_z_max - mesh_z_min);
+					ratio = (z4 / factor - mesh_z_min) / (mesh_z_max - mesh_z_min);
 					r = mesh_min_color_r + (mesh_max_color_r - mesh_min_color_r) * ratio;
 					g = mesh_min_color_g + (mesh_max_color_g - mesh_min_color_g) * ratio;
 					b = mesh_min_color_b + (mesh_max_color_b - mesh_min_color_b) * ratio;
-					glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
 					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
@@ -721,6 +722,15 @@ bool CWglViewTestView::initializeView()
     glClearDepth(1.0f);
 	// enable depth testing
     glEnable(GL_DEPTH_TEST);
+	// the type Of depth testing
+	glDepthFunc(GL_LESS);
+
+	// 
+	//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+	// really nice perspective calculations
+	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
 	glEnable(GL_LIGHTING);
@@ -728,9 +738,9 @@ bool CWglViewTestView::initializeView()
 	glEnable(GL_LIGHT1);
 
 	// create light components
-	const GLfloat ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
-	const GLfloat diffuseLight[] = { 0.8f, 0.8f, 0.8f, 1.0f };
-	const GLfloat specularLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	const GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
+	const GLfloat diffuseLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
+	const GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	const GLfloat position0[] = { 0.2f, 0.2f, 1.0f, 0.0f };
 	const GLfloat position1[] = { 0.2f, 0.2f, -1.0f, 0.0f };
 
@@ -746,7 +756,7 @@ bool CWglViewTestView::initializeView()
 
 	// polygon winding
 	glFrontFace(GL_CCW);
-	glCullFace(GL_FRONT_AND_BACK);
+	//glCullFace(GL_FRONT_AND_BACK);
 
 	// surface normal
 	glEnable(GL_NORMALIZE);
@@ -806,7 +816,7 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-#if 1
+#if 0
 	glPushMatrix();
 		//glLoadIdentity();
 		glTranslatef(-250.0f, 250.0f, -250.0f);
@@ -824,7 +834,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 	glPopMatrix();
 #endif
 
-#if 0
+#if 1
 	glPushMatrix();
 		drawMesh();
 	glPopMatrix();
