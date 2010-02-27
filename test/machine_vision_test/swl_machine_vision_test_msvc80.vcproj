@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_machine_vision.lib"
+				AdditionalDependencies="swl_math.lib swl_machine_vision.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_machine_vision.lib"
+				AdditionalDependencies="swl_math.lib swl_machine_vision.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -180,6 +180,10 @@
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
+			<File
+				RelativePath=".\HoughTransformTest.cpp"
+				>
+			</File>
 			<File
 				RelativePath=".\main.cpp"
 				>

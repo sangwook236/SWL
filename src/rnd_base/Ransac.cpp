@@ -18,6 +18,10 @@
 
 namespace swl {
 
+Ransac::~Ransac()
+{
+}
+
 size_t Ransac::runRANSAC(const size_t maxIterationCount, const size_t minInlierCount, const double alarmRatio, const bool isProsacSampling, const double threshold)
 {
 	if (totalSampleCount_ < minimalSampleSetSize_)

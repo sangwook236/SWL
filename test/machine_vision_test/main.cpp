@@ -3,6 +3,9 @@
 
 int main()
 {
+	void hough_transform();
+
+	hough_transform();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;
 	std::wcout.flush();

@@ -13,6 +13,9 @@ namespace swl {
 
 class SWL_RND_BASE_API Ransac
 {
+public:
+	//typedef Ransac base_type;
+
 protected:
 	Ransac(const size_t sampleCount, const size_t minimalSampleSetSize)
 	: totalSampleCount_(sampleCount), minimalSampleSetSize_(minimalSampleSetSize), scores_(NULL), sortedIndices_(), inlierFlags_(), iteration_(0)
@@ -23,9 +26,7 @@ protected:
 	{
 	}
 public:
-	virtual ~Ransac()
-	{
-	}
+	virtual ~Ransac();
 
 public:
 	virtual size_t runRANSAC(const size_t maxIterationCount, const size_t minInlierCount, const double alarmRatio, const bool isProsacSampling, const double threshold);
