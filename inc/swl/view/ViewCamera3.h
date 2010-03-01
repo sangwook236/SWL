@@ -35,6 +35,7 @@ public:
 	///*virtual*/ void read(::std::istream& stream);
 
 	/// set the size of viewing volume: (left, bottom, right, top) is set wrt a eye coordinates frame
+	/// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
     /*virtual*/ bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar);
 	/// get the size of viewing volume
     /*virtual*/ void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop, double& rdNear, double& rdFar) const
@@ -95,8 +96,8 @@ public:
 	{
 		refObjX_ = dObjX;  refObjY_ = dObjY;  refObjZ_ = dObjZ;
 		//--S [] 2001/05/22: Sang-Wook Lee
-		//updateEyeDistance( false );
-		//return updateEyeDirection( bUpdateViewpoint );
+		//updateEyeDistance(false);
+		//return updateEyeDirection(bUpdateViewpoint);
 		return updateEyePosition(bUpdateViewpoint);
 		//--E [] 2001/05/22
 	}

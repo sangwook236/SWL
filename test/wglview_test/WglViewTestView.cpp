@@ -18,6 +18,7 @@
 #include "swl/oglview/OglCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
+#include "swl/math/MathConstant.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/multi_array.hpp>
 #include <GL/glut.h>
@@ -33,9 +34,82 @@
 #if defined(max)
 #undef max
 #endif
+#if defined(min)
+#undef min
+#endif
 
 
 namespace {
+
+void drawCube()
+{
+	const GLfloat len = 500.0f;
+
+	glPushMatrix();
+		glTranslatef(-len * 0.5f, -len * 0.5f, -len * 0.5f);
+		glBegin(GL_QUADS);
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, 0.0f, -1.0f);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, 0.0f, -1.0f);
+			glVertex3f(0.0f, len, 0.0f);
+			glNormal3f(0.0f, 0.0f, -1.0f);
+			glVertex3f(len, len, 0.0f);
+			glNormal3f(0.0f, 0.0f, -1.0f);
+			glVertex3f(len, 0.0f, 0.0f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(0.0f, 0.0f, len);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(len, 0.0f, len);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(len, len, len);
+			glNormal3f(0.0f, 0.0f, 1.0f);
+			glVertex3f(0.0f, len, len);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, -1.0f, 0.0f);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, -1.0f, 0.0f);
+			glVertex3f(len, 0.0f, 0.0f);
+			glNormal3f(0.0f, -1.0f, 0.0f);
+			glVertex3f(len, 0.0f, len);
+			glNormal3f(0.0f, -1.0f, 0.0f);
+			glVertex3f(0.0f, 0.0f, len);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.0f, len, 0.0f);
+			glNormal3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(0.0f, len, len);
+			glNormal3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(len, len, len);
+			glNormal3f(0.0f, 1.0f, 0.0f);
+			glVertex3f(len, len, 0.0f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(-1.0f, 0.0f, 0.0f);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glNormal3f(-1.0f, 0.0f, 0.0f);
+			glVertex3f(0.0f, 0.0f, len);
+			glNormal3f(-1.0f, 0.0f, 0.0f);
+			glVertex3f(0.0f, len, len);
+			glNormal3f(-1.0f, 0.0f, 0.0f);
+			glVertex3f(0.0f, len, 0.0f);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glNormal3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(len, 0.0f, 0.0f);
+			glNormal3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(len, len, 0.0f);
+			glNormal3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(len, len, len);
+			glNormal3f(1.0f, 0.0f, 0.0f);
+			glVertex3f(len, 0.0f, len);
+		glEnd();
+	glPopMatrix();
+}
 
 typedef boost::multi_array<float, 2> mesh_array_type;
 boost::scoped_ptr<mesh_array_type> mesh;
@@ -96,7 +170,6 @@ void drawMesh()
 		float ratio;
 
 #if 0
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
@@ -200,7 +273,6 @@ void drawMesh()
 				}
 		glEnd();
 #elif 0
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
@@ -304,7 +376,6 @@ void drawMesh()
 				}
 		glEnd();
 #else
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
 		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
@@ -429,7 +500,9 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-: viewStateFsm_()
+: viewStateFsm_(),
+  isPerspective_(true), isWireFrame_(false),
+  isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true)
 {
 	loadMesh();
 }
@@ -620,18 +693,22 @@ void CWglViewTestView::OnInitialUpdate()
 		// set the camera
 		if (viewCamera.get())
 		{
+			// set the size of viewing volume
+			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
+			viewCamera->setEyeDistance(8000.0, false);
+			viewCamera->setObjectPosition(0.0, 0.0, 0.0, false);
+			//viewCamera->setEyeDistance(1000.0, false);
+			//viewCamera->setObjectPosition(110.0, 110.0, 150.0, false);
+
+			//	(left, bottom, right, top) is set wrt a eye coordinates frame
+			//	(near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
 			//viewCamera->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
 			viewCamera->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
 			//viewCamera->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
 
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
-			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
-			viewCamera->setEyeDistance(8000.0, false);
-			viewCamera->setObjectPosition(0.0, 0.0, 0.0);
-			//viewCamera->setEyeDistance(1000.0, false);
-			//viewCamera->setObjectPosition(110.0, 110.0, 150.0);
-
-			viewCamera->setPerspective(true);
+			
+			viewCamera->setPerspective(isPerspective_);
 		}
 
 		raiseDrawEvent(false);
@@ -722,8 +799,15 @@ bool CWglViewTestView::initializeView()
     glClearDepth(1.0f);
 	// enable depth testing
     glEnable(GL_DEPTH_TEST);
-	// the type Of depth testing
+	// the type of depth testing
 	glDepthFunc(GL_LESS);
+
+	// enable stencil testing
+	//glEnable(GL_STENCIL_TEST);
+	// the type of stencil testing
+	//glStencilFunc(GL_ALWAYS, 0, 1);
+	//
+	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 	// 
 	//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
@@ -733,9 +817,9 @@ bool CWglViewTestView::initializeView()
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
-	glEnable(GL_LIGHTING);
-	glEnable(GL_LIGHT0);
-	glEnable(GL_LIGHT1);
+	//glEnable(GL_LIGHTING);
+	//glEnable(GL_LIGHT0);
+	//glEnable(GL_LIGHT1);
 
 	// create light components
 	const GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -767,9 +851,16 @@ bool CWglViewTestView::initializeView()
 	glShadeModel(GL_SMOOTH);
 
 	// color tracking
-	glEnable(GL_COLOR_MATERIAL);
+	//glEnable(GL_COLOR_MATERIAL);
 	// set material properties which will be assigned by glColor
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+
+	// clipping
+	//int maxClipPlanes = 0;
+	//glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
+
+	glEnable(GL_CLIP_PLANE0);
+	//glEnable(GL_CLIP_PLANE1);
 
 	return true;
 }
@@ -799,6 +890,7 @@ bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const camera_type &/*camera*/)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     return true;
 }
@@ -808,6 +900,17 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
+	if (isFloorShown_)
+	{
+		const float minXBound = -500.0f, maxXBound = 500.0f;
+		const float minYBound = -500.0f, maxYBound = 500.0f;
+		const float minZBound = -500.0f, maxZBound = 500.0f;
+		const float angleThreshold = (float)std::cos(80.0 * swl::MathConstant::TO_RAD);
+		const size_t lineCount = 5;
+		const int lineStippleScaleFactor = 2;
+
+		drawFloor(minXBound, maxXBound, minYBound, maxYBound, minZBound, maxZBound, angleThreshold, lineCount, lineStippleScaleFactor);
+	}
     return true;
 }
 
@@ -835,12 +938,422 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 #endif
 
 #if 1
-	glPushMatrix();
-		drawMesh();
-	glPopMatrix();
+	// set clipping planes
+	GLdouble matrix[16];
+	glGetDoublev(GL_MODELVIEW_MATRIX, matrix);
+
+	const double clippingPlane0[] = { 0.0, 1.0, 0.0, 100.0 };
+	const double clippingPlane1[] = { 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0), 0.0, 0.5 * std::sqrt(1500.0 * 1500.0 * 2.0) };
+
+#if 0
+	glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
+	glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
+#elif 1
+	double clippingPlane[4] = { 0.0, };
+	for (int i = 0; i < 3; ++i)  // row
+	{
+		clippingPlane[i] = 0.0;
+		for (int j = 0; j < 3; ++j)  // col
+			clippingPlane[i] += matrix[i + j * 4] * clippingPlane0[j];
+	}
+	clippingPlane[3] = clippingPlane0[3] - (clippingPlane[0] * matrix[12] + clippingPlane[1] * matrix[13] + clippingPlane[2] * matrix[14]);
+	glClipPlane(GL_CLIP_PLANE0, clippingPlane);
+	//for (int i = 0; i < 3; ++i)  // row
+	//{
+	//	clippingPlane[i] = 0.0;
+	//	for (int j = 0; j < 4; ++j)  // col
+	//		clippingPlane[i] += matrix[i + j * 4] * (3 == j ? 1.0 : clippingPlane1[j]);
+	//}
+	//clippingPlane[3] = clippingPlane1[3];
+	//glClipPlane(GL_CLIP_PLANE1, clippingPlane);
+#elif 0
+	double mat[16] = { 0.0, };
+	mat[0] = matrix[0];
+	mat[1] = matrix[4];
+	mat[2] = matrix[8];
+	mat[3] = 0.0;
+	mat[4] = matrix[1];
+	mat[5] = matrix[5];
+	mat[6] = matrix[9];
+	mat[7] = 0.0;
+	mat[8] = matrix[2];
+	mat[9] = matrix[6];
+	mat[10] = matrix[10];
+	mat[11] = 0.0;
+	mat[12] = -(matrix[0]*matrix[12] + matrix[1]*matrix[13] + matrix[2]*matrix[14]);
+	mat[13] = -(matrix[4]*matrix[12] + matrix[5]*matrix[13] + matrix[6]*matrix[14]);
+	mat[14] = -(matrix[8]*matrix[12] + matrix[9]*matrix[13] + matrix[10]*matrix[14]);
+	mat[15] = 1.0;
+
+	double clippingPlane[4] = { 0.0, };
+	for (int i = 0; i < 3; ++i)  // row
+	{
+		clippingPlane[i] = 0.0;
+		for (int j = 0; j < 4; ++j)  // col
+			clippingPlane[i] += mat[i + j * 4] * (3 == j ? 1.0 : clippingPlane0[j]);
+	}
+	clippingPlane[3] = clippingPlane0[3];
+	glClipPlane(GL_CLIP_PLANE0, clippingPlane);
+	for (int i = 0; i < 3; ++i)  // row
+	{
+		clippingPlane[i] = 0.0;
+		for (int j = 0; j < 4; ++j)  // col
+			clippingPlane[i] += mat[i + j * 4] * (3 == j ? 1.0 : clippingPlane1[j]);
+	}
+	clippingPlane[3] = clippingPlane1[3];
+	glClipPlane(GL_CLIP_PLANE1, clippingPlane);
+#else
+	const double mat[12] = { matrix[0], matrix[4], matrix[8], matrix[12], matrix[1], matrix[5], matrix[9], matrix[13], matrix[2], matrix[6], matrix[10], matrix[14] };
+	const swl::ViewMatrix3 vmat(mat);
 #endif
 
+	// save states
+	GLint oldPolygonMode[2];
+	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+
+	glPushMatrix();
+		glPolygonMode(GL_FRONT_AND_BACK, isWireFrame_ ? GL_LINE : GL_FILL);
+		//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
+
+		//drawCube();
+		drawMesh();
+	glPopMatrix();
+
+	// restore states
+	glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
+#endif
+
+	if (isColorBarShown_) drawColorBar();
+	if (isCoordinateFrameShown_) drawCoordinateFrame();
+
     return true;
+}
+
+void CWglViewTestView::setPerspective(const bool isPerspective)
+{
+	if (isPerspective == isPerspective_) return;
+
+	const boost::shared_ptr<context_type> &context = topContext();
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (context.get() && camera.get())
+	{
+		isPerspective_ = isPerspective;
+
+		context_type::guard_type guard(*context);
+		camera->setPerspective(isPerspective_);
+		raiseDrawEvent(false);
+	}
+}
+
+void CWglViewTestView::setWireFrame(const bool isWireFrame)
+{
+	if (isWireFrame == isWireFrame_) return;
+
+	isWireFrame_ = isWireFrame;
+	raiseDrawEvent(true);
+}
+
+void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, const float minYBound, const float maxYBound, const float minZBound, const float maxZBound, const float angleThreshold, const size_t lineCount, const int lineStippleScaleFactor) const
+{
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (camera.get())
+	{
+		double dirX = 0.0, dirY = 0.0, dirZ = 0.0;
+		camera->getEyeDirection(dirX, dirY, dirZ);
+
+		const bool isXYPlaneShown = std::fabs((float)dirZ) >= angleThreshold;
+		const bool isYZPlaneShown = std::fabs((float)dirX) >= angleThreshold;
+		const bool isZXPlaneShown = std::fabs((float)dirY) >= angleThreshold;
+
+		const bool isNegativeXYPlane = dirZ < 0.0;
+		const bool isNegativeYZPlane = dirX < 0.0;
+		const bool isNegativeZXPlane = dirY < 0.0;
+
+		// save states
+		const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
+		if (isLighting) glDisable(GL_LIGHTING);
+		const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
+		if (isDepthTest) glDisable(GL_DEPTH_TEST);
+
+		const GLboolean isLineStipple = glIsEnabled(GL_LINE_STIPPLE);
+		if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
+		GLint oldPolygonMode[2];
+		glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+		//const float xmargin = 0.0f, ymargin = 0.0f, zmargin = 0.0f;
+		const float marginRatio = 0.1f;
+		const float xmargin = (maxXBound - minXBound) * marginRatio, ymargin = (maxYBound - minYBound) * marginRatio, zmargin = (maxZBound - minZBound) * marginRatio;
+		const float margin = std::min(xmargin, std::min(ymargin, zmargin));
+		const float xmin = minXBound - margin, xmax = maxXBound + margin;
+		const float ymin = minYBound - margin, ymax = maxYBound + margin;
+		const float zmin = minZBound - margin, zmax = maxZBound + margin;
+
+		const float xspace = std::fabs(xmax - xmin) / float(lineCount);
+		const float yspace = std::fabs(ymax - ymin) / float(lineCount);
+		const float zspace = std::fabs(zmax - zmin) / float(lineCount);
+		const float space = std::min(xspace, std::min(yspace, zspace));
+
+		const float xyPlane = isNegativeXYPlane ? zmin : zmax;
+		const float yzPlane = isNegativeYZPlane ? xmin : xmax;
+		const float zxPlane = isNegativeZXPlane ? ymin : ymax;
+
+		const int xstart = (int)std::ceil(xmin / space), xend = (int)std::floor(xmax / space);
+		const int ystart = (int)std::ceil(ymin / space), yend = (int)std::floor(ymax / space);
+		const int zstart = (int)std::ceil(zmin / space), zend = (int)std::floor(zmax / space);
+
+		glLineStipple(lineStippleScaleFactor, 0xAAAA);
+		glBegin(GL_LINES);
+			// the color of a floor
+			glColor3f(0.8f, 0.8f, 0.8f);
+
+			// xy-plane
+			if (isXYPlaneShown)
+			{
+				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmin, ymax, xyPlane);
+				glVertex3f(xmax, ymin, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
+				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmax, ymin, xyPlane);
+				glVertex3f(xmin, ymax, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
+				for (int i = xstart; i <= xend; ++i)
+				{
+					glVertex3f(i * space, ymin, xyPlane);
+					glVertex3f(i * space, ymax, xyPlane);
+				}
+				for (int i = ystart; i <= yend; ++i)
+				{
+					glVertex3f(xmin, i * space, xyPlane);
+					glVertex3f(xmax, i * space, xyPlane);
+				}
+			}
+
+			// yz-plane
+			if (isYZPlaneShown)
+			{
+				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymin, zmax);
+				glVertex3f(yzPlane, ymax, zmin);  glVertex3f(yzPlane, ymax, zmax);
+				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymax, zmin);
+				glVertex3f(yzPlane, ymin, zmax);  glVertex3f(yzPlane, ymax, zmax);
+				for (int i = ystart; i <= yend; ++i)
+				{
+					glVertex3f(yzPlane, i * space, zmin);
+					glVertex3f(yzPlane, i * space, zmax);
+				}
+				for (int i = zstart; i <= zend; ++i)
+				{
+					glVertex3f(yzPlane, ymin, i * space);
+					glVertex3f(yzPlane, ymax, i * space);
+				}
+			}
+
+			// zx-plane
+			if (isZXPlaneShown)
+			{
+				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmin);
+				glVertex3f(xmin, zxPlane, zmax);  glVertex3f(xmax, zxPlane, zmax);
+				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmin, zxPlane, zmax);
+				glVertex3f(xmax, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmax);
+				for (int i = zstart; i <= zend; ++i)
+				{
+					glVertex3f(xmin, zxPlane, i * space);
+					glVertex3f(xmax, zxPlane, i * space);
+				}
+				for (int i = xstart; i <= xend; ++i)
+				{
+					glVertex3f(i * space, zxPlane, zmin);
+					glVertex3f(i * space, zxPlane, zmax);
+				}
+			}
+		glEnd();
+
+		// restore states
+		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
+		if (!isLineStipple) glDisable(GL_LINE_STIPPLE);
+
+		if (isLighting) glEnable(GL_LIGHTING);
+		if (isDepthTest) glEnable(GL_DEPTH_TEST);
+	}
+}
+
+void CWglViewTestView::drawColorBar() const
+{
+	const size_t colorDim = 3;
+	const float rgb[] = {
+		1.0f, 0.0f, 0.0f,
+		1.0f, 0.5f, 0.0f,
+		1.0f, 1.0f, 0.0f,
+		0.5f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.0f,
+		0.0f, 1.0f, 0.5f,
+		0.0f, 1.0f, 1.0f,
+		0.0f, 0.5f, 1.0f,
+		0.0f, 0.0f, 1.0f,
+		0.5f, 0.0f, 1.0f,
+		1.0f, 0.0f, 1.0f,
+	};
+	const size_t rgbCount = sizeof(rgb) / (sizeof(rgb[0]) * colorDim);
+
+	// save states
+	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
+	if (isDepthTest) glDisable(GL_DEPTH_TEST);
+
+	// save modelview matrix
+	glPushMatrix();
+	glLoadIdentity();  // reset modelview matrix
+
+	// set to 2D orthogonal projection
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+		glLoadIdentity();  // reset projection matrix
+		gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+
+		const float left = 0.90f, right = 0.95f, bottom = 0.65f, top = 0.95f;
+		const float dh = (top - bottom) / float(rgbCount);
+		glBegin(GL_QUADS);
+			float r1 = rgb[0 * colorDim];
+			float g1 = rgb[0 * colorDim + 1];
+			float b1 = rgb[0 * colorDim + 2];
+			float h1 = bottom + 0 * dh;
+			float r2, g2, b2, h2;
+			for (size_t i = 1; i < rgbCount; ++i)
+			{
+				glColor3f(r1, g1, b1);
+				glVertex3f(left, h1, 0.0f);
+				glVertex3f(right, h1, 0.0f);
+
+				r2 = rgb[i * colorDim];
+				g2 = rgb[i * colorDim + 1];
+				b2 = rgb[i * colorDim + 2];
+				h2 = bottom + i * dh;
+				glColor3f(r2, g2, b2);
+				glVertex3f(right, h2, 0.0f);
+				glVertex3f(left, h2, 0.0f);
+
+				r1 = r2;
+				g1 = g2;
+				b1 = b2;
+				h1 = h2;
+			}
+		glEnd();
+	glPopMatrix();
+
+	// restore modelview matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	// restore states
+	if (isDepthTest) glEnable(GL_DEPTH_TEST);
+}
+
+void CWglViewTestView::drawCoordinateFrame() const
+{
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (NULL == camera.get()) return;
+
+	// save states
+	const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
+	if (isLighting) glDisable(GL_LIGHTING);
+	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
+	if (isDepthTest) glDisable(GL_DEPTH_TEST);
+
+	GLint oldMatrixMode = 0;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+
+	const swl::Region2<int> &oldViewport = camera->getViewport();
+	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
+
+	const int dX = int(oldViewport.getWidth() * 0.10);
+	const int dY = int(oldViewport.getHeight() * 0.10);
+	const int size = std::max(std::max(dX, dY), 100);
+
+	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
+	camera->setViewRegion(((swl::ViewCamera2 *)camera.get())->getViewBound());
+	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
+
+	//
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		// move origin
+		double eyeX(0.0), eyeY(0.0), eyeZ(0.0), dirX(0.0), dirY(0.0), dirZ(0.0);
+		camera->getEyePosition(eyeX, eyeY, eyeZ);
+		camera->getEyeDirection(dirX, dirY, dirZ);
+		const double eyeDist = camera->getEyeDistance();
+		glTranslated(eyeX + eyeDist * dirX, eyeY + eyeDist * dirY, eyeZ + eyeDist * dirZ);
+
+		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
+		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
+		drawCoordinateFrame(length);
+
+		// draw characters
+		const double zoomFactor = camera->getZoomFactor();
+		glColor3f(1.0f, 0.0f, 0.0f); 
+     	drawText(true, length, 0.0f, 0.0f, "X"); 
+		glColor3f(0.0f, 1.0f, 0.0f); 
+		drawText(true, 0.0f, length, 0.0f, "Y"); 
+		glColor3f(0.0f, 0.0f, 1.0f); 
+		drawText(true, 0.0f, 0.0f, length, "Z"); 
+	glPopMatrix();
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
+
+	// restore states
+	camera->setViewRegion(oldViewRegion);
+	camera->setViewport(oldViewport);
+
+	if (isLighting) glEnable(GL_LIGHTING);
+	if (isDepthTest) glEnable(GL_DEPTH_TEST);
+}
+
+void CWglViewTestView::drawText(const bool isBitmapFont, const float x, const float y, const float z, const std::string &str) const
+{
+	void *font = isBitmapFont ? GLUT_BITMAP_HELVETICA_18 : GLUT_STROKE_ROMAN;
+
+	glRasterPos3f(x, y, z);
+
+	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+		isBitmapFont ? glutBitmapCharacter(font, *it) : glutStrokeCharacter(font, *it);
+}
+
+void CWglViewTestView::drawCoordinateFrame(const float height) const
+{
+	const float ratio = 0.7f;  // cylinder ratio
+	const float size = height * ratio;
+ 
+	const float radius = height * 0.05f;
+	const float coneRadius = radius * 2.0f;
+	const float coneHeight = height * (1.0f - ratio);
+	//const float letterRadius = radius * 0.5f;
+	//const float letterScale = radius * 0.1f;
+ 
+	GLUquadricObj *obj = gluNewQuadric();
+	gluQuadricDrawStyle(obj, GLU_FILL);
+	gluQuadricNormals(obj, GLU_SMOOTH);
+
+	// z axis
+	glPushMatrix();
+		glColor3f(0, 0, 1);	
+		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+		glTranslated(0, 0, size);
+		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
+	glPopMatrix();
+	
+	// x axis
+	glPushMatrix();
+		glColor3f(1, 0, 0);
+		glRotated(90, 0, 1, 0);
+		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+		glTranslated(0, 0, size);
+		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
+	glPopMatrix();
+ 
+	// y axis
+	glPushMatrix();
+		glColor3f(0, 1, 0);
+		glRotated(-90, 1, 0, 0);
+		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+		glTranslated(0, 0, size);
+		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
+	glPopMatrix();
+ 
+	gluDeleteQuadric(obj);
 }
 
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)

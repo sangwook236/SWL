@@ -287,6 +287,9 @@ void CWinViewTestView::OnInitialUpdate()
 		// set the camera
 		if (viewCamera.get())
 		{
+			// set the size of viewing volume
+			//	(left, bottom, right, top) is set wrt a eye coordinates frame
+			//	(near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
 			//viewCamera->setViewBound(-500, -500, 1500, 1500);
 			viewCamera->setViewBound(0, 0, rect.Width(), rect.Height());
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());

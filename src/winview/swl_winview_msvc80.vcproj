@@ -241,6 +241,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\WinClipboardApi.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WinViewBase.cpp"
 				>
 			</File>
@@ -316,6 +320,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\WglViewPrintApi.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WinClipboardApi.h"
 				>
 			</File>
 			<File

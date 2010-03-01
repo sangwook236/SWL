@@ -35,8 +35,8 @@ void WglContextBase::createDisplayList(const HDC hDC)
 {
 	// caution:
 	//	OpenGL에서 display list를 share하고자 하는 경우 source RC와 destination RC가 동일하여야 한다.
-	//	예를 들어, source RC의 flag 속성이 PFD_DRAW_TO_WINDOW이고 destination RC의 flag 속성이
-	//	PFD_DRAW_TO_BITMAP이라면, display list의 share는 실패한다.
+	//	예를 들어, source RC의 flag 속성이 PFD_DRAW_TO_WINDOW이고
+	//	destination RC의 flag 속성이 PFD_DRAW_TO_BITMAP이라면, display list의 share는 실패한다.
 
 	// share display list
 	if (!shareDisplayList(wglRC_))
@@ -47,14 +47,14 @@ void WglContextBase::createDisplayList(const HDC hDC)
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 			NULL,
 			GetLastError(),
-			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  //  Default language
+			MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),  // Default language
 			(LPTSTR)&lpMsgBuf,
 			0,
 			NULL 
 		);
 		// display the string
 #if defined(_UNICODE) || defined(UNICODE)
-		std::wcout << L"error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << L") at " << __LINE__ << L" in " << __FILE__ << std::endl;
+		std::wcerr << L"error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << L") at " << __LINE__ << L" in " << __FILE__ << std::endl;
 #else
 		std::cerr << "error : fail to share display lists(" << (LPCTSTR)lpMsgBuf << ") at " << __LINE__ << " in " << __FILE__ << std::endl;
 #endif

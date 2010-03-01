@@ -122,7 +122,7 @@ bool WglDoubleBufferedContext::createOffScreen()
 	//pfd.cAccumBlueBits	= 16;
 	//pfd.cAccumAlphaBits	= 0;
 	pfd.cDepthBits			= 32;
-	pfd.cStencilBits		= 8;
+	pfd.cStencilBits		= 16;
 	pfd.cAuxBuffers			= 0;
 	pfd.bReserved			= 0;
 	pfd.dwLayerMask			= 0;

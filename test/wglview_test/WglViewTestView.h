@@ -53,6 +53,21 @@ public:
 	/*virtual*/ bool initializeView();
 	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
+	//-------------------------------------------------------------------------
+	//
+
+	void setPerspective(const bool isPerspective);
+	bool isPerspective() const  {  return isPerspective_;  }
+	void setWireFrame(const bool isWireFrame);
+	bool isWireFrame() const  {  return isWireFrame_;  }
+
+	void showFloor(const bool isShown)  {  isFloorShown_ = isShown;  }
+	bool isFloorShown() const  {  return isFloorShown_;  }
+	void showColorBar(const bool isShown)  {  isColorBarShown_ = isShown;  }
+	bool isColorBarShown() const  {  return isColorBarShown_;  }
+	void showCoordinateFrame(const bool isShown)  {  isCoordinateFrameShown_ = isShown;  }
+	bool isCoordinateFrameShown() const  {  return isCoordinateFrameShown_;  }
+
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
@@ -60,6 +75,13 @@ private:
 	/*virtual*/ bool doPrepareRendering(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
+
+	void drawFloor(const float minXBound, const float maxXBound, const float minYBound, const float maxYBound, const float minZBound, const float maxZBound, const float angleThreshold, const size_t lineCount, const int lineStippleScaleFactor) const;
+	void drawColorBar() const;
+	void drawCoordinateFrame() const;
+
+	void drawText(const bool isBitmapFont, const float x, const float y, const float z, const std::string &str) const;
+	void drawCoordinateFrame(const float height) const;
 
 private:
 	//-------------------------------------------------------------------------
@@ -77,6 +99,13 @@ private:
 
 	int drawMode_;
 	bool useLocallyCreatedContext_;
+
+	bool isPerspective_;
+	bool isWireFrame_;
+
+	bool isFloorShown_;
+	bool isColorBarShown_;
+	bool isCoordinateFrameShown_;
 
 // Generated message map functions
 protected:
