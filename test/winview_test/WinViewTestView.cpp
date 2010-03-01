@@ -28,6 +28,10 @@
 #define new DEBUG_NEW
 #endif
 
+#if defined(min)
+#undef min
+#endif
+
 
 // CWinViewTestView
 
@@ -114,15 +118,26 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
 		const int oldMapMode = pDC->SetMapMode(MM_TEXT);
 
-		const CRect rctPage(0, 0, pDC->GetDeviceCaps(HORZRES), pDC->GetDeviceCaps(VERTRES));
+		//
+		const double eps = 1.0e-20;
 
-		swl::GdiPrintContext printContext(pDC->GetSafeHdc(), rctPage);
+		const swl::Region2<int> rctPage(swl::Point2<int>(0, 0), swl::Point2<int>(pDC->GetDeviceCaps(HORZRES), pDC->GetDeviceCaps(VERTRES)));
+		const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
+		const double width = currViewRegion.getWidth() >= eps ? currViewRegion.getWidth() : 1.0;
+		const double height = currViewRegion.getHeight() >= eps ? currViewRegion.getHeight() : 1.0;
+		const double ratio = std::min(rctPage.getWidth() / width, rctPage.getHeight() / height);
+
+		const double width0 = width * ratio, height0 = height * ratio;
+		const int w0 = (int)std::floor(width0), h0 = (int)std::floor(height0);
+		const int x0 = rctPage.left + (int)std::floor((rctPage.getWidth() - width0) * 0.5), y0 = rctPage.bottom + (int)std::floor((rctPage.getHeight() - height0) * 0.5);
+
+		swl::GdiPrintContext printContext(pDC->GetSafeHdc(), swl::Region2<int>(x0, y0, x0 + w0, y0 + h0));
 		const std::auto_ptr<camera_type> printCamera(camera->cloneCamera());
 		if (printCamera.get() && printContext.isActivated())
 		{
 			initializeView();
 			printCamera->setViewRegion(camera->getCurrentViewRegion());
-			printCamera->setViewport(rctPage.left, rctPage.top, rctPage.right, rctPage.bottom);
+			printCamera->setViewport(0, 0, w0, h0);
 			renderScene(printContext, *printCamera);
 		}
 
@@ -1040,8 +1055,17 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 	StartPage(pd.hDC);
 
 	//
+#if 0
 	if (!swl::printWinViewUsingGdi(*this, pd.hDC))
 		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
+#else
+	CDC *pDC = CDC::FromHandle(pd.hDC);
+	if (pDC)
+	{
+		pDC->m_bPrinting = TRUE;;
+		OnDraw(pDC);
+	}
+#endif
 
 	// end the print job
 	EndPage(pd.hDC);
