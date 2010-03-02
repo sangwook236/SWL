@@ -838,9 +838,9 @@ bool CWglViewTestView::initializeView()
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_LIGHT0);
-	//glEnable(GL_LIGHT1);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_LIGHT0);
+	glEnable(GL_LIGHT1);
 
 	// create light components
 	const GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
@@ -861,7 +861,8 @@ bool CWglViewTestView::initializeView()
 
 	// polygon winding
 	glFrontFace(GL_CCW);
-	//glCullFace(GL_FRONT_AND_BACK);
+	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
 
 	// surface normal
 	glEnable(GL_NORMALIZE);
@@ -872,7 +873,7 @@ bool CWglViewTestView::initializeView()
 	glShadeModel(GL_SMOOTH);
 
 	// color tracking
-	//glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_COLOR_MATERIAL);
 	// set material properties which will be assigned by glColor
 	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
@@ -880,8 +881,7 @@ bool CWglViewTestView::initializeView()
 	//int maxClipPlanes = 0;
 	//glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
 
-	glEnable(GL_CLIP_PLANE0);
-	//glEnable(GL_CLIP_PLANE1);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	return true;
 }
@@ -940,13 +940,32 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-#if 0
+#if 1
+	// save states
+	GLint oldPolygonMode[2];
+	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+
+	glPolygonMode(GL_FRONT_AND_BACK, isWireFrame_ ? GL_LINE : GL_FILL);
+	//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
+
 	glPushMatrix();
 		//glLoadIdentity();
 		glTranslatef(-250.0f, 250.0f, -250.0f);
 		glColor3f(1.0f, 0.0f, 0.0f);
-		glutWireSphere(500.0, 20, 20);
-		//glutSolidSphere(500.0, 20, 20);
+
+		// set clipping planes
+		const double clippingPlane0[] = { 1.0, 0.0, 0.0, 100.0 };
+		glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
+        glEnable(GL_CLIP_PLANE0);
+		const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
+		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
+        glEnable(GL_CLIP_PLANE1);
+
+		//glutWireSphere(500.0, 20, 20);
+		glutSolidSphere(500.0, 20, 20);
+
+		glDisable(GL_CLIP_PLANE0);
+		glDisable(GL_CLIP_PLANE1);
 	glPopMatrix();
 
 	glPushMatrix();
@@ -956,78 +975,12 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 		//glutWireCube(500.0);
 		glutSolidCube(500.0);
 	glPopMatrix();
+
+	// restore states
+	glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
 #endif
-
-#if 1
-	// set clipping planes
-	GLdouble matrix[16];
-	glGetDoublev(GL_MODELVIEW_MATRIX, matrix);
-
-	const double clippingPlane0[] = { 0.0, 1.0, 0.0, 100.0 };
-	const double clippingPlane1[] = { 1.0 / std::sqrt(2.0), 1.0 / std::sqrt(2.0), 0.0, 0.5 * std::sqrt(1500.0 * 1500.0 * 2.0) };
 
 #if 0
-	glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
-	glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
-#elif 1
-	double clippingPlane[4] = { 0.0, };
-	for (int i = 0; i < 3; ++i)  // row
-	{
-		clippingPlane[i] = 0.0;
-		for (int j = 0; j < 3; ++j)  // col
-			clippingPlane[i] += matrix[i + j * 4] * clippingPlane0[j];
-	}
-	clippingPlane[3] = clippingPlane0[3] - (clippingPlane[0] * matrix[12] + clippingPlane[1] * matrix[13] + clippingPlane[2] * matrix[14]);
-	glClipPlane(GL_CLIP_PLANE0, clippingPlane);
-	//for (int i = 0; i < 3; ++i)  // row
-	//{
-	//	clippingPlane[i] = 0.0;
-	//	for (int j = 0; j < 4; ++j)  // col
-	//		clippingPlane[i] += matrix[i + j * 4] * (3 == j ? 1.0 : clippingPlane1[j]);
-	//}
-	//clippingPlane[3] = clippingPlane1[3];
-	//glClipPlane(GL_CLIP_PLANE1, clippingPlane);
-#elif 0
-	double mat[16] = { 0.0, };
-	mat[0] = matrix[0];
-	mat[1] = matrix[4];
-	mat[2] = matrix[8];
-	mat[3] = 0.0;
-	mat[4] = matrix[1];
-	mat[5] = matrix[5];
-	mat[6] = matrix[9];
-	mat[7] = 0.0;
-	mat[8] = matrix[2];
-	mat[9] = matrix[6];
-	mat[10] = matrix[10];
-	mat[11] = 0.0;
-	mat[12] = -(matrix[0]*matrix[12] + matrix[1]*matrix[13] + matrix[2]*matrix[14]);
-	mat[13] = -(matrix[4]*matrix[12] + matrix[5]*matrix[13] + matrix[6]*matrix[14]);
-	mat[14] = -(matrix[8]*matrix[12] + matrix[9]*matrix[13] + matrix[10]*matrix[14]);
-	mat[15] = 1.0;
-
-	double clippingPlane[4] = { 0.0, };
-	for (int i = 0; i < 3; ++i)  // row
-	{
-		clippingPlane[i] = 0.0;
-		for (int j = 0; j < 4; ++j)  // col
-			clippingPlane[i] += mat[i + j * 4] * (3 == j ? 1.0 : clippingPlane0[j]);
-	}
-	clippingPlane[3] = clippingPlane0[3];
-	glClipPlane(GL_CLIP_PLANE0, clippingPlane);
-	for (int i = 0; i < 3; ++i)  // row
-	{
-		clippingPlane[i] = 0.0;
-		for (int j = 0; j < 4; ++j)  // col
-			clippingPlane[i] += mat[i + j * 4] * (3 == j ? 1.0 : clippingPlane1[j]);
-	}
-	clippingPlane[3] = clippingPlane1[3];
-	glClipPlane(GL_CLIP_PLANE1, clippingPlane);
-#else
-	const double mat[12] = { matrix[0], matrix[4], matrix[8], matrix[12], matrix[1], matrix[5], matrix[9], matrix[13], matrix[2], matrix[6], matrix[10], matrix[14] };
-	const swl::ViewMatrix3 vmat(mat);
-#endif
-
 	// save states
 	GLint oldPolygonMode[2];
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
@@ -1126,11 +1079,13 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 		glLineStipple(lineStippleScaleFactor, 0xAAAA);
 		glBegin(GL_LINES);
 			// the color of a floor
-			glColor3f(0.8f, 0.8f, 0.8f);
+			glColor3f(0.7f, 0.7f, 0.7f);
 
 			// xy-plane
 			if (isXYPlaneShown)
 			{
+				//glColor3f(0.7f, 0.0f, 0.0f);
+
 				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmin, ymax, xyPlane);
 				glVertex3f(xmax, ymin, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
 				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmax, ymin, xyPlane);
@@ -1150,6 +1105,8 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 			// yz-plane
 			if (isYZPlaneShown)
 			{
+				//glColor3f(0.0f, 0.7f, 0.0f);
+
 				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymin, zmax);
 				glVertex3f(yzPlane, ymax, zmin);  glVertex3f(yzPlane, ymax, zmax);
 				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymax, zmin);
@@ -1169,6 +1126,8 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 			// zx-plane
 			if (isZXPlaneShown)
 			{
+				//glColor3f(0.0f, 0.0f, 0.7f);
+
 				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmin);
 				glVertex3f(xmin, zxPlane, zmax);  glVertex3f(xmax, zxPlane, zmax);
 				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmin, zxPlane, zmax);
@@ -1214,6 +1173,8 @@ void CWglViewTestView::drawColorBar() const
 	const size_t rgbCount = sizeof(rgb) / (sizeof(rgb[0]) * colorDim);
 
 	// save states
+	const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
+	if (isLighting) glDisable(GL_LIGHTING);
 	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 	if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
@@ -1262,6 +1223,7 @@ void CWglViewTestView::drawColorBar() const
 	glPopMatrix();
 
 	// restore states
+	if (isLighting) glEnable(GL_LIGHTING);
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
