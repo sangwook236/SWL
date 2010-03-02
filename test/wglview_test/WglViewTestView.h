@@ -81,8 +81,13 @@ private:
 	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
+	bool initializeDisplayList();
+	void finalizeDisplayList();
+	void createDisplayList() const;
+
+	void drawObject(const bool createDisplayList = false) const;
 	void drawGradientBackground() const;
-	void drawFloor(const float minXBound, const float maxXBound, const float minYBound, const float maxYBound, const float minZBound, const float maxZBound, const float angleThreshold, const size_t lineCount, const int lineStippleScaleFactor) const;
+	void drawFloor(const bool createDisplayList = false) const;
 	void drawColorBar() const;
 	void drawCoordinateFrame() const;
 
@@ -99,6 +104,13 @@ private:
 	// This code is required for SWL.WglView: view state
 
 	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
+
+	//
+	const int maxDisplayListCount_;
+	unsigned int displayListNameBase_;
+
+	const int objectDisplayListName_;
+	const int floorDisplayListName_;
 
 	//-------------------------------------------------------------------------
 	//
