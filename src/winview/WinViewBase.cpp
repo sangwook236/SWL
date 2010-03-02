@@ -21,7 +21,7 @@ void WinViewBase::renderScene(context_type &context, camera_type &camera)
 	//context_type::guard_type guard(context)
 
 	//
-	context.setViewingRegion(camera.getCurrentViewRegion());
+	//context.setViewRegion(camera.getCurrentViewRegion());
 
 	//
 	doPrepareRendering(context, camera);

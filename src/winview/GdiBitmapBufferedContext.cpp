@@ -44,6 +44,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 	setDrawing(true);
 
 	// copy off-screen buffer to window's DC
+#if 1
 	// method #1: [use DDB & DIB] the image is not scaled to fit the rectangle
 	const bool ret = TRUE == BitBlt(
 		hDC_,
@@ -52,7 +53,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 		0, 0,  //drawRegion_.left, drawRegion_.bottom,
 		SRCCOPY
 	);
-/*
+#elif 0
 	// method #2: [use DDB & DIB] the image is scaled to fit the rectangle
 	// caution:
 	// all negative coordinate values are ignored.
@@ -65,8 +66,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 		0, 0, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5),
 		SRCCOPY
 	);
-*/
-/*
+#else
 	// method #3: [use DIB] the image is scaled to fit the rectangle
 	// caution:
 	// all negative coordinate values are ignored.
@@ -81,7 +81,7 @@ bool GdiBitmapBufferedContext::swapBuffer()
 		!isPaletteUsed_ ? DIB_RGB_COLORS : DIB_PAL_COLORS,
 		SRCCOPY
 	);
-*/
+#endif
 	setDrawing(false);
 	return ret;
 }
@@ -161,10 +161,10 @@ bool GdiBitmapBufferedContext::createOffScreen()
 bool GdiBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount)
 {
 	// method #1: use DDB
-/*
+#if 0
 	memBmp_ = CreateCompatibleBitmap(hDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
 	//memBmp_ = CreateCompatibleBitmap(hDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
-*/
+#else
 	// method #2: use DIB
 	const size_t bufSize = !isPaletteUsed_ ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
 	const boost::scoped_array<unsigned char> buf(new unsigned char [bufSize]);
@@ -174,12 +174,15 @@ bool GdiBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	// following routine aligns given value to 4 bytes boundary.
 	// the current implementation of DIB rendering in Windows 95/98/NT seems to be free from this alignment
 	// but old version compatibility is needed.
+#if 1
 	const int width = ((drawRegion_.getWidth() + 3) / 4 * 4 > 0) ? drawRegion_.getWidth() : 4;
 	const int height = (0 == drawRegion_.getHeight()) ? 1 : drawRegion_.getHeight();
-	//const int viewingWidth = (int)std::floor(viewingRegion_.getWidth() + 0.5);
-	//const int viewingHeight = (int)std::floor(viewingRegion_.getHeight() + 0.5);
-	//const int width = ((viewingWidth + 3) / 4 * 4 > 0) ? viewingWidth : 4;
-	//const int height = (0 == viewingHeight) ? 1 : viewingHeight;
+#else
+	const int viewingWidth = (int)std::floor(viewingRegion_.getWidth() + 0.5);
+	const int viewingHeight = (int)std::floor(viewingRegion_.getHeight() + 0.5);
+	const int width = ((viewingWidth + 3) / 4 * 4 > 0) ? viewingWidth : 4;
+	const int height = (0 == viewingHeight) ? 1 : viewingHeight;
+#endif
 
 	bmiDIB.bmiHeader.biSize			= sizeof(BITMAPINFOHEADER);
 	bmiDIB.bmiHeader.biWidth		= width;
@@ -216,6 +219,7 @@ bool GdiBitmapBufferedContext::createOffScreenBitmap(const int colorBitCount, co
 	}
 	if (NULL == memBmp_) return false;
 	oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
+#endif
 
 	return true;
 }

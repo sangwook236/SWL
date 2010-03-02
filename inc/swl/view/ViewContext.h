@@ -82,11 +82,6 @@ public:
 	/// get the drawing context region
 	const Region2<int> & getRegion() const  {  return drawRegion_;  }
 
-	/// set the viewing region
-	void setViewingRegion(const Region2<double> &viewingRegion)  {  viewingRegion_ = viewingRegion;  }
-	/// get the viewing region
-	const Region2<double> & getViewingRegion() const  {  return viewingRegion_;  }
-
 protected:
 	/// set the context activation flag
 	void setActivation(const bool isActivated)  {  isActivated_ = isActivated;  }
@@ -103,8 +98,6 @@ private:
 protected:
 	/// a drawing context region
 	Region2<int> drawRegion_;
-	/// a viewing region
-	Region2<double> viewingRegion_;
 
 private:
 	/// a flag to check whether off-screen buffer is used

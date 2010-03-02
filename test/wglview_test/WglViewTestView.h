@@ -61,6 +61,8 @@ public:
 	void setWireFrame(const bool isWireFrame);
 	bool isWireFrame() const  {  return isWireFrame_;  }
 
+	void showGradientBackground(const bool isShown)  {  isGradientBackgroundUsed_ = isShown;  }
+	bool isGradientBackgroundShown() const  {  return isGradientBackgroundUsed_;  }
 	void showFloor(const bool isShown)  {  isFloorShown_ = isShown;  }
 	bool isFloorShown() const  {  return isFloorShown_;  }
 	void showColorBar(const bool isShown)  {  isColorBarShown_ = isShown;  }
@@ -76,6 +78,7 @@ private:
 	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
+	void drawGradientBackground() const;
 	void drawFloor(const float minXBound, const float maxXBound, const float minYBound, const float maxYBound, const float minZBound, const float maxZBound, const float angleThreshold, const size_t lineCount, const int lineStippleScaleFactor) const;
 	void drawColorBar() const;
 	void drawCoordinateFrame() const;
@@ -103,9 +106,12 @@ private:
 	bool isPerspective_;
 	bool isWireFrame_;
 
+	bool isGradientBackgroundUsed_;
 	bool isFloorShown_;
 	bool isColorBarShown_;
 	bool isCoordinateFrameShown_;
+
+	const int polygonFacing_;
 
 // Generated message map functions
 protected:

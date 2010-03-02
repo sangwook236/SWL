@@ -170,10 +170,10 @@ void drawMesh()
 		float ratio;
 
 #if 0
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -199,7 +199,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -210,7 +210,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -221,7 +221,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 
@@ -245,7 +245,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -256,7 +256,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -267,16 +267,16 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 				}
 		glEnd();
 #elif 0
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -302,7 +302,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -313,7 +313,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -324,7 +324,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 
@@ -348,7 +348,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -359,7 +359,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -370,16 +370,16 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 				}
 		glEnd();
 #else
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_half);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, material_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_SHININESS, shininess_none);
-		//glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
 		glBegin(GL_QUADS);
@@ -408,7 +408,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -419,7 +419,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -430,7 +430,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 					//
@@ -441,7 +441,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x4, y4, z4);
 				}
@@ -502,7 +502,8 @@ END_MESSAGE_MAP()
 CWglViewTestView::CWglViewTestView()
 : viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
-  isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true)
+  isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
+  polygonFacing_(GL_FRONT_AND_BACK)
 {
 	loadMesh();
 }
@@ -830,6 +831,10 @@ bool CWglViewTestView::initializeView()
 	//
 	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
+	//
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	// 
 	//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
@@ -875,13 +880,13 @@ bool CWglViewTestView::initializeView()
 	// color tracking
 	glEnable(GL_COLOR_MATERIAL);
 	// set material properties which will be assigned by glColor
-	glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
+	glColorMaterial(polygonFacing_, GL_AMBIENT_AND_DIFFUSE);
 
 	// clipping
 	//int maxClipPlanes = 0;
 	//glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(polygonFacing_, GL_FILL);
 
 	return true;
 }
@@ -921,6 +926,9 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
+	if (isGradientBackgroundUsed_)
+		drawGradientBackground();
+
 	if (isFloorShown_)
 	{
 		const float minXBound = -500.0f, maxXBound = 500.0f;
@@ -945,7 +953,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 	GLint oldPolygonMode[2];
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 
-	glPolygonMode(GL_FRONT_AND_BACK, isWireFrame_ ? GL_LINE : GL_FILL);
+	glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
 	//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
 
 	glPushMatrix();
@@ -961,8 +969,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
         glEnable(GL_CLIP_PLANE1);
 
-		//glutWireSphere(500.0, 20, 20);
-		glutSolidSphere(500.0, 20, 20);
+		isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
 
 		glDisable(GL_CLIP_PLANE0);
 		glDisable(GL_CLIP_PLANE1);
@@ -971,9 +978,9 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 	glPushMatrix();
 		//glLoadIdentity();
 		glTranslatef(250.0f, -250.0f, 250.0f);
+
 		glColor3f(0.5f, 0.5f, 1.0f);
-		//glutWireCube(500.0);
-		glutSolidCube(500.0);
+		isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
 	glPopMatrix();
 
 	// restore states
@@ -986,7 +993,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 
 	glPushMatrix();
-		glPolygonMode(GL_FRONT_AND_BACK, isWireFrame_ ? GL_LINE : GL_FILL);
+		glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
 		//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
 
 		//drawCube();
@@ -1027,6 +1034,67 @@ void CWglViewTestView::setWireFrame(const bool isWireFrame)
 	raiseDrawEvent(true);
 }
 
+void CWglViewTestView::drawGradientBackground() const
+{
+	// save states
+	const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
+	if (isLighting) glDisable(GL_LIGHTING);
+	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
+	if (isDepthTest) glDisable(GL_DEPTH_TEST);
+
+	// save modelview matrix
+	glPushMatrix();
+	glLoadIdentity();  // reset modelview matrix
+
+	// set to 2D orthogonal projection
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+		glLoadIdentity();  // reset projection matrix
+		gluOrtho2D(0.0, 1.0, 0.0, 1.0);
+
+#if 0
+		const float topR = 0.776f;
+		const float topG = 0.835f;
+		const float topB = 0.980f;
+		const float bottomR = 0.243f;
+		const float bottomG = 0.443f;
+		const float bottomB = 0.968f;
+#elif 0
+		const float topR = 0.780f;
+		const float topG = 0.988f;
+		const float topB = 0.910f;
+		const float bottomR = 0.302f;
+		const float bottomG = 0.969f;
+		const float bottomB = 0.712f;
+#else
+		const float topR = 0.812f;
+		const float topG = 0.847f;
+		const float topB = 0.863f;
+		const float bottomR = 0.384f;
+		const float bottomG = 0.467f;
+		const float bottomB = 0.510f;
+#endif
+
+		glBegin(GL_QUADS);
+			glColor3f(bottomR, bottomG, bottomB);
+			glVertex3f(0.0f, 0.0f, 0.0f);
+			glVertex3f(1.0f, 0.0f, 0.0f);
+
+			glColor3f(topR, topG, topB);
+			glVertex3f(1.0f, 1.0f, 0.0f);
+			glVertex3f(0.0f, 1.0f, 0.0f);
+		glEnd();
+	glPopMatrix();
+
+	// restore modelview matrix
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+
+	// restore states
+	if (isLighting) glEnable(GL_LIGHTING);
+	if (isDepthTest) glEnable(GL_DEPTH_TEST);
+}
+
 void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, const float minYBound, const float maxYBound, const float minZBound, const float maxZBound, const float angleThreshold, const size_t lineCount, const int lineStippleScaleFactor) const
 {
 	const boost::shared_ptr<camera_type> &camera = topCamera();
@@ -1053,7 +1121,7 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 		if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
 		GLint oldPolygonMode[2];
 		glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
-		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_LINE);
 
 		//const float xmargin = 0.0f, ymargin = 0.0f, zmargin = 0.0f;
 		const float marginRatio = 0.1f;

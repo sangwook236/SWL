@@ -218,11 +218,11 @@ bool WglPrintContext::createOffScreen()
 
 bool WglPrintContext::createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount)
 {
+#if 0
 	// method #1
-/*
 	memBmp_ = CreateCompatibleBitmap(printDC_, drawRegion_.getWidth(), drawRegion_.getHeight());
 	//memBmp_ = CreateCompatibleBitmap(printDC_, (int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5));
-*/
+#else
 	// method #2
 	const size_t bufSize = !isPaletteUsed_ ? sizeof(BITMAPINFO) : sizeof(BITMAPINFO) + sizeof(RGBQUAD) * 255;
 	const boost::scoped_array<unsigned char> buf(new unsigned char [bufSize]);
@@ -232,12 +232,15 @@ bool WglPrintContext::createOffScreenBitmap(const int colorBitCount, const int c
 	// Following routine aligns given value to 4 bytes boundary.
 	// The current implementation of DIB rendering in Windows 95/98/NT seems to be free from this alignment
 	// but old version compatibility is needed.
+#if 1
 	const int width = ((drawRegion_.getWidth() + 3) / 4 * 4 > 0) ? drawRegion_.getWidth() : 4;
 	const int height = (0 == drawRegion_.getHeight()) ? 1 : drawRegion_.getHeight();
-	//const int viewingWidth = (int)std::floor(viewingRegion_.getWidth() + 0.5);
-	//const int viewingHeight = (int)std::floor(viewingRegion_.getHeight() + 0.5);
-	//const int width = ((viewingWidth + 3) / 4 * 4 > 0) ? viewingWidth : 4;
-	//const int height = (0 == viewingHeight) ? 1 : viewingHeight;
+#else
+	const int viewingWidth = (int)std::floor(viewingRegion_.getWidth() + 0.5);
+	const int viewingHeight = (int)std::floor(viewingRegion_.getHeight() + 0.5);
+	const int width = ((viewingWidth + 3) / 4 * 4 > 0) ? viewingWidth : 4;
+	const int height = (0 == viewingHeight) ? 1 : viewingHeight;
+#endif
 
 	bmiDIB.bmiHeader.biSize			= sizeof(BITMAPINFOHEADER);
 	bmiDIB.bmiHeader.biWidth		= width;
@@ -274,6 +277,7 @@ bool WglPrintContext::createOffScreenBitmap(const int colorBitCount, const int c
 	}
 	if (NULL == memBmp_ || NULL == dibBits_) return false;
 	oldBmp_ = (HBITMAP)SelectObject(memDC_, memBmp_);
+#endif
 
 	return true;
 }

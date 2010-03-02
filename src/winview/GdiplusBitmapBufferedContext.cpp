@@ -44,10 +44,12 @@ bool GdiplusBitmapBufferedContext::swapBuffer()
 
 	// when all drawing has been completed, a new graphics canvas should be created,
 	// but this time it should be associated with the actual output screen or window
+#if 1
 	// method #1: the image is scaled to fit the rectangle
 	const bool ret = Gdiplus::Ok == graphics_->DrawImage(memBmp_, drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight());
-	//const bool ret = Gdiplus::Ok == graphics_->DrawImage(memBmp_, Gdiplus::Rect(drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight()));
-/*
+#elif 0
+	const bool ret = Gdiplus::Ok == graphics_->DrawImage(memBmp_, Gdiplus::Rect(drawRegion_.left, drawRegion_.bottom, drawRegion_.getWidth(), drawRegion_.getHeight()));
+#elif 0
 	// method #2: the image is scaled to fit the rectangle
 	const Gdiplus::RectF dstRgn((Gdiplus::REAL)drawRegion_.left, (Gdiplus::REAL)drawRegion_.bottom, (Gdiplus::REAL)drawRegion_.getWidth(), (Gdiplus::REAL)drawRegion_.getHeight());
 	// caution:
@@ -61,10 +63,11 @@ bool GdiplusBitmapBufferedContext::swapBuffer()
 		(Gdiplus::REAL)std::floor(viewingRegion_.getWidth() + 0.5), (Gdiplus::REAL)std::floor(viewingRegion_.getHeight() + 0.5),
 		Gdiplus::UnitPixel
 	);
-*/
+#else
 	// method #3: the image is not scaled to fit the rectangle
-	//Gdiplus::CachedBitmap cachedBmp(memBmp_, graphics_);
-	//const bool ret = Gdiplus::Ok == graphics_->DrawCachedBitmap(&cachedBmp, drawRegion_.left, drawRegion_.bottom);
+	Gdiplus::CachedBitmap cachedBmp(memBmp_, graphics_);
+	const bool ret = Gdiplus::Ok == graphics_->DrawCachedBitmap(&cachedBmp, drawRegion_.left, drawRegion_.bottom);
+#endif
 
 	setDrawing(false);
 	return ret;
@@ -109,8 +112,11 @@ bool GdiplusBitmapBufferedContext::createOffScreen()
 	if (NULL == graphics_) return false;
 
 	// create an off-screen graphics for double-buffering
+#if 1
 	memBmp_ = new Gdiplus::Bitmap(drawRegion_.getWidth(), drawRegion_.getHeight(), graphics_);
-	//memBmp_ = new Gdiplus::Bitmap((int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5), graphics_);
+#else
+	memBmp_ = new Gdiplus::Bitmap((int)std::floor(viewingRegion_.getWidth() + 0.5), (int)std::floor(viewingRegion_.getHeight() + 0.5), graphics_);
+#endif
 	if (NULL == memBmp_)
 	{
 		delete graphics_;
