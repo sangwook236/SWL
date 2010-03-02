@@ -70,6 +70,9 @@ public:
 	void showCoordinateFrame(const bool isShown)  {  isCoordinateFrameShown_ = isShown;  }
 	bool isCoordinateFrameShown() const  {  return isCoordinateFrameShown_;  }
 
+	void setPrinting(const bool isPrinting)  {  isPrinting_ = isPrinting;  }
+	bool isPrinting() const  {  return isPrinting_;  }
+	
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
@@ -84,7 +87,7 @@ private:
 	void drawCoordinateFrame() const;
 
 	void drawText(const bool isBitmapFont, const float x, const float y, const float z, const std::string &str) const;
-	void drawCoordinateFrame(const float height) const;
+	void drawCoordinateFrame(const float height, const int order[]) const;
 
 private:
 	//-------------------------------------------------------------------------
@@ -110,6 +113,8 @@ private:
 	bool isFloorShown_;
 	bool isColorBarShown_;
 	bool isCoordinateFrameShown_;
+
+	bool isPrinting_;
 
 	const int polygonFacing_;
 

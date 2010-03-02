@@ -503,6 +503,7 @@ CWglViewTestView::CWglViewTestView()
 : viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
+  isPrinting_(false),
   polygonFacing_(GL_FRONT_AND_BACK)
 {
 	loadMesh();
@@ -540,11 +541,9 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 		const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
 		const int oldMapMode = pDC->SetMapMode(MM_TEXT);
 
-		// save states
-		const bool isCoordinateFrameShown = isCoordinateFrameShown_;
-		if (isCoordinateFrameShown) isCoordinateFrameShown_ = false;
-		//const bool isColorBarShown = isColorBarShown_;
-		//if (isColorBarShown) isColorBarShown_ = false;
+		// save view's states
+		const bool isPrinting = isPrinting_;
+		if (!isPrinting) isPrinting_ = true;
 
 		//
 		const double eps = 1.0e-20;
@@ -569,9 +568,8 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 			renderScene(printContext, *printCamera);
 		}
 
-		// restore states
-		if (isCoordinateFrameShown) isCoordinateFrameShown_ = true;
-		//if (isColorBarShown) isColorBarShown_ = false;
+		// restore view's states
+		if (!isPrinting) isPrinting_ = false;
 
 		pDC->SetMapMode(oldMapMode);
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
@@ -926,7 +924,7 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-	if (isGradientBackgroundUsed_)
+	if (isGradientBackgroundUsed_ && !isPrinting_)
 		drawGradientBackground();
 
 	if (isFloorShown_)
@@ -1005,7 +1003,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 #endif
 
 	if (isColorBarShown_) drawColorBar();
-	if (isCoordinateFrameShown_) drawCoordinateFrame();
+	if (isCoordinateFrameShown_ && !isPrinting_) drawCoordinateFrame();
 
     return true;
 }
@@ -1041,6 +1039,9 @@ void CWglViewTestView::drawGradientBackground() const
 	if (isLighting) glDisable(GL_LIGHTING);
 	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 	if (isDepthTest) glDisable(GL_DEPTH_TEST);
+	GLint oldPolygonMode[2];
+	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+	if (GL_FILL != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_FILL);
 
 	// save modelview matrix
 	glPushMatrix();
@@ -1091,6 +1092,7 @@ void CWglViewTestView::drawGradientBackground() const
 	glPopMatrix();
 
 	// restore states
+	if (GL_FILL != oldPolygonMode[1]) glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
 	if (isLighting) glEnable(GL_LIGHTING);
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
@@ -1124,9 +1126,9 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_LINE);
 
 		//const float xmargin = 0.0f, ymargin = 0.0f, zmargin = 0.0f;
-		const float marginRatio = 0.1f;
+		const float marginRatio = 0.3f;
 		const float xmargin = (maxXBound - minXBound) * marginRatio, ymargin = (maxYBound - minYBound) * marginRatio, zmargin = (maxZBound - minZBound) * marginRatio;
-		const float margin = std::min(xmargin, std::min(ymargin, zmargin));
+		const float margin = std::min(std::min(xmargin, ymargin), zmargin);
 		const float xmin = minXBound - margin, xmax = maxXBound + margin;
 		const float ymin = minYBound - margin, ymax = maxYBound + margin;
 		const float zmin = minZBound - margin, zmax = maxZBound + margin;
@@ -1147,7 +1149,7 @@ void CWglViewTestView::drawFloor(const float minXBound, const float maxXBound, c
 		glLineStipple(lineStippleScaleFactor, 0xAAAA);
 		glBegin(GL_LINES);
 			// the color of a floor
-			glColor3f(0.7f, 0.7f, 0.7f);
+			glColor3f(0.5f, 0.5f, 0.5f);
 
 			// xy-plane
 			if (isXYPlaneShown)
@@ -1330,18 +1332,19 @@ void CWglViewTestView::drawCoordinateFrame() const
 		const double eyeDist = camera->getEyeDistance();
 		glTranslated(eyeX + eyeDist * dirX, eyeY + eyeDist * dirY, eyeZ + eyeDist * dirZ);
 
+		std::multimap<double, int> vals;
+		vals.insert(std::make_pair(std::acos(dirX), 0));
+		vals.insert(std::make_pair(std::acos(dirY), 1));
+		vals.insert(std::make_pair(std::acos(dirZ), 2));
+		std::multimap<double, int>::iterator it = vals.begin();
+		const int order1 = it->second;  ++it;
+		const int order2 = it->second;  ++it;
+		const int order3 = it->second;
+		const int order[] = { order1, order2, order3 };
+
 		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
 		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(length);
-
-		// draw characters
-		const double zoomFactor = camera->getZoomFactor();
-		glColor3f(1.0f, 0.0f, 0.0f); 
-     	drawText(true, length, 0.0f, 0.0f, "X"); 
-		glColor3f(0.0f, 1.0f, 0.0f); 
-		drawText(true, 0.0f, length, 0.0f, "Y"); 
-		glColor3f(0.0f, 0.0f, 1.0f); 
-		drawText(true, 0.0f, 0.0f, length, "Z"); 
+		drawCoordinateFrame(length, order);
 	glPopMatrix();
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 
@@ -1363,7 +1366,7 @@ void CWglViewTestView::drawText(const bool isBitmapFont, const float x, const fl
 		isBitmapFont ? glutBitmapCharacter(font, *it) : glutStrokeCharacter(font, *it);
 }
 
-void CWglViewTestView::drawCoordinateFrame(const float height) const
+void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]) const
 {
 	const float ratio = 0.7f;  // cylinder ratio
 	const float size = height * ratio;
@@ -1378,31 +1381,44 @@ void CWglViewTestView::drawCoordinateFrame(const float height) const
 	gluQuadricDrawStyle(obj, GLU_FILL);
 	gluQuadricNormals(obj, GLU_SMOOTH);
 
-	// z axis
-	glPushMatrix();
-		glColor3f(0, 0, 1);	
-		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-		glTranslated(0, 0, size);
-		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
-	glPopMatrix();
-	
-	// x axis
-	glPushMatrix();
-		glColor3f(1, 0, 0);
-		glRotated(90, 0, 1, 0);
-		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-		glTranslated(0, 0, size);
-		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
-	glPopMatrix();
- 
-	// y axis
-	glPushMatrix();
-		glColor3f(0, 1, 0);
-		glRotated(-90, 1, 0, 0);
-		gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-		glTranslated(0, 0, size);
-		gluCylinder(obj, coneRadius, 0, coneHeight, 12, 1);
-	glPopMatrix();
+	for (int i = 0; i < 3; ++i)
+	{
+		if (0 == order[i])
+		{
+			// x axis
+			glColor3f(1.0f, 0.0f, 0.0f);
+			glPushMatrix();
+				glRotated(90.0, 0.0, 1.0, 0.0);
+				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+				glTranslated(0.0, 0.0, size);
+				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+			glPopMatrix();
+	     	drawText(true, height, 0.0f, 0.0f, "X"); 
+		}
+		else if (1 == order[i])
+		{
+			// y axis
+			glColor3f(0.0f, 1.0f, 0.0f);
+			glPushMatrix();
+				glRotated(-90.0, 1.0, 0.0, 0.0);
+				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+				glTranslated(0.0, 0.0, size);
+				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+			glPopMatrix();
+			drawText(true, 0.0f, height, 0.0f, "Y"); 
+		}
+		else if (2 == order[i])
+		{
+			// z axis
+			glColor3f(0.0f, 0.0f, 1.0f);	
+			glPushMatrix();
+				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+				glTranslated(0.0, 0.0, size);
+				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+			glPopMatrix();
+			drawText(true, 0.0f, 0.0f, height, "Z"); 
+		}
+	}
  
 	gluDeleteQuadric(obj);
 }
@@ -1739,18 +1755,15 @@ void CWglViewTestView::OnPrintandcapturePrintviewusinggdi()
 
 	//
 #if 0
-	// save states
-	const bool isCoordinateFrameShown = isCoordinateFrameShown_;
-	if (isCoordinateFrameShown) isCoordinateFrameShown_ = false;
-	//const bool isColorBarShown = isColorBarShown_;
-	//if (isColorBarShown) isColorBarShown_ = false;
+	// save view's states
+	const bool isPrinting = isPrinting_;
+	if (!isPrinting) isPrinting_ = true;
 
 	if (!swl::printWglViewUsingGdi(*this, pd.hDC))
 		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
 
-	// restore states
-	if (isCoordinateFrameShown) isCoordinateFrameShown_ = true;
-	//if (isColorBarShown) isColorBarShown_ = false;
+	// restore view's states
+	if (!isPrinting) isPrinting_ = false;
 #else
 	CDC *pDC = CDC::FromHandle(pd.hDC);
 	if (pDC)
