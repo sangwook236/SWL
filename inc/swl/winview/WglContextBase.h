@@ -30,6 +30,10 @@ private:
 	WglContextBase & operator=(const WglContextBase &);
 
 public:
+	/// get the native window handle
+	virtual boost::any getNativeWindowHandle() = 0;
+	virtual const boost::any getNativeWindowHandle() const = 0;
+
 	/// share an OpenGL display list
 	bool shareDisplayList(const WglContextBase &srcContext);
 

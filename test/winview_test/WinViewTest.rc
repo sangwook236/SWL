@@ -176,6 +176,8 @@ BEGIN
         MENUITEM "Zoom All",                    ID_VIEWHANDLING_ZOOMALL
         MENUITEM "Zoom In",                     ID_VIEWHANDLING_ZOOMIN
         MENUITEM "Zoom Out",                    ID_VIEWHANDLING_ZOOMOUT
+        MENUITEM SEPARATOR
+        MENUITEM "Pick Object",                 32795
     END
     POPUP "Print and Capture"
     BEGIN

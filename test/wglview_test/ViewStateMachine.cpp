@@ -16,6 +16,41 @@
 
 namespace swl {
 
+namespace {
+
+void drawRubberBand(const MouseEvent &evt, HDC hdc, const int initX, const int initY, const int prevX, const int prevY)
+{
+	{
+		const int left = prevX <= initX ? prevX : initX;
+		const int right = prevX > initX ? prevX : initX;
+		const int top = prevY <= initY ? prevY : initY;  // downward y-axis
+		const int bottom = prevY > initY ? prevY : initY;  // downward y-axis
+
+		RECT rect;
+		rect.left = left;
+		rect.right = right;
+		rect.top = top;
+		rect.bottom = bottom;
+		DrawFocusRect(hdc, &rect);
+	}
+
+	{
+		const int left = evt.x <= initX ? evt.x : initX;
+		const int right = evt.x > initX ? evt.x : initX;
+		const int top = evt.y <= initY ? evt.y : initY;  // downward y-axis
+		const int bottom = evt.y > initY ? evt.y : initY;  // downward y-axis
+
+		RECT rect;
+		rect.left = left;
+		rect.right = right;
+		rect.top = top;
+		rect.bottom = bottom;
+		DrawFocusRect(hdc, &rect);
+	}
+}
+
+}  // unnamed namespace
+
 //-----------------------------------------------------------------------------------
 // 
 
@@ -347,53 +382,57 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
-		ViewContext &context = fsm.getViewContext();
-		ViewCamera2 &camera = fsm.getViewCamera();
 
+#if 1
 		CView *vw = dynamic_cast<CView *>(&view);
 		if (vw)
 		{
 			CClientDC dc(vw);
 			drawRubberBand(evt, dc.GetSafeHdc());
 		}
-/*
-		// this implementation is not working
-		boost::any &nativeCtx;
+#else
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw && !vw->isContextStackEmpty())
 		{
-			ViewContext::guard_type guard(context);
-			nativeCtx = context.getNativeContext();
-		}
-		if (!nativeCtx.empty())
-		{
-			try
+			const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
+			if (NULL != ctx.get())
 			{
-				HDC *hdc = boost::any_cast<HDC *>(nativeCtx);
-				if (hdc)
+				const boost::any nativeHandle = ctx->getNativeWindowHandle();
+				if (!nativeHandle.empty())
 				{
-					drawRubberBand(evt, *hdc);
-					//view.updateScrollBar();
-				}
-			}
-			catch (const boost::bad_any_cast &)
-			{
-			}
+					HWND *hwnd = NULL;
+					try
+					{
+						hwnd = boost::any_cast<HWND *>(nativeHandle);
+					}
+					catch (const boost::bad_any_cast &)
+					{
+						hwnd = NULL;
+					}
 
-			try
-			{
-				Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(nativeCtx);
-				if (graphics)
-				{
-					HDC hdc = graphics->GetHDC();
-					drawRubberBand(evt, hdc);
-					//view.updateScrollBar();
-					graphics->ReleaseHDC(hdc);
+					if (hwnd)
+					{
+#if 1
+						HDC hdc = GetDC(*hwnd);
+						drawRubberBand(evt, *hdc, initX_, initY_, prevX_, prevY_);
+						//view.updateScrollBar();
+						ReleaseDC(*hwnd, hdc);
+#else
+						Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+						if (graphics)
+						{
+							HDC hdc = graphics->GetHDC();
+							drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
+							//view.updateScrollBar();
+							graphics->ReleaseHDC(hdc);
+							delete graphics;
+						}
+#endif
+					}
 				}
 			}
-			catch (const boost::bad_any_cast &)
-			{
-			}
 		}
-*/
+#endif
 	}
 	catch (const std::bad_cast &)
 	{
@@ -428,27 +467,6 @@ void ZoomRegionState::wheelMouse(const MouseEvent &evt)
 	catch (const std::bad_cast &)
 	{
 		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
-}
-
-void ZoomRegionState::drawRubberBand(const MouseEvent &evt, HDC hdc) const
-{
-	{
-		const int left = prevX_ <= initX_ ? prevX_ : initX_;
-		const int right = prevX_ > initX_ ? prevX_ : initX_;
-		const int top = prevY_ <= initY_ ? prevY_ : initY_;  // downward y-axis
-		const int bottom = prevY_ > initY_ ? prevY_ : initY_;  // downward y-axis
-
-		DrawFocusRect(hdc, &CRect(left, top, right, bottom));
-	}
-
-	{
-		const int left = evt.x <= initX_ ? evt.x : initX_;
-		const int right = evt.x > initX_ ? evt.x : initX_;
-		const int top = evt.y <= initY_ ? evt.y : initY_;  // downward y-axis
-		const int bottom = evt.y > initY_ ? evt.y : initY_;  // downward y-axis
-
-		DrawFocusRect(hdc, &CRect(left, top, right, bottom));
 	}
 }
 
@@ -546,6 +564,116 @@ void ZoomOutState::handleEvent()
 	{
 		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 	}
+}
+
+PickObjectState::PickObjectState()
+: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+PickObjectState::~PickObjectState()
+{
+}
+
+void PickObjectState::pressMouse(const MouseEvent &evt)
+{
+	isDragging_ = true;
+	initX_ = prevX_ = evt.x;
+	initY_ = prevY_ = evt.y;
+}
+
+void PickObjectState::releaseMouse(const MouseEvent &evt)
+{
+	isDragging_ = false;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+		ViewContext &context = fsm.getViewContext();
+		ViewCamera2 &camera = fsm.getViewCamera();
+
+		{
+			ViewContext::guard_type guard(context);
+			const swl::Region2<int> vp = camera.getViewport();
+			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);
+			view.raiseDrawEvent(true);
+			//view.updateScrollBar();
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void PickObjectState::moveMouse(const MouseEvent &evt)
+{
+	if (!isDragging_) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+#if 1
+		CView *vw = dynamic_cast<CView *>(&view);
+		if (vw)
+		{
+			CClientDC dc(vw);
+			drawRubberBand(evt, dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_);
+		}
+#else
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw && !vw->isContextStackEmpty())
+		{
+			const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
+			if (NULL != ctx.get())
+			{
+				const boost::any nativeHandle = ctx->getNativeWindowHandle();
+				if (!nativeHandle.empty())
+				{
+					HWND *hwnd = NULL;
+					try
+					{
+						hwnd = boost::any_cast<HWND *>(nativeHandle);
+					}
+					catch (const boost::bad_any_cast &)
+					{
+						hwnd = NULL;
+					}
+
+					if (hwnd)
+					{
+#if 1
+						HDC hdc = GetDC(*hwnd);
+						drawRubberBand(evt, *hdc, initX_, initY_, prevX_, prevY_);
+						//view.updateScrollBar();
+						ReleaseDC(*hwnd, hdc);
+#else
+						Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+						if (graphics)
+						{
+							HDC hdc = graphics->GetHDC();
+							drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
+							//view.updateScrollBar();
+							graphics->ReleaseHDC(hdc);
+							delete graphics;
+						}
+#endif
+					}
+				}
+			}
+		}
+#endif
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
 }
 
 }  // namespace swl

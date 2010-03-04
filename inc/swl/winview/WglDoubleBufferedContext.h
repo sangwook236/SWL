@@ -24,13 +24,17 @@ private:
 	WglDoubleBufferedContext(const WglDoubleBufferedContext &);
 	WglDoubleBufferedContext & operator=(const WglDoubleBufferedContext &);
 
-	/// get the native context
-	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
-	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
-
 public:
 	/// swap buffers
 	/*virtual*/ bool swapBuffer();
+
+	/// get the native window handle
+	/*virtual*/ boost::any getNativeWindowHandle()  {  return NULL != hWnd_ ? boost::any(&hWnd_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeWindowHandle() const  {  return NULL != hWnd_ ? boost::any(&hWnd_) : boost::any();  }
+
+	/// get the native context
+	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&hDC_) : boost::any();  }
 
 private:
 	/// activate the context

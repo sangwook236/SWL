@@ -117,12 +117,14 @@ public:
 	afx_msg void OnViewhandlingZoomall();
 	afx_msg void OnViewhandlingZoomin();
 	afx_msg void OnViewhandlingZoomout();
+	afx_msg void OnViewhandlingPickobject();
 	afx_msg void OnUpdateViewhandlingPan(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewhandlingRotate(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI);
 	afx_msg void OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI);
+	afx_msg void OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI);
 	afx_msg void OnPrintandcapturePrintviewusinggdi();
 	afx_msg void OnPrintandcaptureCaptureviewusinggdi();
 	afx_msg void OnPrintandcaptureCaptureviewusinggdiplus();

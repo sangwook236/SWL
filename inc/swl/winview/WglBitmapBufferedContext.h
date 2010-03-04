@@ -30,6 +30,10 @@ public:
 	/// resize the context
 	/*virtual*/ bool resize(const int x1, const int y1, const int x2, const int y2);
 
+	/// get the native window handle
+	/*virtual*/ boost::any getNativeWindowHandle()  {  return NULL != hWnd_ ? boost::any(&hWnd_) : boost::any();  }
+	/*virtual*/ const boost::any getNativeWindowHandle() const  {  return NULL != hWnd_ ? boost::any(&hWnd_) : boost::any();  }
+
 	/// get the native context
 	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }

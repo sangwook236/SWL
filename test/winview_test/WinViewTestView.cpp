@@ -66,12 +66,14 @@ BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
 	ON_COMMAND(ID_VIEWHANDLING_ZOOMALL, &CWinViewTestView::OnViewhandlingZoomall)
 	ON_COMMAND(ID_VIEWHANDLING_ZOOMIN, &CWinViewTestView::OnViewhandlingZoomin)
 	ON_COMMAND(ID_VIEWHANDLING_ZOOMOUT, &CWinViewTestView::OnViewhandlingZoomout)
+	ON_COMMAND(ID_VIEWHANDLING_PICKOBJECT, &CWinViewTestView::OnViewhandlingPickobject)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_PAN, &CWinViewTestView::OnUpdateViewhandlingPan)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ROTATE, &CWinViewTestView::OnUpdateViewhandlingRotate)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMREGION, &CWinViewTestView::OnUpdateViewhandlingZoomregion)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMALL, &CWinViewTestView::OnUpdateViewhandlingZoomall)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMIN, &CWinViewTestView::OnUpdateViewhandlingZoomin)
 	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_ZOOMOUT, &CWinViewTestView::OnUpdateViewhandlingZoomout)
+	ON_UPDATE_COMMAND_UI(ID_VIEWHANDLING_PICKOBJECT, &CWinViewTestView::OnUpdateViewhandlingPickobject)
 	ON_COMMAND(ID_PRINTANDCAPTURE_PRINTVIEWUSINGGDI, &CWinViewTestView::OnPrintandcapturePrintviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdi)
 	ON_COMMAND(ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDIPLUS, &CWinViewTestView::OnPrintandcaptureCaptureviewusinggdiplus)
@@ -972,6 +974,13 @@ void CWinViewTestView::OnViewhandlingZoomout()
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
+void CWinViewTestView::OnViewhandlingPickobject()
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView: view state
+	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+}
+
 void CWinViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
@@ -1025,6 +1034,17 @@ void CWinViewTestView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
+	else pCmdUI->SetCheck(0);
+}
+
+void CWinViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
+{
+	//-------------------------------------------------------------------------
+	// This code is required for SWL.WinView: view state
+	pCmdUI->Enable(FALSE);
+
+	if (viewStateFsm_.get())
+		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 
