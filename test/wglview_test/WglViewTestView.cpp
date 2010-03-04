@@ -827,7 +827,7 @@ bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
-		if (!context.get() || context->isDrawing())
+		if (!context || context->isDrawing())
 			return false;
 
 		context_type::guard_type guard(*context);
@@ -1177,7 +1177,11 @@ void CWglViewTestView::drawGradientBackground() const
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 	if (GL_FILL != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_FILL);
 
+	int oldMatrixMode = 0;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+
 	// save modelview matrix
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();  // reset modelview matrix
 
@@ -1226,6 +1230,8 @@ void CWglViewTestView::drawGradientBackground() const
 	glPopMatrix();
 
 	// restore states
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
+
 	if (GL_FILL != oldPolygonMode[1])
 		//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 		glPolygonMode(polygonFacing_, oldPolygonMode[1]);
@@ -1411,7 +1417,11 @@ void CWglViewTestView::drawColorBar() const
 	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 	if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
+	int oldMatrixMode = 0;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+
 	// save modelview matrix
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
 	glLoadIdentity();  // reset modelview matrix
 
@@ -1456,6 +1466,8 @@ void CWglViewTestView::drawColorBar() const
 	glPopMatrix();
 
 	// restore states
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
+
 	if (isLighting) glEnable(GL_LIGHTING);
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
