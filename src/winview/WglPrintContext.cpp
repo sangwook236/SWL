@@ -210,9 +210,6 @@ bool WglPrintContext::createOffScreen()
 		return false;
 	}
 
-	// create & share a display list
-	createDisplayList(memDC_);
-
 	return true;
 }
 

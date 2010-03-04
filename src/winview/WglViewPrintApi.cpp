@@ -53,14 +53,30 @@ bool printWglViewUsingGdi(WglViewBase &view, HDC hPrintDC)
 		const int x0 = rctPage.left + (int)std::floor((rctPage.getWidth() - width0) * 0.5), y0 = rctPage.bottom + (int)std::floor((rctPage.getHeight() - height0) * 0.5);
 
 		{
+			const boost::shared_ptr<WglViewBase::context_type> &currContext = view.topContext();
+
 			const std::auto_ptr<WglViewBase::context_type> printContext(new WglPrintContext(hPrintDC, Region2<int>(x0, y0, x0 + w0, y0 + h0)));
 			const std::auto_ptr<WglViewBase::camera_type> printCamera(dynamic_cast<WglViewBase::camera_type *>(currCamera->cloneCamera()));
+
+			const bool isDisplayListShared = !currContext ? false : printContext->shareDisplayList(*currContext);
+
 			if (printCamera.get() && printContext.get() && printContext->isActivated())
 			{
+				const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
+				// push a new name base of OpenGL display list
+				if (doesRecreateDisplayListUsed) view.pushDisplayList(true);
+
 				view.initializeView();
 				printCamera->setViewRegion(currCamera->getCurrentViewRegion());
 				printCamera->setViewport(0, 0, w0, h0);
+
+				// re-create a OpenGL display list
+				if (doesRecreateDisplayListUsed) view.createDisplayList(true);
+
 				view.renderScene(*printContext, *printCamera);
+
+				// pop a new name base of OpenGL display list
+				if (doesRecreateDisplayListUsed) view.popDisplayList(true);
 			}
 		}
 #endif

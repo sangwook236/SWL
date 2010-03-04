@@ -81,7 +81,7 @@ bool OglCamera::doUpdateFrustum()
 	if (oldMatrixMode != GL_PROJECTION) glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 
-	const Region2<double> rctViewRegion = getCurrentViewRegion();
+	const Region2<double> &rctViewRegion = getCurrentViewRegion();
 
 	if (isPerspective_)
 	{
@@ -93,7 +93,7 @@ bool OglCamera::doUpdateFrustum()
 		//          object coordinates <==> window coordinates 으로의 좌표변경시 이들의 영향을 고려하여야 한다
 		if (nearPlane_ > 0.0 && farPlane_ > 0.0 && nearPlane_ < farPlane_)
 		{
-			double dRatio = calcResizingRatio();
+			const double dRatio = calcResizingRatio();
 			glFrustum(
 				rctViewRegion.left * dRatio, rctViewRegion.right * dRatio,
 				rctViewRegion.bottom * dRatio, rctViewRegion.top * dRatio,

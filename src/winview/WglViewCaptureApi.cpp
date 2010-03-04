@@ -132,6 +132,12 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 
 	const Region2<int> &viewport = currCamera->getViewport();
 /*
+	const boost::shared_ptr<WglViewBase::context_type> &currContext = view.topContext();
+	const boost::shared_ptr<WglViewBase::camera_type> &currCamera = view.topCamera();
+ 	if (!currContext || !currCamera) return false;
+
+	const Region2<int> &viewport = currCamera->getViewport();
+
 	bool isCaptured = true;
 	if (currContext->isOffScreenUsed())
 	{
@@ -156,11 +162,25 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 */
 		WglBitmapBufferedContext captureContext(hWnd, viewport, false);
 
+		const bool isDisplayListShared = !currContext ? false : captureContext.shareDisplayList(*currContext);
+
 		{
 			WglBitmapBufferedContext::guard_type guard(captureContext);
+
+			const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
+			// push a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) view.pushDisplayList(true);
+
 			view.initializeView();
 			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
+
+			// re-create a OpenGL display list
+			if (doesRecreateDisplayListUsed) view.createDisplayList(true);
+
 			view.renderScene(captureContext, *currCamera);
+
+			// pop a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) view.popDisplayList(true);
 		}
 
 		// write DIB

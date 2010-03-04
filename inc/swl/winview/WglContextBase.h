@@ -30,21 +30,14 @@ private:
 	WglContextBase & operator=(const WglContextBase &);
 
 public:
-	/// create an OpenGL display list
-	void createDisplayList(const HDC hDC);
-
-	/// get the OpenGL shared display list
-	static HGLRC & getSharedRenderingContext()  {  return sSharedRC_;  }
-	/// reset the OpenGL shared display list
-	static void resetSharedRenderingContext()  {  sSharedRC_ = 0L;  }
+	/// share an OpenGL display list
+	bool shareDisplayList(const WglContextBase &srcContext);
 
 	/// get the OpenGL rendering context
 	HGLRC & getRenderingContext()  {  return wglRC_;  }
 	const HGLRC & getRenderingContext() const  {  return wglRC_;  }
 
 protected:
-	/// share an OpenGL display list
-	static bool shareDisplayList(HGLRC &glRC);
 	/// create a palette
 	static void createPalette(HDC hDC, const PIXELFORMATDESCRIPTOR &pfd, const int colorBitCount);
 	/// delete a palette
@@ -65,10 +58,6 @@ protected:
     static HPALETTE shPalette_;
 	/// a palette usage count
     static size_t sUsedPaletteCount_;
-
-private:
-	/// a sharing OpenGL rendering context
-    static HGLRC sSharedRC_;
 };
 
 }  // namespace swl

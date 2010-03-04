@@ -68,4 +68,73 @@ void WglViewBase::renderScene(context_type &context, camera_type &camera)
 #endif
 }
 
+bool WglViewBase::pushDisplayList(const bool isContextActivated, const bool disableDisplayList /*= false*/)
+{
+	if (disableDisplayList)
+	{
+		displayListStack_.push(0);
+		return true;
+	}
+	else
+	{
+		unsigned int displayListNameBase = 0;
+
+		if (isContextActivated)
+			displayListNameBase = glGenLists(maxDisplayListCount_);
+		else
+		{
+			const boost::shared_ptr<context_type> &context = topContext();
+			if (!context.get()) return false;
+
+			context_type::guard_type guard(*context);
+			displayListNameBase = glGenLists(maxDisplayListCount_);
+		}
+
+		if (displayListNameBase)
+		{
+			displayListStack_.push(displayListNameBase);
+			return true;
+		}
+		else return false;
+	}
+}
+
+bool WglViewBase::popDisplayList(const bool isContextActivated)
+{
+	if (displayListStack_.empty()) return false;
+
+	const unsigned int currDisplayListNameBase = displayListStack_.top();
+	if (0 == currDisplayListNameBase)
+	{
+		displayListStack_.pop();
+		return true;
+	}
+	else
+	{
+		if (isContextActivated)
+			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
+		else
+		{
+			const boost::shared_ptr<context_type> &context = topContext();
+			if (!context.get()) return false;
+
+			context_type::guard_type guard(*context);
+			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
+		}
+
+		displayListStack_.pop();
+		return true;
+	}
+}
+
+bool WglViewBase::isDisplayListUsed() const
+{
+	return !displayListStack_.empty() && 0 != displayListStack_.top();
+}
+
+unsigned int WglViewBase::getCurrentDisplayListNameBase() const
+{
+	return displayListStack_.empty() ? 0 : displayListStack_.top();
+}
+
 }  // namespace swl

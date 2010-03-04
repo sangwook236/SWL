@@ -310,7 +310,7 @@ void CWinViewTestView::OnInitialUpdate()
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
 		}
 
-		raiseDrawEvent(false);
+		raiseDrawEvent(true);
 	}
 
 	// using a locally-created context
@@ -338,7 +338,7 @@ void CWinViewTestView::OnPaint()
 
 	// using a locally-created context
 	if (useLocallyCreatedContext_)
-		raiseDrawEvent(false);
+		raiseDrawEvent(true);
 	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
@@ -349,7 +349,7 @@ void CWinViewTestView::OnPaint()
 				//context_type::guard_type guard(*context);
 				context->swapBuffer();
 			}
-			else raiseDrawEvent(true);
+			else raiseDrawEvent(false);
 		}
 	}
 
@@ -375,7 +375,7 @@ void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
 
 	++idx_;
 
-	raiseDrawEvent(useLocallyCreatedContext_ ? false : true);
+	raiseDrawEvent(useLocallyCreatedContext_);
 
 	CView::OnTimer(nIDEvent);
 }
@@ -386,6 +386,8 @@ void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
 bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
 	if (isContextActivated)
+		OnDraw(0L);
+	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
 		if (!context.get() || context->isDrawing())
@@ -394,7 +396,6 @@ bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 		context_type::guard_type guard(*context);
 		OnDraw(0L);
 	}
-	else OnDraw(0L);
 
 	return true;
 }
@@ -419,7 +420,7 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 		initializeView();
 		const boost::shared_ptr<camera_type> &camera = topCamera();
 		if (camera.get()) camera->setViewport(x1, y1, x2, y2);	
-		raiseDrawEvent(false);
+		raiseDrawEvent(true);
 
 		return true;
 	}

@@ -178,7 +178,7 @@ void PanState::releaseMouse(const MouseEvent &evt)
 		{
 			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -206,7 +206,7 @@ void PanState::moveMouse(const MouseEvent &evt)
 		{
 			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -256,7 +256,7 @@ void RotateState::releaseMouse(const MouseEvent &evt)
 		{
 			ViewContext::guard_type guard(context);
 			camera.rotateView(dX, dY);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 		}
 	}
 	catch (const std::bad_cast &)
@@ -283,7 +283,7 @@ void RotateState::moveMouse(const MouseEvent &evt)
 		{
 			ViewContext::guard_type guard(context);
 			camera.rotateView(dX, dY);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 		}
 	}
 	catch (const std::bad_cast &)
@@ -329,7 +329,7 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 			ViewContext::guard_type guard(context);
 			const swl::Region2<int> vp = camera.getViewport();
 			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -421,7 +421,7 @@ void ZoomRegionState::wheelMouse(const MouseEvent &evt)
 				camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25 * evt.scrollAmount);  // zoom-out
 			else
 				camera.scaleViewRegion(0.8 * -evt.scrollAmount);  // zoom-in
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -474,7 +474,7 @@ void ZoomAllState::handleEvent()
 		{
 			ViewContext::guard_type guard(context);
 			camera.restoreViewRegion();
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -506,7 +506,7 @@ void ZoomInState::handleEvent()
 		{
 			ViewContext::guard_type guard(context);
 			camera.scaleViewRegion(0.8);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}
@@ -538,7 +538,7 @@ void ZoomOutState::handleEvent()
 		{
 			ViewContext::guard_type guard(context);
 			camera.scaleViewRegion(/*1.0 / 0.8 =*/ 1.25);
-			view.raiseDrawEvent(false);
+			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
 	}

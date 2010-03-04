@@ -53,6 +53,8 @@ public:
 	/*virtual*/ bool initializeView();
 	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
+	/*virtual*/ bool createDisplayList(const bool isContextActivated);
+
 	//-------------------------------------------------------------------------
 	//
 
@@ -72,7 +74,7 @@ public:
 
 	void setPrinting(const bool isPrinting)  {  isPrinting_ = isPrinting;  }
 	bool isPrinting() const  {  return isPrinting_;  }
-	
+
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
@@ -81,18 +83,16 @@ private:
 	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
-	bool initializeDisplayList();
-	void finalizeDisplayList();
-	void createDisplayList() const;
-
-	void drawObject(const bool createDisplayList = false) const;
+	void drawMainContent() const;
 	void drawGradientBackground() const;
-	void drawFloor(const bool createDisplayList = false) const;
+	void drawFloor() const;
 	void drawColorBar() const;
 	void drawCoordinateFrame() const;
 
 	void drawText(const bool isBitmapFont, const float x, const float y, const float z, const std::string &str) const;
 	void drawCoordinateFrame(const float height, const int order[]) const;
+
+	void createDisplayLists(const unsigned int displayListNameBase) const;
 
 private:
 	//-------------------------------------------------------------------------
@@ -105,12 +105,12 @@ private:
 
 	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
 
-	//
-	const int maxDisplayListCount_;
-	unsigned int displayListNameBase_;
+	//-------------------------------------------------------------------------
+	// OpenGL display list
 
-	const int objectDisplayListName_;
-	const int floorDisplayListName_;
+	enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR };
+	//enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
+	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
 
 	//-------------------------------------------------------------------------
 	//

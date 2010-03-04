@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "EchoTcpSocketSession.h"
+#include <iostream>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

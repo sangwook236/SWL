@@ -502,8 +502,8 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-: viewStateFsm_(),
-  maxDisplayListCount_(2), displayListNameBase_(0), objectDisplayListName_(0), floorDisplayListName_(1),
+: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT),
+  viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false),
@@ -561,8 +561,13 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 		const int w0 = (int)std::floor(width0), h0 = (int)std::floor(height0);
 		const int x0 = rctPage.left + (int)std::floor((rctPage.getWidth() - width0) * 0.5), y0 = rctPage.bottom + (int)std::floor((rctPage.getHeight() - height0) * 0.5);
 
+		const boost::shared_ptr<context_type> &context = topContext();
+
 		swl::WglPrintContext printContext(pDC->GetSafeHdc(), swl::Region2<int>(x0, y0, x0 + w0, y0 + h0));
 		const std::auto_ptr<camera_type> printCamera(dynamic_cast<WglViewBase::camera_type *>(camera->cloneCamera()));
+
+		const bool isDisplayListShared = !context ? false : printContext.shareDisplayList(*context);
+
 		if (printCamera.get() && printContext.isActivated())
 		{
 			initializeView();
@@ -682,10 +687,9 @@ void CWglViewTestView::OnInitialUpdate()
 
 	// create a context
 	if (1 == drawMode_)
-		// it is not working with OpenGL display list.
+		// it is not working with clipboard in Windows.
 		pushContext(boost::shared_ptr<context_type>(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false)));
 	else if (2 == drawMode_)
-		// it is better working with OpenGL display list, but not perfect.
 		pushContext(boost::shared_ptr<context_type>(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
 	// create a camera
@@ -713,10 +717,9 @@ void CWglViewTestView::OnInitialUpdate()
 		context_type::guard_type guard(*viewContext);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-		// OpenGL context has to be activated
-		if (!initializeDisplayList())
+		if (!pushDisplayList(true))
 		{
-			// error: OpenGL display list cannot be generated !!!
+			// error: OpenGL display list cannot be initialized !!!
 		}
 #endif
 
@@ -733,8 +736,8 @@ void CWglViewTestView::OnInitialUpdate()
 			//viewCamera->setEyeDistance(1000.0, false);
 			//viewCamera->setObjectPosition(110.0, 110.0, 150.0, false);
 
-			//	(left, bottom, right, top) is set wrt a eye coordinates frame
-			//	(near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
+			// (left, bottom, right, top) is set wrt a eye coordinates frame
+			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
 			//viewCamera->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
 			viewCamera->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
 			//viewCamera->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
@@ -745,11 +748,10 @@ void CWglViewTestView::OnInitialUpdate()
 		}
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-		// OpenGL context has to be activated & the setting of a camera is done
-		createDisplayList();
+		createDisplayList(true);
 #endif
 
-		raiseDrawEvent(false);
+		raiseDrawEvent(true);
 	}
 
 	// using a locally-created context
@@ -762,13 +764,9 @@ void CWglViewTestView::OnDestroy()
 	CView::OnDestroy();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	// TODO [check] >> OpenGL context has to be activated
-	const boost::shared_ptr<context_type> &context = topContext();
-	if (context.get())
+	if (!popDisplayList(false))
 	{
-		// guard the context
-		context_type::guard_type guard(*context);
-		finalizeDisplayList();
+		// error: OpenGL display list cannot be finalized !!!
 	}
 #endif
 
@@ -788,7 +786,7 @@ void CWglViewTestView::OnPaint()
 
 	// using a locally-created context
 	if (useLocallyCreatedContext_)
-		raiseDrawEvent(false);
+		raiseDrawEvent(true);
 	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
@@ -799,7 +797,7 @@ void CWglViewTestView::OnPaint()
 				//context_type::guard_type guard(*context);
 				context->swapBuffer();
 			}
-			else raiseDrawEvent(true);
+			else raiseDrawEvent(false);
 		}
 	}
 
@@ -823,6 +821,8 @@ void CWglViewTestView::OnSize(UINT nType, int cx, int cy)
 bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
 	if (isContextActivated)
+		OnDraw(0L);
+	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
 		if (!context.get() || context->isDrawing())
@@ -831,7 +831,6 @@ bool CWglViewTestView::raiseDrawEvent(const bool isContextActivated)
 		context_type::guard_type guard(*context);
 		OnDraw(0L);
 	}
-	else OnDraw(0L);
 
 	return true;
 }
@@ -923,15 +922,37 @@ bool CWglViewTestView::initializeView()
 
 bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (!popDisplayList(false))
+	{
+		// error: OpenGL display list cannot be finalized !!!
+	}
+#endif
+
 	const boost::shared_ptr<context_type> &context = topContext();
 	if (context.get() && context->resize(x1, y1, x2, y2))
 	{
 		context_type::guard_type guard(*context);
+
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+		if (!pushDisplayList(true))
+		{
+			// error: OpenGL display list cannot be initialized !!!
+		}
+#endif
+
 		initializeView();
 		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (camera.get()) camera->setViewport(x1, y1, x2, y2);
-		raiseDrawEvent(false);
+		if (camera.get())
+		{
+			camera->setViewport(x1, y1, x2, y2);
 
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+			createDisplayList(true);
+#endif
+		}
+
+		raiseDrawEvent(true);
 		return true;
 	}
 	else return false;
@@ -968,7 +989,7 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
 	glPushMatrix();
-		drawObject();
+		drawMainContent();
 	glPopMatrix();
 
 	if (isColorBarShown_) drawColorBar();
@@ -977,29 +998,63 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
     return true;
 }
 
-bool CWglViewTestView::initializeDisplayList()
+
+bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 {
-	displayListNameBase_ = glGenLists(maxDisplayListCount_);
-	return 0 != displayListNameBase_;
+	if (isDisplayListUsed())
+	{
+		// the name base of OpenGL display list that is actually used
+		const unsigned int currCisplayListNameBase = displayListStack_.top();
+
+		// disable OpenGL display list
+		pushDisplayList(isContextActivated, true);  // context activation doesn't care
+
+		if (isContextActivated)
+			createDisplayLists(currCisplayListNameBase);
+		else
+		{
+			const boost::shared_ptr<context_type> &context = topContext();
+			if (context.get())
+			{
+				context_type::guard_type guard(*context);
+				createDisplayLists(currCisplayListNameBase);
+			}
+		}
+
+		// restore OpenGL display list
+		popDisplayList(isContextActivated);  // context activation doesn't care
+	}
+
+	return true;
 }
 
-void CWglViewTestView::finalizeDisplayList()
+void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
 {
-	glDeleteLists(displayListNameBase_, maxDisplayListCount_);
-	displayListNameBase_ = 0;
-}
-
-void CWglViewTestView::createDisplayList() const
-{
-	// for objects
-	glNewList(displayListNameBase_ + objectDisplayListName_, GL_COMPILE);
-		drawObject(true);
+	// for main content
+	glNewList(displayListNameBase + DLN_MAIN_CONTENT, GL_COMPILE);
+		drawMainContent();
 	glEndList();
-
+/*
 	// for floor
-	glNewList(displayListNameBase_ + floorDisplayListName_, GL_COMPILE);
-		drawFloor(true);
+	glNewList(displayListNameBase + DLN_FLOOR, GL_COMPILE);
+		drawFloor();
 	glEndList();
+*/
+	// for gradient background
+	glNewList(displayListNameBase + DLN_GRADIENT_BACKGROUND, GL_COMPILE);
+		drawGradientBackground();
+	glEndList();
+
+	// for color bar
+	glNewList(displayListNameBase + DLN_COLOR_BAR, GL_COMPILE);
+		drawColorBar();
+	glEndList();
+/*
+	// for coordinate frame
+	glNewList(displayListNameBase + DLN_COORDINATE_FRAME, GL_COMPILE);
+		drawCoordinateFrame(true);
+	glEndList();
+*/
 }
 
 void CWglViewTestView::setPerspective(const bool isPerspective)
@@ -1014,7 +1069,10 @@ void CWglViewTestView::setPerspective(const bool isPerspective)
 
 		context_type::guard_type guard(*context);
 		camera->setPerspective(isPerspective_);
-		raiseDrawEvent(false);
+
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+		createDisplayList(true);
+#endif
 	}
 }
 
@@ -1023,81 +1081,91 @@ void CWglViewTestView::setWireFrame(const bool isWireFrame)
 	if (isWireFrame == isWireFrame_) return;
 
 	isWireFrame_ = isWireFrame;
-	raiseDrawEvent(true);
+
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	createDisplayList(false);
+#endif
 }
 
-void CWglViewTestView::drawObject(const bool createDisplayList /*= false*/) const
+void CWglViewTestView::drawMainContent() const
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (createDisplayList)
+	if (isDisplayListUsed())
 	{
+		glCallList(displayListStack_.top() + DLN_MAIN_CONTENT);
+		return;
+	}
 #endif
 
 #if 1
-		// save states
-		GLint oldPolygonMode[2];
-		glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+	// save states
+	GLint oldPolygonMode[2];
+	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 
-		glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
-		//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
+	glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
+	//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
 
-		glPushMatrix();
-			//glLoadIdentity();
-			glTranslatef(-250.0f, 250.0f, -250.0f);
-			glColor3f(1.0f, 0.0f, 0.0f);
+	glPushMatrix();
+		//glLoadIdentity();
+		glTranslatef(-250.0f, 250.0f, -250.0f);
+		glColor3f(1.0f, 0.0f, 0.0f);
 
-			// set clipping planes
-			const double clippingPlane0[] = { 1.0, 0.0, 0.0, 100.0 };
-			glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
-			glEnable(GL_CLIP_PLANE0);
-			const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
-			glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
-			glEnable(GL_CLIP_PLANE1);
+		// set clipping planes
+		const double clippingPlane0[] = { 1.0, 0.0, 0.0, 100.0 };
+		glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
+		glEnable(GL_CLIP_PLANE0);
+		const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
+		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
+		glEnable(GL_CLIP_PLANE1);
 
-			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+		isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
 
-			glDisable(GL_CLIP_PLANE0);
-			glDisable(GL_CLIP_PLANE1);
-		glPopMatrix();
+		glDisable(GL_CLIP_PLANE0);
+		glDisable(GL_CLIP_PLANE1);
+	glPopMatrix();
 
-		glPushMatrix();
-			//glLoadIdentity();
-			glTranslatef(250.0f, -250.0f, 250.0f);
+	glPushMatrix();
+		//glLoadIdentity();
+		glTranslatef(250.0f, -250.0f, 250.0f);
 
-			glColor3f(0.5f, 0.5f, 1.0f);
-			isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
-		glPopMatrix();
+		glColor3f(0.5f, 0.5f, 1.0f);
+		isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
+	glPopMatrix();
 
-		// restore states
-		glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
+	// restore states
+	//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
+	glPolygonMode(polygonFacing_, oldPolygonMode[1]);
 #endif
 
 #if 0
-		// save states
-		GLint oldPolygonMode[2];
-		glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+	// save states
+	GLint oldPolygonMode[2];
+	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 
-		glPushMatrix();
-			glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
-			//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
+	glPushMatrix();
+		glPolygonMode(polygonFacing_, isWireFrame_ ? GL_LINE : GL_FILL);
+		//glPolygonMode(GL_FRONT, isWireFrame_ ? GL_LINE : GL_FILL);  // not working !!!
 
-			//drawCube();
-			drawMesh();
-		glPopMatrix();
+		//drawCube();
+		drawMesh();
+	glPopMatrix();
 
-		// restore states
-		glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
-#endif
-
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	}
-	else
-		glCallList(displayListNameBase_ + objectDisplayListName_);
+	// restore states
+	//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
+	glPolygonMode(polygonFacing_, oldPolygonMode[1]);
 #endif
 }
 
 void CWglViewTestView::drawGradientBackground() const
 {
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (isDisplayListUsed())
+	{
+		glCallList(displayListStack_.top() + DLN_GRADIENT_BACKGROUND);
+		return;
+	}
+#endif
+
 	// save states
 	const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
 	if (isLighting) glDisable(GL_LIGHTING);
@@ -1156,156 +1224,169 @@ void CWglViewTestView::drawGradientBackground() const
 	glPopMatrix();
 
 	// restore states
-	if (GL_FILL != oldPolygonMode[1]) glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
+	if (GL_FILL != oldPolygonMode[1])
+		//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
+		glPolygonMode(polygonFacing_, oldPolygonMode[1]);
 	if (isLighting) glEnable(GL_LIGHTING);
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawFloor(const bool createDisplayList /*= false*/) const
+void CWglViewTestView::drawFloor() const
 {
+/*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (createDisplayList)
+	if (isDisplayListUsed())
 	{
-#endif
-		const float minXBound = -500.0f, maxXBound = 500.0f;
-		const float minYBound = -500.0f, maxYBound = 500.0f;
-		const float minZBound = -500.0f, maxZBound = 500.0f;
-		const float angleThreshold = (float)std::cos(80.0 * swl::MathConstant::TO_RAD);
-		const size_t lineCount = 5;
-		const int lineStippleScaleFactor = 2;
-
-		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (camera.get())
-		{
-			double dirX = 0.0, dirY = 0.0, dirZ = 0.0;
-			camera->getEyeDirection(dirX, dirY, dirZ);
-
-			const bool isXYPlaneShown = std::fabs((float)dirZ) >= angleThreshold;
-			const bool isYZPlaneShown = std::fabs((float)dirX) >= angleThreshold;
-			const bool isZXPlaneShown = std::fabs((float)dirY) >= angleThreshold;
-
-			const bool isNegativeXYPlane = dirZ < 0.0;
-			const bool isNegativeYZPlane = dirX < 0.0;
-			const bool isNegativeZXPlane = dirY < 0.0;
-
-			// save states
-			const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
-			if (isLighting) glDisable(GL_LIGHTING);
-			const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
-			if (isDepthTest) glDisable(GL_DEPTH_TEST);
-
-			const GLboolean isLineStipple = glIsEnabled(GL_LINE_STIPPLE);
-			if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
-			GLint oldPolygonMode[2];
-			glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
-			if (GL_LINE != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_LINE);
-
-			//const float xmargin = 0.0f, ymargin = 0.0f, zmargin = 0.0f;
-			const float marginRatio = 0.3f;
-			const float xmargin = (maxXBound - minXBound) * marginRatio, ymargin = (maxYBound - minYBound) * marginRatio, zmargin = (maxZBound - minZBound) * marginRatio;
-			const float margin = std::min(std::min(xmargin, ymargin), zmargin);
-			const float xmin = minXBound - margin, xmax = maxXBound + margin;
-			const float ymin = minYBound - margin, ymax = maxYBound + margin;
-			const float zmin = minZBound - margin, zmax = maxZBound + margin;
-
-			const float xspace = std::fabs(xmax - xmin) / float(lineCount);
-			const float yspace = std::fabs(ymax - ymin) / float(lineCount);
-			const float zspace = std::fabs(zmax - zmin) / float(lineCount);
-			const float space = std::min(xspace, std::min(yspace, zspace));
-
-			const float xyPlane = isNegativeXYPlane ? zmin : zmax;
-			const float yzPlane = isNegativeYZPlane ? xmin : xmax;
-			const float zxPlane = isNegativeZXPlane ? ymin : ymax;
-
-			const int xstart = (int)std::ceil(xmin / space), xend = (int)std::floor(xmax / space);
-			const int ystart = (int)std::ceil(ymin / space), yend = (int)std::floor(ymax / space);
-			const int zstart = (int)std::ceil(zmin / space), zend = (int)std::floor(zmax / space);
-
-			glLineStipple(lineStippleScaleFactor, 0xAAAA);
-			glBegin(GL_LINES);
-				// the color of a floor
-				glColor3f(0.5f, 0.5f, 0.5f);
-
-				// xy-plane
-				if (isXYPlaneShown)
-				{
-					//glColor3f(0.7f, 0.0f, 0.0f);
-
-					glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmin, ymax, xyPlane);
-					glVertex3f(xmax, ymin, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
-					glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmax, ymin, xyPlane);
-					glVertex3f(xmin, ymax, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
-					for (int i = xstart; i <= xend; ++i)
-					{
-						glVertex3f(i * space, ymin, xyPlane);
-						glVertex3f(i * space, ymax, xyPlane);
-					}
-					for (int i = ystart; i <= yend; ++i)
-					{
-						glVertex3f(xmin, i * space, xyPlane);
-						glVertex3f(xmax, i * space, xyPlane);
-					}
-				}
-
-				// yz-plane
-				if (isYZPlaneShown)
-				{
-					//glColor3f(0.0f, 0.7f, 0.0f);
-
-					glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymin, zmax);
-					glVertex3f(yzPlane, ymax, zmin);  glVertex3f(yzPlane, ymax, zmax);
-					glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymax, zmin);
-					glVertex3f(yzPlane, ymin, zmax);  glVertex3f(yzPlane, ymax, zmax);
-					for (int i = ystart; i <= yend; ++i)
-					{
-						glVertex3f(yzPlane, i * space, zmin);
-						glVertex3f(yzPlane, i * space, zmax);
-					}
-					for (int i = zstart; i <= zend; ++i)
-					{
-						glVertex3f(yzPlane, ymin, i * space);
-						glVertex3f(yzPlane, ymax, i * space);
-					}
-				}
-
-				// zx-plane
-				if (isZXPlaneShown)
-				{
-					//glColor3f(0.0f, 0.0f, 0.7f);
-
-					glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmin);
-					glVertex3f(xmin, zxPlane, zmax);  glVertex3f(xmax, zxPlane, zmax);
-					glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmin, zxPlane, zmax);
-					glVertex3f(xmax, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmax);
-					for (int i = zstart; i <= zend; ++i)
-					{
-						glVertex3f(xmin, zxPlane, i * space);
-						glVertex3f(xmax, zxPlane, i * space);
-					}
-					for (int i = xstart; i <= xend; ++i)
-					{
-						glVertex3f(i * space, zxPlane, zmin);
-						glVertex3f(i * space, zxPlane, zmax);
-					}
-				}
-			glEnd();
-
-			// restore states
-			if (GL_LINE != oldPolygonMode[1]) glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);
-			if (!isLineStipple) glDisable(GL_LINE_STIPPLE);
-
-			if (isLighting) glEnable(GL_LIGHTING);
-			if (isDepthTest) glEnable(GL_DEPTH_TEST);
-		}
-#if defined(__USE_OPENGL_DISPLAY_LIST)
+		glCallList(displayListStack_.top() + DLN_FLOOR);
+		return;
 	}
-	else
-		glCallList(displayListNameBase_ + floorDisplayListName_);
 #endif
+*/
+
+	const float minXBound = -500.0f, maxXBound = 500.0f;
+	const float minYBound = -500.0f, maxYBound = 500.0f;
+	const float minZBound = -500.0f, maxZBound = 500.0f;
+	const float angleThreshold = (float)std::cos(80.0 * swl::MathConstant::TO_RAD);
+	const size_t lineCount = 5;
+	const int lineStippleScaleFactor = 2;
+
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (camera.get())
+	{
+		double dirX = 0.0, dirY = 0.0, dirZ = 0.0;
+		camera->getEyeDirection(dirX, dirY, dirZ);
+
+		const bool isXYPlaneShown = std::fabs((float)dirZ) >= angleThreshold;
+		const bool isYZPlaneShown = std::fabs((float)dirX) >= angleThreshold;
+		const bool isZXPlaneShown = std::fabs((float)dirY) >= angleThreshold;
+
+		const bool isNegativeXYPlane = dirZ < 0.0;
+		const bool isNegativeYZPlane = dirX < 0.0;
+		const bool isNegativeZXPlane = dirY < 0.0;
+
+		// save states
+		const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
+		if (isLighting) glDisable(GL_LIGHTING);
+		const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
+		if (isDepthTest) glDisable(GL_DEPTH_TEST);
+
+		const GLboolean isLineStipple = glIsEnabled(GL_LINE_STIPPLE);
+		if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
+		GLint oldPolygonMode[2];
+		glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
+		if (GL_LINE != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_LINE);
+
+		//const float xmargin = 0.0f, ymargin = 0.0f, zmargin = 0.0f;
+		const float marginRatio = 0.3f;
+		const float xmargin = (maxXBound - minXBound) * marginRatio, ymargin = (maxYBound - minYBound) * marginRatio, zmargin = (maxZBound - minZBound) * marginRatio;
+		const float margin = std::min(std::min(xmargin, ymargin), zmargin);
+		const float xmin = minXBound - margin, xmax = maxXBound + margin;
+		const float ymin = minYBound - margin, ymax = maxYBound + margin;
+		const float zmin = minZBound - margin, zmax = maxZBound + margin;
+
+		const float xspace = std::fabs(xmax - xmin) / float(lineCount);
+		const float yspace = std::fabs(ymax - ymin) / float(lineCount);
+		const float zspace = std::fabs(zmax - zmin) / float(lineCount);
+		const float space = std::min(xspace, std::min(yspace, zspace));
+
+		const float xyPlane = isNegativeXYPlane ? zmin : zmax;
+		const float yzPlane = isNegativeYZPlane ? xmin : xmax;
+		const float zxPlane = isNegativeZXPlane ? ymin : ymax;
+
+		const int xstart = (int)std::ceil(xmin / space), xend = (int)std::floor(xmax / space);
+		const int ystart = (int)std::ceil(ymin / space), yend = (int)std::floor(ymax / space);
+		const int zstart = (int)std::ceil(zmin / space), zend = (int)std::floor(zmax / space);
+
+		glLineStipple(lineStippleScaleFactor, 0xAAAA);
+		glBegin(GL_LINES);
+			// the color of a floor
+			glColor3f(0.5f, 0.5f, 0.5f);
+
+			// xy-plane
+			if (isXYPlaneShown)
+			{
+				//glColor3f(0.7f, 0.0f, 0.0f);
+
+				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmin, ymax, xyPlane);
+				glVertex3f(xmax, ymin, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
+				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmax, ymin, xyPlane);
+				glVertex3f(xmin, ymax, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
+				for (int i = xstart; i <= xend; ++i)
+				{
+					glVertex3f(i * space, ymin, xyPlane);
+					glVertex3f(i * space, ymax, xyPlane);
+				}
+				for (int i = ystart; i <= yend; ++i)
+				{
+					glVertex3f(xmin, i * space, xyPlane);
+					glVertex3f(xmax, i * space, xyPlane);
+				}
+			}
+
+			// yz-plane
+			if (isYZPlaneShown)
+			{
+				//glColor3f(0.0f, 0.7f, 0.0f);
+
+				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymin, zmax);
+				glVertex3f(yzPlane, ymax, zmin);  glVertex3f(yzPlane, ymax, zmax);
+				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymax, zmin);
+				glVertex3f(yzPlane, ymin, zmax);  glVertex3f(yzPlane, ymax, zmax);
+				for (int i = ystart; i <= yend; ++i)
+				{
+					glVertex3f(yzPlane, i * space, zmin);
+					glVertex3f(yzPlane, i * space, zmax);
+				}
+				for (int i = zstart; i <= zend; ++i)
+				{
+					glVertex3f(yzPlane, ymin, i * space);
+					glVertex3f(yzPlane, ymax, i * space);
+				}
+			}
+
+			// zx-plane
+			if (isZXPlaneShown)
+			{
+				//glColor3f(0.0f, 0.0f, 0.7f);
+
+				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmin);
+				glVertex3f(xmin, zxPlane, zmax);  glVertex3f(xmax, zxPlane, zmax);
+				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmin, zxPlane, zmax);
+				glVertex3f(xmax, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmax);
+				for (int i = zstart; i <= zend; ++i)
+				{
+					glVertex3f(xmin, zxPlane, i * space);
+					glVertex3f(xmax, zxPlane, i * space);
+				}
+				for (int i = xstart; i <= xend; ++i)
+				{
+					glVertex3f(i * space, zxPlane, zmin);
+					glVertex3f(i * space, zxPlane, zmax);
+				}
+			}
+		glEnd();
+
+		// restore states
+		if (GL_LINE != oldPolygonMode[1])
+			//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
+			glPolygonMode(polygonFacing_, oldPolygonMode[1]);
+		if (!isLineStipple) glDisable(GL_LINE_STIPPLE);
+
+		if (isLighting) glEnable(GL_LIGHTING);
+		if (isDepthTest) glEnable(GL_DEPTH_TEST);
+	}
 }
 
 void CWglViewTestView::drawColorBar() const
 {
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (isDisplayListUsed())
+	{
+		glCallList(displayListStack_.top() + DLN_COLOR_BAR);
+		return;
+	}
+#endif
+
 	const size_t colorDim = 3;
 	const float rgb[] = {
 		1.0f, 0.0f, 0.0f,
@@ -1379,6 +1460,16 @@ void CWglViewTestView::drawColorBar() const
 
 void CWglViewTestView::drawCoordinateFrame() const
 {
+/*
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (isDisplayListUsed())
+	{
+		glCallList(displayListStack_.top() + DLN_COORDINATE_FRAME);
+		return
+	}
+#endif
+*/
+
 	const boost::shared_ptr<camera_type> &camera = topCamera();
 	if (NULL == camera.get()) return;
 

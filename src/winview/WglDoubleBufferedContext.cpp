@@ -158,9 +158,6 @@ bool WglDoubleBufferedContext::createOffScreen()
 		return false;
 	}
 
-	// create & share a display list
-	createDisplayList(hDC_);
-
 	return true;
 }
 
