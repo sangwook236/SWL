@@ -74,6 +74,7 @@ IDR_WinViewTestTYPE     ICON                    "res\\WinViewTestDoc.ico"
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+IDR_WinViewTestTYPE     BITMAP                  "res\\toolbar_winview.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -92,6 +93,29 @@ BEGIN
     SEPARATOR
     BUTTON      ID_FILE_PRINT
     BUTTON      ID_APP_ABOUT
+END
+
+IDR_WinViewTestTYPE TOOLBAR  16, 16
+BEGIN
+    BUTTON      ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI
+    BUTTON      ID_FILE_PRINT
+    BUTTON      ID_FILE_PRINT_PREVIEW
+    BUTTON      ID_PRINTANDCAPTURE_COPYTOCLIPBOARD
+    SEPARATOR
+    BUTTON      ID_VIEWHANDLING_PAN
+    BUTTON      ID_VIEWHANDLING_ROTATE
+    SEPARATOR
+    BUTTON      ID_VIEWHANDLING_ZOOMREGION
+    BUTTON      ID_VIEWHANDLING_ZOOMALL
+    BUTTON      ID_VIEWHANDLING_ZOOMIN
+    BUTTON      ID_VIEWHANDLING_ZOOMOUT
+    SEPARATOR
+    BUTTON      ID_VIEWHANDLING_PICKOBJECT
+    SEPARATOR
+    BUTTON      ID_VIEWHANDLING_SHOWBACKGROUND
+    BUTTON      ID_VIEWHANDLING_SHOWFLOOR
+    BUTTON      ID_VIEWHANDLING_SHOWCOORDINATEFRAME
+    BUTTON      ID_VIEWHANDLING_SHOWCOLORBAR
 END
 
 
@@ -177,7 +201,7 @@ BEGIN
         MENUITEM "Zoom In",                     ID_VIEWHANDLING_ZOOMIN
         MENUITEM "Zoom Out",                    ID_VIEWHANDLING_ZOOMOUT
         MENUITEM SEPARATOR
-        MENUITEM "Pick Object",                 32795
+        MENUITEM "Pick Object",                 ID_VIEWHANDLING_PICKOBJECT
     END
     POPUP "Print and Capture"
     BEGIN
@@ -419,6 +443,20 @@ END
 STRINGTABLE 
 BEGIN
     AFX_IDS_PREVIEW_CLOSE   "Close print preview mode\nCancel Preview"
+END
+
+STRINGTABLE 
+BEGIN
+    ID_PRINTANDCAPTURE_CAPTUREVIEWUSINGGDI "Save the active image\nSave"
+    ID_PRINTANDCAPTURE_COPYTOCLIPBOARD 
+                            "Copy the view and put it on the Clipboard\nCopy"
+    ID_VIEWHANDLING_PAN     "Pan"
+    ID_VIEWHANDLING_ROTATE  "Rotate"
+    ID_VIEWHANDLING_ZOOMREGION "Zoom Region"
+    ID_VIEWHANDLING_ZOOMALL "Zoom All"
+    ID_VIEWHANDLING_ZOOMIN  "Zoom In"
+    ID_VIEWHANDLING_ZOOMOUT "Zoom Out"
+    ID_VIEWHANDLING_PICKOBJECT "Pick Object"
 END
 
 #endif    // Korean resources

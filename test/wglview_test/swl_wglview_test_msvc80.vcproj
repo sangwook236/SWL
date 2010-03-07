@@ -296,6 +296,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\res\toolbar_wglview.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\res\WglViewTest.ico"
 				>
 			</File>

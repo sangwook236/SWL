@@ -22,11 +22,11 @@ public:
 
 protected:
 	GraphicsObj();
-	GraphicsObj(const GraphicsObj& rhs);
+	GraphicsObj(const GraphicsObj &rhs);
 	virtual ~GraphicsObj() = 0;  // implemented
 
 public:
-	GraphicsObj& operator=(const GraphicsObj& rhs);
+	GraphicsObj& operator=(const GraphicsObj &rhs);
 
 public:
 	void setVisible(bool isVisible)  {  visible_.setVisible(isVisible);  }

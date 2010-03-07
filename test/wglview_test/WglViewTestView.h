@@ -123,11 +123,11 @@ private:
 	//
 	void createDisplayLists(const unsigned int displayListNameBase) const;
 #if defined(_UNICODE) || defined(UNICODE)
-	bool createBitmapFonts(const std::wstring &fontName, const int fontSize) const;
-	bool createOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const;
+	bool createWglBitmapFonts(const std::wstring &fontName, const int fontSize) const;
+	bool createWglOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const;
 #else
-	bool createBitmapFonts(const std::string &fontName, const int fontSize) const;
-	bool createOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const;
+	bool createWglBitmapFonts(const std::string &fontName, const int fontSize) const;
+	bool createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const;
 #endif
 
 	void drawCoordinateFrame(const float height, const int order[]) const;
@@ -135,14 +135,14 @@ private:
 	void drawText(const float x, const float y, const float z, const std::wstring &str) const;
 	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
 	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
-	void drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
+	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
+	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
 #else
 	void drawText(const float x, const float y, const float z, const std::string &str) const;
 	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
 	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
-	void drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
+	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
+	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
 private:
@@ -162,8 +162,9 @@ private:
 	enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR };
 	//enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
 	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
-	static const int MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;
-	static const int MAX_OPENGL_OUTLINE_FONT_DISPLAY_LIST_COUNT = 256;
+
+	static const int MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;
+	static const int MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT = 256;
 	mutable GLYPHMETRICSFLOAT gmf_[256];
 
 	//-------------------------------------------------------------------------

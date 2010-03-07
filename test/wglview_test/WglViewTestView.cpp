@@ -39,7 +39,20 @@
 #endif
 
 #define __USE_OPENGL_DISPLAY_LIST 1
+//#define __USE_GLUT_BITMAP_FONTS 1
+//#define __USE_GLUT_STROKE_FONTS 1
+#define __USE_WGL_BITMAP_FONTS 1
+//#define __USE_WGL_OUTLINE_FONTS 1
 
+#if defined(__USE_GLUT_BITMAP_FONTS)
+#define __USE_OPENGL_FONTS 1  // for GLUT bitmap fonts
+#elif defined(__USE_GLUT_STROKE_FONTS)
+#define __USE_OPENGL_FONTS 2  // for GLUT stroke fonts
+#elif defined(__USE_WGL_BITMAP_FONTS) && defined(__USE_OPENGL_DISPLAY_LIST)
+#define __USE_OPENGL_FONTS 3  // for WGL bitmap fonts
+#elif defined(__USE_WGL_OUTLINE_FONTS) && defined(__USE_OPENGL_DISPLAY_LIST)
+#define __USE_OPENGL_FONTS 4  // for WGL outline fonts
+#endif
 
 namespace {
 
@@ -504,7 +517,13 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT + MAX_OPENGL_OUTLINE_FONT_DISPLAY_LIST_COUNT),
+#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
+: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT),
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
+: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT),
+#else
+: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, 0),
+#endif
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
@@ -1069,13 +1088,18 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 
 void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
 {
-	// for bitmap & outline fonts
+#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
 #if defined(_UNICODE) || defined(UNICODE)
-	createBitmapFonts(L"Comic Sans MS", 24);
-	createOutlineFonts(L"Arial", 10, 0.25f);
+	createWglBitmapFonts(L"Comic Sans MS", 24);
 #else
-	createBitmapFonts("Comic Sans MS", 24);
-	createOutlineFonts("Arial", 10, 0.25f);
+	createWglBitmapFonts("Comic Sans MS", 24);
+#endif
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
+#if defined(_UNICODE) || defined(UNICODE)
+	createWglOutlineFonts(L"Arial", 10, 0.25f);
+#else
+	createWglOutlineFonts("Arial", 10, 0.25f);
+#endif
 #endif
 
 	// for main content
@@ -1106,9 +1130,9 @@ void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase
 }
 
 #if defined(_UNICODE) || defined(UNICODE)
-bool CWglViewTestView::createBitmapFonts(const std::wstring &fontName, const int fontSize) const
+bool CWglViewTestView::createWglBitmapFonts(const std::wstring &fontName, const int fontSize) const
 #else
-bool CWglViewTestView::createBitmapFonts(const std::string &fontName, const int fontSize) const
+bool CWglViewTestView::createWglBitmapFonts(const std::string &fontName, const int fontSize) const
 #endif
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -1136,8 +1160,8 @@ bool CWglViewTestView::createBitmapFonts(const std::string &fontName, const int 
 				if (!hFont) return false;
 				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
 
-				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT;
-				const bool ret = TRUE == wglUseFontBitmaps(*dc, 32, MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase);
+				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
+				const bool ret = TRUE == wglUseFontBitmaps(*dc, 32, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase);
 
 				SelectObject(*dc, hOldFont);
 				return ret;
@@ -1156,9 +1180,9 @@ bool CWglViewTestView::createBitmapFonts(const std::string &fontName, const int 
 }
 
 #if defined(_UNICODE) || defined(UNICODE)
-bool CWglViewTestView::createOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const
+bool CWglViewTestView::createWglOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const
 #else
-bool CWglViewTestView::createOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const
+bool CWglViewTestView::createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const
 #endif
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -1186,9 +1210,9 @@ bool CWglViewTestView::createOutlineFonts(const std::string &fontName, const int
 				if (!hFont) return false;
 				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
 
-				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT;
+				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
 				// it takes long time to create display lists for outline fonts
-				const bool ret = TRUE == wglUseFontOutlines(*dc, 0, MAX_OPENGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase, 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
+				const bool ret = TRUE == wglUseFontOutlines(*dc, 0, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase, 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
 
 				SelectObject(*dc, hOldFont);
 				return ret;
@@ -1740,16 +1764,16 @@ void CWglViewTestView::drawText(const float x, const float y, const float z, con
 void CWglViewTestView::drawText(const float x, const float y, const float z, const std::string &str) const
 #endif
 {
-#if 0
+#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 1  // for GLUT bitmap fonts
 	drawTextUsingGlutBitmapFonts(x, y, z, str);
-#elif 0
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 2  // for GLUT stroke fonts
 	const float scale = 2.0f;
 	drawTextUsingGlutStrokeFonts(x, y, z, scale, scale, scale, str);
-#elif 1
-	drawTextUsingBitmapFonts(x, y, z, str);
-#else
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
+	drawTextUsingWglBitmapFonts(x, y, z, str);
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
 	const float scale = 300.0f;
-	drawTextUsingOutlineFonts(x, y, z, scale, scale, 1.0f, str);
+	drawTextUsingWglOutlineFonts(x, y, z, scale, scale, 1.0f, str);
 #endif
 }
 
@@ -1793,9 +1817,9 @@ void CWglViewTestView::drawTextUsingGlutStrokeFonts(const float x, const float y
 }
 
 #if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
+void CWglViewTestView::drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
 #else
-void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::string &str) const
+void CWglViewTestView::drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::string &str) const
 #endif
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -1804,7 +1828,7 @@ void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, co
 		glRasterPos3f(x, y, z);
 
 		glPushAttrib(GL_LIST_BIT);
-			const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT;
+			const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
 			glListBase(fontDiplayListNameBase - 32);
 #if defined(_UNICODE) || defined(UNICODE)
 			glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
@@ -1817,9 +1841,9 @@ void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, co
 }
 
 #if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
+void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
 #else
-void CWglViewTestView::drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
+void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
 #endif
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -1841,7 +1865,7 @@ void CWglViewTestView::drawTextUsingOutlineFonts(const float x, const float y, c
 			glScalef(xScale, yScale, zScale);
 
 			glPushAttrib(GL_LIST_BIT);
-				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT;
+				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
 				glListBase(fontDiplayListNameBase);
 #if defined(_UNICODE) || defined(UNICODE)
 				glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());

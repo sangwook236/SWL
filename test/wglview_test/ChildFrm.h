@@ -28,7 +28,12 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
+protected:  // control bar embedded members
+	CToolBar m_wndToolBar;
+
 // Generated message map functions
 protected:
 	DECLARE_MESSAGE_MAP()
+public:
+	afx_msg int OnCreate(LPCREATESTRUCT lpCreateStruct);
 };

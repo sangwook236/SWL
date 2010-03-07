@@ -20,8 +20,8 @@ public:
 	typedef ViewBase<context_type, camera_type> base_type;
 
 public:
-	WglViewBase(const int maxDisplayListCount)
-	: maxDisplayListCount_(maxDisplayListCount)
+	WglViewBase(const int maxDisplayListCount, const int maxFontDisplayListCount)
+	: maxDisplayListCount_(maxDisplayListCount), maxFontDisplayListCount_(maxFontDisplayListCount)
 	{}
 	virtual ~WglViewBase()  {}
 
@@ -34,8 +34,10 @@ public:
 	bool pushDisplayList(const bool isContextActivated);
 	bool popDisplayList(const bool isContextActivated);
 	bool isDisplayListUsed() const;
-	unsigned int getCurrentDisplayListNameBase() const;
 	virtual bool createDisplayList(const bool isContextActivated) = 0;
+
+	unsigned int getCurrentDisplayListNameBase() const;
+	unsigned int getCurrentFontDisplayListNameBase() const;
 
 private:
 	virtual bool doPrepareRendering(const context_type &context, const camera_type &camera) = 0;
@@ -49,6 +51,9 @@ protected:
 	/// a stack of the name base of OpenGL display list. if the name base of OpenGL display list == 0, OpenGL display list isn't used.
 	std::stack<unsigned int> displayListStack_;
 	const int maxDisplayListCount_;
+	/// a stack of the name base of OpenGL display list for fonts. if the name base of OpenGL display list for fonts == 0, OpenGL display list for fonts isn't used.
+	std::stack<unsigned int> fontDisplayListStack_;
+	const int maxFontDisplayListCount_;
 };
 
 }  // namespace swl

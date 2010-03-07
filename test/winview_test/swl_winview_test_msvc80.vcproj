@@ -296,6 +296,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\res\toolbar_winview.bmp"
+				>
+			</File>
+			<File
 				RelativePath=".\res\WinViewTest.ico"
 				>
 			</File>
