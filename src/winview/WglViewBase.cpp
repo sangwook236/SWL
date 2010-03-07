@@ -68,35 +68,33 @@ void WglViewBase::renderScene(context_type &context, camera_type &camera)
 #endif
 }
 
-bool WglViewBase::pushDisplayList(const bool isContextActivated, const bool disableDisplayList /*= false*/)
+bool WglViewBase::pushDisplayList(const bool isContextActivated)
 {
-	if (disableDisplayList)
-	{
-		displayListStack_.push(0);
-		return true;
-	}
+	unsigned int displayListNameBase = 0;
+
+	if (isContextActivated)
+		displayListNameBase = glGenLists(maxDisplayListCount_);
 	else
 	{
-		unsigned int displayListNameBase = 0;
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (!context.get()) return false;
 
-		if (isContextActivated)
-			displayListNameBase = glGenLists(maxDisplayListCount_);
-		else
-		{
-			const boost::shared_ptr<context_type> &context = topContext();
-			if (!context.get()) return false;
-
-			context_type::guard_type guard(*context);
-			displayListNameBase = glGenLists(maxDisplayListCount_);
-		}
-
-		if (displayListNameBase)
-		{
-			displayListStack_.push(displayListNameBase);
-			return true;
-		}
-		else return false;
+		context_type::guard_type guard(*context);
+		displayListNameBase = glGenLists(maxDisplayListCount_);
 	}
+
+	// if displayListNameBase == 0, OpenGL display list won't be used.
+#if 0
+	if (displayListNameBase)
+	{
+		displayListStack_.push(displayListNameBase);
+		return true;
+	}
+	else return false;
+#else
+	displayListStack_.push(displayListNameBase);
+	return 0 == displayListNameBase;
+#endif
 }
 
 bool WglViewBase::popDisplayList(const bool isContextActivated)
@@ -104,12 +102,9 @@ bool WglViewBase::popDisplayList(const bool isContextActivated)
 	if (displayListStack_.empty()) return false;
 
 	const unsigned int currDisplayListNameBase = displayListStack_.top();
-	if (0 == currDisplayListNameBase)
-	{
-		displayListStack_.pop();
-		return true;
-	}
-	else
+
+	// if currDisplayListNameBase == 0, OpenGL display list has been used.
+	if (currDisplayListNameBase)
 	{
 		if (isContextActivated)
 			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
@@ -122,6 +117,11 @@ bool WglViewBase::popDisplayList(const bool isContextActivated)
 			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
 		}
 
+		displayListStack_.pop();
+		return true;
+	}
+	else
+	{
 		displayListStack_.pop();
 		return true;
 	}

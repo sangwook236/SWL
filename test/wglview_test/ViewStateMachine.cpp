@@ -388,7 +388,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		if (vw)
 		{
 			CClientDC dc(vw);
-			drawRubberBand(evt, dc.GetSafeHdc());
+			drawRubberBand(evt, dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_);
 		}
 #else
 		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);

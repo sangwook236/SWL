@@ -31,7 +31,7 @@ public:
 	//-------------------------------------------------------------------------
 	// OpenGL display list
 
-	bool pushDisplayList(const bool isContextActivated, const bool disableDisplayList = false);
+	bool pushDisplayList(const bool isContextActivated);
 	bool popDisplayList(const bool isContextActivated);
 	bool isDisplayListUsed() const;
 	unsigned int getCurrentDisplayListNameBase() const;

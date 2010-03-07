@@ -167,7 +167,7 @@ bool captureWinViewUsingGdi(const std::string &filePathName, WinViewBase &view, 
 	{
 		try
 		{
-			const HDC *dc = boost::any_cast<const HDC *>(currContext->getNativeContext());
+			const HDC *dc = boost::any_cast<HDC *>(currContext->getNativeContext());
 			if (dc)
 			{
 				const int colorBitCount = GetDeviceCaps(*dc, BITSPIXEL);
@@ -221,7 +221,7 @@ bool captureWinViewUsingGdiplus(const std::string &filePathName, const std::stri
 	{
 		try
 		{
-			const HDC *dc = boost::any_cast<const HDC *>(currContext->getNativeContext());
+			const HDC *dc = boost::any_cast<HDC *>(currContext->getNativeContext());
 			if (dc)
 			{
 				const int colorBitCount = GetDeviceCaps(*dc, BITSPIXEL);

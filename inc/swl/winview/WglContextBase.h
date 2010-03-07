@@ -47,10 +47,6 @@ protected:
 	/// delete a palette
 	static void deletePalette(HDC hDC);
 
-private:
-	/// re-create an OpenGL display list
-	virtual bool doRecreateDisplayList() = 0;
-
 protected:
 	/// an OpenGL rendering context
     HGLRC wglRC_;

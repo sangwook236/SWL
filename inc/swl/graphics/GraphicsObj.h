@@ -18,7 +18,7 @@ class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public ITransformable
 {
 public:
 	//typedef GraphicsObj base_type;
-	typedef VisibleAttrib::ViewMode ViewMode;
+	typedef VisibleAttrib::PolygonMode PolygonMode;
 
 protected:
 	GraphicsObj();
@@ -32,8 +32,8 @@ public:
 	void setVisible(bool isVisible)  {  visible_.setVisible(isVisible);  }
 	bool isVisible() const  {  return visible_.isVisible();  }
 
-	void setViewMode(const ViewMode viewMode)  {  visible_.setViewMode(viewMode);  }
-	ViewMode getViewMode() const  {  return visible_.getViewMode();  }
+	void setPolygonMode(const PolygonMode polygonMode)  {  visible_.setPolygonMode(polygonMode);  }
+	PolygonMode getPolygonMode() const  {  return visible_.getPolygonMode();  }
 
 	void setPickable(bool isPickable)  {  pickable_.setPickable(isPickable);  }
 	bool isPickable() const  {  return pickable_.isPickable();  }

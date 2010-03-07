@@ -48,9 +48,6 @@ protected :
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
 
-	/// re-create an OpenGL display list
-	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
-
 private:
 	bool createOffScreen();
 	bool createOffScreenBitmap(const int colorBitCount, const int colorPlaneCount);

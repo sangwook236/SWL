@@ -10,14 +10,14 @@ namespace swl {
 struct VisibleAttrib
 {
 public:
-	enum ViewMode { WIRE_FRAME, FLAT_SHADING, SMOOTH_SHADING };
+	enum PolygonMode { WIRE_FRAME, FLAT_SHADING, SMOOTH_SHADING };
 
 public:
-	VisibleAttrib(const bool isVisible = true, const ViewMode viewMode = SMOOTH_SHADING)
-	: isVisible_(isVisible), viewMode_(viewMode)
+	VisibleAttrib(const bool isVisible = true, const PolygonMode viewMode = SMOOTH_SHADING)
+	: isVisible_(isVisible), polygonMode_(viewMode)
 	{}
 	VisibleAttrib(const VisibleAttrib &rhs)
-	: isVisible_(rhs.isVisible_), viewMode_(rhs.viewMode_)
+	: isVisible_(rhs.isVisible_), polygonMode_(rhs.polygonMode_)
 	{}
 	~VisibleAttrib()
 	{}
@@ -27,7 +27,7 @@ public:
 		if (this == &rhs) return *this;
 		//static_cast<base_type &>(*this) = rhs;
 		isVisible_ = rhs.isVisible_;
-		viewMode_ = rhs.viewMode_;
+		polygonMode_ = rhs.polygonMode_;
 		return *this;
 	}
 
@@ -38,14 +38,14 @@ public:
 	bool isVisible() const  {  return isVisible_;  }
 
 	/// mutator
-	void setViewMode(const ViewMode viewMode)  {  viewMode_ = viewMode;  }
+	void setPolygonMode(const PolygonMode polygonMode)  {  polygonMode_ = polygonMode;  }
 	/// accessor
-	ViewMode getViewMode() const  {  return viewMode_;  }
+	PolygonMode getPolygonMode() const  {  return polygonMode_;  }
 
 private:
 	bool isVisible_;
 
-	ViewMode viewMode_;
+	PolygonMode polygonMode_;
 };
 
 }  // namespace swl

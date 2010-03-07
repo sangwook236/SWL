@@ -143,7 +143,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 	{
 		try
 		{
-			const HDC *dc = boost::any_cast<const HDC *>(currContext->getNativeContext());
+			const HDC *dc = boost::any_cast<HDC *>(currContext->getNativeContext());
 			if (dc)
 			{
 				const int colorBitCount = GetDeviceCaps(*dc, BITSPIXEL);
@@ -168,7 +168,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 			WglBitmapBufferedContext::guard_type guard(captureContext);
 
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
-			// push a new name base of OpenGL display list
+			// create & push a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) view.pushDisplayList(true);
 
 			view.initializeView();
@@ -179,7 +179,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 
 			view.renderScene(captureContext, *currCamera);
 
-			// pop a new name base of OpenGL display list
+			// pop & delete a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) view.popDisplayList(true);
 		}
 

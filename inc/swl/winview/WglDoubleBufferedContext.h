@@ -42,9 +42,6 @@ private:
 	/// de-activate the context
 	/*virtual*/ bool deactivate();
 
-	/// re-create an OpenGL display list
-	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
-
 	bool createOffScreen();
 
 private:

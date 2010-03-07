@@ -38,10 +38,6 @@ public:
 	/*virtual*/ boost::any getNativeContext()  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 	/*virtual*/ const boost::any getNativeContext() const  {  return isActivated() ? boost::any(&memDC_) : boost::any();  }
 
-protected :
-	/// re-create an OpenGL display list
-	/*virtual*/ bool doRecreateDisplayList()  {  return true;  }
-
 private:
 	/// activate the context
 	/*virtual*/ bool activate();

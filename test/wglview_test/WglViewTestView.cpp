@@ -504,13 +504,48 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT),
+: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT + MAX_OPENGL_OUTLINE_FONT_DISPLAY_LIST_COUNT),
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false),
   polygonFacing_(GL_FRONT_AND_BACK)
 {
+#if 0
+	topGradientBackgroundColor_[0] = 0.776f;
+	topGradientBackgroundColor_[1] = 0.835f;
+	topGradientBackgroundColor_[2] = 0.980f;
+	topGradientBackgroundColor_[3] = 1.0f;
+	bottomGradientBackgroundColor_[0] = 0.243f;
+	bottomGradientBackgroundColor_[1] = 0.443f;
+	bottomGradientBackgroundColor_[2] = 0.968f;
+	bottomGradientBackgroundColor_[3] = 1.0f;
+#elif 0
+	topGradientBackgroundColor_[0] = 0.780f;
+	topGradientBackgroundColor_[1] = 0.988f;
+	topGradientBackgroundColor_[2] = 0.910f;
+	topGradientBackgroundColor_[3] = 1.0f;
+	bottomGradientBackgroundColor_[0] = 0.302f;
+	bottomGradientBackgroundColor_[1] = 0.969f;
+	bottomGradientBackgroundColor_[2] = 0.712f;
+	bottomGradientBackgroundColor_[3] = 1.0f;
+#else
+	topGradientBackgroundColor_[0] = 0.812f;
+	topGradientBackgroundColor_[1] = 0.847f;
+	topGradientBackgroundColor_[2] = 0.863f;
+	topGradientBackgroundColor_[3] = 1.0f;
+	bottomGradientBackgroundColor_[0] = 0.384f;
+	bottomGradientBackgroundColor_[1] = 0.467f;
+	bottomGradientBackgroundColor_[2] = 0.510f;
+	bottomGradientBackgroundColor_[3] = 1.0f;
+#endif
+
+	floorColor_[0] = 0.5f;
+	floorColor_[1] = 0.5f;
+	floorColor_[2] = 0.5f;
+	floorColor_[3] = 0.5f;
+
+	// TODO [check] >> for testing
 	loadMesh();
 }
 
@@ -572,10 +607,21 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 
 		if (printCamera.get() && printContext.isActivated())
 		{
+			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
+			// create & push a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) pushDisplayList(true);
+
 			initializeView();
 			printCamera->setViewRegion(camera->getCurrentViewRegion());
 			printCamera->setViewport(0, 0, w0, h0);
+
+			// re-create a OpenGL display list
+			if (doesRecreateDisplayListUsed) createDisplayList(true);
+
 			renderScene(printContext, *printCamera);
+
+			// pop & delete a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) popDisplayList(true);
 		}
 
 		// restore view's states
@@ -976,11 +1022,8 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-	if (isGradientBackgroundUsed_ && !isPrinting_)
-		drawGradientBackground();
-
-	if (isFloorShown_)
-		drawFloor();
+	if (isGradientBackgroundUsed_ && !isPrinting_) drawGradientBackground();
+	if (isFloorShown_) drawFloor();
 
 	return true;
 }
@@ -1008,9 +1051,6 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 		// the name base of OpenGL display list that is actually used
 		const unsigned int currCisplayListNameBase = displayListStack_.top();
 
-		// disable OpenGL display list
-		pushDisplayList(isContextActivated, true);  // context activation doesn't care
-
 		if (isContextActivated)
 			createDisplayLists(currCisplayListNameBase);
 		else
@@ -1022,9 +1062,6 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 				createDisplayLists(currCisplayListNameBase);
 			}
 		}
-
-		// restore OpenGL display list
-		popDisplayList(isContextActivated);  // context activation doesn't care
 	}
 
 	return true;
@@ -1032,24 +1069,33 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 
 void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
 {
+	// for bitmap & outline fonts
+#if defined(_UNICODE) || defined(UNICODE)
+	createBitmapFonts(L"Comic Sans MS", 24);
+	createOutlineFonts(L"Arial", 10, 0.25f);
+#else
+	createBitmapFonts("Comic Sans MS", 24);
+	createOutlineFonts("Arial", 10, 0.25f);
+#endif
+
 	// for main content
 	glNewList(displayListNameBase + DLN_MAIN_CONTENT, GL_COMPILE);
-		drawMainContent();
+		drawMainContent(true);
 	glEndList();
 /*
 	// for floor
 	glNewList(displayListNameBase + DLN_FLOOR, GL_COMPILE);
-		drawFloor();
+		drawFloor(true);
 	glEndList();
 */
 	// for gradient background
 	glNewList(displayListNameBase + DLN_GRADIENT_BACKGROUND, GL_COMPILE);
-		drawGradientBackground();
+		drawGradientBackground(true);
 	glEndList();
 
 	// for color bar
 	glNewList(displayListNameBase + DLN_COLOR_BAR, GL_COMPILE);
-		drawColorBar();
+		drawColorBar(true);
 	glEndList();
 /*
 	// for coordinate frame
@@ -1057,6 +1103,107 @@ void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase
 		drawCoordinateFrame(true);
 	glEndList();
 */
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+bool CWglViewTestView::createBitmapFonts(const std::wstring &fontName, const int fontSize) const
+#else
+bool CWglViewTestView::createBitmapFonts(const std::string &fontName, const int fontSize) const
+#endif
+{
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	const boost::shared_ptr<context_type> &context = topContext();
+	if (context.get())
+	{
+		//context_type::guard_type guard(*context);
+
+		try
+		{
+			const HDC *dc = boost::any_cast<HDC *>(context->getNativeContext());
+			if (dc)
+			{
+#if defined(_UNICODE) || defined(UNICODE)
+				const DWORD charSet = 0 == _wcsicmp(fontName.c_str(), L"symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
+#else
+				const DWORD charSet = 0 == stricmp(fontName.c_str(), "symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
+#endif
+				const HFONT hFont = CreateFont(
+					fontSize, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+					charSet, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+					ANTIALIASED_QUALITY, FF_DONTCARE | DEFAULT_PITCH,
+					fontName.c_str()
+				);
+				if (!hFont) return false;
+				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
+
+				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT;
+				const bool ret = TRUE == wglUseFontBitmaps(*dc, 32, MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase);
+
+				SelectObject(*dc, hOldFont);
+				return ret;
+			}
+		}
+		catch (const boost::bad_any_cast &)
+		{
+			return false;
+		}
+	}
+
+	return false;
+#else
+	return false;
+#endif
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+bool CWglViewTestView::createOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const
+#else
+bool CWglViewTestView::createOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const
+#endif
+{
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	const boost::shared_ptr<context_type> &context = topContext();
+	if (context.get())
+	{
+		//context_type::guard_type guard(*context);
+
+		try
+		{
+			const HDC *dc = boost::any_cast<HDC *>(context->getNativeContext());
+			if (dc)
+			{
+#if defined(_UNICODE) || defined(UNICODE)
+				const DWORD charSet = 0 == _wcsicmp(fontName.c_str(), L"symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
+#else
+				const DWORD charSet = 0 == stricmp(fontName.c_str(), "symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
+#endif
+				const HFONT hFont = CreateFont(
+					fontSize, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
+					charSet, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
+					ANTIALIASED_QUALITY, FF_DONTCARE | DEFAULT_PITCH,
+					fontName.c_str()
+				);
+				if (!hFont) return false;
+				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
+
+				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT;
+				// it takes long time to create display lists for outline fonts
+				const bool ret = TRUE == wglUseFontOutlines(*dc, 0, MAX_OPENGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase, 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
+
+				SelectObject(*dc, hOldFont);
+				return ret;
+			}
+		}
+		catch (const boost::bad_any_cast &)
+		{
+			return false;
+		}
+	}
+
+	return false;
+#else
+	return false;
+#endif
 }
 
 void CWglViewTestView::setPerspective(const bool isPerspective)
@@ -1089,10 +1236,10 @@ void CWglViewTestView::setWireFrame(const bool isWireFrame)
 #endif
 }
 
-void CWglViewTestView::drawMainContent() const
+void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= false*/) const
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed())
 	{
 		glCallList(displayListStack_.top() + DLN_MAIN_CONTENT);
 		return;
@@ -1158,10 +1305,10 @@ void CWglViewTestView::drawMainContent() const
 #endif
 }
 
-void CWglViewTestView::drawGradientBackground() const
+void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /*= false*/) const
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed())
 	{
 		glCallList(displayListStack_.top() + DLN_GRADIENT_BACKGROUND);
 		return;
@@ -1191,35 +1338,12 @@ void CWglViewTestView::drawGradientBackground() const
 		glLoadIdentity();  // reset projection matrix
 		gluOrtho2D(0.0, 1.0, 0.0, 1.0);
 
-#if 0
-		const float topR = 0.776f;
-		const float topG = 0.835f;
-		const float topB = 0.980f;
-		const float bottomR = 0.243f;
-		const float bottomG = 0.443f;
-		const float bottomB = 0.968f;
-#elif 0
-		const float topR = 0.780f;
-		const float topG = 0.988f;
-		const float topB = 0.910f;
-		const float bottomR = 0.302f;
-		const float bottomG = 0.969f;
-		const float bottomB = 0.712f;
-#else
-		const float topR = 0.812f;
-		const float topG = 0.847f;
-		const float topB = 0.863f;
-		const float bottomR = 0.384f;
-		const float bottomG = 0.467f;
-		const float bottomB = 0.510f;
-#endif
-
 		glBegin(GL_QUADS);
-			glColor3f(bottomR, bottomG, bottomB);
+			glColor4f(bottomGradientBackgroundColor_[0], bottomGradientBackgroundColor_[1], bottomGradientBackgroundColor_[2], bottomGradientBackgroundColor_[3]);
 			glVertex3f(0.0f, 0.0f, 0.0f);
 			glVertex3f(1.0f, 0.0f, 0.0f);
 
-			glColor3f(topR, topG, topB);
+			glColor4f(topGradientBackgroundColor_[0], topGradientBackgroundColor_[1], topGradientBackgroundColor_[2], topGradientBackgroundColor_[3]);
 			glVertex3f(1.0f, 1.0f, 0.0f);
 			glVertex3f(0.0f, 1.0f, 0.0f);
 		glEnd();
@@ -1239,11 +1363,11 @@ void CWglViewTestView::drawGradientBackground() const
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawFloor() const
+void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) const
 {
 /*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed())
 	{
 		glCallList(displayListStack_.top() + DLN_FLOOR);
 		return;
@@ -1308,12 +1432,12 @@ void CWglViewTestView::drawFloor() const
 		glLineStipple(lineStippleScaleFactor, 0xAAAA);
 		glBegin(GL_LINES);
 			// the color of a floor
-			glColor3f(0.5f, 0.5f, 0.5f);
+			glColor4f(floorColor_[0], floorColor_[1], floorColor_[2], floorColor_[3]);
 
 			// xy-plane
 			if (isXYPlaneShown)
 			{
-				//glColor3f(0.7f, 0.0f, 0.0f);
+				//glColor4f(floorColor_[0], 0.0f, 0.0f, floorColor_[3]);
 
 				glVertex3f(xmin, ymin, xyPlane);  glVertex3f(xmin, ymax, xyPlane);
 				glVertex3f(xmax, ymin, xyPlane);  glVertex3f(xmax, ymax, xyPlane);
@@ -1334,7 +1458,7 @@ void CWglViewTestView::drawFloor() const
 			// yz-plane
 			if (isYZPlaneShown)
 			{
-				//glColor3f(0.0f, 0.7f, 0.0f);
+				//glColor4f(0.0f, floorColor_[1], 0.0f, floorColor_[3]);
 
 				glVertex3f(yzPlane, ymin, zmin);  glVertex3f(yzPlane, ymin, zmax);
 				glVertex3f(yzPlane, ymax, zmin);  glVertex3f(yzPlane, ymax, zmax);
@@ -1355,7 +1479,7 @@ void CWglViewTestView::drawFloor() const
 			// zx-plane
 			if (isZXPlaneShown)
 			{
-				//glColor3f(0.0f, 0.0f, 0.7f);
+				//glColor4f(0.0f, 0.0f, floorColor_[2], floorColor_[3]);
 
 				glVertex3f(xmin, zxPlane, zmin);  glVertex3f(xmax, zxPlane, zmin);
 				glVertex3f(xmin, zxPlane, zmax);  glVertex3f(xmax, zxPlane, zmax);
@@ -1385,10 +1509,10 @@ void CWglViewTestView::drawFloor() const
 	}
 }
 
-void CWglViewTestView::drawColorBar() const
+void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/) const
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed())
 	{
 		glCallList(displayListStack_.top() + DLN_COLOR_BAR);
 		return;
@@ -1472,11 +1596,11 @@ void CWglViewTestView::drawColorBar() const
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawCoordinateFrame() const
+void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= false*/) const
 {
 /*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed())
 	{
 		glCallList(displayListStack_.top() + DLN_COORDINATE_FRAME);
 		return
@@ -1541,16 +1665,6 @@ void CWglViewTestView::drawCoordinateFrame() const
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawText(const bool isBitmapFont, const float x, const float y, const float z, const std::string &str) const
-{
-	void *font = isBitmapFont ? GLUT_BITMAP_HELVETICA_18 : GLUT_STROKE_ROMAN;
-
-	glRasterPos3f(x, y, z);
-
-	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
-		isBitmapFont ? glutBitmapCharacter(font, *it) : glutStrokeCharacter(font, *it);
-}
-
 void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]) const
 {
 	const float ratio = 0.7f;  // cylinder ratio
@@ -1578,7 +1692,11 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 				glTranslated(0.0, 0.0, size);
 				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
 			glPopMatrix();
-	     	drawText(true, height, 0.0f, 0.0f, "X"); 
+#if defined(_UNICODE) || defined(UNICODE)
+	     	drawText(height, 0.0f, 0.0f, L"X");
+#else
+	     	drawText(height, 0.0f, 0.0f, "X");
+#endif
 		}
 		else if (1 == order[i])
 		{
@@ -1590,7 +1708,11 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 				glTranslated(0.0, 0.0, size);
 				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
 			glPopMatrix();
-			drawText(true, 0.0f, height, 0.0f, "Y"); 
+#if defined(_UNICODE) || defined(UNICODE)
+			drawText(0.0f, height, 0.0f, L"Y");
+#else
+			drawText(0.0f, height, 0.0f, "Y");
+#endif
 		}
 		else if (2 == order[i])
 		{
@@ -1601,11 +1723,139 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 				glTranslated(0.0, 0.0, size);
 				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
 			glPopMatrix();
-			drawText(true, 0.0f, 0.0f, height, "Z"); 
+#if defined(_UNICODE) || defined(UNICODE)
+			drawText(0.0f, 0.0f, height, L"Z");
+#else
+			drawText(0.0f, 0.0f, height, "Z");
+#endif
 		}
 	}
  
 	gluDeleteQuadric(obj);
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+void CWglViewTestView::drawText(const float x, const float y, const float z, const std::wstring &str) const
+#else
+void CWglViewTestView::drawText(const float x, const float y, const float z, const std::string &str) const
+#endif
+{
+#if 0
+	drawTextUsingGlutBitmapFonts(x, y, z, str);
+#elif 0
+	const float scale = 2.0f;
+	drawTextUsingGlutStrokeFonts(x, y, z, scale, scale, scale, str);
+#elif 1
+	drawTextUsingBitmapFonts(x, y, z, str);
+#else
+	const float scale = 300.0f;
+	drawTextUsingOutlineFonts(x, y, z, scale, scale, 1.0f, str);
+#endif
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+void CWglViewTestView::drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
+#else
+void CWglViewTestView::drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::string &str) const
+#endif
+{
+	void *font = GLUT_BITMAP_HELVETICA_18;
+
+	glRasterPos3f(x, y, z);
+
+#if defined(_UNICODE) || defined(UNICODE)
+	for (std::wstring::const_iterator it = str.begin(); it != str.end(); ++it)
+#else
+	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+#endif
+		glutBitmapCharacter(font, *it);
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+void CWglViewTestView::drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
+#else
+void CWglViewTestView::drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
+#endif
+{
+	void *font = GLUT_STROKE_ROMAN;
+
+	glPushMatrix();
+		glTranslatef(x, y, z);
+		glScalef(xScale, yScale, zScale);
+
+#if defined(_UNICODE) || defined(UNICODE)
+		for (std::wstring::const_iterator it = str.begin(); it != str.end(); ++it)
+#else
+		for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
+#endif
+			glutStrokeCharacter(font, *it);
+	glPopMatrix();
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
+#else
+void CWglViewTestView::drawTextUsingBitmapFonts(const float x, const float y, const float z, const std::string &str) const
+#endif
+{
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (isDisplayListUsed() && !str.empty())
+	{
+		glRasterPos3f(x, y, z);
+
+		glPushAttrib(GL_LIST_BIT);
+			const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT;
+			glListBase(fontDiplayListNameBase - 32);
+#if defined(_UNICODE) || defined(UNICODE)
+			glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
+#else
+			glCallLists((int)str.length(), GL_UNSIGNED_BYTE, str.c_str());
+#endif
+		glPopAttrib();
+	}
+#endif
+}
+
+#if defined(_UNICODE) || defined(UNICODE)
+void CWglViewTestView::drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
+#else
+void CWglViewTestView::drawTextUsingOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
+#endif
+{
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	if (isDisplayListUsed() && !str.empty())
+	{
+		float length = 0.0f;
+		for (size_t i = 0; i < str.length(); ++i)
+			length += gmf_[str[i]].gmfCellIncX;
+
+		// save states
+		GLint oldCullFace;
+		glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFace);
+		if (GL_BACK != oldCullFace) glCullFace(GL_BACK); 
+		const GLboolean isCullFace = glIsEnabled(GL_CULL_FACE);
+		if (!isCullFace) glEnable(GL_CULL_FACE);
+
+		glPushMatrix();
+			glTranslatef(x, y, z);
+			glScalef(xScale, yScale, zScale);
+
+			glPushAttrib(GL_LIST_BIT);
+				const unsigned int fontDiplayListNameBase = getCurrentDisplayListNameBase() + MAX_OPENGL_DISPLAY_LIST_COUNT + MAX_OPENGL_BITMAP_FONT_DISPLAY_LIST_COUNT;
+				glListBase(fontDiplayListNameBase);
+#if defined(_UNICODE) || defined(UNICODE)
+				glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
+#else
+				glCallLists((int)str.length(), GL_UNSIGNED_BYTE, str.c_str());
+#endif
+			glPopAttrib();
+		glPopMatrix();
+
+		// restore states
+		if (GL_BACK != oldCullFace) glCullFace(oldCullFace); 
+		if (!isCullFace) glDisable(GL_CULL_FACE);
+	}
+#endif
 }
 
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)

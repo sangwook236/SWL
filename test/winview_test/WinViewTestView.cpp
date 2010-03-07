@@ -437,7 +437,7 @@ bool CWinViewTestView::doPrepareRendering(const context_type &context, const cam
 	// clear the background
 	try
 	{
-		const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+		const HDC *dc = boost::any_cast<HDC *>(context.getNativeContext());
 		if (dc)
 		{
 			CDC *pDC = CDC::FromHandle(*dc);
@@ -492,7 +492,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 	{
 		try
 		{
-			const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+			const HDC *dc = boost::any_cast<HDC *>(context.getNativeContext());
 			if (dc)
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
@@ -602,7 +602,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 	{
 		try
 		{
-			const HDC *dc = boost::any_cast<const HDC *>(context.getNativeContext());
+			const HDC *dc = boost::any_cast<HDC *>(context.getNativeContext());
 			if (dc)
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
