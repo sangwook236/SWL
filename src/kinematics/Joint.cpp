@@ -32,7 +32,7 @@ Joint::~Joint()
 Joint & Joint::operator=(const Joint &rhs)
 {
 	if (this == &rhs) return *this;
-	//static_cast<Joint::base_type &>(*this) = rhs;
+	//static_cast<base_type &>(*this) = rhs;
 	jointParam_ = rhs.jointParam_;
 	return *this;
 }

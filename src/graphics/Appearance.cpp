@@ -32,7 +32,7 @@ Appearance::~Appearance()
 Appearance & Appearance::operator=(const Appearance &rhs)
 {
 	if (this == &rhs) return *this;
-	//static_cast<Appearance::base_type &>(*this) = rhs;
+	//static_cast<base_type &>(*this) = rhs;
 	color_ = rhs.color_;
 	visible_ = rhs.visible_;
 	transparent_ = rhs.transparent_;

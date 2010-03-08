@@ -4,6 +4,7 @@
 #include "swl/winutil/WinSerialPort.h"
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
+#include <iostream>
 #include <ctime>
 
 

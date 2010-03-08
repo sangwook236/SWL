@@ -29,7 +29,7 @@ GraphicsObj::~GraphicsObj()
 GraphicsObj & GraphicsObj::operator=(const GraphicsObj &rhs)
 {
 	if (this == &rhs) return *this;
-	//static_cast<GraphicsObj::base_type &>(*this) = rhs;
+	//static_cast<base_type &>(*this) = rhs;
 	pickable_ = rhs.pickable_;
 	return *this;
 }

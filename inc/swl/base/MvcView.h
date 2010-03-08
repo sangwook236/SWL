@@ -8,7 +8,7 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-//  class MvcView
+// class MvcView
 
 class SWL_BASE_API MvcView: public IObserver
 {
@@ -22,7 +22,7 @@ public:
 
 private:
 	MvcView(const MvcView &);
-	MvcView& operator=(const MvcView &);
+	MvcView & operator=(const MvcView &);
 
 public:
 };

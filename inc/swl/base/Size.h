@@ -14,10 +14,10 @@ public:
 	typedef T value_type;
 
 public:    
-    Size2(const T& Width = T(0), const T& Height = T(0))
+    Size2(const T &Width = T(0), const T &Height = T(0))
 	: width(Width), height(Height)
 	{}
-    Size2(const Size2<T>& rhs)
+    Size2(const Size2<T> &rhs)
 	: width(rhs.width), height(rhs.height)
 	{}
 	explicit Size2(const T rhs[2])
@@ -25,9 +25,9 @@ public:
 	{}
     ~Size2()  {}
 
-    Size2<T>& operator=(const Size2<T>& rhs)
+    Size2<T> & operator=(const Size2<T> &rhs)
     {
-        if (this == &rhs)  return *this;
+        if (this == &rhs) return *this;
         width = rhs.width;
 		height = rhs.height;
         return *this;
@@ -52,10 +52,10 @@ public:
 	typedef T value_type;
 
 public:    
-    Size3(const T& Width = T(0), const T& Height = T(0), const T& Depth = T(0))
+    Size3(const T &Width = T(0), const T &Height = T(0), const T &Depth = T(0))
 	: width(Width), height(Height), depth(Depth)
 	{}
-    Size3(const Size3<T>& rhs)
+    Size3(const Size3<T> &rhs)
 	: width(rhs.width), height(rhs.height), depth(rhs.depth)
 	{}
 	explicit Size3(const T rhs[3])
@@ -63,9 +63,9 @@ public:
 	{}
     ~Size3()  {}
 
-    Size3<T>& operator=(const Size3<T>& rhs)
+    Size3<T> & operator=(const Size3<T> &rhs)
     {
-        if (this == &rhs)  return *this;
+        if (this == &rhs) return *this;
         width = rhs.width;
 		height = rhs.height;
 		depth = rhs.depth;

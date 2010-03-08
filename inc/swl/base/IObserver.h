@@ -18,14 +18,14 @@ public:
 
 protected:
 	explicit IObserver()  {}
-	explicit IObserver(const IObserver&)  {}
+	explicit IObserver(const IObserver &)  {}
 
 public:
 	virtual ~IObserver();
 
 public:
 	///
-	virtual void updateObserver(const notifier_type& notifier, const boost::any& msg = boost::any()) = 0;
+	virtual void updateObserver(const notifier_type &notifier, const boost::any &msg = boost::any()) = 0;
 };
 
 }  // namespace swl

@@ -205,6 +205,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SceneNode.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Shape.cpp"
 				>
 			</File>
@@ -256,6 +260,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\graphics\PickableAttrib.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\SceneNode.h"
 				>
 			</File>
 			<File

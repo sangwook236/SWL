@@ -34,7 +34,7 @@ GeometryPool::geometry_id_type & GeometryPool::createGeometryId()
 			break;
 		}
 
-	geometryPool_.insert(std::make_pair(geomId, boost::shared_ptr<geometry_type>()));
+	geometryPool_.insert(std::make_pair(geomId, geometry_type()));
 	return geomId;
 }
 
@@ -44,32 +44,31 @@ void GeometryPool::deleteGeometryId(const GeometryPool::geometry_id_type &geomId
 		geometryPool_.erase(geomId);
 }
 
-bool GeometryPool::setGeometry(const geometry_id_type &geomId, geometry_type &geom)
+bool GeometryPool::setGeometry(const GeometryPool::geometry_id_type &geomId, GeometryPool::geometry_type &geom)
 {
 	if (geometryPool_.empty()) return false;
 	geometry_pool_type::iterator it = geometryPool_.find(geomId);
 	if (geometryPool_.end() == it) return false;
 	else
 	{
-		// TODO [check] >>
-		//it->second = boost::shared_ptr<geometry_type>(&geom);
-		it->second.reset(&geom);
+		// TODO [check] >> is it correct?
+		it->second = geom;
 		return true;
 	}
 }
 
-boost::shared_ptr<GeometryPool::geometry_type> GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId)
+GeometryPool::geometry_type GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId)
 {
-	if (geometryPool_.empty()) return boost::shared_ptr<geometry_type>();
+	if (geometryPool_.empty()) return geometry_type();
 	geometry_pool_type::iterator it = geometryPool_.find(geomId);
-	return geometryPool_.end() == it ? boost::shared_ptr<geometry_type>() : it->second;
+	return geometryPool_.end() == it ? geometry_type() : it->second;
 }
 
-const boost::shared_ptr<GeometryPool::geometry_type> GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId) const
+const GeometryPool::geometry_type GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId) const
 {
-	if (geometryPool_.empty()) return boost::shared_ptr<geometry_type>();
+	if (geometryPool_.empty()) return geometry_type();
 	geometry_pool_type::const_iterator it = geometryPool_.find(geomId);
-	return geometryPool_.end() == it ? boost::shared_ptr<geometry_type>() : it->second;
+	return geometryPool_.end() == it ? geometry_type() : it->second;
 }
 
 }  // namespace swl

@@ -30,7 +30,7 @@ Geometry::~Geometry()
 Geometry & Geometry::operator=(const Geometry &rhs)
 {
 	if (this == &rhs) return *this;
-	//static_cast<Geometry::base_type &>(*this) = rhs;
+	//static_cast<base_type &>(*this) = rhs;
 	return *this;
 }
 

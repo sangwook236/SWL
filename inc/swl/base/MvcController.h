@@ -8,7 +8,7 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-//  class MvcController
+// class MvcController
 
 class MvcController: public Notifier
 {
@@ -24,7 +24,7 @@ public:
 
 private:
 	MvcController(const MvcController &);
-	MvcController& operator=(const MvcController &);
+	MvcController & operator=(const MvcController &);
 
 public:
 };

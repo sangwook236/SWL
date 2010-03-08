@@ -14,10 +14,10 @@ public:
 	typedef T value_type;
 
 public:    
-    Tuple2(const T& First = T(0), const T& Second = T(0))
+    Tuple2(const T &First = T(0), const T &Second = T(0))
 	: first(First), second(Second)
 	{}
-    Tuple2(const Tuple2<T>& rhs)
+    Tuple2(const Tuple2<T> &rhs)
 	: first(rhs.first), second(rhs.second)
 	{}
 	explicit Tuple2(const T rhs[2])
@@ -25,9 +25,9 @@ public:
 	{}
     ~Tuple2()  {}
 
-    Tuple2<T>& operator=(const Tuple2<T>& rhs)
+    Tuple2<T> & operator=(const Tuple2<T> &rhs)
     {
-        if (this == &rhs)  return *this;
+        if (this == &rhs) return *this;
         first = rhs.first;
 		second = rhs.second;
         return *this;
@@ -54,10 +54,10 @@ public:
 	typedef T value_type;
 
 public:    
-    Tuple3(const T& First = T(0), const T& Second = T(0), const T& Third = T(0))
+    Tuple3(const T &First = T(0), const T &Second = T(0), const T &Third = T(0))
 	: first(First), second(Second), third(Third)
 	{}
-    Tuple3(const Tuple3<T>& rhs)
+    Tuple3(const Tuple3<T> &rhs)
 	: first(rhs.first), second(rhs.second), third(rhs.third)
 	{}
 	explicit Tuple3(const T rhs[3])
@@ -65,9 +65,9 @@ public:
 	{}
     ~Tuple3()  {}
 
-    Tuple3<T>& operator=(const Tuple3<T>& rhs)
+    Tuple3<T> & operator=(const Tuple3<T> &rhs)
     {
-        if (this == &rhs)  return *this;
+        if (this == &rhs) return *this;
         first = rhs.first;
 		second = rhs.second;
 		third = rhs.third;
@@ -91,13 +91,13 @@ template<typename T>
 struct Tuple4
 {
 public:
-	typedef T	value_type;
+	typedef T value_type;
 
 public:    
-    Tuple4(const T& First = T(0), const T& Second = T(0), const T& Third = T(0), const T& Fourth = T(0))
+    Tuple4(const T &First = T(0), const T &Second = T(0), const T &Third = T(0), const T &Fourth = T(0))
 	:  first(First), second(Second), third(Third), fourth(Fourth)
 	{}
-    Tuple4(const Tuple4<T>& rhs)
+    Tuple4(const Tuple4<T> &rhs)
 	:  first(rhs.first), second(rhs.second), third(rhs.third), fourth(rhs.fourth)
 	{}
 	explicit Tuple4(const T rhs[4])
@@ -105,9 +105,9 @@ public:
 	{}
     ~Tuple4()  {}
 
-    Tuple4<T>& operator=(const Tuple4<T>& rhs)
+    Tuple4<T> & operator=(const Tuple4<T> &rhs)
     {
-        if (this == &rhs)  return *this;
+        if (this == &rhs) return *this;
         first = rhs.first;
 		second = rhs.second;
 		third = rhs.third;
