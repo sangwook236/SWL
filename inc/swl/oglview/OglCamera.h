@@ -37,7 +37,7 @@ public:
 	///
 	double calcResizingRatio() const;
 
-protected :
+protected:
 	///
 	/*virtual*/ bool doUpdateFrustum();
 	/*virtual*/ bool doUpdateViewport();

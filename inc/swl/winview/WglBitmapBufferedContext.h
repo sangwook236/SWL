@@ -42,7 +42,7 @@ public:
 	void * getOffScreen()  {  return dibBits_;  }
 	const void * getOffScreen() const  {  return dibBits_;  }
 
-protected :
+protected:
 	/// activate the context
 	/*virtual*/ bool activate();
 	/// de-activate the context

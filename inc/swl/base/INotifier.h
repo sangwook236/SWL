@@ -45,7 +45,7 @@ protected:
     explicit Notifier();
     explicit Notifier(const Notifier& rhs);
 
-public :
+public:
 	virtual ~Notifier();
 
 	Notifier& operator=(const Notifier& rhs);

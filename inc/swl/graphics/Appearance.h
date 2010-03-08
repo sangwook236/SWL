@@ -4,6 +4,7 @@
 
 #include "swl/graphics/ExportGraphics.h"
 #include "swl/graphics/Color.h"
+#include "swl/graphics/VisibleAttrib.h"
 #include "swl/graphics/TransparentAttrib.h"
 
 
@@ -11,7 +12,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API RGBAColor<double>;
+SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<double>;
 #endif
 
 
@@ -22,13 +23,14 @@ class SWL_GRAPHICS_API Appearance
 {
 public:
 	//typedef Appearance base_type;
+	typedef VisibleAttrib::PolygonMode PolygonMode;
 
 public:
 	Appearance();
 	Appearance(const Appearance &rhs);
 	virtual ~Appearance();
 
-	Appearance& operator=(const Appearance &rhs);
+	Appearance & operator=(const Appearance &rhs);
 
 public:
 	/// accessor & mutator
@@ -41,12 +43,19 @@ public:
 	double & alpha()  {  return color_.a;  }
 	double alpha() const  {  return color_.a;  }
 
+	void setVisible(bool isVisible)  {  visible_.setVisible(isVisible);  }
+	bool isVisible() const  {  return visible_.isVisible();  }
+
+	void setPolygonMode(const PolygonMode polygonMode)  {  visible_.setPolygonMode(polygonMode);  }
+	PolygonMode getPolygonMode() const  {  return visible_.getPolygonMode();  }
+
 	void setTransparent(bool isTransparent)  {  transparent_.setTransparent(isTransparent);  }
 	bool isTransparent() const  {  return transparent_.isTransparent();  }
 
 private:
-	///
-	RGBAColor<double> color_;
+	Color4<double> color_;
+
+	VisibleAttrib visible_;
 	TransparentAttrib transparent_;
 };
 

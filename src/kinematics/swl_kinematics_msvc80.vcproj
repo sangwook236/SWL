@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8.00"
-	Name="swl_graphics"
-	ProjectGUID="{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
-	RootNamespace="swl_graphics"
+	Name="swl_kinematics"
+	ProjectGUID="{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
+	RootNamespace="swl_kinematics"
 	Keyword="Win32Proj"
 	>
 	<Platforms>
@@ -20,7 +20,6 @@
 			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			UseOfMFC="0"
 			CharacterSet="1"
 			>
 			<Tool
@@ -41,8 +40,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GRAPHICS"
+				AdditionalIncludeDirectories="../../inc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_KINEMATICS"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -100,7 +99,6 @@
 			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
-			UseOfMFC="0"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -121,8 +119,8 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../../inc/"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GRAPHICS"
+				AdditionalIncludeDirectories="../../inc"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_KINEMATICS"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -182,99 +180,183 @@
 		<Filter
 			Name="Source Files"
 			Filter="cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{5E760451-1E17-4050-84F7-38656AFDD5AC}"
+			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\Appearance.cpp"
+				RelativePath=".\ArcPathPlanner.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\CoordinateFrame.cpp"
+				RelativePath=".\ArticulatedKinematics.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Geometry.cpp"
+				RelativePath=".\CartesianKinematics.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\GeometryPool.cpp"
+				RelativePath=".\CartesianPathPlanner.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\GraphicsObj.cpp"
+				RelativePath=".\CurvePathPlanner.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\Shape.cpp"
+				RelativePath=".\DHParam.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Joint.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\JointParam.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\JointPathPlanner.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Kinematics.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\LinePathPlanner.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\Link.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PathBlender.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PathPlanner.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\PumaKinematics.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RearLinkKinematics.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RobotKinematics.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ScaraKinematics.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ScrewAxis.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\StanfordArmKinematics.cpp"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{A137C959-F0A6-428f-896C-69ED694D2FB9}"
+			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\inc\swl\graphics\Appearance.h"
+				RelativePath="..\..\inc\swl\kinematics\ArcPathPlanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\BoundingBox.h"
+				RelativePath="..\..\inc\swl\kinematics\ArticulatedKinematics.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\Color.h"
+				RelativePath="..\..\inc\swl\kinematics\CartesianKinematics.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\CoordinateFrame.h"
+				RelativePath="..\..\inc\swl\kinematics\CartesianPathPlanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\ExportGraphics.h"
+				RelativePath="..\..\inc\swl\kinematics\CurvePathPlanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\Geometry.h"
+				RelativePath="..\..\inc\swl\kinematics\DHParam.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\GeometryPool.h"
+				RelativePath="..\..\inc\swl\kinematics\ExportKinematics.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\GraphicsObj.h"
+				RelativePath="..\..\inc\swl\kinematics\Joint.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\IDrawable.h"
+				RelativePath="..\..\inc\swl\kinematics\JointParam.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\ITransformable.h"
+				RelativePath="..\..\inc\swl\kinematics\JointPathPlanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\PickableAttrib.h"
+				RelativePath="..\..\inc\swl\kinematics\Kinematics.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\Shape.h"
+				RelativePath="..\..\inc\swl\kinematics\LinePathPlanner.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\TransparentAttrib.h"
+				RelativePath="..\..\inc\swl\kinematics\Link.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\VisibleAttrib.h"
+				RelativePath="..\..\inc\swl\kinematics\PathBlender.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\PathPlanner.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\PumaKinematics.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\RearLinkKinematics.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\RobotKinematics.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\ScaraKinematics.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\ScrewAxis.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\kinematics\StanfordArmKinematics.h"
 				>
 			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
-			UniqueIdentifier="{2DD1C932-B302-464a-A60C-0227FF29F906}"
+			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 		</Filter>
 	</Files>

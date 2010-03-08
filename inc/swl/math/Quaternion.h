@@ -22,18 +22,18 @@ public:
     typedef T value_type;
     
 public:
-	Quaternion(const T& tQ0 = T(0), const T& tQ1 = T(0), const T& tQ2 = T(0), const T& tQ3 = T(0))
+	Quaternion(const T &tQ0 = T(0), const T &tQ1 = T(0), const T &tQ2 = T(0), const T &tQ3 = T(0))
 	: q0_(tQ0), q1_(tQ1), q2_(tQ2), q3_(tQ3)
 	{}
 	explicit Quaternion(const T rhs[4])
 	: q0_(rhs[0]), q1_(rhs[1]), q2_(rhs[2]), q3_(rhs[3])
     {}
-	Quaternion(const Quaternion& rhs)
+	Quaternion(const Quaternion &rhs)
 	: q0_(rhs.q0_), q1_(rhs.q1_), q2_(rhs.q2_), q3_(rhs.q3_)
 	{}
 	~Quaternion()  {}
 
-	Quaternion& operator=(const Quaternion& rhs)
+	Quaternion & operator=(const Quaternion &rhs)
     {
     	if (this == &rhs) return *this;
     	q0_ = rhs.q0_;  q1_ = rhs.q1_;  q2_ = rhs.q2_;  q3_ = rhs.q3_;
@@ -42,75 +42,75 @@ public:
 
 public:
 	/// accessor & mutator
-	T& q0()  {  return q0_;  }
-	const T& q0() const  {  return q0_;  }
-	T& q1()  {  return q1_;  }
-	const T& q1() const  {  return q1_;  }
-	T& q2()  {  return q2_;  }
-	const T& q2() const  {  return q2_;  }
-	T& q3()  {  return q3_;  }
-	const T& q3() const  {  return q3_;  }
+	T & q0()  {  return q0_;  }
+	const T & q0() const  {  return q0_;  }
+	T & q1()  {  return q1_;  }
+	const T & q1() const  {  return q1_;  }
+	T & q2()  {  return q2_;  }
+	const T & q2() const  {  return q2_;  }
+	T & q3()  {  return q3_;  }
+	const T & q3() const  {  return q3_;  }
 
 	///
-    T& operator[](unsigned int iIndex);
-    const T& operator[](unsigned int iIndex) const;
+    T & operator[](const unsigned int iIndex);
+    const T & operator[](const unsigned int iIndex) const;
 
 	///
-	bool isZero(const T& tTol = (T)MathConstant::EPS) const
+	bool isZero(const T &tTol = (T)MathConstant::EPS) const
 	{
 		return MathUtil::isZero(q0_, tTol) && MathUtil::isZero(q1_, tTol) &&
 			   MathUtil::isZero(q2_, tTol) && MathUtil::isZero(q3_, tTol);
 	}
-	bool isEqual(const Quaternion& rhs, const T& tTol = (T)MathConstant::EPS) const
+	bool isEqual(const Quaternion &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		return MathUtil::isZero(q0_ - rhs.q0_, tTol) && MathUtil::isZero(q1_ - rhs.q1_, tTol) &&
 			   MathUtil::isZero(q2_ - rhs.q2_, tTol) && MathUtil::isZero(q3_ - rhs.q3_, tTol);
 	}
-	bool isUnit(const T& tTol = (T)MathConstant::EPS) const
+	bool isUnit(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(norm() - T(1), tTol);  }
-	bool isScalar(const T& tTol = (T)MathConstant::EPS) const
+	bool isScalar(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(q1_, tTol) && MathUtil::isZero(q2_, tTol) && MathUtil::isZero(q3_, tTol);  }
-	bool isVector(const T& tTol = (T)MathConstant::EPS) const
+	bool isVector(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(q0_, tTol);  }
 
 	/// comparison operator
-	bool operator==(const Quaternion& rhs) const
+	bool operator==(const Quaternion &rhs) const
 	{  return isEqual(rhs);  }
-	bool operator!=(const Quaternion& rhs) const
+	bool operator!=(const Quaternion &rhs) const
 	{  return !isEqual(rhs);  }
 
 	/// arithmetic functions
-	Quaternion& operator+()  {  return *this;  }
-	const Quaternion& operator+() const  {  return *this;  }
-	Quaternion operator+(const Quaternion& rhs) const
+	Quaternion & operator+()  {  return *this;  }
+	const Quaternion & operator+() const  {  return *this;  }
+	Quaternion operator+(const Quaternion &rhs) const
 	{  return Quaternion(q0_+rhs.q0_, q1_+rhs.q1_, q2_+rhs.q2_, q3_+rhs.q3_);  }
-	Quaternion& operator+=(const Quaternion& rhs)
+	Quaternion & operator+=(const Quaternion &rhs)
 	{  q0_ += rhs.q0_;  q1_ += rhs.q1_;  q2_ += rhs.q2_;  q3_ += rhs.q3_;  return *this;  }
 	Quaternion operator-() const
 	{  return Quaternion(-q0_, -q1_, -q2_, -q3_);  }
-	Quaternion operator-(const Quaternion& rhs) const
+	Quaternion operator-(const Quaternion &rhs) const
 	{  return Quaternion(q0_-rhs.q0_, q1_-rhs.q1_, q2_-rhs.q2_, q3_-rhs.q3_);  }
-	Quaternion& operator-=(const Quaternion& rhs)
+	Quaternion & operator-=(const Quaternion &rhs)
 	{  q0_ -= rhs.q0_;  q1_ -= rhs.q1_;  q2_ -= rhs.q2_;  q3_ -= rhs.q3_;  return *this;  }
-	Quaternion operator*(const Quaternion& rhs) const;
-	Quaternion& operator*=(const Quaternion& rhs)
+	Quaternion operator*(const Quaternion &rhs) const;
+	Quaternion & operator*=(const Quaternion &rhs)
 	{  return *this = *this * rhs;  }
-	Quaternion operator/(const Quaternion& rhs) const
+	Quaternion operator/(const Quaternion &rhs) const
 	{  return *this * rhs.inverse();  }
-	Quaternion& operator/=(const Quaternion& rhs)
+	Quaternion & operator/=(const Quaternion &rhs)
 	{  return *this *= rhs.inverse();  }
 
 	/// scalar operation
-	Quaternion operator*(const T& S) const
+	Quaternion operator*(const T &S) const
     {  return Quaternion(q0_*S, q1_*S, q2_*S, q3_*S);  }
-	Quaternion& operator*=(const T& S)
+	Quaternion & operator*=(const T &S)
 	{  q0_ *= S;  q1_ *= S;  q2_ *= S;  q3_ *= S;  return *this;  }
-	Quaternion operator/(const T& S) const;
-	Quaternion& operator/=(const T& S);
+	Quaternion operator/(const T &S) const;
+	Quaternion & operator/=(const T& S);
 /*
-	friend Quaternion operator*(const T& S, const Quaternion& rhs)
+	friend Quaternion operator*(const T &S, const Quaternion &rhs)
     {  return rhs * S;  }
-	friend Quaternion operator/(const T& S, const Quaternion& rhs)
+	friend Quaternion operator/(const T &S, const Quaternion &rhs)
     {  return rhs / S;  }
 */
 	/// norm of a quaternion
@@ -135,30 +135,30 @@ public:
 	{  aVector[0] = q1_;  aVector[1] = q2_;  aVector[2] = q3_;  }
 
 	///
-	Quaternion rotate(const Quaternion& quat);
-	Quaternion rotate(const T& rad, const TVector3<T>& axis);
+	Quaternion rotate(const Quaternion &quat);
+	Quaternion rotate(const T &rad, const TVector3<T> &axis);
 
 	/// angle-axis representation
 	T angle();
 	TVector3<T> axis();
 
 	/// angle-axis representation ==> quaternion
-	static Quaternion toQuaternion(const T& rad, const TVector3<T>& axis);
+	static Quaternion toQuaternion(const T &rad, const TVector3<T> &axis);
 
 	/// 3x3 rotation matirx ==> quaternion
-	static Quaternion toQuaternion(const RMatrix3<T>& rotMat);
+	static Quaternion toQuaternion(const RMatrix3<T> &rotMat);
 
 	/// slerp: spherical linear interpolation
 	/// 0 <= t <= 1 && uq0, uq1: unit quaternions
-	static Quaternion slerp(const T& t, const Quaternion& uq0, const Quaternion& uq1);
+	static Quaternion slerp(const T &t, const Quaternion &uq0, const Quaternion &uq1);
 
 	/// squad: spherical cubic interpolation
 	/// 0 <= t <= 1 && uq0, uq1, uq2, uq3: unit quaternions
-	static Quaternion squad(const T& t, const Quaternion& uq0, const Quaternion& uq1, const Quaternion& uq2, const Quaternion& uq3);
+	static Quaternion squad(const T &t, const Quaternion &uq0, const Quaternion &uq1, const Quaternion &uq2, const Quaternion &uq3);
 
 private:
 	/// for unit quaternion
-	Quaternion pow(const T& t);
+	Quaternion pow(const T &t);
 	Quaternion log();
 
 private:
@@ -168,7 +168,7 @@ private:
 
 
 template<typename T>
-T& Quaternion<T>::operator[](unsigned int iIndex)
+T & Quaternion<T>::operator[](const unsigned int iIndex)
 {
 	switch (iIndex)
 	{
@@ -183,7 +183,7 @@ T& Quaternion<T>::operator[](unsigned int iIndex)
 }
 
 template<typename T>
-const T& Quaternion<T>::operator[](unsigned int iIndex) const
+const T & Quaternion<T>::operator[](const unsigned int iIndex) const
 {
 	switch (iIndex)
 	{
@@ -198,7 +198,7 @@ const T& Quaternion<T>::operator[](unsigned int iIndex) const
 }
 
 template<typename T>
-Quaternion<T> Quaternion<T>::operator*(const Quaternion<T>& rhs) const
+Quaternion<T> Quaternion<T>::operator*(const Quaternion<T> &rhs) const
 {
 	return Quaternion<T>(
 		q0_*rhs.q0_ - q1_*rhs.q1_ - q2_*rhs.q2_ - q3_*rhs.q3_,
@@ -209,7 +209,7 @@ Quaternion<T> Quaternion<T>::operator*(const Quaternion<T>& rhs) const
 }
 
 template<typename T>
-Quaternion<T> Quaternion<T>::operator/(const T& S) const
+Quaternion<T> Quaternion<T>::operator/(const T &S) const
 {
 	if (MathUtil::isZero(S))
 	{
@@ -220,7 +220,7 @@ Quaternion<T> Quaternion<T>::operator/(const T& S) const
 }
 
 template<typename T>
-Quaternion<T>& Quaternion<T>::operator/=(const T& S)
+Quaternion<T> & Quaternion<T>::operator/=(const T &S)
 {
 	if (MathUtil::isZero(S))
 	{
@@ -258,11 +258,11 @@ Quaternion<T> Quaternion<T>::unit() const
 }
 
 template<typename T>
-Quaternion<T> Quaternion<T>::rotate(const Quaternion<T>& quat)
+Quaternion<T> Quaternion<T>::rotate(const Quaternion<T> &quat)
 {  return quat * *this * quat.inverse();  }
 
 template<typename T>
-Quaternion<T> Quaternion<T>::rotate(const T& rad, const TVector3<T>& axis)
+Quaternion<T> Quaternion<T>::rotate(const T &rad, const TVector3<T> &axis)
 {  return rotate(Quaternion<T>::toQuaternion(rad, axis));  }
 
 template<typename T>
@@ -292,11 +292,11 @@ TVector3<T> Quaternion<T>::axis()
 		return TVector3<T>();
 	}
 
-	TVector3<T>(q1_ / h2, q2_ / h2, q3_ / h2);
+	return TVector3<T>(q1_ / h2, q2_ / h2, q3_ / h2);
 }
 
 template<typename T>
-/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const T& rad, const TVector3<T>& axis)
+/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const T &rad, const TVector3<T> &axis)
 {
 	// for making a unit quaternion
 	const T tNorm = (T)sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
@@ -313,7 +313,7 @@ template<typename T>
 
 // 3x3 rotation matirx ==> quaternion
 template<typename T>
-/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const RMatrix3<T>& rotMat)
+/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const RMatrix3<T> &rotMat)
 //  R = [  e0  e3  e6  ]
 //      [  e1  e4  e7  ]
 //      [  e2  e5  e8  ]
@@ -369,7 +369,7 @@ template<typename T>
 // slerp: spherical linear interpolation
 // 0 <= t <= 1 && q0, q1: unit quaternions
 template<typename T>
-/*static*/ Quaternion<T> Quaternion<T>::slerp(const T& t, const Quaternion<T>& uq0, const Quaternion<T>& uq1)
+/*static*/ Quaternion<T> Quaternion<T>::slerp(const T &t, const Quaternion<T> &uq0, const Quaternion<T> &uq1)
 {
 /*
 	// for non-unit quaternions
@@ -390,7 +390,7 @@ template<typename T>
 // squad: spherical cubic interpolation
 // 0 <= t <= 1 && uq0, uq1, uq2, uq3: unit quaternions
 template<typename T>
-/*static*/ Quaternion<T> Quaternion<T>::squad(const T& t, const Quaternion<T>& uq0, const Quaternion<T>& uq1, const Quaternion<T>& uq2, const Quaternion<T>& uq3)
+/*static*/ Quaternion<T> Quaternion<T>::squad(const T &t, const Quaternion<T> &uq0, const Quaternion<T> &uq1, const Quaternion<T> &uq2, const Quaternion<T> &uq3)
 {
 /*
 	// for non-unit quaternions
@@ -402,7 +402,7 @@ template<typename T>
 
 // for unit quaternion
 template<typename T>
-Quaternion<T> Quaternion<T>::pow(const T& t)
+Quaternion<T> Quaternion<T>::pow(const T &t)
 {
 	const T theta(angle());
 	const TVector3<T> U(axis());
@@ -426,7 +426,7 @@ Quaternion<T> Quaternion<T>::log()
 // Quaternion API
 
 template<typename T>
-std::istream& operator>>(std::istream& stream, Quaternion<T>& q)
+std::istream & operator>>(std::istream &stream, Quaternion<T> &q)
 {
 	// < q0 + q1 {i} + q2 {j} + q3 {k} > means a quaternion
 /*
@@ -444,7 +444,7 @@ std::istream& operator>>(std::istream& stream, Quaternion<T>& q)
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& stream, const Quaternion<T>& q)
+std::ostream & operator<<(std::ostream &stream, const Quaternion<T> &q)
 {
 	// < q0 + q1 {i} + q2 {j} + q3 {k} > means a quaternion
 	stream << "< " << q.q0() << " + " << q.q1() << " {i} + " << q.q2() << " {j} + " << q.q3() << " {k} >";

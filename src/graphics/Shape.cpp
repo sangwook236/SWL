@@ -29,7 +29,7 @@ Shape::~Shape()
 {
 }
 
-Shape& Shape::operator=(const Shape &rhs)
+Shape & Shape::operator=(const Shape &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<Shape::base_type &>(*this) = rhs;

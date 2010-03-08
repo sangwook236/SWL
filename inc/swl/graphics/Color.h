@@ -5,12 +5,13 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// struct RGBColor
+// struct Color3
 
 template<typename T>
-struct RGBColor
+struct Color3
 {
-	RGBColor(const T &tRed = T(0), const T &tGreen = T(0), const T &tBlue = T(0))
+public:
+	Color3(const T &tRed = T(0), const T &tGreen = T(0), const T &tBlue = T(0))
 	: red(tRed), green(tGreen), blue(tBlue)
 	{}
 
@@ -24,12 +25,13 @@ struct RGBColor
 
 
 //--------------------------------------------------------------------------
-// struct RGBAColor
+// struct Color4
 
 template<typename T>
-struct RGBAColor
+struct Color4
 {
-	RGBAColor(const T &tRed = T(0), const T &tGreen = T(0), const T &tBlue = T(0), const T &tAlpha = T(0))
+public:
+	Color4(const T &tRed = T(0), const T &tGreen = T(0), const T &tBlue = T(0), const T &tAlpha = T(0))
 	: red(tRed), green(tGreen), blue(tBlue), alpha(tAlpha)
 	{}
 

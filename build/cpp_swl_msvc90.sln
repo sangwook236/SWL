@@ -121,6 +121,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test"
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics", "..\src\kinematics\swl_kinematics_msvc90.vcproj", "{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -203,6 +205,10 @@ Global
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Debug|Win32.Build.0 = Debug|Win32
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Release|Win32.ActiveCfg = Release|Win32
 		{E4DAAE16-B50D-4A59-88BA-051A26BE191B}.Release|Win32.Build.0 = Release|Win32
+		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}.Debug|Win32.Build.0 = Debug|Win32
+		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}.Release|Win32.ActiveCfg = Release|Win32
+		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

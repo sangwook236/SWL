@@ -33,7 +33,7 @@ CoordinateFrame::~CoordinateFrame()
 {
 }
 
-CoordinateFrame& CoordinateFrame::operator=(const CoordinateFrame &rhs)
+CoordinateFrame & CoordinateFrame::operator=(const CoordinateFrame &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<CoordinateFrame::base_type &>(*this) = rhs;

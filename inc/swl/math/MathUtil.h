@@ -48,9 +48,9 @@ public:
 	static bool isReal(const double x, const double tol = MathConstant::EPS);
 
 	///
-	static double deg2rad(const double deg)
+	static double toRad(const double deg)
 	{  return deg * MathConstant::TO_RAD;  }
-	static double rad2deg(const double rad)
+	static double toDeg(const double rad)
 	{  return rad * MathConstant::TO_DEG;  }
 
 	/// convert base field

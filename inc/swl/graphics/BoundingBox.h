@@ -38,7 +38,7 @@ public:
 	{}
 	~BoundingBox()  {}
 
-	BoundingBox<T>& operator=(const BoundingBox<T>& rhs)
+	BoundingBox<T> & operator=(const BoundingBox<T> &rhs)
 	{
 		if (this == &rhs) return *this;
 		//static_cast<base_type &>(*this) = rhs;
@@ -48,15 +48,15 @@ public:
 
 public:
     /// union bounding boxes             
-	BoundingBox<T> operator|(const BoundingBox<T>& rhs) const
+	BoundingBox<T> operator|(const BoundingBox<T> &rhs) const
 	{  return bound_ | rhs.bound_;  }
-	BoundingBox<T>& operator|=(const BoundingBox<T>& rhs)
+	BoundingBox<T> & operator|=(const BoundingBox<T> &rhs)
 	{  return (bound_ |= rhs.bound_);  }
 	
     /// intersect bounding boxes               
-	BoundingBox<T> operator&(const BoundingBox<T>& rhs) const
+	BoundingBox<T> operator&(const BoundingBox<T> &rhs) const
 	{  return bound_ & rhs.bound_;  }
-	BoundingBox<T>& operator&=(const BoundingBox<T>& rhs)
+	BoundingBox<T> & operator&=(const BoundingBox<T> &rhs)
 	{  return (bound_ &= rhs.bound_);  }
 
 	///
@@ -72,7 +72,7 @@ public:
 	}
 
 	///
-	void updateBound(const TMatrix3<T>& rTMat)
+	void updateBound(const TMatrix3<T> &rTMat)
 	{  *this = calcAxisAlignedBox(rTMat);  }
 
 	///
@@ -86,9 +86,9 @@ public:
 	{  return bound_.diagonal();  }
 
 protected:
-	BoundingBox<T> calcAxisAlignedBox(const TMatrix3<T>& mat)
+	BoundingBox<T> calcAxisAlignedBox(const TMatrix3<T> &mat)
 	{
-		swTVector3<T> vertexArr[8];
+		TVector3<T> vertexArr[8];
 		getAllVertices(vertexArr);
 		for (int i = 0 ; i < 8 ; ++i) vertexArr[i] = mat * vertexArr[i];
 
@@ -105,7 +105,7 @@ protected:
 		return BoundingBox<T>(minArr, maxArr);
 	}
 
-	void getAllVertices(swTVector3<T> vertexArr[8])
+	void getAllVertices(TVector3<T> vertexArr[8])
 	{
 		vertexArr[0].x() = bound_.lower[0];  vertexArr[0].y() = bound_.lower[1];  vertexArr[0].z() = bound_.lower[2];
 		vertexArr[1].x() = bound_.lower[0];  vertexArr[1].y() = bound_.upper[1];  vertexArr[1].z() = bound_.lower[2];
