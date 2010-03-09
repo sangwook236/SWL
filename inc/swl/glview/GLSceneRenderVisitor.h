@@ -17,10 +17,21 @@ public:
 	//typedef ISceneVisitor base_type;
 
 public:
+	enum RenderMode { RENDER_OPAQUE_OBJECTS, RENDER_TRANSPARENT_OBJECTS, SELECT_OBJECTS };
+
+public:
+	GLSceneRenderVisitor(const RenderMode renderMode)
+	: renderMode_(renderMode)
+	{}
+
+public:
 	/*virtual*/ void visit(const AppearanceSceneNode &node) const;
 	/*virtual*/ void visit(const GeometrySceneNode &node) const;
+	/*virtual*/ void visit(const ShapeSceneNode &node) const;
 	/*virtual*/ void visit(const TransformSceneNode &node) const;
 
+private:
+	const RenderMode renderMode_;
 };
 
 }  // namespace swl

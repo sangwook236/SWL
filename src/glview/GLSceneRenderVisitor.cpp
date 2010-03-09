@@ -2,6 +2,7 @@
 #include "swl/glview/GLSceneRenderVisitor.h"
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
+#include "swl/graphics/ShapeSceneNode.h"
 #include "swl/graphics/TransformSceneNode.h"
 #include <windows.h>
 #include <GL/gl.h>
@@ -34,6 +35,26 @@ void GLSceneRenderVisitor::visit(const GeometrySceneNode &node) const
 	const GeometrySceneNode::geometry_type &geometry = node.getGeometry();
 
 	if (geometry) geometry->draw();
+}
+
+void GLSceneRenderVisitor::visit(const ShapeSceneNode &node) const
+{
+	const ShapeSceneNode::shape_type &shape = node.getShape();
+	const ShapeSceneNode::shape_type::appearance_type &appearance = shape.getAppearance();
+
+	if (!appearance.isVisible()) return;
+	if ((RENDER_OPAQUE_OBJECTS == renderMode_ && appearance.isTransparent()) ||
+		(RENDER_TRANSPARENT_OBJECTS == renderMode_ && !appearance.isTransparent()))
+		return;
+
+	const ShapeSceneNode::shape_type::geometry_type &geometry = shape.getGeometry();
+
+	const ShapeSceneNode::shape_type::appearance_type::PolygonMode &polygonMode = appearance.getPolygonMode();
+
+	//glBegin();
+	//	glColor4f(appearance.red(), appearance.green(), appearance.blue(), appearance.alpha());
+	//	if (geometry) geometry->draw();
+	//glEnd();
 }
 
 void GLSceneRenderVisitor::visit(const TransformSceneNode &node) const

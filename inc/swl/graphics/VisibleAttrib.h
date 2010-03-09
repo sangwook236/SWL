@@ -10,11 +10,12 @@ namespace swl {
 struct VisibleAttrib
 {
 public:
-	enum PolygonMode { WIRE_FRAME, FLAT_SHADING, SMOOTH_SHADING };
+	enum PolygonMode { POLYGON_POINT, POLYGON_LINE, POLYGON_FILL };
+	//enum ShadingMode { FLAT_SHADING, SMOOTH_SHADING };
 
 public:
-	VisibleAttrib(const bool isVisible = true, const PolygonMode viewMode = SMOOTH_SHADING)
-	: isVisible_(isVisible), polygonMode_(viewMode)
+	VisibleAttrib(const bool isVisible = true, const PolygonMode polygonMode = POLYGON_FILL)
+	: isVisible_(isVisible), polygonMode_(polygonMode)
 	{}
 	VisibleAttrib(const VisibleAttrib &rhs)
 	: isVisible_(rhs.isVisible_), polygonMode_(rhs.polygonMode_)

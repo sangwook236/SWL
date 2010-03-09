@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ShapeSceneNode.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\TransformSceneNode.cpp"
 				>
 			</File>
@@ -292,6 +296,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\graphics\Shape.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\ShapeSceneNode.h"
 				>
 			</File>
 			<File

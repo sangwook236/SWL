@@ -14,7 +14,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class GeometrySceneNode
 
-GeometrySceneNode::GeometrySceneNode(const geometry_id_type &geometryId)
+GeometrySceneNode::GeometrySceneNode(const GeometrySceneNode::geometry_id_type &geometryId)
 : base_type(),
   geometryId_(geometryId) //geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID)
 {

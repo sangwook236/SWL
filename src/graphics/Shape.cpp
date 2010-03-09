@@ -38,4 +38,9 @@ Shape & Shape::operator=(const Shape &rhs)
 	return *this;
 }
 
+Shape::geometry_type Shape::getGeometry() const
+{
+	return GeometryPool::getInstance().getGeometry(geometryId_);
+}
+
 }  // namespace swl
