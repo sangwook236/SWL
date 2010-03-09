@@ -18,15 +18,15 @@ public:
     typedef T value_type;
 
 public:
-	Matrix(int row = 1, int col = 1)
+	Matrix(const int row = 1, const int col = 1)
 	: row_(row), col_(col), entry_()
 	{}
-	Matrix(const Matrix& rhs)
+	Matrix(const Matrix &rhs)
 	: row_(rhs.row_), col_(rhs.col_), entry_(rhs.entry_)
 	{}
 	~Matrix() {}
 	
-	Matrix& operator=(const Matrix& rhs)
+	Matrix & operator=(const Matrix &rhs)
 	{
 		if (this == &rhs) return *this;
 		row_ = rhs.row_;

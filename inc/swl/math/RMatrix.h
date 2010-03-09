@@ -31,18 +31,18 @@ public:
 	RMatrix2()
 	: X_(T(1), T(0)), Y_(T(0), T(1))
 	{}
-	explicit RMatrix2(const column_type& rX, const column_type& rY)
+	explicit RMatrix2(const column_type &rX, const column_type &rY)
 	: X_(rX), Y_(rY)
 	{}
 	explicit RMatrix2(const T rhs[4])
 	: X_(rhs[0], rhs[1]), Y_(rhs[2], rhs[3])
 	{}
-	RMatrix2(const RMatrix2& rhs)
+	RMatrix2(const RMatrix2 &rhs)
 	: X_(rhs.X_), Y_(rhs.Y_)
 	{}
 	~RMatrix2()  {}
 
-	RMatrix2& operator=(const RMatrix2& rhs)
+	RMatrix2 & operator=(const RMatrix2 &rhs)
 	{
 		if (this == &rhs) return *this;
 		X_ = rhs.X_;  Y_ = rhs.Y_;
@@ -51,14 +51,14 @@ public:
 
 public:
 	///
-	column_type& X()  {  return X_;  }
-	const column_type& X() const  {  return X_;  }
-	column_type& Y()  {  return Y_;  }
-	const column_type& Y() const  {  return Y_;  }
+	column_type & X()  {  return X_;  }
+	const column_type & X() const  {  return X_;  }
+	column_type & Y()  {  return Y_;  }
+	const column_type & Y() const  {  return Y_;  }
 
 	///
-	T operator[](int iIndex) const  {  return getEntry(iIndex%2, iIndex/2);  }
-	T operator()(int iRow, int iCol) const  {  return getEntry(iRow, iCol);  }
+	T operator[](const int iIndex) const  {  return getEntry(iIndex%2, iIndex/2);  }
+	T operator()(const int iRow, const int iCol) const  {  return getEntry(iRow, iCol);  }
 	
 	///
 	bool set(const T entry[4])
@@ -75,24 +75,24 @@ public:
 	}
 
 	///
-	bool isValid(const T& tTol = (T)MathConstant::EPS) const
+	bool isValid(const T &tTol = (T)MathConstant::EPS) const
 	{  return X_.isUnit(tTol) && Y_.isUnit(tTol) && X_.isOrthogonal(Y_, tTol);  }
-	bool isEqual(const RMatrix2& rhs, const T& tTol = (T)MathConstant::EPS) const
+	bool isEqual(const RMatrix2 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{  return X_.isEqual(rhs.X_, tTol) && Y_.isEqual(rhs.Y_, tTol);  }
 
 	/// comparison operator
-    bool operator==(const RMatrix2& rhs) const  {  return isEqual(rhs);  }
-    bool operator!=(const RMatrix2& rhs) const  {  return !isEqual(rhs);  }
+    bool operator==(const RMatrix2 &rhs) const  {  return isEqual(rhs);  }
+    bool operator!=(const RMatrix2 &rhs) const  {  return !isEqual(rhs);  }
 
 	///
-	RMatrix2 operator*(const RMatrix2& rhs) const
+	RMatrix2 operator*(const RMatrix2 &rhs) const
 	{
 		return RMatrix2(
 			X_*rhs.X_.x() + Y_*rhs.X_.y(),
 			X_*rhs.Y_.x() + Y_*rhs.Y_.y()
 		);
 	}
-	RMatrix2& operator*=(const RMatrix2& rhs)
+	RMatrix2 & operator*=(const RMatrix2 &rhs)
 	{  return *this = *this * rhs;  }
 	column_type operator*(const column_type& rV) const
 	{  return column_type(X_*rV.x() + Y_*rV.y());  }
@@ -124,17 +124,17 @@ public:
 	}
 
 	/// angle-axis representation
-	T angle()
+	T angle() const
 	{
 		if (MathUtil::isZero(X_.x()))
 			return (T)asin(X_.y()) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
 		else return (T)atan2(X_.y(), X_.x());
 	}
-	TVector3<T> axis()
+	TVector3<T> axis() const
 	{  return TVector3<T>(T(0), T(0), T(1));  }
 
 protected:
-	T getEntry(int iRow, int iCol) const
+	T getEntry(const int iRow, const int iCol) const
 	{
 		switch (iCol)
 		{
@@ -172,7 +172,7 @@ private:
 // 2D Rotation Matrix API
 
 template<typename T>
-std::istream& operator>>(std::istream& stream, RMatrix2<T>& mat)
+std::istream & operator>>(std::istream &stream, RMatrix2<T> &mat)
 {
 	// [> Xx  Yx  ] means a rotation matrix
 	// [  Xy  Yy <]
@@ -183,7 +183,7 @@ std::istream& operator>>(std::istream& stream, RMatrix2<T>& mat)
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& stream, const RMatrix2<T>& mat)
+std::ostream & operator<<(std::ostream &stream, const RMatrix2<T> &mat)
 {
 	// [> Xx  Yx  ] means a rotation matrix
 	// [  Xy  Yy <]
@@ -222,18 +222,18 @@ public:
 	RMatrix3()
 	: X_(T(1), T(0), T(0)), Y_(T(0), T(1), T(0)), Z_(T(0), T(0), T(1))
 	{}
-	explicit RMatrix3(const column_type& rX, const column_type& rY, const column_type& rZ)
+	explicit RMatrix3(const column_type &rX, const column_type &rY, const column_type &rZ)
 	: X_(rX), Y_(rY), Z_(rZ)
 	{}
 	explicit RMatrix3(const T rhs[9])
 	: X_(rhs[0], rhs[1], rhs[2]), Y_(rhs[3], rhs[4], rhs[5]), Z_(rhs[6], rhs[7], rhs[8])
 	{}
-	RMatrix3(const RMatrix3& rhs)
+	RMatrix3(const RMatrix3 &rhs)
 	: X_(rhs.X_), Y_(rhs.Y_), Z_(rhs.Z_)
 	{}
 	~RMatrix3()  {}
 
-	RMatrix3& operator=(const RMatrix3& rhs)
+	RMatrix3 & operator=(const RMatrix3 &rhs)
 	{
 		if (this == &rhs) return *this;
 		X_ = rhs.X_;  Y_ = rhs.Y_;  Z_ = rhs.Z_;
@@ -242,16 +242,16 @@ public:
 
 public:
 	///
-	column_type& X()  {  return X_;  }
-	const column_type& X() const  {  return X_;  }
-	column_type& Y()  {  return Y_;  }
-	const column_type& Y() const  {  return Y_;  }
-	column_type& Z()  {  return Z_;  }
-	const column_type& Z() const  {  return Z_;  }
+	column_type & X()  {  return X_;  }
+	const column_type & X() const  {  return X_;  }
+	column_type & Y()  {  return Y_;  }
+	const column_type & Y() const  {  return Y_;  }
+	column_type & Z()  {  return Z_;  }
+	const column_type & Z() const  {  return Z_;  }
 
 	///
-	T operator[](int iIndex) const  {  return getEntry(iIndex%3, iIndex/3);  }
-	T operator()(int iRow, int iCol) const  {  return getEntry(iRow, iCol);  }
+	T operator[](const int iIndex) const  {  return getEntry(iIndex%3, iIndex/3);  }
+	T operator()(const int iRow, const int iCol) const  {  return getEntry(iRow, iCol);  }
 	
 	///
 	bool set(const T entry[9])
@@ -270,22 +270,22 @@ public:
 	}
 
 	///
-	bool isValid(const T& tTol = (T)MathConstant::EPS) const
+	bool isValid(const T &tTol = (T)MathConstant::EPS) const
 	{
 		return X_.isUnit(tTol) && Y_.isUnit(tTol) && Z_.isUnit(tTol) &&
 			   X_.isOrthogonal(Y_, tTol) && X_.isOrthogonal(Z_, tTol) && Y_.isOrthogonal(Z_, tTol);
 	}
-	bool isEqual(const RMatrix3& rhs, const T& tTol = (T)MathConstant::EPS) const
+	bool isEqual(const RMatrix3 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		return X_.isEqual(rhs.X_, tTol) && Y_.isEqual(rhs.Y_, tTol) && Z_.isEqual(rhs.Z_, tTol);
 	}
 
 	/// comparison operator
-    bool operator==(const RMatrix3& rhs) const  {  return isEqual(rhs);  }
-    bool operator!=(const RMatrix3& rhs) const  {  return !isEqual(rhs);  }
+    bool operator==(const RMatrix3 &rhs) const  {  return isEqual(rhs);  }
+    bool operator!=(const RMatrix3 &rhs) const  {  return !isEqual(rhs);  }
 
 	///
-	RMatrix3 operator*(const RMatrix3& rhs) const
+	RMatrix3 operator*(const RMatrix3 &rhs) const
 	{
 		return RMatrix3(
 			X_*rhs.X_.x() + Y_*rhs.X_.y() + Z_*rhs.X_.z(),
@@ -293,7 +293,7 @@ public:
 			X_*rhs.Z_.x() + Y_*rhs.Z_.y() + Z_*rhs.Z_.z()
 		);
 	}
-	RMatrix3& operator*=(const RMatrix3& rhs)
+	RMatrix3& operator*=(const RMatrix3 &rhs)
 	{  return *this = *this * rhs;  }
 
 	/// rotation
@@ -331,17 +331,17 @@ public:
 	}
 
 	/// angle-axis representation
-	T angle();
-	TVector3<T> axis();
+	T angle() const;
+	TVector3<T> axis() const;
 
 	/// angle-axis representation ==> 3x3 rotation matrix
-	static RMatrix3 toRotationMatrix(const T& rad, const TVector3<T>& axis);
+	static RMatrix3 toRotationMatrix(const T &rad, const TVector3<T>& axis);
 
 	/// quaternion ==> 3x3 rotation matrix
-	static RMatrix3 toRotationMatrix(const Quaternion<T>& rQuat);
+	static RMatrix3 toRotationMatrix(const Quaternion<T> &rQuat);
 
 protected:
-	T getEntry(int iRow, int iCol) const
+	T getEntry(const int iRow, const int iCol) const
 	{
 		switch (iCol)
 		{
@@ -390,7 +390,7 @@ private:
 
 //
 template<typename T>
-T RMatrix3<T>::angle()
+T RMatrix3<T>::angle() const
 {
 	// solution 1
 	const T s = (T)sqrt((X_.y() - Y_.x())*(X_.y() - Y_.x()) + (Y_.z() - Z_.y())*(Y_.z() - Z_.y()) + (Z_.x() - X_.z())*(Z_.x() - X_.z())) / T(2);
@@ -403,7 +403,7 @@ T RMatrix3<T>::angle()
 }
 
 template<typename T>
-TVector3<T> RMatrix3<T>::axis()
+TVector3<T> RMatrix3<T>::axis() const
 {
 	const T tAngle(angle());
 	if (MathUtil::isZero(tAngle)) return TVector3<T>();
@@ -440,7 +440,7 @@ TVector3<T> RMatrix3<T>::axis()
 }
 
 template<typename T>
-/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const T& rad, const TVector3<T>& axis)
+/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const T &rad, const TVector3<T> &axis)
 // R = [  e0  e3  e6  ]
 //     [  e1  e4  e7  ]
 //     [  e2  e5  e8  ]
@@ -477,7 +477,7 @@ template<typename T>
 
 // quaternion ==> 3x3 rotation matrix
 template<typename T>
-/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const Quaternion<T>& quat)
+/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const Quaternion<T> &quat)
 // R = [  e0  e3  e6  ]
 //     [  e1  e4  e7  ]
 //     [  e2  e5  e8  ]
@@ -509,7 +509,7 @@ template<typename T>
 // 3D Rotation Matrix API
 
 template<typename T>
-std::istream& operator>>(std::istream& stream, RMatrix3<T>& mat)
+std::istream & operator>>(std::istream &stream, RMatrix3<T> &mat)
 {
 	// [> Xx  Yx  Zx  ] means a rotation matrix
 	// [  Xy  Yy  Zy  ]
@@ -522,7 +522,7 @@ std::istream& operator>>(std::istream& stream, RMatrix3<T>& mat)
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& stream, const RMatrix3<T>& mat)
+std::ostream & operator<<(std::ostream &stream, const RMatrix3<T> &mat)
 {
 	// [> Xx  Yx  Zx  ] means a rotation matrix
 	// [  Xy  Yy  Zy  ]

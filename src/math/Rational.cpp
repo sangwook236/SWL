@@ -26,7 +26,7 @@ Rational::Rational()
 : sign_(1), num_(0ul), denom_(1ul)
 {}
 
-Rational::Rational(int i)
+Rational::Rational(const int i)
 {
 	if (i >= 0)
 	{
@@ -42,7 +42,7 @@ Rational::Rational(int i)
 	}
 }
 
-Rational::Rational(long l)
+Rational::Rational(const long l)
 {
 	if (l >= 0l)
 	{
@@ -58,26 +58,26 @@ Rational::Rational(long l)
 	}
 }
 
-Rational::Rational(float f)
+Rational::Rational(const float f)
 {  *this = Rational::toRational(double(f));  }
 
-Rational::Rational(double d)
+Rational::Rational(const double d)
 {  *this = Rational::toRational(d);  }
 
-Rational::Rational(int num, int denom)
+Rational::Rational(const int num, const int denom)
 {  set(long(num), long(denom));  }
 
-Rational::Rational(long num, long denom)
+Rational::Rational(const long num, const long denom)
 {  set(num, denom);  }
 
-Rational::Rational(const Rational& rhs)
+Rational::Rational(const Rational &rhs)
 : sign_(rhs.sign_), num_(rhs.num_), denom_(rhs.denom_)
 {}
 
 Rational::~Rational()
 {}
 
-Rational& Rational::operator=(const Rational& rhs)
+Rational & Rational::operator=(const Rational &rhs)
 {
     if (this == &rhs) return *this;
     sign_ = rhs.sign_;
@@ -86,10 +86,10 @@ Rational& Rational::operator=(const Rational& rhs)
     return *this;
 }
 
-void Rational::set(int num, int denom)
+void Rational::set(const int num, const int denom)
 {  set(long(num), long(denom));  }
 
-void Rational::set(long num, long denom)
+void Rational::set(const long num, const long denom)
 {
 	if (denom == 0l)
 	{
@@ -108,7 +108,7 @@ void Rational::set(long num, long denom)
 	}
 }
 
-void Rational::set(double num, double denom, double tolerance /*= MathConstant::EPS*/)
+void Rational::set(const double num, const double denom, const double tolerance /*= MathConstant::EPS*/)
 {
 /*
 	num = MathExt::round(num);
@@ -137,7 +137,7 @@ void Rational::set(double num, double denom, double tolerance /*= MathConstant::
 	*this = Rational::toRational(num / denom);
 }
 
-void Rational::set(const Rational& r)
+void Rational::set(const Rational &r)
 {
 	sign_ = r.sign_;
 	num_ = r.num_;
@@ -162,13 +162,13 @@ double Rational::toDouble() const
 	return double(num_) * double(sign_) / double(denom_);
 }
 
-bool Rational::isZero(double tolerance /*= MathConstant::EPS*/) const
+bool Rational::isZero(const double tolerance /*= MathConstant::EPS*/) const
 {
 	if (num_ == 0ul) return true;
 	else
 		return MathUtil::isZero(toDouble(), tolerance);
 }
-bool Rational::isEqual(const Rational& r, double tolerance /*= MathConstant::EPS*/) const
+bool Rational::isEqual(const Rational &r, const double tolerance /*= MathConstant::EPS*/) const
 {
 	if (sign_ == r.sign_ && num_ == r.num_ && denom_ == r.denom_)
 		return true;
@@ -176,15 +176,15 @@ bool Rational::isEqual(const Rational& r, double tolerance /*= MathConstant::EPS
 		return MathUtil::isZero(toDouble() - r.toDouble(), tolerance);
 }
 
-bool Rational::operator==(const Rational& rhs) const
+bool Rational::operator==(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ == denom_*rhs.num_*rhs.sign_;  }
 {  return isEqual(rhs);  }
 
-bool Rational::operator!=(const Rational& rhs) const
+bool Rational::operator!=(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ != denom_*rhs.num_*rhs.sign_;  }
 {  return !isEqual(rhs);  }
 
-bool Rational::operator>(const Rational& rhs) const
+bool Rational::operator>(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ > denom_*rhs.num_*rhs.sign_;  }
 {
 	if (sign_ * rhs.sign_ < 0) return sign_ > rhs.sign_;
@@ -196,7 +196,7 @@ bool Rational::operator>(const Rational& rhs) const
 	}
 }
 
-bool Rational::operator>=(const Rational& rhs) const
+bool Rational::operator>=(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ >= denom_*rhs.num_*rhs.sign_;  }
 {
 	if (sign_ * rhs.sign_ < 0) return sign_ > rhs.sign_;
@@ -208,18 +208,18 @@ bool Rational::operator>=(const Rational& rhs) const
 	}
 }
 
-bool Rational::operator<(const Rational& rhs) const
+bool Rational::operator<(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ < denom_*rhs.num_*rhs.sign_;  }
 {  return !operator>=(rhs);  }
 
-bool Rational::operator<=(const Rational& rhs) const
+bool Rational::operator<=(const Rational &rhs) const
 //{  return num_*sign_*rhs.denom_ <= denom_*rhs.num_*rhs.sign_;  }
 {  return !operator>(rhs);  }
 
 Rational& Rational::operator+()
 {  return *this;  }
 
-Rational Rational::operator+(const Rational& rhs) const
+Rational Rational::operator+(const Rational &rhs) const
 {
 	Rational aRational;
 	
@@ -257,7 +257,7 @@ Rational Rational::operator+(const Rational& rhs) const
 	return aRational;
 }
 
-Rational& Rational::operator+=(const Rational& rhs)
+Rational& Rational::operator+=(const Rational &rhs)
 {
 	if (denom_ == rhs.denom_)
 	{
@@ -300,7 +300,7 @@ Rational Rational::operator-() const
 	return aRational;
 }
 
-Rational Rational::operator-(const Rational& rhs) const
+Rational Rational::operator-(const Rational &rhs) const
 {
 	Rational aRational;
 	
@@ -338,7 +338,7 @@ Rational Rational::operator-(const Rational& rhs) const
 	return aRational;
 }
 
-Rational& Rational::operator-=(const Rational& rhs)
+Rational& Rational::operator-=(const Rational &rhs)
 {
 	if (denom_ == rhs.denom_)
 	{
@@ -374,7 +374,7 @@ Rational& Rational::operator-=(const Rational& rhs)
 	return *this;
 }
 
-Rational Rational::operator*(const Rational& rhs) const
+Rational Rational::operator*(const Rational &rhs) const
 {
 	if (num_ == 0ul || rhs.num_ == 0ul)	return Rational(0L);
 	
@@ -401,7 +401,7 @@ Rational Rational::operator*(const Rational& rhs) const
 	return aRational;
 }
 
-Rational& Rational::operator*=(const Rational& rhs)
+Rational& Rational::operator*=(const Rational &rhs)
 {
 	if (num_ == 0ul || rhs.num_ == 0ul)
 	{
@@ -430,7 +430,7 @@ Rational& Rational::operator*=(const Rational& rhs)
 	return *this;
 }
 
-Rational Rational::operator/(const Rational& rhs) const
+Rational Rational::operator/(const Rational &rhs) const
 {
 	if (rhs.num_ == 0ul)
 	{
@@ -461,7 +461,7 @@ Rational Rational::operator/(const Rational& rhs) const
 	return aRational;
 }
 
-Rational& Rational::operator/=(const Rational& rhs)
+Rational& Rational::operator/=(const Rational &rhs)
 {
 	if (rhs.num_ == 0ul)
 	{
@@ -490,54 +490,55 @@ Rational& Rational::operator/=(const Rational& rhs)
 	return *this;
 }
 /*
-Rational operator+(int i, Rational& rhs)
+Rational operator+(const int i, const Rational &rhs)
 {  return Rational(i) + rhs;  }
 
-Rational operator-(int i, Rational& rhs)
+Rational operator-(const int i, const Rational &rhs)
 {  return Rational(i) - rhs;  }
 
-Rational operator*(int i, Rational& rhs)
+Rational operator*(const int i, const Rational &rhs)
 {  return Rational(i) * rhs;  }
 
-Rational operator/(int i, Rational& rhs)
+Rational operator/(const int i, const Rational &rhs)
 {  return Rational(integer) / rhs;  }
 
-Rational operator+(long l, Rational& rhs)
+Rational operator+(const long l, const Rational &rhs)
 {  return Rational(l) + rhs;  }
 
-Rational operator-(long l, Rational& rhs)
+Rational operator-(const long l, const Rational &rhs)
 {  return Rational(l) - rhs;  }
 
-Rational operator*(long l, Rational& rhs)
+Rational operator*(const long l, const Rational &rhs)
 {  return Rational(l) * rhs;  }
 
-Rational operator/(long l, Rational& rhs)
+Rational operator/(const long l, const Rational &rhs)
 {  return Rational(l) / rhs;  }
 
-Rational operator+(float f, Rational& rhs)
+Rational operator+(const float f, const Rational &rhs)
 {  return Rational(real) + rhs;  }
 
-Rational operator-(float f, Rational& rhs)
+Rational operator-(const float f, const Rational &rhs)
 {  return Rational(f) - rhs;  }
 
-Rational operator*(float f, Rational& rhs)
+Rational operator*(const float f, const Rational &rhs)
 {  return Rational(f) * rhs;  }
 
-Rational operator/(float f, Rational& rhs)
+Rational operator/(const float f, const Rational &rhs)
 {  return Rational(f) / rhs;  }
 
-Rational operator+(double d, Rational& rhs)
+Rational operator+(const double d, const Rational &rhs)
 {  return Rational(d) + rhs;  }
 
-Rational operator-(double d, Rational& rhs)
+Rational operator-(const double d, const Rational &rhs)
 {  return Rational(d) - rhs;  }
 
-Rational operator*(double d, Rational& rhs)
+Rational operator*(const double d, const Rational &rhs)
 {  return Rational(d) * rhs;  }
 
-Rational operator/(double d, Rational& rhs)
+Rational operator/(const double d, const Rational &rhs)
 {  return Rational(d) / rhs;  }
 */
+
 void Rational::makeMinimalRational()
 {
 	const unsigned long ulGCD = MathExt::gcd(num_, denom_);
@@ -548,10 +549,10 @@ void Rational::makeMinimalRational()
 	}
 }
 
-/*static*/ bool Rational::isOverflow(double value)
+/*static*/ bool Rational::isOverflow(const double value)
 {  return fabs(value) > (double)std::numeric_limits<unsigned long>::max();  }
 
-/*static*/ Rational Rational::toRational(double r, double tolerance /*= MathConstant::EPS*/)
+/*static*/ Rational Rational::toRational(const double r, const double tolerance /*= MathConstant::EPS*/)
 // r(i-1) = d(i-1) - 1 / r(i), r(i) = 1 / (r(i-1) - d(i-1))  (i = 1, 2, ..., k)
 // d(i) = round(r(i))
 // r(0) = a
@@ -612,7 +613,7 @@ void Rational::makeMinimalRational()
 	return f;
 }
 
-/*static*/ void Rational::calcContinuousRational(const std::deque<long>& denomCtr, Rational& r)
+/*static*/ void Rational::calcContinuousRational(const std::deque<long> &denomCtr, Rational &r)
 {
 	const std::deque<long>::size_type nDenom = denomCtr.size();
 	if (nDenom == 1)
@@ -642,7 +643,7 @@ void Rational::makeMinimalRational()
 //-----------------------------------------------------------------------------------------
 // Rational Number API
 
-std::istream& operator>>(std::istream& stream, Rational& r)
+std::istream & operator>>(std::istream &stream, Rational &r)
 {
 	// < n / d > means a rational number
 	long lNum, lDen;
@@ -660,29 +661,29 @@ std::istream& operator>>(std::istream& stream, Rational& r)
 	return stream;
 }
 
-std::ostream& operator<<(std::ostream& stream, const Rational& r)
+std::ostream & operator<<(std::ostream &stream, const Rational &r)
 {
 	// < n / d > means a rational number
 	stream << "< " << r.num() << " / " << r.denom() << " >";
 	return stream;
 }
 
-Rational sqrt(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::sqrt(r.toDouble()), tolerance);  }
+Rational sqrt(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::sqrt(r.toDouble()), tolerance);  }
 
-Rational pow(const Rational& r1, const Rational& r2, double tolerance /*= MathConstant::EPS*/)
+Rational pow(const Rational &r1, const Rational &r2, const double tolerance /*= MathConstant::EPS*/)
 // If the 1st argument passed to pow is real and less than 0
 // and 2nd argment is not a whole number(integer), or you call pow(0, 0),
 // a calculation of pow failed
-{  return Rational::toRational(::pow(r1.toDouble(), r2.toDouble()), tolerance);  }
+{  return Rational::toRational(std::pow(r1.toDouble(), r2.toDouble()), tolerance);  }
 
-//Rational pow10(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-//{  return Rational::toRational(::pow(10.0, r.toDouble()), tolerance);  }
+//Rational pow10(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+//{  return Rational::toRational(std::pow(10.0, r.toDouble()), tolerance);  }
 
-Rational exp(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::exp(r.toDouble()), tolerance);  }
+Rational exp(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::exp(r.toDouble()), tolerance);  }
 
-Rational ln(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational ln(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {
 	const double dVal = r.toDouble();
 	if (dVal <= tolerance)
@@ -690,16 +691,16 @@ Rational ln(const Rational& r, double tolerance /*= MathConstant::EPS*/)
 		throw LogException(LogException::L_ERROR, "domain error", __FILE__, __LINE__, __FUNCTION__);
 		//return r;
 	}
-	return Rational::toRational(::log(dVal), tolerance);
+	return Rational::toRational(std::log(dVal), tolerance);
 }
 
-Rational log(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational log(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {  return ln(r, tolerance);  }
 
-Rational log10(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational log10(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {  return logb(10.0, r, tolerance);  }
 
-Rational logb(double base, const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational logb(const double base, const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {
 	if (base <= 0.0 || (-tolerance <= base-1.0 && base-1.0 <= tolerance))
 	{
@@ -712,46 +713,46 @@ Rational logb(double base, const Rational& r, double tolerance /*= MathConstant:
 		throw LogException(LogException::L_ERROR, "domain error", __FILE__, __LINE__, __FUNCTION__);
 		//return r;
 	}
-	return Rational::toRational(::log(dVal) / ::log(base), tolerance);
+	return Rational::toRational(std::log(dVal) / std::log(base), tolerance);
 }
 
-Rational sin(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::sin(r.toDouble()), tolerance);  }
+Rational sin(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::sin(r.toDouble()), tolerance);  }
 
-Rational cos(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::cos(r.toDouble()), tolerance);  }
+Rational cos(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::cos(r.toDouble()), tolerance);  }
 
-Rational tan(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::tan(r.toDouble()), tolerance);  }
+Rational tan(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::tan(r.toDouble()), tolerance);  }
 
-Rational asin(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::asin(r.toDouble()), tolerance);  }
+Rational asin(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::asin(r.toDouble()), tolerance);  }
 
-Rational acos(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::acos(r.toDouble()), tolerance);  }
+Rational acos(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::acos(r.toDouble()), tolerance);  }
 
-Rational atan(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::atan(r.toDouble()), tolerance);  }
+Rational atan(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::atan(r.toDouble()), tolerance);  }
 
-Rational atan2(const Rational& r1, const Rational& r2, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::atan2(r1.toDouble(), r2.toDouble()), tolerance);  }
+Rational atan2(const Rational &r1, const Rational &r2, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::atan2(r1.toDouble(), r2.toDouble()), tolerance);  }
 
-Rational sinh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::sinh(r.toDouble()), tolerance);  }
+Rational sinh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::sinh(r.toDouble()), tolerance);  }
 
-Rational cosh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::cosh(r.toDouble()), tolerance);  }
+Rational cosh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::cosh(r.toDouble()), tolerance);  }
 
-Rational tanh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
-{  return Rational::toRational(::tanh(r.toDouble()), tolerance);  }
+Rational tanh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
+{  return Rational::toRational(std::tanh(r.toDouble()), tolerance);  }
 
-Rational asinh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational asinh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {  return Rational::toRational(MathExt::asinh(r.toDouble()), tolerance);  }
 
-Rational acosh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational acosh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {  return Rational::toRational(MathExt::acosh(r.toDouble()), tolerance);  }
 
-Rational atanh(const Rational& r, double tolerance /*= MathConstant::EPS*/)
+Rational atanh(const Rational &r, const double tolerance /*= MathConstant::EPS*/)
 {  return Rational::toRational(MathExt::atanh(r.toDouble()), tolerance);  }
 
 }  // namespace swl

@@ -17,7 +17,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // struct RotationOrder
 
-unsigned int RotationOrder::genOrder(bool isFixed, MathConstant::AXIS first, MathConstant::AXIS second, MathConstant::AXIS third)
+unsigned int RotationOrder::genOrder(const bool isFixed, const MathConstant::AXIS first, const MathConstant::AXIS second, const MathConstant::AXIS third)
 {
 	unsigned int order = isFixed ? 0x0000 : 0x8000;
 #if defined(SLD_ROTATION_ORDER__USE_LEFT_TO_RIGHT)
@@ -32,7 +32,7 @@ unsigned int RotationOrder::genOrder(bool isFixed, MathConstant::AXIS first, Mat
 	return order;
 }
 
-bool RotationOrder::parseOrder(unsigned int order, MathConstant::AXIS& first, MathConstant::AXIS& second, MathConstant::AXIS& third)
+bool RotationOrder::parseOrder(const unsigned int order, MathConstant::AXIS &first, MathConstant::AXIS &second, MathConstant::AXIS &third)
 {
 	// if order == 0, identity rotation
 #if defined(SLD_ROTATION_ORDER__USE_LEFT_TO_RIGHT)
@@ -56,7 +56,7 @@ bool RotationOrder::parseOrder(unsigned int order, MathConstant::AXIS& first, Ma
 //-----------------------------------------------------------------------------------------
 // struct RotationAngle
 
-RotationAngle RotationAngle::calc(unsigned int order, const RMatrix3<double>& mat)
+RotationAngle RotationAngle::calc(const unsigned int order, const RMatrix3<double> &mat)
 {
 	// if order == 0, identity rotation
 	if (!order) return RotationAngle();
@@ -70,7 +70,7 @@ RotationAngle RotationAngle::calc(unsigned int order, const RMatrix3<double>& ma
 
 	if (!first && !second && !third) return RotationAngle();
 
-	bool isFixedRotation = RotationOrder::isFixed(order);
+	const bool isFixedRotation = RotationOrder::isFixed(order);
 	if (isFixedRotation) std::swap(first, third);
 
 	// simplify rotation info
@@ -305,7 +305,7 @@ RotationAngle RotationAngle::calc(unsigned int order, const RMatrix3<double>& ma
 	return rotAngle;
 }
 
-RotationAngle RotationAngle::calcX(const RMatrix3<double>& mat)
+RotationAngle RotationAngle::calcX(const RMatrix3<double> &mat)
 {
 	if (!MathUtil::isZero(mat.X().x() - 1.0) || !MathUtil::isZero(mat.X().y()) || !MathUtil::isZero(mat.X().z()) ||
 		!MathUtil::isZero(mat.Y().x()) || !MathUtil::isZero(mat.Z().x()))
@@ -313,10 +313,10 @@ RotationAngle RotationAngle::calcX(const RMatrix3<double>& mat)
 
 	if (MathUtil::isZero(mat.Y().y()))
 		return RotationAngle(mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::atan2(mat.Y().z(), mat.Y().y()), 0.0, 0.0);
+	else return RotationAngle(::std::atan2(mat.Y().z(), mat.Y().y()), 0.0, 0.0);
 }
 
-RotationAngle RotationAngle::calcY(const RMatrix3<double>& mat)
+RotationAngle RotationAngle::calcY(const RMatrix3<double> &mat)
 {
 	if (!MathUtil::isZero(mat.Y().x()) || !MathUtil::isZero(mat.Y().y() - 1.0) || !MathUtil::isZero(mat.Y().z()) ||
 		!MathUtil::isZero(mat.X().y()) || !MathUtil::isZero(mat.Z().y()))
@@ -324,10 +324,10 @@ RotationAngle RotationAngle::calcY(const RMatrix3<double>& mat)
 
 	if (MathUtil::isZero(mat.X().x()))
 		return RotationAngle(mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::atan2(mat.Z().x(), mat.X().x()), 0.0, 0.0);
+	else return RotationAngle(::std::atan2(mat.Z().x(), mat.X().x()), 0.0, 0.0);
 }
 
-RotationAngle RotationAngle::calcZ(const RMatrix3<double>& mat)
+RotationAngle RotationAngle::calcZ(const RMatrix3<double> &mat)
 {
 	if (!MathUtil::isZero(mat.Z().x()) || !MathUtil::isZero(mat.Z().y()) || !MathUtil::isZero(mat.Z().z() - 1.0) ||
 		!MathUtil::isZero(mat.X().z()) || !MathUtil::isZero(mat.Y().z()))
@@ -335,10 +335,10 @@ RotationAngle RotationAngle::calcZ(const RMatrix3<double>& mat)
 
 	if (MathUtil::isZero(mat.X().x()))
 		return RotationAngle(mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::atan2(mat.X().y(), mat.X().x()), 0.0, 0.0);
+	else return RotationAngle(::std::atan2(mat.X().y(), mat.X().x()), 0.0, 0.0);
 }
 
-void RotationAngle::calcRelativeXY(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeXY(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.Y().x()))
 	{
@@ -349,15 +349,15 @@ void RotationAngle::calcRelativeXY(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Y().y()))
 		alpha = mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::atan2(mat.Y().z(), mat.Y().y());
+	else alpha = ::std::atan2(mat.Y().z(), mat.Y().y());
 
 	// beta
 	if (MathUtil::isZero(mat.X().x()))
 		beta = mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::atan2(mat.Z().x(), mat.X().x());
+	else beta = ::std::atan2(mat.Z().x(), mat.X().x());
 }
 
-void RotationAngle::calcRelativeXZ(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeXZ(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.Z().x()))
 	{
@@ -368,15 +368,15 @@ void RotationAngle::calcRelativeXZ(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Z().z()))
 		alpha = mat.Z().y() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::atan2(-mat.Z().y(), mat.Z().z());
+	else alpha = ::std::atan2(-mat.Z().y(), mat.Z().z());
 
 	// beta
 	if (MathUtil::isZero(mat.X().x()))
 		beta = mat.Y().x() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::atan2(-mat.Y().x(), mat.X().x());
+	else beta = ::std::atan2(-mat.Y().x(), mat.X().x());
 }
 
-void RotationAngle::calcRelativeYZ(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeYZ(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.Z().y()))
 	{
@@ -387,15 +387,15 @@ void RotationAngle::calcRelativeYZ(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Z().z()))
 		alpha = mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::atan2(mat.Z().x(), mat.Z().z());
+	else alpha = ::std::atan2(mat.Z().x(), mat.Z().z());
 
 	// beta
 	if (MathUtil::isZero(mat.Y().y()))
 		beta = mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::atan2(mat.X().y(), mat.Y().y());
+	else beta = ::std::atan2(mat.X().y(), mat.Y().y());
 }
 
-void RotationAngle::calcRelativeYX(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeYX(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.X().y()))
 	{
@@ -406,15 +406,15 @@ void RotationAngle::calcRelativeYX(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.X().x()))
 		alpha = mat.X().z() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::atan2(-mat.X().z(), mat.X().x());
+	else alpha = ::std::atan2(-mat.X().z(), mat.X().x());
 
 	// beta
 	if (MathUtil::isZero(mat.Y().y()))
 		beta = mat.Z().y() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::atan2(-mat.Z().y(), mat.Y().y());
+	else beta = ::std::atan2(-mat.Z().y(), mat.Y().y());
 }
 
-void RotationAngle::calcRelativeZX(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeZX(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.X().z()))
 	{
@@ -425,15 +425,15 @@ void RotationAngle::calcRelativeZX(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.X().x()))
 		alpha = mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::atan2(mat.X().y(), mat.X().x());
+	else alpha = ::std::atan2(mat.X().y(), mat.X().x());
 
 	// beta
 	if (MathUtil::isZero(mat.Z().z()))
 		beta = mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::atan2(mat.Y().z(), mat.Z().z());
+	else beta = ::std::atan2(mat.Y().z(), mat.Z().z());
 }
 
-void RotationAngle::calcRelativeZY(const RMatrix3<double>& mat, double& alpha, double& beta)
+void RotationAngle::calcRelativeZY(const RMatrix3<double> &mat, double &alpha, double &beta)
 {
 	if (!MathUtil::isZero(mat.Y().z()))
 	{
@@ -444,18 +444,18 @@ void RotationAngle::calcRelativeZY(const RMatrix3<double>& mat, double& alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Y().y()))
 		alpha = mat.Y().x() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::atan2(-mat.Y().x(), mat.Y().y());
+	else alpha = ::std::atan2(-mat.Y().x(), mat.Y().y());
 
 	// beta
 	if (MathUtil::isZero(mat.Z().z()))
 		beta = mat.X().z() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::atan2(-mat.X().z(), mat.Z().z());
+	else beta = ::std::atan2(-mat.X().z(), mat.Z().z());
 }
 
-void RotationAngle::calcRelativeXYZ(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeXYZ(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.X().x() * mat.X().x() + mat.Y().x() * mat.Y().x());
-	//const double cb = -sqrt(mat.X().x() * mat.X().x() + mat.Y().x() * mat.Y().x());
+	const double cb = std::sqrt(mat.X().x() * mat.X().x() + mat.Y().x() * mat.Y().x());
+	//const double cb = -std::sqrt(mat.X().x() * mat.X().x() + mat.Y().x() * mat.Y().x());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.Z().x() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
@@ -463,26 +463,26 @@ void RotationAngle::calcRelativeXYZ(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().z() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Y().z(), mat.Y().y());
+		else alpha = std::atan2(mat.Y().z(), mat.Y().y());
 	}
 	else
 	{
-		beta = atan2(mat.Z().x(), cb);
+		beta = std::atan2(mat.Z().x(), cb);
 
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().y() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Z().y(), mat.Z().z());
+		else alpha = std::atan2(-mat.Z().y(), mat.Z().z());
 
 		if (MathUtil::isZero(mat.X().x()))
 			gamma = mat.Y().x() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else gamma = atan2(-mat.Y().x(), mat.X().x());
+		else gamma = std::atan2(-mat.Y().x(), mat.X().x());
 	}
 }
 
-void RotationAngle::calcRelativeXZY(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeXZY(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.Y().y() * mat.Y().y() + mat.Y().z() * mat.Y().z());
-	//const double cb = -sqrt(mat.Y().y() * mat.Y().y() + mat.Y().z() * mat.Y().z());
+	const double cb = std::sqrt(mat.Y().y() * mat.Y().y() + mat.Y().z() * mat.Y().z());
+	//const double cb = -std::sqrt(mat.Y().y() * mat.Y().y() + mat.Y().z() * mat.Y().z());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.Y().x() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
@@ -490,26 +490,26 @@ void RotationAngle::calcRelativeXZY(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().y() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Z().y(), mat.Z().z());
+		else alpha = std::atan2(-mat.Z().y(), mat.Z().z());
 	}
 	else
 	{
-		beta = atan2(-mat.Y().x(), cb);
+		beta = std::atan2(-mat.Y().x(), cb);
 
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().z() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Y().z(), mat.Y().y());
+		else alpha = std::atan2(mat.Y().z(), mat.Y().y());
 
 		if (MathUtil::isZero(mat.X().x()))
 			gamma = mat.Z().x() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Z().x(), mat.X().x());
+		else gamma = std::atan2(mat.Z().x(), mat.X().x());
 	}
 }
 
-void RotationAngle::calcRelativeYZX(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeYZX(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.X().x() * mat.X().x() + mat.X().z() * mat.X().z());
-	//const double cb = -sqrt(mat.X().x() * mat.X().x() + mat.X().z() * mat.X().z());
+	const double cb = std::sqrt(mat.X().x() * mat.X().x() + mat.X().z() * mat.X().z());
+	//const double cb = -std::sqrt(mat.X().x() * mat.X().x() + mat.X().z() * mat.X().z());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.X().y() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
@@ -517,26 +517,26 @@ void RotationAngle::calcRelativeYZX(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().x() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Z().x(), mat.Z().z());
+		else alpha = std::atan2(mat.Z().x(), mat.Z().z());
 	}
 	else
 	{
-		beta = atan2(mat.X().y(), cb);
+		beta = std::atan2(mat.X().y(), cb);
 
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().z() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.X().z(), mat.X().x());
+		else alpha = std::atan2(-mat.X().z(), mat.X().x());
 
 		if (MathUtil::isZero(mat.Y().y()))
 			gamma = mat.Z().y() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else gamma = atan2(-mat.Z().y(), mat.Y().y());
+		else gamma = std::atan2(-mat.Z().y(), mat.Y().y());
 	}
 }
 
-void RotationAngle::calcRelativeYXZ(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeYXZ(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.Z().x() * mat.Z().x() + mat.Z().z() * mat.Z().z());
-	//const double cb = -sqrt(mat.Z().x() * mat.Z().x() + mat.Z().z() * mat.Z().z());
+	const double cb = std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().z() * mat.Z().z());
+	//const double cb = -std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().z() * mat.Z().z());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.Z().y() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
@@ -544,26 +544,26 @@ void RotationAngle::calcRelativeYXZ(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().z() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.X().z(), mat.X().x());
+		else alpha = std::atan2(-mat.X().z(), mat.X().x());
 	}
 	else
 	{
-		beta = atan2(-mat.Z().y(), cb);
+		beta = std::atan2(-mat.Z().y(), cb);
 
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().x() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Z().x(), mat.Z().z());
+		else alpha = std::atan2(mat.Z().x(), mat.Z().z());
 
 		if (MathUtil::isZero(mat.Y().y()))
 			gamma = mat.X().y() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.X().y(), mat.Y().y());
+		else gamma = std::atan2(mat.X().y(), mat.Y().y());
 	}
 }
 
-void RotationAngle::calcRelativeZXY(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeZXY(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.Y().x() * mat.Y().x() + mat.Y().y() * mat.Y().y());
-	//const double cb = -sqrt(mat.Y().x() * mat.Y().x() + mat.Y().y() * mat.Y().y());
+	const double cb = std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().y() * mat.Y().y());
+	//const double cb = -std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().y() * mat.Y().y());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.Y().z() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
@@ -571,26 +571,26 @@ void RotationAngle::calcRelativeZXY(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().y() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.X().y(), mat.X().x());
+		else alpha = std::atan2(mat.X().y(), mat.X().x());
 	}
 	else
 	{
-		beta = atan2(mat.Y().z(), cb);
+		beta = std::atan2(mat.Y().z(), cb);
 
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().x() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Y().x(), mat.Y().y());
+		else alpha = std::atan2(-mat.Y().x(), mat.Y().y());
 
 		if (MathUtil::isZero(mat.Z().z()))
 			gamma = mat.X().z() * cb >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else gamma = atan2(-mat.X().z(), mat.Z().z());
+		else gamma = std::atan2(-mat.X().z(), mat.Z().z());
 	}
 }
 
-void RotationAngle::calcRelativeZYX(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeZYX(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double cb = sqrt(mat.X().x() * mat.X().x() + mat.X().y() * mat.X().y());
-	//const double cb = -sqrt(mat.X().x() * mat.X().x() + mat.X().y() * mat.X().y());
+	const double cb = std::sqrt(mat.X().x() * mat.X().x() + mat.X().y() * mat.X().y());
+	//const double cb = -std::sqrt(mat.X().x() * mat.X().x() + mat.X().y() * mat.X().y());
 	if (MathUtil::isZero(cb))  // degenerating case
 	{
 		beta = mat.X().z() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
@@ -598,26 +598,26 @@ void RotationAngle::calcRelativeZYX(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().x() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Y().x(), mat.Y().y());
+		else alpha = std::atan2(-mat.Y().x(), mat.Y().y());
 	}
 	else
 	{
-		beta = atan2(-mat.X().z(), cb);
+		beta = std::atan2(-mat.X().z(), cb);
 
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().y() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.X().y(), mat.X().x());
+		else alpha = std::atan2(mat.X().y(), mat.X().x());
 
 		if (MathUtil::isZero(mat.Z().z()))
 			gamma = mat.Y().z() * cb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Y().z(), mat.Z().z());
+		else gamma = std::atan2(mat.Y().z(), mat.Z().z());
 	}
 }
 
-void RotationAngle::calcRelativeXYX(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeXYX(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
-	//const double sb = -sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
+	const double sb = std::sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
+	//const double sb = -std::sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.X().x() >= 0.0 ? 0 : MathConstant::PI;
@@ -626,28 +626,28 @@ void RotationAngle::calcRelativeXYX(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().z() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Y().z(), mat.Y().y());
+		else alpha = std::atan2(mat.Y().z(), mat.Y().y());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.X().x()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.X().x());
+		else beta = std::atan2(sb, mat.X().x());
 
 		if (MathUtil::isZero(mat.X().z()))
 			alpha = mat.X().y() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.X().y(), -mat.X().z());
+		else alpha = std::atan2(mat.X().y(), -mat.X().z());
 
 		if (MathUtil::isZero(mat.Z().x()))
 			gamma = mat.Y().x() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Y().x(), mat.Z().x());
+		else gamma = std::atan2(mat.Y().x(), mat.Z().x());
 	}
 }
 
-void RotationAngle::calcRelativeXZX(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeXZX(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
-	//const double sb = -sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
+	const double sb = std::sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
+	//const double sb = -std::sqrt(mat.X().y() * mat.X().y() + mat.X().z() * mat.X().z());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.X().x() >= 0.0 ? 0 : MathConstant::PI;
@@ -656,28 +656,28 @@ void RotationAngle::calcRelativeXZX(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().y() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Z().y(), mat.Z().z());
+		else alpha = std::atan2(-mat.Z().y(), mat.Z().z());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.X().x()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.X().x());
+		else beta = std::atan2(sb, mat.X().x());
 
 		if (MathUtil::isZero(mat.X().y()))
 			alpha = mat.X().z() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.X().z(), mat.X().y());
+		else alpha = std::atan2(mat.X().z(), mat.X().y());
 
 		if (MathUtil::isZero(mat.Y().x()))
 			gamma = mat.Z().x() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Z().x(), -mat.Y().x());
+		else gamma = std::atan2(mat.Z().x(), -mat.Y().x());
 	}
 }
 
-void RotationAngle::calcRelativeYZY(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeYZY(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
-	//const double sb = -sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
+	const double sb = std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
+	//const double sb = -std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.Y().y() >= 0.0 ? 0 : MathConstant::PI;
@@ -686,28 +686,28 @@ void RotationAngle::calcRelativeYZY(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Z().z()))
 			alpha = mat.Z().x() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Z().x(), mat.Z().z());
+		else alpha = std::atan2(mat.Z().x(), mat.Z().z());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.Y().y()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.Y().y());
+		else beta = std::atan2(sb, mat.Y().y());
 
 		if (MathUtil::isZero(mat.Y().x()))
 			alpha = mat.Y().z() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Y().z(), -mat.Y().x());
+		else alpha = std::atan2(mat.Y().z(), -mat.Y().x());
 
 		if (MathUtil::isZero(mat.X().y()))
 			gamma = mat.Z().y() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Z().y(), mat.X().y());
+		else gamma = std::atan2(mat.Z().y(), mat.X().y());
 	}
 }
 
-void RotationAngle::calcRelativeYXY(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeYXY(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
-	//const double sb = -sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
+	const double sb = std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
+	//const double sb = -std::sqrt(mat.Y().x() * mat.Y().x() + mat.Y().z() * mat.Y().z());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.Y().y() >= 0.0 ? 0 : MathConstant::PI;
@@ -716,28 +716,28 @@ void RotationAngle::calcRelativeYXY(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().z() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.X().z(), mat.X().x());
+		else alpha = std::atan2(-mat.X().z(), mat.X().x());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.Y().y()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.Y().y());
+		else beta = std::atan2(sb, mat.Y().y());
 
 		if (MathUtil::isZero(mat.Y().z()))
 			alpha = mat.Y().x() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Y().x(), mat.Y().z());
+		else alpha = std::atan2(mat.Y().x(), mat.Y().z());
 
 		if (MathUtil::isZero(mat.Z().y()))
 			gamma = mat.X().y() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.X().y(), -mat.Z().y());
+		else gamma = std::atan2(mat.X().y(), -mat.Z().y());
 	}
 }
 
-void RotationAngle::calcRelativeZXZ(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeZXZ(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
-	//const double sb = -sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
+	const double sb = std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
+	//const double sb = -std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.Z().z() >= 0.0 ? 0 : MathConstant::PI;
@@ -746,28 +746,28 @@ void RotationAngle::calcRelativeZXZ(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.X().x()))
 			alpha = mat.X().y() >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.X().y(), mat.X().x());
+		else alpha = std::atan2(mat.X().y(), mat.X().x());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.Z().z()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.Z().z());
+		else beta = std::atan2(sb, mat.Z().z());
 
 		if (MathUtil::isZero(mat.Z().y()))
 			alpha = mat.Z().x() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Z().x(), -mat.Z().y());
+		else alpha = std::atan2(mat.Z().x(), -mat.Z().y());
 
 		if (MathUtil::isZero(mat.Y().z()))
 			gamma = mat.X().z() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.X().z(), mat.Y().z());
+		else gamma = std::atan2(mat.X().z(), mat.Y().z());
 	}
 }
 
-void RotationAngle::calcRelativeZYZ(const RMatrix3<double>& mat, double& alpha, double& beta, double& gamma)
+void RotationAngle::calcRelativeZYZ(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)
 {
-	const double sb = sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
-	//const double sb = -sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
+	const double sb = std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
+	//const double sb = -std::sqrt(mat.Z().x() * mat.Z().x() + mat.Z().y() * mat.Z().y());
 	if (MathUtil::isZero(sb))  // degenerating case
 	{
 		beta = mat.Z().z() >= 0.0 ? 0 : MathConstant::PI;
@@ -776,21 +776,21 @@ void RotationAngle::calcRelativeZYZ(const RMatrix3<double>& mat, double& alpha, 
 		gamma = 0.0;
 		if (MathUtil::isZero(mat.Y().y()))
 			alpha = mat.Y().x() >= 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-		else alpha = atan2(-mat.Y().x(), mat.Y().y());
+		else alpha = std::atan2(-mat.Y().x(), mat.Y().y());
 	}
 	else
 	{
 		if (MathUtil::isZero(mat.Z().z()))
 			beta = sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else beta = atan2(sb, mat.Z().z());
+		else beta = std::atan2(sb, mat.Z().z());
 
 		if (MathUtil::isZero(mat.Z().x()))
 			alpha = mat.Z().y() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else alpha = atan2(mat.Z().y(), mat.Z().x());
+		else alpha = std::atan2(mat.Z().y(), mat.Z().x());
 
 		if (MathUtil::isZero(mat.X().z()))
 			gamma = mat.Y().z() * sb >= 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-		else gamma = atan2(mat.Y().z(), -mat.X().z());
+		else gamma = std::atan2(mat.Y().z(), -mat.X().z());
 	}
 }
 
@@ -798,9 +798,9 @@ void RotationAngle::calcRelativeZYZ(const RMatrix3<double>& mat, double& alpha, 
 //-----------------------------------------------------------------------------------------
 //  struct Rotation
 
-RMatrix3<double> Rotation::rotateX(double radian)
+RMatrix3<double> Rotation::rotateX(const double radian)
 {
-	const double s = sin(radian), c = cos(radian);
+	const double s = std::sin(radian), c = std::cos(radian);
 
 	RMatrix3<double> m;
 	m.X().x() = 1.0;
@@ -819,9 +819,9 @@ RMatrix3<double> Rotation::rotateX(double radian)
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateY(double radian)
+RMatrix3<double> Rotation::rotateY(const double radian)
 {
-	const double s = sin(radian), c = cos(radian);
+	const double s = std::sin(radian), c = std::cos(radian);
 
 	RMatrix3<double> m;
 	m.X().x() = c;
@@ -840,9 +840,9 @@ RMatrix3<double> Rotation::rotateY(double radian)
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateZ(double radian)
+RMatrix3<double> Rotation::rotateZ(const double radian)
 {
-	const double s = sin(radian), c = cos(radian);
+	const double s = std::sin(radian), c = std::cos(radian);
 
 	RMatrix3<double> m;
 	m.X().x() = c;
@@ -861,10 +861,10 @@ RMatrix3<double> Rotation::rotateZ(double radian)
 	return m;
 }
 
-RMatrix3<double> Rotation::rotate(double rad, const TVector3<double>& axis)
+RMatrix3<double> Rotation::rotate(const double rad, const TVector3<double> &axis)
 {
 	// for making a unit vector
-	const double norm = sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
+	const double norm = std::sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
 	if (MathUtil::isZero(norm))
 	{
 		throw LogException(LogException::L_ERROR, "illegal parameter value", __FILE__, __LINE__, __FUNCTION__);
@@ -873,8 +873,8 @@ RMatrix3<double> Rotation::rotate(double rad, const TVector3<double>& axis)
 
 	RMatrix3<double> m;
 	const double x(axis.x() / norm), y(axis.y() / norm), z(axis.z() / norm);
-	const double s = sin(rad);
-	const double c = cos(rad);
+	const double s = std::sin(rad);
+	const double c = std::cos(rad);
 	const double v = 1.0 - c;
 
 	m.X().x() = x * x * v + c;
@@ -893,7 +893,7 @@ RMatrix3<double> Rotation::rotate(double rad, const TVector3<double>& axis)
 	return m;
 }
 
-RMatrix3<double> Rotation::rotate(unsigned int order, const RotationAngle& angle)
+RMatrix3<double> Rotation::rotate(const unsigned int order, const RotationAngle &angle)
 {
 	// if order == 0, identity rotation
 	if (!order) return RMatrix3<double>();
@@ -1401,11 +1401,11 @@ RMatrix3<double> Rotation::rotate(unsigned int order, const RotationAngle& angle
 	return RMatrix3<double>();
 }
 
-RMatrix3<double> Rotation::rotateRelativeXYZ(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeXYZ(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = cb * cr;
@@ -1423,11 +1423,11 @@ RMatrix3<double> Rotation::rotateRelativeXYZ(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeXZY(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeXZY(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = cb * cr;
@@ -1445,11 +1445,11 @@ RMatrix3<double> Rotation::rotateRelativeXZY(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeYZX(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeYZX(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = ca * cb;
@@ -1467,11 +1467,11 @@ RMatrix3<double> Rotation::rotateRelativeYZX(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeYXZ(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeYXZ(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = sa * sb * sr + ca * cr;
@@ -1489,11 +1489,11 @@ RMatrix3<double> Rotation::rotateRelativeYXZ(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeZXY(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeZXY(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = -sa * sb * sr + ca * cr;
@@ -1511,11 +1511,11 @@ RMatrix3<double> Rotation::rotateRelativeZXY(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeZYX(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeZYX(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = ca * cb;
@@ -1533,11 +1533,11 @@ RMatrix3<double> Rotation::rotateRelativeZYX(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeXYX(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeXYX(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = cb;
@@ -1555,11 +1555,11 @@ RMatrix3<double> Rotation::rotateRelativeXYX(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeXZX(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeXZX(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = cb;
@@ -1577,11 +1577,11 @@ RMatrix3<double> Rotation::rotateRelativeXZX(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeYZY(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeYZY(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = ca * cb * cr - sa * sr;
@@ -1599,11 +1599,11 @@ RMatrix3<double> Rotation::rotateRelativeYZY(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeYXY(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeYXY(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = -sa * cb * sr + ca * cr;
@@ -1621,11 +1621,11 @@ RMatrix3<double> Rotation::rotateRelativeYXY(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeZXZ(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeZXZ(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = -sa * cb * sr + ca * cr;
@@ -1643,11 +1643,11 @@ RMatrix3<double> Rotation::rotateRelativeZXZ(double alpha, double beta, double g
 	return m;
 }
 
-RMatrix3<double> Rotation::rotateRelativeZYZ(double alpha, double beta, double gamma)
+RMatrix3<double> Rotation::rotateRelativeZYZ(const double alpha, const double beta, const double gamma)
 {
-	const double sa = sin(alpha), ca = cos(alpha);
-	const double sb = sin(beta), cb = cos(beta);
-	const double sr = sin(gamma), cr = cos(gamma);
+	const double sa = std::sin(alpha), ca = std::cos(alpha);
+	const double sb = std::sin(beta), cb = std::cos(beta);
+	const double sr = std::sin(gamma), cr = std::cos(gamma);
 
 	RMatrix3<double> m;
 	m.X().x() = ca * cb * cr - sa * sr;

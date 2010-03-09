@@ -12,7 +12,7 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// class QMatrix: 3x3 quaternion matrix for rotation of 3D vector ( 3x1 vector )
+// class QMatrix: 3x3 quaternion matrix for rotation of 3D vector (3x1 vector)
 // [  e0  e3  e6  ]
 // [  e1  e4  e7  ]
 // [  e2  e5  e8  ]
@@ -27,24 +27,24 @@ public:
 	QMatrix()
 	: q_(T(1), T(0), T(0), T(0))
 	{}
-	explicit QMatrix(const TVector3<T>& rX, const TVector3<T>& rY, const TVector3<T>& rZ)
+	explicit QMatrix(const TVector3<T> &rX, const TVector3<T> &rY, const TVector3<T> &rZ)
 	: q_(Quaternion<T>::to_quaternion(RMatrix3<T>(rX, rY, rZ)))
 	{}
 	explicit QMatrix(const T rhs[9])
 	: q_(Quaternion<T>::to_quaternion(RMatrix3<T>(rhs)))
 	{}
-	explicit QMatrix(const Quaternion<T> rQuat)
+	explicit QMatrix(const Quaternion<T> &rQuat)
 	: q_(rQuat)
 	{}
-	explicit QMatrix(const RMatrix3<T> rRMat)
+	explicit QMatrix(const RMatrix3<T> &rRMat)
 	: q_(Quaternion<T>::to_quaternion(rRMat))
 	{}
-	QMatrix(const QMatrix& rhs)
+	QMatrix(const QMatrix &rhs)
 	: q_(rhs.q_)
 	{}
 	~QMatrix()  {}
 
-	QMatrix& operator=(const QMatrix& rhs)
+	QMatrix & operator=(const QMatrix &rhs)
 	{
 		if (this == &rhs) return *this;
 		q_ = rhs.q_;
@@ -53,8 +53,8 @@ public:
 
 public:
 	///
-	Quaternion<T>& q()  {  return q_;  }
-	const Quaternion<T>& q() const  {  return q_;  }
+	Quaternion<T> & q()  {  return q_;  }
+	const Quaternion<T> & q() const  {  return q_;  }
 
 	///
 	bool get(T entry[9]) const 
@@ -66,23 +66,23 @@ public:
 	}
 
 	///
-	bool isValid(const T& tTol = (T)MathConstant::EPS) const
+	bool isValid(const T &tTol = (T)MathConstant::EPS) const
 	{  return !q_.isZero(tTol) && q_.isUnit(tTol);  }
-	bool isEqual(const QMatrix& rhs, const T& tTol = (T)MathConstant::EPS) const
+	bool isEqual(const QMatrix &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{  return q_.isEqual(rhs.q_, tTol);  }
 
 	/// comparison operator
-    bool operator==(const QMatrix& rhs) const  {  return isEqual(rhs);  }
-    bool operator!=(const QMatrix& rhs) const  {  return !isEqual(rhs);  }
+    bool operator==(const QMatrix &rhs) const  {  return isEqual(rhs);  }
+    bool operator!=(const QMatrix &rhs) const  {  return !isEqual(rhs);  }
 
 	///
-	QMatrix operator*(const QMatrix& rhs) const
+	QMatrix operator*(const QMatrix &rhs) const
 	{  return QMatrix(q_ * rhs.q_);  }
-	QMatrix& operator*=(const QMatrix& rhs)
+	QMatrix & operator*=(const QMatrix &rhs)
 	{  q_ *= rhs.q_;  return *this;  }
 
 	/// rotation
-	TVector3<T> operator*(const TVector3<T>& rV) const
+	TVector3<T> operator*(const TVector3<T> &rV) const
 	{
 		Quaternion<T> aQuat(T(0), rV.x(), rV.y(), rV.z()), aUnit(q_.unit());
 		aQuat = aUnit * aQuat * aUnit.conjugate();
@@ -106,7 +106,7 @@ public:
 	}
 
 	///
-	static QMatrix toRotationMatrix(const T& rad, const TVector3<T>& axis);
+	static QMatrix toRotationMatrix(const T &rad, const TVector3<T> &axis);
 
 private:
 	Quaternion<T> q_;
@@ -114,7 +114,7 @@ private:
 
 
 template<typename T>
-/*static*/ QMatrix<T> QMatrix<T>::toRotationMatrix(const T& rad, const TVector3<T>& axis)
+/*static*/ QMatrix<T> QMatrix<T>::toRotationMatrix(const T &rad, const TVector3<T> &axis)
 {
 	// for making a unit quaternion
 	const T tNorm = (T)sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
@@ -139,7 +139,7 @@ template<typename T>
 // 3D Quaternion Matrix API
 
 template<typename T>
-std::istream& operator>>(std::istream& stream, QMatrix<T>& mat)
+std::istream & operator>>(std::istream &stream, QMatrix<T> &mat)
 {
 	// [> q0  q1  q2  q3 <] means a quaternion matrix
 	char ch;
@@ -148,7 +148,7 @@ std::istream& operator>>(std::istream& stream, QMatrix<T>& mat)
 }
 
 template<typename T>
-std::ostream& operator<<(std::ostream& stream, const QMatrix<T>& mat)
+std::ostream & operator<<(std::ostream &stream, const QMatrix<T> &mat)
 {
 	// [> q0  q1  q2  q3 <] means a quaternion matrix
 	stream << "[> " << mat.q().q0() << "  " << mat.q().q1() << "  " << mat.q().q2() << "  " << mat.q().q3() << " <]";
