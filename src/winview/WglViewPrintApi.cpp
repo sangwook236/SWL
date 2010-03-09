@@ -2,7 +2,7 @@
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglPrintContext.h"
 #include "swl/winview/WglViewBase.h"
-#include "swl/oglview/OglCamera.h"
+#include "swl/glview/GLCamera.h"
 #include <wingdi.h>
 #include <cmath>
 

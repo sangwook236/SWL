@@ -15,13 +15,13 @@ namespace swl {
 
 Shape::Shape()
 : base_type(),
-  geometry_(), appearance_()
+  geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID), appearance_()
 {
 }
 
 Shape::Shape(const Shape &rhs)
 : base_type(rhs),
-  geometry_(rhs.geometry_), appearance_(rhs.appearance_)
+  geometryId_(rhs.geometryId_), appearance_(rhs.appearance_)
 {
 }
 
@@ -33,7 +33,7 @@ Shape & Shape::operator=(const Shape &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
-	geometry_ = rhs.geometry_;
+	geometryId_ = rhs.geometryId_;
 	appearance_ = rhs.appearance_;
 	return *this;
 }

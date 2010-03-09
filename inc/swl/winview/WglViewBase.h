@@ -9,12 +9,12 @@
 namespace swl {
 
 class WglContextBase;
-class OglCamera;
+class GLCamera;
 
 //-----------------------------------------------------------------------------------
 // 
 
-struct SWL_WIN_VIEW_API WglViewBase: public ViewBase<WglContextBase, OglCamera>
+struct SWL_WIN_VIEW_API WglViewBase: public ViewBase<WglContextBase, GLCamera>
 {
 public:
 	typedef ViewBase<context_type, camera_type> base_type;

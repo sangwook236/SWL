@@ -16,26 +16,30 @@ namespace swl {
 //--------------------------------------------------------------------------
 // struct ISceneNode
 
-//--------------------------------------------------------------------------
-// class SceneComponentNode
+ISceneNode::~ISceneNode()
+{
+}
 
-SceneComponentNode::SceneComponentNode()
-: //base_type(),
+//--------------------------------------------------------------------------
+// class ComponentSceneNode
+
+ComponentSceneNode::ComponentSceneNode()
+: base_type(),
   parent_()
 {
 }
 
-SceneComponentNode::SceneComponentNode(const SceneComponentNode &rhs)
-: //base_type(rhs),
+ComponentSceneNode::ComponentSceneNode(const ComponentSceneNode &rhs)
+: base_type(rhs),
   parent_(rhs.parent_)
 {
 }
 
-SceneComponentNode::~SceneComponentNode()
+ComponentSceneNode::~ComponentSceneNode()
 {
 }
 
-SceneComponentNode & SceneComponentNode::operator=(const SceneComponentNode &rhs)
+ComponentSceneNode & ComponentSceneNode::operator=(const ComponentSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	//static_cast<base_type &>(*this) = rhs;
@@ -44,25 +48,25 @@ SceneComponentNode & SceneComponentNode::operator=(const SceneComponentNode &rhs
 }
 
 //--------------------------------------------------------------------------
-// class SceneCompositeNode
+// class CompositeSceneNode
 
-SceneCompositeNode::SceneCompositeNode()
+CompositeSceneNode::CompositeSceneNode()
 : base_type(),
   children_()
 {
 }
 
-SceneCompositeNode::SceneCompositeNode(const SceneCompositeNode &rhs)
+CompositeSceneNode::CompositeSceneNode(const CompositeSceneNode &rhs)
 : base_type(rhs),
   children_(rhs.children_)
 {
 }
 
-SceneCompositeNode::~SceneCompositeNode()
+CompositeSceneNode::~CompositeSceneNode()
 {
 }
 
-SceneCompositeNode & SceneCompositeNode::operator=(const SceneCompositeNode &rhs)
+CompositeSceneNode & CompositeSceneNode::operator=(const CompositeSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -70,69 +74,69 @@ SceneCompositeNode & SceneCompositeNode::operator=(const SceneCompositeNode &rhs
 	return *this;
 }
 
-void SceneCompositeNode::draw()
-{
-	BOOST_FOREACH(node_type node, children_)
-	{
-		node->draw();
-	}
-}
-
-void SceneCompositeNode::addChild(const SceneLeafNode::node_type &node)
+void CompositeSceneNode::addChild(const CompositeSceneNode::node_type &node)
 {
 	children_.push_back(node);
 }
 
-void SceneCompositeNode::removeChild(const SceneLeafNode::node_type &node)
+void CompositeSceneNode::removeChild(const CompositeSceneNode::node_type &node)
 {
 	children_.remove(node);
 }
 
-void SceneCompositeNode::clearChildren()
+void CompositeSceneNode::clearChildren()
 {
 	children_.clear();
 }
 
-void SceneCompositeNode::replace(const SceneLeafNode::node_type &oldNode, const SceneLeafNode::node_type &newNode)
+void CompositeSceneNode::traverse(const ISceneVisitor &visitor) const
+{
+	BOOST_FOREACH(node_type node, children_)
+	{
+		if (node) node->accept(visitor);
+	}
+}
+
+void CompositeSceneNode::replace(const CompositeSceneNode::node_type &oldNode, const CompositeSceneNode::node_type &newNode)
 {
 	std::replace(children_.begin(), children_.end(), oldNode, newNode);
 }
 
 //--------------------------------------------------------------------------
-// class SceneLeafNode
+// class LeafSceneNode
 
-SceneLeafNode::SceneLeafNode()
+LeafSceneNode::LeafSceneNode()
 : base_type()
 {
 }
 
-SceneLeafNode::SceneLeafNode(const SceneLeafNode &rhs)
+LeafSceneNode::LeafSceneNode(const LeafSceneNode &rhs)
 : base_type(rhs)
 {
 }
 
-SceneLeafNode::~SceneLeafNode()
+LeafSceneNode::~LeafSceneNode()
 {
 }
 
-SceneLeafNode & SceneLeafNode::operator=(const SceneLeafNode &rhs)
+LeafSceneNode & LeafSceneNode::operator=(const LeafSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
 	return *this;
 }
 
-void SceneLeafNode::addChild(const SceneLeafNode::node_type &node)
+void LeafSceneNode::addChild(const LeafSceneNode::node_type &node)
 {
 	throw LogException(LogException::L_INFO, "can't add a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }
 
-void SceneLeafNode::removeChild(const SceneLeafNode::node_type &node)
+void LeafSceneNode::removeChild(const LeafSceneNode::node_type &node)
 {
 	throw LogException(LogException::L_INFO, "can't remove a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }
 
-void SceneLeafNode::clearChildren()
+void LeafSceneNode::clearChildren()
 {
 	throw LogException(LogException::L_INFO, "can't clear all children to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }

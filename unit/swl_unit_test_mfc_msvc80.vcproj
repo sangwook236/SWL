@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_oglview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
+				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_oglview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
+				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glview.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"

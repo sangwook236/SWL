@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/oglview/OglCamera.h"
+#include "swl/glview/GLCamera.h"
 #include <GL/glut.h>
 
 
@@ -12,19 +12,19 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-//  class OglCamera
+//  class GLCamera
 
-OglCamera::OglCamera()
+GLCamera::GLCamera()
 : base_type()
 {}
 
-OglCamera::OglCamera(const OglCamera &rhs)
+GLCamera::GLCamera(const GLCamera &rhs)
 : base_type(rhs)
 {}
 
-OglCamera::~OglCamera()  {}
+GLCamera::~GLCamera()  {}
 
-OglCamera & OglCamera::operator=(const OglCamera &rhs)
+GLCamera & GLCamera::operator=(const GLCamera &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type&>(*this) = rhs;
@@ -32,20 +32,20 @@ OglCamera & OglCamera::operator=(const OglCamera &rhs)
 }
 
 /*
-void OglCamera::write(std::ostream &stream)
+void GLCamera::write(std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
-		stream << ' ' << OglCamera::getVersion();
+		stream << ' ' << GLCamera::getVersion();
 
 		// write base class
-		OglCamera::base_type::write(stream);
+		GLCamera::base_type::write(stream);
 
 		// write self
 	endWriteEndl(stream);
 }
 
-void OglCamera::read(std::istream &stream)
+void GLCamera::read(std::istream &stream)
 {
 	beginAssert(stream);
 		// read version
@@ -53,7 +53,7 @@ void OglCamera::read(std::istream &stream)
 		stream >> iVersion;
 
 		// read base class
-		OglCamera::base_type::read(stream);
+		GLCamera::base_type::read(stream);
 
 		// read self
 		unsigned int iOldVersion = setReadVersion(iVersion);
@@ -69,12 +69,12 @@ void OglCamera::read(std::istream &stream)
 	endAssert(stream);
 }
 
-void OglCamera::read20021008(std::istream& stream)
+void GLCamera::read20021008(std::istream& stream)
 {
 }
 */
 
-bool OglCamera::doUpdateFrustum()
+bool GLCamera::doUpdateFrustum()
 {
 	int oldMatrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
@@ -119,13 +119,13 @@ bool OglCamera::doUpdateFrustum()
 	return true;
 }
 
-inline bool OglCamera::doUpdateViewport()
+inline bool GLCamera::doUpdateViewport()
 {
 	glViewport(viewport_.left, viewport_.bottom, viewport_.getWidth(), viewport_.getHeight());
 	return doUpdateFrustum();
 }
 
-inline void OglCamera::lookAt()
+inline void GLCamera::lookAt()
 {
 	//doUpdateFrustum();
 	gluLookAt(eyePosX_, eyePosY_, eyePosZ_, eyePosX_+eyeDirX_, eyePosY_+eyeDirY_, eyePosZ_+eyeDirZ_, upDirX_, upDirY_, upDirZ_);
@@ -133,7 +133,7 @@ inline void OglCamera::lookAt()
 
 // projection transformation: an eye coordinates(before projection)  ==>  a clip coordinates(after projection)
 // ==> OpenGL Red Book p. 96
-bool OglCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
+bool GLCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 {
 	// rojection transformation: an eye coordinates  ==>  a clip coordinates
 	Region2<double> rctViewRegion = getCurrentViewRegion();
@@ -177,7 +177,7 @@ bool OglCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 }
 
 // viewport transformation: a clip coordinates  ==>  a window coordinates
-bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
+bool GLCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 {
 	// viewport transformation: a clip coordinates  ==>  a window coordinates
 	const Region2<double> rctViewRegion = getCurrentViewRegion();
@@ -203,7 +203,7 @@ bool OglCamera::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 }
 
 // inverse viewport transformation: a window coordinates  ==>  a clip coordinates
-bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
+bool GLCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 {
 	// inverse viewport transformation: a window coordinates  ==>  a clip coordinates
 	const Region2<double> rctViewRegion = getCurrentViewRegion();
@@ -231,7 +231,7 @@ bool OglCamera::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 
 // inverse projection transformation: a clip coordinates(after projection)  ==>  an eye coordinates(before projection)
 // ==> OpenGL Red Book p. 96
-bool OglCamera::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
+bool GLCamera::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 {
 	// inverse projection transformation: a clip coordinates  ==>  an eye coordinates
 	Region2<double> rctViewRegion = getCurrentViewRegion();
@@ -272,7 +272,7 @@ bool OglCamera::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 	return true;
 }
 
-double OglCamera::calcResizingRatio() const
+double GLCamera::calcResizingRatio() const
 {
 	const double dEPS = 1.0e-10;
 	double dRatio = (-dEPS <= eyeDistance_ && eyeDistance_ <= dEPS) ? nearPlane_ : nearPlane_ / eyeDistance_;

@@ -3,7 +3,7 @@
 
 
 #include "swl/graphics/GraphicsObj.h"
-#include "swl/graphics/Geometry.h"
+#include "swl/graphics/GeometryPool.h"
 #include "swl/graphics/Appearance.h"
 
 
@@ -15,7 +15,9 @@ namespace swl {
 class SWL_GRAPHICS_API Shape: public GraphicsObj
 {
 public:
-	typedef GraphicsObj base_type;
+	typedef GraphicsObj						base_type;
+	typedef GeometryPool::geometry_id_type	geometry_id_type;
+	typedef Appearance						appearance_type;
 
 public:
 	Shape();
@@ -26,8 +28,8 @@ public:
 
 private:
 	///
-	Geometry geometry_;
-	Appearance appearance_;
+	geometry_id_type geometryId_;
+	appearance_type appearance_;
 };
 
 }  // namespace swl

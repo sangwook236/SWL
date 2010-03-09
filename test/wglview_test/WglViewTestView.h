@@ -10,7 +10,7 @@
 
 namespace swl {
 class WglContextBase;
-class OglCamera;
+class GLCamera;
 struct ViewStateMachine;
 }
 

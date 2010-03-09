@@ -15,7 +15,7 @@
 #include "swl/winview/WglPrintContext.h"
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglViewCaptureApi.h"
-#include "swl/oglview/OglCamera.h"
+#include "swl/glview/GLCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/math/MathConstant.h"
@@ -760,7 +760,7 @@ void CWglViewTestView::OnInitialUpdate()
 		pushContext(boost::shared_ptr<context_type>(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
 	// create a camera
-	pushCamera(boost::shared_ptr<camera_type>(new swl::OglCamera()));
+	pushCamera(boost::shared_ptr<camera_type>(new swl::GLCamera()));
 
 	const boost::shared_ptr<context_type> &viewContext = topContext();
 	const boost::shared_ptr<camera_type> &viewCamera = topCamera();

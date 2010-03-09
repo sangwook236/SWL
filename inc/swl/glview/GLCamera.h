@@ -1,32 +1,32 @@
-#if !defined(__SWL_OGL_VIEW__OGL_CAMERA__H_)
-#define __SWL_OGL_VIEW__OGL_CAMERA__H_ 1
+#if !defined(__SWL_GL_VIEW__GL_CAMERA__H_)
+#define __SWL_GL_VIEW__GL_CAMERA__H_ 1
 
 
-#include "swl/oglview/ExportOglView.h"
+#include "swl/glview/ExportGLView.h"
 #include "swl/view/ViewCamera3.h"
 
 
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-//   class OglCamera
+// class GLCamera
 
-class SWL_OGL_VIEW_API OglCamera: public ViewCamera3
+class SWL_GL_VIEW_API GLCamera: public ViewCamera3
 {
 public:
 	typedef ViewCamera3 base_type;
 
 public:
-	OglCamera();
-	OglCamera(const OglCamera &rhs);
-	virtual ~OglCamera();
+	GLCamera();
+	GLCamera(const GLCamera &rhs);
+	virtual ~GLCamera();
 	
-	OglCamera & operator=(const OglCamera &rhs);
+	GLCamera & operator=(const GLCamera &rhs);
 
 public:
 	/// virtual copy constructor
 	/*virtual*/ ViewCamera2 * cloneCamera() const
-	{  return new OglCamera(*this);  }
+	{  return new GLCamera(*this);  }
 
 	///*virtual*/ void Write(std::ostream &stream);
 	///*virtual*/ void Read(std::istream &stream);
@@ -59,4 +59,4 @@ private:
 }  // namespace swl
 
 
-#endif  //  __SWL_OGL_VIEW__OGL_CAMERA__H_
+#endif  //  __SWL_GL_VIEW__GL_CAMERA__H_

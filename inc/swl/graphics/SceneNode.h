@@ -9,6 +9,8 @@
 
 namespace swl {
 
+struct ISceneVisitor;
+
 //--------------------------------------------------------------------------
 // struct ISceneNode
 
@@ -19,7 +21,10 @@ public:
 	typedef boost::shared_ptr<ISceneNode>	node_type;
 
 public:
-	virtual void draw() = 0;
+	virtual ~ISceneNode();
+
+public:
+	virtual void accept(const ISceneVisitor &visitor) const = 0;
  
 	virtual void addChild(const node_type &node) = 0;
  	virtual void removeChild(const node_type &node) = 0;
@@ -35,20 +40,20 @@ public:
 };
 
 //--------------------------------------------------------------------------
-// class SceneComponentNode
+// class ComponentSceneNode
 
-class SceneComponentNode: public ISceneNode
+class SWL_GRAPHICS_API ComponentSceneNode: public ISceneNode
 {
 public:
-	//typedef ISceneNode base_type;
+	typedef ISceneNode base_type;
 
 protected:
-	SceneComponentNode();
-	SceneComponentNode(const SceneComponentNode &rhs);
+	ComponentSceneNode();
+	ComponentSceneNode(const ComponentSceneNode &rhs);
 public:
-	virtual ~SceneComponentNode();
+	virtual ~ComponentSceneNode();
 
-	SceneComponentNode & operator=(const SceneComponentNode &rhs);
+	ComponentSceneNode & operator=(const ComponentSceneNode &rhs);
 
 public:
 	/*final*/ /*virtual*/ node_type getParent()  {  return parent_;  }
@@ -61,32 +66,31 @@ private:
 };
 
 //--------------------------------------------------------------------------
-// class SceneCompositeNode
+// class CompositeSceneNode
 
-class SWL_GRAPHICS_API SceneCompositeNode: public SceneComponentNode
+class SWL_GRAPHICS_API CompositeSceneNode: public ComponentSceneNode
 {
 public:
-	typedef SceneComponentNode base_type;
+	typedef ComponentSceneNode base_type;
 
 protected:
-	SceneCompositeNode();
-	SceneCompositeNode(const SceneCompositeNode &rhs);
+	CompositeSceneNode();
+	CompositeSceneNode(const CompositeSceneNode &rhs);
 public:
-	virtual ~SceneCompositeNode();
+	virtual ~CompositeSceneNode();
 
-	SceneCompositeNode & operator=(const SceneCompositeNode &rhs);
+	CompositeSceneNode & operator=(const CompositeSceneNode &rhs);
 
 public:
-	/*virtual*/ void draw();
-
 	/*final*/ /*virtual*/ void addChild(const node_type &node);
  	/*final*/ /*virtual*/ void removeChild(const node_type &node);
 	/*final*/ /*virtual*/ void clearChildren();
 	/*final*/ /*virtual*/ size_t countChildren() const  {  return children_.size();  }
 	/*final*/ /*virtual*/ bool containChildren() const  {  return !children_.empty();  }
 
-	/*virtual*/ bool isLeaf() const  {  return children_.empty();  }
+	/*final*/ /*virtual*/ bool isLeaf() const  {  return children_.empty();  }
 
+	void traverse(const ISceneVisitor &visitor) const;
 	void replace(const node_type &oldNode, const node_type &newNode);
 
 private:
@@ -94,20 +98,20 @@ private:
 };
 
 //--------------------------------------------------------------------------
-// class SceneLeafNode
+// class LeafSceneNode
 
-class SWL_GRAPHICS_API SceneLeafNode: public SceneComponentNode
+class SWL_GRAPHICS_API LeafSceneNode: public ComponentSceneNode
 {
 public:
-	typedef SceneComponentNode base_type;
+	typedef ComponentSceneNode base_type;
 
 protected:
-	SceneLeafNode();
-	SceneLeafNode(const SceneLeafNode &rhs);
+	LeafSceneNode();
+	LeafSceneNode(const LeafSceneNode &rhs);
 public:
-	virtual ~SceneLeafNode();
+	virtual ~LeafSceneNode();
 
-	SceneLeafNode & operator=(const SceneLeafNode &rhs);
+	LeafSceneNode & operator=(const LeafSceneNode &rhs);
  
 public:
 	/*final*/ /*virtual*/ void addChild(const node_type &node);

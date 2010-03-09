@@ -16,10 +16,13 @@ namespace swl {
 class SWL_GRAPHICS_API GeometryPool
 {
 public:
-	//typedef GeometryPool base_type;
-	typedef boost::shared_ptr<Geometry> geometry_type;
-	typedef size_t geometry_id_type;
-	typedef std::map<geometry_id_type, geometry_type> geometry_pool_type;
+	//typedef GeometryPool								base_type;
+	typedef size_t										geometry_id_type;
+	typedef boost::shared_ptr<Geometry>					geometry_type;
+	typedef std::map<geometry_id_type, geometry_type>	geometry_pool_type;
+
+public:
+	static const geometry_id_type UNDEFINED_GEOMETRY_ID = -1;
 
 private:
 	GeometryPool()  {}
@@ -29,7 +32,7 @@ public:
 public:
 	static GeometryPool & getInstance();
 
-	geometry_id_type & createGeometryId();
+	geometry_id_type createGeometryId();
 	void deleteGeometryId(const geometry_id_type &geomId);
 
 	bool setGeometry(const geometry_id_type &geomId, geometry_type &geom);
@@ -38,6 +41,7 @@ public:
 
 private:
 	static GeometryPool *singleton_;
+
 	geometry_pool_type geometryPool_;
 };
 

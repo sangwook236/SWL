@@ -21,6 +21,9 @@ public:
 	virtual ~Geometry();
 
 	Geometry & operator=(const Geometry &rhs);
+
+public:
+	virtual void draw() const = 0;
 };
 
 }  // namespace swl

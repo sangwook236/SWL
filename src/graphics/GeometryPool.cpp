@@ -23,7 +23,7 @@ namespace swl {
 	return *singleton_;
 }
 
-GeometryPool::geometry_id_type & GeometryPool::createGeometryId()
+GeometryPool::geometry_id_type GeometryPool::createGeometryId()
 {
 	const size_t count = geometryPool_.size();
 	geometry_id_type geomId = count;

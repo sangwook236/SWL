@@ -12,7 +12,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<double>;
+SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<float>;
 #endif
 
 
@@ -34,14 +34,14 @@ public:
 
 public:
 	/// accessor & mutator
-	double & red()  {  return color_.r;  }
-	double red() const  {  return color_.r;  }
-	double & green()  {  return color_.g;  }
-	double green() const  {  return color_.g;  }
-	double & blue()  {  return color_.b;  }
-	double blue() const  {  return color_.b;  }
-	double & alpha()  {  return color_.a;  }
-	double alpha() const  {  return color_.a;  }
+	float & red()  {  return color_.r;  }
+	float red() const  {  return color_.r;  }
+	float & green()  {  return color_.g;  }
+	float green() const  {  return color_.g;  }
+	float & blue()  {  return color_.b;  }
+	float blue() const  {  return color_.b;  }
+	float & alpha()  {  return color_.a;  }
+	float alpha() const  {  return color_.a;  }
 
 	void setVisible(bool isVisible)  {  visible_.setVisible(isVisible);  }
 	bool isVisible() const  {  return visible_.isVisible();  }
@@ -53,7 +53,7 @@ public:
 	bool isTransparent() const  {  return transparent_.isTransparent();  }
 
 private:
-	Color4<double> color_;
+	Color4<float> color_;
 
 	VisibleAttrib visible_;
 	TransparentAttrib transparent_;

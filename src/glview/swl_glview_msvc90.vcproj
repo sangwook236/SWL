@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="ks_c_5601-1987"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
-	Name="swl_oglview"
+	Version="9.00"
+	Name="swl_glview"
 	ProjectGUID="{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
-	RootNamespace="swl_oglview"
+	RootNamespace="swl_glview"
 	Keyword="Win32Proj"
+	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -42,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_OGL_VIEW"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GL_VIEW"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -67,6 +68,8 @@
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="../../lib/$(ConfigurationName)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -87,9 +90,6 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -122,7 +122,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_OGL_VIEW"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GL_VIEW"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
@@ -147,6 +147,8 @@
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
+				RandomizedBaseAddress="1"
+				DataExecutionPrevention="0"
 				ImportLibrary="../../lib/$(ConfigurationName)/$(TargetName).lib"
 				TargetMachine="1"
 			/>
@@ -169,9 +171,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -185,7 +184,7 @@
 			UniqueIdentifier="{E6A1256A-0EA2-4ef3-A343-F686B5F5D659}"
 			>
 			<File
-				RelativePath=".\OglCamera.cpp"
+				RelativePath=".\GLCamera.cpp"
 				>
 			</File>
 		</Filter>
@@ -195,11 +194,11 @@
 			UniqueIdentifier="{7A2A5A24-E647-4b94-A6B0-2ABE3E705261}"
 			>
 			<File
-				RelativePath="..\..\inc\swl\oglview\ExportOglView.h"
+				RelativePath="..\..\inc\swl\glview\ExportGLView.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\oglview\OglCamera.h"
+				RelativePath="..\..\inc\swl\glview\GLCamera.h"
 				>
 			</File>
 		</Filter>

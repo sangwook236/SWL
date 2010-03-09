@@ -189,6 +189,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\AppearanceSceneNode.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\CoordinateFrame.cpp"
 				>
 			</File>
@@ -198,6 +202,10 @@
 			</File>
 			<File
 				RelativePath=".\GeometryPool.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GeometrySceneNode.cpp"
 				>
 			</File>
 			<File
@@ -212,6 +220,10 @@
 				RelativePath=".\Shape.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\TransformSceneNode.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -220,6 +232,10 @@
 			>
 			<File
 				RelativePath="..\..\inc\swl\graphics\Appearance.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\AppearanceSceneNode.h"
 				>
 			</File>
 			<File
@@ -247,11 +263,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\graphics\GeometrySceneNode.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\graphics\GraphicsObj.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\graphics\IDrawable.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\ISceneVisitor.h"
 				>
 			</File>
 			<File
@@ -268,6 +292,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\graphics\Shape.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\graphics\TransformSceneNode.h"
 				>
 			</File>
 			<File

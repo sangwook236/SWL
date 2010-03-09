@@ -39,6 +39,7 @@ static std::string convert_base_field(const unsigned long dec, const unsigned lo
 	}
 	else
 	{
+		// TODO [check] >>
 		dec2 = -dec;
 		isNegative = true;
 	}
@@ -155,6 +156,7 @@ static long convert_base_field(const std::string &num, const unsigned long base)
 		dec += digit * (long)std::pow(double(base), double(len - idx - 1ul));
 	}
 
+	// TODO [check] >>
 	return isNegative ? -dec : dec;
 }
 
