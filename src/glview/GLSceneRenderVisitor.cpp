@@ -34,27 +34,34 @@ void GLSceneRenderVisitor::visit(const GeometrySceneNode &node) const
 {
 	const GeometrySceneNode::geometry_type &geometry = node.getGeometry();
 
+	// FIXME [modify] >>
 	if (geometry) geometry->draw();
 }
 
 void GLSceneRenderVisitor::visit(const ShapeSceneNode &node) const
 {
 	const ShapeSceneNode::shape_type &shape = node.getShape();
-	const ShapeSceneNode::shape_type::appearance_type &appearance = shape.getAppearance();
+	if (!shape) return;
+
+	const ShapeSceneNode::appearance_type &appearance = shape->getAppearance();
 
 	if (!appearance.isVisible()) return;
 	if ((RENDER_OPAQUE_OBJECTS == renderMode_ && appearance.isTransparent()) ||
 		(RENDER_TRANSPARENT_OBJECTS == renderMode_ && !appearance.isTransparent()))
 		return;
 
-	const ShapeSceneNode::shape_type::geometry_type &geometry = shape.getGeometry();
+	// FIXME [modify] >>
+#if 0
+	const ShapeSceneNode::geometry_type &geometry = shape->getGeometry();
+	const ShapeSceneNode::appearance_type::PolygonMode &polygonMode = appearance.getPolygonMode();
 
-	const ShapeSceneNode::shape_type::appearance_type::PolygonMode &polygonMode = appearance.getPolygonMode();
-
-	//glBegin();
-	//	glColor4f(appearance.red(), appearance.green(), appearance.blue(), appearance.alpha());
-	//	if (geometry) geometry->draw();
-	//glEnd();
+	glBegin();
+		glColor4f(appearance.red(), appearance.green(), appearance.blue(), appearance.alpha());
+		if (geometry) geometry->draw();
+	glEnd();
+#else
+	shape->draw();
+#endif
 }
 
 void GLSceneRenderVisitor::visit(const TransformSceneNode &node) const

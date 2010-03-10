@@ -14,7 +14,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class ShapeSceneNode
 
-ShapeSceneNode::ShapeSceneNode(const ShapeSceneNode::shape_type &shape)
+ShapeSceneNode::ShapeSceneNode(ShapeSceneNode::shape_type &shape)
 : base_type(),
   shape_(shape)
 {

@@ -18,7 +18,7 @@ protected:
 
 public:
 	///
-	virtual bool move(const TMatrix2<double> &mat) = 0;
+	virtual bool move(const TMatrix2<double> &mat) const = 0;
 };
 
 
@@ -32,7 +32,7 @@ protected:
 
 public:
 	///
-	virtual bool transform(const TMatrix3<double> &mat) = 0;
+	virtual bool transform(const TMatrix3<double> &mat) const = 0;
 };
 
 }  // namespace swl

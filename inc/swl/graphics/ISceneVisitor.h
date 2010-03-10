@@ -24,6 +24,7 @@ public:
 	virtual void visit(const AppearanceSceneNode &node) const = 0;
 	virtual void visit(const GeometrySceneNode &node) const = 0;
 	virtual void visit(const ShapeSceneNode &node) const = 0;
+
 	virtual void visit(const TransformSceneNode &node) const = 0;
 
 };

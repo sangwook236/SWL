@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/graphics/SceneNode.h"
+#include "swl/graphics/ISceneVisitor.h"
 #include "swl/base/LogException.h"
 #include <boost/foreach.hpp>
 #include <algorithm>
@@ -48,25 +49,25 @@ ComponentSceneNode & ComponentSceneNode::operator=(const ComponentSceneNode &rhs
 }
 
 //--------------------------------------------------------------------------
-// class CompositeSceneNode
+// class GroupSceneNode
 
-CompositeSceneNode::CompositeSceneNode()
+GroupSceneNode::GroupSceneNode()
 : base_type(),
   children_()
 {
 }
 
-CompositeSceneNode::CompositeSceneNode(const CompositeSceneNode &rhs)
+GroupSceneNode::GroupSceneNode(const GroupSceneNode &rhs)
 : base_type(rhs),
   children_(rhs.children_)
 {
 }
 
-CompositeSceneNode::~CompositeSceneNode()
+GroupSceneNode::~GroupSceneNode()
 {
 }
 
-CompositeSceneNode & CompositeSceneNode::operator=(const CompositeSceneNode &rhs)
+GroupSceneNode & GroupSceneNode::operator=(const GroupSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -74,22 +75,28 @@ CompositeSceneNode & CompositeSceneNode::operator=(const CompositeSceneNode &rhs
 	return *this;
 }
 
-void CompositeSceneNode::addChild(const CompositeSceneNode::node_type &node)
+void GroupSceneNode::accept(const ISceneVisitor &visitor) const
+{
+	traverse(visitor);
+	//visitor.visit(*this);
+}
+
+void GroupSceneNode::addChild(const GroupSceneNode::node_type &node)
 {
 	children_.push_back(node);
 }
 
-void CompositeSceneNode::removeChild(const CompositeSceneNode::node_type &node)
+void GroupSceneNode::removeChild(const GroupSceneNode::node_type &node)
 {
 	children_.remove(node);
 }
 
-void CompositeSceneNode::clearChildren()
+void GroupSceneNode::clearChildren()
 {
 	children_.clear();
 }
 
-void CompositeSceneNode::traverse(const ISceneVisitor &visitor) const
+void GroupSceneNode::traverse(const ISceneVisitor &visitor) const
 {
 	BOOST_FOREACH(node_type node, children_)
 	{
@@ -97,7 +104,7 @@ void CompositeSceneNode::traverse(const ISceneVisitor &visitor) const
 	}
 }
 
-void CompositeSceneNode::replace(const CompositeSceneNode::node_type &oldNode, const CompositeSceneNode::node_type &newNode)
+void GroupSceneNode::replace(const GroupSceneNode::node_type &oldNode, const GroupSceneNode::node_type &newNode)
 {
 	std::replace(children_.begin(), children_.end(), oldNode, newNode);
 }

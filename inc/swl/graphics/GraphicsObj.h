@@ -3,7 +3,7 @@
 
 
 #include "swl/graphics/ExportGraphics.h"
-//#include "swl/graphics/IDrawable.h"
+#include "swl/graphics/IDrawable.h"
 //#include "swl/graphics/ITransformable.h"
 #include "swl/graphics/PickableAttrib.h"
 
@@ -14,7 +14,7 @@ namespace swl {
 // class GraphicsObj
 
 //class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public ITransformable3
-class SWL_GRAPHICS_API GraphicsObj
+class SWL_GRAPHICS_API GraphicsObj: public IDrawable
 {
 public:
 	//typedef GraphicsObj base_type;

@@ -6,6 +6,8 @@
 
 #include "swl/winview/WglViewBase.h"
 #include "swl/view/ViewEventController.h"
+#include "swl/graphics/SceneNode.h"
+#include "swl/graphics/Shape.h"
 #include <boost/smart_ptr.hpp>
 
 namespace swl {
@@ -145,6 +147,9 @@ private:
 	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
+	void contructSceneGraph();
+	void traverseSceneGraph() const;
+
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
@@ -163,7 +168,9 @@ private:
 	//enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
 	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
 
+	// for WGL bitmap fonts
 	static const int MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;
+	// for WGL outline fonts
 	static const int MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT = 256;
 	mutable GLYPHMETRICSFLOAT gmf_[256];
 
@@ -187,6 +194,24 @@ private:
 	bool isPrinting_;
 
 	const int polygonFacing_;
+
+	//
+	friend class SimpleShape;
+	class SimpleShape: public swl::Shape
+	{
+	public:
+		SimpleShape(CWglViewTestView &view)
+		: view_(view)
+		{}
+
+	public:
+		/*virtual*/ bool draw(/*...*/) const;
+
+	public:
+		CWglViewTestView &view_;
+	};
+
+	swl::ISceneNode::node_type rootSceneNode_;
 
 // Generated message map functions
 protected:

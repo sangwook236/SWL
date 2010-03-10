@@ -14,7 +14,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class AppearanceSceneNode
 
-AppearanceSceneNode::AppearanceSceneNode(const AppearanceSceneNode::appearance_type &appearance)
+AppearanceSceneNode::AppearanceSceneNode(AppearanceSceneNode::appearance_type &appearance)
 : base_type(),
   appearance_(appearance)
 {

@@ -16,8 +16,10 @@
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglViewCaptureApi.h"
 #include "swl/glview/GLCamera.h"
+#include "swl/glview/GLSceneRenderVisitor.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
+#include "swl/graphics/ShapeSceneNode.h"
 #include "swl/math/MathConstant.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/multi_array.hpp>
@@ -39,6 +41,8 @@
 #endif
 
 #define __USE_OPENGL_DISPLAY_LIST 1
+#define __USE_SCENE_GRAPH 1
+
 //#define __USE_GLUT_BITMAP_FONTS 1
 //#define __USE_GLUT_STROKE_FONTS 1
 #define __USE_WGL_BITMAP_FONTS 1
@@ -467,6 +471,18 @@ void drawMesh()
 
 }  // unnamed namespace
 
+bool CWglViewTestView::SimpleShape::draw(/*...*/) const
+{
+	glPushMatrix();
+		view_.drawMainContent();
+	glPopMatrix();
+
+	if (view_.isColorBarShown_) view_.drawColorBar();
+	if (view_.isCoordinateFrameShown_ && !view_.isPrinting_) view_.drawCoordinateFrame();
+
+	return true;
+}
+
 // CWglViewTestView
 
 IMPLEMENT_DYNCREATE(CWglViewTestView, CView)
@@ -528,7 +544,8 @@ CWglViewTestView::CWglViewTestView()
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false),
-  polygonFacing_(GL_FRONT_AND_BACK)
+  polygonFacing_(GL_FRONT_AND_BACK),
+  rootSceneNode_()
 {
 #if 0
 	topGradientBackgroundColor_[0] = 0.776f;
@@ -773,6 +790,10 @@ void CWglViewTestView::OnInitialUpdate()
 		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
 		if (viewStateFsm_.get()) viewStateFsm_->initiate();
 	}
+
+#if defined(__USE_SCENE_GRAPH)
+	contructSceneGraph();
+#endif
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
@@ -1052,12 +1073,16 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
+#if defined(__USE_SCENE_GRAPH)
+	traverseSceneGraph();
+#else
 	glPushMatrix();
 		drawMainContent();
 	glPopMatrix();
 
 	if (isColorBarShown_) drawColorBar();
 	if (isCoordinateFrameShown_ && !isPrinting_) drawCoordinateFrame();
+#endif
 
     return true;
 }
@@ -1880,6 +1905,24 @@ void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y
 		if (!isCullFace) glDisable(GL_CULL_FACE);
 	}
 #endif
+}
+
+void CWglViewTestView::contructSceneGraph()
+{
+	rootSceneNode_.reset(new swl::GroupSceneNode());
+
+	boost::shared_ptr<swl::Shape> shape(new SimpleShape(*this));
+	boost::shared_ptr<swl::ShapeSceneNode> shapeNode(new swl::ShapeSceneNode(shape));
+	rootSceneNode_->addChild(shapeNode);
+}
+
+void CWglViewTestView::traverseSceneGraph() const
+{
+	if (rootSceneNode_)
+	{
+		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_OPAQUE_OBJECTS));
+		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_TRANSPARENT_OBJECTS));
+	}
 }
 
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)

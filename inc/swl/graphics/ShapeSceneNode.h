@@ -14,11 +14,13 @@ namespace swl {
 class SWL_GRAPHICS_API ShapeSceneNode: public LeafSceneNode
 {
 public:
-	typedef LeafSceneNode	base_type;
-	typedef Shape			shape_type;
+	typedef LeafSceneNode				base_type;
+	typedef boost::shared_ptr<Shape>	shape_type;
+	typedef Shape::geometry_type		geometry_type;
+	typedef Shape::appearance_type		appearance_type;
 
 public:
-	ShapeSceneNode(const shape_type &shape);
+	ShapeSceneNode(shape_type &shape);
 	ShapeSceneNode(const ShapeSceneNode &rhs);
 	virtual ~ShapeSceneNode();
 

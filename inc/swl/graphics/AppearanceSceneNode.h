@@ -18,7 +18,7 @@ public:
 	typedef Appearance		appearance_type;
 
 public:
-	AppearanceSceneNode(const appearance_type &appearance);
+	AppearanceSceneNode(appearance_type &appearance);
 	AppearanceSceneNode(const AppearanceSceneNode &rhs);
 	virtual ~AppearanceSceneNode();
 
@@ -31,7 +31,7 @@ public:
 	const appearance_type & getAppearance() const  {  return appearance_;  }
 
 private:
-	appearance_type appearance_;
+	appearance_type &appearance_;
 };
 
 }  // namespace swl

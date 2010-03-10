@@ -14,7 +14,7 @@ protected:
 
 public:
 	///
-	virtual bool draw(/*...*/) = 0;
+	virtual bool draw(/*...*/) const = 0;
 };
 
 }  // namespace swl

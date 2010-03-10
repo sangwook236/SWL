@@ -11,11 +11,11 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class TransformSceneNode
 
-class SWL_GRAPHICS_API TransformSceneNode: public CompositeSceneNode
+class SWL_GRAPHICS_API TransformSceneNode: public GroupSceneNode
 {
 public:
-	typedef CompositeSceneNode		base_type;
-	typedef TMatrix3<double>		transform_type;
+	typedef GroupSceneNode		base_type;
+	typedef TMatrix3<double>	transform_type;
 
 public:
 	TransformSceneNode();

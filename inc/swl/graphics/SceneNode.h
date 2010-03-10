@@ -66,22 +66,23 @@ private:
 };
 
 //--------------------------------------------------------------------------
-// class CompositeSceneNode
+// class GroupSceneNode
 
-class SWL_GRAPHICS_API CompositeSceneNode: public ComponentSceneNode
+class SWL_GRAPHICS_API GroupSceneNode: public ComponentSceneNode
 {
 public:
 	typedef ComponentSceneNode base_type;
 
-protected:
-	CompositeSceneNode();
-	CompositeSceneNode(const CompositeSceneNode &rhs);
 public:
-	virtual ~CompositeSceneNode();
+	GroupSceneNode();
+	GroupSceneNode(const GroupSceneNode &rhs);
+	virtual ~GroupSceneNode();
 
-	CompositeSceneNode & operator=(const CompositeSceneNode &rhs);
+	GroupSceneNode & operator=(const GroupSceneNode &rhs);
 
 public:
+	/*virtual*/ void accept(const ISceneVisitor &visitor) const;
+
 	/*final*/ /*virtual*/ void addChild(const node_type &node);
  	/*final*/ /*virtual*/ void removeChild(const node_type &node);
 	/*final*/ /*virtual*/ void clearChildren();
