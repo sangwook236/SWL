@@ -121,6 +121,7 @@ private:
 	void drawFloor(const bool doesCreateDisplayList = false) const;
 	void drawColorBar(const bool doesCreateDisplayList = false) const;
 	void drawCoordinateFrame(const bool doesCreateDisplayList = false) const;
+	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
 
 	//
 	void createDisplayLists(const unsigned int displayListNameBase) const;

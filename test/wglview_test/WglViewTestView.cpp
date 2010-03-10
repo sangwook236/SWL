@@ -1306,20 +1306,26 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 	glPushMatrix();
 		//glLoadIdentity();
 		glTranslatef(-250.0f, 250.0f, -250.0f);
-		glColor3f(1.0f, 0.0f, 0.0f);
 
-		// set clipping planes
 		const double clippingPlane0[] = { 1.0, 0.0, 0.0, 100.0 };
-		glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
-		glEnable(GL_CLIP_PLANE0);
 		const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
-		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
-		glEnable(GL_CLIP_PLANE1);
 
-		isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+		drawClippingArea(GL_CLIP_PLANE0, clippingPlane0);
+		drawClippingArea(GL_CLIP_PLANE1, clippingPlane1);
 
-		glDisable(GL_CLIP_PLANE0);
-		glDisable(GL_CLIP_PLANE1);
+		{
+			// set clipping planes
+			glEnable(GL_CLIP_PLANE0);
+			glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
+			glEnable(GL_CLIP_PLANE1);
+			glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
+
+			glColor3f(1.0f, 0.0f, 0.0f);
+			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+
+			glDisable(GL_CLIP_PLANE0);
+			glDisable(GL_CLIP_PLANE1);
+		}
 	glPopMatrix();
 
 	glPushMatrix();
@@ -1781,6 +1787,66 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 	}
  
 	gluDeleteQuadric(obj);
+}
+
+void CWglViewTestView::drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
+{
+	glEnable(clippingPlaneId);
+	glClipPlane(clippingPlaneId, clippingPlaneEqn);
+
+	//----- rendering the mesh's clip edge
+	glEnable(GL_STENCIL_TEST);
+	glEnable(GL_CULL_FACE);
+	glClear(GL_STENCIL_BUFFER_BIT);
+	glDisable(GL_DEPTH_TEST);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+	// first pass: increment stencil buffer value on back faces
+	glStencilFunc(GL_ALWAYS, 0, 0);
+	glStencilOp(GL_KEEP, GL_KEEP, GL_INCR);
+	glCullFace(GL_FRONT);  // render back faces only
+
+	isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+
+	// second pass: decrement stencil buffer value on front faces
+	glStencilOp(GL_KEEP, GL_KEEP, GL_DECR);
+	glCullFace(GL_BACK);  // render front faces only
+
+	isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+
+	// drawing clip planes masked by stencil buffer content
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+	glDisable(clippingPlaneId);
+	glStencilFunc(GL_NOTEQUAL, 0, ~0); 
+	// stencil test will pass only when stencil buffer value = 0. (~0 = 0x11...11)
+
+	// rendering the plane quad. Note, it should be big enough to cover all clip edge area.
+	glCullFace(GL_BACK);  // render back faces only
+	glBegin(GL_QUADS);
+		glColor3f(0.0f, 0.0f, 0.0f);
+		// FIXME [correct] >> to be generalized
+		if (clippingPlaneEqn[0] < 0.0f)
+		{
+			const GLfloat x = -clippingPlaneEqn[3] / clippingPlaneEqn[0];
+			glVertex3f(x, -1000.0f, -1000.0f);
+			glVertex3f(x, 1000.0f, -1000.0f);
+			glVertex3f(x, 1000.0f, 1000.0f);
+			glVertex3f(x, -1000.0f, 1000.0f);
+		}
+		else
+		{
+			const GLfloat x = -clippingPlaneEqn[3] / clippingPlaneEqn[0];
+			glVertex3f(x, -1000.0f, -1000.0f);
+			glVertex3f(x, -1000.0f, 1000.0f);
+			glVertex3f(x, 1000.0f, 1000.0f);
+			glVertex3f(x, 1000.0f, -1000.0f);
+		}
+	glEnd();
+
+	glDisable(GL_STENCIL_TEST);
+	glDisable(GL_CULL_FACE);
+	//----- end rendering mesh's clip edge
 }
 
 #if defined(_UNICODE) || defined(UNICODE)
