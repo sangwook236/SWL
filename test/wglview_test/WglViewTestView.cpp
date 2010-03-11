@@ -477,7 +477,10 @@ bool CWglViewTestView::SimpleShape::draw(/*...*/) const
 		view_.drawMainContent();
 	glPopMatrix();
 
+	// FIXME [delete] >>
+	glLoadName(1);
 	if (view_.isColorBarShown_) view_.drawColorBar();
+	glLoadName(2);
 	if (view_.isCoordinateFrameShown_ && !view_.isPrinting_) view_.drawCoordinateFrame();
 
 	return true;
@@ -543,7 +546,7 @@ CWglViewTestView::CWglViewTestView()
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
-  isPrinting_(false),
+  isPrinting_(false), isPickingObject_(false),
   polygonFacing_(GL_FRONT_AND_BACK),
   rootSceneNode_()
 {
@@ -946,14 +949,25 @@ bool CWglViewTestView::initializeView()
 	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
 
 	//
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glEnable(GL_BLEND);
+	////glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// 
+	//
+	//GLfloat pointSizes[2] = { 0.0f, };
+	//glGetFloatv(GL_POINT_SIZE_RANGE, pointSizes);
+	//GLfloat lineGradularities[2] = { 0.0f, };
+	//glGetFloatv(GL_LINE_WIDTH_GRANULARITY, lineGradularities);
+	//GLfloat lineWidths[2] = { 0.0f, };
+	//glGetFloatv(GL_LINE_WIDTH_RANGE, lineWidths);
+
+	//glEnable(GL_POINT_SMOOTH);
 	//glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+	//glEnable(GL_LINE_SMOOTH);
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+	//glEnable(GL_POLYGON_SMOOTH);
 	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	// really nice perspective calculations
+	//// really nice perspective calculations
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
@@ -1074,7 +1088,12 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
 #if defined(__USE_SCENE_GRAPH)
-	traverseSceneGraph();
+	// traverse a scene graph
+	if (rootSceneNode_)
+	{
+		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_OPAQUE_OBJECTS));
+		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_TRANSPARENT_OBJECTS));
+	}
 #else
 	glPushMatrix();
 		drawMainContent();
@@ -1109,6 +1128,134 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 	}
 
 	return true;
+}
+
+void CWglViewTestView::pickObject(const int x, const int y)
+{
+	processObjectPicking(x, y, 2, 2);
+}
+
+void CWglViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2)
+{
+	const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
+	processObjectPicking(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight());
+}
+
+void CWglViewTestView::processObjectPicking(const int x, const int y, const int width, const int height)
+{
+	const boost::shared_ptr<context_type> &context = topContext();
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (!context || !camera) return;
+
+	isPickingObject_ = true;
+
+	{
+		context_type::guard_type guard(*context);
+
+		// save states
+		GLint oldMatrixMode;
+		glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+		glPushAttrib(GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// set attributes
+		glDisable(GL_LIGHTING);
+		glDepthFunc(GL_LEQUAL);
+		glEnable(GL_DEPTH_TEST);
+		//glDepthRange(0.0, 1.0);
+
+		//double modelviewMatrix[16];
+		double projectionMatrix[16];
+		int viewport[4];
+		//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+		glGetIntegerv(GL_VIEWPORT, viewport);
+
+		// set selection buffer
+		const GLsizei SELECT_BUFFER_SIZE = 64;
+		GLuint selectBuffer[SELECT_BUFFER_SIZE] = { 0, };
+		glSelectBuffer(SELECT_BUFFER_SIZE, selectBuffer);
+
+		// change rendering mode
+		glRenderMode(GL_SELECT);
+
+		// initialize name stack
+		glInitNames();
+		//glPushName(NAME_BASE_ENTRY);
+
+		// set projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+
+		glLoadIdentity();
+		gluPickMatrix(x, viewport[3] - y, width, height, viewport);
+
+		// need to load current projection matrix
+		glMultMatrixd(projectionMatrix);
+
+		// render scene
+#if 0
+		renderScene(*context, *camera);
+#else
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+		glLoadIdentity();
+		// 1. need to load current modelview matrix
+		//   e.g.) glLoadMatrixd(modelviewMatrix);
+		// 2. need to be thought of viewing transformation
+		//   e.g.) camera->lookAt();
+		camera->lookAt();
+
+#if 1
+		doRenderScene(*context, *camera);
+#else
+		drawMainContent();
+#endif
+#endif
+
+		// gather hit records
+		const GLint hitCount = glRenderMode(GL_RENDER);
+
+		// restore states
+		// pop matrices
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+		glMatrixMode(GL_MODELVIEW);
+		glPopMatrix();
+
+		// pop original attributes
+		glPopAttrib();  // GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT
+
+		glMatrixMode(oldMatrixMode);
+
+		// process hits
+		if (hitCount > 0) processHits(hitCount, selectBuffer);
+	}
+
+	isPickingObject_ = false;
+}
+
+void CWglViewTestView::processHits(const int hitCount, const unsigned int *buffer) const
+{
+	const GLuint *ptr = (GLuint *)buffer;
+	for (int i = 0; i < hitCount; ++i)
+	{
+		// number of names for each hit.
+		const GLuint nameCount = *ptr;
+		++ptr;
+		// min. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit.
+		const float minZ = float(*ptr) / 0x7fffffff;
+		++ptr;
+		// max. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit
+		const float maxZ = float(*ptr) / 0x7fffffff;
+		++ptr;
+
+		for (GLuint j = 0; j < nameCount; ++j)
+		{
+			const GLint name = *ptr;
+			++ptr;
+			TRACE("***** pick object: %d\n", name);
+		}
+	}
 }
 
 void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
@@ -1310,30 +1457,35 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 		const double clippingPlane0[] = { 1.0, 0.0, 0.0, 100.0 };
 		const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
 
+		// draw clipping areas
 		drawClippingArea(GL_CLIP_PLANE0, clippingPlane0);
 		drawClippingArea(GL_CLIP_PLANE1, clippingPlane1);
 
-		{
-			// set clipping planes
-			glEnable(GL_CLIP_PLANE0);
-			glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
-			glEnable(GL_CLIP_PLANE1);
-			glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
+		// enables clipping planes
+		glEnable(GL_CLIP_PLANE0);
+		glClipPlane(GL_CLIP_PLANE0, clippingPlane0);
+		glEnable(GL_CLIP_PLANE1);
+		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
 
+		glPushName(NAME_SPHERE);
+			// draw a sphere
 			glColor3f(1.0f, 0.0f, 0.0f);
 			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
+		glPopName();
 
-			glDisable(GL_CLIP_PLANE0);
-			glDisable(GL_CLIP_PLANE1);
-		}
+		// disables clipping planes
+		glDisable(GL_CLIP_PLANE0);
+		glDisable(GL_CLIP_PLANE1);
 	glPopMatrix();
 
 	glPushMatrix();
-		//glLoadIdentity();
 		glTranslatef(250.0f, -250.0f, 250.0f);
 
-		glColor3f(0.5f, 0.5f, 1.0f);
-		isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
+		glPushName(NAME_CUBE);
+			// draw a cube
+			glColor3f(0.5f, 0.5f, 1.0f);
+			isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
+		glPopName();
 	glPopMatrix();
 
 	// restore states
@@ -1978,17 +2130,8 @@ void CWglViewTestView::contructSceneGraph()
 	rootSceneNode_.reset(new swl::GroupSceneNode());
 
 	boost::shared_ptr<swl::Shape> shape(new SimpleShape(*this));
-	boost::shared_ptr<swl::ShapeSceneNode> shapeNode(new swl::ShapeSceneNode(shape));
+	boost::shared_ptr<swl::ISceneNode> shapeNode(new swl::ShapeSceneNode(shape));
 	rootSceneNode_->addChild(shapeNode);
-}
-
-void CWglViewTestView::traverseSceneGraph() const
-{
-	if (rootSceneNode_)
-	{
-		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_OPAQUE_OBJECTS));
-		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_TRANSPARENT_OBJECTS));
-	}
 }
 
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)

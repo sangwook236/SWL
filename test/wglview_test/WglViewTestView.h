@@ -57,6 +57,9 @@ public:
 
 	/*virtual*/ bool createDisplayList(const bool isContextActivated);
 
+	/*virtual*/ void pickObject(const int x, const int y);
+	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2);
+
 	//-------------------------------------------------------------------------
 	//
 
@@ -148,8 +151,10 @@ private:
 	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
+	void processObjectPicking(const int x, const int y, const int width, const int height);
+	void processHits(const int hitCount, const unsigned int *buffer) const;
+
 	void contructSceneGraph();
-	void traverseSceneGraph() const;
 
 private:
 	//-------------------------------------------------------------------------
@@ -178,6 +183,11 @@ private:
 	//-------------------------------------------------------------------------
 	//
 
+	enum OBJECT_NAME { NAME_BASE_ENTRY = 0, NAME_SPHERE = 13, NAME_CUBE = 37 };
+
+	//-------------------------------------------------------------------------
+	//
+
 	int drawMode_;
 	bool useLocallyCreatedContext_;
 
@@ -193,6 +203,7 @@ private:
 	float floorColor_[4];  // r, g, b, a
 
 	bool isPrinting_;
+	bool isPickingObject_;
 
 	const int polygonFacing_;
 

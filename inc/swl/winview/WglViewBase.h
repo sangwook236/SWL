@@ -28,6 +28,9 @@ public:
 public:
 	void renderScene(context_type &context, camera_type &camera);
 
+	virtual void pickObject(const int x, const int y) = 0;
+	virtual void pickObject(const int x1, const int y1, const int x2, const int y2) = 0;
+
 	//-------------------------------------------------------------------------
 	// OpenGL display list
 

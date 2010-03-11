@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "ViewStateMachine.h"
-#include "swl/view/ViewBase.h"
+#include "swl/winview/WinViewBase.h"
 #include "swl/view/ViewContext.h"
 #include "swl/view/ViewCamera2.h"
 #include "swl/view/MouseEvent.h"
@@ -19,8 +19,9 @@ namespace swl {
 
 namespace {
 
-void drawRubberBand(const MouseEvent &evt, HDC hdc, const int initX, const int initY, const int prevX, const int prevY)
+void drawRubberBandUsingGdi(HDC hdc, const int initX, const int initY, const int prevX, const int prevY, const int currX, const int currY, const bool doesErase = true, const bool doesDraw = true)
 {
+	if (doesErase)
 	{
 		const int left = prevX <= initX ? prevX : initX;
 		const int right = prevX > initX ? prevX : initX;
@@ -35,11 +36,12 @@ void drawRubberBand(const MouseEvent &evt, HDC hdc, const int initX, const int i
 		DrawFocusRect(hdc, &rect);
 	}
 
+	if (doesDraw)
 	{
-		const int left = evt.x <= initX ? evt.x : initX;
-		const int right = evt.x > initX ? evt.x : initX;
-		const int top = evt.y <= initY ? evt.y : initY;  // downward y-axis
-		const int bottom = evt.y > initY ? evt.y : initY;  // downward y-axis
+		const int left = currX <= initX ? currX : initX;
+		const int right = currX > initX ? currX : initX;
+		const int top = currY <= initY ? currY : initY;  // downward y-axis
+		const int bottom = currY > initY ? currY : initY;  // downward y-axis
 
 		RECT rect;
 		rect.left = left;
@@ -314,7 +316,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		if (vw)
 		{
 			CClientDC dc(vw);
-			drawRubberBand(evt, dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_);
+			drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, evt.x, evt.y);
 		}
 #else
 		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
@@ -340,7 +342,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 					{
 #if 1
 						HDC hdc = GetDC(*hwnd);
-						drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
+						drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, evt.x, evt.y);
 						//view.updateScrollBar();
 						ReleaseDC(*hwnd, hdc);
 #else
@@ -348,7 +350,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 						if (graphics)
 						{
 							HDC hdc = graphics->GetHDC();
-							drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
+							drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, evt.x, evt.y);
 							//view.updateScrollBar();
 							graphics->ReleaseHDC(hdc);
 							delete graphics;
@@ -509,6 +511,18 @@ void PickObjectState::pressMouse(const MouseEvent &evt)
 	isDragging_ = true;
 	initX_ = prevX_ = evt.x;
 	initY_ = prevY_ = evt.y;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawRubberBand(view, evt.x, evt.y, false, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
 }
 
 void PickObjectState::releaseMouse(const MouseEvent &evt)
@@ -520,15 +534,18 @@ void PickObjectState::releaseMouse(const MouseEvent &evt)
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
-		ViewContext &context = fsm.getViewContext();
-		ViewCamera2 &camera = fsm.getViewCamera();
 
+		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+		if (vw)
 		{
-			ViewContext::guard_type guard(context);
-			camera.setView(initX_, initY_, evt.x, evt.y);
-			view.raiseDrawEvent(true);
-			//view.updateScrollBar();
+			// TODO [modify] >>
+			//if (evt.x == initX_ && evt.y == initY_)
+			//	vw->pickObject(initX_, initY_);
+			//else
+			//	vw->pickObject(initX_, initY_, evt.x, evt.y);
 		}
+
+		drawRubberBand(view, evt.x, evt.y, true, false);
 	}
 	catch (const std::bad_cast &)
 	{
@@ -546,56 +563,7 @@ void PickObjectState::moveMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-#if 1
-		CView *vw = dynamic_cast<CView *>(&view);
-		if (vw)
-		{
-			CClientDC dc(vw);
-			drawRubberBand(evt, dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_);
-		}
-#else
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw && !vw->isContextStackEmpty())
-		{
-			const boost::shared_ptr<WinViewBase::context_type> &ctx(vw->topContext());
-			if (NULL != ctx.get())
-			{
-				const boost::any nativeHandle = ctx->getNativeWindowHandle();
-				if (!nativeHandle.empty())
-				{
-					HWND *hwnd = NULL;
-					try
-					{
-						hwnd = boost::any_cast<HWND *>(nativeHandle);
-					}
-					catch (const boost::bad_any_cast &)
-					{
-						hwnd = NULL;
-					}
-
-					if (hwnd)
-					{
-#if 1
-						HDC hdc = GetDC(*hwnd);
-						drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
-						//view.updateScrollBar();
-						ReleaseDC(*hwnd, hdc);
-#else
-						Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
-						if (graphics)
-						{
-							HDC hdc = graphics->GetHDC();
-							drawRubberBand(evt, hdc, initX_, initY_, prevX_, prevY_);
-							//view.updateScrollBar();
-							graphics->ReleaseHDC(hdc);
-							delete graphics;
-						}
-#endif
-					}
-				}
-			}
-		}
-#endif
+		drawRubberBand(view, evt.x, evt.y, true, true);
 	}
 	catch (const std::bad_cast &)
 	{
@@ -604,6 +572,60 @@ void PickObjectState::moveMouse(const MouseEvent &evt)
 
 	prevX_ = evt.x;
 	prevY_ = evt.y;
+}
+
+void PickObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
+{
+#if 1
+	CView *vw = dynamic_cast<CView *>(&view);
+	if (vw)
+	{
+		CClientDC dc(vw);
+		drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+	}
+#else
+	WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+	if (vw && !vw->isContextStackEmpty())
+	{
+		const boost::shared_ptr<WinViewBase::context_type> &ctx(vw->topContext());
+		if (NULL != ctx.get())
+		{
+			const boost::any nativeHandle = ctx->getNativeWindowHandle();
+			if (!nativeHandle.empty())
+			{
+				HWND *hwnd = NULL;
+				try
+				{
+					hwnd = boost::any_cast<HWND *>(nativeHandle);
+				}
+				catch (const boost::bad_any_cast &)
+				{
+					hwnd = NULL;
+				}
+
+				if (hwnd)
+				{
+#if 1
+					HDC hdc = GetDC(*hwnd);
+					drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+					//view.updateScrollBar();
+					ReleaseDC(*hwnd, hdc);
+#else
+					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+					if (graphics)
+					{
+						HDC hdc = graphics->GetHDC();
+						drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+						//view.updateScrollBar();
+						graphics->ReleaseHDC(hdc);
+						delete graphics;
+					}
+#endif
+				}
+			}
+		}
+	}
+#endif
 }
 
 }  // namespace swl
