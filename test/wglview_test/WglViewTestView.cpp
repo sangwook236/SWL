@@ -477,10 +477,7 @@ bool CWglViewTestView::SimpleShape::draw(/*...*/) const
 		view_.drawMainContent();
 	glPopMatrix();
 
-	// FIXME [delete] >>
-	glLoadName(1);
 	if (view_.isColorBarShown_) view_.drawColorBar();
-	glLoadName(2);
 	if (view_.isCoordinateFrameShown_ && !view_.isPrinting_) view_.drawCoordinateFrame();
 
 	return true;
@@ -1132,16 +1129,16 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 
 void CWglViewTestView::pickObject(const int x, const int y)
 {
-	processObjectPicking(x, y, 2, 2);
+	processToPickObject(x, y, 2, 2);
 }
 
 void CWglViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2)
 {
 	const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
-	processObjectPicking(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight());
+	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight());
 }
 
-void CWglViewTestView::processObjectPicking(const int x, const int y, const int width, const int height)
+void CWglViewTestView::processToPickObject(const int x, const int y, const int width, const int height)
 {
 	const boost::shared_ptr<context_type> &context = topContext();
 	const boost::shared_ptr<camera_type> &camera = topCamera();

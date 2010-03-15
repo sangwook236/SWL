@@ -151,7 +151,7 @@ private:
 	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
-	void processObjectPicking(const int x, const int y, const int width, const int height);
+	void processToPickObject(const int x, const int y, const int width, const int height);
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
 	void processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
 	void processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
