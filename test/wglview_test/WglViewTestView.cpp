@@ -1160,15 +1160,6 @@ void CWglViewTestView::processObjectPicking(const int x, const int y, const int 
 		// set attributes
 		glDisable(GL_LIGHTING);
 		glDepthFunc(GL_LEQUAL);
-		glEnable(GL_DEPTH_TEST);
-		//glDepthRange(0.0, 1.0);
-
-		//double modelviewMatrix[16];
-		double projectionMatrix[16];
-		int viewport[4];
-		//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
-		glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
-		glGetIntegerv(GL_VIEWPORT, viewport);
 
 		// set selection buffer
 		const GLsizei SELECT_BUFFER_SIZE = 64;
@@ -1180,37 +1171,10 @@ void CWglViewTestView::processObjectPicking(const int x, const int y, const int 
 
 		// initialize name stack
 		glInitNames();
-		//glPushName(NAME_BASE_ENTRY);
+		//glPushName(PON_BASE_ENTRY);
 
-		// set projection matrix
-		glMatrixMode(GL_PROJECTION);
-		glPushMatrix();
-
-		glLoadIdentity();
-		gluPickMatrix(x, viewport[3] - y, width, height, viewport);
-
-		// need to load current projection matrix
-		glMultMatrixd(projectionMatrix);
-
-		// render scene
-#if 0
-		renderScene(*context, *camera);
-#else
-		glMatrixMode(GL_MODELVIEW);
-		glPushMatrix();
-		glLoadIdentity();
-		// 1. need to load current modelview matrix
-		//   e.g.) glLoadMatrixd(modelviewMatrix);
-		// 2. need to be thought of viewing transformation
-		//   e.g.) camera->lookAt();
-		camera->lookAt();
-
-#if 1
-		doRenderScene(*context, *camera);
-#else
-		drawMainContent();
-#endif
-#endif
+		processToPickMainContent(camera, x, y, width, height);
+		if (isCoordinateFrameShown_) processToPickCoordinateFrame(camera, x, y, width, height);
 
 		// gather hit records
 		const GLint hitCount = glRenderMode(GL_RENDER);
@@ -1228,34 +1192,203 @@ void CWglViewTestView::processObjectPicking(const int x, const int y, const int 
 		glMatrixMode(oldMatrixMode);
 
 		// process hits
-		if (hitCount > 0) processHits(hitCount, selectBuffer);
+		if (hitCount > 0)
+		{
+			const unsigned int pickedObj = processHits(hitCount, selectBuffer);
+		}
 	}
 
 	isPickingObject_ = false;
 }
 
-void CWglViewTestView::processHits(const int hitCount, const unsigned int *buffer) const
+void CWglViewTestView::processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
 {
-	const GLuint *ptr = (GLuint *)buffer;
+	// set attributes
+	glEnable(GL_DEPTH_TEST);
+	//glDepthRange(0.0, 1.0);
+
+	//double modelviewMatrix[16];
+	double projectionMatrix[16];
+	int viewport[4];
+	//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
+	glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+	// set projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	gluPickMatrix(x, viewport[3] - y, width, height, viewport);
+
+	// need to load current projection matrix
+	glMultMatrixd(projectionMatrix);
+
+	// render scene
+#if 0
+	renderScene(*context, *camera);
+#else
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	// 1. need to load current modelview matrix
+	//   e.g.) glLoadMatrixd(modelviewMatrix);
+	// 2. need to be thought of viewing transformation
+	//   e.g.) camera->lookAt();
+	camera->lookAt();
+
+#if 0
+	doRenderScene(*context, *camera);
+#else
+	drawMainContent();
+#endif
+#endif
+}
+
+void CWglViewTestView::processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
+{
+	const swl::Region2<int> &oldViewport = camera->getViewport();
+	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
+
+	const int dX = int(oldViewport.getWidth() * 0.10);
+	const int dY = int(oldViewport.getHeight() * 0.10);
+	const int size = std::max(std::max(dX, dY), 100);
+
+	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
+	camera->setViewRegion(static_cast<swl::ViewCamera2 *>(camera.get())->getViewBound());
+	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
+
+	// save states
+	glDisable(GL_DEPTH_TEST);
+
+	//double modelviewMatrix[16];
+	double projectionMatrix[16];
+	int viewport[4];
+	//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
+	glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+	// set projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	//gluPickMatrix(x, viewport[3] - y, width, height, viewport);
+	gluPickMatrix(x, oldViewport.getHeight() - y, width, height, viewport);
+
+	// need to load current projection matrix
+	glMultMatrixd(projectionMatrix);
+
+	//
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+		// move origin
+		double eyeX(0.0), eyeY(0.0), eyeZ(0.0), dirX(0.0), dirY(0.0), dirZ(0.0);
+		camera->getEyePosition(eyeX, eyeY, eyeZ);
+		camera->getEyeDirection(dirX, dirY, dirZ);
+		const double eyeDist = camera->getEyeDistance();
+		glTranslated(eyeX + eyeDist * dirX, eyeY + eyeDist * dirY, eyeZ + eyeDist * dirZ);
+
+		std::multimap<double, int> vals;
+		vals.insert(std::make_pair(std::acos(dirX), 0));
+		vals.insert(std::make_pair(std::acos(dirY), 1));
+		vals.insert(std::make_pair(std::acos(dirZ), 2));
+		std::multimap<double, int>::iterator it = vals.begin();
+		const int order1 = it->second;  ++it;
+		const int order2 = it->second;  ++it;
+		const int order3 = it->second;
+		const int order[] = { order1, order2, order3 };
+
+		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
+		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
+		drawCoordinateFrame(length, order);
+	glPopMatrix();
+
+	// restore states
+	camera->setViewRegion(oldViewRegion);
+	camera->setViewport(oldViewport);
+}
+
+unsigned int CWglViewTestView::processHits(const int hitCount, const unsigned int *buffer) const
+{
+	const GLuint *ptr = (const GLuint *)buffer;
+
+	GLuint selectedObj = PON_BASE_ENTRY;
+	bool isCoordinateFramePicked = false;
+	//float minZ = 1.0f;
+	unsigned int minZ = 0xffffffff;
 	for (int i = 0; i < hitCount; ++i)
 	{
 		// number of names for each hit.
 		const GLuint nameCount = *ptr;
 		++ptr;
 		// min. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit.
-		const float minZ = float(*ptr) / 0x7fffffff;
+		////const float mnZ = float(*ptr) / 0x7fffffff;
+		//const float mnZ = float(*ptr) / 0xffffffff;  // 2^32 - 1
+		const unsigned int mnZ = *ptr;
 		++ptr;
 		// max. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit
-		const float maxZ = float(*ptr) / 0x7fffffff;
+		////const float mxZ = float(*ptr) / 0x7fffffff;
+		//const float mxZ = float(*ptr) / 0xffffffff;  // 2^32 - 1
+		const unsigned int mxZ = *ptr;
 		++ptr;
 
-		for (GLuint j = 0; j < nameCount; ++j)
+		if (0 == nameCount) continue;
+
+		const GLuint currObj = *(ptr + nameCount - 1);
+		if (isCoordinateFramePicked)
 		{
-			const GLint name = *ptr;
-			++ptr;
-			TRACE("***** pick object: %d\n", name);
+			switch (currObj)
+			{
+			case PON_X_AXIS:
+			case PON_Y_AXIS:
+			case PON_Z_AXIS:
+				if (mnZ < minZ)
+				{
+					minZ = mnZ;
+					selectedObj = currObj;
+				}
+				break;
+			}
 		}
+		else
+		{
+			switch (currObj)
+			{
+			case PON_X_AXIS:
+			case PON_Y_AXIS:
+			case PON_Z_AXIS:
+				minZ = mnZ;
+				selectedObj = currObj;
+				isCoordinateFramePicked = true;
+				break;
+			default:
+				if (mnZ < minZ)
+				{
+					minZ = mnZ;
+					selectedObj = currObj;
+				}
+				break;
+			}
+		}
+
+		const GLuint *ptr2 = ptr;
+		//TRACE("***** the number of names for each hit: %d, min z: %f, max z: %f\n", nameCount, mnZ, mxZ);
+		TRACE("***** the number of names for each hit: %d, min z: %d, max z: %d\n", nameCount, mnZ, mxZ);
+		// the contents of the name stack
+		TRACE("\tthe contents of the name stack: %d", *ptr2);
+		++ptr2;
+		for (GLuint j = 1; j < nameCount; ++j)
+		{
+			const GLint name = *ptr2;
+			++ptr2;
+			TRACE(" - %d", name);
+		}
+		TRACE("\n");
+
+		ptr += nameCount;
 	}
+
+	TRACE("=====> the picked object: %d\n", selectedObj);
+	return selectedObj;
 }
 
 void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
@@ -1467,7 +1600,7 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 		glEnable(GL_CLIP_PLANE1);
 		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
 
-		glPushName(NAME_SPHERE);
+		glPushName(PON_SPHERE);
 			// draw a sphere
 			glColor3f(1.0f, 0.0f, 0.0f);
 			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
@@ -1481,7 +1614,7 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 	glPushMatrix();
 		glTranslatef(250.0f, -250.0f, 250.0f);
 
-		glPushName(NAME_CUBE);
+		glPushName(PON_CUBE);
 			// draw a cube
 			glColor3f(0.5f, 0.5f, 1.0f);
 			isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
@@ -1817,6 +1950,17 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 
 	const boost::shared_ptr<camera_type> &camera = topCamera();
 	if (NULL == camera.get()) return;
+ 
+	const swl::Region2<int> &oldViewport = camera->getViewport();
+	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
+
+	const int dX = int(oldViewport.getWidth() * 0.10);
+	const int dY = int(oldViewport.getHeight() * 0.10);
+	const int size = std::max(std::max(dX, dY), 100);
+
+	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
+	camera->setViewRegion(static_cast<swl::ViewCamera2 *>(camera.get())->getViewBound());
+	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
 
 	// save states
 	const GLboolean isLighting = glIsEnabled(GL_LIGHTING);
@@ -1826,17 +1970,6 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 
 	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
-
-	const swl::Region2<int> &oldViewport = camera->getViewport();
-	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
-
-	const int dX = int(oldViewport.getWidth() * 0.10);
-	const int dY = int(oldViewport.getHeight() * 0.10);
-	const int size = std::max(std::max(dX, dY), 100);
-
-	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
-	camera->setViewRegion(((swl::ViewCamera2 *)camera.get())->getViewBound());
-	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
 
 	//
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
@@ -1882,7 +2015,7 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 	const float coneHeight = height * (1.0f - ratio);
 	//const float letterRadius = radius * 0.5f;
 	//const float letterScale = radius * 0.1f;
- 
+
 	GLUquadricObj *obj = gluNewQuadric();
 	gluQuadricDrawStyle(obj, GLU_FILL);
 	gluQuadricNormals(obj, GLU_SMOOTH);
@@ -1891,6 +2024,8 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 	{
 		if (0 == order[i])
 		{
+			glPushName(PON_X_AXIS);
+
 			// x axis
 			glColor3f(1.0f, 0.0f, 0.0f);
 			glPushMatrix();
@@ -1904,9 +2039,13 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 #else
 	     	drawText(height, 0.0f, 0.0f, "X");
 #endif
+
+			glPopName();
 		}
 		else if (1 == order[i])
 		{
+			glPushName(PON_Y_AXIS);
+
 			// y axis
 			glColor3f(0.0f, 1.0f, 0.0f);
 			glPushMatrix();
@@ -1920,9 +2059,13 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 #else
 			drawText(0.0f, height, 0.0f, "Y");
 #endif
+
+			glPopName();
 		}
 		else if (2 == order[i])
 		{
+			glPushName(PON_Z_AXIS);
+
 			// z axis
 			glColor3f(0.0f, 0.0f, 1.0f);	
 			glPushMatrix();
@@ -1935,6 +2078,8 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 #else
 			drawText(0.0f, 0.0f, height, "Z");
 #endif
+
+			glPopName();
 		}
 	}
  

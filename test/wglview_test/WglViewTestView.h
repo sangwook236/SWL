@@ -152,7 +152,9 @@ private:
 #endif
 
 	void processObjectPicking(const int x, const int y, const int width, const int height);
-	void processHits(const int hitCount, const unsigned int *buffer) const;
+	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
+	void processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
+	void processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
 
 	void contructSceneGraph();
 
@@ -183,7 +185,7 @@ private:
 	//-------------------------------------------------------------------------
 	//
 
-	enum OBJECT_NAME { NAME_BASE_ENTRY = 0, NAME_SPHERE = 13, NAME_CUBE = 37 };
+	enum PICKABLE_OBJECT_NAME { PON_BASE_ENTRY = 0, PON_SPHERE, PON_CUBE, PON_X_AXIS, PON_Y_AXIS, PON_Z_AXIS };
 
 	//-------------------------------------------------------------------------
 	//
