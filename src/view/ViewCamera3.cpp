@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/view/ViewCamera3.h"
+#include "swl/math/MathConstant.h"
 #include <memory>
 #include <cmath>
 
@@ -47,7 +48,7 @@ ViewCamera3::~ViewCamera3()  {}
 ViewCamera3 & ViewCamera3::operator=(const ViewCamera3 &rhs)
 {
 	if (this == &rhs) return *this;
-	static_cast<base_type&>(*this) = rhs;
+	static_cast<base_type &>(*this) = rhs;
 
 	isValid_ = rhs.isValid_;
 	isPerspective_ = rhs.isPerspective_;
@@ -66,7 +67,7 @@ ViewCamera3 & ViewCamera3::operator=(const ViewCamera3 &rhs)
 }
 
 /*
-void ViewCamera3::write(::std::ostream &stream)
+void ViewCamera3::write(std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
@@ -85,7 +86,7 @@ void ViewCamera3::write(::std::ostream &stream)
 	endWriteEndl(stream);
 }
 
-void ViewCamera3::read(::std::istream& stream)
+void ViewCamera3::read(std::istream &stream)
 {
 	beginAssert(stream);
 		// read version
@@ -113,7 +114,7 @@ void ViewCamera3::read(::std::istream& stream)
 	endAssert(stream);
 }
 
-void ViewCamera3::Read20021008(::std::istream &stream)
+void ViewCamera3::Read20021008(std::istream &stream)
 {
 	stream >> isValid_ >> isPerspective_ >>
 		eyeDistance_ >> nearPlane_ >> farPlane_ >>
@@ -124,7 +125,7 @@ void ViewCamera3::Read20021008(::std::istream &stream)
 }
 */
 
-bool ViewCamera3::setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar)
+bool ViewCamera3::setViewBound(const double dLeft, const double dBottom, const double dRight, const double dTop, const double dNear, const double dFar)
 {
 	nearPlane_ = dNear <= dFar ? dNear : dFar;
 	farPlane_ = dNear > dFar ? dNear : dFar;
@@ -158,7 +159,7 @@ inline bool ViewCamera3::setViewRegion(const Region2<double> &rRct)
 #endif  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
 }
 
-inline bool ViewCamera3::moveViewRegion(double dDeltaX, double dDeltaY)
+inline bool ViewCamera3::moveViewRegion(const double dDeltaX, const double dDeltaY)
 {
 	// move the position of eye point
 #if defined(_TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_)
@@ -170,14 +171,14 @@ inline bool ViewCamera3::moveViewRegion(double dDeltaX, double dDeltaY)
 #endif  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
 }
 
-inline bool ViewCamera3::rotateViewRegion(double dDeltaX, double dDeltaY)
+inline bool ViewCamera3::rotateViewRegion(const double dDeltaX, const double dDeltaY)
 {
 	// rotate the position of eye point, the direction of sight and up direction
 	return rotateScene(dDeltaX, dDeltaY)
 		   && doUpdateFrustum();
 }
 
-inline bool ViewCamera3::scaleViewRegion(double dFactor)
+inline bool ViewCamera3::scaleViewRegion(const double dFactor)
 {
 	return base_type::scaleViewRegion(dFactor)
 		   && doUpdateFrustum();
@@ -196,7 +197,7 @@ inline bool ViewCamera3::restoreViewRegion()
 		   && updateEyePosition();
 }
 
-bool ViewCamera3::setEyePose(double dDirX, double dDirY, double dDirZ, double dUpX, double dUpY, double dUpZ, const bool bUpdateViewpoint /*= true*/)
+bool ViewCamera3::setEyePose(const double dDirX, const double dDirY, const double dDirZ, const double dUpX, const double dUpY, const double dUpZ, const bool bUpdateViewpoint /*= true*/)
 {
 	eyeDirX_ = dDirX;  eyeDirY_ = dDirY;  eyeDirZ_ = dDirZ;
 	upDirX_ = dUpX;  upDirY_ = dUpY;  upDirZ_ = dUpZ;
@@ -262,8 +263,8 @@ inline bool ViewCamera3::updateEyeDirection(const bool bUpdateViewpoint /*= true
 	return !isValid_ ? false : bUpdateViewpoint ? doUpdateFrustum() : true;
 }
 
-bool  ViewCamera3::translateScene(double dDeltaX, double dDeltaY)
-// Translate a Scene along Screen Coordinate Frames
+bool ViewCamera3::translateScene(const double dDeltaX, const double dDeltaY)
+// translate a scene along screen coordinate frames
 {
 	double vXs[3];
 	crossVector(eyeDir_, upDir_, vXs);
@@ -274,11 +275,11 @@ bool  ViewCamera3::translateScene(double dDeltaX, double dDeltaY)
 	return true;
 }
 
-bool ViewCamera3::rotateScene(double dDeltaX, double dDeltaY)
-// Rotate a Scene about Screen Coordinate Frames
+bool ViewCamera3::rotateScene(const double dDeltaX, const double dDeltaY)
+// rotate a scene about screen coordinate frames
 {
-	double vYs[3] = { upDirX_, upDirY_, upDirZ_ };
-	double vZs[3] = { -eyeDirX_, -eyeDirY_, -eyeDirZ_ };
+	const double vYs[3] = { upDirX_, upDirY_, upDirZ_ };
+	const double vZs[3] = { -eyeDirX_, -eyeDirY_, -eyeDirZ_ };
 	double vXs[3];  crossVector(vYs, vZs, vXs);
 
 	double vV[3];
@@ -293,9 +294,9 @@ bool ViewCamera3::rotateScene(double dDeltaX, double dDeltaY)
 	double vU[3];
 	crossVector(vZs, vV, vU);
 
-	double dRad = 16.0 * std::atan(1.0) * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
+	const double dRad = MathConstant::_4_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
 	double mRot[9];
-	if (!calcRotationMatrix(-dRad, vU, mRot))  return false;
+	if (!calcRotationMatrix(-dRad, vU, mRot)) return false;
 
 	//
 	double dTmp;
@@ -317,8 +318,55 @@ bool ViewCamera3::rotateScene(double dDeltaX, double dDeltaY)
 	return true;
 }
 
-bool ViewCamera3::translateEye(ViewCamera3::EAxis eAxis, double dDelta)
-//  Translate an Eye Point along Eye Coordinate Frames
+bool ViewCamera3::rotateSceneAboutAxis(const ViewCamera3::EAxis eAxis, const double dDeltaX, const double dDeltaY)
+{
+	const bool isPositiveDir = std::fabs(dDeltaX) > std::fabs(dDeltaY) ? dDeltaX >= 0.0 : dDeltaY >= 0.0;
+	double vU[3] = { 0.0, };
+	switch (eAxis)
+	{
+	case ViewCamera3::XAXIS:
+		vU[0] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	case ViewCamera3::YAXIS:
+		vU[1] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	case ViewCamera3::ZAXIS:
+		vU[2] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	default:
+		return false;
+	}
+
+	const double vYs[3] = { upDirX_, upDirY_, upDirZ_ };
+	const double vZs[3] = { -eyeDirX_, -eyeDirY_, -eyeDirZ_ };
+
+	const double dRad = MathConstant::_4_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
+	double mRot[9];
+	if (!calcRotationMatrix(-dRad, vU, mRot)) return false;
+
+	//
+	double vV[3];
+	double dTmp;
+	for (int i = 0; i < 3; ++i)
+	{
+		dTmp = eyeDistance_ * eyeDir_[i];
+		// the position of the center of a viewing volume
+		vU[i] = eyePos_[i] + dTmp;
+		// the direction from the reference point to the eye point
+		vV[i] = -dTmp;
+	}
+	productMatrixAndVector(mRot, vV, eyePos_);
+	eyePosX_ += vU[0];  eyePosY_ += vU[1];  eyePosZ_ += vU[2];
+
+	//
+	productMatrixAndVector(mRot, vYs, upDir_);
+	vV[0] = eyeDirX_;  vV[1] = eyeDirY_;  vV[2] = eyeDirZ_;
+	productMatrixAndVector(mRot, vV, eyeDir_);
+	return true;
+}
+
+bool ViewCamera3::translateEye(const ViewCamera3::EAxis eAxis, const double dDelta)
+// translate an eye point along eye coordinate frames
 {
 	switch (eAxis)
 	{
@@ -341,8 +389,8 @@ bool ViewCamera3::translateEye(ViewCamera3::EAxis eAxis, double dDelta)
 	return doUpdateFrustum();
 }
 
-bool ViewCamera3::rotateEye(ViewCamera3::EAxis eAxis, double dRad)
-//  Rotate an Eye Point about Eye Coordinate Frames
+bool ViewCamera3::rotateEye(const ViewCamera3::EAxis eAxis, const double dRad)
+// rotate an eye point about eye coordinate frames
 {
 	double mRot[9];
 
@@ -405,12 +453,12 @@ inline void ViewCamera3::crossVector(const double vV1[3], const double vV2[3], d
 inline double ViewCamera3::normVector(const double vV[3]) const
 {  return std::sqrt(vV[0]*vV[0] + vV[1]*vV[1] + vV[2]*vV[2]);  }
 
-bool ViewCamera3::calcRotationMatrix(double dRad, const double vV[3], double mRot[9]) const
+bool ViewCamera3::calcRotationMatrix(const double dRad, const double vV[3], double mRot[9]) const
 //						   [  e0  e3  e6  ]
 // R  =  [  x  y  z  ]  =  [  e1  e4  e7  ]
 //						   [  e2  e5  e8  ]
 {
-	double c = std::cos(dRad), s = std::sin(dRad), v = 1 - c;
+	const double c = std::cos(dRad), s = std::sin(dRad), v = 1 - c;
 	mRot[0] = vV[0]*vV[0]*v+c;			mRot[3] = vV[0]*vV[1]*v-vV[2]*s;	mRot[6] = vV[0]*vV[2]*v+vV[1]*s;
 	mRot[1] = vV[0]*vV[1]*v+vV[2]*s;	mRot[4] = vV[1]*vV[1]*v+c;			mRot[7] = vV[1]*vV[2]*v-vV[0]*s;
 	mRot[2] = vV[0]*vV[2]*v-vV[1]*s;	mRot[5] = vV[1]*vV[2]*v+vV[0]*s;	mRot[8] = vV[2]*vV[2]*v+c;
@@ -495,7 +543,7 @@ bool ViewCamera3::doMapObjectToEye(const double ptObj[3], double ptEye[3]) const
 bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 {
 	// projection transformation: an eye coordinates  ==>  a clip coordinates
-	Region2<double> rctViewRegion = getCurrentViewRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 	if (rctViewRegion.left >= rctViewRegion.right ||
 		rctViewRegion.bottom >= rctViewRegion.top ||
 		nearPlane_ >= farPlane_)
@@ -504,7 +552,7 @@ bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 	// from OpenGL Red Book
 	if (isPerspective_)
 	{
-		double dW = -ptEye[2];
+		const double dW = -ptEye[2];
 		if (dW <= 0.0 || nearPlane_ <= 0.0) return false;
 
 		ptClip[0] = (2.0*nearPlane_*ptEye[0] + (rctViewRegion.right+rctViewRegion.left)*ptEye[2]) / (rctViewRegion.right - rctViewRegion.left);
@@ -530,9 +578,9 @@ bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 bool ViewCamera3::doMapClipToWindow(const double ptClip[3], double ptWin[3]) const
 {
 	// viewport transformation: a clip coordinates  ==>  a window coordinates
-	Region2<double> rctViewRegion = getCurrentViewRegion();
-	double dNCx = ptClip[0] * rctViewRegion.getWidth() * 0.5;
-	double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5;
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
+	const double dNCx = ptClip[0] * rctViewRegion.getWidth() * 0.5;
+	const double dNCy = ptClip[1] * rctViewRegion.getHeight() * 0.5;
 
 	int iX, iY;
 	if (base_type::mapCanvasToWindow(dNCx, dNCy, iX, iY))
@@ -548,7 +596,7 @@ bool ViewCamera3::doMapClipToWindow(const double ptClip[3], double ptWin[3]) con
 bool ViewCamera3::doMapWindowToClip(const double ptWin[3], double ptClip[3]) const
 {
 	// inverse viewport transformation: a window coordinates  ==>  a clip coordinates
-	Region2<double> rctViewRegion = getCurrentViewRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 	double dNCx, dNCy;
 	if (rctViewRegion.isValid() && base_type::mapWindowToCanvas(int(ptWin[0]), int(ptWin[1]), dNCx, dNCy))
 	{
@@ -565,7 +613,7 @@ bool ViewCamera3::doMapWindowToClip(const double ptWin[3], double ptClip[3]) con
 bool ViewCamera3::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 {
 	// inverse projection transformation: a clip coordinates  ==>  an eye coordinates
-	Region2<double> rctViewRegion = getCurrentViewRegion();
+	const Region2<double> rctViewRegion = getCurrentViewRegion();
 	if (rctViewRegion.left >= rctViewRegion.right
 		|| rctViewRegion.bottom >= rctViewRegion.top
 		|| nearPlane_ >= farPlane_)

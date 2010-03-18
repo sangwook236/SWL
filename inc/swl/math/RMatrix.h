@@ -127,8 +127,8 @@ public:
 	T angle() const
 	{
 		if (MathUtil::isZero(X_.x()))
-			return (T)asin(X_.y()) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
-		else return (T)atan2(X_.y(), X_.x());
+			return (T)std::asin(X_.y()) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
+		else return (T)std::atan2(X_.y(), X_.x());
 	}
 	TVector3<T> axis() const
 	{  return TVector3<T>(T(0), T(0), T(1));  }
@@ -297,7 +297,7 @@ public:
 	{  return *this = *this * rhs;  }
 
 	/// rotation
-	column_type operator*(const column_type& rV) const
+	column_type operator*(const column_type &rV) const
 	{  return column_type(X_*rV.x() + Y_*rV.y() + Z_*rV.z());  }
 
 	///
@@ -335,7 +335,7 @@ public:
 	TVector3<T> axis() const;
 
 	/// angle-axis representation ==> 3x3 rotation matrix
-	static RMatrix3 toRotationMatrix(const T &rad, const TVector3<T>& axis);
+	static RMatrix3 toRotationMatrix(const T &rad, const TVector3<T> &axis);
 
 	/// quaternion ==> 3x3 rotation matrix
 	static RMatrix3 toRotationMatrix(const Quaternion<T> &rQuat);
@@ -393,13 +393,13 @@ template<typename T>
 T RMatrix3<T>::angle() const
 {
 	// solution 1
-	const T s = (T)sqrt((X_.y() - Y_.x())*(X_.y() - Y_.x()) + (Y_.z() - Z_.y())*(Y_.z() - Z_.y()) + (Z_.x() - X_.z())*(Z_.x() - X_.z())) / T(2);
+	const T s = (T)std::sqrt((X_.y() - Y_.x())*(X_.y() - Y_.x()) + (Y_.z() - Z_.y())*(Y_.z() - Z_.y()) + (Z_.x() - X_.z())*(Z_.x() - X_.z())) / T(2);
 	// solution 2
-	//const T s = -(T)sqrt((X_.y() - Y_.x())*(X_.y() - Y_.x()) + (Y_.z() - Z_.y())*(Y_.z() - Z_.y()) + (Z_.x() - X_.z())*(Z_.x() - X_.z())) / T(2);
+	//const T s = -(T)std::sqrt((X_.y() - Y_.x())*(X_.y() - Y_.x()) + (Y_.z() - Z_.y())*(Y_.z() - Z_.y()) + (Z_.x() - X_.z())*(Z_.x() - X_.z())) / T(2);
 	const T c = (X_.x() + Y_.y() + Z_.z() - T(1)) / T(2);
 	if (MathUtil::isZero(c))
-		return (T)asin(s) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
-	else return (T)atan2(s, c);
+		return (T)std::asin(s) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
+	else return (T)std::atan2(s, c);
 }
 
 template<typename T>
@@ -419,18 +419,18 @@ TVector3<T> RMatrix3<T>::axis() const
 		}
 */
 		// solution 1
-		axis.x() = (T)sqrt((X_.x() + T(1)) / T(2));
+		axis.x() = (T)std::sqrt((X_.x() + T(1)) / T(2));
 		// solution 2
-		//axis.x() = -(T)sqrt((X_.x() + T(1)) / T(2));
-		axis.y() = (T)sqrt((Y_.y() + T(1)) / T(2));
-		axis.z() = (T)sqrt((Z_.z() + T(1)) / T(2));
+		//axis.x() = -(T)std::sqrt((X_.x() + T(1)) / T(2));
+		axis.y() = (T)std::sqrt((Y_.y() + T(1)) / T(2));
+		axis.z() = (T)std::sqrt((Z_.z() + T(1)) / T(2));
 
 		if (axis.x() * Y_.x() < T(0)) axis.y() = -axis.y();
 		if (axis.x() * Z_.x() < T(0)) axis.z() = -axis.z();
 	}
 	else
 	{
-		const T denom(T(2) * (T)sin(tAngle));
+		const T denom(T(2) * (T)std::sin(tAngle));
 		axis.x() = (Y_.z() - Z_.y()) / denom;
 		axis.y() = (Z_.x() - X_.z()) / denom;
 		axis.z() = (X_.y() - Y_.x()) / denom;
@@ -446,7 +446,7 @@ template<typename T>
 //     [  e2  e5  e8  ]
 {
 	// for making a unit quaternion
-	const T tNorm = (T)sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
+	const T tNorm = (T)std::sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
 	if (MathUtil::isZero(tNorm))
 	{
 		throw LogException(LogException::L_ERROR, "divide by zero", __FILE__, __LINE__, __FUNCTION__);
@@ -454,8 +454,8 @@ template<typename T>
 	}
 
 	const T x(axis.x() / tNorm), y(axis.y() / tNorm), z(axis.z() / tNorm);
-	const T s = (T)sin(rad);
-	const T c = (T)cos(rad);
+	const T s = (T)std::sin(rad);
+	const T c = (T)std::cos(rad);
 	const T v = T(1) - c;
 
 	RMatrix3<T> rotMat;

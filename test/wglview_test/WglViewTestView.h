@@ -57,8 +57,8 @@ public:
 
 	/*virtual*/ bool createDisplayList(const bool isContextActivated);
 
-	/*virtual*/ void pickObject(const int x, const int y);
-	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2);
+	/*virtual*/ void pickObject(const int x, const int y, const bool isTemporary = false);
+	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false);
 
 	//-------------------------------------------------------------------------
 	//
@@ -136,7 +136,7 @@ private:
 	bool createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const;
 #endif
 
-	void drawCoordinateFrame(const float height, const int order[]) const;
+	void drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const;
 #if defined(_UNICODE) || defined(UNICODE)
 	void drawText(const float x, const float y, const float z, const std::wstring &str) const;
 	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
@@ -151,7 +151,7 @@ private:
 	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
-	void processToPickObject(const int x, const int y, const int width, const int height);
+	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
 	void processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
 	void processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
@@ -196,6 +196,8 @@ private:
 	bool isPerspective_;
 	bool isWireFrame_;
 
+	const int polygonFacing_;
+
 	bool isGradientBackgroundUsed_;
 	bool isFloorShown_;
 	bool isColorBarShown_;
@@ -203,11 +205,13 @@ private:
 
 	float topGradientBackgroundColor_[4], bottomGradientBackgroundColor_[4];  // r, g, b, a
 	float floorColor_[4];  // r, g, b, a
+	float pickedColor_[4];  // r, g, b, a
 
 	bool isPrinting_;
 	bool isPickingObject_;
 
-	const int polygonFacing_;
+	unsigned int pickedObj_;
+	unsigned int temporarilyPickedObj_;
 
 	//
 	friend class SimpleShape;

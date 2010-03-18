@@ -53,7 +53,7 @@ protected:
 
 private:
 	///
-	//void read20021008(::std::istream& stream);
+	//void read20021008(std::istream &stream);
 };
 
 }  // namespace swl

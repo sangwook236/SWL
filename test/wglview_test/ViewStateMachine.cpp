@@ -605,16 +605,16 @@ void PickObjectState::releaseMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
+		drawRubberBand(view, evt.x, evt.y, true, false);
+
 		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
 		if (vw)
 		{
 			if (evt.x == initX_ && evt.y == initY_)
-				vw->pickObject(initX_, initY_);
+				vw->pickObject(evt.x, evt.y, false);
 			else
-				vw->pickObject(initX_, initY_, evt.x, evt.y);
+				vw->pickObject(initX_, initY_, evt.x, evt.y, false);
 		}
-
-		drawRubberBand(view, evt.x, evt.y, true, false);
 	}
 	catch (const std::bad_cast &)
 	{
@@ -624,22 +624,39 @@ void PickObjectState::releaseMouse(const MouseEvent &evt)
 
 void PickObjectState::moveMouse(const MouseEvent &evt)
 {
-	if (!isDragging_) return;
-
-	try
+	if (isDragging_)
 	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
 
-		drawRubberBand(view, evt.x, evt.y, true, true);
+			drawRubberBand(view, evt.x, evt.y, true, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+
+		prevX_ = evt.x;
+		prevY_ = evt.y;
 	}
-	catch (const std::bad_cast &)
+	else
 	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
 
-	prevX_ = evt.x;
-	prevY_ = evt.y;
+			WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+			if (vw)
+				vw->pickObject(evt.x, evt.y, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
 }
 
 void PickObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const

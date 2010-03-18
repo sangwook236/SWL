@@ -313,7 +313,7 @@ RotationAngle RotationAngle::calcX(const RMatrix3<double> &mat)
 
 	if (MathUtil::isZero(mat.Y().y()))
 		return RotationAngle(mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::std::atan2(mat.Y().z(), mat.Y().y()), 0.0, 0.0);
+	else return RotationAngle(std::atan2(mat.Y().z(), mat.Y().y()), 0.0, 0.0);
 }
 
 RotationAngle RotationAngle::calcY(const RMatrix3<double> &mat)
@@ -324,7 +324,7 @@ RotationAngle RotationAngle::calcY(const RMatrix3<double> &mat)
 
 	if (MathUtil::isZero(mat.X().x()))
 		return RotationAngle(mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::std::atan2(mat.Z().x(), mat.X().x()), 0.0, 0.0);
+	else return RotationAngle(std::atan2(mat.Z().x(), mat.X().x()), 0.0, 0.0);
 }
 
 RotationAngle RotationAngle::calcZ(const RMatrix3<double> &mat)
@@ -335,7 +335,7 @@ RotationAngle RotationAngle::calcZ(const RMatrix3<double> &mat)
 
 	if (MathUtil::isZero(mat.X().x()))
 		return RotationAngle(mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2, 0.0, 0.0);
-	else return RotationAngle(::std::atan2(mat.X().y(), mat.X().x()), 0.0, 0.0);
+	else return RotationAngle(std::atan2(mat.X().y(), mat.X().x()), 0.0, 0.0);
 }
 
 void RotationAngle::calcRelativeXY(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -349,12 +349,12 @@ void RotationAngle::calcRelativeXY(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Y().y()))
 		alpha = mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::std::atan2(mat.Y().z(), mat.Y().y());
+	else alpha = std::atan2(mat.Y().z(), mat.Y().y());
 
 	// beta
 	if (MathUtil::isZero(mat.X().x()))
 		beta = mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::std::atan2(mat.Z().x(), mat.X().x());
+	else beta = std::atan2(mat.Z().x(), mat.X().x());
 }
 
 void RotationAngle::calcRelativeXZ(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -368,12 +368,12 @@ void RotationAngle::calcRelativeXZ(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Z().z()))
 		alpha = mat.Z().y() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::std::atan2(-mat.Z().y(), mat.Z().z());
+	else alpha = std::atan2(-mat.Z().y(), mat.Z().z());
 
 	// beta
 	if (MathUtil::isZero(mat.X().x()))
 		beta = mat.Y().x() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::std::atan2(-mat.Y().x(), mat.X().x());
+	else beta = std::atan2(-mat.Y().x(), mat.X().x());
 }
 
 void RotationAngle::calcRelativeYZ(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -387,12 +387,12 @@ void RotationAngle::calcRelativeYZ(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Z().z()))
 		alpha = mat.Z().x() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::std::atan2(mat.Z().x(), mat.Z().z());
+	else alpha = std::atan2(mat.Z().x(), mat.Z().z());
 
 	// beta
 	if (MathUtil::isZero(mat.Y().y()))
 		beta = mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::std::atan2(mat.X().y(), mat.Y().y());
+	else beta = std::atan2(mat.X().y(), mat.Y().y());
 }
 
 void RotationAngle::calcRelativeYX(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -406,12 +406,12 @@ void RotationAngle::calcRelativeYX(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.X().x()))
 		alpha = mat.X().z() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::std::atan2(-mat.X().z(), mat.X().x());
+	else alpha = std::atan2(-mat.X().z(), mat.X().x());
 
 	// beta
 	if (MathUtil::isZero(mat.Y().y()))
 		beta = mat.Z().y() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::std::atan2(-mat.Z().y(), mat.Y().y());
+	else beta = std::atan2(-mat.Z().y(), mat.Y().y());
 }
 
 void RotationAngle::calcRelativeZX(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -425,12 +425,12 @@ void RotationAngle::calcRelativeZX(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.X().x()))
 		alpha = mat.X().y() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else alpha = ::std::atan2(mat.X().y(), mat.X().x());
+	else alpha = std::atan2(mat.X().y(), mat.X().x());
 
 	// beta
 	if (MathUtil::isZero(mat.Z().z()))
 		beta = mat.Y().z() > 0.0 ? MathConstant::PI_2 : -MathConstant::PI_2;
-	else beta = ::std::atan2(mat.Y().z(), mat.Z().z());
+	else beta = std::atan2(mat.Y().z(), mat.Z().z());
 }
 
 void RotationAngle::calcRelativeZY(const RMatrix3<double> &mat, double &alpha, double &beta)
@@ -444,12 +444,12 @@ void RotationAngle::calcRelativeZY(const RMatrix3<double> &mat, double &alpha, d
 	// alpha
 	if (MathUtil::isZero(mat.Y().y()))
 		alpha = mat.Y().x() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else alpha = ::std::atan2(-mat.Y().x(), mat.Y().y());
+	else alpha = std::atan2(-mat.Y().x(), mat.Y().y());
 
 	// beta
 	if (MathUtil::isZero(mat.Z().z()))
 		beta = mat.X().z() > 0.0 ? -MathConstant::PI_2 : MathConstant::PI_2;
-	else beta = ::std::atan2(-mat.X().z(), mat.Z().z());
+	else beta = std::atan2(-mat.X().z(), mat.Z().z());
 }
 
 void RotationAngle::calcRelativeXYZ(const RMatrix3<double> &mat, double &alpha, double &beta, double &gamma)

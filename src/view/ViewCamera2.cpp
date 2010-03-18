@@ -30,6 +30,7 @@ ViewCamera2::~ViewCamera2()  {}
 ViewCamera2 & ViewCamera2::operator=(const ViewCamera2 &rhs)
 {
 	if (this == &rhs) return *this;
+	//static_cast<base_type &>(*this) = rhs;
 
 	viewBound_ = rhs.viewBound_;
 	viewport_ = rhs.viewport_;
@@ -40,7 +41,7 @@ ViewCamera2 & ViewCamera2::operator=(const ViewCamera2 &rhs)
 }
 
 /*
-void ViewCamera2::write(::std::ostream &stream)
+void ViewCamera2::write(std::ostream &stream)
 {
 	beginWrite(stream);
 		// write version
@@ -56,7 +57,7 @@ void ViewCamera2::write(::std::ostream &stream)
 	endWriteEndl(stream);
 }
 
-void ViewCamera2::read(::std::istream &stream)
+void ViewCamera2::read(std::istream &stream)
 {
 	beginAssert(stream);
 		// read version
@@ -85,7 +86,7 @@ void ViewCamera2::read(::std::istream &stream)
 	endAssert(stream);
 }
 
-void ViewCamera2::read20021008(::std::istream& stream)
+void ViewCamera2::read20021008(std::istream &stream)
 {
 	stream >> viewBound_.left >> viewBound_.bottom >> viewBound_.right >> viewBound_.top >>
 		viewport_.left >> viewport_.bottom >> viewport_.right >> viewport_.top >>
@@ -118,8 +119,8 @@ bool ViewCamera2::doUpdateZoomFactor()
 	// calculate a ratio of aspect ratio of viewport to that of viewing bound
 	if (!viewport_.isValid() || !viewRegion_.isValid())  return false;
 
-	double dWidthVP = double(viewport_.getWidth()), dHeightVP = double(viewport_.getHeight());
-	double dWidthVR = viewRegion_.getWidth(), dHeightVR = viewRegion_.getHeight();
+	const double dWidthVP = double(viewport_.getWidth()), dHeightVP = double(viewport_.getHeight());
+	const double dWidthVR = viewRegion_.getWidth(), dHeightVR = viewRegion_.getHeight();
     double dRatioAR = (dWidthVP / dHeightVP) / (dWidthVR / dHeightVR);
 	checkLimit(dRatioAR);
 
@@ -141,24 +142,24 @@ inline bool ViewCamera2::setViewRegion(const Region2<double> &rRct)
 	return doUpdateZoomFactor();
 }
 
-inline bool ViewCamera2::resizeViewRegion(double dWidth, double dHeight)
+inline bool ViewCamera2::resizeViewRegion(const double dWidth, const double dHeight)
 {
 	viewRegion_.changeSize(dWidth, dHeight);
 	// update zoom factor
 	return doUpdateZoomFactor();
 }
 
-inline bool ViewCamera2::moveViewRegion(double dDeltaX, double dDeltaY)
+inline bool ViewCamera2::moveViewRegion(const double dDeltaX, const double dDeltaY)
 {
 	// caution: the size of a viewing region isn't changed
 	viewRegion_ -= Point2<double>(dDeltaX, dDeltaY);
 	return true;
 }
 
-inline bool ViewCamera2::scaleViewRegion(double dFactor)
+inline bool ViewCamera2::scaleViewRegion(const double dFactor)
 {
 /*
-	double dEPS = 1.0e-10;
+	const double dEPS = 1.0e-10;
 	if (dFactor <= -dEPS || dFactor >= dEPS) zoomFactor_ /= dFactor;
 	checkLimit(zoomFactor_);
 
@@ -176,9 +177,9 @@ inline bool ViewCamera2::restoreViewRegion()
 	return doUpdateZoomFactor();
 }
 
-inline bool ViewCamera2::setView(int iX1, int iY1, int iX2, int iY2)
+inline bool ViewCamera2::setView(const int iX1, const int iY1, const int iX2, const int iY2)
 {
-	Region2<int> rctView(iX1, iY1, iX2, iY2);
+	const Region2<int> rctView(iX1, iY1, iX2, iY2);
 	if (!rctView.isValid())  return false;
 
 	Point2<double> ptNC1, ptNC2;
@@ -189,12 +190,12 @@ inline bool ViewCamera2::setView(int iX1, int iY1, int iX2, int iY2)
 	return setViewRegion(ptNC1, ptNC2);
 }
 
-inline bool ViewCamera2::moveView(int iDeltaX, int iDeltaY)
+inline bool ViewCamera2::moveView(const int iDeltaX, const int iDeltaY)
 {
 	return moveViewRegion(double(iDeltaX)/zoomFactor_, double(iDeltaY)/zoomFactor_);
 }
 
-inline bool ViewCamera2::rotateView(int iDeltaX, int iDeltaY)
+inline bool ViewCamera2::rotateView(const int iDeltaX, const int iDeltaY)
 {
 	// rotate the position of eye point, the direction of sight and up direction
 	return rotateViewRegion(double(iDeltaX)/zoomFactor_, double(iDeltaY)/zoomFactor_);
@@ -280,7 +281,7 @@ bool ViewCamera2::getHorizontalRatio(float &rfPosRatio, float &rfWidthRatio)
 	}
 /*
 	// intersect rectangles               
-	Region2<double> rctIntersection(viewBound_ & viewRegion_);
+	const Region2<double> rctIntersection(viewBound_ & viewRegion_);
 
 	if (rctIntersection.isValid())
 	{
@@ -316,7 +317,7 @@ bool ViewCamera2::getHorizontalRatio(float &rfPosRatio, float &rfWidthRatio)
 	else
 	{
 		// union rectangles               
-		Region2<double> rctUnion(viewBound_ | viewRegion_);
+		const Region2<double> rctUnion(viewBound_ | viewRegion_);
 		rfWidthRatio = float(viewRegion_.getWidth() / rctUnion.getWidth());
 		rfPosRatio = float((viewRegion_.left - rctUnion.left) / rctUnion.getWidth());
 	}
@@ -334,7 +335,7 @@ bool ViewCamera2::getVerticalRatio(float &rfPosRatio, float &rfHeightRatio)
 	}
 /*
 	// intersect rectangles               
-	Region2<double> rctIntersection(viewBound_ & viewRegion_);
+	const Region2<double> rctIntersection(viewBound_ & viewRegion_);
 
 	if (rctIntersection.isValid())
 	{
@@ -370,7 +371,7 @@ bool ViewCamera2::getVerticalRatio(float &rfPosRatio, float &rfHeightRatio)
 	else
 	{
 		// union rectangles               
-		Region2<double> rctUnion(viewBound_ | viewRegion_);
+		const Region2<double> rctUnion(viewBound_ | viewRegion_);
 		rfHeightRatio = float(viewRegion_.getHeight() / rctUnion.getHeight());
 		rfPosRatio = float((viewRegion_.bottom - rctUnion.bottom) / rctUnion.getHeight());
 	}
@@ -378,7 +379,7 @@ bool ViewCamera2::getVerticalRatio(float &rfPosRatio, float &rfHeightRatio)
 	return true;
 }
 
-inline bool ViewCamera2::scrollHorizontally(float fRatio)
+inline bool ViewCamera2::scrollHorizontally(const float fRatio)
 // if fRatio < 0, scroll rightwards
 //           > 0, scroll leftwards
 // if | fRatio | < 1, scroll partial page 
@@ -389,7 +390,7 @@ inline bool ViewCamera2::scrollHorizontally(float fRatio)
 	return true;
 }
 
-inline bool ViewCamera2::scrollVertically(float fRatio)
+inline bool ViewCamera2::scrollVertically(const float fRatio)
 // if fRatio < 0, scroll downwards
 //           > 0, scroll upwards
 // if | fRatio | < 1, scroll partial page 
@@ -408,7 +409,7 @@ inline void ViewCamera2::checkLimit(double &rdValue) const
 		rdValue = std::numeric_limits<double>::max();
 }
 
-inline double ViewCamera2::round(double dValue) const
+inline double ViewCamera2::round(const double dValue) const
 {	return (int)std::floor(dValue + 0.5);  }
 
 Region2<double> ViewCamera2::getCurrentViewRegion() const

@@ -188,11 +188,12 @@ void drawMesh()
 		float r, g, b;
 		float ratio;
 
+		GLenum polygonFacing = GL_FRONT_AND_BACK;
 #if 0
-		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
-		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
-		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
-		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -218,7 +219,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -229,7 +230,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -240,7 +241,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 
@@ -264,7 +265,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -275,7 +276,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -286,16 +287,16 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 				}
 		glEnd();
 #elif 0
-		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
-		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
-		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
-		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3;
 		glBegin(GL_TRIANGLES);
@@ -321,7 +322,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -332,7 +333,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -343,7 +344,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 
@@ -367,7 +368,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -378,7 +379,7 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -389,16 +390,16 @@ void drawMesh()
 					glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 				}
 		glEnd();
 #else
-		//glMaterialfv(polygonFacing_, GL_AMBIENT, material_half);
-		//glMaterialfv(polygonFacing_, GL_SPECULAR, material_none);
-		//glMaterialfv(polygonFacing_, GL_SHININESS, shininess_none);
-		//glMaterialfv(polygonFacing_, GL_EMISSION, material_none);
+		//glMaterialfv(polygonFacing, GL_AMBIENT, material_half);
+		//glMaterialfv(polygonFacing, GL_SPECULAR, material_none);
+		//glMaterialfv(polygonFacing, GL_SHININESS, shininess_none);
+		//glMaterialfv(polygonFacing, GL_EMISSION, material_none);
 
 		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4;
 		glBegin(GL_QUADS);
@@ -427,7 +428,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x1, y1, z1);
 					//
@@ -438,7 +439,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x2, y2, z2);
 					//
@@ -449,7 +450,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x3, y3, z3);
 					//
@@ -460,7 +461,7 @@ void drawMesh()
 					//glEdgeFlag(GL_TRUE);
 					glColor3f(r, g, b);
 					//material_diffuse[0] = r;  material_diffuse[1] = g;  material_diffuse[2] = b;
-					//glMaterialfv(polygonFacing_, GL_DIFFUSE, material_diffuse);
+					//glMaterialfv(polygonFacing, GL_DIFFUSE, material_diffuse);
 					glNormal3f(nx, ny, nz);
 					glVertex3f(x4, y4, z4);
 				}
@@ -477,7 +478,7 @@ bool CWglViewTestView::SimpleShape::draw(/*...*/) const
 		view_.drawMainContent();
 	glPopMatrix();
 
-	if (view_.isColorBarShown_) view_.drawColorBar();
+	if (view_.isColorBarShown_ && !view_.isPickingObject_) view_.drawColorBar();
 	if (view_.isCoordinateFrameShown_ && !view_.isPrinting_) view_.drawCoordinateFrame();
 
 	return true;
@@ -542,9 +543,10 @@ CWglViewTestView::CWglViewTestView()
 #endif
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
+  polygonFacing_(GL_FRONT_AND_BACK),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false), isPickingObject_(false),
-  polygonFacing_(GL_FRONT_AND_BACK),
+  pickedObj_(PON_BASE_ENTRY), temporarilyPickedObj_(PON_BASE_ENTRY),
   rootSceneNode_()
 {
 #if 0
@@ -580,6 +582,11 @@ CWglViewTestView::CWglViewTestView()
 	floorColor_[1] = 0.5f;
 	floorColor_[2] = 0.5f;
 	floorColor_[3] = 0.5f;
+
+	pickedColor_[0] = 1.0f;
+	pickedColor_[1] = 1.0f;
+	pickedColor_[2] = 0.0f;
+	pickedColor_[3] = 1.0f;
 
 	// TODO [check] >> for testing
 	loadMesh();
@@ -1073,8 +1080,8 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-	if (isGradientBackgroundUsed_ && !isPrinting_) drawGradientBackground();
-	if (isFloorShown_) drawFloor();
+	if (isGradientBackgroundUsed_ && !isPrinting_ && !isPickingObject_) drawGradientBackground();
+	if (isFloorShown_ && !isPickingObject_) drawFloor();
 
 	return true;
 }
@@ -1096,7 +1103,7 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 		drawMainContent();
 	glPopMatrix();
 
-	if (isColorBarShown_) drawColorBar();
+	if (isColorBarShown_ && !isPickingObject_) drawColorBar();
 	if (isCoordinateFrameShown_ && !isPrinting_) drawCoordinateFrame();
 #endif
 
@@ -1127,18 +1134,18 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 	return true;
 }
 
-void CWglViewTestView::pickObject(const int x, const int y)
+void CWglViewTestView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
 {
-	processToPickObject(x, y, 2, 2);
+	processToPickObject(x, y, 2, 2, isTemporary);
 }
 
-void CWglViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2)
+void CWglViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary /*= false*/)
 {
 	const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
-	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight());
+	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight(), isTemporary);
 }
 
-void CWglViewTestView::processToPickObject(const int x, const int y, const int width, const int height)
+void CWglViewTestView::processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary /*= false*/)
 {
 	const boost::shared_ptr<context_type> &context = topContext();
 	const boost::shared_ptr<camera_type> &camera = topCamera();
@@ -1146,56 +1153,84 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 
 	isPickingObject_ = true;
 
-	{
-		context_type::guard_type guard(*context);
+	context_type::guard_type guard(*context);
 
-		// save states
-		GLint oldMatrixMode;
-		glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
-		glPushAttrib(GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT);
+	// save states
+	GLint oldMatrixMode;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+	glPushAttrib(GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT);
 
-		// set attributes
-		glDisable(GL_LIGHTING);
-		glDepthFunc(GL_LEQUAL);
+	// set attributes
+	glDisable(GL_LIGHTING);
+	glDepthFunc(GL_LEQUAL);
 
-		// set selection buffer
-		const GLsizei SELECT_BUFFER_SIZE = 64;
-		GLuint selectBuffer[SELECT_BUFFER_SIZE] = { 0, };
-		glSelectBuffer(SELECT_BUFFER_SIZE, selectBuffer);
+	// set selection buffer
+	const GLsizei SELECT_BUFFER_SIZE = 64;
+	GLuint selectBuffer[SELECT_BUFFER_SIZE] = { 0, };
+	glSelectBuffer(SELECT_BUFFER_SIZE, selectBuffer);
 
-		// change rendering mode
-		glRenderMode(GL_SELECT);
+	// change rendering mode
+	glRenderMode(GL_SELECT);
 
-		// initialize name stack
-		glInitNames();
-		//glPushName(PON_BASE_ENTRY);
+	// initialize name stack
+	glInitNames();
+	//glPushName(PON_BASE_ENTRY);
 
-		processToPickMainContent(camera, x, y, width, height);
-		if (isCoordinateFrameShown_) processToPickCoordinateFrame(camera, x, y, width, height);
+	// render scene
+#if 0
+	renderScene(*context, *camera);
+#else
+	processToPickMainContent(camera, x, y, width, height);
+	if (isCoordinateFrameShown_) processToPickCoordinateFrame(camera, x, y, width, height);
+#endif
 
-		// gather hit records
-		const GLint hitCount = glRenderMode(GL_RENDER);
+	// gather hit records
+	const GLint hitCount = glRenderMode(GL_RENDER);
 
-		// restore states
-		// pop matrices
-		glMatrixMode(GL_PROJECTION);
-		glPopMatrix();
-		glMatrixMode(GL_MODELVIEW);
-		glPopMatrix();
+	// pop original attributes
+	glPopAttrib();  // GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT
 
-		// pop original attributes
-		glPopAttrib();  // GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT
-
-		glMatrixMode(oldMatrixMode);
-
-		// process hits
-		if (hitCount > 0)
-		{
-			const unsigned int pickedObj = processHits(hitCount, selectBuffer);
-		}
-	}
+	glMatrixMode(oldMatrixMode);
 
 	isPickingObject_ = false;
+
+	// process hits
+	if (isTemporary)
+	{
+		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
+		if (pickedObj != temporarilyPickedObj_)
+		{
+			temporarilyPickedObj_ = pickedObj;
+			raiseDrawEvent(false);
+		}
+	}
+	else
+	{
+		const unsigned int oldPickedObj = pickedObj_;
+
+		temporarilyPickedObj_ = PON_BASE_ENTRY;
+		if (hitCount > 0)
+		{
+			pickedObj_ = processHits(hitCount, selectBuffer);
+			switch (pickedObj_)
+			{
+			case PON_SPHERE:
+				break;
+			case PON_CUBE:
+				break;
+			case PON_X_AXIS:
+				break;
+			case PON_Y_AXIS:
+				break;
+			case PON_Z_AXIS:
+				break;
+			}
+		}
+		else pickedObj_ = PON_BASE_ENTRY;
+
+		if (oldPickedObj != pickedObj_)
+			raiseDrawEvent(false);
+	}
 }
 
 void CWglViewTestView::processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
@@ -1220,25 +1255,25 @@ void CWglViewTestView::processToPickMainContent(const boost::shared_ptr<camera_t
 	// need to load current projection matrix
 	glMultMatrixd(projectionMatrix);
 
-	// render scene
-#if 0
-	renderScene(*context, *camera);
-#else
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
-	glLoadIdentity();
-	// 1. need to load current modelview matrix
-	//   e.g.) glLoadMatrixd(modelviewMatrix);
-	// 2. need to be thought of viewing transformation
-	//   e.g.) camera->lookAt();
-	camera->lookAt();
+		glLoadIdentity();
+		// 1. need to load current modelview matrix
+		//   e.g.) glLoadMatrixd(modelviewMatrix);
+		// 2. need to be thought of viewing transformation
+		//   e.g.) camera->lookAt();
+		camera->lookAt();
 
 #if 0
-	doRenderScene(*context, *camera);
+		doRenderScene(*context, *camera);
 #else
-	drawMainContent();
+		drawMainContent();
 #endif
-#endif
+	glPopMatrix();
+
+	// pop projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
 }
 
 void CWglViewTestView::processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
@@ -1277,6 +1312,13 @@ void CWglViewTestView::processToPickCoordinateFrame(const boost::shared_ptr<came
 	//
 	glMatrixMode(GL_MODELVIEW);
 	glPushMatrix();
+		glLoadIdentity();
+		// 1. need to load current modelview matrix
+		//   e.g.) glLoadMatrixd(modelviewMatrix);
+		// 2. need to be thought of viewing transformation
+		//   e.g.) camera->lookAt();
+		camera->lookAt();
+
 		// move origin
 		double eyeX(0.0), eyeY(0.0), eyeZ(0.0), dirX(0.0), dirY(0.0), dirZ(0.0);
 		camera->getEyePosition(eyeX, eyeY, eyeZ);
@@ -1296,7 +1338,11 @@ void CWglViewTestView::processToPickCoordinateFrame(const boost::shared_ptr<came
 
 		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
 		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(length, order);
+		drawCoordinateFrame(false, length, order);
+	glPopMatrix();
+
+	// pop projection matrix
+	glMatrixMode(GL_PROJECTION);
 	glPopMatrix();
 
 	// restore states
@@ -1545,9 +1591,9 @@ void CWglViewTestView::setPerspective(const bool isPerspective)
 		context_type::guard_type guard(*context);
 		camera->setPerspective(isPerspective_);
 
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-		createDisplayList(true);
-#endif
+//#if defined(__USE_OPENGL_DISPLAY_LIST)
+//		createDisplayList(true);
+//#endif
 	}
 }
 
@@ -1564,8 +1610,10 @@ void CWglViewTestView::setWireFrame(const bool isWireFrame)
 
 void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= false*/) const
 {
+	const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!doesCreateDisplayList && isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
 		glCallList(displayListStack_.top() + DLN_MAIN_CONTENT);
 		return;
@@ -1599,7 +1647,10 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 
 		glPushName(PON_SPHERE);
 			// draw a sphere
-			glColor3f(1.0f, 0.0f, 0.0f);
+			if (PON_SPHERE == pickedObj_ || (PON_SPHERE == temporarilyPickedObj_ && isPickObjectState))
+				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+			else
+				glColor3f(1.0f, 0.0f, 0.0f);
 			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
 		glPopName();
 
@@ -1613,7 +1664,10 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 
 		glPushName(PON_CUBE);
 			// draw a cube
-			glColor3f(0.5f, 0.5f, 1.0f);
+			if (PON_CUBE == pickedObj_ || (PON_CUBE == temporarilyPickedObj_ && isPickObjectState))
+				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+			else
+				glColor3f(0.5f, 0.5f, 1.0f);
 			isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
 		glPopName();
 	glPopMatrix();
@@ -1646,6 +1700,7 @@ void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed())
+	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
 		glCallList(displayListStack_.top() + DLN_GRADIENT_BACKGROUND);
 		return;
@@ -1705,6 +1760,7 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 /*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed())
+	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
 		glCallList(displayListStack_.top() + DLN_FLOOR);
 		return;
@@ -1850,6 +1906,7 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed())
+	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
 		glCallList(displayListStack_.top() + DLN_COLOR_BAR);
 		return;
@@ -1935,9 +1992,11 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 
 void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= false*/) const
 {
+	const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+
 /*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!doesCreateDisplayList && isDisplayListUsed())
+	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
 		glCallList(displayListStack_.top() + DLN_COORDINATE_FRAME);
 		return
@@ -1990,7 +2049,7 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 
 		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
 		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(length, order);
+		drawCoordinateFrame(isPickObjectState, length, order);
 	glPopMatrix();
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 
@@ -2002,7 +2061,7 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]) const
+void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const
 {
 	const float ratio = 0.7f;  // cylinder ratio
 	const float size = height * ratio;
@@ -2024,7 +2083,10 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 			glPushName(PON_X_AXIS);
 
 			// x axis
-			glColor3f(1.0f, 0.0f, 0.0f);
+			if (PON_X_AXIS == pickedObj_ || (PON_X_AXIS == temporarilyPickedObj_ && isPickObjectState))
+				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+			else
+				glColor3f(1.0f, 0.0f, 0.0f);
 			glPushMatrix();
 				glRotated(90.0, 0.0, 1.0, 0.0);
 				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
@@ -2044,7 +2106,10 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 			glPushName(PON_Y_AXIS);
 
 			// y axis
-			glColor3f(0.0f, 1.0f, 0.0f);
+			if (PON_Y_AXIS == pickedObj_ || (PON_Y_AXIS == temporarilyPickedObj_ && isPickObjectState))
+				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+			else
+				glColor3f(0.0f, 1.0f, 0.0f);
 			glPushMatrix();
 				glRotated(-90.0, 1.0, 0.0, 0.0);
 				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
@@ -2064,7 +2129,10 @@ void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]
 			glPushName(PON_Z_AXIS);
 
 			// z axis
-			glColor3f(0.0f, 0.0f, 1.0f);	
+			if (PON_Z_AXIS == pickedObj_ || (PON_Z_AXIS == temporarilyPickedObj_ && isPickObjectState))
+				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+			else
+				glColor3f(0.0f, 0.0f, 1.0f);	
 			glPushMatrix();
 				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
 				glTranslated(0.0, 0.0, size);
@@ -2527,6 +2595,10 @@ void CWglViewTestView::OnViewhandlingZoomout()
 
 void CWglViewTestView::OnViewhandlingPickobject()
 {
+	const bool isRedrawn = PON_BASE_ENTRY != pickedObj_;
+	pickedObj_ = temporarilyPickedObj_ = PON_BASE_ENTRY;
+	if (isRedrawn) raiseDrawEvent(false);
+
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());

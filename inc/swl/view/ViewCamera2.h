@@ -32,14 +32,14 @@ public:
 	virtual ViewCamera2 * cloneCamera() const
 	{  return new ViewCamera2(*this);  }
 
-	///*virtual*/ void write(::std::ostream& stream);
-	///*virtual*/ void read(::std::istream& stream);
+	///*virtual*/ void write(std::ostream &stream);
+	///*virtual*/ void read(std::istream &stream);
 
 	///
 	double getZoomFactor() const  {  return zoomFactor_;  }
 
 	/// set the size of viewing bound
-    virtual bool setViewBound(double dLeft, double dBottom, double dRight, double dTop)
+    virtual bool setViewBound(const double dLeft, const double dBottom, const double dRight, const double dTop)
 	{  return setViewBound(Region2<double>(dLeft, dBottom, dRight, dTop) );  }
     virtual bool setViewBound(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewBound(Region2<double>(rPt1, rPt2));  }
@@ -53,7 +53,7 @@ public:
     virtual Region2<double> getViewBound() const  {  return viewBound_;  }
 
 	///
-    virtual bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar)
+    virtual bool setViewBound(const double dLeft, const double dBottom, const double dRight, const double dTop, const double dNear, const double dFar)
 	{  return setViewBound(Region2<double>(dLeft, dBottom, dRight, dTop));  }
     virtual void getViewBound(double &rdLeft, double &rdBottom, double &rdRight, double &rdTop, double &rdNear, double &rdFar) const
 	{
@@ -62,7 +62,7 @@ public:
 	}
 
 	/// set the size of viewport
-    virtual bool setViewport(int iLeft, int iBottom, int iRight, int iTop)
+    virtual bool setViewport(const int iLeft, const int iBottom, const int iRight, const int iTop)
 	{  return setViewport(Region2<int>(iLeft, iBottom, iRight, iTop));  }
     virtual bool setViewport(const Point2<int> &rPt1, Point2<int> &rPt2)
 	{  return setViewport(Region2<int>(rPt1, rPt2));  }
@@ -76,7 +76,7 @@ public:
     virtual Region2<int> getViewport() const  {  return viewport_;  }
 
 	/// set a viewing region
-	virtual bool setViewRegion(double dX1, double dY1, double dX2, double dY2)
+	virtual bool setViewRegion(const double dX1, const double dY1, const double dX2, const double dY2)
 	{  return setViewRegion(Region2<double>(dX1, dY1, dX2, dY2));  }
     virtual bool setViewRegion(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewRegion(Region2<double>(rPt1, rPt2));  }
@@ -93,27 +93,27 @@ public:
 	virtual Region2<double> getCurrentViewRegion() const;
 
 	/// resize a viewing region
-	virtual bool resizeViewRegion(double dWidth, double dHeight);
+	virtual bool resizeViewRegion(const double dWidth, const double dHeight);
 	/// move a viewing region
-	virtual bool moveViewRegion(double dDeltaX, double dDeltaY);
+	virtual bool moveViewRegion(const double dDeltaX, const double dDeltaY);
 	virtual bool moveViewRegion(const Point2<double> &rDelta)
 	{  return moveViewRegion(rDelta.x, rDelta.y);  }
 	/// rotate a viewing region
-	virtual bool rotateViewRegion(double dDeltaX, double dDeltaY)  {  return true;  }
+	virtual bool rotateViewRegion(const double dDeltaX, const double dDeltaY)  {  return true;  }
 	virtual bool rotateViewRegion(const Point2<double> &rDelta)
 	{  return rotateViewRegion(rDelta.x, rDelta.y);  }
 	/// scale a viewing region
-	virtual bool scaleViewRegion(double dFactor);
+	virtual bool scaleViewRegion(const double dFactor);
 
 	/// restore a viewing region
 	virtual bool restoreViewRegion();
 
  	/// set a view
-	virtual bool setView(int iX1, int iY1, int iX2, int iY2);
+	virtual bool setView(const int iX1, const int iY1, const int iX2, const int iY2);
 	/// move a view
-	virtual bool moveView(int iDeltaX, int iDeltaY);
+	virtual bool moveView(const int iDeltaX, const int iDeltaY);
 	/// rotate a view
-	virtual bool rotateView(int iDeltaX, int iDeltaY);
+	virtual bool rotateView(const int iDeltaX, const int iDeltaY);
 
 	/// look at the view region from the eye position along the eye direction and up direction
 	/// this function is needed usually in 3D, but not 2D 
@@ -130,8 +130,8 @@ public:
 	virtual bool getHorizontalRatio(float &rfPosRatio, float &rfWidthRatio);
 	virtual bool getVerticalRatio(float &rfPosRatio, float &rfHeightRatio);
 
-	virtual bool scrollHorizontally(float fRatio);
-	virtual bool scrollVertically(float fRatio);
+	virtual bool scrollHorizontally(const float fRatio);
+	virtual bool scrollVertically(const float fRatio);
 
 	/// update the camera
 	virtual bool update()  {  return true;  }
@@ -144,11 +144,11 @@ protected:
 	void checkLimit(double &rdValue) const;
 
 	///
-	double round(double dValue) const;
+	double round(const double dValue) const;
 
 private:
 	///
-	//void read20021008(::std::istream& stream);
+	//void read20021008(std::istream &stream);
 
 protected:
 	/// 1. take the direction of axes into consideration

@@ -31,39 +31,39 @@ public:
 	/*virtual*/ ViewCamera2 * cloneCamera() const
 	{  return new ViewCamera3(*this);  }
 
-	///*virtual*/ void write(::std::ostream& stream);
-	///*virtual*/ void read(::std::istream& stream);
+	///*virtual*/ void write(std::ostream& stream);
+	///*virtual*/ void read(const std::istream& stream);
 
 	/// set the size of viewing volume: (left, bottom, right, top) is set wrt a eye coordinates frame
 	/// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
-    /*virtual*/ bool setViewBound(double dLeft, double dBottom, double dRight, double dTop, double dNear, double dFar);
+    /*virtual*/ bool setViewBound(const double dLeft, const double dBottom, const double dRight, const double dTop, const double dNear, const double dFar);
 	/// get the size of viewing volume
-    /*virtual*/ void getViewBound(double& rdLeft, double& rdBottom, double& rdRight, double& rdTop, double& rdNear, double& rdFar) const
+    /*virtual*/ void getViewBound(double &rdLeft, double &rdBottom, double &rdRight, double &rdTop, double &rdNear, double &rdFar) const
 	{
 		base_type::getViewBound(rdLeft, rdBottom, rdRight, rdTop);
 		rdNear = nearPlane_;  rdFar = farPlane_;
 	}
 
 	/// set the size of viewport
-    /*virtual*/ bool setViewport(int iLeft, int iBottom, int iRight, int iTop)
+    /*virtual*/ bool setViewport(const int iLeft, const int iBottom, const int iRight, const int iTop)
 	{  return setViewport(Region2<int>(iLeft, iBottom, iRight, iTop));  }
     /*virtual*/ bool setViewport(const Point2<int> &rPt1, Point2<int> &rPt2)
 	{  return setViewport(Region2<int>(rPt1, rPt2));  }
     /*virtual*/ bool setViewport(const Region2<int> &rViewport);
 
 	/// set a viewing region
-	/*virtual */ bool setViewRegion(double dX1, double dY1, double dX2, double dY2)
+	/*virtual */ bool setViewRegion(const double dX1, const double dY1, const double dX2, const double dY2)
 	{  return setViewRegion(Region2<double>(dX1, dY1, dX2, dY2));  }
     /*virtual */ bool setViewRegion(const Point2<double> &rPt1, Point2<double> &rPt2)
 	{  return setViewRegion(Region2<double>(rPt1, rPt2));  }
 	/*virtual */ bool setViewRegion(const Region2<double> &rRct);
 
 	/// move a viewing region
-	/*virtual*/ bool moveViewRegion(double dDeltaX, double dDeltaY);
+	/*virtual*/ bool moveViewRegion(const double dDeltaX, const double dDeltaY);
 	/// rotate a viewing region
-	/*virtual*/ bool rotateViewRegion(double dDeltaX, double dDeltaY);
+	/*virtual*/ bool rotateViewRegion(const double dDeltaX, const double dDeltaY);
 	/// scale a viewing region
-	/*virtual*/ bool scaleViewRegion(double dFactor);
+	/*virtual*/ bool scaleViewRegion(const double dFactor);
 
 	/// restore a viewing region
 	/*virtual*/ bool restoreViewRegion();
@@ -74,7 +74,7 @@ public:
 
 	/// which projection mode is perspective or orthographic
     bool isPerspective() const  {  return isPerspective_;  }
-    void setPerspective(bool bIsPerspective = true)
+    void setPerspective(const bool bIsPerspective = true)
 	{
 		if (isPerspective_ != bIsPerspective)
 		{
@@ -84,7 +84,7 @@ public:
 	}
 
 	///
-	bool setEyeDistance(double dEyeDistance, const bool bUpdateViewpoint = true)
+	bool setEyeDistance(const double dEyeDistance, const bool bUpdateViewpoint = true)
 	{
 		eyeDistance_ = dEyeDistance;
 		return updateEyePosition(bUpdateViewpoint);
@@ -92,7 +92,7 @@ public:
 	double getEyeDistance() const  {  return eyeDistance_;  }
 
 	///
-	bool setObjectPosition(double dObjX, double dObjY, double dObjZ, const bool bUpdateViewpoint = true)
+	bool setObjectPosition(const double dObjX, const double dObjY, const double dObjZ, const bool bUpdateViewpoint = true)
 	{
 		refObjX_ = dObjX;  refObjY_ = dObjY;  refObjZ_ = dObjZ;
 		//--S [] 2001/05/22: Sang-Wook Lee
@@ -101,62 +101,64 @@ public:
 		return updateEyePosition(bUpdateViewpoint);
 		//--E [] 2001/05/22
 	}
-	void getObjectPosition(double& rdObjX, double& rdObjY, double& rdObjZ) const
+	void getObjectPosition(double &rdObjX, double &rdObjY, double &rdObjZ) const
 	{  rdObjX = refObjX_;  rdObjY = refObjY_;  rdObjZ = refObjZ_;  }
 
 	///
-	bool setEyePose(double dDirX, double dDirY, double dDirZ, double dUpX, double dUpY, double dUpZ, const bool bUpdateViewpoint = true);
-	void getEyePose(double& rdDirX, double& rdDirY, double& rdDirZ, double& rdUpX, double& rdUpY, double& rdUpZ) const
+	bool setEyePose(const double dDirX, const double dDirY, const double dDirZ, const double dUpX, const double dUpY, const double dUpZ, const bool bUpdateViewpoint = true);
+	void getEyePose(double &rdDirX, double &rdDirY, double &rdDirZ, double &rdUpX, double &rdUpY, double &rdUpZ) const
 	{
 		rdDirX = eyeDirX_;  rdDirY = eyeDirY_;  rdDirZ = eyeDirZ_;
 		rdUpX = upDirX_;  rdUpY = upDirY_;  rdUpZ = upDirZ_;
 	}
-	void getEyeDirection(double& rdDirX, double& rdDirY, double& rdDirZ) const
+	void getEyeDirection(double &rdDirX, double &rdDirY, double &rdDirZ) const
 	{  rdDirX = eyeDirX_;  rdDirY = eyeDirY_;  rdDirZ = eyeDirZ_;  }
 
 	///
-	bool setEyePosition(double dEyeX, double dEyeY, double dEyeZ, const bool bUpdateViewpoint = true)
+	bool setEyePosition(const double dEyeX, const double dEyeY, const double dEyeZ, const bool bUpdateViewpoint = true)
 	{
 		eyePosX_ = dEyeX;  eyePosY_ = dEyeY;  eyePosZ_ = dEyeZ;
 		updateEyeDistance(false);
 		return updateEyeDirection(bUpdateViewpoint);
 	}
-	void getEyePosition(double& rdEyeX, double& rdEyeY, double& rdEyeZ) const
+	void getEyePosition(double &rdEyeX, double &rdEyeY, double &rdEyeZ) const
 	{  rdEyeX = eyePosX_;  rdEyeY = eyePosY_;  rdEyeZ = eyePosZ_;  }
 
 	///
-	bool setEyeUp(double dUpX, double dUpY, double dUpZ, const bool bUpdateViewpoint = true)
+	bool setEyeUp(const double dUpX, const double dUpY, const double dUpZ, const bool bUpdateViewpoint = true)
 	{
 		upDirX_ = dUpX;  upDirY_ = dUpY;  upDirZ_ = dUpZ;
 		isValid_ &= normalizeVector(upDir_);
 		//return isValid_;  //-- [] 2001/05/22: Sang-Wook Lee
 		return !isValid_ ? false : bUpdateViewpoint ? doUpdateFrustum() : true;
 	}
-	void getEyeUp(double& rdUpX, double& rdUpY, double& rdUpZ) const
+	void getEyeUp(double &rdUpX, double &rdUpY, double &rdUpZ) const
 	{  rdUpX = upDirX_;  rdUpY = upDirY_;  rdUpZ = upDirZ_;  }
 
 	/// set an eye coordinates frame wrt a world coordinates frame
-	bool setEyeFrame(const ViewMatrix3& rFrame, const bool bUpdateViewpoint = true);
+	bool setEyeFrame(const ViewMatrix3 &rFrame, const bool bUpdateViewpoint = true);
 	/// get an eye coordinates frame wrt a world coordinates frame
 	ViewMatrix3 getEyeFrame() const;
 
 	/// transform an eye coordinates frame wrt a world coordinates frame, Te' = rdT * Te
-	bool transform(const ViewMatrix3& rdT, const bool bUpdateViewpoint = true);
+	bool transform(const ViewMatrix3 &rdT, const bool bUpdateViewpoint = true);
 
 	///
-	bool setViewDepth(double dNear, double dFar, const bool bUpdateViewpoint = true)
+	bool setViewDepth(const double dNear, const double dFar, const bool bUpdateViewpoint = true)
 	{
 		nearPlane_ = dNear;  farPlane_ = dFar;
 		isValid_ &= (nearPlane_ < farPlane_) && (!isPerspective_ || (nearPlane_ > 0.0 && farPlane_ > 0.0));
 		//return isValid_;  //-- [] 2001/05/22: Sang-Wook Lee
 		return !isValid_ ? false : bUpdateViewpoint ? doUpdateFrustum() : true;
 	}
-	void getViewDepth(double& rdNear, double& rdFar) const
+	void getViewDepth(double &rdNear, double &rdFar) const
 	{  rdNear = nearPlane_;  rdFar = farPlane_;  }
 
 	/// transform an eye wrt eye coordinate frames
-	virtual bool translateEye(EAxis eAxis, double dDelta);
-	virtual bool rotateEye(EAxis eAxis, double dRad);
+	virtual bool translateEye(const EAxis eAxis, const double dDelta);
+	virtual bool rotateEye(const EAxis eAxis, const double dRad);
+
+	bool rotateSceneAboutAxis(const EAxis eAxis, const double dDeltaX, const double dDeltaY);
 
 	/// map an object coordinates(before projection) to a window coordinates(after projection)
 	/// ==> OpenGL Red Book(p. 96)
@@ -192,19 +194,19 @@ protected:
 	bool updateEyeDirection(const bool bUpdateViewpoint = true);
 
 	/// transform a scene wrt screen coordinate frames
-	virtual bool translateScene(double dDeltaX, double dDeltaY);
-	virtual bool rotateScene(double dDeltaX, double dDeltaY);
+	virtual bool translateScene(const double dDeltaX, const double dDeltaY);
+	virtual bool rotateScene(const double dDeltaX, const double dDeltaY);
 
 	/// vector & matrix arithmetic
 	bool normalizeVector(double vV[3]) const;
 	void crossVector(const double vV1[3], const double vV2[3], double vV[3]) const;
 	double normVector(const double vV[3]) const;
-	bool calcRotationMatrix(double dRad, const double vV[3], double mRot[9]) const;
+	bool calcRotationMatrix(const double dRad, const double vV[3], double mRot[9]) const;
 	void productMatrixAndVector(const double mRot[9], const double vVi[3], double vVo[3]) const;
 
 private:
 	///
-	//void Read20021008(::std::istream& stream);
+	//void Read20021008(std::istream &stream);
 
 protected:
 	/// check if the camera's state is valid or not
