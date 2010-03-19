@@ -11,7 +11,8 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class TransformSceneNode
 
-class SWL_GRAPHICS_API TransformSceneNode: public GroupSceneNode
+template<typename SceneVisitor>
+class TransformSceneNode: public GroupSceneNode<SceneVisitor>
 {
 public:
 	typedef GroupSceneNode		base_type;
@@ -25,7 +26,7 @@ public:
 	TransformSceneNode & operator=(const TransformSceneNode &rhs);
 
 public:
-	/*final*/ /*virtual*/ void accept(const ISceneVisitor &visitor) const;
+	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const;
 
 	transform_type & getTransform()  {  return transform_;  }
 	const transform_type & getTransform() const  {  return transform_;  }

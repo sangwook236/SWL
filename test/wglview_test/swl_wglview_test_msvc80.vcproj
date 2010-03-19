@@ -68,7 +68,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_graphics.lib swl_view.lib swl_glview.lib opengl32.lib glu32.lib glut32.lib"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_graphics.lib swl_view.lib swl_glutil.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -152,7 +152,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_graphics.lib swl_view.lib swl_glview.lib opengl32.lib glu32.lib glut32.lib"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_graphics.lib swl_view.lib swl_glutil.lib opengl32.lib glu32.lib glut32.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -204,6 +204,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SceneGraphShape.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.cpp"
 				>
 				<FileConfiguration
@@ -229,6 +233,10 @@
 			</File>
 			<File
 				RelativePath=".\ViewStateMachine.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WglSceneGraphView.cpp"
 				>
 			</File>
 			<File
@@ -262,6 +270,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SceneGraphShape.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
 				>
 			</File>
@@ -271,6 +283,10 @@
 			</File>
 			<File
 				RelativePath=".\ViewStateMachine.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WglSceneGraphView.h"
 				>
 			</File>
 			<File

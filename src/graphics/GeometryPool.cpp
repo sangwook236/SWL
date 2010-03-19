@@ -23,6 +23,14 @@ namespace swl {
 	return *singleton_;
 }
 
+/*static*/ void GeometryPool::clearInstance()
+{
+	if (singleton_)
+	{
+		delete singleton_;
+		singleton_ = NULL;
+	}
+}
 GeometryPool::geometry_id_type GeometryPool::createGeometryId()
 {
 	const size_t count = geometryPool_.size();

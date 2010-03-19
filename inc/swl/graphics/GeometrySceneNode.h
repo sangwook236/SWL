@@ -13,7 +13,8 @@ class GeometryPool;
 //--------------------------------------------------------------------------
 // class GeometrySceneNode
 
-class SWL_GRAPHICS_API GeometrySceneNode: public LeafSceneNode
+template<typename SceneVisitor>
+class GeometrySceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
 	typedef LeafSceneNode					base_type;
@@ -21,19 +22,42 @@ public:
 	typedef GeometryPool::geometry_type		geometry_type;
 
 public:
-	GeometrySceneNode(const geometry_id_type &geometryId);
-	GeometrySceneNode(const GeometrySceneNode &rhs);
-	virtual ~GeometrySceneNode();
+#if defined(UNICODE) || defined(_UNICODE)
+	GeometrySceneNode(const geometry_id_type &geometryId, const std::wstring &name = std::wstring())
+#else
+	GeometrySceneNode(const geometry_id_type &geometryId, const std::string &name = std::string())
+#endif
+	: base_type(name),
+	  geometryId_(geometryId) //geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID)
+	{}
+	GeometrySceneNode(const GeometrySceneNode &rhs)
+	: base_type(rhs),
+	  geometryId_(rhs.geometryId_)
+	{}
+	virtual ~GeometrySceneNode()
+	{}
 
-	GeometrySceneNode & operator=(const GeometrySceneNode &rhs);
+	GeometrySceneNode & operator=(const GeometrySceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		geometryId_ = rhs.geometryId_;
+		return *this;
+	}
  
 public:
-	/*final*/ /*virtual*/ void accept(const ISceneVisitor &visitor) const;
+	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const
+	{
+		visitor.visit(*this);
+	}
 
 	geometry_id_type & getGeometryId()  {  return geometryId_;  }
 	const geometry_id_type & getGeometryId() const  {  return geometryId_;  }
 
-	geometry_type getGeometry() const;
+	geometry_type getGeometry() const
+	{
+		return GeometryPool::getInstance().getGeometry(geometryId_);
+	}
 
 private:
 	geometry_id_type geometryId_;

@@ -1,42 +1,42 @@
-#if !defined(__SWL_GRAPHICS__SHAPE_SCENE_NODE__H_)
-#define __SWL_GRAPHICS__SHAPE_SCENE_NODE__H_ 1
+#if !defined(__SWL_GL_UTIL__GL_SHAPE_SCENE_NODE__H_)
+#define __SWL_GL_UTIL__GL_SHAPE_SCENE_NODE__H_ 1
 
 
 #include "swl/graphics/SceneNode.h"
-#include "swl/graphics/Shape.h"
+#include "swl/glutil/GLShape.h"
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// class ShapeSceneNode
+// class GLShapeSceneNode
 
 template<typename SceneVisitor>
-class ShapeSceneNode: public LeafSceneNode<SceneVisitor>
+class GLShapeSceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
 	typedef LeafSceneNode				base_type;
-	typedef boost::shared_ptr<Shape>	shape_type;
-	typedef Shape::geometry_type		geometry_type;
-	typedef Shape::appearance_type		appearance_type;
+	typedef boost::shared_ptr<GLShape>	shape_type;
+	typedef GLShape::geometry_type		geometry_type;
+	typedef GLShape::appearance_type	appearance_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
-	ShapeSceneNode(shape_type &shape, const std::wstring &name = std::wstring())
+	GLShapeSceneNode(shape_type &shape, const std::wstring &name = std::wstring())
 #else
-	ShapeSceneNode(shape_type &shape, const std::string &name = std::string())
+	GLShapeSceneNode(shape_type &shape, const std::string &name = std::string())
 #endif
 	: base_type(name),
 	  shape_(shape)
 	{}
-	ShapeSceneNode(const ShapeSceneNode &rhs)
+	GLShapeSceneNode(const GLShapeSceneNode &rhs)
 	: base_type(rhs),
 	  shape_(rhs.shape_)
 	{}
-	virtual ~ShapeSceneNode()
+	virtual ~GLShapeSceneNode()
 	{}
 
-	ShapeSceneNode & operator=(const ShapeSceneNode &rhs)
+	GLShapeSceneNode & operator=(const GLShapeSceneNode &rhs)
 	{
 		if (this == &rhs) return *this;
 		static_cast<base_type &>(*this) = rhs;
@@ -60,4 +60,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_GRAPHICS__SHAPE_SCENE_NODE__H_
+#endif  // __SWL_GL_UTIL__GL_SHAPE_SCENE_NODE__H_

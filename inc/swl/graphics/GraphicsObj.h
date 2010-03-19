@@ -4,8 +4,8 @@
 
 #include "swl/graphics/ExportGraphics.h"
 #include "swl/graphics/IDrawable.h"
+#include "swl/graphics/IPickable.h"
 //#include "swl/graphics/ITransformable.h"
-#include "swl/graphics/PickableAttrib.h"
 
 
 namespace swl {
@@ -13,14 +13,14 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // class GraphicsObj
 
-//class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public ITransformable3
-class SWL_GRAPHICS_API GraphicsObj: public IDrawable
+//class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public IPickable, public ITransformable3
+class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public IPickable
 {
 public:
 	//typedef GraphicsObj base_type;
 
 protected:
-	GraphicsObj();
+	GraphicsObj(const bool isPrintable, const bool isPickable);
 	GraphicsObj(const GraphicsObj &rhs);
 	virtual ~GraphicsObj() = 0;  // implemented
 
@@ -28,12 +28,16 @@ public:
 	GraphicsObj & operator=(const GraphicsObj &rhs);
 
 public:
-	void setPickable(bool isPickable)  {  pickable_.setPickable(isPickable);  }
-	bool isPickable() const  {  return pickable_.isPickable();  }
+	void setPrintable(const bool isPrintable)  {  isPrintable_ = isPrintable;  }
+	bool isPrintable() const {  return isPrintable_;  }
+
+	void setPickable(const bool isPickable)  {  isPickable_ = isPickable;  }
+	bool isPickable() const {  return isPickable_;  }
 
 private:
-	///
-	PickableAttrib pickable_;
+	//
+	bool isPrintable_;
+	bool isPickable_;
 };
 
 }  // namespace swl

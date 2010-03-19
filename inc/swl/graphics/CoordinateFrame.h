@@ -28,41 +28,18 @@ public:
 	typedef TMatrix3<double>	frame_type;
 
 public:
-#if defined(_UNICODE) || defined(UNICODE)
-	CoordinateFrame(const std::wstring &name = std::wstring());
-#else
-	CoordinateFrame(const std::string &name = std::string());
-#endif
+	CoordinateFrame(const bool isPrintable, const bool isPickable);
 	CoordinateFrame(const CoordinateFrame &rhs);
 	virtual ~CoordinateFrame();
 
 	CoordinateFrame& operator=(const CoordinateFrame &rhs);
 
 public:
-	/// frame name
-#if defined(_UNICODE) || defined(UNICODE)
-	void setName(const std::wstring& name)  {  name_ = name;  }
-#else
-	void setName(const std::string& name)  {  name_ = name;  }
-#endif
-#if defined(_UNICODE) || defined(UNICODE)
-	const std::wstring& getName() const  {  return name_;  }
-#else
-	const std::string& getName() const  {  return name_;  }
-#endif
-
 	void setFrame(const frame_type &frame)  {  frame_ = frame;  }
 	frame_type getFrame() const  {  return frame_;  }
 
 private:
-	/// frame name
-#if defined(_UNICODE) || defined(UNICODE)
-	std::wstring name_;
-#else
-	std::string name_;
-#endif
-
-	///
+	//
 	frame_type frame_;
 };
 

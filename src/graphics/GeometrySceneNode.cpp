@@ -14,23 +14,31 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class GeometrySceneNode
 
-GeometrySceneNode::GeometrySceneNode(const GeometrySceneNode::geometry_id_type &geometryId)
-: base_type(),
+template<typename SceneVisitor>
+#if defined(UNICODE) || defined(_UNICODE)
+GeometrySceneNode<SceneVisitor>::GeometrySceneNode(const geometry_id_type &geometryId, const std::wstring &name /*= std::wstring()*/)
+#else
+GeometrySceneNode<SceneVisitor>::GeometrySceneNode(const geometry_id_type &geometryId, const std::string &name /*= std::string()*/);
+#endif
+: base_type(name),
   geometryId_(geometryId) //geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID)
 {
 }
 
-GeometrySceneNode::GeometrySceneNode(const GeometrySceneNode &rhs)
+template<typename SceneVisitor>
+GeometrySceneNode<SceneVisitor>::GeometrySceneNode(const GeometrySceneNode &rhs)
 : base_type(rhs),
   geometryId_(rhs.geometryId_)
 {
 }
 
-GeometrySceneNode::~GeometrySceneNode()
+template<typename SceneVisitor>
+GeometrySceneNode<SceneVisitor>::~GeometrySceneNode()
 {
 }
 
-GeometrySceneNode & GeometrySceneNode::operator=(const GeometrySceneNode &rhs)
+template<typename SceneVisitor>
+GeometrySceneNode<SceneVisitor> & GeometrySceneNode<SceneVisitor>::operator=(const GeometrySceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -38,12 +46,14 @@ GeometrySceneNode & GeometrySceneNode::operator=(const GeometrySceneNode &rhs)
 	return *this;
 }
 
-void GeometrySceneNode::accept(const ISceneVisitor &visitor) const
+template<typename SceneVisitor>
+void GeometrySceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
 {
 	visitor.visit(*this);
 }
 
-GeometrySceneNode::geometry_type GeometrySceneNode::getGeometry() const
+template<typename SceneVisitor>
+typename GeometrySceneNode<SceneVisitor>::geometry_type GeometrySceneNode<SceneVisitor>::getGeometry() const
 {
 	return GeometryPool::getInstance().getGeometry(geometryId_);
 }

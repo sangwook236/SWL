@@ -9,6 +9,7 @@
 #include "ChildFrm.h"
 #include "WglViewTestDoc.h"
 #include "WglViewTestView.h"
+#include "WglSceneGraphView.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -80,6 +81,13 @@ BOOL CWglViewTestApp::InitInstance()
 		RUNTIME_CLASS(CWglViewTestDoc),
 		RUNTIME_CLASS(CChildFrame), // custom MDI child frame
 		RUNTIME_CLASS(CWglViewTestView));
+	if (!pDocTemplate)
+		return FALSE;
+	AddDocTemplate(pDocTemplate);
+	pDocTemplate = new CMultiDocTemplate(IDR_WglSceneGraphViewTYPE,
+		RUNTIME_CLASS(CWglViewTestDoc),
+		RUNTIME_CLASS(CChildFrame), // custom MDI child frame
+		RUNTIME_CLASS(CWglSceneGraphView));
 	if (!pDocTemplate)
 		return FALSE;
 	AddDocTemplate(pDocTemplate);

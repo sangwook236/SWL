@@ -2,7 +2,6 @@
 #include "swl/graphics/SceneNode.h"
 #include "swl/graphics/ISceneVisitor.h"
 #include "swl/base/LogException.h"
-#include <boost/foreach.hpp>
 #include <algorithm>
 
 
@@ -17,57 +16,75 @@ namespace swl {
 //--------------------------------------------------------------------------
 // struct ISceneNode
 
-ISceneNode::~ISceneNode()
+template<typename SceneVisitor>
+ISceneNode<SceneVisitor>::~ISceneNode()
 {
 }
 
 //--------------------------------------------------------------------------
 // class ComponentSceneNode
 
-ComponentSceneNode::ComponentSceneNode()
+template<typename SceneVisitor>
+#if defined(UNICODE) || defined(_UNICODE)
+ComponentSceneNode<SceneVisitor>::ComponentSceneNode(const std::wstring &name /*= std::wstring()*/)
+#else
+ComponentSceneNode<SceneVisitor>::ComponentSceneNode(const std::string &name /*= std::string()*/);
+#endif
 : base_type(),
-  parent_()
+  parent_(), name_(name)
 {
 }
 
-ComponentSceneNode::ComponentSceneNode(const ComponentSceneNode &rhs)
+template<typename SceneVisitor>
+ComponentSceneNode<SceneVisitor>::ComponentSceneNode(const ComponentSceneNode &rhs)
 : base_type(rhs),
-  parent_(rhs.parent_)
+  parent_(rhs.parent_), name_(rhs.name_)
 {
 }
 
-ComponentSceneNode::~ComponentSceneNode()
+template<typename SceneVisitor>
+ComponentSceneNode<SceneVisitor>::~ComponentSceneNode()
 {
 }
 
-ComponentSceneNode & ComponentSceneNode::operator=(const ComponentSceneNode &rhs)
+template<typename SceneVisitor>
+ComponentSceneNode<SceneVisitor> & ComponentSceneNode<SceneVisitor>::operator=(const ComponentSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
-	//static_cast<base_type &>(*this) = rhs;
+	static_cast<base_type &>(*this) = rhs;
 	parent_ = rhs.parent_;
+	name_ = rhs.name_;
 	return *this;
 }
 
 //--------------------------------------------------------------------------
 // class GroupSceneNode
 
-GroupSceneNode::GroupSceneNode()
-: base_type(),
+template<typename SceneVisitor>
+#if defined(UNICODE) || defined(_UNICODE)
+GroupSceneNode<SceneVisitor>::GroupSceneNode(const std::wstring &name /*= std::wstring()*/)
+#else
+GroupSceneNode<SceneVisitor>::GroupSceneNode(const std::string &name /*= std::string()*/);
+#endif
+: base_type(name),
   children_()
 {
 }
 
-GroupSceneNode::GroupSceneNode(const GroupSceneNode &rhs)
+template<typename SceneVisitor>
+GroupSceneNode<SceneVisitor>::GroupSceneNode(const GroupSceneNode &rhs)
 : base_type(rhs),
   children_(rhs.children_)
 {
 }
 
-GroupSceneNode::~GroupSceneNode()
+template<typename SceneVisitor>
+GroupSceneNode<SceneVisitor>::~GroupSceneNode()
 {
 }
 
-GroupSceneNode & GroupSceneNode::operator=(const GroupSceneNode &rhs)
+template<typename SceneVisitor>
+GroupSceneNode<SceneVisitor> & GroupSceneNode<SceneVisitor>::operator=(const GroupSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -75,36 +92,40 @@ GroupSceneNode & GroupSceneNode::operator=(const GroupSceneNode &rhs)
 	return *this;
 }
 
-void GroupSceneNode::accept(const ISceneVisitor &visitor) const
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
 {
 	traverse(visitor);
 	//visitor.visit(*this);
 }
 
-void GroupSceneNode::addChild(const GroupSceneNode::node_type &node)
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::addChild(const node_type &node)
 {
 	children_.push_back(node);
 }
 
-void GroupSceneNode::removeChild(const GroupSceneNode::node_type &node)
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::removeChild(const node_type &node)
 {
 	children_.remove(node);
 }
 
-void GroupSceneNode::clearChildren()
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::clearChildren()
 {
 	children_.clear();
 }
 
-void GroupSceneNode::traverse(const ISceneVisitor &visitor) const
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::traverse(const visitor_type &visitor) const
 {
-	BOOST_FOREACH(node_type node, children_)
-	{
-		if (node) node->accept(visitor);
-	}
+	for (std::list<node_type>::const_iterator it = children_.begin(); it != children_.end(); ++it)
+		if (*it) (*it)->accept(visitor);
 }
 
-void GroupSceneNode::replace(const GroupSceneNode::node_type &oldNode, const GroupSceneNode::node_type &newNode)
+template<typename SceneVisitor>
+void GroupSceneNode<SceneVisitor>::replace(const node_type &oldNode, const node_type &newNode)
 {
 	std::replace(children_.begin(), children_.end(), oldNode, newNode);
 }
@@ -112,38 +133,49 @@ void GroupSceneNode::replace(const GroupSceneNode::node_type &oldNode, const Gro
 //--------------------------------------------------------------------------
 // class LeafSceneNode
 
-LeafSceneNode::LeafSceneNode()
-: base_type()
+template<typename SceneVisitor>
+#if defined(UNICODE) || defined(_UNICODE)
+LeafSceneNode<SceneVisitor>::LeafSceneNode(const std::wstring &name /*= std::wstring()*/)
+#else
+LeafSceneNode<SceneVisitor>::LeafSceneNode(const std::string &name /*= std::string()*/);
+#endif
+: base_type(name)
 {
 }
 
-LeafSceneNode::LeafSceneNode(const LeafSceneNode &rhs)
+template<typename SceneVisitor>
+LeafSceneNode<SceneVisitor>::LeafSceneNode(const LeafSceneNode &rhs)
 : base_type(rhs)
 {
 }
 
-LeafSceneNode::~LeafSceneNode()
+template<typename SceneVisitor>
+LeafSceneNode<SceneVisitor>::~LeafSceneNode()
 {
 }
 
-LeafSceneNode & LeafSceneNode::operator=(const LeafSceneNode &rhs)
+template<typename SceneVisitor>
+LeafSceneNode<SceneVisitor> & LeafSceneNode<SceneVisitor>::operator=(const LeafSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
 	return *this;
 }
 
-void LeafSceneNode::addChild(const LeafSceneNode::node_type &node)
+template<typename SceneVisitor>
+void LeafSceneNode<SceneVisitor>::addChild(const node_type &node)
 {
 	throw LogException(LogException::L_INFO, "can't add a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }
 
-void LeafSceneNode::removeChild(const LeafSceneNode::node_type &node)
+template<typename SceneVisitor>
+void LeafSceneNode<SceneVisitor>::removeChild(const node_type &node)
 {
 	throw LogException(LogException::L_INFO, "can't remove a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }
 
-void LeafSceneNode::clearChildren()
+template<typename SceneVisitor>
+void LeafSceneNode<SceneVisitor>::clearChildren()
 {
 	throw LogException(LogException::L_INFO, "can't clear all children to a leaf", __FILE__, __LINE__, __FUNCTION__);
 }

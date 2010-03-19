@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="swl_glview"
+	Name="swl_glutil"
 	ProjectGUID="{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
-	RootNamespace="swl_glview"
+	RootNamespace="swl_glutil"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -194,11 +194,11 @@
 			UniqueIdentifier="{7A2A5A24-E647-4b94-A6B0-2ABE3E705261}"
 			>
 			<File
-				RelativePath="..\..\inc\swl\glview\ExportGLView.h"
+				RelativePath="..\..\inc\swl\glutil\ExportGLUtil.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\glview\GLCamera.h"
+				RelativePath="..\..\inc\swl\glutil\GLCamera.h"
 				>
 			</File>
 		</Filter>

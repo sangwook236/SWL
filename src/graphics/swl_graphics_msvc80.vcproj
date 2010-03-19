@@ -189,10 +189,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\AppearanceSceneNode.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\CoordinateFrame.cpp"
 				>
 			</File>
@@ -205,23 +201,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\GeometrySceneNode.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\GraphicsObj.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\SceneNode.cpp"
-				>
-			</File>
-			<File
 				RelativePath=".\Shape.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ShapeSceneNode.cpp"
 				>
 			</File>
 			<File
@@ -287,10 +271,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\PickableAttrib.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\inc\swl\graphics\SceneNode.h"
 				>
 			</File>
@@ -304,14 +284,6 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\graphics\TransformSceneNode.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\graphics\TransparentAttrib.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\graphics\VisibleAttrib.h"
 				>
 			</File>
 		</Filter>

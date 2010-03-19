@@ -13,19 +13,15 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class CoordinateFrame
 
-#if defined(_UNICODE) || defined(UNICODE)
-CoordinateFrame::CoordinateFrame(const std::wstring &name /*= std::wstring()*/)
-#else
-CoordinateFrame::CoordinateFrame(const std::string &name /*= std::string()*/)
-#endif
-: base_type(), 
-  name_(name), frame_()
+CoordinateFrame::CoordinateFrame(const bool isPrintable, const bool isPickable)
+: base_type(isPrintable, isPickable), 
+  frame_()
 {
 }
 
 CoordinateFrame::CoordinateFrame(const CoordinateFrame &rhs)
 : base_type(rhs),
-  name_(rhs.name_), frame_(rhs.frame_)
+  frame_(rhs.frame_)
 {
 }
 
@@ -37,7 +33,6 @@ CoordinateFrame & CoordinateFrame::operator=(const CoordinateFrame &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
-	name_ = rhs.name_;
 	frame_ = rhs.frame_;
 	return *this;
 }

@@ -47,7 +47,7 @@ private:
 	virtual bool doRenderStockScene(const context_type &context, const camera_type &camera) = 0;
 	virtual bool doRenderScene(const context_type &context, const camera_type &camera) = 0;
 
-protected:
+private:
 	//-------------------------------------------------------------------------
 	// OpenGL display list
 

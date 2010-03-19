@@ -242,10 +242,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\graphics\IMovable.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\inc\swl\graphics\ITransformable.h"
 				>
 			</File>

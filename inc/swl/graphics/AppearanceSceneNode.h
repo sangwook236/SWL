@@ -11,21 +11,42 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class AppearanceSceneNode
 
-class SWL_GRAPHICS_API AppearanceSceneNode: public LeafSceneNode
+template<typename SceneVisitor>
+class AppearanceSceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
 	typedef LeafSceneNode	base_type;
 	typedef Appearance		appearance_type;
 
 public:
-	AppearanceSceneNode(appearance_type &appearance);
-	AppearanceSceneNode(const AppearanceSceneNode &rhs);
-	virtual ~AppearanceSceneNode();
+#if defined(UNICODE) || defined(_UNICODE)
+	AppearanceSceneNode(appearance_type &appearance, const std::wstring &name = std::wstring())
+#else
+	AppearanceSceneNode(appearance_type &appearance, const std::string &name = std::string())
+#endif
+	: base_type(name),
+	  appearance_(appearance)
+	{}
+	AppearanceSceneNode(const AppearanceSceneNode &rhs)
+	: base_type(rhs),
+	  appearance_(rhs.appearance_)
+	{}
+	virtual ~AppearanceSceneNode()
+	{}
 
-	AppearanceSceneNode & operator=(const AppearanceSceneNode &rhs);
- 
+	AppearanceSceneNode & operator=(const AppearanceSceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		appearance_ = rhs.appearance_;
+		return *this;
+	}
+
 public:
-	/*final*/ /*virtual*/ void accept(const ISceneVisitor &visitor) const;
+	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const
+	{
+		visitor.visit(*this);
+	}
 
 	appearance_type & getAppearance()  {  return appearance_;  }
 	const appearance_type & getAppearance() const  {  return appearance_;  }

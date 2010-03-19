@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/glview/GLCamera.h"
+#include "swl/glutil/GLCamera.h"
 #include <GL/glut.h>
 
 

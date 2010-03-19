@@ -1,8 +1,8 @@
-#if !defined(__SWL_GL_VIEW__GL_CAMERA__H_)
-#define __SWL_GL_VIEW__GL_CAMERA__H_ 1
+#if !defined(__SWL_GL_UTIL__GL_CAMERA__H_)
+#define __SWL_GL_UTIL__GL_CAMERA__H_ 1
 
 
-#include "swl/glview/ExportGLView.h"
+#include "swl/glutil/ExportGLUtil.h"
 #include "swl/view/ViewCamera3.h"
 
 
@@ -11,7 +11,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // class GLCamera
 
-class SWL_GL_VIEW_API GLCamera: public ViewCamera3
+class SWL_GL_UTIL_API GLCamera: public ViewCamera3
 {
 public:
 	typedef ViewCamera3 base_type;
@@ -59,4 +59,4 @@ private:
 }  // namespace swl
 
 
-#endif  //  __SWL_GL_VIEW__GL_CAMERA__H_
+#endif  //  __SWL_GL_UTIL__GL_CAMERA__H_

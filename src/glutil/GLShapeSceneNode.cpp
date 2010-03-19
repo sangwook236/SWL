@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/graphics/ShapeSceneNode.h"
+#include "swl/glutil/GLShapeSceneNode.h"
 #include "swl/graphics/ISceneVisitor.h"
 
 
@@ -12,13 +12,13 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// class ShapeSceneNode
+// class GLShapeSceneNode
 
 template<typename SceneVisitor>
 #if defined(UNICODE) || defined(_UNICODE)
-ShapeSceneNode<SceneVisitor>::ShapeSceneNode(shape_type &shape, const std::wstring &name /*= std::wstring()*/)
+GLShapeSceneNode<SceneVisitor>::GLShapeSceneNode(shape_type &shape, const std::wstring &name /*= std::wstring()*/)
 #else
-ShapeSceneNode<SceneVisitor>::ShapeSceneNode(shape_type &shape, const std::string &name /*= std::string()*/);
+GLShapeSceneNode<SceneVisitor>::GLShapeSceneNode(shape_type &shape, const std::string &name /*= std::string()*/);
 #endif
 : base_type(name),
   shape_(shape)
@@ -26,19 +26,19 @@ ShapeSceneNode<SceneVisitor>::ShapeSceneNode(shape_type &shape, const std::strin
 }
 
 template<typename SceneVisitor>
-ShapeSceneNode<SceneVisitor>::ShapeSceneNode(const ShapeSceneNode &rhs)
+GLShapeSceneNode<SceneVisitor>::GLShapeSceneNode(const GLShapeSceneNode &rhs)
 : base_type(rhs),
   shape_(rhs.shape_)
 {
 }
 
 template<typename SceneVisitor>
-ShapeSceneNode<SceneVisitor>::~ShapeSceneNode()
+GLShapeSceneNode<SceneVisitor>::~GLShapeSceneNode()
 {
 }
 
 template<typename SceneVisitor>
-ShapeSceneNode<SceneVisitor> & ShapeSceneNode<SceneVisitor>::operator=(const ShapeSceneNode &rhs)
+GLShapeSceneNode<SceneVisitor> & GLShapeSceneNode<SceneVisitor>::operator=(const GLShapeSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -46,7 +46,7 @@ ShapeSceneNode<SceneVisitor> & ShapeSceneNode<SceneVisitor>::operator=(const Sha
 	return *this;
 }
 
-void ShapeSceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
+void GLShapeSceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
 {
 	visitor.visit(*this);
 }

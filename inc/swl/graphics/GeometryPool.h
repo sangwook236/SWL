@@ -31,7 +31,9 @@ public:
 
 public:
 	static GeometryPool & getInstance();
+	static void clearInstance();
 
+public:
 	geometry_id_type createGeometryId();
 	void deleteGeometryId(const geometry_id_type &geomId);
 

@@ -14,23 +14,31 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class AppearanceSceneNode
 
-AppearanceSceneNode::AppearanceSceneNode(AppearanceSceneNode::appearance_type &appearance)
-: base_type(),
+template<typename SceneVisitor>
+#if defined(UNICODE) || defined(_UNICODE)
+AppearanceSceneNode<SceneVisitor>::AppearanceSceneNode(appearance_type &appearance, const std::wstring &name /*= std::wstring()*/)
+#else
+AppearanceSceneNode<SceneVisitor>::AppearanceSceneNode(appearance_type &appearance, const std::string &name /*= std::string()*/);
+#endif
+: base_type(name),
   appearance_(appearance)
 {
 }
 
-AppearanceSceneNode::AppearanceSceneNode(const AppearanceSceneNode &rhs)
+template<typename SceneVisitor>
+AppearanceSceneNode<SceneVisitor>::AppearanceSceneNode(const AppearanceSceneNode &rhs)
 : base_type(rhs),
   appearance_(rhs.appearance_)
 {
 }
 
-AppearanceSceneNode::~AppearanceSceneNode()
+template<typename SceneVisitor>
+AppearanceSceneNode<SceneVisitor>::~AppearanceSceneNode()
 {
 }
 
-AppearanceSceneNode & AppearanceSceneNode::operator=(const AppearanceSceneNode &rhs)
+template<typename SceneVisitor>
+AppearanceSceneNode<SceneVisitor> & AppearanceSceneNode<SceneVisitor>::operator=(const AppearanceSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -38,7 +46,8 @@ AppearanceSceneNode & AppearanceSceneNode::operator=(const AppearanceSceneNode &
 	return *this;
 }
 
-void AppearanceSceneNode::accept(const ISceneVisitor &visitor) const
+template<typename SceneVisitor>
+void AppearanceSceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
 {
 	visitor.visit(*this);
 }

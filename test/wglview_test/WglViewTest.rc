@@ -338,6 +338,8 @@ STRINGTABLE
 BEGIN
     IDR_MAINFRAME           "WglViewTest"
     IDR_WglViewTestTYPE     "\nWglViewTest\nWglViewTest\n\n\nWglViewTest.Document\nWglViewTest.Document"
+    IDR_WglSceneGraphViewTYPE 
+                            "\nWglSceneGraphView\nWglSceneGraphView\n\n\nWglSceneGraphView.Document\nWglSceneGraphView.Document"
 END
 
 STRINGTABLE 

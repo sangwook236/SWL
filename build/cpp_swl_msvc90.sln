@@ -30,7 +30,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview", "..\src\winvi
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glview", "..\src\glview\swl_glview_msvc90.vcproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil", "..\src\glutil\swl_glutil_msvc90.vcproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
 	ProjectSection(ProjectDependencies) = postProject
 		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 	EndProjectSection

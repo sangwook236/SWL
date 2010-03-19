@@ -13,8 +13,8 @@ protected:
 	virtual ~IDrawable()  {}
 
 public:
-	///
-	virtual bool draw(/*...*/) const = 0;
+	//
+	virtual void draw() const = 0;
 };
 
 }  // namespace swl

@@ -1,7 +1,7 @@
 #include "swl/Config.h"
 #include "swl/winview/WglViewBase.h"
 #include "swl/winview/WglContextBase.h"
-#include "swl/glview/GLCamera.h"
+#include "swl/glutil/GLCamera.h"
 #include <GL/glut.h>
 #include <iostream>
 

@@ -1,4 +1,4 @@
-// WglViewTestView.h : interface of the CWglViewTestView class
+// WglSceneGraphView.h : interface of the CWglSceneGraphView class
 //
 
 
@@ -6,8 +6,8 @@
 
 #include "swl/winview/WglViewBase.h"
 #include "swl/view/ViewEventController.h"
+#include "swl/glutil/IGLSceneVisitor.h"
 #include "swl/graphics/SceneNode.h"
-#include "swl/graphics/Shape.h"
 #include <boost/smart_ptr.hpp>
 
 namespace swl {
@@ -16,11 +16,11 @@ class GLCamera;
 struct ViewStateMachine;
 }
 
-class CWglViewTestView : public CView, public swl::WglViewBase
+class CWglSceneGraphView : public CView, public swl::WglViewBase
 {
 protected: // create from serialization only
-	CWglViewTestView();
-	DECLARE_DYNCREATE(CWglViewTestView)
+	CWglSceneGraphView();
+	DECLARE_DYNCREATE(CWglSceneGraphView)
 
 // Attributes
 public:
@@ -40,7 +40,7 @@ protected:
 
 // Implementation
 public:
-	virtual ~CWglViewTestView();
+	virtual ~CWglSceneGraphView();
 #ifdef _DEBUG
 	virtual void AssertValid() const;
 	virtual void Dump(CDumpContext& dc) const;
@@ -119,40 +119,14 @@ private:
 	/*virtual*/ bool doRenderStockScene(const context_type &context, const camera_type &camera);
 	/*virtual*/ bool doRenderScene(const context_type &context, const camera_type &camera);
 
-	void drawMainContent(const bool doesCreateDisplayList = false) const;
-	void drawGradientBackground(const bool doesCreateDisplayList = false) const;
-	void drawFloor(const bool doesCreateDisplayList = false) const;
-	void drawColorBar(const bool doesCreateDisplayList = false) const;
-	void drawCoordinateFrame(const bool doesCreateDisplayList = false) const;
-	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
-
+	//-------------------------------------------------------------------------
 	//
-	void createDisplayLists(const unsigned int displayListNameBase) const;
-#if defined(_UNICODE) || defined(UNICODE)
-	bool createWglBitmapFonts(const std::wstring &fontName, const int fontSize) const;
-	bool createWglOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const;
-#else
-	bool createWglBitmapFonts(const std::string &fontName, const int fontSize) const;
-	bool createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const;
-#endif
 
-	void drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const;
-#if defined(_UNICODE) || defined(UNICODE)
-	void drawText(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
-	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
-#else
-	void drawText(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
-	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
-#endif
+	void contructSceneGraph();
 
-	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
+private:
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
+
 	void processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
 	void processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
 
@@ -170,20 +144,9 @@ private:
 	//-------------------------------------------------------------------------
 	// OpenGL display list
 
-	enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR };
-	//enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
+	enum DisplayListNames { DLN_MAIN_OBJECT_1 = 0, DLN_MAIN_OBJECT_2, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR };
+	//enum DisplayListNames { DLN_MAIN_OBJECT_1 = 0, DLN_MAIN_OBJECT_2, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
 	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
-
-	// for WGL bitmap fonts
-	static const int MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;
-	// for WGL outline fonts
-	static const int MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT = 256;
-	mutable GLYPHMETRICSFLOAT gmf_[256];
-
-	//-------------------------------------------------------------------------
-	//
-
-	enum PICKABLE_OBJECT_NAME { PON_BASE_ENTRY = 0, PON_SPHERE, PON_CUBE, PON_X_AXIS, PON_Y_AXIS, PON_Z_AXIS };
 
 	//-------------------------------------------------------------------------
 	//
@@ -193,8 +156,6 @@ private:
 
 	bool isPerspective_;
 	bool isWireFrame_;
-
-	const int polygonFacing_;
 
 	bool isGradientBackgroundUsed_;
 	bool isFloorShown_;
@@ -210,6 +171,11 @@ private:
 
 	unsigned int pickedObj_;
 	unsigned int temporarilyPickedObj_;
+
+	//
+	typedef swl::IGLSceneVisitor visitor_type;
+	typedef swl::ISceneNode<visitor_type> scene_node_type;
+	scene_node_type::node_type rootSceneNode_;
 
 // Generated message map functions
 protected:
@@ -254,8 +220,8 @@ public:
 	afx_msg void OnEditCopy();
 };
 
-#ifndef _DEBUG  // debug version in WglViewTestView.cpp
-inline CWglViewTestDoc* CWglViewTestView::GetDocument() const
+#ifndef _DEBUG  // debug version in WglSceneGraphView.cpp
+inline CWglViewTestDoc* CWglSceneGraphView::GetDocument() const
    { return reinterpret_cast<CWglViewTestDoc*>(m_pDocument); }
 #endif
 

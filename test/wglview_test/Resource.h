@@ -7,6 +7,7 @@
 #define IDR_MAINFRAME                   128
 #define IDR_WglViewTestTYPE             129
 #define IDR_TOOLBAR1                    130
+#define IDR_WglSceneGraphViewTYPE       130
 #define IDB_BITMAP1                     132
 #define IDR_TOOLBAR2                    133
 #define IDB_BITMAP2                     134
@@ -32,7 +33,6 @@
 #define ID_VIEWHANDLING_SHOWBACKGROUND  32811
 #define ID_VIEWHANDLING_SHOWFLOOR       32812
 #define ID_VIEWHANDLING_SHOWCOORDINATEFRAME 32813
-#define ID_BUTTON32814                  32814
 #define ID_VIEWHANDLING_SHOWCOLORBAR    32814
 
 // Next default values for new objects

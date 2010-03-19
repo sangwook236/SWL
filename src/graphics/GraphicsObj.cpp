@@ -13,14 +13,14 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // class GraphicsObj
 
-GraphicsObj::GraphicsObj()
+GraphicsObj::GraphicsObj(const bool isPrintable, const bool isPickable)
 : //base_type(),
-  pickable_()
+  isPrintable_(isPrintable), isPickable_(isPickable)
 {}
 
 GraphicsObj::GraphicsObj(const GraphicsObj &rhs)
 : //base_type(rhs),
-  pickable_(rhs.pickable_)
+  isPrintable_(rhs.isPrintable_), isPickable_(rhs.isPickable_)
 {}
 
 GraphicsObj::~GraphicsObj()
@@ -30,7 +30,8 @@ GraphicsObj & GraphicsObj::operator=(const GraphicsObj &rhs)
 {
 	if (this == &rhs) return *this;
 	//static_cast<base_type &>(*this) = rhs;
-	pickable_ = rhs.pickable_;
+	isPrintable_ = rhs.isPrintable_;
+	isPickable_ = rhs.isPickable_;
 	return *this;
 }
 

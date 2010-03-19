@@ -13,9 +13,9 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class Shape
 
-Shape::Shape()
-: base_type(),
-  geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID), appearance_()
+Shape::Shape(const bool isTransparent /*= false*/, const bool isPrintable /*= true*/, const bool isPickable /*= true*/, const attrib::PolygonMode polygonMode /*= attrib::POLYGON_FILL*/, const attrib::PolygonFace drawingFace /*= attrib::POLYGON_FACE_FRONT*/)
+: base_type(isPrintable, isPickable),
+  geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID), appearance_(true, isTransparent, polygonMode, drawingFace)
 {
 }
 

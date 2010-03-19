@@ -14,23 +14,27 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class TransformSceneNode
 
-TransformSceneNode::TransformSceneNode()
+template<typename SceneVisitor>
+TransformSceneNode<SceneVisitor>::TransformSceneNode()
 : base_type(),
   transform_()
 {
 }
 
-TransformSceneNode::TransformSceneNode(const TransformSceneNode &rhs)
+template<typename SceneVisitor>
+TransformSceneNode<SceneVisitor>::TransformSceneNode(const TransformSceneNode &rhs)
 : base_type(rhs),
   transform_(rhs.transform_)
 {
 }
 
-TransformSceneNode::~TransformSceneNode()
+template<typename SceneVisitor>
+TransformSceneNode<SceneVisitor>::~TransformSceneNode()
 {
 }
 
-TransformSceneNode & TransformSceneNode::operator=(const TransformSceneNode &rhs)
+template<typename SceneVisitor>
+TransformSceneNode<SceneVisitor> & TransformSceneNode<SceneVisitor>::operator=(const TransformSceneNode &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
@@ -38,9 +42,9 @@ TransformSceneNode & TransformSceneNode::operator=(const TransformSceneNode &rhs
 	return *this;
 }
 
-void TransformSceneNode::accept(const ISceneVisitor &visitor) const
+template<typename SceneVisitor>
+void TransformSceneNode<SceneVisitor>::accept(const visitor_type &visitor) const
 {
-	//traverse(visitor);
 	visitor.visit(*this);
 }
 

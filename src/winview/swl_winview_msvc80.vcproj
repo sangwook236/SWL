@@ -225,6 +225,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\WglFont.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WglPrintContext.cpp"
 				>
 			</File>
@@ -304,6 +308,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\WglDoubleBufferedContext.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\WglFont.h"
 				>
 			</File>
 			<File

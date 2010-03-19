@@ -2,30 +2,28 @@
 #define __SWL_GRAPHICS__SCENE_NODE__H_ 1
 
 
-#include "swl/graphics/ExportGraphics.h"
+#include "swl/base/IVisitable.h"
+#include "swl/base/LogException.h"
 #include <boost/smart_ptr.hpp>
 #include <list>
 
 
 namespace swl {
 
-struct ISceneVisitor;
-
 //--------------------------------------------------------------------------
 // struct ISceneNode
 
-struct ISceneNode
+template<typename SceneVisitor>
+struct ISceneNode: public IVisitable<SceneVisitor>
 {
 public:
 	//typedef ISceneNode					base_type;
 	typedef boost::shared_ptr<ISceneNode>	node_type;
 
 public:
-	virtual ~ISceneNode();
+	virtual ~ISceneNode()  {}
 
 public:
-	virtual void accept(const ISceneVisitor &visitor) const = 0;
- 
 	virtual void addChild(const node_type &node) = 0;
  	virtual void removeChild(const node_type &node) = 0;
 	virtual void clearChildren() = 0;
@@ -42,18 +40,37 @@ public:
 //--------------------------------------------------------------------------
 // class ComponentSceneNode
 
-class SWL_GRAPHICS_API ComponentSceneNode: public ISceneNode
+template<typename SceneVisitor>
+class ComponentSceneNode: public ISceneNode<SceneVisitor>
 {
 public:
 	typedef ISceneNode base_type;
 
 protected:
-	ComponentSceneNode();
-	ComponentSceneNode(const ComponentSceneNode &rhs);
+#if defined(UNICODE) || defined(_UNICODE)
+	ComponentSceneNode(const std::wstring &name = std::wstring())
+#else
+	ComponentSceneNode(const std::string &name = std::string())
+#endif
+	: base_type(),
+	  parent_(), name_(name)
+	{}
+	ComponentSceneNode(const ComponentSceneNode &rhs)
+	: base_type(rhs),
+	  parent_(rhs.parent_), name_(rhs.name_)
+	{}
 public:
-	virtual ~ComponentSceneNode();
+	virtual ~ComponentSceneNode()
+	{}
 
-	ComponentSceneNode & operator=(const ComponentSceneNode &rhs);
+	ComponentSceneNode & operator=(const ComponentSceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		parent_ = rhs.parent_;
+		name_ = rhs.name_;
+		return *this;
+	}
 
 public:
 	/*final*/ /*virtual*/ node_type getParent()  {  return parent_;  }
@@ -61,38 +78,93 @@ public:
 
 	/*final*/ /*virtual*/ bool isRoot() const  {  return NULL == parent_.get();  }
 
+#if defined(UNICODE) || defined(_UNICODE)
+	void setName(const std::wstring &name)  {  name_ = name;  }
+	std::wstring & getName()  {  return name_;  }
+	const std::wstring & getName() const  {  return name_;  }
+#else
+	void setName(const std::string name)  {  name_ = name;  }
+	std::string & getName()  {  return name_;  }
+	const std::string & getName() const  {  reutn name_;  }
+#endif
+
 private:
 	node_type parent_;
+
+#if defined(UNICODE) || defined(_UNICODE)
+	std::wstring name_;
+#else
+	std::string name_;
+#endif
 };
 
 //--------------------------------------------------------------------------
 // class GroupSceneNode
 
-class SWL_GRAPHICS_API GroupSceneNode: public ComponentSceneNode
+template<typename SceneVisitor>
+class GroupSceneNode: public ComponentSceneNode<SceneVisitor>
 {
 public:
 	typedef ComponentSceneNode base_type;
 
 public:
-	GroupSceneNode();
-	GroupSceneNode(const GroupSceneNode &rhs);
-	virtual ~GroupSceneNode();
+#if defined(UNICODE) || defined(_UNICODE)
+	GroupSceneNode(const std::wstring &name = std::wstring())
+#else
+	GroupSceneNode(const std::string &name = std::string())
+#endif
+	: base_type(name),
+	  children_()
+	{}
+	GroupSceneNode(const GroupSceneNode &rhs)
+	: base_type(rhs),
+	  children_(rhs.children_)
+	{}
+	virtual ~GroupSceneNode()
+	{}
 
-	GroupSceneNode & operator=(const GroupSceneNode &rhs);
+	GroupSceneNode & operator=(const GroupSceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		children_.assign(children_.begin(), children_.end());
+		return *this;
+	}
 
 public:
-	/*virtual*/ void accept(const ISceneVisitor &visitor) const;
+	/*virtual*/ void accept(const visitor_type &visitor) const
+	{
+		traverse(visitor);
+		//visitor.visit(*this);
+	}
 
-	/*final*/ /*virtual*/ void addChild(const node_type &node);
- 	/*final*/ /*virtual*/ void removeChild(const node_type &node);
-	/*final*/ /*virtual*/ void clearChildren();
+	/*final*/ /*virtual*/ void addChild(const node_type &node)
+	{
+		children_.push_back(node);
+	}
+	/*final*/ /*virtual*/ void removeChild(const node_type &node)
+	{
+		children_.remove(node);
+	}
+	/*final*/ /*virtual*/ void clearChildren()
+	{
+		children_.clear();
+	}
 	/*final*/ /*virtual*/ size_t countChildren() const  {  return children_.size();  }
 	/*final*/ /*virtual*/ bool containChildren() const  {  return !children_.empty();  }
 
 	/*final*/ /*virtual*/ bool isLeaf() const  {  return children_.empty();  }
 
-	void traverse(const ISceneVisitor &visitor) const;
-	void replace(const node_type &oldNode, const node_type &newNode);
+	//
+	void traverse(const visitor_type &visitor) const
+	{
+		for (std::list<node_type>::const_iterator it = children_.begin(); it != children_.end(); ++it)
+			if (*it) (*it)->accept(visitor);
+	}
+	void replace(const node_type &oldNode, const node_type &newNode)
+	{
+		std::replace(children_.begin(), children_.end(), oldNode, newNode);
+	}
 
 private:
 	std::list<node_type> children_;
@@ -101,23 +173,47 @@ private:
 //--------------------------------------------------------------------------
 // class LeafSceneNode
 
-class SWL_GRAPHICS_API LeafSceneNode: public ComponentSceneNode
+template<typename SceneVisitor>
+class LeafSceneNode: public ComponentSceneNode<SceneVisitor>
 {
 public:
 	typedef ComponentSceneNode base_type;
 
 protected:
-	LeafSceneNode();
-	LeafSceneNode(const LeafSceneNode &rhs);
+#if defined(UNICODE) || defined(_UNICODE)
+	LeafSceneNode(const std::wstring &name = std::wstring())
+#else
+	LeafSceneNode(const std::string &name = std::string())
+#endif
+	: base_type(name)
+	{}
+	LeafSceneNode(const LeafSceneNode &rhs)
+	: base_type(rhs)
+	{}
 public:
-	virtual ~LeafSceneNode();
+	virtual ~LeafSceneNode()
+	{}
 
-	LeafSceneNode & operator=(const LeafSceneNode &rhs);
- 
+	LeafSceneNode & operator=(const LeafSceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		return *this;
+	}
+
 public:
-	/*final*/ /*virtual*/ void addChild(const node_type &node);
-	/*final*/ /*virtual*/ void removeChild(const node_type &node);
-	/*final*/ /*virtual*/ void clearChildren();
+	/*final*/ /*virtual*/ void addChild(const node_type &node)
+	{
+		throw LogException(LogException::L_INFO, "can't add a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
+	}
+	/*final*/ /*virtual*/ void removeChild(const node_type &node)
+	{
+		throw LogException(LogException::L_INFO, "can't remove a child to a leaf", __FILE__, __LINE__, __FUNCTION__);
+	}
+	/*final*/ /*virtual*/ void clearChildren()
+	{
+		throw LogException(LogException::L_INFO, "can't clear all children to a leaf", __FILE__, __LINE__, __FUNCTION__);
+	}
 	/*final*/ /*virtual*/ size_t countChildren() const  {  return 0;  }
 	/*final*/ /*virtual*/ bool containChildren() const  {  return false;  }
 

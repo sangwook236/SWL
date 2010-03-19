@@ -15,8 +15,7 @@
 #include "swl/winview/WglPrintContext.h"
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglViewCaptureApi.h"
-#include "swl/glview/GLCamera.h"
-#include "swl/glview/GLSceneRenderVisitor.h"
+#include "swl/glutil/GLCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/graphics/ShapeSceneNode.h"
@@ -41,7 +40,6 @@
 #endif
 
 #define __USE_OPENGL_DISPLAY_LIST 1
-#define __USE_SCENE_GRAPH 1
 
 //#define __USE_GLUT_BITMAP_FONTS 1
 //#define __USE_GLUT_STROKE_FONTS 1
@@ -472,18 +470,6 @@ void drawMesh()
 
 }  // unnamed namespace
 
-bool CWglViewTestView::SimpleShape::draw(/*...*/) const
-{
-	glPushMatrix();
-		view_.drawMainContent();
-	glPopMatrix();
-
-	if (view_.isColorBarShown_ && !view_.isPickingObject_) view_.drawColorBar();
-	if (view_.isCoordinateFrameShown_ && !view_.isPrinting_) view_.drawCoordinateFrame();
-
-	return true;
-}
-
 // CWglViewTestView
 
 IMPLEMENT_DYNCREATE(CWglViewTestView, CView)
@@ -546,8 +532,7 @@ CWglViewTestView::CWglViewTestView()
   polygonFacing_(GL_FRONT_AND_BACK),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false), isPickingObject_(false),
-  pickedObj_(PON_BASE_ENTRY), temporarilyPickedObj_(PON_BASE_ENTRY),
-  rootSceneNode_()
+  pickedObj_(PON_BASE_ENTRY), temporarilyPickedObj_(PON_BASE_ENTRY)
 {
 #if 0
 	topGradientBackgroundColor_[0] = 0.776f;
@@ -797,10 +782,6 @@ void CWglViewTestView::OnInitialUpdate()
 		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
 		if (viewStateFsm_.get()) viewStateFsm_->initiate();
 	}
-
-#if defined(__USE_SCENE_GRAPH)
-	contructSceneGraph();
-#endif
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
@@ -1091,21 +1072,12 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 
 bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
 {
-#if defined(__USE_SCENE_GRAPH)
-	// traverse a scene graph
-	if (rootSceneNode_)
-	{
-		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_OPAQUE_OBJECTS));
-		rootSceneNode_->accept(swl::GLSceneRenderVisitor(swl::GLSceneRenderVisitor::RENDER_TRANSPARENT_OBJECTS));
-	}
-#else
 	glPushMatrix();
 		drawMainContent();
 	glPopMatrix();
 
 	if (isColorBarShown_ && !isPickingObject_) drawColorBar();
 	if (isCoordinateFrameShown_ && !isPrinting_) drawCoordinateFrame();
-#endif
 
     return true;
 }
@@ -1116,17 +1088,17 @@ bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 	if (isDisplayListUsed())
 	{
 		// the name base of OpenGL display list that is actually used
-		const unsigned int currCisplayListNameBase = displayListStack_.top();
+		const unsigned int currDisplayListNameBase = getCurrentDisplayListNameBase();
 
 		if (isContextActivated)
-			createDisplayLists(currCisplayListNameBase);
+			createDisplayLists(currDisplayListNameBase);
 		else
 		{
 			const boost::shared_ptr<context_type> &context = topContext();
 			if (context.get())
 			{
 				context_type::guard_type guard(*context);
-				createDisplayLists(currCisplayListNameBase);
+				createDisplayLists(currDisplayListNameBase);
 			}
 		}
 	}
@@ -1615,7 +1587,7 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(displayListStack_.top() + DLN_MAIN_CONTENT);
+		glCallList(getCurrentDisplayListNameBase() + DLN_MAIN_CONTENT);
 		return;
 	}
 #endif
@@ -1702,7 +1674,7 @@ void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(displayListStack_.top() + DLN_GRADIENT_BACKGROUND);
+		glCallList(getCurrentDisplayListNameBase() + DLN_GRADIENT_BACKGROUND);
 		return;
 	}
 #endif
@@ -1762,7 +1734,7 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(displayListStack_.top() + DLN_FLOOR);
+		glCallList(getCurrentDisplayListNameBase() + DLN_FLOOR);
 		return;
 	}
 #endif
@@ -1908,7 +1880,7 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(displayListStack_.top() + DLN_COLOR_BAR);
+		glCallList(getCurrentDisplayListNameBase() + DLN_COLOR_BAR);
 		return;
 	}
 #endif
@@ -1998,7 +1970,7 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(displayListStack_.top() + DLN_COORDINATE_FRAME);
+		glCallList(getCurrentDisplayListNameBase() + DLN_COORDINATE_FRAME);
 		return
 	}
 #endif
@@ -2333,15 +2305,6 @@ void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y
 		if (!isCullFace) glDisable(GL_CULL_FACE);
 	}
 #endif
-}
-
-void CWglViewTestView::contructSceneGraph()
-{
-	rootSceneNode_.reset(new swl::GroupSceneNode());
-
-	boost::shared_ptr<swl::Shape> shape(new SimpleShape(*this));
-	boost::shared_ptr<swl::ISceneNode> shapeNode(new swl::ShapeSceneNode(shape));
-	rootSceneNode_->addChild(shapeNode);
 }
 
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
