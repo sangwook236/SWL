@@ -169,7 +169,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
 			// create & push a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) view.pushDisplayList(true);
+			if (doesRecreateDisplayListUsed) view.generateDisplayListName(true);
 
 			view.initializeView();
 			currCamera->setViewport(0, 0, viewport.getWidth(), viewport.getHeight());
@@ -180,7 +180,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 			view.renderScene(captureContext, *currCamera);
 
 			// pop & delete a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) view.popDisplayList(true);
+			if (doesRecreateDisplayListUsed) view.deleteDisplayListName(true);
 		}
 
 		// write DIB

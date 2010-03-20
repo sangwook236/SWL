@@ -56,6 +56,9 @@ public:
 	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
 	/*virtual*/ bool createDisplayList(const bool isContextActivated);
+	/*virtual*/ void generateDisplayListName(const bool isContextActivated);
+	/*virtual*/ void deleteDisplayListName(const bool isContextActivated);
+	/*virtual*/ bool isDisplayListUsed() const;
 
 	/*virtual*/ void pickObject(const int x, const int y, const bool isTemporary = false);
 	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false);
@@ -123,9 +126,6 @@ private:
 	//
 
 	void contructSceneGraph();
-
-	void generateDisplayListName(const bool isContextActivated) const;
-	void deleteDisplayListName(const bool isContextActivated) const;
 
 	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;

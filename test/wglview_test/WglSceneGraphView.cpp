@@ -48,6 +48,7 @@
 
 #define __USE_OPENGL_DISPLAY_LIST 1
 
+
 // CWglSceneGraphView
 
 IMPLEMENT_DYNCREATE(CWglSceneGraphView, CView)
@@ -98,7 +99,7 @@ END_MESSAGE_MAP()
 // CWglSceneGraphView construction/destruction
 
 CWglSceneGraphView::CWglSceneGraphView()
-: swl::WglViewBase(0u, 0u),
+: swl::WglViewBase(),
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
@@ -198,21 +199,27 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 
 		if (printCamera.get() && printContext.isActivated())
 		{
-			const bool doesRecreateDisplayListUsed = !isDisplayListShared;
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
 			// create & push a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) generateDisplayListName(true);
+#endif
 
 			initializeView();
 			printCamera->setViewRegion(camera->getCurrentViewRegion());
 			printCamera->setViewport(0, 0, w0, h0);
 
+#if defined(__USE_OPENGL_DISPLAY_LIST)
 			// re-create a OpenGL display list
 			if (doesRecreateDisplayListUsed) createDisplayList(true);
+#endif
 
 			renderScene(printContext, *printCamera);
 
+#if defined(__USE_OPENGL_DISPLAY_LIST)
 			// pop & delete a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) deleteDisplayListName(true);
+#endif
 		}
 
 		// restore view's states
@@ -238,7 +245,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 			else if (2 == drawMode_)
 				context.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect));
 
-			if (context.get() && context->isActivated())
+			if (context && context->isActivated())
 			{
 				initializeView();
 				camera->setViewport(0, 0, rect.Width(), rect.Height());
@@ -248,7 +255,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 		else
 		{
 			const boost::shared_ptr<context_type> &context = topContext();
-			if (context.get() && context->isActivated())
+			if (context && context->isActivated())
 				renderScene(*context, *camera);
 		}
 	}
@@ -340,17 +347,17 @@ void CWglSceneGraphView::OnInitialUpdate()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 
-	if (!useLocallyCreatedContext_ && NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
+	if (!useLocallyCreatedContext_ && !viewStateFsm_ && viewContext && viewCamera)
 	{
 		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
-		if (viewStateFsm_.get()) viewStateFsm_->initiate();
+		if (viewStateFsm_) viewStateFsm_->initiate();
 	}
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
 	// initialize a view
-	if (viewContext.get())
+	if (viewContext)
 	{
 		// guard the context
 		context_type::guard_type guard(*viewContext);
@@ -367,7 +374,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 		initializeView();
 
 		// set the camera
-		if (viewCamera.get())
+		if (viewCamera)
 		{
 			// set the size of viewing volume
 			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
@@ -428,7 +435,7 @@ void CWglSceneGraphView::OnPaint()
 	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
-		if (context.get())
+		if (context)
 		{
 			if (context->isOffScreenUsed())
 			{
@@ -577,7 +584,7 @@ bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, co
 #endif
 
 	const boost::shared_ptr<context_type> &context = topContext();
-	if (context.get() && context->resize(x1, y1, x2, y2))
+	if (context && context->resize(x1, y1, x2, y2))
 	{
 		context_type::guard_type guard(*context);
 
@@ -587,7 +594,7 @@ bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, co
 
 		initializeView();
 		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (camera.get())
+		if (camera)
 		{
 			camera->setViewport(x1, y1, x2, y2);
 
@@ -605,7 +612,7 @@ bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, co
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglSceneGraphView::doPrepareRendering(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglSceneGraphView::doPrepareRendering(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -616,7 +623,7 @@ bool CWglSceneGraphView::doPrepareRendering(const context_type &/*context*/, con
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglSceneGraphView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglSceneGraphView::doRenderStockScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	return true;
 }
@@ -624,7 +631,7 @@ bool CWglSceneGraphView::doRenderStockScene(const context_type &/*context*/, con
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglSceneGraphView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglSceneGraphView::doRenderScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	// traverse a scene graph
 	if (rootSceneNode_)
@@ -730,7 +737,6 @@ bool CWglSceneGraphView::createDisplayList(const bool isContextActivated)
 	if (isContextActivated)
 	{
 		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
-		// TODO [modify] >> create display list name for fonts
 		if (dc)
 		{
 			swl::WglFont::getInstance().setDeviceContext(*dc);
@@ -739,19 +745,22 @@ bool CWglSceneGraphView::createDisplayList(const bool isContextActivated)
 	}
 	else
 	{
-		context_type::guard_type guard(*context);
-		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
-		if (dc)
+		if (context)
 		{
-			swl::WglFont::getInstance().setDeviceContext(*dc);
-			swl::WglFont::getInstance().createDisplayList();
+			context_type::guard_type guard(*context);
+			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
+			if (dc)
+			{
+				swl::WglFont::getInstance().setDeviceContext(*dc);
+				swl::WglFont::getInstance().createDisplayList();
+			}
 		}
 	}
 
 	return true;
 }
 
-void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated) const
+void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated)
 {
 	if (isContextActivated)
 	{
@@ -770,7 +779,7 @@ void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated) 
 	}
 }
 
-void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated) const
+void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated)
 {
 	if (isContextActivated)
 	{
@@ -787,6 +796,17 @@ void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated) co
 			swl::WglFont::getInstance().popDisplayList();
 		}
 	}
+}
+
+bool CWglSceneGraphView::isDisplayListUsed() const
+{
+	// TODO [check] >>
+	//return ... && swl::WglFont::getInstance().isDisplayListUsed();
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+	return true;
+#else
+	return false;
+#endif
 }
 
 void CWglSceneGraphView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
@@ -1001,7 +1021,7 @@ void CWglSceneGraphView::setPerspective(const bool isPerspective)
 
 	const boost::shared_ptr<context_type> &context = topContext();
 	const boost::shared_ptr<camera_type> &camera = topCamera();
-	if (context.get() && camera.get())
+	if (context && camera)
 	{
 		isPerspective_ = isPerspective;
 
@@ -1036,7 +1056,7 @@ void CWglSceneGraphView::OnLButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDown(nFlags, point);
 }
@@ -1052,7 +1072,7 @@ void CWglSceneGraphView::OnLButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonUp(nFlags, point);
 }
@@ -1066,7 +1086,7 @@ void CWglSceneGraphView::OnLButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDblClk(nFlags, point);
 }
@@ -1082,7 +1102,7 @@ void CWglSceneGraphView::OnMButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDown(nFlags, point);
 }
@@ -1098,7 +1118,7 @@ void CWglSceneGraphView::OnMButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonUp(nFlags, point);
 }
@@ -1112,7 +1132,7 @@ void CWglSceneGraphView::OnMButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDblClk(nFlags, point);
 }
@@ -1128,7 +1148,7 @@ void CWglSceneGraphView::OnRButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDown(nFlags, point);
 }
@@ -1144,7 +1164,7 @@ void CWglSceneGraphView::OnRButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonUp(nFlags, point);
 }
@@ -1158,7 +1178,7 @@ void CWglSceneGraphView::OnRButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDblClk(nFlags, point);
 }
@@ -1177,7 +1197,7 @@ void CWglSceneGraphView::OnMouseMove(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
+	if (viewStateFsm_) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
 
 	CView::OnMouseMove(nFlags, point);
 }
@@ -1196,7 +1216,7 @@ BOOL CWglSceneGraphView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
-	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
+	if (viewStateFsm_) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
 
 	return CView::OnMouseWheel(nFlags, zDelta, point);
 }
@@ -1206,7 +1226,7 @@ void CWglSceneGraphView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
 	//viewController_.pressKey(swl::KeyEvent(nChar, nRepCnt));
-	if (viewStateFsm_.get()) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
@@ -1216,7 +1236,7 @@ void CWglSceneGraphView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }
@@ -1227,7 +1247,7 @@ void CWglSceneGraphView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	// This code is required for SWL.WglView: event handling
 	const swl::KeyEvent::EControlKey ckey = ((nFlags >> 28) & 0x01) == 0x01 ? swl::KeyEvent::CK_ALT : swl::KeyEvent::CK_NONE;
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
 
 	CView::OnChar(nChar, nRepCnt, nFlags);
 }
@@ -1236,42 +1256,42 @@ void CWglSceneGraphView::OnViewhandlingPan()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPan());
 }
 
 void CWglSceneGraphView::OnViewhandlingRotate()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomregion()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomall()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomAll());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomin()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomout()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
 void CWglSceneGraphView::OnViewhandlingPickobject()
@@ -1280,7 +1300,7 @@ void CWglSceneGraphView::OnViewhandlingPickobject()
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
 
 	if (isRedrawn) raiseDrawEvent(false);
 }
@@ -1289,7 +1309,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PanState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1298,7 +1318,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::RotateState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1307,7 +1327,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomRegionState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1316,7 +1336,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomAllState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1325,7 +1345,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomInState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1334,7 +1354,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -1343,7 +1363,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }

@@ -5,6 +5,7 @@
 #pragma once
 
 #include "swl/winview/WglViewBase.h"
+#include "swl/glutil/GLDisplayListCallableInterface.h"
 #include "swl/view/ViewEventController.h"
 #include "swl/graphics/SceneNode.h"
 #include "swl/graphics/Shape.h"
@@ -46,6 +47,21 @@ public:
 	virtual void Dump(CDumpContext& dc) const;
 #endif
 
+private:
+	struct GLDisplayListHandler: public swl::GLDisplayListCallableInterface
+	{
+		typedef GLDisplayListCallableInterface base_type;
+		
+		GLDisplayListHandler(const unsigned int displayListCount)
+		: base_type(displayListCount)
+		{}
+
+		/*virtual*/ bool createDisplayList()
+		{  throw std::runtime_error("this function should not be called");  }
+		/*virtual*/ void callDisplayList() const
+		{  throw std::runtime_error("this function should not be called");  }
+	};
+
 public:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: basic routine
@@ -56,6 +72,9 @@ public:
 	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
 	/*virtual*/ bool createDisplayList(const bool isContextActivated);
+	/*virtual*/ void generateDisplayListName(const bool isContextActivated);
+	/*virtual*/ void deleteDisplayListName(const bool isContextActivated);
+	/*virtual*/ bool isDisplayListUsed() const;
 
 	/*virtual*/ void pickObject(const int x, const int y, const bool isTemporary = false);
 	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false);
@@ -126,30 +145,10 @@ private:
 	void drawCoordinateFrame(const bool doesCreateDisplayList = false) const;
 	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
 
-	//
-	void createDisplayLists(const unsigned int displayListNameBase) const;
-#if defined(_UNICODE) || defined(UNICODE)
-	bool createWglBitmapFonts(const std::wstring &fontName, const int fontSize) const;
-	bool createWglOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const;
-#else
-	bool createWglBitmapFonts(const std::string &fontName, const int fontSize) const;
-	bool createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const;
-#endif
-
 	void drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const;
-#if defined(_UNICODE) || defined(UNICODE)
-	void drawText(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
-	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const;
-	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const;
-#else
-	void drawText(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
-	void drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::string &str) const;
-	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
-#endif
+
+	//
+	void createDisplayLists() const;
 
 	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
@@ -174,11 +173,7 @@ private:
 	//enum DisplayListNames { DLN_MAIN_CONTENT = 0, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
 	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
 
-	// for WGL bitmap fonts
-	static const int MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;
-	// for WGL outline fonts
-	static const int MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT = 256;
-	mutable GLYPHMETRICSFLOAT gmf_[256];
+	GLDisplayListHandler displayListHandler_;
 
 	//-------------------------------------------------------------------------
 	//

@@ -15,6 +15,7 @@
 #include "swl/winview/WglPrintContext.h"
 #include "swl/winview/WglViewPrintApi.h"
 #include "swl/winview/WglViewCaptureApi.h"
+#include "swl/winview/WglFont.h"
 #include "swl/glutil/GLCamera.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
@@ -41,20 +42,6 @@
 
 #define __USE_OPENGL_DISPLAY_LIST 1
 
-//#define __USE_GLUT_BITMAP_FONTS 1
-//#define __USE_GLUT_STROKE_FONTS 1
-#define __USE_WGL_BITMAP_FONTS 1
-//#define __USE_WGL_OUTLINE_FONTS 1
-
-#if defined(__USE_GLUT_BITMAP_FONTS)
-#define __USE_OPENGL_FONTS 1  // for GLUT bitmap fonts
-#elif defined(__USE_GLUT_STROKE_FONTS)
-#define __USE_OPENGL_FONTS 2  // for GLUT stroke fonts
-#elif defined(__USE_WGL_BITMAP_FONTS) && defined(__USE_OPENGL_DISPLAY_LIST)
-#define __USE_OPENGL_FONTS 3  // for WGL bitmap fonts
-#elif defined(__USE_WGL_OUTLINE_FONTS) && defined(__USE_OPENGL_DISPLAY_LIST)
-#define __USE_OPENGL_FONTS 4  // for WGL outline fonts
-#endif
 
 namespace {
 
@@ -172,7 +159,7 @@ void calculateNormal(const float vx1, const float vy1, const float vz1, const fl
 
 void drawMesh()
 {
-	if (mesh.get())
+	if (mesh)
 	{
 		const float factor = 50.0f;
 
@@ -520,14 +507,9 @@ END_MESSAGE_MAP()
 // CWglViewTestView construction/destruction
 
 CWglViewTestView::CWglViewTestView()
-#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT),
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT),
-#else
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, 0),
-#endif
+: swl::WglViewBase(),
   viewStateFsm_(),
+  displayListHandler_(MAX_OPENGL_DISPLAY_LIST_COUNT),
   isPerspective_(true), isWireFrame_(false),
   polygonFacing_(GL_FRONT_AND_BACK),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
@@ -635,21 +617,27 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 
 		if (printCamera.get() && printContext.isActivated())
 		{
+#if defined(__USE_OPENGL_DISPLAY_LIST)
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
-			// create & push a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) pushDisplayList(true);
+			// generate a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) generateDisplayListName(true);
+#endif
 
 			initializeView();
 			printCamera->setViewRegion(camera->getCurrentViewRegion());
 			printCamera->setViewport(0, 0, w0, h0);
 
+#if defined(__USE_OPENGL_DISPLAY_LIST)
 			// re-create a OpenGL display list
 			if (doesRecreateDisplayListUsed) createDisplayList(true);
+#endif
 
 			renderScene(printContext, *printCamera);
 
-			// pop & delete a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) popDisplayList(true);
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+			// delete a new name base of OpenGL display list
+			if (doesRecreateDisplayListUsed) deleteDisplayListName(true);
+#endif
 		}
 
 		// restore view's states
@@ -675,7 +663,7 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 			else if (2 == drawMode_)
 				context.reset(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect));
 
-			if (context.get() && context->isActivated())
+			if (context && context->isActivated())
 			{
 				initializeView();
 				camera->setViewport(0, 0, rect.Width(), rect.Height());
@@ -685,7 +673,7 @@ void CWglViewTestView::OnDraw(CDC* pDC)
 		else
 		{
 			const boost::shared_ptr<context_type> &context = topContext();
-			if (context.get() && context->isActivated())
+			if (context && context->isActivated())
 				renderScene(*context, *camera);
 		}
 	}
@@ -777,33 +765,30 @@ void CWglViewTestView::OnInitialUpdate()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 
-	if (!useLocallyCreatedContext_ && NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
+	if (!useLocallyCreatedContext_ && !viewStateFsm_ && viewContext && viewCamera)
 	{
 		viewStateFsm_.reset(new swl::ViewStateMachine(*this, *viewContext, *viewCamera));
-		if (viewStateFsm_.get()) viewStateFsm_->initiate();
+		if (viewStateFsm_) viewStateFsm_->initiate();
 	}
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine
 
 	// initialize a view
-	if (viewContext.get())
+	if (viewContext)
 	{
 		// guard the context
 		context_type::guard_type guard(*viewContext);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-		if (!pushDisplayList(true))
-		{
-			// error: OpenGL display list cannot be initialized !!!
-		}
+		generateDisplayListName(true);
 #endif
 
 		// set the view
 		initializeView();
 
 		// set the camera
-		if (viewCamera.get())
+		if (viewCamera)
 		{
 			// set the size of viewing volume
 			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
@@ -840,10 +825,7 @@ void CWglViewTestView::OnDestroy()
 	CView::OnDestroy();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!popDisplayList(false))
-	{
-		// error: OpenGL display list cannot be finalized !!!
-	}
+	deleteDisplayListName(false);
 #endif
 
 	//-------------------------------------------------------------------------
@@ -866,7 +848,7 @@ void CWglViewTestView::OnPaint()
 	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
-		if (context.get())
+		if (context)
 		{
 			if (context->isOffScreenUsed())
 			{
@@ -1010,27 +992,21 @@ bool CWglViewTestView::initializeView()
 bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!popDisplayList(false))
-	{
-		// error: OpenGL display list cannot be finalized !!!
-	}
+	deleteDisplayListName(false);
 #endif
 
 	const boost::shared_ptr<context_type> &context = topContext();
-	if (context.get() && context->resize(x1, y1, x2, y2))
+	if (context && context->resize(x1, y1, x2, y2))
 	{
 		context_type::guard_type guard(*context);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-		if (!pushDisplayList(true))
-		{
-			// error: OpenGL display list cannot be initialized !!!
-		}
+		generateDisplayListName(true);
 #endif
 
 		initializeView();
 		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (camera.get())
+		if (camera)
 		{
 			camera->setViewport(x1, y1, x2, y2);
 
@@ -1048,7 +1024,7 @@ bool CWglViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglViewTestView::doPrepareRendering(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
@@ -1059,7 +1035,7 @@ bool CWglViewTestView::doPrepareRendering(const context_type &/*context*/, const
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglViewTestView::doRenderStockScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	if (isGradientBackgroundUsed_ && !isPrinting_ && !isPickingObject_) drawGradientBackground();
 	if (isFloorShown_ && !isPickingObject_) drawFloor();
@@ -1070,7 +1046,7 @@ bool CWglViewTestView::doRenderStockScene(const context_type &/*context*/, const
 //-------------------------------------------------------------------------
 // This code is required for SWL.WglView: basic routine
 
-bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const camera_type &/*camera*/)
+bool CWglViewTestView::doRenderScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
 	glPushMatrix();
 		drawMainContent();
@@ -1085,25 +1061,121 @@ bool CWglViewTestView::doRenderScene(const context_type &/*context*/, const came
 
 bool CWglViewTestView::createDisplayList(const bool isContextActivated)
 {
-	if (isDisplayListUsed())
-	{
-		// the name base of OpenGL display list that is actually used
-		const unsigned int currDisplayListNameBase = getCurrentDisplayListNameBase();
+	HDC *dc = NULL;
 
-		if (isContextActivated)
-			createDisplayLists(currDisplayListNameBase);
-		else
+	const boost::shared_ptr<context_type> &context = topContext();
+	if (context)
+	{
+		//context_type::guard_type guard(*context);
+		try
 		{
-			const boost::shared_ptr<context_type> &context = topContext();
-			if (context.get())
+			dc = boost::any_cast<HDC *>(context->getNativeContext());
+		}
+		catch (const boost::bad_any_cast &)
+		{
+		}
+	}
+
+	if (isContextActivated)
+	{
+		createDisplayLists();
+		if (dc)
+		{
+			swl::WglFont::getInstance().setDeviceContext(*dc);
+			swl::WglFont::getInstance().createDisplayList();
+		}
+	}
+	else
+	{
+		if (context)
+		{
+			context_type::guard_type guard(*context);
+			createDisplayLists();
+			if (dc)
 			{
-				context_type::guard_type guard(*context);
-				createDisplayLists(currDisplayListNameBase);
+				swl::WglFont::getInstance().setDeviceContext(*dc);
+				swl::WglFont::getInstance().createDisplayList();
 			}
 		}
 	}
 
 	return true;
+}
+
+void CWglViewTestView::generateDisplayListName(const bool isContextActivated)
+{
+	if (isContextActivated)
+	{
+		displayListHandler_.pushDisplayList();
+		swl::WglFont::getInstance().pushDisplayList();
+	}
+	else
+	{
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (context)
+		{
+			context_type::guard_type guard(*context);
+			displayListHandler_.pushDisplayList();
+			swl::WglFont::getInstance().pushDisplayList();
+		}
+	}
+}
+
+void CWglViewTestView::deleteDisplayListName(const bool isContextActivated)
+{
+	if (isContextActivated)
+	{
+		displayListHandler_.popDisplayList();
+		swl::WglFont::getInstance().popDisplayList();
+	}
+	else
+	{
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (context)
+		{
+			context_type::guard_type guard(*context);
+			displayListHandler_.popDisplayList();
+			swl::WglFont::getInstance().popDisplayList();
+		}
+	}
+}
+
+bool CWglViewTestView::isDisplayListUsed() const
+{
+	return displayListHandler_.isDisplayListUsed() || swl::WglFont::getInstance().isDisplayListUsed();
+}
+
+void CWglViewTestView::createDisplayLists() const
+{
+	// the name base of OpenGL display list that is actually used
+	const unsigned int currDisplayListNameBase = displayListHandler_.getDisplayListNameBase();
+	if (0u == currDisplayListNameBase) return;
+
+	// for main content
+	glNewList(currDisplayListNameBase + DLN_MAIN_CONTENT, GL_COMPILE);
+		drawMainContent(true);
+	glEndList();
+/*
+	// for floor
+	glNewList(currDisplayListNameBase + DLN_FLOOR, GL_COMPILE);
+		drawFloor(true);
+	glEndList();
+*/
+	// for gradient background
+	glNewList(currDisplayListNameBase + DLN_GRADIENT_BACKGROUND, GL_COMPILE);
+		drawGradientBackground(true);
+	glEndList();
+
+	// for color bar
+	glNewList(currDisplayListNameBase + DLN_COLOR_BAR, GL_COMPILE);
+		drawColorBar(true);
+	glEndList();
+/*
+	// for coordinate frame
+	glNewList(currDisplayListNameBase + DLN_COORDINATE_FRAME, GL_COMPILE);
+		drawCoordinateFrame(true);
+	glEndList();
+*/
 }
 
 void CWglViewTestView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
@@ -1406,157 +1478,13 @@ unsigned int CWglViewTestView::processHits(const int hitCount, const unsigned in
 	return selectedObj;
 }
 
-void CWglViewTestView::createDisplayLists(const unsigned int displayListNameBase) const
-{
-#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
-#if defined(_UNICODE) || defined(UNICODE)
-	createWglBitmapFonts(L"Comic Sans MS", 24);
-#else
-	createWglBitmapFonts("Comic Sans MS", 24);
-#endif
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
-#if defined(_UNICODE) || defined(UNICODE)
-	createWglOutlineFonts(L"Arial", 10, 0.25f);
-#else
-	createWglOutlineFonts("Arial", 10, 0.25f);
-#endif
-#endif
-
-	// for main content
-	glNewList(displayListNameBase + DLN_MAIN_CONTENT, GL_COMPILE);
-		drawMainContent(true);
-	glEndList();
-/*
-	// for floor
-	glNewList(displayListNameBase + DLN_FLOOR, GL_COMPILE);
-		drawFloor(true);
-	glEndList();
-*/
-	// for gradient background
-	glNewList(displayListNameBase + DLN_GRADIENT_BACKGROUND, GL_COMPILE);
-		drawGradientBackground(true);
-	glEndList();
-
-	// for color bar
-	glNewList(displayListNameBase + DLN_COLOR_BAR, GL_COMPILE);
-		drawColorBar(true);
-	glEndList();
-/*
-	// for coordinate frame
-	glNewList(displayListNameBase + DLN_COORDINATE_FRAME, GL_COMPILE);
-		drawCoordinateFrame(true);
-	glEndList();
-*/
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-bool CWglViewTestView::createWglBitmapFonts(const std::wstring &fontName, const int fontSize) const
-#else
-bool CWglViewTestView::createWglBitmapFonts(const std::string &fontName, const int fontSize) const
-#endif
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	const boost::shared_ptr<context_type> &context = topContext();
-	if (context.get())
-	{
-		//context_type::guard_type guard(*context);
-
-		try
-		{
-			const HDC *dc = boost::any_cast<HDC *>(context->getNativeContext());
-			if (dc)
-			{
-#if defined(_UNICODE) || defined(UNICODE)
-				const DWORD charSet = 0 == _wcsicmp(fontName.c_str(), L"symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
-#else
-				const DWORD charSet = 0 == stricmp(fontName.c_str(), "symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
-#endif
-				const HFONT hFont = CreateFont(
-					fontSize, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-					charSet, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-					ANTIALIASED_QUALITY, FF_DONTCARE | DEFAULT_PITCH,
-					fontName.c_str()
-				);
-				if (!hFont) return false;
-				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
-
-				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
-				const bool ret = TRUE == wglUseFontBitmaps(*dc, 32, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase);
-
-				SelectObject(*dc, hOldFont);
-				return ret;
-			}
-		}
-		catch (const boost::bad_any_cast &)
-		{
-			return false;
-		}
-	}
-
-	return false;
-#else
-	return false;
-#endif
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-bool CWglViewTestView::createWglOutlineFonts(const std::wstring &fontName, const int fontSize, const float depth) const
-#else
-bool CWglViewTestView::createWglOutlineFonts(const std::string &fontName, const int fontSize, const float depth) const
-#endif
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	const boost::shared_ptr<context_type> &context = topContext();
-	if (context.get())
-	{
-		//context_type::guard_type guard(*context);
-
-		try
-		{
-			const HDC *dc = boost::any_cast<HDC *>(context->getNativeContext());
-			if (dc)
-			{
-#if defined(_UNICODE) || defined(UNICODE)
-				const DWORD charSet = 0 == _wcsicmp(fontName.c_str(), L"symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
-#else
-				const DWORD charSet = 0 == stricmp(fontName.c_str(), "symbol") ? SYMBOL_CHARSET : ANSI_CHARSET;
-#endif
-				const HFONT hFont = CreateFont(
-					fontSize, 0, 0, 0, FW_BOLD, FALSE, FALSE, FALSE,
-					charSet, OUT_TT_PRECIS, CLIP_DEFAULT_PRECIS,
-					ANTIALIASED_QUALITY, FF_DONTCARE | DEFAULT_PITCH,
-					fontName.c_str()
-				);
-				if (!hFont) return false;
-				const HFONT hOldFont = (HFONT)SelectObject(*dc, hFont);
-
-				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
-				// it takes long time to create display lists for outline fonts
-				const bool ret = TRUE == wglUseFontOutlines(*dc, 0, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, fontDiplayListNameBase, 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
-
-				SelectObject(*dc, hOldFont);
-				return ret;
-			}
-		}
-		catch (const boost::bad_any_cast &)
-		{
-			return false;
-		}
-	}
-
-	return false;
-#else
-	return false;
-#endif
-}
-
 void CWglViewTestView::setPerspective(const bool isPerspective)
 {
 	if (isPerspective == isPerspective_) return;
 
 	const boost::shared_ptr<context_type> &context = topContext();
 	const boost::shared_ptr<camera_type> &camera = topCamera();
-	if (context.get() && camera.get())
+	if (context && camera)
 	{
 		isPerspective_ = isPerspective;
 
@@ -1587,7 +1515,7 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(getCurrentDisplayListNameBase() + DLN_MAIN_CONTENT);
+		glCallList(displayListHandler_.getDisplayListNameBase() + DLN_MAIN_CONTENT);
 		return;
 	}
 #endif
@@ -1674,7 +1602,7 @@ void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(getCurrentDisplayListNameBase() + DLN_GRADIENT_BACKGROUND);
+		glCallList(displayListHandler_.getDisplayListNameBase() + DLN_GRADIENT_BACKGROUND);
 		return;
 	}
 #endif
@@ -1734,7 +1662,7 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(getCurrentDisplayListNameBase() + DLN_FLOOR);
+		glCallList(displayListHandler_.getDisplayListNameBase() + DLN_FLOOR);
 		return;
 	}
 #endif
@@ -1748,7 +1676,7 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 	const int lineStippleScaleFactor = 2;
 
 	const boost::shared_ptr<camera_type> &camera = topCamera();
-	if (camera.get())
+	if (camera)
 	{
 		double dirX = 0.0, dirY = 0.0, dirZ = 0.0;
 		camera->getEyeDirection(dirX, dirY, dirZ);
@@ -1880,7 +1808,7 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 	if (!doesCreateDisplayList && isDisplayListUsed())
 	//if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(getCurrentDisplayListNameBase() + DLN_COLOR_BAR);
+		glCallList(displayListHandler_.getDisplayListNameBase() + DLN_COLOR_BAR);
 		return;
 	}
 #endif
@@ -1970,14 +1898,14 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
 	{
-		glCallList(getCurrentDisplayListNameBase() + DLN_COORDINATE_FRAME);
+		glCallList(displayListHandler_.getDisplayListNameBase() + DLN_COORDINATE_FRAME);
 		return
 	}
 #endif
 */
 
 	const boost::shared_ptr<camera_type> &camera = topCamera();
-	if (NULL == camera.get()) return;
+	if (!camera) return;
  
 	const swl::Region2<int> &oldViewport = camera->getViewport();
 	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
@@ -2053,69 +1981,63 @@ void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const f
 		if (0 == order[i])
 		{
 			glPushName(PON_X_AXIS);
-
-			// x axis
-			if (PON_X_AXIS == pickedObj_ || (PON_X_AXIS == temporarilyPickedObj_ && isPickObjectState))
-				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			else
-				glColor3f(1.0f, 0.0f, 0.0f);
-			glPushMatrix();
-				glRotated(90.0, 0.0, 1.0, 0.0);
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
+				// x axis
+				if (PON_X_AXIS == pickedObj_ || (PON_X_AXIS == temporarilyPickedObj_ && isPickObjectState))
+					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+				else
+					glColor3f(1.0f, 0.0f, 0.0f);
+				glPushMatrix();
+					glRotated(90.0, 0.0, 1.0, 0.0);
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 #if defined(_UNICODE) || defined(UNICODE)
-	     	drawText(height, 0.0f, 0.0f, L"X");
+		     	swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, L"X");
 #else
-	     	drawText(height, 0.0f, 0.0f, "X");
+		     	swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, "X");
 #endif
-
 			glPopName();
 		}
 		else if (1 == order[i])
 		{
 			glPushName(PON_Y_AXIS);
-
-			// y axis
-			if (PON_Y_AXIS == pickedObj_ || (PON_Y_AXIS == temporarilyPickedObj_ && isPickObjectState))
-				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			else
-				glColor3f(0.0f, 1.0f, 0.0f);
-			glPushMatrix();
-				glRotated(-90.0, 1.0, 0.0, 0.0);
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
+				// y axis
+				if (PON_Y_AXIS == pickedObj_ || (PON_Y_AXIS == temporarilyPickedObj_ && isPickObjectState))
+					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+				else
+					glColor3f(0.0f, 1.0f, 0.0f);
+				glPushMatrix();
+					glRotated(-90.0, 1.0, 0.0, 0.0);
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 #if defined(_UNICODE) || defined(UNICODE)
-			drawText(0.0f, height, 0.0f, L"Y");
+				swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, L"Y");
 #else
-			drawText(0.0f, height, 0.0f, "Y");
+				swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, "Y");
 #endif
-
 			glPopName();
 		}
 		else if (2 == order[i])
 		{
 			glPushName(PON_Z_AXIS);
-
-			// z axis
-			if (PON_Z_AXIS == pickedObj_ || (PON_Z_AXIS == temporarilyPickedObj_ && isPickObjectState))
-				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			else
-				glColor3f(0.0f, 0.0f, 1.0f);	
-			glPushMatrix();
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
+				// z axis
+				if (PON_Z_AXIS == pickedObj_ || (PON_Z_AXIS == temporarilyPickedObj_ && isPickObjectState))
+					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
+				else
+					glColor3f(0.0f, 0.0f, 1.0f);	
+				glPushMatrix();
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 #if defined(_UNICODE) || defined(UNICODE)
-			drawText(0.0f, 0.0f, height, L"Z");
+				swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, L"Z");
 #else
-			drawText(0.0f, 0.0f, height, "Z");
+				swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, "Z");
 #endif
-
 			glPopName();
 		}
 	}
@@ -2183,130 +2105,6 @@ void CWglViewTestView::drawClippingArea(const unsigned int clippingPlaneId, cons
 	//----- end rendering mesh's clip edge
 }
 
-#if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawText(const float x, const float y, const float z, const std::wstring &str) const
-#else
-void CWglViewTestView::drawText(const float x, const float y, const float z, const std::string &str) const
-#endif
-{
-#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 1  // for GLUT bitmap fonts
-	drawTextUsingGlutBitmapFonts(x, y, z, str);
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 2  // for GLUT stroke fonts
-	const float scale = 2.0f;
-	drawTextUsingGlutStrokeFonts(x, y, z, scale, scale, scale, str);
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
-	drawTextUsingWglBitmapFonts(x, y, z, str);
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
-	const float scale = 300.0f;
-	drawTextUsingWglOutlineFonts(x, y, z, scale, scale, 1.0f, str);
-#endif
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
-#else
-void CWglViewTestView::drawTextUsingGlutBitmapFonts(const float x, const float y, const float z, const std::string &str) const
-#endif
-{
-	void *font = GLUT_BITMAP_HELVETICA_18;
-
-	glRasterPos3f(x, y, z);
-
-#if defined(_UNICODE) || defined(UNICODE)
-	for (std::wstring::const_iterator it = str.begin(); it != str.end(); ++it)
-#else
-	for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
-#endif
-		glutBitmapCharacter(font, *it);
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
-#else
-void CWglViewTestView::drawTextUsingGlutStrokeFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
-#endif
-{
-	void *font = GLUT_STROKE_ROMAN;
-
-	glPushMatrix();
-		glTranslatef(x, y, z);
-		glScalef(xScale, yScale, zScale);
-
-#if defined(_UNICODE) || defined(UNICODE)
-		for (std::wstring::const_iterator it = str.begin(); it != str.end(); ++it)
-#else
-		for (std::string::const_iterator it = str.begin(); it != str.end(); ++it)
-#endif
-			glutStrokeCharacter(font, *it);
-	glPopMatrix();
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::wstring &str) const
-#else
-void CWglViewTestView::drawTextUsingWglBitmapFonts(const float x, const float y, const float z, const std::string &str) const
-#endif
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed() && !str.empty())
-	{
-		glRasterPos3f(x, y, z);
-
-		glPushAttrib(GL_LIST_BIT);
-			const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
-			glListBase(fontDiplayListNameBase - 32);
-#if defined(_UNICODE) || defined(UNICODE)
-			glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
-#else
-			glCallLists((int)str.length(), GL_UNSIGNED_BYTE, str.c_str());
-#endif
-		glPopAttrib();
-	}
-#endif
-}
-
-#if defined(_UNICODE) || defined(UNICODE)
-void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::wstring &str) const
-#else
-void CWglViewTestView::drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const
-#endif
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (isDisplayListUsed() && !str.empty())
-	{
-		float length = 0.0f;
-		for (size_t i = 0; i < str.length(); ++i)
-			length += gmf_[str[i]].gmfCellIncX;
-
-		// save states
-		GLint oldCullFace;
-		glGetIntegerv(GL_CULL_FACE_MODE, &oldCullFace);
-		if (GL_BACK != oldCullFace) glCullFace(GL_BACK); 
-		const GLboolean isCullFace = glIsEnabled(GL_CULL_FACE);
-		if (!isCullFace) glEnable(GL_CULL_FACE);
-
-		glPushMatrix();
-			glTranslatef(x, y, z);
-			glScalef(xScale, yScale, zScale);
-
-			glPushAttrib(GL_LIST_BIT);
-				const unsigned int fontDiplayListNameBase = getCurrentFontDisplayListNameBase();
-				glListBase(fontDiplayListNameBase);
-#if defined(_UNICODE) || defined(UNICODE)
-				glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
-#else
-				glCallLists((int)str.length(), GL_UNSIGNED_BYTE, str.c_str());
-#endif
-			glPopAttrib();
-		glPopMatrix();
-
-		// restore states
-		if (GL_BACK != oldCullFace) glCullFace(oldCullFace); 
-		if (!isCullFace) glDisable(GL_CULL_FACE);
-	}
-#endif
-}
-
 void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
@@ -2318,7 +2116,7 @@ void CWglViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDown(nFlags, point);
 }
@@ -2334,7 +2132,7 @@ void CWglViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonUp(nFlags, point);
 }
@@ -2348,7 +2146,7 @@ void CWglViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_LEFT, ckey));
 
 	CView::OnLButtonDblClk(nFlags, point);
 }
@@ -2364,7 +2162,7 @@ void CWglViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDown(nFlags, point);
 }
@@ -2380,7 +2178,7 @@ void CWglViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonUp(nFlags, point);
 }
@@ -2394,7 +2192,7 @@ void CWglViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_MIDDLE, ckey));
 
 	CView::OnMButtonDblClk(nFlags, point);
 }
@@ -2410,7 +2208,7 @@ void CWglViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->pressMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDown(nFlags, point);
 }
@@ -2426,7 +2224,7 @@ void CWglViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonUp(nFlags, point);
 }
@@ -2440,7 +2238,7 @@ void CWglViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
+	if (viewStateFsm_) viewStateFsm_->doubleClickMouse(swl::MouseEvent(point.x, point.y, swl::MouseEvent::BT_RIGHT, ckey));
 
 	CView::OnRButtonDblClk(nFlags, point);
 }
@@ -2459,7 +2257,7 @@ void CWglViewTestView::OnMouseMove(UINT nFlags, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
+	if (viewStateFsm_) viewStateFsm_->moveMouse(swl::MouseEvent(point.x, point.y, btn, ckey));
 
 	CView::OnMouseMove(nFlags, point);
 }
@@ -2478,7 +2276,7 @@ BOOL CWglViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
 	);
 	//viewController_.wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
-	if (viewStateFsm_.get()) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
+	if (viewStateFsm_) viewStateFsm_->wheelMouse(swl::MouseEvent(point.x, point.y, btn, ckey, swl::MouseEvent::SC_VERTICAL, zDelta / WHEEL_DELTA));
 
 	return CView::OnMouseWheel(nFlags, zDelta, point);
 }
@@ -2488,7 +2286,7 @@ void CWglViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
 	//viewController_.pressKey(swl::KeyEvent(nChar, nRepCnt));
-	if (viewStateFsm_.get()) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyDown(nChar, nRepCnt, nFlags);
 }
@@ -2498,7 +2296,7 @@ void CWglViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: event handling
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
+	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
 
 	CView::OnKeyUp(nChar, nRepCnt, nFlags);
 }
@@ -2509,7 +2307,7 @@ void CWglViewTestView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	// This code is required for SWL.WglView: event handling
 	const swl::KeyEvent::EControlKey ckey = ((nFlags >> 28) & 0x01) == 0x01 ? swl::KeyEvent::CK_ALT : swl::KeyEvent::CK_NONE;
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
-	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
+	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
 
 	CView::OnChar(nChar, nRepCnt, nFlags);
 }
@@ -2518,42 +2316,42 @@ void CWglViewTestView::OnViewhandlingPan()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPan());
 }
 
 void CWglViewTestView::OnViewhandlingRotate()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
 void CWglViewTestView::OnViewhandlingZoomregion()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
 void CWglViewTestView::OnViewhandlingZoomall()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomAll());
 }
 
 void CWglViewTestView::OnViewhandlingZoomin()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
 void CWglViewTestView::OnViewhandlingZoomout()
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
 void CWglViewTestView::OnViewhandlingPickobject()
@@ -2564,14 +2362,14 @@ void CWglViewTestView::OnViewhandlingPickobject()
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
-	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
 }
 
 void CWglViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PanState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2580,7 +2378,7 @@ void CWglViewTestView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::RotateState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2589,7 +2387,7 @@ void CWglViewTestView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomRegionState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2598,7 +2396,7 @@ void CWglViewTestView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomAllState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2607,7 +2405,7 @@ void CWglViewTestView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomInState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2616,7 +2414,7 @@ void CWglViewTestView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
@@ -2625,7 +2423,7 @@ void CWglViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
-	if (viewStateFsm_.get())
+	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }

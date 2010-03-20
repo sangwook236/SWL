@@ -64,7 +64,7 @@ bool printWglViewUsingGdi(WglViewBase &view, HDC hPrintDC)
 			{
 				const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
 				// create & push a new name base of OpenGL display list
-				if (doesRecreateDisplayListUsed) view.pushDisplayList(true);
+				if (doesRecreateDisplayListUsed) view.generateDisplayListName(true);
 
 				view.initializeView();
 				printCamera->setViewRegion(currCamera->getCurrentViewRegion());
@@ -76,7 +76,7 @@ bool printWglViewUsingGdi(WglViewBase &view, HDC hPrintDC)
 				view.renderScene(*printContext, *printCamera);
 
 				// pop & delete a new name base of OpenGL display list
-				if (doesRecreateDisplayListUsed) view.popDisplayList(true);
+				if (doesRecreateDisplayListUsed) view.deleteDisplayListName(true);
 			}
 		}
 #endif
