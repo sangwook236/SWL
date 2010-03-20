@@ -168,7 +168,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 			WglBitmapBufferedContext::guard_type guard(captureContext);
 
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && view.isDisplayListUsed();
-			// create & push a new name base of OpenGL display list
+			// generate a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) view.generateDisplayListName(true);
 
 			view.initializeView();
@@ -179,7 +179,7 @@ bool captureWglViewUsingGdi(const std::string& filePathName, WglViewBase &view, 
 
 			view.renderScene(captureContext, *currCamera);
 
-			// pop & delete a new name base of OpenGL display list
+			// delete a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) view.deleteDisplayListName(true);
 		}
 

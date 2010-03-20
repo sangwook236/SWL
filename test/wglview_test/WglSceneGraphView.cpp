@@ -201,7 +201,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 		{
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
-			// create & push a new name base of OpenGL display list
+			// generate a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) generateDisplayListName(true);
 #endif
 
@@ -217,7 +217,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 			renderScene(printContext, *printCamera);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-			// pop & delete a new name base of OpenGL display list
+			// delete a new name base of OpenGL display list
 			if (doesRecreateDisplayListUsed) deleteDisplayListName(true);
 #endif
 		}
@@ -365,7 +365,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 		// construct scene graph
 		contructSceneGraph();
 
-		// create & push a new name base of OpenGL display list
+		// generate a new name base of OpenGL display list
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 		generateDisplayListName(true);
 #endif
@@ -411,7 +411,7 @@ void CWglSceneGraphView::OnDestroy()
 	CView::OnDestroy();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	// pop & delete a new name base of OpenGL display list
+	// delete a new name base of OpenGL display list
 	deleteDisplayListName(false);
 #endif
 
@@ -579,7 +579,7 @@ bool CWglSceneGraphView::initializeView()
 bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	// pop & delete a new name base of OpenGL display list
+	// delete a new name base of OpenGL display list
 	deleteDisplayListName(false);
 #endif
 
