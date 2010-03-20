@@ -6,6 +6,7 @@
 #include "swl/view/ViewCamera3.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
+#include "swl/graphics/ObjectPickerMgr.h"
 #include <iostream>
 
 
@@ -571,10 +572,13 @@ void ZoomOutState::handleEvent()
 PickObjectState::PickObjectState()
 : isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
+	swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
+	swl::ObjectPickerMgr::getInstance().startPicking();
 }
 
 PickObjectState::~PickObjectState()
 {
+	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
 void PickObjectState::pressMouse(const MouseEvent &evt)

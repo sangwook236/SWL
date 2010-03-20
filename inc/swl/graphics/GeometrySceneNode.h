@@ -3,12 +3,12 @@
 
 
 #include "swl/graphics/SceneNode.h"
-#include "swl/graphics/GeometryPool.h"
+#include "swl/graphics/GeometryPoolMgr.h"
 
 
 namespace swl {
 
-class GeometryPool;
+class GeometryPoolMgr;
 
 //--------------------------------------------------------------------------
 // class GeometrySceneNode
@@ -17,9 +17,9 @@ template<typename SceneVisitor>
 class GeometrySceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
-	typedef LeafSceneNode					base_type;
-	typedef GeometryPool::geometry_id_type	geometry_id_type;
-	typedef GeometryPool::geometry_type		geometry_type;
+	typedef LeafSceneNode						base_type;
+	typedef GeometryPoolMgr::geometry_id_type	geometry_id_type;
+	typedef GeometryPoolMgr::geometry_type		geometry_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
@@ -28,7 +28,7 @@ public:
 	GeometrySceneNode(const geometry_id_type &geometryId, const std::string &name = std::string())
 #endif
 	: base_type(name),
-	  geometryId_(geometryId) //geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID)
+	  geometryId_(geometryId) //geometryId_(GeometryPoolMgr::UNDEFINED_GEOMETRY_ID)
 	{}
 	GeometrySceneNode(const GeometrySceneNode &rhs)
 	: base_type(rhs),
@@ -56,7 +56,7 @@ public:
 
 	geometry_type getGeometry() const
 	{
-		return GeometryPool::getInstance().getGeometry(geometryId_);
+		return GeometryPoolMgr::getInstance().getGeometry(geometryId_);
 	}
 
 private:

@@ -18,7 +18,8 @@ public:
 	//typedef IGLSceneVisitor base_type;
 
 public:
-	GLPickObjectVisitor()
+	GLPickObjectVisitor(const int x, const int y, const int width, const int height)
+	: x_(x), y_(y), width_(width), height_(height)
 	{}
 
 public:
@@ -27,6 +28,10 @@ public:
 	/*virtual*/ void visit(const shape_node_type &node) const;
 
 	/*virtual*/ void visit(const transform_node_type & /*node*/) const  {}
+
+private:
+	const int x_, y_;
+	const int width_, height_;
 };
 
 }  // namespace swl

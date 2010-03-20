@@ -33,18 +33,17 @@ namespace swl {
 
 /*static*/ WglFont *WglFont::singleton_ = NULL;
 
-;
-#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
-/*static*/ const int WglFont::FONT_DISPLAY_LIST_COUNT = MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT;
-#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
-/*static*/ const int WglFont::FONT_DISPLAY_LIST_COUNT = MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT;
-#else
-/*static*/ const int WglFont::FONT_DISPLAY_LIST_COUNT = 0;
-#endif
 
 WglFont::WglFont()
-: //base_type(),
-  displayListNameBase_(0u)
+: base_type(true, false),
+  hDC_(NULL),
+#if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
+  GLDisplayListCallableInterface(MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT)
+#elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
+  GLDisplayListCallableInterface(MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT)
+#else
+  GLDisplayListCallableInterface(0u)
+#endif
 {
 }
 
@@ -69,22 +68,21 @@ WglFont::~WglFont()
 	}
 }
 
-bool WglFont::create(HDC hDC, const unsigned int displayListNameBase)
+bool WglFont::createDisplayList()
 {
-	displayListNameBase_ = displayListNameBase;
-	if (0u == displayListNameBase_) return false;
+	if (NULL == hDC_) return false;
 
 #if defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 3  // for WGL bitmap fonts
 #if defined(_UNICODE) || defined(UNICODE)
-	return createWglBitmapFonts(hDC, L"Comic Sans MS", 24);
+	return createWglBitmapFonts(hDC_, L"Comic Sans MS", 24);
 #else
-	return createWglBitmapFonts(hDC, "Comic Sans MS", 24);
+	return createWglBitmapFonts(hDC_, "Comic Sans MS", 24);
 #endif
 #elif defined(__USE_OPENGL_FONTS) && __USE_OPENGL_FONTS == 4  // for WGL outline fonts
 #if defined(_UNICODE) || defined(UNICODE)
-	return createWglOutlineFonts(hDC, L"Arial", 10, 0.25f);
+	return createWglOutlineFonts(hDC_, L"Arial", 10, 0.25f);
 #else
-	return createWglOutlineFonts(hDC, "Arial", 10, 0.25f);
+	return createWglOutlineFonts(hDC_, "Arial", 10, 0.25f);
 #endif
 #else
 	return true;
@@ -112,7 +110,7 @@ bool WglFont::createWglBitmapFonts(HDC hDC, const std::string &fontName, const i
 	if (!hFont) return false;
 	const HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
 
-	const bool ret = TRUE == wglUseFontBitmaps(hDC, 32, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT, displayListNameBase_);
+	const bool ret = TRUE == wglUseFontBitmaps(hDC, 32, MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT, getDisplayListNameBase());
 
 	SelectObject(hDC, hOldFont);
 	return ret;
@@ -143,7 +141,7 @@ bool WglFont::createWglOutlineFonts(HDC hDC, const std::string &fontName, const 
 	const HFONT hOldFont = (HFONT)SelectObject(hDC, hFont);
 
 	// it takes long time to create display lists for outline fonts
-	const bool ret = TRUE == wglUseFontOutlines(hDC, 0, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, displayListNameBase_, 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
+	const bool ret = TRUE == wglUseFontOutlines(hDC, 0, MAX_WGL_OUTLINE_FONT_DISPLAY_LIST_COUNT, getDisplayListNameBase(), 0.0f, depth, WGL_FONT_POLYGONS, gmf_);
 
 	SelectObject(hDC, hOldFont);
 	return ret;
@@ -222,7 +220,7 @@ void WglFont::drawTextUsingWglBitmapFonts(const float x, const float y, const fl
 		glRasterPos3f(x, y, z);
 
 		glPushAttrib(GL_LIST_BIT);
-			glListBase(displayListNameBase_ - 32);
+			glListBase(getDisplayListNameBase() - 32);
 #if defined(_UNICODE) || defined(UNICODE)
 			glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
 #else
@@ -258,7 +256,7 @@ void WglFont::drawTextUsingWglOutlineFonts(const float x, const float y, const f
 			glScalef(xScale, yScale, zScale);
 
 			glPushAttrib(GL_LIST_BIT);
-				glListBase(displayListNameBase_);
+				glListBase(getDisplayListNameBase());
 #if defined(_UNICODE) || defined(UNICODE)
 				glCallLists((int)str.length(), GL_UNSIGNED_SHORT, str.c_str());
 #else

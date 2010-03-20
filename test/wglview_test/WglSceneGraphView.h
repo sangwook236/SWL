@@ -124,11 +124,11 @@ private:
 
 	void contructSceneGraph();
 
-private:
-	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
+	void generateDisplayListName(const bool isContextActivated) const;
+	void deleteDisplayListName(const bool isContextActivated) const;
 
-	void processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
-	void processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const;
+	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
+	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
 
 private:
 	//-------------------------------------------------------------------------
@@ -140,13 +140,6 @@ private:
 	// This code is required for SWL.WglView: view state
 
 	boost::scoped_ptr<swl::ViewStateMachine> viewStateFsm_;
-
-	//-------------------------------------------------------------------------
-	// OpenGL display list
-
-	enum DisplayListNames { DLN_MAIN_OBJECT_1 = 0, DLN_MAIN_OBJECT_2, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR };
-	//enum DisplayListNames { DLN_MAIN_OBJECT_1 = 0, DLN_MAIN_OBJECT_2, DLN_FLOOR, DLN_GRADIENT_BACKGROUND, DLN_COLOR_BAR, DLN_COORDINATE_FRAME };
-	static const int MAX_OPENGL_DISPLAY_LIST_COUNT = 4;
 
 	//-------------------------------------------------------------------------
 	//
@@ -164,13 +157,8 @@ private:
 
 	float topGradientBackgroundColor_[4], bottomGradientBackgroundColor_[4];  // r, g, b, a
 	float floorColor_[4];  // r, g, b, a
-	float pickedColor_[4];  // r, g, b, a
 
 	bool isPrinting_;
-	bool isPickingObject_;
-
-	unsigned int pickedObj_;
-	unsigned int temporarilyPickedObj_;
 
 	//
 	typedef swl::IGLSceneVisitor visitor_type;

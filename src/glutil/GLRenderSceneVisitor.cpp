@@ -4,7 +4,9 @@
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
 #include "swl/graphics/TransformSceneNode.h"
+#if defined(WIN32)
 #include <windows.h>
+#endif
 #include <GL/gl.h>
 
 
@@ -58,7 +60,8 @@ void GLRenderSceneVisitor::visit(const shape_node_type &node) const
 		if (geometry) geometry->draw();
 	glEnd();
 #else
-	shape->isDisplayListUsed() ? shape->callDisplayList() : shape->draw();
+	//shape->isDisplayListUsed() ? shape->callDisplayList() : shape->draw();
+	isPickingState_ || !shape->isDisplayListUsed() ? shape->draw() : shape->callDisplayList();
 #endif
 }
 

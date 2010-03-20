@@ -217,10 +217,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\base\IPickable.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\inc\swl\base\IPrintable.h"
 				>
 			</File>

@@ -120,10 +120,10 @@ bool WglViewBase::popDisplayList(const bool isContextActivated)
 	{
 		if (currDisplayListNameBase)
 			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
-		else displayListStack_.pop();
+		displayListStack_.pop();
 		if (currFontDisplayListNameBase)
 			glDeleteLists(currFontDisplayListNameBase, maxFontDisplayListCount_);
-		else fontDisplayListStack_.pop();
+		fontDisplayListStack_.pop();
 	}
 	else
 	{
@@ -133,10 +133,10 @@ bool WglViewBase::popDisplayList(const bool isContextActivated)
 
 		if (currDisplayListNameBase)
 			glDeleteLists(currDisplayListNameBase, maxDisplayListCount_);
-		else displayListStack_.pop();
+		displayListStack_.pop();
 		if (currFontDisplayListNameBase)
 			glDeleteLists(currFontDisplayListNameBase, maxFontDisplayListCount_);
-		else fontDisplayListStack_.pop();
+		fontDisplayListStack_.pop();
 	}
 	
 	return true;

@@ -17,11 +17,11 @@ public:
 	//typedef IGLSceneVisitor base_type;
 
 public:
-	enum RenderMode { RENDER_OPAQUE_OBJECTS, RENDER_TRANSPARENT_OBJECTS, SELECT_OBJECTS };
+	enum RenderMode { RENDER_OPAQUE_OBJECTS, RENDER_TRANSPARENT_OBJECTS };
 
 public:
-	GLPrintSceneVisitor(const RenderMode renderMode)
-	: renderMode_(renderMode)
+	GLPrintSceneVisitor(const RenderMode renderMode, const bool isPickingState = false)
+	: renderMode_(renderMode), isPickingState_(isPickingState)
 	{}
 
 public:
@@ -33,6 +33,7 @@ public:
 
 private:
 	const RenderMode renderMode_;
+	const bool isPickingState_;
 };
 
 }  // namespace swl

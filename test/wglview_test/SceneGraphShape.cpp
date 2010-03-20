@@ -3,6 +3,7 @@
 #include "SceneGraphShape.h"
 #include "swl/winview/WglFont.h"
 #include "swl/glutil/GLCamera.h"
+#include "swl/graphics/ObjectPickerMgr.h"
 #include "swl/math/MathConstant.h"
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -20,8 +21,6 @@
 #if defined(min)
 #undef min
 #endif
-
-#define __USE_OPENGL_DISPLAY_LIST 1
 
 
 //-----------------------------------------------------------------------------
@@ -60,13 +59,20 @@ void Main1Shape::draw() const
 		glEnable(GL_CLIP_PLANE1);
 		glClipPlane(GL_CLIP_PLANE1, clippingPlane1);
 
-		glPushName(reinterpret_cast<GLuint>(this));
+		const GLuint id = reinterpret_cast<GLuint>(this);
+		glPushName(id);
 			// draw a sphere
-			// FIXME [uncomment] >>
-			//if (PON_SPHERE == pickedObj_ || (PON_SPHERE == temporarilyPickedObj_ && isPickObjectState))
-			//	glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			//else
-				glColor4f(red(), green(), blue(), alpha());
+			if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(id))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else if (swl::ObjectPickerMgr::getInstance().isPickedObject(id))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else glColor4f(red(), green(), blue(), alpha());
 			GL_LINE == polygonMode ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
 		glPopName();
 
@@ -78,20 +84,6 @@ void Main1Shape::draw() const
 	// restore states
 	//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 	glPolygonMode(drawingFace, oldPolygonMode[1]);
-}
-
-bool Main1Shape::createDisplayList()
-{
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
-}
-void Main1Shape::callDisplayList() const
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
 }
 
 void Main1Shape::drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
@@ -176,13 +168,20 @@ void Main2Shape::draw() const
 	glPushMatrix();
 		glTranslatef(250.0f, -250.0f, 250.0f);
 
-		glPushName(reinterpret_cast<GLuint>(this));
+		const GLuint id = reinterpret_cast<GLuint>(this);
+		glPushName(id);
 			// draw a cube
-			// FIXME [uncomment] >>
-			//if (PON_CUBE == pickedObj_ || (PON_CUBE == temporarilyPickedObj_ && isPickObjectState))
-			//	glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			//else
-				glColor4f(red(), green(), blue(), alpha());
+			if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(id))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else if (swl::ObjectPickerMgr::getInstance().isPickedObject(id))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else glColor4f(red(), green(), blue(), alpha());
 			GL_LINE == polygonMode ? glutWireCube(500.0) : glutSolidCube(500.0);
 		glPopName();
 	glPopMatrix();
@@ -190,20 +189,6 @@ void Main2Shape::draw() const
 	// restore states
 	//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 	glPolygonMode(drawingFace, oldPolygonMode[1]);
-}
-
-bool Main2Shape::createDisplayList()
-{
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
-}
-void Main2Shape::callDisplayList() const
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -265,20 +250,6 @@ void GradientBackgroundShape::draw() const
 		glPolygonMode(drawingFace, oldPolygonMode[1]);
 	if (isLighting) glEnable(GL_LIGHTING);
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
-}
-
-bool GradientBackgroundShape::createDisplayList()
-{
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
-}
-void GradientBackgroundShape::callDisplayList() const
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -430,18 +401,12 @@ void FloorShape::draw() const
 
 bool FloorShape::createDisplayList()
 {
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
+	throw std::runtime_error("OpenGL display list is not used");
 }
+
 void FloorShape::callDisplayList() const
 {
-/*
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
-*/
+	throw std::runtime_error("OpenGL display list is not used");
 }
 
 //-----------------------------------------------------------------------------
@@ -526,27 +491,13 @@ void ColorBarShape::draw() const
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-bool ColorBarShape::createDisplayList()
-{
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
-}
-void ColorBarShape::callDisplayList() const
-{
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
-}
-
 //-----------------------------------------------------------------------------
 //
 
 void CoordinateFrameShape::draw() const
 {
 	const boost::shared_ptr<view_type::camera_type> &camera = view_.topCamera();
-	if (NULL == camera.get()) return false;
+	if (NULL == camera.get()) return;
  
 	const swl::Region2<int> &oldViewport = camera->getViewport();
 	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
@@ -604,22 +555,91 @@ void CoordinateFrameShape::draw() const
 
 bool CoordinateFrameShape::createDisplayList()
 {
-	glNewList(displayListName_, GL_COMPILE);
-		draw();
-	glEndList();
-	return true;
-}
-void CoordinateFrameShape::callDisplayList() const
-{
-/*
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-	glCallList(displayListName_);
-#endif
-*/
+	throw std::runtime_error("OpenGL display list is not used");
 }
 
-void CoordinateFrameShape:processToPick() const
+void CoordinateFrameShape::callDisplayList() const
 {
+	throw std::runtime_error("OpenGL display list is not used");
+}
+
+void CoordinateFrameShape::processToPick(const int x, const int y, const int width, const int height) const
+{
+	const boost::shared_ptr<view_type::context_type> &context = view_.topContext();
+	const boost::shared_ptr<view_type::camera_type> &camera = view_.topCamera();
+	if (!context || !camera) return;
+
+	const swl::Region2<int> &oldViewport = camera->getViewport();
+	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
+
+	const int dX = int(oldViewport.getWidth() * 0.10);
+	const int dY = int(oldViewport.getHeight() * 0.10);
+	const int size = std::max(std::max(dX, dY), 100);
+
+	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
+	camera->setViewRegion(static_cast<swl::ViewCamera2 *>(camera.get())->getViewBound());
+	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
+
+	// save states
+	glDisable(GL_DEPTH_TEST);
+
+	//double modelviewMatrix[16];
+	double projectionMatrix[16];
+	int viewport[4];
+	//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
+	glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+	glGetIntegerv(GL_VIEWPORT, viewport);
+
+	// set projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	//gluPickMatrix(x, viewport[3] - y, width, height, viewport);
+	gluPickMatrix(x, oldViewport.getHeight() - y, width, height, viewport);
+
+	// need to load current projection matrix
+	glMultMatrixd(projectionMatrix);
+
+	//
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+/*
+		glLoadIdentity();
+		// 1. need to load current modelview matrix
+		//   e.g.) glLoadMatrixd(modelviewMatrix);
+		// 2. need to be thought of viewing transformation
+		//   e.g.) camera->lookAt();
+		camera->lookAt();
+*/
+		// move origin
+		double eyeX(0.0), eyeY(0.0), eyeZ(0.0), dirX(0.0), dirY(0.0), dirZ(0.0);
+		camera->getEyePosition(eyeX, eyeY, eyeZ);
+		camera->getEyeDirection(dirX, dirY, dirZ);
+		const double eyeDist = camera->getEyeDistance();
+		glTranslated(eyeX + eyeDist * dirX, eyeY + eyeDist * dirY, eyeZ + eyeDist * dirZ);
+
+		std::multimap<double, int> vals;
+		vals.insert(std::make_pair(std::acos(dirX), 0));
+		vals.insert(std::make_pair(std::acos(dirY), 1));
+		vals.insert(std::make_pair(std::acos(dirZ), 2));
+		std::multimap<double, int>::iterator it = vals.begin();
+		const int order1 = it->second;  ++it;
+		const int order2 = it->second;  ++it;
+		const int order3 = it->second;
+		const int order[] = { order1, order2, order3 };
+
+		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
+		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
+		drawCoordinateFrame(length, order);
+	glPopMatrix();
+
+	// pop projection matrix
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+
+	// restore states
+	camera->setViewRegion(oldViewRegion);
+	camera->setViewport(oldViewport);
 }
 
 void CoordinateFrameShape::drawCoordinateFrame(const float height, const int order[]) const
@@ -637,83 +657,101 @@ void CoordinateFrameShape::drawCoordinateFrame(const float height, const int ord
 	gluQuadricDrawStyle(obj, GLU_FILL);
 	gluQuadricNormals(obj, GLU_SMOOTH);
 
+	const GLuint id = reinterpret_cast<GLuint>(this);
+	glPushName(id);
 	for (int i = 0; i < 3; ++i)
 	{
 		if (0 == order[i])
 		{
-			glPushName(reinterpret_cast<GLuint>(this));
+			const GLuint xId = id + 0;
+			glPushName(xId);
+				// x axis
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(xId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(xId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(1.0f, 0.0f, 0.0f);
+				glPushMatrix();
+					glRotated(90.0, 0.0, 1.0, 0.0);
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 
-			// x axis
-			// FIXME [uncomment] >>
-			//if (PON_X_AXIS == pickedObj_ || (PON_X_AXIS == temporarilyPickedObj_ && isPickObjectState))
-			//	glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			//else
-				glColor3f(1.0f, 0.0f, 0.0f);
-			glPushMatrix();
-				glRotated(90.0, 0.0, 1.0, 0.0);
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
-			// TODO [check] >>
 #if defined(_UNICODE) || defined(UNICODE)
-			swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, L"X");
+				swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, L"X");
 #else
-     		swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, "X");
+     			swl::WglFont::getInstance().drawText(height, 0.0f, 0.0f, "X");
 #endif
-
 			glPopName();
 		}
 		else if (1 == order[i])
 		{
-			glPushName(reinterpret_cast<GLuint>(this));
+			const GLuint yId = id + 1;
+			glPushName(yId);
+				// y axis
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(yId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(yId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(0.0f, 1.0f, 0.0f);
+				glPushMatrix();
+					glRotated(-90.0, 1.0, 0.0, 0.0);
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 
-			// y axis
-			// FIXME [uncomment] >>
-			//if (PON_Y_AXIS == pickedObj_ || (PON_Y_AXIS == temporarilyPickedObj_ && isPickObjectState))
-			//	glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			//else
-				glColor3f(0.0f, 1.0f, 0.0f);
-			glPushMatrix();
-				glRotated(-90.0, 1.0, 0.0, 0.0);
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
-			// TODO [check] >>
 #if defined(_UNICODE) || defined(UNICODE)
-			swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, L"Y");
+				swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, L"Y");
 #else
-			swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, "Y");
+				swl::WglFont::getInstance().drawText(0.0f, height, 0.0f, "Y");
 #endif
-
 			glPopName();
 		}
 		else if (2 == order[i])
 		{
-			glPushName(reinterpret_cast<GLuint>(this));
+			const GLuint zId = id + 2;
+			glPushName(zId);
+				// z axis
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(zId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(zId))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(0.0f, 0.0f, 1.0f);	
+				glPushMatrix();
+					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
+					glTranslated(0.0, 0.0, size);
+					gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
+				glPopMatrix();
 
-			// z axis
-			// FIXME [uncomment] >>
-			//if (PON_Z_AXIS == pickedObj_ || (PON_Z_AXIS == temporarilyPickedObj_ && isPickObjectState))
-			//	glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			//else
-				glColor3f(0.0f, 0.0f, 1.0f);	
-			glPushMatrix();
-				gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
-				glTranslated(0.0, 0.0, size);
-				gluCylinder(obj, coneRadius, 0.0, coneHeight, 12, 1);
-			glPopMatrix();
-			// TODO [check] >>
 #if defined(_UNICODE) || defined(UNICODE)
-			swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, L"Z");
+				swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, L"Z");
 #else
-			swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, "Z");
+				swl::WglFont::getInstance().drawText(0.0f, 0.0f, height, "Z");
 #endif
-
 			glPopName();
 		}
 	}
+	glPopName();
  
 	gluDeleteQuadric(obj);
 }

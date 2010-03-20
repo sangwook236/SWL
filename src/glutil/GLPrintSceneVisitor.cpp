@@ -4,7 +4,9 @@
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
 #include "swl/graphics/TransformSceneNode.h"
+#if defined(WIN32)
 #include <windows.h>
+#endif
 #include <GL/gl.h>
 
 
@@ -21,21 +23,12 @@ namespace swl {
 
 void GLPrintSceneVisitor::visit(const appearance_node_type &node) const
 {
-	const appearance_node_type::appearance_type &appearance = node.getAppearance();
-
-	const attrib::PolygonMode &polygonMode = appearance.getPolygonMode();
-	const bool &isVisible = appearance.isVisible();
-	const bool &isTransparent = appearance.isTransparent();
-
-	glColor4f(appearance.red(), appearance.green(), appearance.blue(), appearance.alpha());
+	std::runtime_error("not yet implemented");
 }
 
 void GLPrintSceneVisitor::visit(const geometry_node_type &node) const
 {
-	const geometry_node_type::geometry_type &geometry = node.getGeometry();
-
-	// FIXME [modify] >>
-	if (geometry) geometry->draw();
+	std::runtime_error("not yet implemented");
 }
 
 void GLPrintSceneVisitor::visit(const shape_node_type &node) const
@@ -58,7 +51,8 @@ void GLPrintSceneVisitor::visit(const shape_node_type &node) const
 		if (geometry) geometry->draw();
 	glEnd();
 #else
-	shape->isDisplayListUsed() ? shape->callDisplayList() : shape->draw();
+	//shape->isDisplayListUsed() ? shape->callDisplayList() : shape->draw();
+	isPickingState_ || !shape->isDisplayListUsed() ? shape->draw() : shape->callDisplayList();
 #endif
 }
 

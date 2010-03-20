@@ -15,15 +15,12 @@ public:
 	typedef swl::GLShape base_type;
 
 public:
-	Main1Shape(const unsigned int displayListName)
-	: base_type(displayListName, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
+	Main1Shape()
+	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
 	{}
 
 public:
 	/*virtual*/ void draw() const;
-
-	/*virtual*/ bool createDisplayList();
-	/*virtual*/ void callDisplayList() const;
 
 private:
 	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
@@ -38,15 +35,12 @@ public:
 	typedef swl::GLShape base_type;
 
 public:
-	Main2Shape(const unsigned int displayListName)
-	: base_type(displayListName, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
+	Main2Shape()
+	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
 	{}
 
 public:
 	/*virtual*/ void draw() const;
-
-	/*virtual*/ bool createDisplayList();
-	/*virtual*/ void callDisplayList() const;
 };
 
 //-----------------------------------------------------------------------------
@@ -58,15 +52,12 @@ public:
 	typedef swl::GLShape base_type;
 
 public:
-	GradientBackgroundShape(const unsigned int displayListName)
-	: base_type(displayListName, false, false, false, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT)
+	GradientBackgroundShape()
+	: base_type(1u, false, false, false, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT)
 	{}
 
 public:
 	/*virtual*/ void draw() const;
-
-	/*virtual*/ bool createDisplayList();
-	/*virtual*/ void callDisplayList() const;
 
 	void setTopColor(const float r, const float g, const float b, const float a = 1.0f)
 	{  topColor_.r = r;  topColor_.g = g;  topColor_.b = b;  topColor_.a = a;  }
@@ -111,15 +102,12 @@ public:
 	typedef swl::GLShape base_type;
 
 public:
-	ColorBarShape(const unsigned int displayListName)
-	: base_type(displayListName, false, true, false, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT)
+	ColorBarShape()
+	: base_type(1u, false, true, false, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT)
 	{}
 
 public:
 	/*virtual*/ void draw() const;
-
-	/*virtual*/ bool createDisplayList();
-	/*virtual*/ void callDisplayList() const;
 };
 
 //-----------------------------------------------------------------------------
@@ -143,7 +131,7 @@ public:
 	/*virtual*/ bool createDisplayList();
 	/*virtual*/ void callDisplayList() const;
 
-	/*virtual*/ void processToPick() const;
+	/*virtual*/ void processToPick(const int x, const int y, const int width, const int height) const;
 
 private:
 	void drawCoordinateFrame(const float height, const int order[]) const;

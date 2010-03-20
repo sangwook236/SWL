@@ -3,19 +3,22 @@
 
 
 #include "swl/winview/ExportWinView.h"
+#include "swl/glutil/GLDisplayListCallableInterface.h"
+#include "swl/graphics/GraphicsObj.h"
 #include <string>
+#if defined(WIN32)
 #include <windows.h>
-
+#endif
 
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
 // class WglFont
 
-class SWL_WIN_VIEW_API WglFont
+class SWL_WIN_VIEW_API WglFont: public GraphicsObj, public GLDisplayListCallableInterface
 {
 public:
-	//typedef WglFont base_type;
+	typedef GraphicsObj base_type;
 
 private:
 	WglFont();
@@ -31,9 +34,23 @@ public:
 	static void clearInstance();
 
 public:
-	bool create(HDC hDC, const unsigned int displayListNameBase);
+	void setDeviceContext(HDC hDC)  {  hDC_ = hDC;  }
 
-	bool isDisplayListUsed() const  {  return 0 != displayListNameBase_;  }
+	/*virtual*/ void draw() const
+	{
+		throw std::runtime_error("this function should not be called");
+	}
+
+	/*virtual*/ bool createDisplayList();
+	/*virtual*/ void callDisplayList() const
+	{
+		throw std::runtime_error("this function should not be called");
+	}
+
+	/*virtual*/ void processToPick(const int /*x*/, const int /*y*/, const int /*width*/, const int /*height*/) const
+	{
+		throw std::runtime_error("this function should not be called");
+	}
 
 #if defined(_UNICODE) || defined(UNICODE)
 	void drawText(const float x, const float y, const float z, const std::wstring &str) const;
@@ -60,14 +77,10 @@ private:
 	void drawTextUsingWglOutlineFonts(const float x, const float y, const float z, const float xScale, const float yScale, const float zScale, const std::string &str) const;
 #endif
 
-public:
-	static const int FONT_DISPLAY_LIST_COUNT;
-
 private:
 	static WglFont *singleton_;
 
-	//
-	unsigned int displayListNameBase_;
+	HDC hDC_;
 
 	// for WGL bitmap fonts
 	static const int MAX_WGL_BITMAP_FONT_DISPLAY_LIST_COUNT = 96;

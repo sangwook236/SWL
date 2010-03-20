@@ -3,7 +3,9 @@
 #include "swl/glutil/GLShapeSceneNode.h"
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
+#if defined(WIN32)
 #include <windows.h>
+#endif
 #include <GL/gl.h>
 
 
@@ -35,7 +37,7 @@ void GLPickObjectVisitor::visit(const shape_node_type &node) const
 
 	if (!shape->isVisible() || !shape->isPickable()) return;
 
-	shape->processToPick();
+	shape->processToPick(x_, y_, width_, height_);
 }
 
 }  // namespace swl

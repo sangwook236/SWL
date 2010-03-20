@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/graphics/GeometryPool.h"
+#include "swl/graphics/GeometryPoolMgr.h"
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -11,19 +11,19 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// class GeometryPool
+// class GeometryPoolMgr
 
-/*static*/ GeometryPool *GeometryPool::singleton_ = NULL;
+/*static*/ GeometryPoolMgr *GeometryPoolMgr::singleton_ = NULL;
 
-/*static*/ GeometryPool & GeometryPool::getInstance()
+/*static*/ GeometryPoolMgr & GeometryPoolMgr::getInstance()
 {
 	if (NULL == singleton_)
-		singleton_ = new GeometryPool();
+		singleton_ = new GeometryPoolMgr();
 
 	return *singleton_;
 }
 
-/*static*/ void GeometryPool::clearInstance()
+/*static*/ void GeometryPoolMgr::clearInstance()
 {
 	if (singleton_)
 	{
@@ -31,7 +31,8 @@ namespace swl {
 		singleton_ = NULL;
 	}
 }
-GeometryPool::geometry_id_type GeometryPool::createGeometryId()
+
+GeometryPoolMgr::geometry_id_type GeometryPoolMgr::createGeometryId()
 {
 	const size_t count = geometryPool_.size();
 	geometry_id_type geomId = count;
@@ -46,13 +47,13 @@ GeometryPool::geometry_id_type GeometryPool::createGeometryId()
 	return geomId;
 }
 
-void GeometryPool::deleteGeometryId(const GeometryPool::geometry_id_type &geomId)
+void GeometryPoolMgr::deleteGeometryId(const GeometryPoolMgr::geometry_id_type &geomId)
 {
 	if (geometryPool_.end() != geometryPool_.find(geomId))
 		geometryPool_.erase(geomId);
 }
 
-bool GeometryPool::setGeometry(const GeometryPool::geometry_id_type &geomId, GeometryPool::geometry_type &geom)
+bool GeometryPoolMgr::setGeometry(const GeometryPoolMgr::geometry_id_type &geomId, GeometryPoolMgr::geometry_type &geom)
 {
 	if (geometryPool_.empty()) return false;
 	geometry_pool_type::iterator it = geometryPool_.find(geomId);
@@ -65,14 +66,14 @@ bool GeometryPool::setGeometry(const GeometryPool::geometry_id_type &geomId, Geo
 	}
 }
 
-GeometryPool::geometry_type GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId)
+GeometryPoolMgr::geometry_type GeometryPoolMgr::getGeometry(const GeometryPoolMgr::geometry_id_type &geomId)
 {
 	if (geometryPool_.empty()) return geometry_type();
 	geometry_pool_type::iterator it = geometryPool_.find(geomId);
 	return geometryPool_.end() == it ? geometry_type() : it->second;
 }
 
-const GeometryPool::geometry_type GeometryPool::getGeometry(const GeometryPool::geometry_id_type &geomId) const
+const GeometryPoolMgr::geometry_type GeometryPoolMgr::getGeometry(const GeometryPoolMgr::geometry_id_type &geomId) const
 {
 	if (geometryPool_.empty()) return geometry_type();
 	geometry_pool_type::const_iterator it = geometryPool_.find(geomId);

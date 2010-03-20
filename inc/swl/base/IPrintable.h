@@ -9,6 +9,9 @@ namespace swl {
 
 struct IPrintable
 {
+public:
+	//typedef IPrintable base_type;
+
 protected:
 	virtual ~IPrintable()  {}
 

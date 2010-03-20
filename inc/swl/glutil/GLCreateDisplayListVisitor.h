@@ -17,7 +17,11 @@ public:
 	//typedef IGLSceneVisitor base_type;
 
 public:
-	GLCreateDisplayListVisitor()
+	enum DisplayListMode { DLM_CREATE, DLM_GENERATE_NAME, DLM_DELETE_NAME };
+
+public:
+	GLCreateDisplayListVisitor(const DisplayListMode displayListMode)
+	: displayListMode_(displayListMode)
 	{}
 
 public:
@@ -26,6 +30,9 @@ public:
 	/*virtual*/ void visit(const shape_node_type &node) const;
 
 	/*virtual*/ void visit(const transform_node_type & /*node*/) const  {}
+
+private:
+	const DisplayListMode displayListMode_;
 };
 
 }  // namespace swl

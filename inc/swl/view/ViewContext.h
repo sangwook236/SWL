@@ -23,17 +23,17 @@ public:
 	{
 	public:
 		//typedef Guard base_type;
-		typedef ViewContext context_type;
+		typedef ViewContext guardable_type;
 
 	public:
-		Guard(context_type &context)
-		: context_(context)
-		{  context_.activate();  }
+		Guard(guardable_type &guardable)
+		: guardable_(guardable)
+		{  guardable_.activate();  }
 		~Guard()
-		{  context_.deactivate();  }
+		{  guardable_.deactivate();  }
 
 	private:
-		context_type &context_;
+		guardable_type &guardable_;
 	};
 
 public:

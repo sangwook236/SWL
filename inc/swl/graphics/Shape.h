@@ -3,7 +3,7 @@
 
 
 #include "swl/graphics/GraphicsObj.h"
-#include "swl/graphics/GeometryPool.h"
+#include "swl/graphics/GeometryPoolMgr.h"
 #include "swl/graphics/Appearance.h"
 
 
@@ -15,10 +15,10 @@ namespace swl {
 class SWL_GRAPHICS_API Shape: public GraphicsObj
 {
 public:
-	typedef GraphicsObj						base_type;
-	typedef GeometryPool::geometry_id_type	geometry_id_type;
-	typedef GeometryPool::geometry_type		geometry_type;
-	typedef Appearance						appearance_type;
+	typedef GraphicsObj							base_type;
+	typedef GeometryPoolMgr::geometry_id_type	geometry_id_type;
+	typedef GeometryPoolMgr::geometry_type		geometry_type;
+	typedef Appearance							appearance_type;
 
 public:
 	Shape(const bool isTransparent = false, const bool isPrintable = true, const bool isPickable = true, const attrib::PolygonMode polygonMode = attrib::POLYGON_FILL, const attrib::PolygonFace drawingFace = attrib::POLYGON_FACE_FRONT);

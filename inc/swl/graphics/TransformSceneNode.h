@@ -19,14 +19,30 @@ public:
 	typedef TMatrix3<double>	transform_type;
 
 public:
-	TransformSceneNode();
-	TransformSceneNode(const TransformSceneNode &rhs);
-	virtual ~TransformSceneNode();
+	TransformSceneNode()
+	: base_type(),
+	  transform_()
+	{}
+	TransformSceneNode(const TransformSceneNode &rhs)
+	: base_type(rhs),
+	  transform_(rhs.transform_)
+	{}
+	virtual ~TransformSceneNode()
+	{}
 
-	TransformSceneNode & operator=(const TransformSceneNode &rhs);
+	TransformSceneNode & operator=(const TransformSceneNode &rhs)
+	{
+		if (this == &rhs) return *this;
+		static_cast<base_type &>(*this) = rhs;
+		transform_ = rhs.transform_;
+		return *this;
+	}
 
 public:
-	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const;
+	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const
+	{
+		visitor.visit(*this);
+	}
 
 	transform_type & getTransform()  {  return transform_;  }
 	const transform_type & getTransform() const  {  return transform_;  }

@@ -1,5 +1,5 @@
-#if !defined(__SWL_GRAPHICS__DRAWABLE_INTERFACE__H_)
-#define __SWL_GRAPHICS__DRAWABLE_INTERFACE__H_ 1
+#if !defined(__SWL_GRAPHICS__DRAWABLE_INTRFACE__H_)
+#define __SWL_GRAPHICS__DRAWABLE_INTRFACE__H_ 1
 
 
 namespace swl {
@@ -9,6 +9,9 @@ namespace swl {
 
 struct IDrawable
 {
+public:
+	//typedef IDrawable base_type;
+
 protected:
 	virtual ~IDrawable()  {}
 
@@ -20,4 +23,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_GRAPHICS__DRAWABLE_INTERFACE__H_
+#endif  // __SWL_GRAPHICS__DRAWABLE_INTRFACE__H_

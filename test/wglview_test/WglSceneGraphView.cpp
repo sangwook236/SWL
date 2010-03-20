@@ -20,10 +20,12 @@
 #include "swl/glutil/GLCamera.h"
 #include "swl/glutil/GLRenderSceneVisitor.h"
 #include "swl/glutil/GLCreateDisplayListVisitor.h"
-#include "swl/glutil/CWglSceneGraphView.h"
+#include "swl/glutil/GLPickObjectVisitor.h"
+#include "swl/glutil/GLPrintSceneVisitor.h"
 #include "swl/glutil/GLShapeSceneNode.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
+#include "swl/graphics/ObjectPickerMgr.h"
 #include "swl/math/MathConstant.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/multi_array.hpp>
@@ -45,11 +47,6 @@
 #endif
 
 #define __USE_OPENGL_DISPLAY_LIST 1
-
-namespace {
-
-}  // unnamed namespace
-
 
 // CWglSceneGraphView
 
@@ -101,12 +98,11 @@ END_MESSAGE_MAP()
 // CWglSceneGraphView construction/destruction
 
 CWglSceneGraphView::CWglSceneGraphView()
-: swl::WglViewBase(MAX_OPENGL_DISPLAY_LIST_COUNT, swl::WglFont::FONT_DISPLAY_LIST_COUNT),
+: swl::WglViewBase(0u, 0u),
   viewStateFsm_(),
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
-  isPrinting_(false), isPickingObject_(false),
-  pickedObj_(0u), temporarilyPickedObj_(0u),
+  isPrinting_(false),
   rootSceneNode_()
 {
 #if 0
@@ -142,11 +138,6 @@ CWglSceneGraphView::CWglSceneGraphView()
 	floorColor_[1] = 0.5f;
 	floorColor_[2] = 0.5f;
 	floorColor_[3] = 0.5f;
-
-	pickedColor_[0] = 1.0f;
-	pickedColor_[1] = 1.0f;
-	pickedColor_[2] = 0.0f;
-	pickedColor_[3] = 1.0f;
 }
 
 CWglSceneGraphView::~CWglSceneGraphView()
@@ -207,9 +198,9 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 
 		if (printCamera.get() && printContext.isActivated())
 		{
-			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
+			const bool doesRecreateDisplayListUsed = !isDisplayListShared;
 			// create & push a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) pushDisplayList(true);
+			if (doesRecreateDisplayListUsed) generateDisplayListName(true);
 
 			initializeView();
 			printCamera->setViewRegion(camera->getCurrentViewRegion());
@@ -221,7 +212,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 			renderScene(printContext, *printCamera);
 
 			// pop & delete a new name base of OpenGL display list
-			if (doesRecreateDisplayListUsed) popDisplayList(true);
+			if (doesRecreateDisplayListUsed) deleteDisplayListName(true);
 		}
 
 		// restore view's states
@@ -364,14 +355,13 @@ void CWglSceneGraphView::OnInitialUpdate()
 		// guard the context
 		context_type::guard_type guard(*viewContext);
 
-#if defined(__USE_OPENGL_DISPLAY_LIST)
-		if (!pushDisplayList(true))
-		{
-			// error: OpenGL display list cannot be initialized !!!
-		}
-#endif
-
+		// construct scene graph
 		contructSceneGraph();
+
+		// create & push a new name base of OpenGL display list
+#if defined(__USE_OPENGL_DISPLAY_LIST)
+		generateDisplayListName(true);
+#endif
 
 		// set the view
 		initializeView();
@@ -414,10 +404,8 @@ void CWglSceneGraphView::OnDestroy()
 	CView::OnDestroy();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!popDisplayList(false))
-	{
-		// error: OpenGL display list cannot be finalized !!!
-	}
+	// pop & delete a new name base of OpenGL display list
+	deleteDisplayListName(false);
 #endif
 
 	//-------------------------------------------------------------------------
@@ -584,10 +572,8 @@ bool CWglSceneGraphView::initializeView()
 bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	if (!popDisplayList(false))
-	{
-		// error: OpenGL display list cannot be finalized !!!
-	}
+	// pop & delete a new name base of OpenGL display list
+	deleteDisplayListName(false);
 #endif
 
 	const boost::shared_ptr<context_type> &context = topContext();
@@ -596,10 +582,7 @@ bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, co
 		context_type::guard_type guard(*context);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-		if (!pushDisplayList(true))
-		{
-			// error: OpenGL display list cannot be initialized !!!
-		}
+		generateDisplayListName(true);
 #endif
 
 		initializeView();
@@ -646,8 +629,17 @@ bool CWglSceneGraphView::doRenderScene(const context_type &/*context*/, const ca
 	// traverse a scene graph
 	if (rootSceneNode_)
 	{
-		rootSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_OPAQUE_OBJECTS));
-		rootSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_TRANSPARENT_OBJECTS));
+		const bool isPickingState = swl::ObjectPickerMgr::getInstance().isPicking();
+		if (isPrinting_)
+		{
+			rootSceneNode_->accept(swl::GLPrintSceneVisitor(swl::GLPrintSceneVisitor::RENDER_OPAQUE_OBJECTS, isPickingState));
+			rootSceneNode_->accept(swl::GLPrintSceneVisitor(swl::GLPrintSceneVisitor::RENDER_TRANSPARENT_OBJECTS, isPickingState));
+		}
+		else
+		{
+			rootSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_OPAQUE_OBJECTS, isPickingState));
+			rootSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_TRANSPARENT_OBJECTS, isPickingState));
+		}
 	}
 
     return true;
@@ -655,14 +647,10 @@ bool CWglSceneGraphView::doRenderScene(const context_type &/*context*/, const ca
 
 void CWglSceneGraphView::contructSceneGraph()
 {
-	// the name base of OpenGL display list that is actually used
-	const unsigned int currDiplayListNameBase = getCurrentDisplayListNameBase();
-	if (0u == currDiplayListNameBase) return;
-
 	rootSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 
 	// background
-	GradientBackgroundShape *bgShape = new GradientBackgroundShape(currDiplayListNameBase + DLN_GRADIENT_BACKGROUND);
+	GradientBackgroundShape *bgShape = new GradientBackgroundShape();
 	bgShape->setTopColor(topGradientBackgroundColor_[0], topGradientBackgroundColor_[1], topGradientBackgroundColor_[2], topGradientBackgroundColor_[3]);
 	bgShape->setBottomColor(bottomGradientBackgroundColor_[0], bottomGradientBackgroundColor_[1], bottomGradientBackgroundColor_[2], bottomGradientBackgroundColor_[3]);
 
@@ -685,26 +673,26 @@ void CWglSceneGraphView::contructSceneGraph()
 	rootSceneNode_->addChild(floorNode);
 
 	// main contents
-	boost::shared_ptr<swl::GLShape> main1Shape(new Main1Shape(currDiplayListNameBase + DLN_MAIN_OBJECT_1));
-	main1Shape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
+	boost::shared_ptr<swl::GLShape> mainObj1Shape(new Main1Shape());
+	mainObj1Shape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
-	boost::shared_ptr<scene_node_type> main1Node(new swl::GLShapeSceneNode<visitor_type>(main1Shape, L"main #1"));
+	boost::shared_ptr<scene_node_type> mainObj1Node(new swl::GLShapeSceneNode<visitor_type>(mainObj1Shape, L"main object #1"));
 #else
-	boost::shared_ptr<scene_node_type> main1Node(new swl::GLShapeSceneNode<visitor_type>(main1Shape, "main #1"));
+	boost::shared_ptr<scene_node_type> mainObj1Node(new swl::GLShapeSceneNode<visitor_type>(mainObj1Shape, "main object #1"));
 #endif
-	rootSceneNode_->addChild(main1Node);
+	rootSceneNode_->addChild(mainObj1Node);
 
-	boost::shared_ptr<swl::GLShape> main2Shape(new Main2Shape(currDiplayListNameBase + DLN_MAIN_OBJECT_2));
-	main2Shape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
+	boost::shared_ptr<swl::GLShape> mainObj2Shape(new Main2Shape());
+	mainObj2Shape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
-	boost::shared_ptr<scene_node_type> main2Node(new swl::GLShapeSceneNode<visitor_type>(main2Shape, L"main #2"));
+	boost::shared_ptr<scene_node_type> mainObj2Node(new swl::GLShapeSceneNode<visitor_type>(mainObj2Shape, L"main object #2"));
 #else
-	boost::shared_ptr<scene_node_type> main2Node(new swl::GLShapeSceneNode<visitor_type>(main2Shape, "main #2"));
+	boost::shared_ptr<scene_node_type> mainObj2Node(new swl::GLShapeSceneNode<visitor_type>(mainObj2Shape, "main object #2"));
 #endif
-	rootSceneNode_->addChild(main2Node);
+	rootSceneNode_->addChild(mainObj2Node);
 
 	// color bar
-	boost::shared_ptr<swl::GLShape> colorBarShape(new ColorBarShape(currDiplayListNameBase + DLN_COLOR_BAR));
+	boost::shared_ptr<swl::GLShape> colorBarShape(new ColorBarShape());
 #if defined(UNICODE) || defined(_UNICODE)
 	boost::shared_ptr<scene_node_type> colorBarNode(new swl::GLShapeSceneNode<visitor_type>(colorBarShape, L"color bar"));
 #else
@@ -724,80 +712,106 @@ void CWglSceneGraphView::contructSceneGraph()
 
 bool CWglSceneGraphView::createDisplayList(const bool isContextActivated)
 {
-	if (isDisplayListUsed())
+	HDC *dc = NULL;
+
+	const boost::shared_ptr<context_type> &context = topContext();
+	if (context)
 	{
-		// the name base of OpenGL display list for fonts that is actually used
-		const unsigned int currFontDiplayListNameBase = getCurrentFontDisplayListNameBase();
-
-		HDC *dc = NULL;
-
-		const boost::shared_ptr<context_type> &context = topContext();
-		if (context.get())
+		//context_type::guard_type guard(*context);
+		try
 		{
-			//context_type::guard_type guard(*context);
-			try
-			{
-				dc = boost::any_cast<HDC *>(context->getNativeContext());
-				if (NULL == dc) return false;
-			}
-			catch (const boost::bad_any_cast &)
-			{
-				return false;
-			}
+			dc = boost::any_cast<HDC *>(context->getNativeContext());
 		}
-
-		if (isContextActivated)
+		catch (const boost::bad_any_cast &)
 		{
-			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor());
-			swl::WglFont::getInstance().create(*dc, currFontDiplayListNameBase);
 		}
-		else
+	}
+
+	if (isContextActivated)
+	{
+		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
+		// TODO [modify] >> create display list name for fonts
+		if (dc)
 		{
-			context_type::guard_type guard(*context);
-			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor());
-			swl::WglFont::getInstance().create(*dc, currFontDiplayListNameBase);
+			swl::WglFont::getInstance().setDeviceContext(*dc);
+			swl::WglFont::getInstance().createDisplayList();
+		}
+	}
+	else
+	{
+		context_type::guard_type guard(*context);
+		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
+		if (dc)
+		{
+			swl::WglFont::getInstance().setDeviceContext(*dc);
+			swl::WglFont::getInstance().createDisplayList();
 		}
 	}
 
 	return true;
 }
 
-void CWglSceneGraphView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
+void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated) const
 {
-	if (rootSceneNode_)
+	if (isContextActivated)
+	{
+		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
+		swl::WglFont::getInstance().pushDisplayList();
+	}
+	else
 	{
 		const boost::shared_ptr<context_type> &context = topContext();
-		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (!context || !camera) return;
-
-		isPickingObject_ = true;
-
-		context_type::guard_type guard(*context);
-		rootSceneNode_->accept(swl::CWglSceneGraphView(/*camera, x, y, 2, 2, isTemporary*/));
-
-		isPickingObject_ = false;
+		if (context)
+		{
+			context_type::guard_type guard(*context);
+			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
+			swl::WglFont::getInstance().pushDisplayList();
+		}
 	}
+}
+
+void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated) const
+{
+	if (isContextActivated)
+	{
+		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
+		swl::WglFont::getInstance().popDisplayList();
+	}
+	else
+	{
+		const boost::shared_ptr<context_type> &context = topContext();
+		if (context)
+		{
+			context_type::guard_type guard(*context);
+			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
+			swl::WglFont::getInstance().popDisplayList();
+		}
+	}
+}
+
+void CWglSceneGraphView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
+{
+	if (!rootSceneNode_) return;
+
+	processToPickObject(x, y, 2, 2, isTemporary);
 }
 
 void CWglSceneGraphView::pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary /*= false*/)
 {
-	if (rootSceneNode_)
-	{
-		const boost::shared_ptr<context_type> &context = topContext();
-		const boost::shared_ptr<camera_type> &camera = topCamera();
-		if (!context || !camera) return;
+	if (!rootSceneNode_) return;
 
-		isPickingObject_ = true;
-
-		context_type::guard_type guard(*context);
-		const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
-		rootSceneNode_->accept(swl::CWglSceneGraphView(/*camera, region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight(), isTemporary*/));
-
-		isPickingObject_ = false;
-	}
+	const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
+	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight(), isTemporary);
 }
 
+void CWglSceneGraphView::processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary /*= false*/)
 {
+	const boost::shared_ptr<context_type> &context = topContext();
+	const boost::shared_ptr<camera_type> &camera = topCamera();
+	if (!context || !camera) return;
+
+	context_type::guard_type guard(*context);
+
 	// save states
 	GLint oldMatrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
@@ -819,15 +833,43 @@ void CWglSceneGraphView::pickObject(const int x1, const int y1, const int x2, co
 	glInitNames();
 	//glPushName(0u);
 
-	// render scene
-#if 0
-	renderScene(*context, *camera);
-#else
-	if (rootSceneNode_) rootSceneNode_->accept(swl::CWglSceneGraphView());
+	{
+		// set attributes
+		glEnable(GL_DEPTH_TEST);
+		//glDepthRange(0.0, 1.0);
 
-	processToPickMainContent(camera_, x_, y_, width_, height_);
-	if (isCoordinateFrameShown_) processToPickCoordinateFrame(camera_, x_, y_, width_, height_);
-#endif
+		//double modelviewMatrix[16];
+		double projectionMatrix[16];
+		int viewport[4];
+		//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
+		glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
+		glGetIntegerv(GL_VIEWPORT, viewport);
+
+		// set projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPushMatrix();
+		glLoadIdentity();
+		gluPickMatrix(x, viewport[3] - y, width, height, viewport);
+
+		// need to load current projection matrix
+		glMultMatrixd(projectionMatrix);
+
+		glMatrixMode(GL_MODELVIEW);
+		glPushMatrix();
+			glLoadIdentity();
+			// 1. need to load current modelview matrix
+			//   e.g.) glLoadMatrixd(modelviewMatrix);
+			// 2. need to be thought of viewing transformation
+			//   e.g.) camera->lookAt();
+			camera->lookAt();
+
+			rootSceneNode_->accept(swl::GLPickObjectVisitor(x, y, width, height));
+		glPopMatrix();
+
+		// pop projection matrix
+		glMatrixMode(GL_PROJECTION);
+		glPopMatrix();
+	}
 
 	// gather hit records
 	const GLint hitCount = glRenderMode(GL_RENDER);
@@ -838,161 +880,41 @@ void CWglSceneGraphView::pickObject(const int x1, const int y1, const int x2, co
 	glMatrixMode(oldMatrixMode);
 
 	// process hits
-	if (isTemporary_)
+	if (isTemporary)
 	{
 		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
-		if (pickedObj != temporarilyPickedObj_)
+		if (0u == pickedObj && swl::ObjectPickerMgr::getInstance().containTemporarilyPickedObject())
 		{
-			temporarilyPickedObj_ = pickedObj;
+			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
+			raiseDrawEvent(false);
+		}
+		else if (0u != pickedObj && !swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(pickedObj))
+		{
+			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
+			swl::ObjectPickerMgr::getInstance().addTemporarilyPickedObject(pickedObj);
 			raiseDrawEvent(false);
 		}
 	}
 	else
 	{
-		const unsigned int oldPickedObj = pickedObj_;
+		swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
 
-		temporarilyPickedObj_ = 0u;
-		if (hitCount > 0)
+		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
+		if (0u == pickedObj && swl::ObjectPickerMgr::getInstance().containPickedObject())
 		{
-			pickedObj_ = processHits(hitCount, selectBuffer);
-
-			// FIXME [modify] >>
-			//switch (pickedObj_)
-			//{
-			//case PON_SPHERE:
-			//	break;
-			//case PON_CUBE:
-			//	break;
-			//case PON_X_AXIS:
-			//	break;
-			//case PON_Y_AXIS:
-			//	break;
-			//case PON_Z_AXIS:
-			//	break;
-			//}
-		}
-		else pickedObj_ = 0u;
-
-		if (oldPickedObj != pickedObj_)
+			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
 			raiseDrawEvent(false);
+		}
+		else if (0u != pickedObj && !swl::ObjectPickerMgr::getInstance().isPickedObject(pickedObj))
+		{
+			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
+			swl::ObjectPickerMgr::getInstance().addPickedObject(pickedObj);
+
+			// FIXME [add] >> process picked objects
+
+			//raiseDrawEvent(false);
+		}
 	}
-}
-
-void CWglSceneGraphView::processToPickMainContent(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
-{
-	// set attributes
-	glEnable(GL_DEPTH_TEST);
-	//glDepthRange(0.0, 1.0);
-
-	//double modelviewMatrix[16];
-	double projectionMatrix[16];
-	int viewport[4];
-	//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
-	glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
-	glGetIntegerv(GL_VIEWPORT, viewport);
-
-	// set projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	gluPickMatrix(x, viewport[3] - y, width, height, viewport);
-
-	// need to load current projection matrix
-	glMultMatrixd(projectionMatrix);
-
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-		glLoadIdentity();
-		// 1. need to load current modelview matrix
-		//   e.g.) glLoadMatrixd(modelviewMatrix);
-		// 2. need to be thought of viewing transformation
-		//   e.g.) camera->lookAt();
-		camera->lookAt();
-
-#if 0
-		doRenderScene(*context, *camera);
-#else
-		drawMainContent();
-#endif
-	glPopMatrix();
-
-	// pop projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-}
-
-void CWglSceneGraphView::processToPickCoordinateFrame(const boost::shared_ptr<camera_type> &camera, const int x, const int y, const int width, const int height) const
-{
-	const swl::Region2<int> &oldViewport = camera->getViewport();
-	const swl::Region2<double> &oldViewRegion = camera->getViewRegion();
-
-	const int dX = int(oldViewport.getWidth() * 0.10);
-	const int dY = int(oldViewport.getHeight() * 0.10);
-	const int size = std::max(std::max(dX, dY), 100);
-
-	camera->setViewport(swl::Region2<int>(oldViewport.left, oldViewport.bottom, size, size));
-	camera->setViewRegion(static_cast<swl::ViewCamera2 *>(camera.get())->getViewBound());
-	const swl::Region2<double> &currViewRegion = camera->getCurrentViewRegion();
-
-	// save states
-	glDisable(GL_DEPTH_TEST);
-
-	//double modelviewMatrix[16];
-	double projectionMatrix[16];
-	int viewport[4];
-	//glGetDoublev(GL_MODELVIEW_MATRIX, modelviewMatrix);
-	glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
-	glGetIntegerv(GL_VIEWPORT, viewport);
-
-	// set projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPushMatrix();
-	glLoadIdentity();
-	//gluPickMatrix(x, viewport[3] - y, width, height, viewport);
-	gluPickMatrix(x, oldViewport.getHeight() - y, width, height, viewport);
-
-	// need to load current projection matrix
-	glMultMatrixd(projectionMatrix);
-
-	//
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-		glLoadIdentity();
-		// 1. need to load current modelview matrix
-		//   e.g.) glLoadMatrixd(modelviewMatrix);
-		// 2. need to be thought of viewing transformation
-		//   e.g.) camera->lookAt();
-		camera->lookAt();
-
-		// move origin
-		double eyeX(0.0), eyeY(0.0), eyeZ(0.0), dirX(0.0), dirY(0.0), dirZ(0.0);
-		camera->getEyePosition(eyeX, eyeY, eyeZ);
-		camera->getEyeDirection(dirX, dirY, dirZ);
-		const double eyeDist = camera->getEyeDistance();
-		glTranslated(eyeX + eyeDist * dirX, eyeY + eyeDist * dirY, eyeZ + eyeDist * dirZ);
-
-		std::multimap<double, int> vals;
-		vals.insert(std::make_pair(std::acos(dirX), 0));
-		vals.insert(std::make_pair(std::acos(dirY), 1));
-		vals.insert(std::make_pair(std::acos(dirZ), 2));
-		std::multimap<double, int>::iterator it = vals.begin();
-		const int order1 = it->second;  ++it;
-		const int order2 = it->second;  ++it;
-		const int order3 = it->second;
-		const int order[] = { order1, order2, order3 };
-
-		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
-		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(false, length, order);
-	glPopMatrix();
-
-	// pop projection matrix
-	glMatrixMode(GL_PROJECTION);
-	glPopMatrix();
-
-	// restore states
-	camera->setViewRegion(oldViewRegion);
-	camera->setViewport(oldViewport);
 }
 
 unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned int *buffer) const
@@ -1021,40 +943,34 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 
 		if (0 == nameCount) continue;
 
-		const GLuint currObj = *(ptr + nameCount - 1);
+		// TODO [check] >> it's a dedicated implementation.
+		const GLuint currObj = *(ptr + nameCount - 1);  // the last object
 		if (isCoordinateFramePicked)
 		{
-			switch (currObj)
+			if (nameCount > 1)  // coordinate frame is picked
 			{
-			case PON_X_AXIS:
-			case PON_Y_AXIS:
-			case PON_Z_AXIS:
 				if (mnZ < minZ)
 				{
 					minZ = mnZ;
 					selectedObj = currObj;
 				}
-				break;
 			}
 		}
 		else
 		{
-			switch (currObj)
+			if (nameCount > 1)  // coordinate frame is picked
 			{
-			case PON_X_AXIS:
-			case PON_Y_AXIS:
-			case PON_Z_AXIS:
 				minZ = mnZ;
 				selectedObj = currObj;
 				isCoordinateFramePicked = true;
-				break;
-			default:
+			}
+			else
+			{
 				if (mnZ < minZ)
 				{
 					minZ = mnZ;
 					selectedObj = currObj;
 				}
-				break;
 			}
 		}
 
@@ -1360,13 +1276,13 @@ void CWglSceneGraphView::OnViewhandlingZoomout()
 
 void CWglSceneGraphView::OnViewhandlingPickobject()
 {
-	const bool isRedrawn = 0u != pickedObj_;
-	pickedObj_ = temporarilyPickedObj_ = 0u;
-	if (isRedrawn) raiseDrawEvent(false);
+	const bool isRedrawn = swl::ObjectPickerMgr::getInstance().containPickedObject();
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+
+	if (isRedrawn) raiseDrawEvent(false);
 }
 
 void CWglSceneGraphView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)

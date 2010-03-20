@@ -1,5 +1,9 @@
 #include "swl/Config.h"
 #include "swl/glutil/GLShape.h"
+#if defined(WIN32)
+#include <windows.h>
+#endif
+#include <GL/gl.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -13,15 +17,15 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class GLShape
 
-GLShape::GLShape(const unsigned int displayListName /*= 0u*/, const bool isTransparent /*= false*/, const bool isPrintable /*= true*/, const bool isPickable /*= true*/, const attrib::PolygonMode polygonMode /*= attrib::POLYGON_FILL*/, const attrib::PolygonFace drawingFace /*= attrib::POLYGON_FACE_FRONT*/)
+GLShape::GLShape(const unsigned int displayListCount, const bool isTransparent /*= false*/, const bool isPrintable /*= true*/, const bool isPickable /*= true*/, const attrib::PolygonMode polygonMode /*= attrib::POLYGON_FILL*/, const attrib::PolygonFace drawingFace /*= attrib::POLYGON_FACE_FRONT*/)
 : base_type(isTransparent, isPrintable, isPickable, polygonMode, drawingFace),
-  displayListName_(displayListName)
+  GLDisplayListCallableInterface(displayListCount)
 {
 }
 
 GLShape::GLShape(const GLShape &rhs)
 : base_type(rhs),
-  displayListName_(rhs.displayListName_)
+  GLDisplayListCallableInterface(rhs)
 {
 }
 
@@ -33,14 +37,26 @@ GLShape & GLShape::operator=(const GLShape &rhs)
 {
 	if (this == &rhs) return *this;
 	static_cast<base_type &>(*this) = rhs;
-	// TODO [check] >>
-	//displayListName_ = rhs.displayListName_;
+	//static_cast<GLDisplayListCallableInterface &>(*this) = rhs;
 	return *this;
 }
 
-void GLShape:processToPick() const
+bool GLShape::createDisplayList()
 {
-}	isDisplayListUsed() ? callDisplayList() : draw();
+	glNewList(getDisplayListNameBase(), GL_COMPILE);
+		draw();
+	glEndList();
+	return true;
+}
 
+void GLShape::callDisplayList() const
+{
+	glCallList(getDisplayListNameBase());
+}
+
+void GLShape::processToPick(const int /*x*/, const int /*y*/, const int /*width*/, const int /*height*/) const
+{
+	isDisplayListUsed() ? callDisplayList() : draw();
+}
 
 }  // namespace swl

@@ -3,7 +3,9 @@
 #include "swl/glutil/GLShapeSceneNode.h"
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
+#if defined(WIN32)
 #include <windows.h>
+#endif
 #include <GL/gl.h>
 
 
@@ -33,10 +35,20 @@ void GLCreateDisplayListVisitor::visit(const shape_node_type &node) const
 	const shape_node_type::shape_type &shape = node.getShape();
 	if (!shape) return;
 
-	//if (!shape->isVisible()) return;
-
-	if (shape->isDisplayListUsed())
-		shape->createDisplayList();
+	switch (displayListMode_)
+	{
+	case DLM_CREATE:
+		//if (shape->isVisible() && shape->isDisplayListUsed())
+		if (shape->isDisplayListUsed())
+			shape->createDisplayList();
+		break;
+	case DLM_GENERATE_NAME:
+		shape->pushDisplayList();
+		break;
+	case DLM_DELETE_NAME:
+		shape->popDisplayList();
+		break;
+	}
 }
 
 }  // namespace swl

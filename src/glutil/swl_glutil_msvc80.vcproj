@@ -193,6 +193,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GLDisplayListCallableInterface.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GLPickObjectVisitor.cpp"
 				>
 			</File>
@@ -227,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\glutil\GLDisplayListCallableInterface.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\glutil\GLPickObjectVisitor.h"
 				>
 			</File>
@@ -244,10 +252,6 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\glutil\GLShapeSceneNode.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\inc\swl\glutil\IGLDisplayListCallable.h"
 				>
 			</File>
 			<File

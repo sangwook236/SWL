@@ -4,8 +4,8 @@
 
 #include "swl/graphics/ExportGraphics.h"
 #include "swl/graphics/IDrawable.h"
-#include "swl/graphics/IPickable.h"
 //#include "swl/graphics/ITransformable.h"
+#include "swl/graphics/PickableInterface.h"
 
 
 namespace swl {
@@ -13,8 +13,8 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // class GraphicsObj
 
-//class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public IPickable, public ITransformable3
-class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public IPickable
+//class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public ITransformable3, public PickableInterface
+class SWL_GRAPHICS_API GraphicsObj: public IDrawable, public PickableInterface
 {
 public:
 	//typedef GraphicsObj base_type;
@@ -31,13 +31,8 @@ public:
 	void setPrintable(const bool isPrintable)  {  isPrintable_ = isPrintable;  }
 	bool isPrintable() const {  return isPrintable_;  }
 
-	void setPickable(const bool isPickable)  {  isPickable_ = isPickable;  }
-	bool isPickable() const {  return isPickable_;  }
-
 private:
-	//
 	bool isPrintable_;
-	bool isPickable_;
 };
 
 }  // namespace swl

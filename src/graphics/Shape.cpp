@@ -15,7 +15,7 @@ namespace swl {
 
 Shape::Shape(const bool isTransparent /*= false*/, const bool isPrintable /*= true*/, const bool isPickable /*= true*/, const attrib::PolygonMode polygonMode /*= attrib::POLYGON_FILL*/, const attrib::PolygonFace drawingFace /*= attrib::POLYGON_FACE_FRONT*/)
 : base_type(isPrintable, isPickable),
-  geometryId_(GeometryPool::UNDEFINED_GEOMETRY_ID), appearance_(true, isTransparent, polygonMode, drawingFace)
+  geometryId_(GeometryPoolMgr::UNDEFINED_GEOMETRY_ID), appearance_(true, isTransparent, polygonMode, drawingFace)
 {
 }
 
@@ -40,7 +40,7 @@ Shape & Shape::operator=(const Shape &rhs)
 
 Shape::geometry_type Shape::getGeometry() const
 {
-	return GeometryPool::getInstance().getGeometry(geometryId_);
+	return GeometryPoolMgr::getInstance().getGeometry(geometryId_);
 }
 
 }  // namespace swl

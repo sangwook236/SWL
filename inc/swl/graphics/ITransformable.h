@@ -13,6 +13,9 @@ template<typename T> class TMatrix3;
 
 struct ITransformable2
 {
+public:
+	//typedef ITransformable2 base_type;
+
 protected:
 	virtual ~ITransformable2()  {}
 
@@ -27,6 +30,9 @@ public:
 
 struct ITransformable3
 {
+public:
+	//typedef ITransformable3 base_type;
+
 protected:
 	virtual ~ITransformable3()  {}
 
