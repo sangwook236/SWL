@@ -569,6 +569,9 @@ void ZoomOutState::handleEvent()
 	}
 }
 
+//-----------------------------------------------------------------------------
+//
+
 PickObjectState::PickObjectState()
 : isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
@@ -664,6 +667,157 @@ void PickObjectState::moveMouse(const MouseEvent &evt)
 }
 
 void PickObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
+{
+#if 1
+	CView *vw = dynamic_cast<CView *>(&view);
+	if (vw)
+	{
+		CClientDC dc(vw);
+		drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+	}
+#else
+	WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+	if (vw && !vw->isContextStackEmpty())
+	{
+		const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
+		if (NULL != ctx.get())
+		{
+			const boost::any nativeHandle = ctx->getNativeWindowHandle();
+			if (!nativeHandle.empty())
+			{
+				HWND *hwnd = NULL;
+				try
+				{
+					hwnd = boost::any_cast<HWND *>(nativeHandle);
+				}
+				catch (const boost::bad_any_cast &)
+				{
+					hwnd = NULL;
+				}
+
+				if (hwnd)
+				{
+#if 1
+					HDC hdc = GetDC(*hwnd);
+					drawRubberBandUsingGdi(*hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+					//view.updateScrollBar();
+					ReleaseDC(*hwnd, hdc);
+#else
+					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+					if (graphics)
+					{
+						HDC hdc = graphics->GetHDC();
+						drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
+						//view.updateScrollBar();
+						graphics->ReleaseHDC(hdc);
+						delete graphics;
+					}
+#endif
+				}
+			}
+		}
+	}
+#endif
+}
+
+//-----------------------------------------------------------------------------
+//
+
+DragObjectState::DragObjectState()
+: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+	swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
+	swl::ObjectPickerMgr::getInstance().startPicking();
+}
+
+DragObjectState::~DragObjectState()
+{
+	swl::ObjectPickerMgr::getInstance().stopPicking();
+}
+
+void DragObjectState::pressMouse(const MouseEvent &evt)
+{
+	isDragging_ = true;
+	initX_ = prevX_ = evt.x;
+	initY_ = prevY_ = evt.y;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawRubberBand(view, evt.x, evt.y, false, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void DragObjectState::releaseMouse(const MouseEvent &evt)
+{
+	isDragging_ = false;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawRubberBand(view, evt.x, evt.y, true, false);
+
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw)
+		{
+			if (evt.x == initX_ && evt.y == initY_)
+				vw->pickObject(evt.x, evt.y, false);
+			else
+				vw->pickObject(initX_, initY_, evt.x, evt.y, false);
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void DragObjectState::moveMouse(const MouseEvent &evt)
+{
+	if (isDragging_)
+	{
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			drawRubberBand(view, evt.x, evt.y, true, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+
+		prevX_ = evt.x;
+		prevY_ = evt.y;
+	}
+	else
+	{
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+			if (vw)
+				vw->pickObject(evt.x, evt.y, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
+}
+
+void DragObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
 {
 #if 1
 	CView *vw = dynamic_cast<CView *>(&view);

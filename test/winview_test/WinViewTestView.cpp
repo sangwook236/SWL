@@ -20,6 +20,7 @@
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/view/ViewCamera2.h"
+#include "swl/graphics/ObjectPickerMgr.h"
 #include "swl/winutil/WinTimer.h"
 #include <gdiplus.h>
 #include <cmath>
@@ -976,9 +977,13 @@ void CWinViewTestView::OnViewhandlingZoomout()
 
 void CWinViewTestView::OnViewhandlingPickobject()
 {
+	const bool isRedrawn = swl::ObjectPickerMgr::getInstance().containPickedObject();
+
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+
+	if (isRedrawn) raiseDrawEvent(false);
 }
 
 void CWinViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)

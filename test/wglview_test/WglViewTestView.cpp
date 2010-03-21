@@ -20,6 +20,7 @@
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/graphics/ShapeSceneNode.h"
+#include "swl/graphics/ObjectPickerMgr.h"
 #include "swl/math/MathConstant.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/multi_array.hpp>
@@ -513,8 +514,7 @@ CWglViewTestView::CWglViewTestView()
   isPerspective_(true), isWireFrame_(false),
   polygonFacing_(GL_FRONT_AND_BACK),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
-  isPrinting_(false), isPickingObject_(false),
-  pickedObj_(PON_BASE_ENTRY), temporarilyPickedObj_(PON_BASE_ENTRY)
+  isPrinting_(false), isPickingObject_(false)
 {
 #if 0
 	topGradientBackgroundColor_[0] = 0.776f;
@@ -549,11 +549,6 @@ CWglViewTestView::CWglViewTestView()
 	floorColor_[1] = 0.5f;
 	floorColor_[2] = 0.5f;
 	floorColor_[3] = 0.5f;
-
-	pickedColor_[0] = 1.0f;
-	pickedColor_[1] = 1.0f;
-	pickedColor_[2] = 0.0f;
-	pickedColor_[3] = 1.0f;
 
 	// TODO [check] >> for testing
 	loadMesh();
@@ -1195,8 +1190,6 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 	const boost::shared_ptr<camera_type> &camera = topCamera();
 	if (!context || !camera) return;
 
-	isPickingObject_ = true;
-
 	context_type::guard_type guard(*context);
 
 	// save states
@@ -1221,12 +1214,14 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 	//glPushName(PON_BASE_ENTRY);
 
 	// render scene
+	isPickingObject_ = true;
 #if 0
 	renderScene(*context, *camera);
 #else
 	processToPickMainContent(camera, x, y, width, height);
 	if (isCoordinateFrameShown_) processToPickCoordinateFrame(camera, x, y, width, height);
 #endif
+	isPickingObject_ = false;
 
 	// gather hit records
 	const GLint hitCount = glRenderMode(GL_RENDER);
@@ -1236,27 +1231,39 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 
 	glMatrixMode(oldMatrixMode);
 
-	isPickingObject_ = false;
-
 	// process hits
 	if (isTemporary)
 	{
 		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
-		if (pickedObj != temporarilyPickedObj_)
+		if (PON_BASE_ENTRY == pickedObj && swl::ObjectPickerMgr::getInstance().containTemporarilyPickedObject())
 		{
-			temporarilyPickedObj_ = pickedObj;
+			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
+			raiseDrawEvent(false);
+		}
+		else if (PON_BASE_ENTRY != pickedObj && !swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(pickedObj))
+		{
+			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
+			swl::ObjectPickerMgr::getInstance().addTemporarilyPickedObject(pickedObj);
 			raiseDrawEvent(false);
 		}
 	}
 	else
 	{
-		const unsigned int oldPickedObj = pickedObj_;
+		swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
 
-		temporarilyPickedObj_ = PON_BASE_ENTRY;
-		if (hitCount > 0)
+		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
+		if (PON_BASE_ENTRY == pickedObj && swl::ObjectPickerMgr::getInstance().containPickedObject())
 		{
-			pickedObj_ = processHits(hitCount, selectBuffer);
-			switch (pickedObj_)
+			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
+			raiseDrawEvent(false);
+		}
+		else if (PON_BASE_ENTRY != pickedObj && !swl::ObjectPickerMgr::getInstance().isPickedObject(pickedObj))
+		{
+			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
+			swl::ObjectPickerMgr::getInstance().addPickedObject(pickedObj);
+
+			// TODO [add] >> process picked objects
+			switch (pickedObj)
 			{
 			case PON_SPHERE:
 				break;
@@ -1269,11 +1276,9 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 			case PON_Z_AXIS:
 				break;
 			}
-		}
-		else pickedObj_ = PON_BASE_ENTRY;
 
-		if (oldPickedObj != pickedObj_)
-			raiseDrawEvent(false);
+			//raiseDrawEvent(false);
+		}
 	}
 }
 
@@ -1382,7 +1387,7 @@ void CWglViewTestView::processToPickCoordinateFrame(const boost::shared_ptr<came
 
 		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
 		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(false, length, order);
+		drawCoordinateFrame(length, order);
 	glPopMatrix();
 
 	// pop projection matrix
@@ -1510,7 +1515,8 @@ void CWglViewTestView::setWireFrame(const bool isWireFrame)
 
 void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= false*/) const
 {
-	const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+	//const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+	const bool isPickObjectState = swl::ObjectPickerMgr::getInstance().isPicking();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 	if (!doesCreateDisplayList && isDisplayListUsed() && !isPickObjectState)
@@ -1547,10 +1553,17 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 
 		glPushName(PON_SPHERE);
 			// draw a sphere
-			if (PON_SPHERE == pickedObj_ || (PON_SPHERE == temporarilyPickedObj_ && isPickObjectState))
-				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			else
-				glColor3f(1.0f, 0.0f, 0.0f);
+			if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(PON_SPHERE))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else if (swl::ObjectPickerMgr::getInstance().isPickedObject(PON_SPHERE))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else glColor3f(1.0f, 0.0f, 0.0f);
 			isWireFrame_ ? glutWireSphere(500.0, 20, 20) : glutSolidSphere(500.0, 20, 20);
 		glPopName();
 
@@ -1564,10 +1577,17 @@ void CWglViewTestView::drawMainContent(const bool doesCreateDisplayList /*= fals
 
 		glPushName(PON_CUBE);
 			// draw a cube
-			if (PON_CUBE == pickedObj_ || (PON_CUBE == temporarilyPickedObj_ && isPickObjectState))
-				glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-			else
-				glColor3f(0.5f, 0.5f, 1.0f);
+			if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(PON_CUBE))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else if (swl::ObjectPickerMgr::getInstance().isPickedObject(PON_CUBE))
+			{
+				const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+				glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+			}
+			else glColor3f(0.5f, 0.5f, 1.0f);
 			isWireFrame_ ? glutWireCube(500.0) : glutSolidCube(500.0);
 		glPopName();
 	glPopMatrix();
@@ -1892,7 +1912,8 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 
 void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= false*/) const
 {
-	const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+	//const bool isPickObjectState = viewStateFsm_ && NULL != viewStateFsm_->state_cast<const swl::PickObjectState *>();
+	const bool isPickObjectState = swl::ObjectPickerMgr::getInstance().isPicking();
 
 /*
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -1949,7 +1970,7 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 
 		float length = (float)std::min(currViewRegion.getHeight(), currViewRegion.getWidth()) * 0.25f;
 		if (camera->isPerspective()) length *= 2.0f / std::sqrt(3.0f);
-		drawCoordinateFrame(isPickObjectState, length, order);
+		drawCoordinateFrame(length, order);
 	glPopMatrix();
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
 
@@ -1961,7 +1982,7 @@ void CWglViewTestView::drawCoordinateFrame(const bool doesCreateDisplayList /*= 
 	if (isDepthTest) glEnable(GL_DEPTH_TEST);
 }
 
-void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const
+void CWglViewTestView::drawCoordinateFrame(const float height, const int order[]) const
 {
 	const float ratio = 0.7f;  // cylinder ratio
 	const float size = height * ratio;
@@ -1982,10 +2003,17 @@ void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const f
 		{
 			glPushName(PON_X_AXIS);
 				// x axis
-				if (PON_X_AXIS == pickedObj_ || (PON_X_AXIS == temporarilyPickedObj_ && isPickObjectState))
-					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-				else
-					glColor3f(1.0f, 0.0f, 0.0f);
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(PON_X_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(PON_X_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(1.0f, 0.0f, 0.0f);
 				glPushMatrix();
 					glRotated(90.0, 0.0, 1.0, 0.0);
 					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
@@ -2003,10 +2031,17 @@ void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const f
 		{
 			glPushName(PON_Y_AXIS);
 				// y axis
-				if (PON_Y_AXIS == pickedObj_ || (PON_Y_AXIS == temporarilyPickedObj_ && isPickObjectState))
-					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-				else
-					glColor3f(0.0f, 1.0f, 0.0f);
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(PON_Y_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(PON_Y_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(0.0f, 1.0f, 0.0f);
 				glPushMatrix();
 					glRotated(-90.0, 1.0, 0.0, 0.0);
 					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
@@ -2024,10 +2059,17 @@ void CWglViewTestView::drawCoordinateFrame(const bool isPickObjectState, const f
 		{
 			glPushName(PON_Z_AXIS);
 				// z axis
-				if (PON_Z_AXIS == pickedObj_ || (PON_Z_AXIS == temporarilyPickedObj_ && isPickObjectState))
-					glColor4f(pickedColor_[0], pickedColor_[1], pickedColor_[2], pickedColor_[3]);
-				else
-					glColor3f(0.0f, 0.0f, 1.0f);	
+				if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(PON_Z_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else if (swl::ObjectPickerMgr::getInstance().isPickedObject(PON_Z_AXIS))
+				{
+					const swl::ObjectPickerMgr::color_type &pickedColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+					glColor4f(pickedColor.r, pickedColor.g, pickedColor.b, pickedColor.a);
+				}
+				else glColor3f(0.0f, 0.0f, 1.0f);	
 				glPushMatrix();
 					gluCylinder(obj, radius, radius, size, 12, 1); // obj, base, top, height 
 					glTranslated(0.0, 0.0, size);
@@ -2356,13 +2398,13 @@ void CWglViewTestView::OnViewhandlingZoomout()
 
 void CWglViewTestView::OnViewhandlingPickobject()
 {
-	const bool isRedrawn = PON_BASE_ENTRY != pickedObj_;
-	pickedObj_ = temporarilyPickedObj_ = PON_BASE_ENTRY;
-	if (isRedrawn) raiseDrawEvent(false);
+	const bool isRedrawn = swl::ObjectPickerMgr::getInstance().containPickedObject();
 
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
+
+	if (isRedrawn) raiseDrawEvent(false);
 }
 
 void CWglViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)

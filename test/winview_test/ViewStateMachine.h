@@ -46,6 +46,7 @@ struct EvtZoomAll: public boost::statechart::event<EvtZoomAll> {};
 struct EvtZoomIn: public boost::statechart::event<EvtZoomIn> {};
 struct EvtZoomOut: public boost::statechart::event<EvtZoomOut> {};
 struct EvtPickObject: public boost::statechart::event<EvtPickObject> {};
+struct EvtDragObject: public boost::statechart::event<EvtDragObject> {};
 struct EvtBackToPreviousState: public boost::statechart::event<EvtBackToPreviousState> {};
 
 //-----------------------------------------------------------------------------------
@@ -103,6 +104,7 @@ struct ZoomAllState;
 struct ZoomInState;
 struct ZoomOutState;
 struct PickObjectState;
+struct DragObjectState;
 
 struct NotTransientState: public boost::statechart::simple_state<NotTransientState, ViewStateMachine, IdleState, boost::statechart::has_deep_history>
 {
@@ -124,7 +126,8 @@ public:
 		boost::statechart::transition<EvtPan, PanState>,
 		boost::statechart::transition<EvtRotate, RotateState>,
 		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>,
-		boost::statechart::transition<EvtPickObject, PickObjectState>
+		boost::statechart::transition<EvtPickObject, PickObjectState>,
+		boost::statechart::transition<EvtDragObject, DragObjectState>
 	> reactions;
 
 public:
@@ -156,7 +159,8 @@ public:
 		boost::statechart::transition<EvtIdle, IdleState>,
 		boost::statechart::transition<EvtRotate, RotateState>,
 		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>,
-		boost::statechart::transition<EvtPickObject, PickObjectState>
+		boost::statechart::transition<EvtPickObject, PickObjectState>,
+		boost::statechart::transition<EvtDragObject, DragObjectState>
 	> reactions;
 
 public:
@@ -192,7 +196,8 @@ public:
 		boost::statechart::transition<EvtIdle, IdleState>,
 		boost::statechart::transition<EvtPan, PanState>,
 		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>,
-		boost::statechart::transition<EvtPickObject, PickObjectState>
+		boost::statechart::transition<EvtPickObject, PickObjectState>,
+		boost::statechart::transition<EvtDragObject, DragObjectState>
 	> reactions;
 
 public:
@@ -224,7 +229,8 @@ public:
 		boost::statechart::transition<EvtIdle, IdleState>,
 		boost::statechart::transition<EvtPan, PanState>,
 		boost::statechart::transition<EvtRotate, RotateState>,
-		boost::statechart::transition<EvtPickObject, PickObjectState>
+		boost::statechart::transition<EvtPickObject, PickObjectState>,
+		boost::statechart::transition<EvtDragObject, DragObjectState>
 	> reactions;
 
 public:
@@ -312,12 +318,54 @@ public:
 		boost::statechart::transition<EvtIdle, IdleState>,
 		boost::statechart::transition<EvtPan, PanState>,
 		boost::statechart::transition<EvtRotate, RotateState>,
-		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>
+		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>,
+		boost::statechart::transition<EvtDragObject, DragObjectState>
 	> reactions;
 
 public:
 	PickObjectState();
 	~PickObjectState();
+
+public:
+	/*virtual*/ void pressMouse(const MouseEvent &evt);
+	/*virtual*/ void releaseMouse(const MouseEvent &evt);
+	/*virtual*/ void moveMouse(const MouseEvent &evt);
+	/*virtual*/ void wheelMouse(const MouseEvent &evt)  {}
+
+	/*virtual*/ void clickMouse(const MouseEvent &evt)  {}
+	/*virtual*/ void doubleClickMouse(const MouseEvent &evt)  {}
+
+	/*virtual*/ void pressKey(const KeyEvent &evt)  {}
+	/*virtual*/ void releaseKey(const KeyEvent &evt)  {}
+
+	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
+
+private:
+	void drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const;
+
+private:
+	bool isDragging_;
+	int initX_, initY_;
+	int prevX_, prevY_;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+struct DragObjectState: public IViewEventHandler, public boost::statechart::simple_state<DragObjectState, NotTransientState>
+{
+public:
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtIdle, IdleState>,
+		boost::statechart::transition<EvtPan, PanState>,
+		boost::statechart::transition<EvtRotate, RotateState>,
+		boost::statechart::transition<EvtZoomRegion, ZoomRegionState>,
+		boost::statechart::transition<EvtPickObject, PickObjectState>
+	> reactions;
+
+public:
+	DragObjectState();
+	~DragObjectState();
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt);

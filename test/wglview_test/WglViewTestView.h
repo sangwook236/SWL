@@ -145,7 +145,7 @@ private:
 	void drawCoordinateFrame(const bool doesCreateDisplayList = false) const;
 	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
 
-	void drawCoordinateFrame(const bool isPickObjectState, const float height, const int order[]) const;
+	void drawCoordinateFrame(const float height, const int order[]) const;
 
 	//
 	void createDisplayLists() const;
@@ -198,13 +198,9 @@ private:
 
 	float topGradientBackgroundColor_[4], bottomGradientBackgroundColor_[4];  // r, g, b, a
 	float floorColor_[4];  // r, g, b, a
-	float pickedColor_[4];  // r, g, b, a
 
 	bool isPrinting_;
 	bool isPickingObject_;
-
-	unsigned int pickedObj_;
-	unsigned int temporarilyPickedObj_;
 
 // Generated message map functions
 protected:
