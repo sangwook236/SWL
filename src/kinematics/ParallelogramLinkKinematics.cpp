@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/kinematics/RearLinkKinematics.h"
+#include "swl/kinematics/ParallelogramLinkKinematics.h"
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -11,9 +11,9 @@
 namespace swl {
 
 //--------------------------------------------------------------------------------
-// class RearLinkKinematics
+// class ParallelogramLinkKinematics
 
-RearLinkKinematics::RearLinkKinematics()
+ParallelogramLinkKinematics::ParallelogramLinkKinematics()
 : base_type()
 {
 /*
@@ -34,11 +34,11 @@ RearLinkKinematics::RearLinkKinematics()
 */
 }
 
-RearLinkKinematics::~RearLinkKinematics()
+ParallelogramLinkKinematics::~ParallelogramLinkKinematics()
 {
 }
 
-bool RearLinkKinematics::isReachable(const RearLinkKinematics::coords_type &poseCoords, const bool isJointSpace /*= true*/)
+bool ParallelogramLinkKinematics::isReachable(const ParallelogramLinkKinematics::coords_type &poseCoords, const bool isJointSpace /*= true*/)
 // if isJointSpace == true,
 //  poseCoords: joint values in joint coordinates, [rad]
 // if isJointSpace == false,
@@ -62,7 +62,7 @@ bool RearLinkKinematics::isReachable(const RearLinkKinematics::coords_type &pose
 	return true;
 }
 
-bool RearLinkKinematics::calcJacobian(const RearLinkKinematics::coords_type &jointCoords, Matrix<double> &jacobian)
+bool ParallelogramLinkKinematics::calcJacobian(const ParallelogramLinkKinematics::coords_type &jointCoords, Matrix<double> &jacobian)
 //jointCoords: joint values in joint coordinates, [rad]
 {
 /*
@@ -113,7 +113,7 @@ bool RearLinkKinematics::calcJacobian(const RearLinkKinematics::coords_type &joi
 	return true;
 }
 
-double RearLinkKinematics::calcJacobianDeterminant(const RearLinkKinematics::coords_type &poseCoords, const bool isJointSpace /*= true*/)
+double ParallelogramLinkKinematics::calcJacobianDeterminant(const ParallelogramLinkKinematics::coords_type &poseCoords, const bool isJointSpace /*= true*/)
 // if isJointSpace == true,
 //  poseCoords: joint values in joint coordinates, [rad]
 // if isJointSpace == false,
@@ -158,14 +158,14 @@ double RearLinkKinematics::calcJacobianDeterminant(const RearLinkKinematics::coo
 		   + s[1][0]*(s[2][0]*r[0][1]*(r[2][1]*r[1][2]-r[1][1]*r[2][2]) + s[2][1]*(r[0][0]*r[1][1]*r[2][2]-r[2][0]*r[0][1]*r[1][2])));
 }
 
-TMatrix3<double> RearLinkKinematics::doCalcDHMatrix(const double d_i, const double theta_i, const double a_i, const double alpha_i)
+TMatrix3<double> ParallelogramLinkKinematics::doCalcDHMatrix(const double d_i, const double theta_i, const double a_i, const double alpha_i)
 // D-H Notation of Asada's Book, A(i-1,i)
 // 현재 index of axes가 0부터 시작되므로 base frame of a robot의 index는 -1이다
 {
 	return base_type::doCalcDHMatrix(d_i, theta_i, a_i, alpha_i);
 }
 
-TMatrix3<double> RearLinkKinematics::doJointCoordsToTMatrix(const RearLinkKinematics::coords_type &jointCoords)
+TMatrix3<double> ParallelogramLinkKinematics::doJointCoordsToTMatrix(const ParallelogramLinkKinematics::coords_type &jointCoords)
 // be used in forward kinematics
 {
 /*
@@ -199,13 +199,13 @@ TMatrix3<double> RearLinkKinematics::doJointCoordsToTMatrix(const RearLinkKinema
 	return dhMat;
 }
 
-TMatrix3<double> RearLinkKinematics::doCartesianCoordsToTMatrix(const RearLinkKinematics::coords_type &cartesianCoords)
+TMatrix3<double> ParallelogramLinkKinematics::doCartesianCoordsToTMatrix(const ParallelogramLinkKinematics::coords_type &cartesianCoords)
 // be used in inverse kinematics
 {
 	return base_type::doCartesianCoordsToTMatrix(cartesianCoords);
 }
 
-bool RearLinkKinematics::doTMatrixToCartesianCoords(const TMatrix3<double> &tmatrix, RearLinkKinematics::coords_type &cartesianCoords, const RearLinkKinematics::coords_type *refCartesianCoordsPtr /*= NULL*/)
+bool ParallelogramLinkKinematics::doTMatrixToCartesianCoords(const TMatrix3<double> &tmatrix, ParallelogramLinkKinematics::coords_type &cartesianCoords, const ParallelogramLinkKinematics::coords_type *refCartesianCoordsPtr /*= NULL*/)
 // be used in forward kinematics
 // fixed angle, X(alpha) => Y(beta) => Z(gamma): R = Rz(gamma) * Ry(beta) * Rx(alpba) from Craig's Book
 // tmatrix: the 4x4 transformation matrix of position & orientation of the end-effector of a robot
@@ -227,7 +227,7 @@ bool RearLinkKinematics::doTMatrixToCartesianCoords(const TMatrix3<double> &tmat
 	return doCalcRotationAngle(tmatrix, cartesianCoords[3], cartesianCoords[4], cartesianCoords[5]);
 }
 
-bool RearLinkKinematics::doTMatrixToJointCoords(const TMatrix3<double> &tmatrix, RearLinkKinematics::coords_type &jointCoords, const RearLinkKinematics::coords_type *refJointCoordsPtr /*= NULL*/)
+bool ParallelogramLinkKinematics::doTMatrixToJointCoords(const TMatrix3<double> &tmatrix, ParallelogramLinkKinematics::coords_type &jointCoords, const ParallelogramLinkKinematics::coords_type *refJointCoordsPtr /*= NULL*/)
 // be used in inverse kinematics
 // 현재 index of axes가 0부터 시작되므로 base frame of a robot의 index는 -1이다
 // tmatrix: the 4x4 transformation matrix of position & orientation of the end-effector of a robot
@@ -498,14 +498,14 @@ bool RearLinkKinematics::doTMatrixToJointCoords(const TMatrix3<double> &tmatrix,
 	return true;
 }
 
-TMatrix3<double> RearLinkKinematics::doCalcRMatrix(const double alpha, const double beta, const double gamma)
+TMatrix3<double> ParallelogramLinkKinematics::doCalcRMatrix(const double alpha, const double beta, const double gamma)
 // be used in inverse kinematics
 // fixed angle, X(alpha) => Y(beta) => Z(gamma): R = Rz(gamma) * Ry(beta) * Rx(alpba) from Craig's Book
 {
 	return base_type::doCalcRMatrix(alpha, beta, gamma);
 }
 
-bool RearLinkKinematics::doCalcRotationAngle(const TMatrix3<double> &tmatrix, double &alpha, double &beta, double &gamma)
+bool ParallelogramLinkKinematics::doCalcRotationAngle(const TMatrix3<double> &tmatrix, double &alpha, double &beta, double &gamma)
 // be used in forward kinematics
 // fixed angle, X(alpha) => Y(beta) => Z(gamma): R = Rz(gamma) * Ry(beta) * Rx(alpba) from Craig's Book
 {

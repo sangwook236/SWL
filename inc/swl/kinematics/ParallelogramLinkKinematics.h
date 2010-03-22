@@ -1,5 +1,5 @@
-#if !defined(__SWL_KINEMATICS__REAR_LINK_KINEMATICS__H_)
-#define __SWL_KINEMATICS__REAR_LINK_KINEMATICS__H_ 1
+#if !defined(__SWL_KINEMATICS__PARALLELOGRAM_LINK_KINEMATICS__H_)
+#define __SWL_KINEMATICS__PARALLELOGRAM_LINK_KINEMATICS__H_ 1
 
 
 #include "swl/kinematics/ArticulatedKinematics.h"
@@ -8,20 +8,20 @@
 namespace swl {
 
 //--------------------------------------------------------------------------------
-// class RearLinkKinematics
+// class ParallelogramLinkKinematics
 
-class SWL_KINEMATICS_API RearLinkKinematics: public ArticulatedKinematics
+class SWL_KINEMATICS_API ParallelogramLinkKinematics: public ArticulatedKinematics
 {
 public:
 	typedef ArticulatedKinematics base_type;
 
 public:
-	RearLinkKinematics();
-	virtual ~RearLinkKinematics();
+	ParallelogramLinkKinematics();
+	virtual ~ParallelogramLinkKinematics();
 
 private:
-	RearLinkKinematics(const RearLinkKinematics &rhs);
-	RearLinkKinematics & operator=(const RearLinkKinematics &rhs);
+	ParallelogramLinkKinematics(const ParallelogramLinkKinematics &rhs);
+	ParallelogramLinkKinematics & operator=(const ParallelogramLinkKinematics &rhs);
 
 public:
 	///
@@ -49,4 +49,4 @@ protected:
 }  // namespace swl
 
 
-#endif  // __SWL_KINEMATICS__REAR_LINK_KINEMATICS__H_
+#endif  // __SWL_KINEMATICS__PARALLELOGRAM_LINK_KINEMATICS__H_
