@@ -59,10 +59,8 @@ void sarsa(const size_t maxEpisodeCount, const state_action_pair_type::policy_ty
 
 	try
 	{
-		typedef swl::Sarsa<state_action_pair_type> learner_type;
-
 		swl::WinTimer aTimer;
-		const learner_type learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
+		const swl::Sarsa<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
 		learner.train(maxEpisodeCount, policy, Q);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
 
@@ -104,10 +102,8 @@ void q_learning(const size_t maxEpisodeCount, const state_action_pair_type::poli
 
 	try
 	{
-		typedef swl::QLearning<state_action_pair_type> learner_type;
-
 		swl::WinTimer aTimer;
-		const learner_type learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
+		const swl::QLearning<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
 		learner.train(maxEpisodeCount, policy, Q);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
 
@@ -155,10 +151,8 @@ void sarsa_lambda(const size_t maxEpisodeCount, const state_action_pair_type::po
 
 	try
 	{
-		typedef swl::SarsaLambda<state_action_pair_type> learner_type;
-
 		swl::WinTimer aTimer;
-		const learner_type learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
+		const swl::SarsaLambda<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
 		learner.train(maxEpisodeCount, policy, Q, eligibility);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
 
@@ -206,10 +200,8 @@ void q_lambda(const size_t maxEpisodeCount, const state_action_pair_type::policy
 
 	try
 	{
-		typedef swl::QLambda<state_action_pair_type> learner_type;
-
 		swl::WinTimer aTimer;
-		const learner_type learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
+		const swl::QLambda<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
 		learner.train(maxEpisodeCount, policy, Q, eligibility);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
 
