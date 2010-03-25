@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_machine_learning.lib"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_winutil.lib swl_machine_learning.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_machine_learning.lib"
+				AdditionalDependencies="swl_base.lib swl_math.lib swl_winutil.lib swl_machine_learning.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -181,6 +181,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\CliffWalkingSystem.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\main.cpp"
 				>
 			</File>
@@ -204,6 +208,14 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\td_learning.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\WindyGridWorldSystem.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -211,7 +223,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath=".\CliffWalkingSystem.h"
+				>
+			</File>
+			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\WindyGridWorldSystem.h"
 				>
 			</File>
 		</Filter>
