@@ -50,7 +50,7 @@ public:
 
 		reward_type getReward() const;
 
-		State takeAction(const action_type &action_) const;
+		State takeAction(const action_type &action) const;
 
 		//value_type getValue() const  {  return *this;  }
 		value_type getValue() const  {  return (row_ - 1) * GRID_COL_SIZE + (col_ - 1);  }

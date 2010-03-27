@@ -40,8 +40,8 @@ CliffWalkingStateActionPair::State CliffWalkingStateActionPair::State::takeActio
 	if ((4 == row_ && 1 == col_ && Right == action) || (3 == row_ && 2 <= col_ && col_ <= 11 && Down == action))  // step into the cliff region
 		return State();
 	if ((1 == row_ && Up == action) || (4 == row_ && Down == action) ||
-		(1 == col_ && Left == action) || (12 == col_ && Right == action))
-		return *this;  // stay the current state
+		(1 == col_ && Left == action) || (12 == col_ && Right == action))  // stay the current state
+		return *this;
 
 	state_type newState(*this);
 	switch (action.getValue())
@@ -127,6 +127,7 @@ CliffWalkingStateActionPair::State CliffWalkingStateActionPair::State::takeActio
 {
 	// constant exploration rate (epsilon)
 	return 0.1;
+
 	// variable exploration rate (epsilon)
 	//return 0 >= episodeTrial ? 1.0 : (1.0 / std::sqrt((double)episodeTrial));
 	//return 0 >= episodeTrial ? 1.0 : (1.0 / episodeTrial);
@@ -138,6 +139,7 @@ CliffWalkingStateActionPair::State CliffWalkingStateActionPair::State::takeActio
 {
 	// constant learning rate (step-size, alpha)
 	//return 0.2;
+
 	// variable learning rate (step-size, alpha)
 	return 0 >= iterationStep ? 1.0 : (1.0 / iterationStep);
 }
