@@ -204,9 +204,6 @@ void PanState::releaseMouse(const MouseEvent &evt)
 	isDragging_ = false;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
-	//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
-	const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
-
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
@@ -215,6 +212,9 @@ void PanState::releaseMouse(const MouseEvent &evt)
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
+			//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+			const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+
 			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(true);
@@ -232,9 +232,6 @@ void PanState::moveMouse(const MouseEvent &evt)
 	if (!isDragging_) return;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
-	//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
-	const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
-
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
@@ -243,6 +240,9 @@ void PanState::moveMouse(const MouseEvent &evt)
 		ViewCamera2 &camera = fsm.getViewCamera();
 
 		{
+			//const int dX = evt.x - prevX_, dY = prevY_ - evt.y;  // upward y-axis
+			const int dX = evt.x - prevX_, dY = evt.y - prevY_;  // downward y-axis
+
 			ViewContext::guard_type guard(context);
 			camera.moveView(dX, dY);
 			view.raiseDrawEvent(true);
@@ -291,7 +291,7 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 
 		{
 			ViewContext::guard_type guard(context);
-			camera.setView(initX_, initY_, evt.x, evt.y);
+			camera.setView(initX_, initY_, evt.x, evt.y);  // downward y-axis
 			view.raiseDrawEvent(true);
 			//view.updateScrollBar();
 		}
@@ -499,7 +499,7 @@ void ZoomOutState::handleEvent()
 // 
 
 PickObjectState::PickObjectState()
-: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+: isDragging_(false), isJustPressed_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
 	swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
 	swl::ObjectPickerMgr::getInstance().startPicking();
@@ -513,43 +513,32 @@ PickObjectState::~PickObjectState()
 void PickObjectState::pressMouse(const MouseEvent &evt)
 {
 	isDragging_ = true;
+	isJustPressed_ = true;
 	initX_ = prevX_ = evt.x;
 	initY_ = prevY_ = evt.y;
-
-	try
-	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
-
-		drawRubberBand(view, evt.x, evt.y, false, true);
-	}
-	catch (const std::bad_cast &)
-	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
 }
 
 void PickObjectState::releaseMouse(const MouseEvent &evt)
 {
+	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
-	if (evt.x == initX_ && evt.y == initY_) return;
+	isJustPressed_ = false;
 
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
+		if (!isJustPressed) drawRubberBand(view, evt.x, evt.y, true, false);
+
 		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
 		if (vw)
 		{
-			// TODO [modify] >>
-			//if (evt.x == initX_ && evt.y == initY_)
-			//	vw->pickObject(initX_, initY_);
-			//else
-			//	vw->pickObject(initX_, initY_, evt.x, evt.y);
+			if (evt.x == initX_ && evt.y == initY_)
+				vw->pickObject(evt.x, evt.y, false);
+			else
+				vw->pickObject(initX_, initY_, evt.x, evt.y, false);
 		}
-
-		drawRubberBand(view, evt.x, evt.y, true, false);
 	}
 	catch (const std::bad_cast &)
 	{
@@ -559,23 +548,43 @@ void PickObjectState::releaseMouse(const MouseEvent &evt)
 
 void PickObjectState::moveMouse(const MouseEvent &evt)
 {
-	if (!isDragging_) return;
-	if (evt.x == prevX_ && evt.y == prevY_) return;
-
-	try
+	if (isDragging_)
 	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
+		//if (evt.x == initX_ && evt.y == initY_) return;
+		if (evt.x == prevX_ && evt.y == prevY_) return;
 
-		drawRubberBand(view, evt.x, evt.y, true, true);
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			drawRubberBand(view, evt.x, evt.y, !isJustPressed_, true);
+			if (isJustPressed_) isJustPressed_ = false;
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+
+		prevX_ = evt.x;
+		prevY_ = evt.y;
 	}
-	catch (const std::bad_cast &)
+	else
 	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
 
-	prevX_ = evt.x;
-	prevY_ = evt.y;
+			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+			if (vw)
+				vw->pickObject(evt.x, evt.y, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
 }
 
 void PickObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
@@ -635,30 +644,30 @@ void PickObjectState::drawRubberBand(IView &view, const int currX, const int cur
 //-----------------------------------------------------------------------------------
 // 
 
-DragObjectState::DragObjectState()
-: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+PickAndDragObjectState::PickAndDragObjectState()
+: isDragging_(false), isDraggingObject_(false), isJustPressed_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
 	swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
 	swl::ObjectPickerMgr::getInstance().startPicking();
 }
 
-DragObjectState::~DragObjectState()
+PickAndDragObjectState::~PickAndDragObjectState()
 {
 	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
-void DragObjectState::pressMouse(const MouseEvent &evt)
+void PickAndDragObjectState::pressMouse(const MouseEvent &evt)
 {
 	isDragging_ = true;
+	isDraggingObject_ = false;
+	isJustPressed_ = true;
 	initX_ = prevX_ = evt.x;
 	initY_ = prevY_ = evt.y;
 
 	try
 	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
-
-		drawRubberBand(view, evt.x, evt.y, false, true);
+		if (swl::ObjectPickerMgr::getInstance().containTemporarilyPickedObject())
+			isDraggingObject_ = true;
 	}
 	catch (const std::bad_cast &)
 	{
@@ -666,56 +675,94 @@ void DragObjectState::pressMouse(const MouseEvent &evt)
 	}
 }
 
-void DragObjectState::releaseMouse(const MouseEvent &evt)
+void PickAndDragObjectState::releaseMouse(const MouseEvent &evt)
 {
+	const bool isDraggingObject = isDraggingObject_;
+	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
-	if (evt.x == initX_ && evt.y == initY_) return;
+	isDraggingObject_ = false;
+	isJustPressed_ = false;
 
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw)
+		if (isDraggingObject && (evt.x != initX_ || evt.y != initY_))
 		{
-			// TODO [modify] >>
-			//if (evt.x == initX_ && evt.y == initY_)
-			//	vw->pickObject(initX_, initY_);
-			//else
-			//	vw->pickObject(initX_, initY_, evt.x, evt.y);
+			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+			if (vw) vw->dragObject(prevX_, prevY_, evt.x, evt.y);
+		}
+		else
+		{
+			if (!isJustPressed) drawRubberBand(view, evt.x, evt.y, true, false);
+
+			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+			if (vw)
+			{
+				if (evt.x == initX_ && evt.y == initY_)
+					vw->pickObject(evt.x, evt.y, false);
+				else
+					vw->pickObject(initX_, initY_, evt.x, evt.y, false);
+			}
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void PickAndDragObjectState::moveMouse(const MouseEvent &evt)
+{
+	if (isDragging_)
+	{
+		//if (evt.x == initX_ && evt.y == initY_) return;
+		if (evt.x == prevX_ && evt.y == prevY_) return;
+
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			if (isDraggingObject_)
+			{
+				WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+				if (vw) vw->dragObject(prevX_, prevY_, evt.x, evt.y);
+			}
+			else
+			{
+				drawRubberBand(view, evt.x, evt.y, !isJustPressed_, true);
+				if (isJustPressed_) isJustPressed_ = false;
+			}
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 		}
 
-		drawRubberBand(view, evt.x, evt.y, true, false);
+		prevX_ = evt.x;
+		prevY_ = evt.y;
 	}
-	catch (const std::bad_cast &)
+	else
 	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
+			if (vw)
+				vw->pickObject(evt.x, evt.y, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
 	}
 }
 
-void DragObjectState::moveMouse(const MouseEvent &evt)
-{
-	if (!isDragging_) return;
-	if (evt.x == prevX_ && evt.y == prevY_) return;
-
-	try
-	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
-
-		drawRubberBand(view, evt.x, evt.y, true, true);
-	}
-	catch (const std::bad_cast &)
-	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
-
-	prevX_ = evt.x;
-	prevY_ = evt.y;
-}
-
-void DragObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
+void PickAndDragObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
 {
 #if 1
 	CView *vw = dynamic_cast<CView *>(&view);

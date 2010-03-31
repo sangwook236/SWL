@@ -1,7 +1,7 @@
 #include "swl/Config.h"
 #include "swl/view/ViewCamera3.h"
 #include "swl/math/MathConstant.h"
-#include <memory>
+#include <stdexcept>
 #include <cmath>
 
 
@@ -131,31 +131,31 @@ bool ViewCamera3::setViewBound(const double dLeft, const double dBottom, const d
 	farPlane_ = dNear > dFar ? dNear : dFar;
 
 	//-- [] 2001/05/22: Sang-Wook Lee
-	return base_type::setViewBound(dLeft, dBottom, dRight, dTop)
-		   && doUpdateFrustum();
+	return base_type::setViewBound(dLeft, dBottom, dRight, dTop) &&
+		   doUpdateFrustum();
 /*
-	return base_type::setViewBound(dLeft, dBottom, dRight, dTop)
-		   && SetObjectPosition((dLeft+dRight)/2.0, (dBottom+dTop)/2.0, (dNear+dFar)/2.0);
+	return base_type::setViewBound(dLeft, dBottom, dRight, dTop) &&
+		   SetObjectPosition((dLeft+dRight)*0.5, (dBottom+dTop)*0.5, (dNear+dFar)*0.5);
 */
 }
 
 bool ViewCamera3::setViewport(const Region2<int> &rViewport)
 {
-	return base_type::setViewport(rViewport)
-		   && doUpdateViewport();
+	return base_type::setViewport(rViewport) &&
+		   doUpdateViewport();
 }
 
 inline bool ViewCamera3::setViewRegion(const Region2<double> &rRct)
 {
 	// resize a viewing region && move the position of eye point
 #if defined(_TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_)
-	return base_type::setViewRegion(rRct)
-		   && doUpdateFrustum();
+	return base_type::setViewRegion(rRct) &&
+		   doUpdateFrustum();
 #else  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
 	Point2<double> m_rctViewRegion.Center() - rRct.Center();
-	return doUpdateZoomFactor()
-		   && translateScene(ptDelta.x, ptDelta.y)
-		   && doUpdateFrustum();
+	return doUpdateZoomFactor() &&
+		   translateScene(ptDelta.x, ptDelta.y) &&
+		   doUpdateFrustum();
 #endif  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
 }
 
@@ -163,25 +163,25 @@ inline bool ViewCamera3::moveViewRegion(const double dDeltaX, const double dDelt
 {
 	// move the position of eye point
 #if defined(_TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_)
-	return base_type::moveViewRegion(dDeltaX, dDeltaY)
-		   && doUpdateFrustum();
+	return base_type::moveViewRegion(dDeltaX, dDeltaY) &&
+		   doUpdateFrustum();
 #else  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
-	return translateScene(dDeltaX, dDeltaY)
-		   && doUpdateFrustum();
+	return translateScene(dDeltaX, dDeltaY) &&
+		   doUpdateFrustum();
 #endif  // _TRANSFORM_SCENE_IN_KERNEL_SC_VIEWER_CAMERA_3D_CPP_
 }
 
 inline bool ViewCamera3::rotateViewRegion(const double dDeltaX, const double dDeltaY)
 {
 	// rotate the position of eye point, the direction of sight and up direction
-	return rotateScene(dDeltaX, dDeltaY)
-		   && doUpdateFrustum();
+	return rotateScene(dDeltaX, dDeltaY) &&
+		   doUpdateFrustum();
 }
 
 inline bool ViewCamera3::scaleViewRegion(const double dFactor)
 {
-	return base_type::scaleViewRegion(dFactor)
-		   && doUpdateFrustum();
+	return base_type::scaleViewRegion(dFactor) &&
+		   doUpdateFrustum();
 }
 
 inline bool ViewCamera3::restoreViewRegion()
@@ -189,12 +189,12 @@ inline bool ViewCamera3::restoreViewRegion()
 {
 	//-- [] 2001/05/22: Sang-Wook Lee
 /*
-	return base_type::restoreViewRegion()
-		   && updateEyePosition()
-		   && doUpdateFrustum();
+	return base_type::restoreViewRegion() &&
+		   updateEyePosition() &&
+		   doUpdateFrustum();
 */
-	return base_type::restoreViewRegion()
-		   && updateEyePosition();
+	return base_type::restoreViewRegion() &&
+		   updateEyePosition();
 }
 
 bool ViewCamera3::setEyePose(const double dDirX, const double dDirY, const double dDirZ, const double dUpX, const double dUpY, const double dUpZ, const bool bUpdateViewpoint /*= true*/)
@@ -243,7 +243,7 @@ bool ViewCamera3::transform(const ViewMatrix3 &rdT, const bool bUpdateViewpoint 
 
 inline bool ViewCamera3::updateEyeDistance(const bool bUpdateViewpoint /*= true*/)
 {
-	eyeDistance_ = std::sqrt(pow(refObj_[0]-eyePos_[0], 2.0) + std::pow(refObj_[1]-eyePos_[1], 2.0) + std::pow(refObj_[2]-eyePos_[2], 2.0));
+	eyeDistance_ = std::sqrt(std::pow(refObj_[0]-eyePos_[0], 2.0) + std::pow(refObj_[1]-eyePos_[1], 2.0) + std::pow(refObj_[2]-eyePos_[2], 2.0));
 	return bUpdateViewpoint ? doUpdateFrustum() : true;  //-- [] 2001/05/22: Sang-Wook Lee
 }
 
@@ -282,7 +282,7 @@ bool ViewCamera3::rotateScene(const double dDeltaX, const double dDeltaY)
 	const double vZs[3] = { -eyeDirX_, -eyeDirY_, -eyeDirZ_ };
 	double vXs[3];  crossVector(vYs, vZs, vXs);
 
-	double vV[3];
+	double vV[3] = { 0.0, };
 	for (int i = 0; i < 3; ++i)  vV[i] = dDeltaX * vXs[i] + dDeltaY * vYs[i];
 	isValid_ &= normalizeVector(vV);
 	if (!isValid_)
@@ -291,78 +291,26 @@ bool ViewCamera3::rotateScene(const double dDeltaX, const double dDeltaY)
 		return false;
 	}
 
-	double vU[3];
+	double vU[3] = { 0.0, };  // rotational axis
 	crossVector(vZs, vV, vU);
 
-	const double dRad = MathConstant::_4_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
-	double mRot[9];
-	if (!calcRotationMatrix(-dRad, vU, mRot)) return false;
+	const double dRad = -MathConstant::_4_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
+	double mRot[9] = { 0.0, };
+	if (!calcRotationMatrix(dRad, vU, mRot)) return false;
 
-	//
-	double dTmp;
-	for (int i = 0; i < 3; ++i)
-	{
-		dTmp = eyeDistance_ * eyeDir_[i];
-		// the position of the center of a viewing volume
-		vU[i] = eyePos_[i] + dTmp;
-		// the direction from the reference point to the eye point
-		vV[i] = -dTmp;
-	}
-	productMatrixAndVector(mRot, vV, eyePos_);
-	eyePosX_ += vU[0];  eyePosY_ += vU[1];  eyePosZ_ += vU[2];
-
-	//
-	productMatrixAndVector(mRot, vYs, upDir_);
-	vV[0] = eyeDirX_;  vV[1] = eyeDirY_;  vV[2] = eyeDirZ_;
+	// the direction from the reference point to the eye point
+	memcpy(vV, eyeDir_, 3 * sizeof(double));
 	productMatrixAndVector(mRot, vV, eyeDir_);
+	eyePosX_ = refObjX_ - eyeDistance_ * eyeDirX_;  eyePosY_ = refObjY_ - eyeDistance_ * eyeDirY_;  eyePosZ_ = refObjZ_ - eyeDistance_ * eyeDirZ_;
+	productMatrixAndVector(mRot, vYs, upDir_);
+
 	return true;
 }
 
-bool ViewCamera3::rotateSceneAboutAxis(const ViewCamera3::EAxis eAxis, const double dDeltaX, const double dDeltaY)
+bool ViewCamera3::rotateViewAboutAxis(const EAxis eAxis, const int iX1, const int iY1, const int iX2, const int iY2)
 {
-	const bool isPositiveDir = std::fabs(dDeltaX) > std::fabs(dDeltaY) ? dDeltaX >= 0.0 : dDeltaY >= 0.0;
-	double vU[3] = { 0.0, };
-	switch (eAxis)
-	{
-	case ViewCamera3::XAXIS:
-		vU[0] = isPositiveDir ? 1.0 : -1.0;
-		break;
-	case ViewCamera3::YAXIS:
-		vU[1] = isPositiveDir ? 1.0 : -1.0;
-		break;
-	case ViewCamera3::ZAXIS:
-		vU[2] = isPositiveDir ? 1.0 : -1.0;
-		break;
-	default:
-		return false;
-	}
-
-	const double vYs[3] = { upDirX_, upDirY_, upDirZ_ };
-	const double vZs[3] = { -eyeDirX_, -eyeDirY_, -eyeDirZ_ };
-
-	const double dRad = MathConstant::_4_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
-	double mRot[9];
-	if (!calcRotationMatrix(-dRad, vU, mRot)) return false;
-
-	//
-	double vV[3];
-	double dTmp;
-	for (int i = 0; i < 3; ++i)
-	{
-		dTmp = eyeDistance_ * eyeDir_[i];
-		// the position of the center of a viewing volume
-		vU[i] = eyePos_[i] + dTmp;
-		// the direction from the reference point to the eye point
-		vV[i] = -dTmp;
-	}
-	productMatrixAndVector(mRot, vV, eyePos_);
-	eyePosX_ += vU[0];  eyePosY_ += vU[1];  eyePosZ_ += vU[2];
-
-	//
-	productMatrixAndVector(mRot, vYs, upDir_);
-	vV[0] = eyeDirX_;  vV[1] = eyeDirY_;  vV[2] = eyeDirZ_;
-	productMatrixAndVector(mRot, vV, eyeDir_);
-	return true;
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
 }
 
 bool ViewCamera3::translateEye(const ViewCamera3::EAxis eAxis, const double dDelta)
@@ -370,16 +318,16 @@ bool ViewCamera3::translateEye(const ViewCamera3::EAxis eAxis, const double dDel
 {
 	switch (eAxis)
 	{
-	case ViewCamera3::XAXIS:
+	case XAXIS:
 		{
 			double vXe[3];  crossVector(upDir_, eyeDir_, vXe);
 			for (int i = 0; i < 3; ++i)  eyePos_[i] += dDelta * vXe[i];
 		}
 		break;
-	case ViewCamera3::YAXIS:
+	case YAXIS:
 		for (int i = 0; i < 3; ++i)  eyePos_[i] -= dDelta * upDir_[i];
 		break;
-	case ViewCamera3::ZAXIS:
+	case ZAXIS:
 		for (int i = 0; i < 3; ++i)  eyePos_[i] += dDelta * eyeDir_[i];
 		break;
 	default:
@@ -396,7 +344,7 @@ bool ViewCamera3::rotateEye(const ViewCamera3::EAxis eAxis, const double dRad)
 
 	switch (eAxis)
 	{
-	case ViewCamera3::XAXIS:
+	case XAXIS:
 		{
 			const double vYe[3] = { upDirX_, upDirY_, upDirZ_ };
 			const double vZe[3] = { eyeDirX_, eyeDirY_, eyeDirZ_ };
@@ -408,14 +356,14 @@ bool ViewCamera3::rotateEye(const ViewCamera3::EAxis eAxis, const double dRad)
 			productMatrixAndVector(mRot, vZe, eyeDir_);
 		}
 		break;
-	case ViewCamera3::YAXIS:
+	case YAXIS:
 		{
 			if (!calcRotationMatrix(dRad, upDir_, mRot)) return false;
 			const double vZe[3] = { eyeDirX_, eyeDirY_, eyeDirZ_ };
 			productMatrixAndVector(mRot, vZe, eyeDir_);
 		}
 		break;
-	case ViewCamera3::ZAXIS:
+	case ZAXIS:
 		{
 			if (!calcRotationMatrix(dRad, eyeDir_, mRot)) return false;
 			const double vYe[3] = { upDirX_, upDirY_, upDirZ_ };

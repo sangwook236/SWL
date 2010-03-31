@@ -725,6 +725,24 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
     return true;
 }
 
+void CWinViewTestView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
+{
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
+}
+
+void CWinViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary /*= false*/)
+{
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
+}
+
+void CWinViewTestView::dragObject(const int x1, const int y1, const int x2, const int y2)
+{
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
+}
+
 void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
@@ -982,6 +1000,7 @@ void CWinViewTestView::OnViewhandlingPickobject()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
+	//if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickAndDragObject());
 
 	if (isRedrawn) raiseDrawEvent(false);
 }
@@ -1050,6 +1069,7 @@ void CWinViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
+		//pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickAndDragObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 

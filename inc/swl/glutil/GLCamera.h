@@ -31,6 +31,9 @@ public:
 	///*virtual*/ void Write(std::ostream &stream);
 	///*virtual*/ void Read(std::istream &stream);
 
+	///
+	/*virtual*/ bool rotateViewAboutAxis(const EAxis eAxis, const int iX1, const int iY1, const int iX2, const int iY2);
+
 	/// look at the view region from the eye position along the eye direction and up direction
 	/*virtual*/ void lookAt();
 

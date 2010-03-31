@@ -1232,9 +1232,9 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 	glMatrixMode(oldMatrixMode);
 
 	// process hits
+	const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
 	if (isTemporary)
 	{
-		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
 		if (PON_BASE_ENTRY == pickedObj && swl::ObjectPickerMgr::getInstance().containTemporarilyPickedObject())
 		{
 			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
@@ -1249,9 +1249,9 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 	}
 	else
 	{
+		const bool isTemporarilyPickedObj = swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(pickedObj);
 		swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
 
-		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : PON_BASE_ENTRY;
 		if (PON_BASE_ENTRY == pickedObj && swl::ObjectPickerMgr::getInstance().containPickedObject())
 		{
 			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
@@ -1277,7 +1277,7 @@ void CWglViewTestView::processToPickObject(const int x, const int y, const int w
 				break;
 			}
 
-			//raiseDrawEvent(false);
+			if (!isTemporarilyPickedObj) raiseDrawEvent(false);
 		}
 	}
 }
@@ -1483,6 +1483,12 @@ unsigned int CWglViewTestView::processHits(const int hitCount, const unsigned in
 	return selectedObj;
 }
 
+void CWglViewTestView::dragObject(const int x1, const int y1, const int x2, const int y2)
+{
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
+}
+
 void CWglViewTestView::setPerspective(const bool isPerspective)
 {
 	if (isPerspective == isPerspective_) return;
@@ -1636,7 +1642,7 @@ void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 	if (GL_FILL != oldPolygonMode[1]) glPolygonMode(polygonFacing_, GL_FILL);
 
-	int oldMatrixMode = 0;
+	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 
 	// save modelview matrix
@@ -1855,7 +1861,7 @@ void CWglViewTestView::drawColorBar(const bool doesCreateDisplayList /*= false*/
 	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 	if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
-	int oldMatrixMode = 0;
+	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 
 	// save modelview matrix
@@ -2403,6 +2409,7 @@ void CWglViewTestView::OnViewhandlingPickobject()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
+	//if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickAndDragObject());
 
 	if (isRedrawn) raiseDrawEvent(false);
 }
@@ -2467,6 +2474,7 @@ void CWglViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
+		//pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickAndDragObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 

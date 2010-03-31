@@ -55,6 +55,11 @@ public:
 	/*virtual*/ bool initializeView();
 	/*virtual*/ bool resizeView(const int x1, const int y1, const int x2, const int y2);
 
+	/*virtual*/ void pickObject(const int x, const int y, const bool isTemporary = false);
+	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false);
+
+	/*virtual*/ void dragObject(const int x1, const int y1, const int x2, const int y2);
+
 private:
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WinView: basic routine

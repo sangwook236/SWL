@@ -63,6 +63,8 @@ public:
 	/*virtual*/ void pickObject(const int x, const int y, const bool isTemporary = false);
 	/*virtual*/ void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false);
 
+	/*virtual*/ void dragObject(const int x1, const int y1, const int x2, const int y2);
+
 	//-------------------------------------------------------------------------
 	//
 

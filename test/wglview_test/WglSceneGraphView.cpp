@@ -900,9 +900,9 @@ void CWglSceneGraphView::processToPickObject(const int x, const int y, const int
 	glMatrixMode(oldMatrixMode);
 
 	// process hits
+	const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
 	if (isTemporary)
 	{
-		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
 		if (0u == pickedObj && swl::ObjectPickerMgr::getInstance().containTemporarilyPickedObject())
 		{
 			swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
@@ -917,9 +917,9 @@ void CWglSceneGraphView::processToPickObject(const int x, const int y, const int
 	}
 	else
 	{
+		const bool isTemporarilyPickedObj = swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(pickedObj);
 		swl::ObjectPickerMgr::getInstance().clearAllTemporarilyPickedObjects();
 
-		const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
 		if (0u == pickedObj && swl::ObjectPickerMgr::getInstance().containPickedObject())
 		{
 			swl::ObjectPickerMgr::getInstance().clearAllPickedObjects();
@@ -932,7 +932,7 @@ void CWglSceneGraphView::processToPickObject(const int x, const int y, const int
 
 			// FIXME [add] >> process picked objects
 
-			//raiseDrawEvent(false);
+			if (!isTemporarilyPickedObj) raiseDrawEvent(false);
 		}
 	}
 }
@@ -1013,6 +1013,12 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 
 	TRACE("=====> the picked object: %d\n", selectedObj);
 	return selectedObj;
+}
+
+void CWglSceneGraphView::dragObject(const int x1, const int y1, const int x2, const int y2)
+{
+	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
 }
 
 void CWglSceneGraphView::setPerspective(const bool isPerspective)
@@ -1301,6 +1307,7 @@ void CWglSceneGraphView::OnViewhandlingPickobject()
 	//-------------------------------------------------------------------------
 	// This code is required for SWL.WglView: view state
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
+	//if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickAndDragObject());
 
 	if (isRedrawn) raiseDrawEvent(false);
 }
@@ -1365,6 +1372,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 	// This code is required for SWL.WinView: view state
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
+		//pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickAndDragObjectState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
 }
 

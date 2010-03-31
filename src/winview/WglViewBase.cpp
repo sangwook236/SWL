@@ -28,7 +28,7 @@ void WglViewBase::renderScene(context_type &context, camera_type &camera)
 	}
 #endif
 
-	int oldMatrixMode = 0;
+	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
 

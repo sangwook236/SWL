@@ -213,7 +213,7 @@ void GradientBackgroundShape::draw() const
 	glGetIntegerv(GL_POLYGON_MODE, oldPolygonMode);
 	if (polygonMode != oldPolygonMode[1]) glPolygonMode(drawingFace, polygonMode);
 
-	int oldMatrixMode = 0;
+	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 
 	// save modelview matrix
@@ -436,7 +436,7 @@ void ColorBarShape::draw() const
 	const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 	if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
-	int oldMatrixMode = 0;
+	GLint oldMatrixMode = 0;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 
 	// save modelview matrix

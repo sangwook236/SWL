@@ -26,6 +26,11 @@ public:
 public:
 	void renderScene(context_type &context, camera_type &camera);
 
+	virtual void pickObject(const int x, const int y, const bool isTemporary = false) = 0;
+	virtual void pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary = false) = 0;
+
+	virtual void dragObject(const int x1, const int y1, const int x2, const int y2) = 0;
+
 private:
 	virtual bool doPrepareRendering(const context_type &context, const camera_type &camera) = 0;
 	virtual bool doRenderStockScene(const context_type &context, const camera_type &camera) = 0;

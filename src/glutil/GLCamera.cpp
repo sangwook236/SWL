@@ -1,6 +1,9 @@
 #include "swl/Config.h"
 #include "swl/glutil/GLCamera.h"
+#include "swl/math/MathConstant.h"
 #include <GL/glut.h>
+#include <cmath>
+#include <cstring>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -76,7 +79,7 @@ void GLCamera::read20021008(std::istream& stream)
 
 bool GLCamera::doUpdateFrustum()
 {
-	int oldMatrixMode;
+	GLint oldMatrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 	if (oldMatrixMode != GL_PROJECTION) glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -123,6 +126,137 @@ inline bool GLCamera::doUpdateViewport()
 {
 	glViewport(viewport_.left, viewport_.bottom, viewport_.getWidth(), viewport_.getHeight());
 	return doUpdateFrustum();
+}
+
+bool GLCamera::rotateViewAboutAxis(const EAxis eAxis, const int iX1, const int iY1, const int iX2, const int iY2)
+{
+#if 1
+	const double dDeltaX = double(iX2 - iX1) / zoomFactor_;
+	const double dDeltaY = double(iY1 - iY2) / zoomFactor_;  // upward y-axis
+	//const double dDeltaY = double(iY2 - iY1) / zoomFactor_;  // downward y-axis
+
+	const bool isPositiveDir = std::fabs(dDeltaX) > std::fabs(dDeltaY) ? dDeltaX >= 0.0 : dDeltaY >= 0.0;
+	double rotAxis[3] = { 0.0, 0.0, 0.0 };  // rotational axis
+	switch (eAxis)
+	{
+	case XAXIS:
+		rotAxis[0] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	case YAXIS:
+		rotAxis[1] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	case ZAXIS:
+		rotAxis[2] = isPositiveDir ? 1.0 : -1.0;
+		break;
+	default:
+		return false;
+	}
+
+	const double rotAngle = -MathConstant::_2_PI * std::sqrt(dDeltaX*dDeltaX + dDeltaY*dDeltaY) / base_type::getViewRegion().getDiagonal();
+	double mRot[9] = { 0.0, };
+	if (!calcRotationMatrix(rotAngle, rotAxis, mRot)) return false;
+
+	// the direction from the reference point to the eye point
+	double vV[3] = { 0.0, };
+	memcpy(vV, eyeDir_, 3 * sizeof(double));
+	productMatrixAndVector(mRot, vV, eyeDir_);
+	eyePosX_ = refObjX_ - eyeDistance_ * eyeDirX_;  eyePosY_ = refObjY_ - eyeDistance_ * eyeDirY_;  eyePosZ_ = refObjZ_ - eyeDistance_ * eyeDirZ_;
+	memcpy(vV, upDir_, 3 * sizeof(double));
+	productMatrixAndVector(mRot, vV, upDir_);
+
+	return true;
+#else
+	const double eps = 1.0e-20;
+
+	GLint oldMatrixMode = 0;
+	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(GL_MODELVIEW);
+
+	glPushMatrix();
+		glLoadIdentity();
+		// 1. need to load current modelview matrix
+		//   e.g.) glLoadMatrixd(modelviewMatrix);
+		// 2. need to be thought of viewing transformation
+		//   e.g.) camera->lookAt();
+		lookAt();
+
+		double modelview[16] = { 0.0, }, projection[16] = { 0.0, };
+		int viewport[4] = { 0, };
+		double depthRange[2] = { 0.0, 1.0 };
+		glGetDoublev(GL_MODELVIEW_MATRIX, modelview);
+		glGetDoublev(GL_PROJECTION_MATRIX, projection);
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		glGetDoublev(GL_DEPTH_RANGE, depthRange);
+
+		double pt1[3] = { 0.0, }, pt2[3] = { 0.0, };
+		const bool ret = gluUnProject(double(iX1), double(viewport[3] - iY1), depthRange[0], modelview, projection, viewport, &pt1[0], &pt1[1], &pt1[2]) == GL_TRUE &&
+			gluUnProject(double(iX2), double(viewport[3] - iY2), depthRange[0], modelview, projection, viewport, &pt2[0], &pt2[1], &pt2[2]) == GL_TRUE;
+	glPopMatrix();
+
+	if (oldMatrixMode != GL_MODELVIEW) glMatrixMode(oldMatrixMode);
+	if (!ret) return false;
+
+	double vec1[3] = { pt1[0] - refObj_[0], pt1[1] - refObj_[1], pt1[2] - refObj_[2] };
+	double vec2[3] = { pt2[0] - refObj_[0], pt2[1] - refObj_[1], pt2[2] - refObj_[2] };
+
+	normalizeVector(vec1);
+	normalizeVector(vec2);
+
+	double rotAxis[3] = { 0.0, 0.0, 0.0 };  // rotational axis
+	double rotAngle = 0.0;
+	switch (eAxis)
+	{
+	case XAXIS:
+		{
+			rotAxis[0] = 1.0;
+			const double norm1 = std::sqrt(vec1[1]*vec1[1] + vec1[2]*vec1[2]);
+			const double norm2 = std::sqrt(vec2[1]*vec2[1] + vec2[2]*vec2[2]);
+			if (norm1 <= eps || norm2 <= eps) return false;
+			rotAngle = std::acos((vec1[1] * vec2[1] + vec1[2] * vec2[2]) / (norm1 * norm2));
+		}
+		break;
+	case YAXIS:
+		{
+			rotAxis[1] = 1.0;
+			const double norm1 = std::sqrt(vec1[0]*vec1[0] + vec1[2]*vec1[2]);
+			const double norm2 = std::sqrt(vec2[0]*vec2[0] + vec2[2]*vec2[2]);
+			if (norm1 <= eps || norm2 <= eps) return false;
+			rotAngle = std::acos((vec1[0] * vec2[0] + vec1[2] * vec2[2]) / (norm1 * norm2));
+		}
+		break;
+	case ZAXIS:
+		{
+			rotAxis[2] = 1.0;
+			const double norm1 = std::sqrt(vec1[0]*vec1[0] + vec1[1]*vec1[1]);
+			const double norm2 = std::sqrt(vec2[0]*vec2[0] + vec2[1]*vec2[1]);
+			if (norm1 <= eps || norm2 <= eps) return false;
+			rotAngle = std::acos((vec1[0] * vec2[0] + vec1[1] * vec2[1]) / (norm1 * norm2));
+		}
+		break;
+	default:
+		return false;
+	}
+
+	double vec3[3] = { 0.0, };
+	crossVector(vec1, vec2, vec3);
+	if (!normalizeVector(vec3)) return false;
+
+	const double betweenAngle = std::acos(vec3[0] * rotAxis[0] + vec3[1] * rotAxis[1] + vec3[2] * rotAxis[2]);
+	const bool isPositiveDir = betweenAngle < PI * 0.5; 
+
+	double mRot[9] = { 0.0, };
+	if (!calcRotationMatrix(isPositiveDir ? -rotAngle : rotAngle, rotAxis, mRot)) return false;
+
+	// the direction from the reference point to the eye point
+	double vV[3] = { 0.0, };
+	memcpy(vV, eyeDir_, 3 * sizeof(double));
+	productMatrixAndVector(mRot, vV, eyeDir_);
+	eyePosX_ = refObjX_ - eyeDistance_ * eyeDirX_;  eyePosY_ = refObjY_ - eyeDistance_ * eyeDirY_;  eyePosZ_ = refObjZ_ - eyeDistance_ * eyeDirZ_;
+	memcpy(vV, upDir_, 3 * sizeof(double));
+	productMatrixAndVector(mRot, vV, upDir_);
+
+	return true;
+#endif
 }
 
 inline void GLCamera::lookAt()

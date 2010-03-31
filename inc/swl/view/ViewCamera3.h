@@ -69,6 +69,9 @@ public:
 	/*virtual*/ bool restoreViewRegion();
 
 	///
+	virtual bool rotateViewAboutAxis(const EAxis eAxis, const int iX1, const int iY1, const int iX2, const int iY2);
+
+	///
 	bool isValid() const  {  return isValid_;  }
 	void resetValid()  {  isValid_ = true;  }
 
@@ -157,8 +160,6 @@ public:
 	/// transform an eye wrt eye coordinate frames
 	virtual bool translateEye(const EAxis eAxis, const double dDelta);
 	virtual bool rotateEye(const EAxis eAxis, const double dRad);
-
-	bool rotateSceneAboutAxis(const EAxis eAxis, const double dDeltaX, const double dDeltaY);
 
 	/// map an object coordinates(before projection) to a window coordinates(after projection)
 	/// ==> OpenGL Red Book(p. 96)
