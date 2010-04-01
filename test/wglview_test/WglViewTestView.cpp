@@ -786,11 +786,12 @@ void CWglViewTestView::OnInitialUpdate()
 		if (viewCamera)
 		{
 			// set the size of viewing volume
-			viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
-			viewCamera->setEyeDistance(8000.0, false);
 			viewCamera->setObjectPosition(0.0, 0.0, 0.0, false);
-			//viewCamera->setEyeDistance(1000.0, false);
 			//viewCamera->setObjectPosition(110.0, 110.0, 150.0, false);
+			viewCamera->setEyePose(0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, false);
+			//viewCamera->setEyePosition(1000.0, 1000.0, 1000.0, false);
+			viewCamera->setEyeDistance(8000.0, false);
+			//viewCamera->setEyeDistance(1000.0, false);
 
 			// (left, bottom, right, top) is set wrt a eye coordinates frame
 			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
