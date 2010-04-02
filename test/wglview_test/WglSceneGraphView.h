@@ -165,6 +165,7 @@ private:
 	//
 	typedef swl::IGLSceneVisitor visitor_type;
 	typedef swl::ISceneNode<visitor_type> scene_node_type;
+	scene_node_type::node_type stockSceneNode_;
 	scene_node_type::node_type rootSceneNode_;
 
 // Generated message map functions

@@ -4,6 +4,7 @@
 
 #include "swl/winview/WglViewBase.h"
 #include "swl/glutil/GLShape.h"
+#include <boost/smart_ptr.hpp>
 
 
 //-----------------------------------------------------------------------------
@@ -41,6 +42,78 @@ public:
 
 public:
 	/*virtual*/ void draw() const;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+class ColoredMeshShape: public swl::GLShape
+{
+public:
+	typedef swl::GLShape base_type;
+
+public:
+	ColoredMeshShape()
+	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK),
+	  meshWidth_(320), meshHeight_(240), paletteSize_(256), paletteColorDim_(3),
+	  meshMinValue_(0.0f), meshMaxValue_(0.0f),
+	  xOffset_(0.0f), yOffset_(0.0f), zOffset_(0.0f), zScaleFactor_(1.0f)
+	{
+		loadMesh();
+	}
+
+public:
+	/*virtual*/ void draw() const;
+
+protected:
+	void loadMesh();
+	void calculateNormal(const float vx1, const float vy1, const float vz1, const float vx2, const float vy2, const float vz2, float &nx, float &ny, float &nz) const;
+
+protected:
+	const size_t meshWidth_, meshHeight_;
+	const size_t paletteSize_;
+	const size_t paletteColorDim_;
+
+	boost::scoped_array<float> mesh_;
+	boost::scoped_array<unsigned char> meshColorIndexes_;
+	boost::scoped_array<unsigned char> palette_;
+
+	float meshMinValue_, meshMaxValue_;
+
+	const float xOffset_;
+	const float yOffset_;
+	const float zOffset_;
+	const float zScaleFactor_;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+class TexturedMeshShape: public ColoredMeshShape
+{
+public:
+	typedef ColoredMeshShape base_type;
+
+public:
+	TexturedMeshShape();
+	~TexturedMeshShape();
+
+public:
+	/*virtual*/ void draw() const;
+	/*virtual*/ bool createDisplayList();
+
+private:
+	void createTexture();
+
+	void drawTexturedMesh() const;
+	void drawTexture() const;
+	void drawMesh() const;
+
+protected:
+	const size_t texWidth_, texHeight_;
+
+	static const size_t texCount_ = 1;
+	unsigned int textureObjs_[texCount_];
 };
 
 //-----------------------------------------------------------------------------

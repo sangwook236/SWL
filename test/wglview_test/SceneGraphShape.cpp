@@ -8,6 +8,8 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 #include <GL/glut.h>
+#include <fstream>
+#include <iostream>
 #include <cmath>
 
 
@@ -91,7 +93,7 @@ void Main1Shape::drawClippingArea(const unsigned int clippingPlaneId, const doub
 	glEnable(clippingPlaneId);
 	glClipPlane(clippingPlaneId, clippingPlaneEqn);
 
-	//----- rendering the mesh's clip edge
+	//----- rendering the mesh_'s clip edge
 	glEnable(GL_STENCIL_TEST);
 	glEnable(GL_CULL_FACE);
 	glClear(GL_STENCIL_BUFFER_BIT);
@@ -143,7 +145,7 @@ void Main1Shape::drawClippingArea(const unsigned int clippingPlaneId, const doub
 
 	glDisable(GL_STENCIL_TEST);
 	glDisable(GL_CULL_FACE);
-	//----- end rendering mesh's clip edge
+	//----- end rendering mesh_'s clip edge
 }
 
 //-----------------------------------------------------------------------------
@@ -189,6 +191,424 @@ void Main2Shape::draw() const
 	// restore states
 	//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 	glPolygonMode(drawingFace, oldPolygonMode[1]);
+}
+
+//-----------------------------------------------------------------------------
+//
+
+void ColoredMeshShape::draw() const
+{
+	if (!mesh_ || !meshColorIndexes_ || !palette_) return;
+
+	//float nx, ny, nz;
+	float r, g, b;
+	size_t colorIndex;
+
+	// save states
+	glPushAttrib(GL_LIGHTING_BIT);
+
+	// set attributes
+	glDisable(GL_LIGHTING);
+
+	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
+	glBegin(GL_QUADS);
+		for (size_t h = 0; h < meshHeight_ - 1; ++h)
+			for (size_t w = 0; w < meshWidth_ - 1; ++w)
+			{
+				x1 = float(w) + xOffset_;
+				x2 = float(w+1) + xOffset_;
+				x3 = float(w+1) + xOffset_;
+				x4 = float(w) + xOffset_;
+#if 0
+				y1 = float(h) + yOffset_;
+				y2 = float(h) + yOffset_;
+				y3 = float(h+1) + yOffset_;
+				y4 = float(h+1) + yOffset_;
+#else
+				// flipped image
+				y1 = float(meshHeight_ - h) + yOffset_;
+				y2 = float(meshHeight_ - h) + yOffset_;
+				y3 = float(meshHeight_ - (h+1)) + yOffset_;
+				y4 = float(meshHeight_ - (h+1)) + yOffset_;
+#endif
+
+				temp1 = mesh_[h * meshWidth_ + w];
+				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				temp2 = mesh_[h * meshWidth_ + (w+1)];
+				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
+				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				temp4 = mesh_[(h+1) * meshWidth_ + w];
+				z4 = (temp4 + zOffset_) * zScaleFactor_;
+
+				//glEdgeFlag(GL_TRUE);
+
+				//calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+
+				//
+				colorIndex = meshColorIndexes_[h * meshWidth_ + w] * paletteColorDim_;
+				r = palette_[colorIndex] / 255.0f;
+				g = palette_[colorIndex + 1] / 255.0f;
+				b = palette_[colorIndex + 2] / 255.0f;
+				glColor3f(r, g, b);
+				//glNormal3f(nx, ny, nz);
+				glVertex3f(x1, y1, z1);
+				//
+				colorIndex = meshColorIndexes_[h * meshWidth_ + (w+1)] * paletteColorDim_;
+				r = palette_[colorIndex] / 255.0f;
+				g = palette_[colorIndex + 1] / 255.0f;
+				b = palette_[colorIndex + 2] / 255.0f;
+				glColor3f(r, g, b);
+				//glNormal3f(nx, ny, nz);
+				glVertex3f(x2, y2, z2);
+				//
+				colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + (w+1)] * paletteColorDim_;
+				r = palette_[colorIndex] / 255.0f;
+				g = palette_[colorIndex + 1] / 255.0f;
+				b = palette_[colorIndex + 2] / 255.0f;
+				glColor3f(r, g, b);
+				//glNormal3f(nx, ny, nz);
+				glVertex3f(x3, y3, z3);
+				//
+				colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + w] * paletteColorDim_;
+				r = palette_[colorIndex] / 255.0f;
+				g = palette_[colorIndex + 1] / 255.0f;
+				b = palette_[colorIndex + 2] / 255.0f;
+				glColor3f(r, g, b);
+				//glNormal3f(nx, ny, nz);
+				glVertex3f(x4, y4, z4);
+			}
+	glEnd();
+
+	// pop original attributes
+	glPopAttrib();  // GL_LIGHTING_BIT
+}
+
+void ColoredMeshShape::loadMesh()
+{
+	mesh_.reset(new float [meshWidth_ * meshHeight_]);
+	meshColorIndexes_.reset(new unsigned char [meshWidth_ * meshHeight_]);
+	palette_.reset(new unsigned char [paletteSize_ * paletteColorDim_]);
+
+	if (!mesh_ || !meshColorIndexes_ || !palette_) return;
+
+	{
+#if defined(DEBUG) || defined(_DEBUG)
+		std::wifstream stream(L"..\\data\\temp_value_320x240.txt");
+#else
+		std::ifstream stream("..\\data\\temp_value_320x240.txt");
+#endif
+		if (stream.is_open())
+		{
+			for (size_t i = 0; i < meshHeight_; ++i)
+				for (size_t j = 0; j < meshWidth_; ++j)
+					stream >> mesh_[i * meshWidth_ + j];
+
+			stream.close();
+
+			meshMinValue_ = *std::min_element(mesh_.get(), mesh_.get() + meshWidth_ * meshHeight_);
+			meshMaxValue_ = *std::max_element(mesh_.get(), mesh_.get() + meshWidth_ * meshHeight_);
+		}
+		else
+		{
+			std::cout << "temperature data fail to be loaded !!!" << std::endl;
+			return;
+		}
+	}
+
+	{
+#if defined(DEBUG) || defined(_DEBUG)
+		std::wifstream stream(L"..\\data\\color_index_320x240.txt");
+#else
+		std::ifstream stream("..\\data\\color_index_320x240.txt");
+#endif
+		if (stream.is_open())
+		{
+			int ch;
+			for (size_t i = 0; i < meshHeight_; ++i)
+				for (size_t j = 0; j < meshWidth_; ++j)
+				{
+					stream >> ch;
+					meshColorIndexes_[i * meshWidth_ + j] = (unsigned char)ch;
+				}
+
+			stream.close();
+		}
+		else
+		{
+			std::cout << "color index data fail to be loaded !!!" << std::endl;
+			return;
+		}
+	}
+
+	{
+#if defined(DEBUG) || defined(_DEBUG)
+		std::wifstream stream(L"..\\data\\rgb_palette.txt");
+#else
+		std::ifstream stream("..\\data\\rgb_palette.txt");
+#endif
+		if (stream.is_open())
+		{
+			int ch;
+			for (size_t i = 0; i < paletteSize_; ++i)
+				for (size_t j = 0; j < paletteColorDim_; ++j)
+				{
+					stream >> ch;
+					palette_[i * paletteColorDim_ + j] = (unsigned char)ch;
+				}
+
+			stream.close();
+		}
+		else
+		{
+			std::cout << "RGB palette_ fails to be loaded !!!" << std::endl;
+			return;
+		}
+	}
+}
+
+void ColoredMeshShape::calculateNormal(const float vx1, const float vy1, const float vz1, const float vx2, const float vy2, const float vz2, float &nx, float &ny, float &nz) const
+{
+	nx = vy1 * vz2 - vz1 * vy2;
+	ny = vz1 * vx2 - vx1 * vz2;
+	nz = vx1 * vy2 - vy1 * vx2;
+
+	const float norm = std::sqrt(nx*nx + ny*ny + nz*nz);
+	nx /= norm;
+	ny /= norm;
+	nz /= norm;
+}
+
+//-----------------------------------------------------------------------------
+//
+
+TexturedMeshShape::TexturedMeshShape()
+: base_type(),
+  texWidth_(512), texHeight_(256)
+{
+}
+
+TexturedMeshShape::~TexturedMeshShape()
+{
+	glDeleteTextures(texCount_, textureObjs_);
+}
+
+void TexturedMeshShape::draw() const
+{
+	drawTexturedMesh();
+	//drawTexture();
+	//drawMesh();
+}
+
+bool TexturedMeshShape::createDisplayList()
+{
+	glDeleteTextures(texCount_, textureObjs_);
+	glGenTextures(texCount_, textureObjs_);
+	createTexture();
+
+	return base_type::createDisplayList();
+}
+
+void TexturedMeshShape::createTexture()
+{
+	//if (!meshColorIndexes_ || !palette_ || !glIsTexture(textureObjs_[0])) return;  // not working: i don't know why
+	if (!meshColorIndexes_ || !palette_) return;
+
+	boost::scoped_array<unsigned char> pixels(new unsigned char [texWidth_ * texHeight_ * paletteColorDim_]);
+	if (!pixels) return;
+
+	for (size_t h = 0; h < texHeight_; ++h)
+		for (size_t w = 0; w < texWidth_; ++w)
+		{
+			const size_t w1 = size_t((float)w / (float)texWidth_ * meshWidth_);
+			const size_t h1 = size_t((float)h / (float)texHeight_ * meshHeight_);
+			const size_t colorIndex = meshColorIndexes_[h1 * meshWidth_ + w1] * paletteColorDim_;
+
+			const size_t idx = (h * texWidth_ + w) * paletteColorDim_;
+			pixels[idx] = palette_[colorIndex];
+			pixels[idx + 1] = palette_[colorIndex + 1];
+			pixels[idx + 2] = palette_[colorIndex + 2];
+		}
+
+	// set a texture object
+	glBindTexture(GL_TEXTURE_2D, textureObjs_[0]);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, (GLsizei)texWidth_, (GLsizei)texHeight_, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels.get());
+	pixels.reset();
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+
+	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL);
+	//const GLfloat texBlendColor[4] = { 1.0f, 0.0f, 0.0f, 0.0f };
+	//glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_BLEND);
+	//glTexEnvfv(GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, texBlendColor);
+
+	// restore to the unnamed default texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+void TexturedMeshShape::drawTexturedMesh() const
+{
+	if (!mesh_ || !glIsTexture(textureObjs_[0])) return;
+
+	// save states
+	glPushAttrib(GL_TEXTURE_BIT);
+
+	// set attributes
+	glEnable(GL_TEXTURE_2D);
+
+	// set a texture object
+	glBindTexture(GL_TEXTURE_2D, textureObjs_[0]);
+
+	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
+	float nx, ny, nz;
+	glBegin(GL_QUADS);
+		for (size_t h = 0; h < meshHeight_ - 1; ++h)
+			for (size_t w = 0; w < meshWidth_ - 1; ++w)
+			{
+				x1 = float(w) + xOffset_;
+				x2 = float(w+1) + xOffset_;
+				x3 = float(w+1) + xOffset_;
+				x4 = float(w) + xOffset_;
+#if 0
+				y1 = float(h) + yOffset_;
+				y2 = float(h) + yOffset_;
+				y3 = float(h+1) + yOffset_;
+				y4 = float(h+1) + yOffset_;
+#else
+				// flipped image
+				y1 = float(meshHeight_ - h) + yOffset_;
+				y2 = float(meshHeight_ - h) + yOffset_;
+				y3 = float(meshHeight_ - (h+1)) + yOffset_;
+				y4 = float(meshHeight_ - (h+1)) + yOffset_;
+#endif
+
+				temp1 = mesh_[h * meshWidth_ + w];
+				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				temp2 = mesh_[h * meshWidth_ + (w+1)];
+				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
+				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				temp4 = mesh_[(h+1) * meshWidth_ + w];
+				z4 = (temp4 + zOffset_) * zScaleFactor_;
+
+				//glEdgeFlag(GL_TRUE);
+
+				calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+				glColor4f(red(), green(), blue(), alpha());
+
+				//
+				glNormal3f(nx, ny, nz);
+				glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
+				glVertex3f(x1, y1, z1);
+				//
+				glNormal3f(nx, ny, nz);
+				glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
+				glVertex3f(x2, y2, z2);
+				//
+				glNormal3f(nx, ny, nz);
+				glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
+				glVertex3f(x3, y3, z3);
+				//
+				glNormal3f(nx, ny, nz);
+				glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
+				glVertex3f(x4, y4, z4);
+			}
+	glEnd();
+
+	// restore to the unnamed default texture
+	//glBindTexture(GL_TEXTURE_2D, 0);
+
+	// pop original attributes
+	glPopAttrib();  // GL_TEXTURE_BIT
+}
+
+void TexturedMeshShape::drawTexture() const
+{
+	if (!meshColorIndexes_ || !palette_) return;
+
+	const boost::scoped_array<unsigned char> pixels(new unsigned char [meshWidth_ * meshHeight_ * paletteColorDim_]);
+	if (!pixels) return;
+
+	for (size_t h = 0; h < meshHeight_; ++h)
+		for (size_t w = 0; w < meshWidth_; ++w)
+		{
+			const size_t idx = (h * meshWidth_ + w) * paletteColorDim_;
+			const size_t colorIndex = meshColorIndexes_[h * meshWidth_ + w] * paletteColorDim_;
+			pixels[idx] = palette_[colorIndex];
+			pixels[idx + 1] = palette_[colorIndex + 1];
+			pixels[idx + 2] = palette_[colorIndex + 2];
+		}
+
+	//glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	//glRasterPos2i(0, 0);
+	glRasterPos3i(0, 0, 0);
+	glDrawPixels((GLsizei)meshWidth_, (GLsizei)meshHeight_, GL_RGB, GL_UNSIGNED_BYTE, pixels.get());
+}
+
+void TexturedMeshShape::drawMesh() const
+{
+	if (!mesh_ || !meshColorIndexes_ || !palette_) return;
+
+	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
+	float nx, ny, nz;
+	glBegin(GL_QUADS);
+		for (size_t h = 0; h < meshHeight_ - 1; ++h)
+			for (size_t w = 0; w < meshWidth_ - 1; ++w)
+			{
+				x1 = float(w) + xOffset_;
+				x2 = float(w+1) + xOffset_;
+				x3 = float(w+1) + xOffset_;
+				x4 = float(w) + xOffset_;
+#if 0
+				y1 = float(h) + yOffset_;
+				y2 = float(h) + yOffset_;
+				y3 = float(h+1) + yOffset_;
+				y4 = float(h+1) + yOffset_;
+#else
+				// flipped image
+				y1 = float(meshHeight_ - h) + yOffset_;
+				y2 = float(meshHeight_ - h) + yOffset_;
+				y3 = float(meshHeight_ - (h+1)) + yOffset_;
+				y4 = float(meshHeight_ - (h+1)) + yOffset_;
+#endif
+
+				temp1 = mesh_[h * meshWidth_ + w];
+				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				temp2 = mesh_[h * meshWidth_ + (w+1)];
+				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
+				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				temp4 = mesh_[(h+1) * meshWidth_ + w];
+				z4 = (temp4 + zOffset_) * zScaleFactor_;
+
+				//glEdgeFlag(GL_TRUE);
+
+				calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+				glColor4f(red(), green(), blue(), alpha());
+
+				//
+				glNormal3f(nx, ny, nz);
+				glVertex3f(x1, y1, z1);
+				//
+				glNormal3f(nx, ny, nz);
+				glVertex3f(x2, y2, z2);
+				//
+				glNormal3f(nx, ny, nz);
+				glVertex3f(x3, y3, z3);
+				//
+				glNormal3f(nx, ny, nz);
+				glVertex3f(x4, y4, z4);
+			}
+	glEnd();
 }
 
 //-----------------------------------------------------------------------------
@@ -257,9 +677,15 @@ void GradientBackgroundShape::draw() const
 
 void FloorShape::draw() const
 {
+#if 0
 	const float minXBound = -500.0f, maxXBound = 500.0f;
 	const float minYBound = -500.0f, maxYBound = 500.0f;
 	const float minZBound = -500.0f, maxZBound = 500.0f;
+#else
+	const float minXBound = 0.0f, maxXBound = 320.0f;
+	const float minYBound = 0.0f, maxYBound = 240.0f;
+	const float minZBound = 0.0f, maxZBound = 40.0f;
+#endif
 	const float angleThreshold = (float)std::cos(80.0 * swl::MathConstant::TO_RAD);
 	const size_t lineCount = 5;
 	const int lineStippleScaleFactor = 2;

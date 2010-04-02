@@ -51,7 +51,8 @@ bool GLShape::createDisplayList()
 
 void GLShape::callDisplayList() const
 {
-	glCallList(getDisplayListNameBase());
+	const unsigned int id = getDisplayListNameBase();
+	if (glIsList(id)) glCallList(id);
 }
 
 void GLShape::processToPick(const int /*x*/, const int /*y*/, const int /*width*/, const int /*height*/) const

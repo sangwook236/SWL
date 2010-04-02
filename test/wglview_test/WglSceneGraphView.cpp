@@ -104,7 +104,7 @@ CWglSceneGraphView::CWglSceneGraphView()
   isPerspective_(true), isWireFrame_(false),
   isGradientBackgroundUsed_(true), isFloorShown_(true), isColorBarShown_(true), isCoordinateFrameShown_(true),
   isPrinting_(false),
-  rootSceneNode_()
+  stockSceneNode_(), rootSceneNode_()
 {
 #if 0
 	topGradientBackgroundColor_[0] = 0.776f;
@@ -376,6 +376,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 		// set the camera
 		if (viewCamera)
 		{
+#if 0
 			// set the size of viewing volume
 			viewCamera->setObjectPosition(0.0, 0.0, 0.0, false);
 			//viewCamera->setObjectPosition(110.0, 110.0, 150.0, false);
@@ -389,7 +390,21 @@ void CWglSceneGraphView::OnInitialUpdate()
 			//viewCamera->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
 			viewCamera->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
 			//viewCamera->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
+#else
+			const double radius = 220.0;
 
+			const double eyeDistance = radius * 4.0;
+			const double nearPlane = radius * 2.5, farPlane = radius * 5.5;
+
+			// set the size of viewing volume
+			viewCamera->setObjectPosition(160.0, 120.0, 36, false);
+			viewCamera->setEyePose(0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, false);
+			viewCamera->setEyeDistance(eyeDistance, false);
+
+			// (left, bottom, right, top) is set wrt a eye coordinates frame
+			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
+			viewCamera->setViewBound(-radius, -radius, radius, radius, nearPlane, farPlane);
+#endif
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
 			
 			viewCamera->setPerspective(isPerspective_);
@@ -626,6 +641,22 @@ bool CWglSceneGraphView::doPrepareRendering(const context_type & /*context*/, co
 
 bool CWglSceneGraphView::doRenderStockScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
+	// traverse a scene graph
+	if (stockSceneNode_)
+	{
+		const bool isPickingState = swl::ObjectPickerMgr::getInstance().isPicking();
+		if (isPrinting_)
+		{
+			stockSceneNode_->accept(swl::GLPrintSceneVisitor(swl::GLPrintSceneVisitor::RENDER_OPAQUE_OBJECTS, isPickingState));
+			stockSceneNode_->accept(swl::GLPrintSceneVisitor(swl::GLPrintSceneVisitor::RENDER_TRANSPARENT_OBJECTS, isPickingState));
+		}
+		else
+		{
+			stockSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_OPAQUE_OBJECTS, isPickingState));
+			stockSceneNode_->accept(swl::GLRenderSceneVisitor(swl::GLRenderSceneVisitor::RENDER_TRANSPARENT_OBJECTS, isPickingState));
+		}
+	}
+
 	return true;
 }
 
@@ -655,6 +686,7 @@ bool CWglSceneGraphView::doRenderScene(const context_type & /*context*/, const c
 
 void CWglSceneGraphView::contructSceneGraph()
 {
+	stockSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 	rootSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 
 	// background
@@ -668,7 +700,7 @@ void CWglSceneGraphView::contructSceneGraph()
 #else
 	boost::shared_ptr<scene_node_type> backgroundNode(new swl::GLShapeSceneNode<visitor_type>(backgroundShape, "background"));
 #endif
-	rootSceneNode_->addChild(backgroundNode);
+	stockSceneNode_->addChild(backgroundNode);
 
 	// floor
 	boost::shared_ptr<swl::GLShape> floorShape(new FloorShape(*this));
@@ -678,9 +710,28 @@ void CWglSceneGraphView::contructSceneGraph()
 #else
 	boost::shared_ptr<scene_node_type> floorNode(new swl::GLShapeSceneNode<visitor_type>(floorShape, "floor"));
 #endif
-	rootSceneNode_->addChild(floorNode);
+	stockSceneNode_->addChild(floorNode);
 
 	// main contents
+#if 0
+	boost::shared_ptr<swl::GLShape> coloredMeshShape(new ColoredMeshShape());
+	coloredMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
+#if defined(UNICODE) || defined(_UNICODE)
+	boost::shared_ptr<scene_node_type> coloredMeshNode(new swl::GLShapeSceneNode<visitor_type>(coloredMeshShape, L"colored mesh object"));
+#else
+	boost::shared_ptr<scene_node_type> coloredMeshNode(new swl::GLShapeSceneNode<visitor_type>(coloredMeshShape, "colored mesh object"));
+#endif
+	rootSceneNode_->addChild(coloredMeshNode);
+#elif 1
+	boost::shared_ptr<swl::GLShape> texturedMeshShape(new TexturedMeshShape());
+	texturedMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
+#if defined(UNICODE) || defined(_UNICODE)
+	boost::shared_ptr<scene_node_type> texturedMeshNode(new swl::GLShapeSceneNode<visitor_type>(texturedMeshShape, L"textured mesh object"));
+#else
+	boost::shared_ptr<scene_node_type> texturedMeshNode(new swl::GLShapeSceneNode<visitor_type>(texturedMeshShape, "textured mesh object"));
+#endif
+	rootSceneNode_->addChild(texturedMeshNode);
+#else
 	boost::shared_ptr<swl::GLShape> mainObj1Shape(new Main1Shape());
 	mainObj1Shape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
@@ -698,6 +749,7 @@ void CWglSceneGraphView::contructSceneGraph()
 	boost::shared_ptr<scene_node_type> mainObj2Node(new swl::GLShapeSceneNode<visitor_type>(mainObj2Shape, "main object #2"));
 #endif
 	rootSceneNode_->addChild(mainObj2Node);
+#endif
 
 	// color bar
 	boost::shared_ptr<swl::GLShape> colorBarShape(new ColorBarShape());
@@ -737,6 +789,7 @@ bool CWglSceneGraphView::createDisplayList(const bool isContextActivated)
 
 	if (isContextActivated)
 	{
+		if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
 		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
 		if (dc)
 		{
@@ -749,6 +802,7 @@ bool CWglSceneGraphView::createDisplayList(const bool isContextActivated)
 		if (context)
 		{
 			context_type::guard_type guard(*context);
+			if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
 			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_CREATE));
 			if (dc)
 			{
@@ -765,6 +819,7 @@ void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated)
 {
 	if (isContextActivated)
 	{
+		if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
 		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
 		swl::WglFont::getInstance().pushDisplayList();
 	}
@@ -774,6 +829,7 @@ void CWglSceneGraphView::generateDisplayListName(const bool isContextActivated)
 		if (context)
 		{
 			context_type::guard_type guard(*context);
+			if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
 			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_GENERATE_NAME));
 			swl::WglFont::getInstance().pushDisplayList();
 		}
@@ -784,6 +840,7 @@ void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated)
 {
 	if (isContextActivated)
 	{
+		if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
 		if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
 		swl::WglFont::getInstance().popDisplayList();
 	}
@@ -793,6 +850,7 @@ void CWglSceneGraphView::deleteDisplayListName(const bool isContextActivated)
 		if (context)
 		{
 			context_type::guard_type guard(*context);
+			if (stockSceneNode_) stockSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
 			if (rootSceneNode_) rootSceneNode_->accept(swl::GLCreateDisplayListVisitor(swl::GLCreateDisplayListVisitor::DLM_DELETE_NAME));
 			swl::WglFont::getInstance().popDisplayList();
 		}
