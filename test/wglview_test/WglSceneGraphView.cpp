@@ -714,6 +714,9 @@ void CWglSceneGraphView::contructSceneGraph()
 
 	// main contents
 #if 0
+	//
+	// a colored mesh
+	//
 	boost::shared_ptr<swl::GLShape> coloredMeshShape(new ColoredMeshShape());
 	coloredMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
@@ -723,6 +726,9 @@ void CWglSceneGraphView::contructSceneGraph()
 #endif
 	rootSceneNode_->addChild(coloredMeshNode);
 #elif 1
+	//
+	// a textured mesh
+	//
 	boost::shared_ptr<swl::GLShape> texturedMeshShape(new TexturedMeshShape());
 	texturedMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
@@ -732,6 +738,9 @@ void CWglSceneGraphView::contructSceneGraph()
 #endif
 	rootSceneNode_->addChild(texturedMeshNode);
 #else
+	//
+	// a clipped sphere
+	//
 	boost::shared_ptr<swl::GLShape> mainObj1Shape(new Main1Shape());
 	mainObj1Shape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
@@ -741,6 +750,9 @@ void CWglSceneGraphView::contructSceneGraph()
 #endif
 	rootSceneNode_->addChild(mainObj1Node);
 
+	//
+	// a box
+	//
 	boost::shared_ptr<swl::GLShape> mainObj2Shape(new Main2Shape());
 	mainObj2Shape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
