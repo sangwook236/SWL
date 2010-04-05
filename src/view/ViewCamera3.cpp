@@ -457,7 +457,7 @@ bool ViewCamera3::mapWindowToObject(const double ptWin[3], double ptObj[3]) cons
 {
 	// 1. inverse viewport transformation: a window coordinates  ==>  a clip coordinates
 	double ptClip[3] = { 0., };  // a clip coordinates
-	if (!doMapClipToWindow(ptWin, ptClip))
+	if (!doMapWindowToClip(ptWin, ptClip))
 	{
 		memset(ptObj, 0, sizeof(double) * 3);
 		return false;
