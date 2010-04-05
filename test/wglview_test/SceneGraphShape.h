@@ -10,13 +10,13 @@
 //-----------------------------------------------------------------------------
 //
 
-class Main1Shape: public swl::GLShape
+class ClippedSphereShape: public swl::GLShape
 {
 public:
 	typedef swl::GLShape base_type;
 
 public:
-	Main1Shape()
+	ClippedSphereShape()
 	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
 	{}
 
@@ -30,13 +30,13 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-class Main2Shape: public swl::GLShape
+class SimpleCubeShape: public swl::GLShape
 {
 public:
 	typedef swl::GLShape base_type;
 
 public:
-	Main2Shape()
+	SimpleCubeShape()
 	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
 	{}
 

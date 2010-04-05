@@ -273,7 +273,7 @@ bool GLCamera::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 	Region2<double> rctViewRegion = getCurrentViewRegion();
 
 	//--S [] 2001/08/08: Sang-Wook Lee
-	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
+	// doUpdateFrustum()에서 glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
 	if (isPerspective())
 		rctViewRegion *= calcResizingRatio();
 	//--E [] 2001/08/08
@@ -371,7 +371,7 @@ bool GLCamera::doMapClipToEye(const double ptClip[3], double ptEye[3]) const
 	Region2<double> rctViewRegion = getCurrentViewRegion();
 
 	//--S [] 2001/08/08: Sang-Wook Lee
-	// doUpdateFrustum()에서 ::glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
+	// doUpdateFrustum()에서 glFrustum()을 호출하기 위해 clipping region을 수정하고 있기 때문에
 	if (isPerspective())
 		rctViewRegion *= calcResizingRatio();
 	//--E [] 2001/08/08

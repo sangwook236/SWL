@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 //
 
-void Main1Shape::draw() const
+void ClippedSphereShape::draw() const
 {
 	const GLenum drawingFace = getDrawingFace() == swl::attrib::POLYGON_FACE_FRONT ? GL_FRONT :
 		(getDrawingFace() == swl::attrib::POLYGON_FACE_BACK ? GL_BACK :
@@ -88,7 +88,7 @@ void Main1Shape::draw() const
 	glPolygonMode(drawingFace, oldPolygonMode[1]);
 }
 
-void Main1Shape::drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
+void ClippedSphereShape::drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
 {
 	glEnable(clippingPlaneId);
 	glClipPlane(clippingPlaneId, clippingPlaneEqn);
@@ -151,7 +151,7 @@ void Main1Shape::drawClippingArea(const unsigned int clippingPlaneId, const doub
 //-----------------------------------------------------------------------------
 //
 
-void Main2Shape::draw() const
+void SimpleCubeShape::draw() const
 {
 	const GLenum drawingFace = getDrawingFace() == swl::attrib::POLYGON_FACE_FRONT ? GL_FRONT :
 		(getDrawingFace() == swl::attrib::POLYGON_FACE_BACK ? GL_BACK :

@@ -741,26 +741,26 @@ void CWglSceneGraphView::contructSceneGraph()
 	//
 	// a clipped sphere
 	//
-	boost::shared_ptr<swl::GLShape> mainObj1Shape(new Main1Shape());
-	mainObj1Shape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
+	boost::shared_ptr<swl::GLShape> clippedSphereShape(new ClippedSphereShape());
+	clippedSphereShape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
-	boost::shared_ptr<scene_node_type> mainObj1Node(new swl::GLShapeSceneNode<visitor_type>(mainObj1Shape, L"main object #1"));
+	boost::shared_ptr<scene_node_type> clippedSphereNode(new swl::GLShapeSceneNode<visitor_type>(clippedSphereShape, L"clipped sphere"));
 #else
-	boost::shared_ptr<scene_node_type> mainObj1Node(new swl::GLShapeSceneNode<visitor_type>(mainObj1Shape, "main object #1"));
+	boost::shared_ptr<scene_node_type> clippedSphereNode(new swl::GLShapeSceneNode<visitor_type>(clippedSphereShape, "clipped sphere"));
 #endif
-	rootSceneNode_->addChild(mainObj1Node);
+	rootSceneNode_->addChild(clippedSphereNode);
 
 	//
-	// a box
+	// a simple cube
 	//
-	boost::shared_ptr<swl::GLShape> mainObj2Shape(new Main2Shape());
-	mainObj2Shape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
+	boost::shared_ptr<swl::GLShape> simpleCubeShape(new SimpleCubeShape());
+	simpleCubeShape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
-	boost::shared_ptr<scene_node_type> mainObj2Node(new swl::GLShapeSceneNode<visitor_type>(mainObj2Shape, L"main object #2"));
+	boost::shared_ptr<scene_node_type> simpleCubeNode(new swl::GLShapeSceneNode<visitor_type>(simpleCubeShape, L"simple cube"));
 #else
-	boost::shared_ptr<scene_node_type> mainObj2Node(new swl::GLShapeSceneNode<visitor_type>(mainObj2Shape, "main object #2"));
+	boost::shared_ptr<scene_node_type> simpleCubeNode(new swl::GLShapeSceneNode<visitor_type>(simpleCubeShape, "simple cube"));
 #endif
-	rootSceneNode_->addChild(mainObj2Node);
+	rootSceneNode_->addChild(simpleCubeNode);
 #endif
 
 	// color bar
