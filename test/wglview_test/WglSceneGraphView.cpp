@@ -363,7 +363,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 		context_type::guard_type guard(*viewContext);
 
 		// construct scene graph
-		contructSceneGraph();
+		constructSceneGraph();
 
 		// generate a new name base of OpenGL display list
 #if defined(__USE_OPENGL_DISPLAY_LIST)
@@ -684,7 +684,7 @@ bool CWglSceneGraphView::doRenderScene(const context_type & /*context*/, const c
     return true;
 }
 
-void CWglSceneGraphView::contructSceneGraph()
+void CWglSceneGraphView::constructSceneGraph()
 {
 	stockSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 	rootSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());

@@ -127,7 +127,7 @@ private:
 	//-------------------------------------------------------------------------
 	//
 
-	void contructSceneGraph();
+	void constructSceneGraph();
 
 	void processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary = false);
 	unsigned int processHits(const int hitCount, const unsigned int *buffer) const;
