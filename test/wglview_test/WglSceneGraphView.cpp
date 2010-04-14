@@ -393,8 +393,8 @@ void CWglSceneGraphView::OnInitialUpdate()
 #else
 			const double radius = 220.0;
 
-			const double eyeDistance = radius * 4.0;
-			const double nearPlane = radius * 2.5, farPlane = radius * 5.5;
+			const double eyeDistance = radius * 8.0;
+			const double nearPlane = eyeDistance - radius * 1.5, farPlane = eyeDistance + radius * 1.5;
 
 			// set the size of viewing volume
 			viewCamera->setObjectPosition(160.0, 120.0, 36, false);
