@@ -930,7 +930,8 @@ bool CWglViewTestView::initializeView()
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	//glEnable(GL_POLYGON_SMOOTH);
 	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	//// really nice perspective calculations
+
+	// really nice perspective calculations
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
@@ -1658,11 +1659,11 @@ void CWglViewTestView::drawGradientBackground(const bool doesCreateDisplayList /
 		gluOrtho2D(0.0, 1.0, 0.0, 1.0);
 
 		glBegin(GL_QUADS);
-			glColor4f(bottomGradientBackgroundColor_[0], bottomGradientBackgroundColor_[1], bottomGradientBackgroundColor_[2], bottomGradientBackgroundColor_[3]);
+			glColor4fv(bottomGradientBackgroundColor_);
 			glVertex3f(0.0f, 0.0f, 0.0f);
 			glVertex3f(1.0f, 0.0f, 0.0f);
 
-			glColor4f(topGradientBackgroundColor_[0], topGradientBackgroundColor_[1], topGradientBackgroundColor_[2], topGradientBackgroundColor_[3]);
+			glColor4fv(topGradientBackgroundColor_);
 			glVertex3f(1.0f, 1.0f, 0.0f);
 			glVertex3f(0.0f, 1.0f, 0.0f);
 		glEnd();
@@ -1722,6 +1723,10 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 		const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 		if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
+		GLfloat oldLineWidth = 1.0f;
+		glGetFloatv(GL_LINE_WIDTH, &oldLineWidth);
+		glLineWidth(1.0f);
+
 		const GLboolean isLineStipple = glIsEnabled(GL_LINE_STIPPLE);
 		if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
 		GLint oldPolygonMode[2];
@@ -1752,7 +1757,7 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 		glLineStipple(lineStippleScaleFactor, 0xAAAA);
 		glBegin(GL_LINES);
 			// the color of a floor
-			glColor4f(floorColor_[0], floorColor_[1], floorColor_[2], floorColor_[3]);
+			glColor4fv(floorColor_);
 
 			// xy-plane
 			if (isXYPlaneShown)
@@ -1823,6 +1828,8 @@ void CWglViewTestView::drawFloor(const bool doesCreateDisplayList /*= false*/) c
 			//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 			glPolygonMode(polygonFacing_, oldPolygonMode[1]);
 		if (!isLineStipple) glDisable(GL_LINE_STIPPLE);
+
+		glLineWidth(oldLineWidth);
 
 		if (isLighting) glEnable(GL_LIGHTING);
 		if (isDepthTest) glEnable(GL_DEPTH_TEST);

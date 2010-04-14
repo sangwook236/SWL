@@ -365,7 +365,7 @@ void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 
 		{
 			ViewContext::guard_type guard(context);
-			const swl::Region2<int> vp = camera.getViewport();
+			const swl::Region2<int> &vp = camera.getViewport();
 			camera.setView(initX_, vp.getHeight() - initY_, evt.x, vp.getHeight() - evt.y);  // upward y-axis
 			view.raiseDrawEvent(true);
 			//view.updateScrollBar();

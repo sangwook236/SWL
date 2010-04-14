@@ -718,6 +718,10 @@ void FloorShape::draw() const
 		const GLboolean isDepthTest = glIsEnabled(GL_DEPTH_TEST);
 		if (isDepthTest) glDisable(GL_DEPTH_TEST);
 
+		GLfloat oldLineWidth = 1.0f;
+		glGetFloatv(GL_LINE_WIDTH, &oldLineWidth);
+		glLineWidth(1.0f);
+
 		const GLboolean isLineStipple = glIsEnabled(GL_LINE_STIPPLE);
 		if (!isLineStipple) glEnable(GL_LINE_STIPPLE);
 		GLint oldPolygonMode[2];
@@ -819,6 +823,8 @@ void FloorShape::draw() const
 			//glPolygonMode(oldPolygonMode[0], oldPolygonMode[1]);  // not working. don't know why.
 			glPolygonMode(drawingFace, oldPolygonMode[1]);
 		if (!isLineStipple) glDisable(GL_LINE_STIPPLE);
+
+		glLineWidth(oldLineWidth);
 
 		if (isLighting) glEnable(GL_LIGHTING);
 		if (isDepthTest) glEnable(GL_DEPTH_TEST);

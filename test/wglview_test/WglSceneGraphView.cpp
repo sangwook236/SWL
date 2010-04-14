@@ -537,7 +537,8 @@ bool CWglSceneGraphView::initializeView()
 	//glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
 	//glEnable(GL_POLYGON_SMOOTH);
 	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
-	//// really nice perspective calculations
+
+	// really nice perspective calculations
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
 	// lighting
