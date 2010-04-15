@@ -280,6 +280,7 @@ void PanState::pressMouse(const MouseEvent &evt)
 void PanState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	isDragging_ = false;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
@@ -362,6 +363,7 @@ void ZoomRegionState::pressMouse(const MouseEvent &evt)
 void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	isDragging_ = false;
 	if (evt.x == initX_ && evt.y == initY_) return;
@@ -558,6 +560,7 @@ void PickObjectState::pressMouse(const MouseEvent &evt)
 void PickObjectState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
@@ -665,6 +668,7 @@ void PickAndDragObjectState::pressMouse(const MouseEvent &evt)
 void PickAndDragObjectState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	const bool isDraggingObject = isDraggingObject_;
 	const bool isJustPressed = isJustPressed_;

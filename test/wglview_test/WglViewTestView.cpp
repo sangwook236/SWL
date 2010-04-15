@@ -1183,7 +1183,7 @@ void CWglViewTestView::pickObject(const int x, const int y, const bool isTempora
 void CWglViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary /*= false*/)
 {
 	const swl::Region2<int> region(swl::Point2<int>(x1, y1), swl::Point2<int>(x2, y2));
-	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth(), region.getHeight(), isTemporary);
+	processToPickObject(region.getCenterX(), region.getCenterY(), region.getWidth() > 0 ? region.getWidth() : 1, region.getHeight() > 0 ? region.getHeight() : 1, isTemporary);
 }
 
 void CWglViewTestView::processToPickObject(const int x, const int y, const int width, const int height, const bool isTemporary /*= false*/)
