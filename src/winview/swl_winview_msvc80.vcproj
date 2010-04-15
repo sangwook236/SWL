@@ -213,6 +213,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\GdiRubberBand.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\WglBitmapBufferedContext.cpp"
 				>
 			</File>
@@ -296,6 +300,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\winview\GdiPrintContext.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\winview\GdiRubberBand.h"
 				>
 			</File>
 			<File

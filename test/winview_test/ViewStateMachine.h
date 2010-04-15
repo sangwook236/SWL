@@ -341,9 +341,6 @@ public:
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
 
 private:
-	void drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const;
-
-private:
 	bool isDragging_;
 	bool isJustPressed_;
 	int initX_, initY_;
@@ -381,9 +378,6 @@ public:
 	/*virtual*/ void releaseKey(const KeyEvent &evt)  {}
 
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
-
-private:
-	void drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const;
 
 private:
 	bool isDragging_;

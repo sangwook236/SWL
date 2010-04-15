@@ -2,11 +2,13 @@
 #include "swl/Config.h"
 #include "ViewStateMachine.h"
 #include "swl/winview/WglViewBase.h"
-#include "swl/view/ViewContext.h"
+#include "swl/winview/WglContextBase.h"
+#include "swl/winview/GdiRubberBand.h"
 #include "swl/view/ViewCamera3.h"
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/graphics/ObjectPickerMgr.h"
+#include <gdiplus.h>
 #include <iostream>
 
 
@@ -19,37 +21,112 @@ namespace swl {
 
 namespace {
 
-void drawRubberBandUsingGdi(HDC hdc, const int initX, const int initY, const int prevX, const int prevY, const int currX, const int currY, const bool doesErase = true, const bool doesDraw = true)
+void drawLineRubberBand(IView &view, const int initX, const int initY, const int prevX, const int prevY, const int currX, const int currY, const bool doesErase, const bool doesDraw)
 {
-	if (doesErase)
+#if 1
+	CView *vw = dynamic_cast<CView *>(&view);
+	if (vw)
 	{
-		const int left = prevX <= initX ? prevX : initX;
-		const int right = prevX > initX ? prevX : initX;
-		const int top = prevY <= initY ? prevY : initY;  // downward y-axis
-		const int bottom = prevY > initY ? prevY : initY;  // downward y-axis
-
-		RECT rect;
-		rect.left = left;
-		rect.right = right;
-		rect.top = top;
-		rect.bottom = bottom;
-		DrawFocusRect(hdc, &rect);
+		CClientDC dc(vw);
+		GdiRubberBand::drawLine(dc.GetSafeHdc(), initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
 	}
-
-	if (doesDraw)
+#else
+	WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+	if (vw && !vw->isContextStackEmpty())
 	{
-		const int left = currX <= initX ? currX : initX;
-		const int right = currX > initX ? currX : initX;
-		const int top = currY <= initY ? currY : initY;  // downward y-axis
-		const int bottom = currY > initY ? currY : initY;  // downward y-axis
+		const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
+		if (NULL != ctx.get())
+		{
+			const boost::any nativeHandle = ctx->getNativeWindowHandle();
+			if (!nativeHandle.empty())
+			{
+				HWND *hwnd = NULL;
+				try
+				{
+					hwnd = boost::any_cast<HWND *>(nativeHandle);
+				}
+				catch (const boost::bad_any_cast &)
+				{
+					hwnd = NULL;
+				}
 
-		RECT rect;
-		rect.left = left;
-		rect.right = right;
-		rect.top = top;
-		rect.bottom = bottom;
-		DrawFocusRect(hdc, &rect);
+				if (hwnd)
+				{
+#if 0
+					HDC hdc = GetDC(*hwnd);
+					GdiRubberBand::drawLine(hdc, initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
+					//view.updateScrollBar();
+					ReleaseDC(*hwnd, hdc);
+#else
+					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+					if (graphics)
+					{
+						HDC hdc = graphics->GetHDC();
+						GdiRubberBand::drawLine(hdc, initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
+						//view.updateScrollBar();
+						graphics->ReleaseHDC(hdc);
+						delete graphics;
+					}
+#endif
+				}
+			}
+		}
 	}
+#endif
+}
+
+void drawRectangleRubberBand(IView &view, const int initX, const int initY, const int prevX, const int prevY, const int currX, const int currY, const bool doesErase, const bool doesDraw)
+{
+#if 1
+	CView *vw = dynamic_cast<CView *>(&view);
+	if (vw)
+	{
+		CClientDC dc(vw);
+		GdiRubberBand::drawRectangle(dc.GetSafeHdc(), initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
+	}
+#else
+	WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+	if (vw && !vw->isContextStackEmpty())
+	{
+		const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
+		if (NULL != ctx.get())
+		{
+			const boost::any nativeHandle = ctx->getNativeWindowHandle();
+			if (!nativeHandle.empty())
+			{
+				HWND *hwnd = NULL;
+				try
+				{
+					hwnd = boost::any_cast<HWND *>(nativeHandle);
+				}
+				catch (const boost::bad_any_cast &)
+				{
+					hwnd = NULL;
+				}
+
+				if (hwnd)
+				{
+#if 0
+					HDC hdc = GetDC(*hwnd);
+					GdiRubberBand::drawRectangle(hdc, initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
+					//view.updateScrollBar();
+					ReleaseDC(*hwnd, hdc);
+#else
+					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
+					if (graphics)
+					{
+						HDC hdc = graphics->GetHDC();
+						GdiRubberBand::drawRectangle(hdc, initX, initY, prevX, prevY, currX, currY, doesErase, doesDraw);
+						//view.updateScrollBar();
+						graphics->ReleaseHDC(hdc);
+						delete graphics;
+					}
+#endif
+				}
+			}
+		}
+	}
+#endif
 }
 
 }  // unnamed namespace
@@ -193,6 +270,8 @@ PanState::~PanState()
 
 void PanState::pressMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = true;
 	prevX_ = evt.x;
 	prevY_ = evt.y;
@@ -200,6 +279,8 @@ void PanState::pressMouse(const MouseEvent &evt)
 
 void PanState::releaseMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = false;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
@@ -271,6 +352,8 @@ RotateState::~RotateState()
 
 void RotateState::pressMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = true;
 	prevX_ = evt.x;
 	prevY_ = evt.y;
@@ -278,6 +361,8 @@ void RotateState::pressMouse(const MouseEvent &evt)
 
 void RotateState::releaseMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = false;
 	if (evt.x == prevX_ && evt.y == prevY_) return;
 
@@ -347,6 +432,8 @@ ZoomRegionState::~ZoomRegionState()
 
 void ZoomRegionState::pressMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = true;
 	initX_ = prevX_ = evt.x;
 	initY_ = prevY_ = evt.y;
@@ -354,6 +441,8 @@ void ZoomRegionState::pressMouse(const MouseEvent &evt)
 
 void ZoomRegionState::releaseMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = false;
 
 	try
@@ -386,56 +475,7 @@ void ZoomRegionState::moveMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-#if 1
-		CView *vw = dynamic_cast<CView *>(&view);
-		if (vw)
-		{
-			CClientDC dc(vw);
-			drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, evt.x, evt.y);
-		}
-#else
-		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
-		if (vw && !vw->isContextStackEmpty())
-		{
-			const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
-			if (NULL != ctx.get())
-			{
-				const boost::any nativeHandle = ctx->getNativeWindowHandle();
-				if (!nativeHandle.empty())
-				{
-					HWND *hwnd = NULL;
-					try
-					{
-						hwnd = boost::any_cast<HWND *>(nativeHandle);
-					}
-					catch (const boost::bad_any_cast &)
-					{
-						hwnd = NULL;
-					}
-
-					if (hwnd)
-					{
-#if 1
-						HDC hdc = GetDC(*hwnd);
-						drawRubberBandUsingGdi(*hdc, initX_, initY_, prevX_, prevY_, evt.x, evt.y);
-						//view.updateScrollBar();
-						ReleaseDC(*hwnd, hdc);
-#else
-						Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
-						if (graphics)
-						{
-							HDC hdc = graphics->GetHDC();
-							drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, evt.x, evt.y);
-							//view.updateScrollBar();
-							graphics->ReleaseHDC(hdc);
-							delete graphics;
-						}
-#endif
-					}
-				}
-			}
-		}
-#endif
+		drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
 	}
 	catch (const std::bad_cast &)
 	{
@@ -586,6 +626,8 @@ PickObjectState::~PickObjectState()
 
 void PickObjectState::pressMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = true;
 	isJustPressed_ = true;
 	initX_ = prevX_ = evt.x;
@@ -594,6 +636,8 @@ void PickObjectState::pressMouse(const MouseEvent &evt)
 
 void PickObjectState::releaseMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
 	isJustPressed_ = false;
@@ -603,7 +647,7 @@ void PickObjectState::releaseMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		if (!isJustPressed) drawRubberBand(view, evt.x, evt.y, true, false);
+		if (!isJustPressed) drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
 
 		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
 		if (vw)
@@ -632,7 +676,7 @@ void PickObjectState::moveMouse(const MouseEvent &evt)
 			ViewStateMachine &fsm = context<ViewStateMachine>();
 			IView &view = fsm.getView();
 
-			drawRubberBand(view, evt.x, evt.y, !isJustPressed_, true);
+			drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, !isJustPressed_, true);
 			if (isJustPressed_) isJustPressed_ = false;
 		}
 		catch (const std::bad_cast &)
@@ -661,60 +705,6 @@ void PickObjectState::moveMouse(const MouseEvent &evt)
 	}
 }
 
-void PickObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
-{
-#if 1
-	CView *vw = dynamic_cast<CView *>(&view);
-	if (vw)
-	{
-		CClientDC dc(vw);
-		drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-	}
-#else
-	WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
-	if (vw && !vw->isContextStackEmpty())
-	{
-		const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
-		if (NULL != ctx.get())
-		{
-			const boost::any nativeHandle = ctx->getNativeWindowHandle();
-			if (!nativeHandle.empty())
-			{
-				HWND *hwnd = NULL;
-				try
-				{
-					hwnd = boost::any_cast<HWND *>(nativeHandle);
-				}
-				catch (const boost::bad_any_cast &)
-				{
-					hwnd = NULL;
-				}
-
-				if (hwnd)
-				{
-#if 1
-					HDC hdc = GetDC(*hwnd);
-					drawRubberBandUsingGdi(*hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-					//view.updateScrollBar();
-					ReleaseDC(*hwnd, hdc);
-#else
-					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
-					if (graphics)
-					{
-						HDC hdc = graphics->GetHDC();
-						drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-						//view.updateScrollBar();
-						graphics->ReleaseHDC(hdc);
-						delete graphics;
-					}
-#endif
-				}
-			}
-		}
-	}
-#endif
-}
-
 //-----------------------------------------------------------------------------
 //
 
@@ -732,6 +722,8 @@ PickAndDragObjectState::~PickAndDragObjectState()
 
 void PickAndDragObjectState::pressMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	isDragging_ = true;
 	isDraggingObject_ = false;
 	isJustPressed_ = true;
@@ -751,6 +743,8 @@ void PickAndDragObjectState::pressMouse(const MouseEvent &evt)
 
 void PickAndDragObjectState::releaseMouse(const MouseEvent &evt)
 {
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
 	const bool isDraggingObject = isDraggingObject_;
 	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
@@ -769,7 +763,7 @@ void PickAndDragObjectState::releaseMouse(const MouseEvent &evt)
 		}
 		else
 		{
-			if (!isJustPressed) drawRubberBand(view, evt.x, evt.y, true, false);
+			if (!isJustPressed) drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
 
 			WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
 			if (vw)
@@ -806,7 +800,7 @@ void PickAndDragObjectState::moveMouse(const MouseEvent &evt)
 			}
 			else
 			{
-				drawRubberBand(view, evt.x, evt.y, !isJustPressed_, true);
+				drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, !isJustPressed_, true);
 				if (isJustPressed_) isJustPressed_ = false;
 			}
 		}
@@ -834,60 +828,6 @@ void PickAndDragObjectState::moveMouse(const MouseEvent &evt)
 			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 		}
 	}
-}
-
-void PickAndDragObjectState::drawRubberBand(IView &view, const int currX, const int currY, const bool doesErase, const bool doesDraw) const
-{
-#if 1
-	CView *vw = dynamic_cast<CView *>(&view);
-	if (vw)
-	{
-		CClientDC dc(vw);
-		drawRubberBandUsingGdi(dc.GetSafeHdc(), initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-	}
-#else
-	WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
-	if (vw && !vw->isContextStackEmpty())
-	{
-		const boost::shared_ptr<WglViewBase::context_type> &ctx(vw->topContext());
-		if (NULL != ctx.get())
-		{
-			const boost::any nativeHandle = ctx->getNativeWindowHandle();
-			if (!nativeHandle.empty())
-			{
-				HWND *hwnd = NULL;
-				try
-				{
-					hwnd = boost::any_cast<HWND *>(nativeHandle);
-				}
-				catch (const boost::bad_any_cast &)
-				{
-					hwnd = NULL;
-				}
-
-				if (hwnd)
-				{
-#if 1
-					HDC hdc = GetDC(*hwnd);
-					drawRubberBandUsingGdi(*hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-					//view.updateScrollBar();
-					ReleaseDC(*hwnd, hdc);
-#else
-					Gdiplus::Graphics *graphics = Gdiplus::Graphics::FromHWND(*hwnd);
-					if (graphics)
-					{
-						HDC hdc = graphics->GetHDC();
-						drawRubberBandUsingGdi(hdc, initX_, initY_, prevX_, prevY_, currX, currY, doesErase, doesDraw);
-						//view.updateScrollBar();
-						graphics->ReleaseHDC(hdc);
-						delete graphics;
-					}
-#endif
-				}
-			}
-		}
-	}
-#endif
 }
 
 }  // namespace swl
