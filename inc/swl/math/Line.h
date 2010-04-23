@@ -47,6 +47,8 @@ public:
 	point_type & point2()  {  return point2_;  }
 	const point_type & point2() const  {  return point2_;  }
 
+	vector_type getDirectionalVector() const  {  return vector_type(point2_ - point1_).unit();  }
+
 	T getSlope() const
 	{  return (point2_.x-point1_.x >= -tol && point2_.x-point1_.x <= tol) ? std::numeric_limits<T>::infinity() : ((point2_.y-point1_.y) / (point2_.x-point1_.x));  }
 	T getIntercept() const
@@ -59,38 +61,33 @@ public:
 	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_));  }
 	bool isParallel(const Line2<T> &line, const T &tol = T(1.0e-5)) const
 	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_));  }
-
+	bool isCollinear(const Line2<T> &line, const T &tol = T(1.0e-5)) const
+	{
+		return isParallel(line, tol) &&
+			(contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));
+	}
+	// don't consider the same or parallel lines
 	bool isIntersectedWith(const Line2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isEqual(line, tol) || !isParallel(line, tol);  }
+	{
+#if 0
+		return isEqual(line, tol) || !isParallel(line, tol);
+#else
+		return !isParallel(line, tol);
+#endif
+	}
+
+	// don't consider the same or parallel lines
 	point_type getIntersectionPoint(const Line2<T> &line) const
 	{
+		const T tol = T(1.0e-5);
+		if (isParallel(line, tol)) return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
+
 		const T a1 = point2_.x - point1_.x, b1 = point2_.y - point1_.y;
 		const T a2 = line.point2_.x - line.point1_.x, b2 = line.point2_.y - line.point1_.y;
 
-#if 0
 		const T denom = b2 * a1 - a2 * b1;
 		const T num_t = a2 * (point1_.y - line.point1_.y) - b2 * (point1_.x - line.point1_.x);
 		const T num_s = a1 * (point1_.y - line.point1_.y) - b1 * (point1_.x - line.point1_.x);
-
-		const bool val1 = denom >= -tol && denom <= tol;
-		const bool val2 = num_t >= -tol && num_t <= tol;
-		const bool val3 = num_s >= -tol && num_s <= tol;
-		if (val1 && val2 && val3)  // the same lines
-		{
-			// TODO [implement] >>
-		}
-		else if (val1)  // parallel lines: meet at infinity
-			return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
-#else
-		const T tol = T(1.0e-5);
-
-		// don't consider the same or parallel lines
-		if (isParallel(line, tol)) return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
-
-		const T denom = b2 * a1 - a2 * b1;
-		const T num_t = a2 * (point1_.y - line.point1_.y) - b2 * (point1_.x - line.point1_.x);
-		const T num_s = a1 * (point1_.y - line.point1_.y) - b1 * (point1_.x - line.point1_.x);
-#endif
 
 		const T t = num_t / denom;
 		//const float s = num_s / denom;
@@ -103,7 +100,7 @@ public:
 		const vector_type dir(point2_ - point1_);
 		const T norm = dir.norm();
 
-		const T eps= T(1.0e-15);
+		const T eps = T(1.0e-15);
 		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
@@ -111,7 +108,7 @@ public:
 		const vector_type dir(point2_ - point1_);
 		const T norm = dir.norm();
 
-		const T eps= T(1.0e-15);
+		const T eps = T(1.0e-15);
 		if (norm <= eps) return point1_;
 		else
 		{
@@ -121,7 +118,16 @@ public:
 	}
 
 	bool contain(const point_type &pt, const T &tol) const
-	{  return getPerpendicularDistance(pt) <= tol;  }
+	{
+#if 0
+		return getPerpendicularDistance(pt) <= tol;
+#else
+		//const T delta = (point2_.y - point1_.y) * (pt.x - point1_.x) - (point2_.x - point1_.x) * (pt.y - point1_.y);
+		const vector_type &dir = getDirectionalVector();
+		const T delta = dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y);
+		return delta >= -tol && delta <= tol;
+#endif
+	}
 
 private:
 	bool isEqual(const point_type &pt1, const point_type &pt2, const T &tol) const
@@ -169,7 +175,7 @@ public:
 	point_type & point2()  {  return point2_;  }
 	const point_type & point2() const  {  return point2_;  }
 
-	vector_type getDirectionalVector() const  {  return (point2_ - point1_).unit();  }
+	vector_type getDirectionalVector() const  {  return vector_type(point2_ - point1_).unit();  }
 
 	//
 	bool isEqual(const Line3<T> &line, const T &tol = T(1.0e-5)) const
@@ -178,21 +184,31 @@ public:
 	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type((line.point2_ - line.point1_),tol);  }
 	bool isParallel(const Line3<T> &line, const T &tol = T(1.0e-5)) const
 	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_), tol);  }
-
-	bool isIntersectedWith(const Line3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isEqual(line, tol) ? true : (isParallel(line, tol) ? false : isOnTheSamePlaneWith(line, tol));  }
-	bool isOnTheSamePlaneWith(const Line3<T> &line, const T &tol = T(1.0e-5)) const
+	bool isCollinear(const Line3<T> &line, const T &tol = T(1.0e-5)) const
+	{
+		return isParallel(line, tol) &&
+			(contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));
+	}
+	bool isCoplanar(const Line3<T> &line, const T &tol = T(1.0e-5)) const
 	{
 		const Plane3<T> plane(point1_, point2_, line.point1_);
 		return plane.contain(line.point2_, tol);
 	}
+	// don't consider the same or parallel lines
+	bool isIntersectedWith(const Line3<T> &line, const T &tol = T(1.0e-5)) const
+	{
+#if 0
+		return isEqual(line, tol) ? true : (isCoplanar(line, tol) && !isParallel(line, tol));
+#else
+		return isCoplanar(line, tol) && !isParallel(line, tol);
+#endif
+	}
 
+	// don't consider the same or parallel lines
 	point_type getIntersectionPoint(const Line3<T> &line) const
 	{
 		const T tol = T(1.0e-5);
-
-		// don't consider the same or parallel line
-		if (!isOnTheSamePlaneWith(line, tol) || isParallel(line, tol))  // don't intersect with each other
+		if (!isCoplanar(line, tol) || isParallel(line, tol))  // don't intersect with each other
 			return point_type(std::numeric_limits<T>::quiet_NaN(), std::numeric_limits<T>::quiet_NaN());
 
 		const T x1 = point1_.x, y1 = point1_.y, z1 = point1_.z;
@@ -207,10 +223,15 @@ public:
 		const bool val1 = denom >= -tol && denom <= tol;
 		const bool val2 = num_t >= -tol && num_t <= tol;
 		const bool val3 = num_s >= -tol && num_s <= tol;
+#if 0
 		if (val1 && val2 && val3)  // the same lines
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
 		else if (val1) return false;  // parallel lines: meet at infinity
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
+#else
+		if (val1)  // the same line or parallel lines: meet at infinity
+			return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
+#endif
 
 		const T t = num_t / denom;
 		const T s = num_s / denom;
@@ -268,7 +289,7 @@ public:
 		const vector_type dir(point2_ - point1_);
 		const T norm = dir.norm();
 
-		const T eps= T(1.0e-15);
+		const T eps = T(1.0e-15);
 		if (norm <= eps) return point1_;
 		else
 		{
@@ -278,7 +299,21 @@ public:
 	}
 
 	bool contain(const point_type &pt, const T &tol) const
-	{  return getPerpendicularDistance(pt) <= tol;  }
+	{
+#if 0
+		return getPerpendicularDistance(pt) <= tol;
+#else
+		const vector_type &dir = getDirectionalVector();
+		if (dir.x >= -tol && dir.x <= tol)
+			return (pt.x-point1_.x >= -tol && pt.x-point1_.x <= tol) && Line2<T>(Line2<T>::point_type(point1_.y, point1_.z), Line2<T>::point_type(point2_.y, point2_.z)).contain(Line2<T>::point_type(pt.y, pt.z), tol);
+		else if (dir.y >= -tol && dir.y <= tol)
+			return (pt.y-point1_.y >= -tol && pt.y-point1_.y <= tol) && Line2<T>(Line2<T>::point_type(point1_.z, point1_.x), Line2<T>::point_type(point2_.z, point2_.x)).contain(Line2<T>::point_type(pt.z, pt.x), tol);
+		else if (dir.z >= -tol && dir.z <= tol)
+			return (pt.z-point1_.z >= -tol && pt.z-point1_.z <= tol) && Line2<T>(Line2<T>::point_type(point1_.x, point1_.y), Line2<T>::point_type(point2_.x, point2_.y)).contain(Line2<T>::point_type(pt.x, pt.y), tol);
+		else
+			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
+#endif
+	}
 
 private:
 	bool isEqual(const point_type &pt1, const point_type &pt2, const T &tol) const

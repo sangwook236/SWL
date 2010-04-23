@@ -57,7 +57,6 @@ public:
 			(isEqual(point1_, tri.point3_, tol) && isEqual(point2_, tri.point2_, tol) && isEqual(point3_, tri.point1_, tol)) ||
 			(isEqual(point1_, tri.point2_, tol) && isEqual(point2_, tri.point1_, tol) && isEqual(point3_, tri.point3_, tol));
 	}
-
 	bool isOverlapped(const Triangle2<T> &tri, const T &tol = T(1.0e-5)) const
 	{
 		return contain(tri.point1_, tol) || contain(tri.point2_, tol) || contain(tri.point3_, tol) ||
@@ -66,23 +65,20 @@ public:
 
 	bool contain(const point_type &pt, const T &tol) const
 	{
-		const T a1 = point2_.x - point1_.x, b1 = point2_.y - point1_.y;
-		const T a2 = point3_.x - point2_.x, b2 = point3_.y - point2_.y;
-		const T a3 = point1_.x - point3_.x, b3 = point1_.y - point3_.y;
-
 		const point_type cx = (point1_.x + point2_.x + point3_.x) / T(3), cy = (point1_.y + point2_.y + point3_.y) / T(3);
 
-		return isInside(pt.x, pt.y, cx, cy, a1, b1, point1_.x, point1_.y, tol) &&
-			isInside(pt.x, pt.y, cx, cy, a2, b2, point2_.x, point2_.y, tol) &&
-			isInside(pt.x, pt.y, cx, cy, a3, b3, point3_.x, point3_.y, tol);
+		return isInside(pt.x, pt.y, cx, cy, point2_.x - point1_.x, point2_.y - point1_.y, point1_.x, point1_.y, tol) &&
+			isInside(pt.x, pt.y, cx, cy, point3_.x - point2_.x, point3_.y - point2_.y, point2_.x, point2_.y, tol) &&
+			isInside(pt.x, pt.y, cx, cy, point1_.x - point3_.x, point1_.y - point3_.y, point3_.x, point3_.y, tol);
 	}
 
 private:
 	bool isEqual(const point_type &pt1, const point_type &pt2, const T &tol) const
 	{  return (pt1.x-pt2.x >= -tol && pt1.x-pt2.x <= tol) && (pt1.y-pt2.y >= -tol && pt1.y-pt2.y <= tol);  }
 
-	bool isInside(const T &x, const T &y, const T &cx, const T &cy, const T &a, const T &b, const T &x0, const T &y0, const T &tol) const
-	{  return (b * (x - x0) - a * (y - y0)) * (b * (cx - x0) * a - (cy - y0)) >= T(0);  }
+	// line equation: (x - x0) / a = (y - y0) / b ==> b * (x - x0) - a * (y - y0) = 0
+	bool isInside(const T &px, const T &py, const T &cx, const T &cy, const T &a, const T &b, const T &x0, const T &y0, const T &tol) const
+	{  return (b * (px - x0) - a * (py - y0)) * (b * (cx - x0) - a * (cy - y0)) >= T(0);  }
 
 private:
 	point_type point1_, point2_, point3_;
@@ -146,10 +142,11 @@ public:
 	{  return getNormalVector().isOrthogonal(tri.getNormalVector());  }
 	bool isParallel(const Triangle3<T> &tri, const T &tol = T(1.0e-5)) const
 	{  return getNormalVector().isParallel(tri.getNormalVector());  }
-
+	bool isCoplanar(const Triangle3<T> &tri, const T &tol = T(1.0e-5)) const
+	{  return toPlane().isCollinear(tri.toPlane(), tol);  }
 	bool isOverlapped(const Triangle3<T> &tri, const T &tol = T(1.0e-5)) const
 	{
-		return isParallel(tri) &&
+		return isCoplanar(tri, tol) &&
 			(contain(tri.point1_, tol) || contain(tri.point2_, tol) || contain(tri.point3_, tol) ||
 			tri.contain(point1_, tol) || tri.contain(point2_, tol) || tri.contain(point3_, tol));
 	}
@@ -160,7 +157,7 @@ public:
 		const vector_type &normal = getNormalVector();
 		const T norm = normal.norm();
 
-		const T eps= T(1.0e-15);
+		const T eps = T(1.0e-15);
 		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
@@ -179,6 +176,8 @@ public:
 
 	bool contain(const point_type &pt, const T &tol) const
 	{
+		if (!toPlane().contain(pt, tol)) return false;
+
 		const vector_type &normal = getNormalVector();
 		const T nor[3] = { normal.x >= 0 ? normal.x : -normal.x, normal.y >= 0 ? normal.y : -normal.y, normal.z >= 0 ? normal.z : -normal.z };
 
