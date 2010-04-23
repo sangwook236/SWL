@@ -251,4 +251,14 @@ namespace swl {
 	return factorial(lhs, dTol) / (factorial(lhs - rhs, dTol) * factorial(rhs, dTol));
 }
 
+/*static*/ double MathExt::det(const double a, const double b, const double c, const double d)
+{
+	return a * d - b * c;
+}
+
+/*static*/ double MathExt::det(const double a, const double b, const double c, const double d, const double e, const double f, const double g, const double h, const double i)
+{
+	return a * e * i - a * f * h - b * d * i + b * f * g + c * d * h - c * e * g;
+}
+
 }  // namespace swl

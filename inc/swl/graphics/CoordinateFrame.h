@@ -13,7 +13,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_GRAPHICS_EXPORT_TEMPLATE template class SWL_GRAPHICS_API TVector3<double>;
+SWL_GRAPHICS_EXPORT_TEMPLATE template class SWL_GRAPHICS_API Vector3<double>;
 SWL_GRAPHICS_EXPORT_TEMPLATE template class SWL_GRAPHICS_API TMatrix3<double>;
 #endif
 

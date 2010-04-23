@@ -235,6 +235,14 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\inc\swl\math\Line.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\LineSegment.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\math\MathConstant.h"
 				>
 			</File>
@@ -248,6 +256,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\math\Matrix.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Plane.h"
 				>
 			</File>
 			<File
@@ -279,7 +291,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\math\TVector.h"
+				RelativePath="..\..\inc\swl\math\Triangle.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\Vector.h"
 				>
 			</File>
 		</Filter>

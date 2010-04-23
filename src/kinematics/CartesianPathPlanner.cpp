@@ -34,7 +34,7 @@ void CartesianPathPlanner::reset()
 {
 	base_type::reset();
 
-	startPt_ = endPt_ = TVector3<double>();
+	startPt_ = endPt_ = Vector3<double>();
 	startQuat_ = endQuat_ = Quaternion<double>();
 }
 

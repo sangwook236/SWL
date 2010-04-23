@@ -2,7 +2,7 @@
 #define __SWL_MATH__TRANSFORMATION_MATRIX__H_ 1
 
 
-#include "swl/math/TVector.h"
+#include "swl/math/Vector.h"
 #include "swl/math/MathConstant.h"
 #include "swl/math/MathUtil.h"
 #include <iomanip>
@@ -10,8 +10,8 @@
 
 namespace swl {
 
-template<typename TT> class TVector2;
-template<typename TT> class TVector3;
+template<typename TT> class Vector2;
+template<typename TT> class Vector3;
 
 
 //----------------------------------------------------------------------------------------------
@@ -26,7 +26,7 @@ class TMatrix2
 {
 public:
     typedef TT					value_type;
-	typedef TVector2<TT>		column_type;
+	typedef Vector2<TT>		column_type;
 
 public:
 	TMatrix2()
@@ -238,7 +238,7 @@ class TMatrix3
 {
 public:
     typedef TT					value_type;
-	typedef TVector3<TT>		column_type;
+	typedef Vector3<TT>		column_type;
 
 public:
 	TMatrix3()

@@ -45,6 +45,14 @@ public:
 	static double permutation(const double lhs, const double rhs, const double tol = MathConstant::EPS);
 	static unsigned long binomial(const unsigned long lhs, const unsigned long rhs);
 	static double binomial(const double lhs, const double rhs, const double tol = MathConstant::EPS);
+
+	// [  a  b  ]
+	// [  c  d  ]
+	static double det(const double a, const double b, const double c, const double d);
+	// [  a  b  c  ]
+	// [  d  e  f  ]
+	// [  g  h  i  ]
+	static double det(const double a, const double b, const double c, const double d, const double e, const double f, const double g, const double h, const double i);
 };
 
 }  // namespace swl

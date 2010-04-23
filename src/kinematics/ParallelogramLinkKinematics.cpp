@@ -74,7 +74,7 @@ bool ParallelogramLinkKinematics::calcJacobian(const ParallelogramLinkKinematics
 	HVector3<double> vecEE;  // position of end-effector
 	vecEE.x() = vCartesian[0];  vecEE.y() = vCartesian[1];  vecEE.z() = vCartesian[2];  vecEE.w() = 1.0;
 
-	TVector3<double> vecB, vecDir;
+	Vector3<double> vecB, vecDir;
 	HVector3<double> vecX, vecPos;
 	vecB.x() = 0.0;  vecB.y() = 0.0;  vecB.z() = 1.0;
 	vecX.x() = 0.0;  vecX.y() = 0.0;  vecX.z() = 0.0;  vecX.w() = 1.0;

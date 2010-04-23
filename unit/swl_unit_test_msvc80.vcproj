@@ -239,6 +239,22 @@
 					RelativePath=".\testcase\math\BaseFieldConversionTest.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\testcase\math\LineSegmentTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\math\LineTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\math\PlaneTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\math\TriangleTest.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="base"
@@ -247,6 +263,10 @@
 					RelativePath=".\testcase\base\LoggerTest.cpp"
 					>
 				</File>
+			</Filter>
+			<Filter
+				Name="winutil"
+				>
 			</Filter>
 		</Filter>
 	</Files>

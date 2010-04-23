@@ -37,10 +37,10 @@ void ArcPathPlanner::reset()
 
 	viaPose_.clear();  viaPose_.reserve(dof_);
 	//isCircular_ = false;
-	center_ = TVector3<double>();
+	center_ = Vector3<double>();
 	radius_ = 0.0;
 	angle_ = 0.0;
-	normal_ = TVector3<double>();
+	normal_ = Vector3<double>();
 }
 
 bool ArcPathPlanner::getNextPose(ArcPathPlanner::coords_type &aPose, const ArcPathPlanner::coords_type *refPose /*= NULL*/)

@@ -1,5 +1,5 @@
-#if !defined(__SWL_MATH__TRANSFORMATION_VECTOR__H_)
-#define __SWL_MATH__TRANSFORMATION_VECTOR__H_ 1
+#if !defined(__SWL_MATH__VECTOR__H_)
+#define __SWL_MATH__VECTOR__H_ 1
 
 
 #include "swl/math/MathUtil.h"
@@ -11,30 +11,30 @@
 namespace swl {
 	
 //----------------------------------------------------------------------------------------------
-// class TVector2: 2D transformation vector (2x1 vector)
+// class Vector2: 2D vector (2x1 vector)
 
 template<typename T>
-class TVector2
+class Vector2
 {
 public:
     typedef T value_type;
 
 public:
-	TVector2(const T &tX = T(0), const T &tY = T(0))
+	Vector2(const T &tX = T(0), const T &tY = T(0))
 	: x_(tX), y_(tY)
 	{}
-	explicit TVector2(const T rhs[2])
+	explicit Vector2(const T rhs[2])
 	: x_(rhs[0]), y_(rhs[1])
 	{}
-	explicit TVector2(const Point2<T> &pt)
+	explicit Vector2(const Point2<T> &pt)
 	: x_(pt.x), y_(pt.y)
 	{}
-	TVector2(const TVector2 &rhs)
+	Vector2(const Vector2 &rhs)
 	: x_(rhs.x_), y_(rhs.y_)
 	{}
-	~TVector2()  {}
+	~Vector2()  {}
 
-	TVector2 & operator=(const TVector2 &rhs)
+	Vector2 & operator=(const Vector2 &rhs)
 	{
 	    if (this == &rhs) return *this;
 	    x_ = rhs.x_;  y_ = rhs.y_;
@@ -75,57 +75,57 @@ public:
 	///
 	bool isZero(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(x_, tTol) && MathUtil::isZero(y_, tTol);  }
-	bool isEqual(const TVector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isEqual(const Vector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{  return (*this - rhs).isZero(tTol);  }
 	bool isUnit(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(norm() - T(1), tTol);  }
-	bool isOrthogonal(const TVector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isOrthogonal(const Vector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		if (MathUtil::isZero(norm(), tTol) || MathUtil::isZero(rhs.norm(), tTol)) return false;
 		return MathUtil::isZero(dot(rhs));
 	}
-	bool isParallel(const TVector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isParallel(const Vector2 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		if (MathUtil::isZero(norm(), tTol) || MathUtil::isZero(rhs.norm(), tTol)) return false;
-		TVector2 unit1 = unit(), unit2 = rhs.unit();
+		Vector2 unit1 = unit(), unit2 = rhs.unit();
 		return (unit1 - unit2).isZero(tTol) || (unit1 + unit2).isZero(tTol);
 	}
 
 	/// comparison operator
-    bool operator==(const TVector2 &rhs) const  {  return isEqual(rhs);  }
-    bool operator!=(const TVector2 &rhs) const  {  return !isEqual(rhs);  }
+    bool operator==(const Vector2 &rhs) const  {  return isEqual(rhs);  }
+    bool operator!=(const Vector2 &rhs) const  {  return !isEqual(rhs);  }
 
 	///
-	TVector2 & operator+()  {  return *this;  }
-	const TVector2 & operator+() const  {  return *this;  }
-	TVector2 operator+(const TVector2 &rhs) const
-	{  return TVector2(x_+rhs.x_, y_+rhs.y_);  }
-	TVector2 & operator+=(const TVector2 &rhs)
+	Vector2 & operator+()  {  return *this;  }
+	const Vector2 & operator+() const  {  return *this;  }
+	Vector2 operator+(const Vector2 &rhs) const
+	{  return Vector2(x_+rhs.x_, y_+rhs.y_);  }
+	Vector2 & operator+=(const Vector2 &rhs)
 	{  x_ += rhs.x_;  y_ += rhs.y_;  return *this;  }
-	TVector2 operator-() const  {  return TVector2(-x_, -y_);  }
-	TVector2 operator-(const TVector2 &rhs) const
-	{  return TVector2(x_-rhs.x_, y_-rhs.y_);  }
-	TVector2 & operator-=(const TVector2 &rhs)
+	Vector2 operator-() const  {  return Vector2(-x_, -y_);  }
+	Vector2 operator-(const Vector2 &rhs) const
+	{  return Vector2(x_-rhs.x_, y_-rhs.y_);  }
+	Vector2 & operator-=(const Vector2 &rhs)
 	{  x_ -= rhs.x_;  y_ -= rhs.y_;  return *this;  }
 
 	/// dot product
-	T operator*(const TVector2 &rhs) const  {  return dot(rhs);  }
+	T operator*(const Vector2 &rhs) const  {  return dot(rhs);  }
 
 	/// scalar operation
-	TVector2 operator*(const T &S) const
-	{  return TVector2(x_*S, y_*S);  }
-	TVector2 & operator*=(const T &S)
+	Vector2 operator*(const T &S) const
+	{  return Vector2(x_*S, y_*S);  }
+	Vector2 & operator*=(const T &S)
 	{  x_ *= S;  y_ *= S;  return *this;  }
-	TVector2 operator/(const T &S) const
+	Vector2 operator/(const T &S) const
 	{
 		if (MathUtil::isZero(S))
 		{
 			throw LogException(LogException::L_ERROR, "divide by zero", __FILE__, __LINE__, __FUNCTION__);
 			//return *this;
 		}
-	    return TVector2(x_/S, y_/S);
+	    return Vector2(x_/S, y_/S);
 	}
-	TVector2 & operator/=(const T &S)
+	Vector2 & operator/=(const T &S)
 	{
 		if (MathUtil::isZero(S))
 		{
@@ -140,10 +140,10 @@ public:
 	T norm() const
 	{  return (T)::sqrt(x_*x_ + y_*y_);  }
 	/// dot product
-	T dot(const TVector2 &rhs) const
+	T dot(const Vector2 &rhs) const
 	{  return x_*rhs.x_ + y_*rhs.y_;  }
 	/// unit vector
-	TVector2 unit(const T &tTol = (T)MathConstant::EPS) const
+	Vector2 unit(const T &tTol = (T)MathConstant::EPS) const
 	{
 		const T tNorm(norm());
 		if (MathUtil::isZero(tNorm, tTol))
@@ -155,7 +155,7 @@ public:
 	}
 
 	///
-	bool normalize(const T &tTol = (T)MathConstant::EPS)
+	void normalize(const T &tTol = (T)MathConstant::EPS)
 	{
 		const T tNorm(norm());
 		if (MathUtil::isZero(tNorm, tTol))
@@ -164,14 +164,13 @@ public:
 			//return false;
 		}
 		*this /= tNorm;
-		return true;
 	}
 /*	
 	///
-	TVector2 & translate(const T &tX, const T &tY);
-	TVector2 & rotate(const T &tAngle);
-	TVector2 & scale(const T &tX, const T &tY);
-	TVector2 & mirror(const T &tAngle);
+	Vector2 & translate(const T &tX, const T &tY);
+	Vector2 & rotate(const T &tAngle);
+	Vector2 & scale(const T &tX, const T &tY);
+	Vector2 & mirror(const T &tAngle);
 */
 	///
 	void toArray(T array[2]) const
@@ -189,7 +188,7 @@ private:
 // 2D Transformation Vector API
 
 template<typename T>
-std::istream & operator>>(std::istream &stream, TVector2<T> &v)
+std::istream & operator>>(std::istream &stream, Vector2<T> &v)
 {
 	// < x, y > means a transformation vector
 	char ch;
@@ -198,7 +197,7 @@ std::istream & operator>>(std::istream &stream, TVector2<T> &v)
 }
 
 template<typename T>
-std::ostream & operator<<(std::ostream &stream, const TVector2<T> &v)
+std::ostream & operator<<(std::ostream &stream, const Vector2<T> &v)
 {
 	// < x, y > means a transformation vector
 	stream << "< " << v.x() << " , " << v.y() << " >";
@@ -207,7 +206,7 @@ std::ostream & operator<<(std::ostream &stream, const TVector2<T> &v)
 
 
 //----------------------------------------------------------------------------------------------
-// class HVector2: 2D homogeneous transformation vector (2x1 vector)
+// class HVector2: 2D homogeneous vector (2x1 vector)
 
 template<typename T>
 class HVector2
@@ -274,30 +273,30 @@ std::ostream & operator<<(std::ostream &stream, const HVector2<T> &v)
 
 
 //----------------------------------------------------------------------------------------------
-// class TVector3: 3D transformation vector (3x1 vector)
+// class Vector3: 3D vector (3x1 vector)
 
 template<typename T>
-class TVector3
+class Vector3
 {
 public:
     typedef T value_type;
 
 public:
-	TVector3(const T &tX = T(0), const T &tY = T(0), const T &tZ = T(0))
+	Vector3(const T &tX = T(0), const T &tY = T(0), const T &tZ = T(0))
 	: x_(tX), y_(tY), z_(tZ)
 	{}
-	explicit TVector3(const T rhs[3])
+	explicit Vector3(const T rhs[3])
 	: x_(rhs[0]), y_(rhs[1]), z_(rhs[2])
 	{}
-	explicit TVector3(const Point3<T> &pt)
+	explicit Vector3(const Point3<T> &pt)
 	: x_(pt.x), y_(pt.y), z_(pt.z)
 	{}
-	TVector3(const TVector3 &rhs)
+	Vector3(const Vector3 &rhs)
 	: x_(rhs.x_), y_(rhs.y_), z_(rhs.z_)
 	{}
-	~TVector3()  {}
+	~Vector3()  {}
 
-	TVector3 & operator=(const TVector3 &rhs)
+	Vector3 & operator=(const Vector3 &rhs)
 	{
 	    if (this == &rhs) return *this;
 	    x_ = rhs.x_;  y_ = rhs.y_;  z_ = rhs.z_;
@@ -342,57 +341,61 @@ public:
 	///
 	bool isZero(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(x_, tTol) && MathUtil::isZero(y_, tTol) && MathUtil::isZero(z_, tTol);  }
-	bool isEqual(const TVector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isEqual(const Vector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{  return (*this - rhs).isZero(tTol);  }
 	bool isUnit(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(norm() - T(1), tTol);  }
-	bool isOrthogonal(const TVector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isOrthogonal(const Vector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		if (MathUtil::isZero(norm(), tTol) || MathUtil::isZero(rhs.norm(), tTol)) return false;
 		return MathUtil::isZero(dot(rhs), tTol);
 	}
-	bool isParallel(const TVector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
+	bool isParallel(const Vector3 &rhs, const T &tTol = (T)MathConstant::EPS) const
 	{
 		if (MathUtil::isZero(norm(), tTol) || MathUtil::isZero(rhs.norm(), tTol)) return false;
-		const TVector3 unit1 = unit(), unit2 = rhs.unit();
+#if 0
+		const Vector3 unit1 = unit(), unit2 = rhs.unit();
 		return (unit1 - unit2).isZero(tTol) || (unit1 + unit2).isZero(tTol);
+#else
+		return cross(rhs).isZero(tTol);
+#endif
 	}
 
 	/// comparison operator
-    bool operator==(const TVector3 &rhs) const  {  return isEqual(rhs);  }
-    bool operator!=(const TVector3 &rhs) const  {  return !isEqual(rhs);  }
+    bool operator==(const Vector3 &rhs) const  {  return isEqual(rhs);  }
+    bool operator!=(const Vector3 &rhs) const  {  return !isEqual(rhs);  }
 
 	///
-	TVector3 & operator+()  {  return *this;  }
-	const TVector3 & operator+() const  {  return *this;  }
-	TVector3 operator+(const TVector3 &rhs) const
-	{  return TVector3(x_+rhs.x_, y_+rhs.y_, z_+rhs.z_);  }
-	TVector3 & operator+=(const TVector3 &rhs)
+	Vector3 & operator+()  {  return *this;  }
+	const Vector3 & operator+() const  {  return *this;  }
+	Vector3 operator+(const Vector3 &rhs) const
+	{  return Vector3(x_+rhs.x_, y_+rhs.y_, z_+rhs.z_);  }
+	Vector3 & operator+=(const Vector3 &rhs)
 	{  x_ += rhs.x_;  y_ += rhs.y_;  z_ += rhs.z_;  return *this;  }
-	TVector3 operator-() const  {  return TVector3(-x_, -y_, -z_);  }
-	TVector3 operator-(const TVector3 &rhs) const
-	{  return TVector3(x_-rhs.x_, y_-rhs.y_, z_-rhs.z_);  }
-	TVector3 & operator-=(const TVector3 &rhs)
+	Vector3 operator-() const  {  return Vector3(-x_, -y_, -z_);  }
+	Vector3 operator-(const Vector3 &rhs) const
+	{  return Vector3(x_-rhs.x_, y_-rhs.y_, z_-rhs.z_);  }
+	Vector3 & operator-=(const Vector3 &rhs)
 	{  x_ -= rhs.x_;  y_ -= rhs.y_;  z_ -= rhs.z_;  return *this;  }
 
 	/// dot product
-	T operator*(const TVector3 &rhs) const  {  return dot(rhs);  }
+	T operator*(const Vector3 &rhs) const  {  return dot(rhs);  }
 
 	/// scalar operation
-	TVector3 operator*(const T &S) const
-	{  return TVector3(x_*S, y_*S, z_*S);  }
-	TVector3 & operator*=(const T &S)
+	Vector3 operator*(const T &S) const
+	{  return Vector3(x_*S, y_*S, z_*S);  }
+	Vector3 & operator*=(const T &S)
 	{  x_ *= S;  y_ *= S;  z_ *= S;  return *this;  }
-	TVector3 operator/(const T &S) const
+	Vector3 operator/(const T &S) const
 	{
 		if (MathUtil::isZero(S))
 		{
 			throw LogException(LogException::L_ERROR, "divide by zero", __FILE__, __LINE__, __FUNCTION__);
 			//return *this;
 		}
-	    return TVector3(x_/S, y_/S, z_/S);
+	    return Vector3(x_/S, y_/S, z_/S);
 	}
-	TVector3 & operator/=(const T &S)
+	Vector3 & operator/=(const T &S)
 	{
 		if (MathUtil::isZero(S))
 		{
@@ -407,13 +410,13 @@ public:
 	T norm() const
 	{  return (T)::sqrt(x_*x_ + y_*y_ + z_*z_);  }
 	/// dot product
-	T dot(const TVector3 &rhs) const
+	T dot(const Vector3 &rhs) const
 	{  return x_*rhs.x_ + y_*rhs.y_ + z_*rhs.z_;  }
 	/// cross product
-	TVector3 cross(const TVector3 &rhs) const
-	{  return TVector3(y_*rhs.z_ - z_*rhs.y_, z_*rhs.x_ - x_*rhs.z_, x_*rhs.y_ - y_*rhs.x_);  }
+	Vector3 cross(const Vector3 &rhs) const
+	{  return Vector3(y_*rhs.z_ - z_*rhs.y_, z_*rhs.x_ - x_*rhs.z_, x_*rhs.y_ - y_*rhs.x_);  }
 	/// unit vector
-	TVector3 unit(const T &tTol = (T)MathConstant::EPS) const
+	Vector3 unit(const T &tTol = (T)MathConstant::EPS) const
 	{
 		const T tNorm(norm());
 		if (MathUtil::isZero(tNorm, tTol))
@@ -425,7 +428,7 @@ public:
 	}
 
 	///
-	bool normalize(const T &tTol = (T)MathConstant::EPS)
+	void normalize(const T &tTol = (T)MathConstant::EPS)
 	{
 		const T tNorm(norm());
 		if (MathUtil::isZero(tNorm, tTol))
@@ -434,14 +437,13 @@ public:
 			//return false;
 		}
 		*this /= tNorm;
-		return true;
 	}
 /*	
 	///
-	TVector2<T> & translate(const T &tX, const T &tY);
-	TVector2<T> & rotate(const T &tAngle);
-	TVector2<T> & scale(const T &tX, const T &tY);
-	TVector2<T> & mirror(const T &tAngle);
+	Vector2<T> & translate(const T &tX, const T &tY);
+	Vector2<T> & rotate(const T &tAngle);
+	Vector2<T> & scale(const T &tX, const T &tY);
+	Vector2<T> & mirror(const T &tAngle);
 */
 	///
 	void toArray(T array[3]) const
@@ -459,7 +461,7 @@ private:
 // 3D Transformation Vector API
 
 template<typename T>
-std::istream & operator>>(std::istream &stream, TVector3<T> &v)
+std::istream & operator>>(std::istream &stream, Vector3<T> &v)
 {
 	// < x, y, z > means a transformation vector
 	char ch;
@@ -468,7 +470,7 @@ std::istream & operator>>(std::istream &stream, TVector3<T> &v)
 }
 
 template<typename T>
-std::ostream & operator<<(std::ostream &stream, const TVector3<T> &v)
+std::ostream & operator<<(std::ostream &stream, const Vector3<T> &v)
 {
 	// < x, y, z > means a transformation vector
 	stream << "< " << v.x() << " , " << v.y() << " , " << v.z() << " >";
@@ -477,7 +479,7 @@ std::ostream & operator<<(std::ostream &stream, const TVector3<T> &v)
 
 
 //----------------------------------------------------------------------------------------------
-// class HVector3: 3D homogeneous transformation vector (4x1 vector)
+// class HVector3: 3D homogeneous vector (4x1 vector)
 
 template<typename T>
 class HVector3
@@ -547,4 +549,4 @@ std::ostream& operator<<(std::ostream& stream, const HVector3<T>& v)
 }  // namespace swl
 
 
-#endif  // __SWL_MATH__TRANSFORMATION_VECTOR__H_
+#endif  // __SWL_MATH__VECTOR__H_

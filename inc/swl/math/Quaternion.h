@@ -136,14 +136,14 @@ public:
 
 	///
 	Quaternion rotate(const Quaternion &quat);
-	Quaternion rotate(const T &rad, const TVector3<T> &axis);
+	Quaternion rotate(const T &rad, const Vector3<T> &axis);
 
 	/// angle-axis representation
 	T angle();
-	TVector3<T> axis();
+	Vector3<T> axis();
 
 	/// angle-axis representation ==> quaternion
-	static Quaternion toQuaternion(const T &rad, const TVector3<T> &axis);
+	static Quaternion toQuaternion(const T &rad, const Vector3<T> &axis);
 
 	/// 3x3 rotation matirx ==> quaternion
 	static Quaternion toQuaternion(const RMatrix3<T> &rotMat);
@@ -262,7 +262,7 @@ Quaternion<T> Quaternion<T>::rotate(const Quaternion<T> &quat)
 {  return quat * *this * quat.inverse();  }
 
 template<typename T>
-Quaternion<T> Quaternion<T>::rotate(const T &rad, const TVector3<T> &axis)
+Quaternion<T> Quaternion<T>::rotate(const T &rad, const Vector3<T> &axis)
 {  return rotate(Quaternion<T>::toQuaternion(rad, axis));  }
 
 template<typename T>
@@ -283,20 +283,20 @@ T Quaternion<T>::angle()
 }
 
 template<typename T>
-TVector3<T> Quaternion<T>::axis()
+Vector3<T> Quaternion<T>::axis()
 {
 	const T h2 = (T)sqrt(q1_*q1_ + q2_*q2_ + q3_*q3_);
 	if (MathUtil::isZero(h2))
 	{
 		//throw LogException(LogException::L_ERROR, "divide by zero", __FILE__, __LINE__, __FUNCTION__);
-		return TVector3<T>();
+		return Vector3<T>();
 	}
 
-	return TVector3<T>(q1_ / h2, q2_ / h2, q3_ / h2);
+	return Vector3<T>(q1_ / h2, q2_ / h2, q3_ / h2);
 }
 
 template<typename T>
-/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const T &rad, const TVector3<T> &axis)
+/*static*/ Quaternion<T> Quaternion<T>::toQuaternion(const T &rad, const Vector3<T> &axis)
 {
 	// for making a unit quaternion
 	const T tNorm = (T)sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());
@@ -405,7 +405,7 @@ template<typename T>
 Quaternion<T> Quaternion<T>::pow(const T &t)
 {
 	const T theta(angle());
-	const TVector3<T> U(axis());
+	const Vector3<T> U(axis());
 
 	const T s(sin(t * theta)), c(cos(t * theta));
 	return Quaternion<T>(c, s * U.x(), s * U.y(), s * U.z());
@@ -416,7 +416,7 @@ template<typename T>
 Quaternion<T> Quaternion<T>::log()
 {
 	const T theta(angle());
-	const TVector3<T> U(axis());
+	const Vector3<T> U(axis());
 
 	return Quaternion<T>(T(0), theta * U.x(), theta * U.y(), theta * U.z());
 }

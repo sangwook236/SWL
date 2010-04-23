@@ -10,9 +10,9 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct ObjectPickerMg
+//
 
-struct SWL_GRAPHICS_API ObjectPickerMgr
+class SWL_GRAPHICS_API ObjectPickerMgr
 {
 public:
 	//typedef ObjectPickerMgr base_type;
@@ -73,11 +73,9 @@ public:
 
 	//
 	void setPickedColor(const color_type &color)  {  pickedColor_ = color;  }
-	color_type getPickedColor()  {  return pickedColor_;  }
 	const color_type & getPickedColor() const  {  return pickedColor_;  }
 
 	void setTemporarilyPickedColor(const color_type &color)  {  temporarilyPickedColor_ = color;  }
-	color_type getTemporarilyPickedColor()  {  return temporarilyPickedColor_;  }
 	const color_type & getTemporarilyPickedColor() const  {  return temporarilyPickedColor_;  }
 
 private:

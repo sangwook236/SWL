@@ -3,7 +3,7 @@
 
 
 #include "swl/kinematics/PathPlanner.h"
-#include "swl/math/TVector.h"
+#include "swl/math/Vector.h"
 #include "swl/math/Quaternion.h"
 
 
@@ -11,7 +11,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API TVector3<double>;
+SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API Vector3<double>;
 SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API Quaternion<double>;
 #endif
 
@@ -38,7 +38,7 @@ public:
 
 protected:
 	/// start & end position of a path
-	TVector3<double> startPt_, endPt_;
+	Vector3<double> startPt_, endPt_;
 
 	/// start & end orientation of a path
 	Quaternion<double> startQuat_, endQuat_;

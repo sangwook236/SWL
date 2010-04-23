@@ -2,7 +2,7 @@
 #define __SWL_MATH__ROTATION_MATRIX__H_ 1
 
 
-#include "swl/math/TVector.h"
+#include "swl/math/Vector.h"
 #include "swl/math/Quaternion.h"
 #include "swl/math/MathConstant.h"
 #include <iomanip>
@@ -10,8 +10,8 @@
 
 namespace swl {
 
-template<typename T> class TVector2;
-template<typename T> class TVector3;
+template<typename T> class Vector2;
+template<typename T> class Vector3;
 template<typename T> class Quaternion;
 
 
@@ -25,7 +25,7 @@ class RMatrix2
 {
 public:
     typedef T				value_type;
-	typedef TVector2<T>		column_type;
+	typedef Vector2<T>		column_type;
 
 public:
 	RMatrix2()
@@ -130,8 +130,8 @@ public:
 			return (T)std::asin(X_.y()) >= T(0) ? (T)MathConstant::PI_2 : (T)-MathConstant::PI_2;
 		else return (T)std::atan2(X_.y(), X_.x());
 	}
-	TVector3<T> axis() const
-	{  return TVector3<T>(T(0), T(0), T(1));  }
+	Vector3<T> axis() const
+	{  return Vector3<T>(T(0), T(0), T(1));  }
 
 protected:
 	T getEntry(const int iRow, const int iCol) const
@@ -216,7 +216,7 @@ class RMatrix3
 {
 public:
     typedef T				value_type;
-	typedef TVector3<T>		column_type;
+	typedef Vector3<T>		column_type;
 
 public:
 	RMatrix3()
@@ -332,10 +332,10 @@ public:
 
 	/// angle-axis representation
 	T angle() const;
-	TVector3<T> axis() const;
+	Vector3<T> axis() const;
 
 	/// angle-axis representation ==> 3x3 rotation matrix
-	static RMatrix3 toRotationMatrix(const T &rad, const TVector3<T> &axis);
+	static RMatrix3 toRotationMatrix(const T &rad, const Vector3<T> &axis);
 
 	/// quaternion ==> 3x3 rotation matrix
 	static RMatrix3 toRotationMatrix(const Quaternion<T> &rQuat);
@@ -403,12 +403,12 @@ T RMatrix3<T>::angle() const
 }
 
 template<typename T>
-TVector3<T> RMatrix3<T>::axis() const
+Vector3<T> RMatrix3<T>::axis() const
 {
 	const T tAngle(angle());
-	if (MathUtil::isZero(tAngle)) return TVector3<T>();
+	if (MathUtil::isZero(tAngle)) return Vector3<T>();
 
-	TVector3<T> axis;
+	Vector3<T> axis;
 	if (MathUtil::isZero(tAngle + (T)MathConstant::PI) || MathUtil::isZero(tAngle - (T)MathConstant::PI))
 	{
 /*
@@ -440,7 +440,7 @@ TVector3<T> RMatrix3<T>::axis() const
 }
 
 template<typename T>
-/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const T &rad, const TVector3<T> &axis)
+/*static*/ RMatrix3<T> RMatrix3<T>::toRotationMatrix(const T &rad, const Vector3<T> &axis)
 // R = [  e0  e3  e6  ]
 //     [  e1  e4  e7  ]
 //     [  e2  e5  e8  ]

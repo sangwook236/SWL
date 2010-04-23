@@ -408,7 +408,7 @@ public:
 	static RMatrix3<double> rotateX(const double radian);
 	static RMatrix3<double> rotateY(const double radian);
 	static RMatrix3<double> rotateZ(const double radian);
-	static RMatrix3<double> rotate(const double radian, const TVector3<double> &axis);
+	static RMatrix3<double> rotate(const double radian, const Vector3<double> &axis);
 
 	/// calculate a rotation matrix
 	static RMatrix3<double> rotate(const unsigned int order, const RotationAngle &angle);

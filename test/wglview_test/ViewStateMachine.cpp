@@ -8,6 +8,7 @@
 #include "swl/view/MouseEvent.h"
 #include "swl/view/KeyEvent.h"
 #include "swl/graphics/ObjectPickerMgr.h"
+#include "swl/util/RegionOfInterestMgr.h"
 #include <gdiplus.h>
 #include <iostream>
 
@@ -835,6 +836,435 @@ void PickAndDragObjectState::moveMouse(const MouseEvent &evt)
 			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 		}
 	}
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+HandleLineROIState::HandleLineROIState()
+: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+HandleLineROIState::~HandleLineROIState()
+{
+}
+
+void HandleLineROIState::pressMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
+	isDragging_ = true;
+	initX_ = prevX_ = evt.x;
+	initY_ = prevY_ = evt.y;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw)
+		{
+			if (vw->containPointsForROI())
+			{
+				vw->clearAllPointsForROI();
+				view.raiseDrawEvent(false);
+			}
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void HandleLineROIState::releaseMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
+	isDragging_ = false;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw)
+		{
+			vw->clearAllPointsForROI();
+
+			if (vw->addPointForROI(initX_, initY_) && vw->addPointForROI(evt.x, evt.y))
+			{
+				vw->setClosedROI(false);
+				view.raiseDrawEvent(false);
+			}
+			else
+			{
+				vw->clearAllPointsForROI();
+				drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
+			}
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void HandleLineROIState::moveMouse(const MouseEvent &evt)
+{
+	if (!isDragging_) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+HandleRectangleROIState::HandleRectangleROIState()
+: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+HandleRectangleROIState::~HandleRectangleROIState()
+{
+}
+
+void HandleRectangleROIState::pressMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
+	isDragging_ = true;
+	initX_ = prevX_ = evt.x;
+	initY_ = prevY_ = evt.y;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw)
+		{
+			if (vw->containPointsForROI())
+			{
+				vw->clearAllPointsForROI();
+				view.raiseDrawEvent(false);
+			}
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
+	isDragging_ = false;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw)
+		{
+			vw->clearAllPointsForROI();
+
+			if (vw->addPointForROI(initX_, initY_) &&
+				vw->addPointForROI(evt.x, initY_) &&
+				vw->addPointForROI(evt.x, evt.y) &&
+				vw->addPointForROI(initX_, evt.y))
+			{
+				vw->setClosedROI(true);
+				view.raiseDrawEvent(false);
+			}
+			else
+			{
+				vw->clearAllPointsForROI();
+				drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
+			}
+		}
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void HandleRectangleROIState::moveMouse(const MouseEvent &evt)
+{
+	if (!isDragging_) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+HandlePolylineROIState::HandlePolylineROIState()
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+HandlePolylineROIState::~HandlePolylineROIState()
+{
+}
+
+void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) == swl::MouseEvent::BT_LEFT)
+	{
+		if (isSelectingRegion_)
+		{
+			try
+			{
+				ViewStateMachine &fsm = context<ViewStateMachine>();
+				IView &view = fsm.getView();
+
+				WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+				if (vw)
+				{
+					if (vw->addPointForROI(evt.x, evt.y))
+					{
+						drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+
+						initX_ = prevX_ = evt.x;
+						initY_ = prevY_ = evt.y;
+					}
+					else
+					{
+						prevX_ = evt.x;
+						prevY_ = evt.y;
+						return;
+					}
+				}
+			}
+			catch (const std::bad_cast &)
+			{
+				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+			}
+		}
+		else
+		{
+			initX_ = prevX_ = evt.x;
+			initY_ = prevY_ = evt.y;
+
+			try
+			{
+				ViewStateMachine &fsm = context<ViewStateMachine>();
+				IView &view = fsm.getView();
+
+				WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+				if (vw)
+				{
+					if (vw->containPointsForROI())
+					{
+						vw->clearAllPointsForROI();
+						view.raiseDrawEvent(false);
+					}
+					isSelectingRegion_ = vw->addPointForROI(evt.x, evt.y);
+				}
+			}
+			catch (const std::bad_cast &)
+			{
+				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+			}
+		}
+	}
+	else if ((evt.button | swl::MouseEvent::BT_RIGHT) == swl::MouseEvent::BT_RIGHT)
+	{
+		isSelectingRegion_ = false;
+
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+			if (vw)
+			{
+				if (vw->countPointsForROI() > 1)
+					vw->setClosedROI(false);
+				else vw->clearAllPointsForROI();
+			}
+			view.raiseDrawEvent(false);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
+}
+
+void HandlePolylineROIState::moveMouse(const MouseEvent &evt)
+{
+	if (!isSelectingRegion_) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+HandlePolygonROIState::HandlePolygonROIState()
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+HandlePolygonROIState::~HandlePolygonROIState()
+{
+}
+
+void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) == swl::MouseEvent::BT_LEFT)
+	{
+		if (isSelectingRegion_)
+		{
+			try
+			{
+				ViewStateMachine &fsm = context<ViewStateMachine>();
+				IView &view = fsm.getView();
+
+				WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+				if (vw)
+				{
+					if (vw->addPointForROI(evt.x, evt.y))
+					{
+						drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+
+						initX_ = prevX_ = evt.x;
+						initY_ = prevY_ = evt.y;
+					}
+					else
+					{
+						prevX_ = evt.x;
+						prevY_ = evt.y;
+						return;
+					}
+				}
+			}
+			catch (const std::bad_cast &)
+			{
+				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+			}
+		}
+		else
+		{
+			initX_ = prevX_ = evt.x;
+			initY_ = prevY_ = evt.y;
+
+			try
+			{
+				ViewStateMachine &fsm = context<ViewStateMachine>();
+				IView &view = fsm.getView();
+
+				WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+				if (vw)
+				{
+					if (vw->containPointsForROI())
+					{
+						vw->clearAllPointsForROI();
+						view.raiseDrawEvent(false);
+					}
+					isSelectingRegion_ = vw->addPointForROI(evt.x, evt.y);
+				}
+			}
+			catch (const std::bad_cast &)
+			{
+				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+			}
+		}
+	}
+	else if ((evt.button | swl::MouseEvent::BT_RIGHT) == swl::MouseEvent::BT_RIGHT)
+	{
+		isSelectingRegion_ = false;
+
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+			if (vw)
+			{
+				if (vw->countPointsForROI() > 2)
+					vw->setClosedROI(true);
+				else vw->clearAllPointsForROI();
+			}
+			view.raiseDrawEvent(false);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
+}
+
+void HandlePolygonROIState::moveMouse(const MouseEvent &evt)
+{
+	if (!isSelectingRegion_) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
+	prevX_ = evt.x;
+	prevY_ = evt.y;
 }
 
 }  // namespace swl

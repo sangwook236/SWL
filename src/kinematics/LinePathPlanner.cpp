@@ -52,8 +52,8 @@ bool LinePathPlanner::plan()
 	memcpy(&startPt_.x(), &aInitSpatial[0], 3 * sizeof(coords_type::value_type));
 	memcpy(&endPt_.x(), &aFinalSpatial[0], 3 * sizeof(coords_type::value_type));
 
-	startQuat_ = Quaternion<double>::toQuaternion(Rotation::rotate(kinematics_.getRotOrder(), TVector3<double>(aInitSpatial[3], aInitSpatial[4], aInitSpatial[5])));
-	endQuat_ = Quaternion<double>::toQuaternion(Rotation::rotate(kinematics_.getRotOrder(), TVector3<double>(aFinalSpatial[3], aFinalSpatial[4], aFinalSpatial[5])));
+	startQuat_ = Quaternion<double>::toQuaternion(Rotation::rotate(kinematics_.getRotOrder(), Vector3<double>(aInitSpatial[3], aInitSpatial[4], aInitSpatial[5])));
+	endQuat_ = Quaternion<double>::toQuaternion(Rotation::rotate(kinematics_.getRotOrder(), Vector3<double>(aFinalSpatial[3], aFinalSpatial[4], aFinalSpatial[5])));
 
 	// calculate required time
 	double dTmp;

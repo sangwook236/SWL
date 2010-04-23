@@ -44,11 +44,11 @@ protected:
 	bool isCircular_;
 
 	/// center of an arc
-	TVector3<double> center_;
+	Vector3<double> center_;
 	/// radius and angle of an arc
 	double radius_, angle_;
 	/// normal vector of a plane including an arc
-	TVector3<double> normal_;
+	Vector3<double> normal_;
 };
 
 }  // namespace swl

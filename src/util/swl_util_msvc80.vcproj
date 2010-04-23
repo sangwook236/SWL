@@ -237,6 +237,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\RegionOfInterest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\RegionOfInterestMgr.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\SerialPort.cpp"
 				>
 			</File>
@@ -324,6 +332,14 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\util\PacketPacker.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\RegionOfInterest.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\util\RegionOfInterestMgr.h"
 				>
 			</File>
 			<File

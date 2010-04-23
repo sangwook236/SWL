@@ -861,7 +861,7 @@ RMatrix3<double> Rotation::rotateZ(const double radian)
 	return m;
 }
 
-RMatrix3<double> Rotation::rotate(const double rad, const TVector3<double> &axis)
+RMatrix3<double> Rotation::rotate(const double rad, const Vector3<double> &axis)
 {
 	// for making a unit vector
 	const double norm = std::sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());

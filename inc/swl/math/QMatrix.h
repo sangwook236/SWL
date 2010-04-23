@@ -4,7 +4,7 @@
 
 #include "swl/math/Quaternion.h"
 #include "swl/math/RMatrix.h"
-#include "swl/math/TVector.h"
+#include "swl/math/Vector.h"
 #include "swl/math/MathConstant.h"
 #include <iomanip>
 
@@ -27,7 +27,7 @@ public:
 	QMatrix()
 	: q_(T(1), T(0), T(0), T(0))
 	{}
-	explicit QMatrix(const TVector3<T> &rX, const TVector3<T> &rY, const TVector3<T> &rZ)
+	explicit QMatrix(const Vector3<T> &rX, const Vector3<T> &rY, const Vector3<T> &rZ)
 	: q_(Quaternion<T>::to_quaternion(RMatrix3<T>(rX, rY, rZ)))
 	{}
 	explicit QMatrix(const T rhs[9])
@@ -82,11 +82,11 @@ public:
 	{  q_ *= rhs.q_;  return *this;  }
 
 	/// rotation
-	TVector3<T> operator*(const TVector3<T> &rV) const
+	Vector3<T> operator*(const Vector3<T> &rV) const
 	{
 		Quaternion<T> aQuat(T(0), rV.x(), rV.y(), rV.z()), aUnit(q_.unit());
 		aQuat = aUnit * aQuat * aUnit.conjugate();
-		return TVector3<T>(aQuat.q1(), aQuat.q2(), aQuat.q3());
+		return Vector3<T>(aQuat.q1(), aQuat.q2(), aQuat.q3());
 	}
 
 	///
@@ -106,7 +106,7 @@ public:
 	}
 
 	///
-	static QMatrix toRotationMatrix(const T &rad, const TVector3<T> &axis);
+	static QMatrix toRotationMatrix(const T &rad, const Vector3<T> &axis);
 
 private:
 	Quaternion<T> q_;
@@ -114,7 +114,7 @@ private:
 
 
 template<typename T>
-/*static*/ QMatrix<T> QMatrix<T>::toRotationMatrix(const T &rad, const TVector3<T> &axis)
+/*static*/ QMatrix<T> QMatrix<T>::toRotationMatrix(const T &rad, const Vector3<T> &axis)
 {
 	// for making a unit quaternion
 	const T tNorm = (T)sqrt(axis.x()*axis.x() + axis.y()*axis.y() + axis.z()*axis.z());

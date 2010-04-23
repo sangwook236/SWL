@@ -3,7 +3,7 @@
 
 
 #include "swl/kinematics/JointParam.h"
-#include "swl/math/TVector.h"
+#include "swl/math/Vector.h"
 
 
 namespace swl {
@@ -13,7 +13,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API TVector3<double>;
+SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API Vector3<double>;
 #endif
 
 
@@ -26,7 +26,7 @@ public:
 	//typedef ScrewAxis base_type;
 
 public:
-	ScrewAxis(const TVector3<double> &dir, const TVector3<double> &pos, const double pitch = 0.0)
+	ScrewAxis(const Vector3<double> &dir, const Vector3<double> &pos, const double pitch = 0.0)
 	: //base_type(),
 	  dir_(dir), pos_(pos), pitch_(pitch)
 	{}
@@ -40,20 +40,20 @@ public:
 
 public:
 	/// accessor & mutator
-	void setDir(const TVector3<double> &dir)  {  dir_ = dir;  }
-	const TVector3<double> & getDir() const  {  return dir_;  }
+	void setDir(const Vector3<double> &dir)  {  dir_ = dir;  }
+	const Vector3<double> & getDir() const  {  return dir_;  }
 
-	void setPos(const TVector3<double> &pos)  {  pos_ = pos;  }
-	const TVector3<double> & getPos() const  {  return pos_;  }
+	void setPos(const Vector3<double> &pos)  {  pos_ = pos;  }
+	const Vector3<double> & getPos() const  {  return pos_;  }
 
 	void setPitch(const double pitch)  {  pitch_ = pitch;  }
 	double getPitch() const  {  return pitch_;  }
 
 protected:
 	/// direction of screw axis
-	TVector3<double> dir_;
+	Vector3<double> dir_;
 	/// position of screw axis
-	TVector3<double> pos_;
+	Vector3<double> pos_;
 	/// pitch of screw axis
 	double pitch_;
 };
