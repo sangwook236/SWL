@@ -298,6 +298,14 @@
 					RelativePath=".\testcase\util\EchoTcpSocketTest.cpp"
 					>
 				</File>
+				<File
+					RelativePath=".\testcase\util\RegionOfInterestMgrTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath=".\testcase\util\RegionOfInterestTest.cpp"
+					>
+				</File>
 			</Filter>
 			<Filter
 				Name="math"
@@ -333,6 +341,22 @@
 			</Filter>
 			<Filter
 				Name="winutil"
+				>
+			</Filter>
+			<Filter
+				Name="kinematics"
+				>
+			</Filter>
+			<Filter
+				Name="machine_learning"
+				>
+			</Filter>
+			<Filter
+				Name="machine_vision"
+				>
+			</Filter>
+			<Filter
+				Name="rnd_base"
 				>
 			</Filter>
 		</Filter>

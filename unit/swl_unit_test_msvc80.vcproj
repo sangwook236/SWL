@@ -61,7 +61,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
+				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -137,7 +137,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
+				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
@@ -266,6 +266,22 @@
 			</Filter>
 			<Filter
 				Name="winutil"
+				>
+			</Filter>
+			<Filter
+				Name="kinematics"
+				>
+			</Filter>
+			<Filter
+				Name="rnd_base"
+				>
+			</Filter>
+			<Filter
+				Name="machine_learning"
+				>
+			</Filter>
+			<Filter
+				Name="machine_vision"
 				>
 			</Filter>
 		</Filter>

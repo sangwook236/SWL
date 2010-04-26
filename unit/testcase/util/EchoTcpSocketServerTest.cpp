@@ -23,8 +23,8 @@ struct echo_tcp_socket_server_worker_thread_functor
 	void operator()()
 	{
 		boost::asio::io_service ioService;
-		const unsigned short portNum_withoutSession = 6000;
-		const unsigned short portNum_withSession = 7000;
+		const unsigned short portNum_withoutSession = 6002;
+		const unsigned short portNum_withSession = 7002;
 
 		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, portNum_withoutSession);
 		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, portNum_withSession);
@@ -125,6 +125,7 @@ public:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::EchoTcpSocketServerTest);
-//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::EchoTcpSocketServerTest, "SWL.Util.TcpSocketServer");  // not working
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::EchoTcpSocketServerTest);
+CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Util");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::EchoTcpSocketServerTest, "SWL.Util");
 #endif

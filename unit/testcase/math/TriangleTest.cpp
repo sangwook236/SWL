@@ -89,6 +89,7 @@ public:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::TriangleTest);
-//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::TriangleTest, "SWL.Math.Triangle");  // not working
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::TriangleTest);
+CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Math");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::TriangleTest, "SWL.Math");
 #endif

@@ -59,11 +59,11 @@ public:
 	}
 	bool isOverlapped(const Triangle2<T> &tri, const T &tol = T(1.0e-5)) const
 	{
-		return contain(tri.point1_, tol) || contain(tri.point2_, tol) || contain(tri.point3_, tol) ||
-			tri.contain(point1_, tol) || tri.contain(point2_, tol) || tri.contain(point3_, tol);
+		return include(tri.point1_, tol) || include(tri.point2_, tol) || include(tri.point3_, tol) ||
+			tri.include(point1_, tol) || tri.include(point2_, tol) || tri.include(point3_, tol);
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
 		const point_type cx = (point1_.x + point2_.x + point3_.x) / T(3), cy = (point1_.y + point2_.y + point3_.y) / T(3);
 
@@ -89,7 +89,7 @@ private:
 // class Triangle3
 
 template<typename T>
-struct Triangle3
+class Triangle3
 {
 public:
     typedef T value_type;
@@ -147,8 +147,8 @@ public:
 	bool isOverlapped(const Triangle3<T> &tri, const T &tol = T(1.0e-5)) const
 	{
 		return isCoplanar(tri, tol) &&
-			(contain(tri.point1_, tol) || contain(tri.point2_, tol) || contain(tri.point3_, tol) ||
-			tri.contain(point1_, tol) || tri.contain(point2_, tol) || tri.contain(point3_, tol));
+			(include(tri.point1_, tol) || include(tri.point2_, tol) || include(tri.point3_, tol) ||
+			tri.include(point1_, tol) || tri.include(point2_, tol) || tri.include(point3_, tol));
 	}
 
 	//
@@ -158,7 +158,7 @@ public:
 		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
@@ -169,27 +169,27 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y) + dir.z * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y, dir.z * s + point1_.z);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
-		if (!toPlane().contain(pt, tol)) return false;
+		if (!toPlane().include(pt, tol)) return false;
 
 		const vector_type &normal = getNormalVector();
-		const T nor[3] = { normal.x >= 0 ? normal.x : -normal.x, normal.y >= 0 ? normal.y : -normal.y, normal.z >= 0 ? normal.z : -normal.z };
+		const T nor[3] = { normal.x() >= 0 ? normal.x() : -normal.x(), normal.y() >= 0 ? normal.y() : -normal.y(), normal.z() >= 0 ? normal.z() : -normal.z() };
 
 		const size_t idx = std::distance(nor, std::max_element(nor, nor + 3));
 		switch (idx)
 		{
 		case 0:  // project onto yz-plane
-			return Triangle2<T>(Triangle2<T>::point_type(point1_.y, point1_.z), Triangle2<T>::point_type(point2_.y, point2_.z), Triangle2<T>::point_type(point3_.y, point3_.z)).contain(Triangle2<T>::point_type(pt.y, pt.z), tol);
+			return Triangle2<T>(Triangle2<T>::point_type(point1_.y, point1_.z), Triangle2<T>::point_type(point2_.y, point2_.z), Triangle2<T>::point_type(point3_.y, point3_.z)).include(Triangle2<T>::point_type(pt.y, pt.z), tol);
 		case 1:  // project onto zx-plane
-			return Triangle2<T>(Triangle2<T>::point_type(point1_.z, point1_.x), Triangle2<T>::point_type(point2_.z, point2_.x), Triangle2<T>::point_type(point3_.z, point3_.x)).contain(Triangle2<T>::point_type(pt.z, pt.x), tol);
+			return Triangle2<T>(Triangle2<T>::point_type(point1_.z, point1_.x), Triangle2<T>::point_type(point2_.z, point2_.x), Triangle2<T>::point_type(point3_.z, point3_.x)).include(Triangle2<T>::point_type(pt.z, pt.x), tol);
 		case 2:  // project onto xy-plane
-			return Triangle2<T>(Triangle2<T>::point_type(point1_.x, point1_.y), Triangle2<T>::point_type(point2_.x, point2_.y), Triangle2<T>::point_type(point3_.x, point3_.y)).contain(Triangle2<T>::point_type(pt.x, pt.y), tol);
+			return Triangle2<T>(Triangle2<T>::point_type(point1_.x, point1_.y), Triangle2<T>::point_type(point2_.x, point2_.y), Triangle2<T>::point_type(point3_.x, point3_.y)).include(Triangle2<T>::point_type(pt.x, pt.y), tol);
 		default:
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
 		}

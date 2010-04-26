@@ -2,8 +2,10 @@
 #define __SWL_UNIT_TEST__UNIT_TEST_CONFIG__H_ 1
 
 
+#if !defined(__SWL_UNIT_TEST__USE_BOOST_UNIT) && !defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 //#define __SWL_UNIT_TEST__USE_BOOST_UNIT 1
-//#define __SWL_UNIT_TEST__USE_CPP_UNIT 1
+#define __SWL_UNIT_TEST__USE_CPP_UNIT 1
+#endif
 
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)

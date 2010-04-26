@@ -8,10 +8,10 @@
 
 namespace swl {
 
-#if defined(_MSC_VER)
-#pragma warning(disable:4231)
-SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<float>;
-#endif
+//#if defined(_MSC_VER)
+//#pragma warning(disable:4231)
+//SWL_GRAPHICS_EXPORT_TEMPLATE template struct SWL_GRAPHICS_API Color4<float>;
+//#endif
 
 
 //-----------------------------------------------------------------------------------------

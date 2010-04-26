@@ -3,7 +3,6 @@
 
 
 #include "swl/math/Vector.h"
-#include "swl/math/Plane.h"
 #include "swl/math/MathExt.h"
 #include "swl/base/Point.h"
 #include <limits>
@@ -28,7 +27,7 @@ public:
 	explicit Line2(const point_type rhs[2])
 	: point1_(rhs[0]), point2_(rhs[1])
 	{}
-    explicit Line2(const Line2<T> &rhs)
+    Line2(const Line2<T> &rhs)
 	: point1_(rhs.point1_), point2_(rhs.point2_)
 	{}
     ~Line2()  {}
@@ -56,15 +55,15 @@ public:
 
 	//
 	bool isEqual(const Line2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isParallel(line) && (contain(line.point1_, tol) || contain(line.point2_, tol));  }
+	{  return isParallel(line) && (include(line.point1_, tol) || include(line.point2_, tol));  }
 	bool isOrthogonal(const Line2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_));  }
+	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isParallel(const Line2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_));  }
+	{  return vector_type(point2_ - point1_).isParallel(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isCollinear(const Line2<T> &line, const T &tol = T(1.0e-5)) const
 	{
 		return isParallel(line, tol) &&
-			(contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));
+			(include(line.point1_, tol) || include(line.point2_, tol) || line.include(point1_, tol) || line.include(point2_, tol));
 	}
 	// don't consider the same or parallel lines
 	bool isIntersectedWith(const Line2<T> &line, const T &tol = T(1.0e-5)) const
@@ -101,7 +100,7 @@ public:
 		const T norm = dir.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
@@ -112,19 +111,19 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y);
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
 #if 0
 		return getPerpendicularDistance(pt) <= tol;
 #else
 		//const T delta = (point2_.y - point1_.y) * (pt.x - point1_.x) - (point2_.x - point1_.x) * (pt.y - point1_.y);
 		const vector_type &dir = getDirectionalVector();
-		const T delta = dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y);
+		const T delta = dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y);
 		return delta >= -tol && delta <= tol;
 #endif
 	}
@@ -142,7 +141,7 @@ public:
 // class Line3
 
 template<typename T>
-struct Line3
+class Line3
 {
 public:
     typedef T value_type;
@@ -156,7 +155,7 @@ public:
 	explicit Line3(const point_type rhs[2])
 	: point1_(rhs[0]), point2_(rhs[1])
 	{}
-    explicit Line3(const Line3<T> &rhs)
+	explicit Line3(const Line3<T> &rhs)
 	: point1_(rhs.point1_), point2_(rhs.point2_)
 	{}
     ~Line3()  {}
@@ -179,20 +178,21 @@ public:
 
 	//
 	bool isEqual(const Line3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isParallel(line) && (contain(line.point1_, tol) || contain(line.point2_, tol));  }
+	{  return isParallel(line) && (include(line.point1_, tol) || include(line.point2_, tol));  }
 	bool isOrthogonal(const Line3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type((line.point2_ - line.point1_),tol);  }
+	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_),tol);  }
 	bool isParallel(const Line3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_), tol);  }
+	{  return vector_type(point2_ - point1_).isParallel(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isCollinear(const Line3<T> &line, const T &tol = T(1.0e-5)) const
 	{
 		return isParallel(line, tol) &&
-			(contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));
+			(include(line.point1_, tol) || include(line.point2_, tol) || line.include(point1_, tol) || line.include(point2_, tol));
 	}
 	bool isCoplanar(const Line3<T> &line, const T &tol = T(1.0e-5)) const
 	{
-		const Plane3<T> plane(point1_, point2_, line.point1_);
-		return plane.contain(line.point2_, tol);
+		const vector_type &normal = vector_type(point2_ - point1_).cross(vector_type(line.point1_ - point1_)).unit();
+		const T delta = normal.x() * (line.point1_.x - point1_.x) + normal.y() * (line.point1_.y - point1_.y) + normal.z() * (line.point1_.z - point1_.z);
+		return delta >= -tol && delta <= tol;
 	}
 	// don't consider the same or parallel lines
 	bool isIntersectedWith(const Line3<T> &line, const T &tol = T(1.0e-5)) const
@@ -260,7 +260,7 @@ public:
 
 		const T &a1 = dir1.x, &b1 = dir1.y, &c1 = dir1.z;
 		const T &a2 = dir2.x, &b2 = dir2.y, &c2 = dir2.z;
-		const T &nx = normal.x, &ny = normal.y, &nz = normal.z;
+		const T &nx = normal.x(), &ny = normal.y(), &nz = normal.z();
 		const T &x1 = point1_.x, &y1 = point1_.y, &z1 = point1_.z;
 		const T &x2 = line.point1_.x, &y2 = line.point1_.y, &z2 = line.point1_.z;
 
@@ -293,23 +293,23 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y) + dir.z * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y, dir.z * s + point1_.z);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
 #if 0
 		return getPerpendicularDistance(pt) <= tol;
 #else
 		const vector_type &dir = getDirectionalVector();
-		if (dir.x >= -tol && dir.x <= tol)
-			return (pt.x-point1_.x >= -tol && pt.x-point1_.x <= tol) && Line2<T>(Line2<T>::point_type(point1_.y, point1_.z), Line2<T>::point_type(point2_.y, point2_.z)).contain(Line2<T>::point_type(pt.y, pt.z), tol);
-		else if (dir.y >= -tol && dir.y <= tol)
-			return (pt.y-point1_.y >= -tol && pt.y-point1_.y <= tol) && Line2<T>(Line2<T>::point_type(point1_.z, point1_.x), Line2<T>::point_type(point2_.z, point2_.x)).contain(Line2<T>::point_type(pt.z, pt.x), tol);
-		else if (dir.z >= -tol && dir.z <= tol)
-			return (pt.z-point1_.z >= -tol && pt.z-point1_.z <= tol) && Line2<T>(Line2<T>::point_type(point1_.x, point1_.y), Line2<T>::point_type(point2_.x, point2_.y)).contain(Line2<T>::point_type(pt.x, pt.y), tol);
+		if (dir.x() >= -tol && dir.x() <= tol)
+			return (pt.x-point1_.x >= -tol && pt.x-point1_.x <= tol) && Line2<T>(Line2<T>::point_type(point1_.y, point1_.z), Line2<T>::point_type(point2_.y, point2_.z)).include(Line2<T>::point_type(pt.y, pt.z), tol);
+		else if (dir.y() >= -tol && dir.y() <= tol)
+			return (pt.y-point1_.y >= -tol && pt.y-point1_.y <= tol) && Line2<T>(Line2<T>::point_type(point1_.z, point1_.x), Line2<T>::point_type(point2_.z, point2_.x)).include(Line2<T>::point_type(pt.z, pt.x), tol);
+		else if (dir.z() >= -tol && dir.z() <= tol)
+			return (pt.z-point1_.z >= -tol && pt.z-point1_.z <= tol) && Line2<T>(Line2<T>::point_type(point1_.x, point1_.y), Line2<T>::point_type(point2_.x, point2_.y)).include(Line2<T>::point_type(pt.x, pt.y), tol);
 		else
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
 #endif

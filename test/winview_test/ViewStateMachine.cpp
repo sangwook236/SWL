@@ -772,23 +772,22 @@ void HandleLineROIState::pressMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 
-	isDragging_ = true;
-	initX_ = prevX_ = evt.x;
-	initY_ = prevY_ = evt.y;
-
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw)
+		if (RegionOfInterestMgr::getInstance().containROI())
 		{
-			if (vw->containPointsForROI())
-			{
-				vw->clearAllPointsForROI();
-				view.raiseDrawEvent(false);
-			}
+			RegionOfInterestMgr::getInstance().clearAllROIs();
+			view.raiseDrawEvent(false);
+		}
+
+		if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+		{
+			isDragging_ = true;
+			initX_ = prevX_ = evt.x;
+			initY_ = prevY_ = evt.y;
 		}
 	}
 	catch (const std::bad_cast &)
@@ -800,6 +799,7 @@ void HandleLineROIState::pressMouse(const MouseEvent &evt)
 void HandleLineROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	isDragging_ = false;
 
@@ -808,21 +808,23 @@ void HandleLineROIState::releaseMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw)
-		{
-			vw->clearAllPointsForROI();
+		RegionOfInterestMgr::getInstance().clearAllROIs();
 
-			if (vw->addPointForROI(initX_, initY_) && vw->addPointForROI(evt.x, evt.y))
-			{
-				vw->setClosedROI(false);
-				view.raiseDrawEvent(false);
-			}
-			else
-			{
-				vw->clearAllPointsForROI();
-				drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
-			}
+		if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+		{
+			roi_type roi(roi_type::point_type(
+				(roi_type::real_type)initX_, (roi_type::real_type)initY_),
+				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
+				// TODO [fix] >> color
+				true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f)
+			);
+			RegionOfInterestMgr::getInstance().addROI(roi);
+			view.raiseDrawEvent(false);
+		}
+		else
+		{
+			RegionOfInterestMgr::getInstance().clearAllROIs();
+			drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
 		}
 	}
 	catch (const std::bad_cast &)
@@ -867,23 +869,22 @@ void HandleRectangleROIState::pressMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 
-	isDragging_ = true;
-	initX_ = prevX_ = evt.x;
-	initY_ = prevY_ = evt.y;
-
 	try
 	{
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw)
+		if (RegionOfInterestMgr::getInstance().containROI())
 		{
-			if (vw->containPointsForROI())
-			{
-				vw->clearAllPointsForROI();
-				view.raiseDrawEvent(false);
-			}
+			RegionOfInterestMgr::getInstance().clearAllROIs();
+			view.raiseDrawEvent(false);
+		}
+
+		if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+		{
+			isDragging_ = true;
+			initX_ = prevX_ = evt.x;
+			initY_ = prevY_ = evt.y;
 		}
 	}
 	catch (const std::bad_cast &)
@@ -895,6 +896,7 @@ void HandleRectangleROIState::pressMouse(const MouseEvent &evt)
 void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
 
 	isDragging_ = false;
 
@@ -903,24 +905,23 @@ void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
 		ViewStateMachine &fsm = context<ViewStateMachine>();
 		IView &view = fsm.getView();
 
-		WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-		if (vw)
-		{
-			vw->clearAllPointsForROI();
+		RegionOfInterestMgr::getInstance().clearAllROIs();
 
-			if (vw->addPointForROI(initX_, initY_) &&
-				vw->addPointForROI(evt.x, initY_) &&
-				vw->addPointForROI(evt.x, evt.y) &&
-				vw->addPointForROI(initX_, evt.y))
-			{
-				vw->setClosedROI(true);
-				view.raiseDrawEvent(false);
-			}
-			else
-			{
-				vw->clearAllPointsForROI();
-				drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
-			}
+		if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+		{
+			roi_type roi(roi_type::point_type(
+				(roi_type::real_type)initX_, (roi_type::real_type)initY_),
+				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
+				// TODO [fix] >> color
+				true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f)
+			);
+			RegionOfInterestMgr::getInstance().addROI(roi);
+			view.raiseDrawEvent(false);
+		}
+		else
+		{
+			RegionOfInterestMgr::getInstance().clearAllROIs();
+			drawRectangleRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, false);
 		}
 	}
 	catch (const std::bad_cast &)
@@ -953,7 +954,8 @@ void HandleRectangleROIState::moveMouse(const MouseEvent &evt)
 // 
 
 HandlePolylineROIState::HandlePolylineROIState()
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+// TODO [fix] >> color
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
 {
 }
 
@@ -972,22 +974,19 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 				ViewStateMachine &fsm = context<ViewStateMachine>();
 				IView &view = fsm.getView();
 
-				WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-				if (vw)
+				if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
 				{
-					if (vw->addPointForROI(evt.x, evt.y))
-					{
-						drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+					roi_.addPoint(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y));
+					drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
 
-						initX_ = prevX_ = evt.x;
-						initY_ = prevY_ = evt.y;
-					}
-					else
-					{
-						prevX_ = evt.x;
-						prevY_ = evt.y;
-						return;
-					}
+					initX_ = prevX_ = evt.x;
+					initY_ = prevY_ = evt.y;
+				}
+				else
+				{
+					prevX_ = evt.x;
+					prevY_ = evt.y;
+					return;
 				}
 			}
 			catch (const std::bad_cast &)
@@ -995,7 +994,7 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 			}
 		}
-		else
+		else  // start selecting ROI
 		{
 			initX_ = prevX_ = evt.x;
 			initY_ = prevY_ = evt.y;
@@ -1005,15 +1004,16 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 				ViewStateMachine &fsm = context<ViewStateMachine>();
 				IView &view = fsm.getView();
 
-				WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-				if (vw)
+				if (roi_.containPoint())
 				{
-					if (vw->containPointsForROI())
-					{
-						vw->clearAllPointsForROI();
-						view.raiseDrawEvent(false);
-					}
-					isSelectingRegion_ = vw->addPointForROI(evt.x, evt.y);
+					roi_.clearAllPoints();
+					view.raiseDrawEvent(false);
+				}
+	
+				if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+				{
+					roi_.addPoint(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y));
+					isSelectingRegion_ = true;
 				}
 			}
 			catch (const std::bad_cast &)
@@ -1031,13 +1031,7 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 			ViewStateMachine &fsm = context<ViewStateMachine>();
 			IView &view = fsm.getView();
 
-			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-			if (vw)
-			{
-				if (vw->countPointsForROI() > 1)
-					vw->setClosedROI(false);
-				else vw->clearAllPointsForROI();
-			}
+			if (roi_.countPoint() < 2) roi_.clearAllPoints();
 			view.raiseDrawEvent(false);
 		}
 		catch (const std::bad_cast &)
@@ -1071,7 +1065,8 @@ void HandlePolylineROIState::moveMouse(const MouseEvent &evt)
 // 
 
 HandlePolygonROIState::HandlePolygonROIState()
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+// TODO [fix] >> color
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
 {
 }
 
@@ -1090,22 +1085,19 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 				ViewStateMachine &fsm = context<ViewStateMachine>();
 				IView &view = fsm.getView();
 
-				WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-				if (vw)
+				if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
 				{
-					if (vw->addPointForROI(evt.x, evt.y))
-					{
-						drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+					roi_.addPoint(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y));
+					drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
 
-						initX_ = prevX_ = evt.x;
-						initY_ = prevY_ = evt.y;
-					}
-					else
-					{
-						prevX_ = evt.x;
-						prevY_ = evt.y;
-						return;
-					}
+					initX_ = prevX_ = evt.x;
+					initY_ = prevY_ = evt.y;
+				}
+				else
+				{
+					prevX_ = evt.x;
+					prevY_ = evt.y;
+					return;
 				}
 			}
 			catch (const std::bad_cast &)
@@ -1113,7 +1105,7 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 				std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
 			}
 		}
-		else
+		else  // start selecting ROI
 		{
 			initX_ = prevX_ = evt.x;
 			initY_ = prevY_ = evt.y;
@@ -1123,15 +1115,16 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 				ViewStateMachine &fsm = context<ViewStateMachine>();
 				IView &view = fsm.getView();
 
-				WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-				if (vw)
+				if (roi_.containPoint())
 				{
-					if (vw->containPointsForROI())
-					{
-						vw->clearAllPointsForROI();
-						view.raiseDrawEvent(false);
-					}
-					isSelectingRegion_ = vw->addPointForROI(evt.x, evt.y);
+					roi_.clearAllPoints();
+					view.raiseDrawEvent(false);
+				}
+
+				if (RegionOfInterestMgr::getInstance().isInValidRegion((roi_type::point_type)((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+				{
+					roi_.addPoint(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y));
+					isSelectingRegion_ = true;
 				}
 			}
 			catch (const std::bad_cast &)
@@ -1149,13 +1142,7 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 			ViewStateMachine &fsm = context<ViewStateMachine>();
 			IView &view = fsm.getView();
 
-			WinViewBase *vw = dynamic_cast<WinViewBase *>(&view);
-			if (vw)
-			{
-				if (vw->countPointsForROI() > 2)
-					vw->setClosedROI(true);
-				else vw->clearAllPointsForROI();
-			}
+			if (roi_.countPoint() < 3) roi_.clearAllPoints();
 			view.raiseDrawEvent(false);
 		}
 		catch (const std::bad_cast &)

@@ -12,13 +12,13 @@ namespace swl {
 // class Plane3
 
 template<typename T>
-struct Plane3
+class Plane3
 {
 public:
     typedef T value_type;
+    typedef Line3<T> line_type;
     typedef Point3<T> point_type;
     typedef Vector3<T> vector_type;
-    typedef Line3<T> line_type;
 
 public:
     explicit Plane3(const point_type &pt1 = point_type(), const point_type &pt2 = point_type(), const point_type &pt3 = point_type())
@@ -55,15 +55,15 @@ public:
 	void getPlaneEquation(T &a, T &b, T &c, T &d) const
 	{
 		const vector_type &normal = getNormalVector();
-		a = normal.x;
-		b = normal.y;
-		c = normal.z;
+		a = normal.x();
+		b = normal.y();
+		c = normal.z();
 		d = -a * point1_.x - b * point1_.y - c * point1_.z;
 	}
 
 	//
 	bool isEqual(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
-	{  return isParallel(plane) && (contain(plane.point1_, tol) || contain(plane.point2_, tol) || contain(plane.point3_, tol));  }
+	{  return isParallel(plane) && (include(plane.point1_, tol) || include(plane.point2_, tol) || include(plane.point3_, tol));  }
 	bool isOrthogonal(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
 	{  return getNormalVector().isOrthogonal(plane.getNormalVector());  }
 	bool isParallel(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
@@ -71,8 +71,8 @@ public:
 	bool isCoplanar(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
 	{
 		return isParallel(plane, tol) &&
-			(contain(plane.point1_, tol) || contain(plane.point2_, tol) || contain(plane.point3_, tol) ||
-			plane.contain(point1_, tol) || plane.contain(point2_, tol) || plane.contain(point3_, tol));
+			(include(plane.point1_, tol) || include(plane.point2_, tol) || include(plane.point3_, tol) ||
+			plane.include(point1_, tol) || plane.include(point2_, tol) || plane.include(point3_, tol));
 	}
 	bool isIntersectedWith(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
 	{  return isEqual(line, tol) || !isParallel(line, tol);  }
@@ -86,14 +86,14 @@ public:
 		if (normal.isOrthogonal(dir))  // meet at infinity
 			return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
 
-		const T denom = normal.x * dir.x + normal.y * dir.y + normal.z * dir.z;
+		const T denom = normal.x() * dir.x() + normal.y() * dir.y() + normal.z() * dir.z();
 		if (denom >= -eps && denom <= eps)  // error
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
 
 		const point_type &pt = line.point1();
-		const T t = (-normal.x * pt.x - normal.y * pt.y - normal.z * pt.z) / denom;
+		const T t = (-normal.x() * pt.x - normal.y() * pt.y - normal.z() * pt.z) / denom;
 
-		return point_type(dir.x * t + pt.x, dir.y * t + pt.y, dir.z * t + pt.z);
+		return point_type(dir.x() * t + pt.x, dir.y() * t + pt.y, dir.z() * t + pt.z);
 	}
 	// don't consider the same or parallel planes
 	line_type getIntersectionLine(const Plane3<T> &plane) const
@@ -114,7 +114,7 @@ public:
 
 		const T x0 = h1 * normal1.x + h2 * normal2.x, y0 = h1 * normal1.y + h2 * normal2.y, z0 = h1 * normal1.z + h2 * normal2.z;
 		const vector_type &dir = normal1.cross(normal2);
-		return line_type(point_type(x0, y0, z0), point_type(x0 + dir.x, y0 + dir.y, z0 + dir.z));
+		return line_type(point_type(x0, y0, z0), point_type(x0 + dir.x(), y0 + dir.y(), z0 + dir.z()));
 	}
 
 	//
@@ -124,7 +124,7 @@ public:
 		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
@@ -135,18 +135,18 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y) + dir.z * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y, dir.z * s + point1_.z);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
-#if
+#if 0
 		return getPerpendicularDistance(pt) <= tol;
 #else
 		const vector_type &normal = getNormalVector();
-		const T delta = normal.x * (point1_.x - pt.x) + normal.y * (point1_.y - pt.y) + normal.z * (point1_.z - pt.z);
+		const T delta = normal.x() * (pt.x - point1_.x) + normal.y() * (pt.y - point1_.y) + normal.z()() * (pt.z - point1_.z);
 		return delta >= -tol && delta <= tol;
 #endif
 	}

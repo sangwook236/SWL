@@ -5,7 +5,7 @@
 #include "swl/base/Logger.h"
 
 
-#if defined(_DEBUG)
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
@@ -154,6 +154,7 @@ private:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::LoggerTest);
-//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::LoggerTest, "SWL.Base.Logger");  // not working
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::LoggerTest);
+CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Base");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::LoggerTest, "SWL.Base");
 #endif

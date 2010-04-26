@@ -28,7 +28,7 @@ public:
 	explicit LineSegment2(const point_type rhs[2])
 	: point1_(rhs[0]), point2_(rhs[1])
 	{}
-    explicit LineSegment2(const LineSegment2<T> &rhs)
+	LineSegment2(const LineSegment2<T> &rhs)
 	: point1_(rhs.point1_), point2_(rhs.point2_)
 	{}
     ~LineSegment2()  {}
@@ -57,13 +57,13 @@ public:
 			(isEqual(point1_, line.point2_, tol) && isEqual(point2_, line.point1_, tol));
 	}
 	bool isOrthogonal(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type((line.point2_ - line.point1_), tol);  }
+	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isParallel(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_), tol);  }
+	{  return vector_type(point2_ - point1_).isParallel(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isCollinear(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
 	{  return toLine().isCollinear(line.toLine(), tol);  }
 	bool isOverlapped(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isCollinear(line, tol) && (contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));  }
+	{  return isCollinear(line, tol) && (include(line.point1_, tol) || include(line.point2_, tol) || line.include(point1_, tol) || line.include(point2_, tol));  }
 	// don't consider the same or parallel, overlapped lines
 	bool isIntersectedWith(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
 	{
@@ -81,7 +81,7 @@ public:
 		const bool val3 = num_s >= -tol && num_s <= tol;
 #if 0
 		if (val1 && val2 && val3)  // the same lines
-			return contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol);
+			return include(line.point1_, tol) || include(line.point2_, tol) || line.include(point1_, tol) || line.include(point2_, tol);
 		else if (val1) return false;  // parallel lines: meet at infinity
 #else
 		if (val1) return false;  // the same line or parallel lines: meet at infinity
@@ -123,7 +123,7 @@ public:
 		const T norm = dir.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y * (pt.x - point1_.x) - dir.x * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
@@ -134,18 +134,18 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y);
 		}
 	}
 	point_type getClosestPoint(const point_type &pt) const
 	{
 		const T eps = T(1.0e-15);
-		if (contain(pt, tol)) return pt;
+		if (include(pt, tol)) return pt;
 		else
 		{
 			const point_type &ppt = getPerpendicularPoint(pt);
-			if (contain(ppt, tol)) return ppt;
+			if (include(ppt, tol)) return ppt;
 			else
 			{
 				const T dist1 = (point1_.x - pt.x)*(point1_.x - pt.x) + (point1_.y - pt.y)*(point1_.y - pt.y);
@@ -156,14 +156,14 @@ public:
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
 #if 0
 		return getPerpendicularDistance(pt) <= tol &&
 			((std::min(point1_.x, point2_.x) <= pt.x && pt.x <= std::max(point1_.x, point2_.x)) ||
 			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y)));
 #else
-		return toLine().contain(pt, tol) &&
+		return toLine().include(pt, tol) &&
 			((std::min(point1_.x, point2_.x) <= pt.x && pt.x <= std::max(point1_.x, point2_.x)) ||
 			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y)));
 #endif
@@ -184,7 +184,7 @@ private:
 // class LineSegment3
 
 template<typename T>
-struct LineSegment3
+class LineSegment3
 {
 public:
     typedef T value_type;
@@ -198,7 +198,7 @@ public:
 	explicit LineSegment3(const point_type rhs[2])
 	: point1_(rhs[0]), point2_(rhs[1])
 	{}
-    explicit LineSegment3(const LineSegment3<T> &rhs)
+	LineSegment3(const LineSegment3<T> &rhs)
 	: point1_(rhs.point1_), point2_(rhs.point2_)
 	{}
     ~LineSegment3()  {}
@@ -226,18 +226,19 @@ public:
 			(isEqual(point1_, line.point2_, tol) && isEqual(point2_, line.point1_, tol));
 	}
 	bool isOrthogonal(const LineSegment3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type((line.point2_ - line.point1_), tol);  }
+	{  return vector_type(point2_ - point1_).isOrthogonal(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isParallel(const LineSegment3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return vector_type(point2_ - point1_).isParallel(vector_type((line.point2_ - line.point1_), tol);  }
+	{  return vector_type(point2_ - point1_).isParallel(vector_type(line.point2_ - line.point1_), tol);  }
 	bool isCoplanar(const LineSegment3<T> &line, const T &tol = T(1.0e-5)) const
 	{
-		const Plane3<T> plane(point1_, point2_, line.point1_);
-		return plane.contain(line.point2_, tol);
+		const vector_type &normal = vector_type(point2_ - point1_).cross(vector_type(line.point1_ - point1_)).unit();
+		const T delta = normal.x() * (line.point1_.x - point1_.x) + normal.y() * (line.point1_.y - point1_.y) + normal.z() * (line.point1_.z - point1_.z);
+		return delta >= -tol && delta <= tol;
 	}
 	bool isCollinear(const LineSegment2<T> &line, const T &tol = T(1.0e-5)) const
 	{  return toLine().isCollinear(line.toLine(), tol);  }
 	bool isOverlapped(const LineSegment3<T> &line, const T &tol = T(1.0e-5)) const
-	{  return isCollinear(line, tol) && (contain(line.point1_, tol) || contain(line.point2_, tol) || line.contain(point1_, tol) || line.contain(point2_, tol));  }
+	{  return isCollinear(line, tol) && (include(line.point1_, tol) || include(line.point2_, tol) || line.include(point1_, tol) || line.include(point2_, tol));  }
 	// don't consider the same or parallel, overlapped lines
 	bool isIntersectedWith(const LineSegment3<T> &line, const T &tol = T(1.0e-5)) const
 	{
@@ -338,7 +339,7 @@ public:
 
 		const T &a1 = dir1.x, &b1 = dir1.y, &c1 = dir1.z;
 		const T &a2 = dir2.x, &b2 = dir2.y, &c2 = dir2.z;
-		const T &nx = normal.x, &ny = normal.y, &nz = normal.z;
+		const T &nx = normal.x(), &ny = normal.y(), &nz = normal.z();
 		const T &x1 = point1_.x, &y1 = point1_.y, &z1 = point1_.z;
 		const T &x2 = line.point1_.x, &y2 = line.point1_.y, &z2 = line.point1_.z;
 
@@ -371,18 +372,18 @@ public:
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x * (pt.x - point1_.x) + dir.y * (pt.y - point1_.y) + dir.z * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x * s + point1_.x, dir.y * s + point1_.y, dir.z * s + point1_.z);
+			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
+			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
 		}
 	}
 	point_type getClosestPoint(const point_type &pt) const
 	{
 		const T eps = T(1.0e-15);
-		if (contain(pt, tol)) return pt;
+		if (include(pt, tol)) return pt;
 		else
 		{
 			const point_type &ppt = getPerpendicularPoint(pt);
-			if (contain(ppt, tol)) return ppt;
+			if (include(ppt, tol)) return ppt;
 			else
 			{
 				const T dist1 = (point1_.x - pt.x)*(point1_.x - pt.x) + (point1_.y - pt.y)*(point1_.y - pt.y) + (point1_.z - pt.z)*(point1_.z - pt.z);
@@ -393,17 +394,17 @@ public:
 		}
 	}
 
-	bool contain(const point_type &pt, const T &tol) const
+	bool include(const point_type &pt, const T &tol) const
 	{
 #if 0
 		return getPerpendicularDistance(pt) <= tol &&
 			((std::min(point1_.x, point2_.x) <= pt.x && pt.x <= std::max(point1_.x, point2_.x)) ||
-			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y))) ||
+			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y)) ||
 			(std::min(point1_.z, point2_.z) <= pt.z && pt.z <= std::max(point1_.z, point2_.z)));
 #else
-		return toLine().contain(pt, tol) &&
+		return toLine().include(pt, tol) &&
 			((std::min(point1_.x, point2_.x) <= pt.x && pt.x <= std::max(point1_.x, point2_.x)) ||
-			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y))) ||
+			(std::min(point1_.y, point2_.y) <= pt.y && pt.y <= std::max(point1_.y, point2_.y)) ||
 			(std::min(point1_.z, point2_.z) <= pt.z && pt.z <= std::max(point1_.z, point2_.z)));
 #endif
 	}

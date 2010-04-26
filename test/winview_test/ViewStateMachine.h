@@ -2,6 +2,7 @@
 #define __SWL_WIN_VIEW_TEST__VIEW_STATE_MACHINE__H_ 1
 
 
+#include "swl/util/RegionOfInterest.h"
 #include <boost/statechart/state_machine.hpp>
 #include <boost/statechart/simple_state.hpp>
 #include <boost/statechart/state.hpp>
@@ -447,6 +448,9 @@ public:
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
 
 private:
+	typedef LineROI roi_type;
+
+private:
 	bool isDragging_;
 	int initX_, initY_;
 	int prevX_, prevY_;
@@ -481,6 +485,9 @@ public:
 	/*virtual*/ void releaseKey(const KeyEvent &evt)  {}
 
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
+
+private:
+	typedef RectangleROI roi_type;
 
 private:
 	bool isDragging_;
@@ -519,9 +526,14 @@ public:
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
 
 private:
+	typedef PolylineROI roi_type;
+
+private:
 	bool isSelectingRegion_;
 	int initX_, initY_;
 	int prevX_, prevY_;
+
+	roi_type roi_;
 };
 
 //-----------------------------------------------------------------------------
@@ -555,9 +567,14 @@ public:
 	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
 
 private:
+	typedef PolygonROI roi_type;
+
+private:
 	bool isSelectingRegion_;
 	int initX_, initY_;
 	int prevX_, prevY_;
+
+	roi_type roi_;
 };
 
 }  // namespace swl

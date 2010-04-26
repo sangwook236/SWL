@@ -23,8 +23,8 @@ namespace unit_test {
 
 namespace {
 
-const unsigned short serverPortNumber_withoutSession = 6000;
-const unsigned short serverPortNumber_withSession = 7000;
+const unsigned short serverPortNumber_withoutSession = 6001;
+const unsigned short serverPortNumber_withSession = 7001;
 
 struct echo_tcp_socket_server_worker_thread_functor
 {
@@ -32,8 +32,8 @@ struct echo_tcp_socket_server_worker_thread_functor
 	{
 		boost::asio::io_service ioService;
 
-		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, serverPortNumber_withoutSession);
 		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, serverPortNumber_withSession);
+		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, serverPortNumber_withoutSession);
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
 		BOOST_TEST_MESSAGE("start TCP socket servers: w/o & w/ session");
@@ -569,7 +569,7 @@ public:
 			while (!client.isConnected() && idx < MAX_ITER)
 			{
 				boost::asio::deadline_timer timer(ioService);
-				timer.expires_from_now(boost::posix_time::milliseconds(10));
+				timer.expires_from_now(boost::posix_time::milliseconds(100));
 				timer.wait();
 				++idx;
 			}
@@ -675,7 +675,7 @@ public:
 			while (!client.isConnected() && idx < MAX_ITER)
 			{
 				boost::asio::deadline_timer timer(ioService);
-				timer.expires_from_now(boost::posix_time::milliseconds(10));
+				timer.expires_from_now(boost::posix_time::milliseconds(100));
 				timer.wait();
 				++idx;
 			}
@@ -764,6 +764,7 @@ public:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::EchoTcpSocketTest);
-//CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::EchoTcpSocketTest, "SWL.Util.TcpSocketClient");  // not working
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::EchoTcpSocketTest);
+CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Util");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::EchoTcpSocketTest, "SWL.Util");
 #endif

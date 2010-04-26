@@ -54,7 +54,7 @@ private:
 #if !defined(BOOST_TEST_MODULE)
 boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
 {
-	//boost::unit_test::framework::master_test_suite().add();
+	//boost::unit_test::framework::master_test_suite().add(...);
 
 	return 0;
 }
