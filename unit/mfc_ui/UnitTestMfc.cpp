@@ -5,7 +5,7 @@
 #include "UnitTestMfc.h"
 #include "UnitTestMfcDlg.h"
 
-#include "UnitTestConfig.h"
+#include "../UnitTestConfig.h"
 #include <cppunit/ui/mfc/TestRunner.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 

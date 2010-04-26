@@ -190,7 +190,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\UnitTestConfig.h"
+				RelativePath="..\UnitTestConfig.h"
 				>
 			</File>
 		</Filter>
@@ -207,27 +207,27 @@
 				Name="util"
 				>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketConnection.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketConnection.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketConnection.h"
+					RelativePath="..\testcase\util\EchoTcpSocketConnection.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketServerTest.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketServerTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSession.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketSession.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSession.h"
+					RelativePath="..\testcase\util\EchoTcpSocketSession.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketTest.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketTest.cpp"
 					>
 				</File>
 			</Filter>
@@ -235,7 +235,7 @@
 				Name="math"
 				>
 				<File
-					RelativePath=".\testcase\math\BaseFieldConversionTest.cpp"
+					RelativePath="..\testcase\math\BaseFieldConversionTest.cpp"
 					>
 				</File>
 			</Filter>

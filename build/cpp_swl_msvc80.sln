@@ -80,7 +80,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winut
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\swl_unit_test_msvc80.vcproj", "{F871854A-3223-4895-A970-180448FC68DA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\text_ui\swl_unit_test_msvc80.vcproj", "{F871854A-3223-4895-A970-180448FC68DA}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -95,7 +95,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\sw
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\swl_unit_test_mfc_msvc80.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_msvc80.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"

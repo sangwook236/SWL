@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "UnitTestConfig.h"
+#include "../UnitTestConfig.h"
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
 #include <boost/test/detail/unit_test_parameters.hpp>

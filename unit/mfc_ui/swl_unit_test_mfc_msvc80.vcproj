@@ -17,7 +17,7 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="../bin/$(ConfigurationName)"
+			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -44,7 +44,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../inc"
+				AdditionalIncludeDirectories="../../inc"
 				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG;__SWL_UNIT_TEST__USE_CPP_UNIT"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
@@ -70,7 +70,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="2"
-				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
+				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				TargetMachine="1"
@@ -102,7 +102,7 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="../bin/$(ConfigurationName)"
+			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			UseOfMFC="2"
@@ -129,7 +129,7 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="../inc"
+				AdditionalIncludeDirectories="../../inc"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;__SWL_UNIT_TEST__USE_CPP_UNIT"
 				MinimalRebuild="false"
 				RuntimeLibrary="2"
@@ -154,7 +154,7 @@
 				Name="VCLinkerTool"
 				AdditionalDependencies="log4cxx.lib swl_base.lib swl_math.lib swl_glutil.lib swl_util.lib swl_view.lib swl_winutil.lib swl_winview.lib"
 				LinkIncremental="1"
-				AdditionalLibraryDirectories="../lib/$(ConfigurationName)"
+				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -238,7 +238,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\UnitTestConfig.h"
+				RelativePath="..\UnitTestConfig.h"
 				>
 			</File>
 			<File
@@ -275,35 +275,35 @@
 				Name="util"
 				>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketConnection.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketConnection.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketConnection.h"
+					RelativePath="..\testcase\util\EchoTcpSocketConnection.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketServerTest.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketServerTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSession.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketSession.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketSession.h"
+					RelativePath="..\testcase\util\EchoTcpSocketSession.h"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\EchoTcpSocketTest.cpp"
+					RelativePath="..\testcase\util\EchoTcpSocketTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\RegionOfInterestMgrTest.cpp"
+					RelativePath="..\testcase\util\RegionOfInterestMgrTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\util\RegionOfInterestTest.cpp"
+					RelativePath="..\testcase\util\RegionOfInterestTest.cpp"
 					>
 				</File>
 			</Filter>
@@ -311,23 +311,23 @@
 				Name="math"
 				>
 				<File
-					RelativePath=".\testcase\math\BaseFieldConversionTest.cpp"
+					RelativePath="..\testcase\math\BaseFieldConversionTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\math\LineSegmentTest.cpp"
+					RelativePath="..\testcase\math\LineSegmentTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\math\LineTest.cpp"
+					RelativePath="..\testcase\math\LineTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\math\PlaneTest.cpp"
+					RelativePath="..\testcase\math\PlaneTest.cpp"
 					>
 				</File>
 				<File
-					RelativePath=".\testcase\math\TriangleTest.cpp"
+					RelativePath="..\testcase\math\TriangleTest.cpp"
 					>
 				</File>
 			</Filter>
@@ -335,7 +335,7 @@
 				Name="base"
 				>
 				<File
-					RelativePath=".\testcase\base\LoggerTest.cpp"
+					RelativePath="..\testcase\base\LoggerTest.cpp"
 					>
 				</File>
 			</Filter>
