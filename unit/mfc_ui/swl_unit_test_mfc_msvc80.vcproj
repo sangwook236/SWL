@@ -299,11 +299,31 @@
 					>
 				</File>
 				<File
+					RelativePath="..\testcase\util\LineROITest.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\testcase\util\PolygonROITest.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\testcase\util\PolylineROITest.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\testcase\util\RectangleROITest.cpp"
+					>
+				</File>
+				<File
 					RelativePath="..\testcase\util\RegionOfInterestMgrTest.cpp"
 					>
 				</File>
 				<File
 					RelativePath="..\testcase\util\RegionOfInterestTest.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\testcase\util\ROIWithVariablePointsTest.cpp"
 					>
 				</File>
 			</Filter>
@@ -357,6 +377,10 @@
 			</Filter>
 			<Filter
 				Name="rnd_base"
+				>
+			</Filter>
+			<Filter
+				Name="graphics"
 				>
 			</Filter>
 		</Filter>

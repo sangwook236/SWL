@@ -13,23 +13,19 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class GeometryPoolMgr
 
-/*static*/ GeometryPoolMgr *GeometryPoolMgr::singleton_ = NULL;
+/*static*/ boost::scoped_ptr<GeometryPoolMgr> GeometryPoolMgr::singleton_;
 
 /*static*/ GeometryPoolMgr & GeometryPoolMgr::getInstance()
 {
-	if (NULL == singleton_)
-		singleton_ = new GeometryPoolMgr();
+	if (!singleton_)
+		singleton_.reset(new GeometryPoolMgr());
 
 	return *singleton_;
 }
 
 /*static*/ void GeometryPoolMgr::clearInstance()
 {
-	if (singleton_)
-	{
-		delete singleton_;
-		singleton_ = NULL;
-	}
+	singleton_.reset();
 }
 
 GeometryPoolMgr::geometry_id_type GeometryPoolMgr::createGeometryId()

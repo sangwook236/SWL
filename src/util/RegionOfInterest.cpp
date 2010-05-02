@@ -54,48 +54,37 @@ RegionOfInterest & RegionOfInterest::operator=(const RegionOfInterest &rhs)
 	return *this;
 }
 
-bool RegionOfInterest::moveVertex(const point_type &pt1, const point_type &pt2, const real_type &vertexRadius)
-{
-	point_type *vertex = NULL;
-	if (getNearestVertex(pt1, vertexRadius, vertex) && vertex)
-	{
-		*vertex += pt2 - pt1;
-		return true;
-	}
-	else return false;
-}
-
-bool RegionOfInterest::moveVertex(const point_type &pt1, const point_type &pt2, const region_type &limitRegion, const real_type &vertexRadius)
-{
-	point_type *vertex = NULL;
-	if (getNearestVertex(pt1, vertexRadius, vertex) && vertex)
-	{
-		*vertex += getMovableDistance(*vertex, pt2 - pt1, limitRegion);
-		return true;
-	}
-	else return false;
-}
-
-bool RegionOfInterest::isNearPoint(const point_type &pt1, const point_type &pt2, const real_type &tol) const
+/*static*/ bool RegionOfInterest::isNearPoint(const point_type &pt1, const point_type &pt2, const real_type &tol)
 {
 	const point_type &delta = pt1 - pt2;
 	return std::fabs(delta.x) <= tol && std::fabs(delta.y) <= tol;
 }
 
-RegionOfInterest::point_type RegionOfInterest::getMovableDistance(const point_type &pt, const point_type &delta, const region_type &limitRegion) const
+/*static*/ RegionOfInterest::point_type RegionOfInterest::getMovableDistance(const point_type &pt, const point_type &delta, const region_type &limitRegion)
 {
 	return point_type(
 		(delta.x < 0) ?
-			(pt.x + delta.x >= limitRegion.left ? delta.x : limitRegion.left - pt.x) :
-			(pt.x + delta.x <= limitRegion.right ? delta.x : limitRegion.right - pt.x),
+			(pt.x <= limitRegion.left ? real_type(0) : (pt.x + delta.x >= limitRegion.left ? delta.x : limitRegion.left - pt.x)) :
+			(pt.x >= limitRegion.right ? real_type(0) : (pt.x + delta.x <= limitRegion.right ? delta.x : limitRegion.right - pt.x)),
 		(delta.y < 0) ?
-			(pt.y + delta.y >= limitRegion.bottom ? delta.y : limitRegion.bottom - pt.y) :
-			(pt.y + delta.y <= limitRegion.top ? delta.y : limitRegion.top - pt.y)
+			(pt.y <= limitRegion.bottom ? real_type(0) : (pt.y + delta.y >= limitRegion.bottom ? delta.y : limitRegion.bottom - pt.y)) :
+			(pt.y >= limitRegion.top ? real_type(0) : (pt.y + delta.y <= limitRegion.top ? delta.y : limitRegion.top - pt.y))
 	);
-
 }
 
-RegionOfInterest::real_type RegionOfInterest::getSquareDistance(const point_type &pt1, const point_type &pt2) const
+/*static*/ RegionOfInterest::point_type RegionOfInterest::getMovableDistance(const region_type &rgn, const point_type &delta, const region_type &limitRegion)
+{
+	return point_type(
+		(delta.x < 0) ?
+			(rgn.left <= limitRegion.left ? real_type(0) : (rgn.left + delta.x >= limitRegion.left ? delta.x : limitRegion.left - rgn.left)) :
+			(rgn.right >= limitRegion.right ? real_type(0) : (rgn.right + delta.x <= limitRegion.right ? delta.x : limitRegion.right - rgn.right)),
+		(delta.y < 0) ?
+			(rgn.bottom <= limitRegion.bottom ? real_type(0) : (rgn.bottom + delta.y >= limitRegion.bottom ? delta.y : limitRegion.bottom - rgn.bottom)) :
+			(rgn.top >= limitRegion.top ? real_type(0) : (rgn.top + delta.y <= limitRegion.top ? delta.y : limitRegion.top - rgn.top))
+	);
+}
+
+/*static*/ RegionOfInterest::real_type RegionOfInterest::getSquareDistance(const point_type &pt1, const point_type &pt2)
 {
 	return (pt2.x-pt1.x)*(pt2.x-pt1.x) + (pt2.y-pt1.y)*(pt2.y-pt1.y);
 }
@@ -130,26 +119,72 @@ LineROI & LineROI::operator=(const LineROI &rhs)
 	return *this;
 }
 
-void LineROI::moveRegion(const point_type &pt1, const point_type &pt2)
+RegionOfInterest * LineROI::clone() const
 {
-	const point_type &delta = pt2 - pt1;
+	return new LineROI(*this);
+}
 
+bool LineROI::moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol)
+{
+	const real_type &dist1 = getSquareDistance(pt, pt1_);
+	const real_type &dist2 = getSquareDistance(pt, pt2_);
+	if (dist1 <= dist2)
+	{
+		if (dist1 < vertexTol*vertexTol)
+		{
+			pt1_ += delta;
+			return true;
+		}
+		else return false;
+	}
+	else
+	{
+		if (dist2 < vertexTol*vertexTol)
+		{
+			pt2_ += delta;
+			return true;
+		}
+		else return false;
+	}
+}
+
+bool LineROI::moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol)
+{
+	const real_type &dist1 = getSquareDistance(pt, pt1_);
+	const real_type &dist2 = getSquareDistance(pt, pt2_);
+	if (dist1 <= dist2)
+	{
+		if (dist1 < vertexTol*vertexTol)
+		{
+			pt1_ += getMovableDistance(pt1_, delta, limitRegion);
+			return true;
+		}
+		else return false;
+	}
+	else
+	{
+		if (dist2 < vertexTol*vertexTol)
+		{
+			pt2_ += getMovableDistance(pt2_, delta, limitRegion);
+			return true;
+		}
+		else return false;
+	}
+}
+
+void LineROI::moveRegion(const point_type &delta)
+{
 	pt1_ += delta;
 	pt2_ += delta;
 }
 
-void LineROI::moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion)
+void LineROI::moveRegion(const point_type &delta, const region_type &limitRegion)
 {
-	const point_type &delta = pt2 - pt1;
+	// calculate the rectangular hull
 	const region_type rgn(pt1_, pt2_);
-	const point_type disp(
-		(delta.x < 0) ?
-			(rgn.left + delta.x >= limitRegion.left ? delta.x : limitRegion.left - rgn.left) :
-			(rgn.right + delta.x <= limitRegion.right ? delta.x : limitRegion.right - rgn.right),
-		(delta.y < 0) ?
-			(rgn.bottom + delta.y >= limitRegion.bottom ? delta.y : limitRegion.bottom - rgn.bottom) :
-			(rgn.top + delta.y <= limitRegion.top ? delta.y : limitRegion.top - rgn.top)
-	);
+
+	//
+	const point_type &disp = getMovableDistance(rgn, delta, limitRegion);
 
 	pt1_ += disp;
 	pt2_ += disp;
@@ -163,38 +198,6 @@ bool LineROI::isVertex(const point_type &pt, const real_type &radius) const
 bool LineROI::include(const point_type &pt, const real_type &tol) const
 {
 	return LineSegment2<real_type>(pt1_, pt2_).include(pt, tol);
-}
-
-bool LineROI::getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex)
-{
-	const real_type &dist1 = getSquareDistance(pt, pt1_);
-	const real_type &dist2 = getSquareDistance(pt, pt2_);
-	if (dist1 <= dist2)
-	{
-		if (dist1 < radius*radius)
-		{
-			vertex = &pt1_;
-			return true;
-		}
-		else
-		{
-			vertex = NULL;
-			return false;
-		}
-	}
-	else
-	{
-		if (dist2 < radius*radius)
-		{
-			vertex = &pt2_;
-			return true;
-		}
-		else
-		{
-			vertex = NULL;
-			return false;
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------------------
@@ -226,24 +229,106 @@ RectangleROI & RectangleROI::operator=(const RectangleROI &rhs)
 	return *this;
 }
 
-void RectangleROI::moveRegion(const point_type &pt1, const point_type &pt2)
+RegionOfInterest * RectangleROI::clone() const
 {
-	rect_ += pt2 - pt1;
+	return new RectangleROI(*this);
 }
 
-void RectangleROI::moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion)
+bool RectangleROI::moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol)
 {
-	const point_type &delta = pt2 - pt1;
-	const point_type disp(
-		(delta.x < 0) ?
-			(rect_.left + delta.x >= limitRegion.left ? delta.x : limitRegion.left - rect_.left) :
-			(rect_.right + delta.x <= limitRegion.right ? delta.x : limitRegion.right - rect_.right),
-		(delta.y < 0) ?
-			(rect_.bottom + delta.y >= limitRegion.bottom ? delta.y : limitRegion.bottom - rect_.bottom) :
-			(rect_.top + delta.y <= limitRegion.top ? delta.y : limitRegion.top - rect_.top)
-	);
+	const point_type pts[4] = {
+		point_type(rect_.left, rect_.bottom),
+		point_type(rect_.right, rect_.bottom),
+		point_type(rect_.right, rect_.top),
+		point_type(rect_.left, rect_.top)
+	};
 
-	rect_ += disp;
+	std::vector<real_type> dists;
+	dists.reserve(4);
+	for (int i = 0; i < 4; ++i)
+		dists.push_back(getSquareDistance(pts[i], pt));
+
+	std::vector<real_type>::iterator it = std::min_element(dists.begin(), dists.end());
+	if (*it < vertexTol*vertexTol)
+	{
+		const size_t idx = std::distance(dists.begin(), it);
+		switch (idx)
+		{
+		case 0:
+			rect_.left += delta.x;
+			rect_.bottom += delta.y;
+			return true;
+		case 1:
+			rect_.right += delta.x;
+			rect_.bottom += delta.y;
+			return true;
+		case 2:
+			rect_.right += delta.x;
+			rect_.top += delta.y;
+			return true;
+		case 3:
+			rect_.left += delta.x;
+			rect_.top += delta.y;
+			return true;
+		default:
+			return false;
+		}
+	}
+	else return false;
+}
+
+bool RectangleROI::moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol)
+{
+	const point_type pts[4] = {
+		point_type(rect_.left, rect_.bottom),
+		point_type(rect_.right, rect_.bottom),
+		point_type(rect_.right, rect_.top),
+		point_type(rect_.left, rect_.top)
+	};
+
+	std::vector<real_type> dists;
+	dists.reserve(4);
+	for (int i = 0; i < 4; ++i)
+		dists.push_back(getSquareDistance(pts[i], pt));
+
+	std::vector<real_type>::iterator it = std::min_element(dists.begin(), dists.end());
+	if (*it < vertexTol*vertexTol)
+	{
+		const size_t idx = std::distance(dists.begin(), it);
+		const point_type &disp = getMovableDistance(pts[idx], delta, limitRegion);
+		switch (idx)
+		{
+		case 0:
+			rect_.left += disp.x;
+			rect_.bottom += disp.y;
+			return true;
+		case 1:
+			rect_.right += disp.x;
+			rect_.bottom += disp.y;
+			return true;
+		case 2:
+			rect_.right += disp.x;
+			rect_.top += disp.y;
+			return true;
+		case 3:
+			rect_.left += disp.x;
+			rect_.top += disp.y;
+			return true;
+		default:
+			return false;
+		}
+	}
+	else return false;
+}
+
+void RectangleROI::moveRegion(const point_type &delta)
+{
+	rect_ += delta;
+}
+
+void RectangleROI::moveRegion(const point_type &delta, const region_type &limitRegion)
+{
+	rect_ += getMovableDistance(rect_, delta, limitRegion);
 }
 
 bool RectangleROI::isVertex(const point_type &pt, const real_type &radius) const
@@ -255,12 +340,6 @@ bool RectangleROI::isVertex(const point_type &pt, const real_type &radius) const
 bool RectangleROI::include(const point_type &pt, const real_type &tol) const
 {
 	return rect_.left-tol <= pt.x && pt.x <= rect_.right+tol && rect_.bottom-tol <= pt.y && pt.y <= rect_.top+tol;
-}
-
-bool RectangleROI::getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex)
-{
-	// TODO [add] >>
-	throw std::runtime_error("not yet implemented");
 }
 
 //-----------------------------------------------------------------------------------------
@@ -311,18 +390,77 @@ void ROIWithVariablePoints::removePoint(const point_type &point)
 	points_.remove_if(PrComparePoints(point));
 }
 
-void ROIWithVariablePoints::moveRegion(const point_type &pt1, const point_type &pt2)
+ROIWithVariablePoints::point_type ROIWithVariablePoints::getPoint(const size_t index) const
 {
-	const point_type &delta = pt2 - pt1;
+	points_type::const_iterator it = points_.begin();
+	std::advance(it, index);
+	if (points_.end() == it)
+		throw LogException(LogException::L_ERROR, "invalid index", __FILE__, __LINE__, __FUNCTION__);
+	else return *it;
+}
 
+bool ROIWithVariablePoints::moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol)
+{
+	std::list<real_type> dists;
+	for (points_type::iterator it = points_.begin(); it != points_.end(); ++it)
+		dists.push_back(getSquareDistance(*it, pt));
+
+	std::list<real_type>::iterator it = std::min_element(dists.begin(), dists.end());
+	if (*it < vertexTol*vertexTol)
+	{
+		const size_t idx = std::distance(dists.begin(), it);
+		points_type::iterator itVertex = points_.begin();
+		std::advance(itVertex, idx);
+		*itVertex += delta;
+		return true;
+	}
+	else return false;
+}
+
+bool ROIWithVariablePoints::moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol)
+{
+	std::list<real_type> dists;
+	for (points_type::iterator it = points_.begin(); it != points_.end(); ++it)
+		dists.push_back(getSquareDistance(*it, pt));
+
+	std::list<real_type>::iterator it = std::min_element(dists.begin(), dists.end());
+	if (*it < vertexTol*vertexTol)
+	{
+		const size_t idx = std::distance(dists.begin(), it);
+		points_type::iterator itVertex = points_.begin();
+		std::advance(itVertex, idx);
+		*itVertex += getMovableDistance(*itVertex, delta, limitRegion);
+		return true;
+	}
+	else return false;
+}
+
+void ROIWithVariablePoints::moveRegion(const point_type &delta)
+{
 	for (points_type::iterator it = points_.begin(); it != points_.end(); ++it)
 		*it += delta;
 }
 
-void ROIWithVariablePoints::moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion)
+void ROIWithVariablePoints::moveRegion(const point_type &delta, const region_type &limitRegion)
 {
-	// TODO [add] >>
-	throw std::runtime_error("not yet implemented");
+	if (points_.empty()) return;
+
+	// calculate the rectangular hull
+	points_type::iterator it = points_.begin();
+	region_type rgn(*it, *it);
+	++it;
+	for (; it != points_.end(); ++it)
+	{
+		if (it->x < rgn.left) rgn.left = it->x;
+		else if (it->x > rgn.right) rgn.right = it->x;
+		if (it->y < rgn.bottom) rgn.bottom = it->y;
+		else if (it->y > rgn.top) rgn.top = it->y;
+	}
+
+	//
+	const point_type &disp = getMovableDistance(rgn, delta, limitRegion);
+	for (points_type::iterator it = points_.begin(); it != points_.end(); ++it)
+		*it += disp;
 }
 
 bool ROIWithVariablePoints::isVertex(const point_type &pt, const real_type &radius) const
@@ -330,26 +468,6 @@ bool ROIWithVariablePoints::isVertex(const point_type &pt, const real_type &radi
 	for (points_type::const_iterator it = points_.begin(); it != points_.end(); ++it)
 		if (isNearPoint(*it, pt, radius)) return true;
 	return false;
-}
-
-bool ROIWithVariablePoints::getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex)
-{
-	vertex = NULL;
-
-	real_type minDist = std::numeric_limits<real_type>::max();
-	const real_type radius2 = radius * radius;
-	for (points_type::iterator it = points_.begin(); it != points_.end(); ++it)
-	{
-		const real_type &dist = getSquareDistance(*it, pt);
-		if (dist < radius2 && dist < minDist)
-		{
-			// TODO [check] >>
-			vertex = &(*it);
-			minDist = dist;
-		}
-	}
-
-	return NULL != vertex;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -389,24 +507,25 @@ PolylineROI & PolylineROI::operator=(const PolylineROI &rhs)
 	return *this;
 }
 
+RegionOfInterest * PolylineROI::clone() const
+{
+	return new PolylineROI(*this);
+}
+
 bool PolylineROI::include(const point_type &pt, const real_type &tol) const
 {
-	if (points_.size() < 3) return false;
+	points_type::const_iterator itPrev = points_.begin();
+	points_type::const_iterator it = itPrev;
+	++it;
+	if (points_.end() == itPrev || points_.end() == it) return false;
 
-	boost::geometry::polygon_2d poly;
-	boost::geometry::ring_type<boost::geometry::polygon_2d>::type &ring = exterior_ring(poly);
-	for (points_type::const_iterator it = points_.begin(); it != points_.end(); ++it)
-		append(ring, boost::geometry::make<boost::geometry::point_2d>(it->x, it->y));
-	// TODO [check] >>
-	append(ring, boost::geometry::make<boost::geometry::point_2d>(points_.front().x, points_.front().y));
+	for (; it != points_.end(); ++it)
+	{
+		if (LineSegment2<real_type>(*itPrev, *it).include(pt, tol)) return true;
+		itPrev = it;
+	}
 
-	// TODO [check] >>
-	correct(poly);
-
-	boost::geometry::polygon_2d hull;
-	convex_hull(poly, hull);
-
-	return within(boost::geometry::make<boost::geometry::point_2d>(pt.x, pt.y), hull);
+	return false;
 }
 
 //-----------------------------------------------------------------------------------------
@@ -446,19 +565,28 @@ PolygonROI & PolygonROI::operator=(const PolygonROI &rhs)
 	return *this;
 }
 
-bool PolygonROI::include(const point_type &pt, const real_type &tol) const
+RegionOfInterest * PolygonROI::clone() const
 {
-	points_type::const_iterator itPrev = points_.begin();
-	points_type::const_iterator it = itPrev;
-	++it;
-	if (points_.end() == itPrev || points_.end() == it) return false;
+	return new PolygonROI(*this);
+}
 
-	for (; it != points_.end(); ++it)
-	{
-		if (LineSegment2<real_type>(*itPrev, *it).include(pt, tol)) return true;
-		itPrev = it;
-	}
-	return false;
+bool PolygonROI::include(const point_type &pt, const real_type & /*tol*/) const
+{
+	if (points_.size() < 3) return false;
+
+	boost::geometry::polygon_2d poly;
+	boost::geometry::ring_type<boost::geometry::polygon_2d>::type &ring = exterior_ring(poly);
+	for (points_type::const_iterator it = points_.begin(); it != points_.end(); ++it)
+		append(ring, boost::geometry::make<boost::geometry::point_2d>(it->x, it->y));
+	append(ring, boost::geometry::make<boost::geometry::point_2d>(points_.front().x, points_.front().y));
+
+	// TODO [check] >>
+	correct(poly);
+
+	boost::geometry::polygon_2d hull;
+	convex_hull(poly, hull);
+
+	return within(boost::geometry::make<boost::geometry::point_2d>(pt.x, pt.y), hull);  // not boundary point, but internal point
 }
 
 }  // namespace swl

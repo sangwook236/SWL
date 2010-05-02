@@ -3,6 +3,7 @@
 
 
 #include "swl/winutil/ExportWinUtil.h"
+#include <boost/smart_ptr.hpp>
 
 namespace swl {
 
@@ -18,6 +19,7 @@ public:
 
 public:
 	static WinConsoleWindow & getInstance();
+	static void clearInstance();
 
 	static void initialize();
 	static void finalize();
@@ -25,6 +27,8 @@ public:
 	bool isValid() const  {  return isValid_;  }
 
 private:
+	static boost::scoped_ptr<WinConsoleWindow> singleton_;
+
 	bool isValid_;
 };
 

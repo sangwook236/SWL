@@ -5,6 +5,7 @@
 #include "swl/winview/ExportWinView.h"
 #include "swl/glutil/GLDisplayListCallableInterface.h"
 #include "swl/graphics/GraphicsObj.h"
+#include <boost/smart_ptr.hpp>
 #include <string>
 #if defined(WIN32)
 #include <windows.h>
@@ -78,7 +79,7 @@ private:
 #endif
 
 private:
-	static WglFont *singleton_;
+	static boost::scoped_ptr<WglFont> singleton_;
 
 	HDC hDC_;
 

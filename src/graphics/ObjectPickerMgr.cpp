@@ -13,23 +13,19 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // class ObjectPickerMgr
 
-/*static*/ ObjectPickerMgr *ObjectPickerMgr::singleton_ = NULL;
+/*static*/ boost::scoped_ptr<ObjectPickerMgr> ObjectPickerMgr::singleton_;
 
 /*static*/ ObjectPickerMgr & ObjectPickerMgr::getInstance()
 {
-	if (NULL == singleton_)
-		singleton_ = new ObjectPickerMgr();
+	if (!singleton_)
+		singleton_.reset(new ObjectPickerMgr());
 
 	return *singleton_;
 }
 
 /*static*/ void ObjectPickerMgr::clearInstance()
 {
-	if (singleton_)
-	{
-		delete singleton_;
-		singleton_ = NULL;
-	}
+	singleton_.reset();
 }
 
 }  // namespace swl

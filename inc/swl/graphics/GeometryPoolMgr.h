@@ -46,7 +46,7 @@ public:
 	const geometry_type getGeometry(const geometry_id_type &geomId) const;
 
 private:
-	static GeometryPoolMgr *singleton_;
+	static boost::scoped_ptr<GeometryPoolMgr> singleton_;
 
 	geometry_pool_type geometryPool_;
 };

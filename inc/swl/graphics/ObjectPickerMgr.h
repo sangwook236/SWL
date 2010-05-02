@@ -4,6 +4,7 @@
 
 #include "swl/graphics/ExportGraphics.h"
 #include "swl/graphics/Color.h"
+#include <boost/smart_ptr.hpp>
 #include <set>
 
 
@@ -79,7 +80,7 @@ public:
 	const color_type & getTemporarilyPickedColor() const  {  return temporarilyPickedColor_;  }
 
 private:
-	static ObjectPickerMgr *singleton_;
+	static boost::scoped_ptr<ObjectPickerMgr> singleton_;
 
 	picked_objects_type pickedObjectIds_;
 	picked_objects_type temporarilyPickedObjectIds_;

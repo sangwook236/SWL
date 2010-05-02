@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/util/RegionOfInterestMgr.h"
+#include "swl/base/LogException.h"
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -28,35 +29,55 @@ namespace swl {
 	singleton_.reset();
 }
 
-void RegionOfInterestMgr::addROI(roi_type &roi)
+void RegionOfInterestMgr::addROI(const roi_type &roi)
 {
-	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	ROIs_.push_back(boost::shared_ptr<roi_type>(roi.clone()));
 }
 
 void RegionOfInterestMgr::removeROI(const roi_id_type &id)
 {
 	rois_type::iterator it = ROIs_.begin();
 	std::advance(it, id);
-	ROIs_.erase(it);
+	// TODO [check] >>
+	if (ROIs_.end() != it) ROIs_.erase(it);
 }
 
 RegionOfInterestMgr::roi_type & RegionOfInterestMgr::getROI(const roi_id_type &id)
 {
-	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	rois_type::iterator it = ROIs_.begin();
+	std::advance(it, id);
+
+	// TODO [check] >>
+	if (ROIs_.end() != it && *it) return *(it->get());
+	else
+		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
 }
 
 const RegionOfInterestMgr::roi_type & RegionOfInterestMgr::getROI(const roi_id_type &id) const
 {
-	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	rois_type::const_iterator it = ROIs_.begin();
+	std::advance(it, id);
+
+	// TODO [check] >>
+	if (ROIs_.end() != it && *it) return *(it->get());
+	else
+		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
+}
+
+void RegionOfInterestMgr::setValidRegion(const region_type &validRegion)
+{
+	validRegion_.reset(new region_type(validRegion));
+}
+
+void RegionOfInterestMgr::resetValidRegion()
+{
+	validRegion_.reset();
 }
 
 bool RegionOfInterestMgr::isInValidRegion(const point_type &pt) const
 {
 	const point_type::value_type &tol = point_type::value_type(1.0e-5);
-	return validRegion_.isIncluded(pt, tol);
+	return !validRegion_ ? true : validRegion_->isIncluded(pt, tol);
 }
 
 }  // namespace swl

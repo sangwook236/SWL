@@ -31,8 +31,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 // class WglFont
 
-/*static*/ WglFont *WglFont::singleton_ = NULL;
-
+/*static*/ boost::scoped_ptr<WglFont> WglFont::singleton_;
 
 WglFont::WglFont()
 : base_type(true, false),
@@ -53,19 +52,15 @@ WglFont::~WglFont()
 
 /*static*/ WglFont & WglFont::getInstance()
 {
-	if (NULL == singleton_)
-		singleton_ = new WglFont();
+	if (!singleton_)
+		singleton_.reset(new WglFont());
 
 	return *singleton_;
 }
 
 /*static*/ void WglFont::clearInstance()
 {
-	if (singleton_)
-	{
-		delete singleton_;
-		singleton_ = NULL;
-	}
+	singleton_.reset();
 }
 
 bool WglFont::createDisplayList()

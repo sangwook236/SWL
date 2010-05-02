@@ -37,10 +37,13 @@ public:
 	RegionOfInterest & operator=(const RegionOfInterest &rhs);
 
 public:
-	bool moveVertex(const point_type &pt1, const point_type &pt2, const real_type &vertexRadius);
-	bool moveVertex(const point_type &pt1, const point_type &pt2, const region_type &limitRegion, const real_type &vertexRadius);
-	virtual void moveRegion(const point_type &pt1, const point_type &pt2) = 0;
-	virtual void moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion) = 0;
+	virtual RegionOfInterest * clone() const = 0;
+
+	//
+	virtual bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol) = 0;
+	virtual bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol) = 0;
+	virtual void moveRegion(const point_type &delta) = 0;
+	virtual void moveRegion(const point_type &delta, const region_type &limitRegion) = 0;
 
 	virtual bool isVertex(const point_type &pt, const real_type &radius) const = 0;
 	virtual bool include(const point_type &pt, const real_type &tol) const = 0;
@@ -61,12 +64,11 @@ public:
 #endif
 
 protected:
-	virtual bool getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex) = 0;
+	static bool isNearPoint(const point_type &pt1, const point_type &pt2, const real_type &tol);
+	static point_type getMovableDistance(const point_type &pt, const point_type &delta, const region_type &limitRegion);
+	static point_type getMovableDistance(const region_type &rgn, const point_type &delta, const region_type &limitRegion);
 
-	bool isNearPoint(const point_type &pt1, const point_type &pt2, const real_type &tol) const;
-	point_type getMovableDistance(const point_type &pt, const point_type &delta, const region_type &limitRegion) const;
-
-	real_type getSquareDistance(const point_type &pt1, const point_type &pt2) const;
+	static real_type getSquareDistance(const point_type &pt1, const point_type &pt2);
 
 protected:
 	struct PrComparePoints
@@ -110,14 +112,21 @@ public:
 
 	LineROI & operator=(const LineROI &rhs);
 
-private:
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2);
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion);
+public:
+	point_type point1() const  {  return pt1_;  }
+	point_type point2() const  {  return pt2_;  }
+
+	//
+	/*virtual*/ RegionOfInterest * clone() const;
+
+	//
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol);
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol);
+	/*virtual*/ void moveRegion(const point_type &delta);
+	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
 	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
-
-	/*virtual*/ bool getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex);
 
 private:
 	point_type pt1_, pt2_;
@@ -142,14 +151,21 @@ public:
 
 	RectangleROI & operator=(const RectangleROI &rhs);
 
-private:
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2);
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion);
+public:
+	point_type point1() const  {  return point_type(rect_.left, rect_.bottom);  }
+	point_type point2() const  {  return point_type(rect_.right, rect_.top);  }
+
+	//
+	/*virtual*/ RegionOfInterest * clone() const;
+
+	//
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol);
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol);
+	/*virtual*/ void moveRegion(const point_type &delta);
+	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
 	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
-
-	/*virtual*/ bool getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex);
 
 private:
 	region_type rect_;
@@ -184,13 +200,15 @@ public:
 	size_t countPoint() const  {  return points_.size();  }
 	bool containPoint() const  {  return !points_.empty();  }
 
-private:
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2);
-	/*virtual*/ void moveRegion(const point_type &pt1, const point_type &pt2, const region_type &limitRegion);
+	point_type getPoint(const size_t index) const;
+
+	//
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol);
+	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol);
+	/*virtual*/ void moveRegion(const point_type &delta);
+	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
 	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
-
-	/*virtual*/ bool getNearestVertex(const point_type &pt, const real_type &radius, point_type *&vertex);
 
 protected:
 	points_type points_;
@@ -217,7 +235,10 @@ public:
 
 	PolylineROI & operator=(const PolylineROI &rhs);
 
-private:
+public:
+	/*virtual*/ RegionOfInterest * clone() const;
+
+	//
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
 };
 
@@ -242,8 +263,11 @@ public:
 
 	PolygonROI & operator=(const PolygonROI &rhs);
 
-private:
-	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
+public:
+	/*virtual*/ RegionOfInterest * clone() const;
+
+	//
+	/*virtual*/ bool include(const point_type &pt, const real_type & /*tol*/) const;
 };
 
 }  // namespace swl
