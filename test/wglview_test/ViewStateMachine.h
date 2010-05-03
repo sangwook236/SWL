@@ -432,7 +432,7 @@ struct HandleLineROIState: public IViewEventHandler, public boost::statechart::s
 {
 public:
 	typedef boost::mpl::list<
-		boost::statechart::transition<EvtHandleRectangleROI, HandleLineROIState>,
+		boost::statechart::transition<EvtHandleRectangleROI, HandleRectangleROIState>,
 		boost::statechart::transition<EvtHandlePolylineROI, HandlePolylineROIState>,
 		boost::statechart::transition<EvtHandlePolygonROI, HandlePolygonROIState>
 	> reactions;
@@ -499,6 +499,7 @@ private:
 
 private:
 	bool isDragging_;
+	bool isJustPressed_;
 	int initX_, initY_;
 	int prevX_, prevY_;
 };

@@ -122,6 +122,14 @@ RegionOfInterest * LineROI::clone() const
 	return new LineROI(*this);
 }
 
+LineROI::points_type LineROI::points() const
+{
+	points_type points;
+	points.push_back(pt1_);
+	points.push_back(pt2_);
+	return points;
+}
+
 bool LineROI::moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol)
 {
 	const real_type &dist1 = getSquareDistance(pt, pt1_);
@@ -230,6 +238,17 @@ RectangleROI & RectangleROI::operator=(const RectangleROI &rhs)
 RegionOfInterest * RectangleROI::clone() const
 {
 	return new RectangleROI(*this);
+}
+
+RectangleROI::points_type RectangleROI::points() const
+{
+	points_type points;
+	points.push_back(point_type(rect_.left, rect_.bottom));
+	points.push_back(point_type(rect_.right, rect_.bottom));
+	points.push_back(point_type(rect_.right, rect_.top));
+	points.push_back(point_type(rect_.left, rect_.top));
+	points.push_back(point_type(rect_.left, rect_.bottom));
+	return points;
 }
 
 bool RectangleROI::moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol)
@@ -510,6 +529,11 @@ RegionOfInterest * PolylineROI::clone() const
 	return new PolylineROI(*this);
 }
 
+PolylineROI::points_type PolylineROI::points() const
+{
+	return points_;
+}
+
 bool PolylineROI::include(const point_type &pt, const real_type &tol) const
 {
 	points_type::const_iterator itPrev = points_.begin();
@@ -566,6 +590,17 @@ PolygonROI & PolygonROI::operator=(const PolygonROI &rhs)
 RegionOfInterest * PolygonROI::clone() const
 {
 	return new PolygonROI(*this);
+}
+
+PolygonROI::points_type PolygonROI::points() const
+{
+	if (points_.empty()) return points_;
+	else
+	{
+		points_type pts(points_);
+		pts.push_back(points_.front());
+		return pts;
+	}
 }
 
 bool PolygonROI::include(const point_type &pt, const real_type &tol) const

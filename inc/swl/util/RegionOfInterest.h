@@ -39,6 +39,8 @@ public:
 public:
 	virtual RegionOfInterest * clone() const = 0;
 
+	virtual points_type points() const = 0;
+
 	//
 	virtual bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol) = 0;
 	virtual bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol) = 0;
@@ -119,6 +121,8 @@ public:
 	//
 	/*virtual*/ RegionOfInterest * clone() const;
 
+	/*virtual*/ points_type points() const;
+
 	//
 	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol);
 	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const region_type &limitRegion, const real_type &vertexTol);
@@ -157,6 +161,8 @@ public:
 
 	//
 	/*virtual*/ RegionOfInterest * clone() const;
+
+	/*virtual*/ points_type points() const;
 
 	//
 	/*virtual*/ bool moveVertex(const point_type &pt, const point_type &delta, const real_type &vertexTol);
@@ -238,6 +244,8 @@ public:
 public:
 	/*virtual*/ RegionOfInterest * clone() const;
 
+	/*virtual*/ points_type points() const;
+
 	//
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
 };
@@ -265,6 +273,8 @@ public:
 
 public:
 	/*virtual*/ RegionOfInterest * clone() const;
+
+	/*virtual*/ points_type points() const;
 
 	//
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
