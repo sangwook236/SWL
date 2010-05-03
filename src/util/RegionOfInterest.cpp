@@ -1,11 +1,9 @@
 #include "swl/Config.h"
 #include "swl/util/RegionOfInterest.h"
 #include "swl/math/LineSegment.h"
-#include <boost/geometry/geometry.hpp>
-#include <boost/geometry/geometries/cartesian2d.hpp>
-#include <boost/geometry/geometries/adapted/tuple_cartesian.hpp>
-#include <boost/geometry/geometries/adapted/c_array_cartesian.hpp>
-#include <boost/geometry/geometries/adapted/std_as_linestring.hpp>
+#include "swl/math/GeometryUtil.h"
+#include <vector>
+#include <algorithm>
 #include <cmath>
 
 
@@ -570,23 +568,10 @@ RegionOfInterest * PolygonROI::clone() const
 	return new PolygonROI(*this);
 }
 
-bool PolygonROI::include(const point_type &pt, const real_type & /*tol*/) const
+bool PolygonROI::include(const point_type &pt, const real_type &tol) const
 {
 	if (points_.size() < 3) return false;
-
-	boost::geometry::polygon_2d poly;
-	boost::geometry::ring_type<boost::geometry::polygon_2d>::type &ring = exterior_ring(poly);
-	for (points_type::const_iterator it = points_.begin(); it != points_.end(); ++it)
-		append(ring, boost::geometry::make<boost::geometry::point_2d>(it->x, it->y));
-	append(ring, boost::geometry::make<boost::geometry::point_2d>(points_.front().x, points_.front().y));
-
-	// TODO [check] >>
-	correct(poly);
-
-	boost::geometry::polygon_2d hull;
-	convex_hull(poly, hull);
-
-	return within(boost::geometry::make<boost::geometry::point_2d>(pt.x, pt.y), hull);  // not boundary point, but internal point
+	return GeometryUtil::within(pt, points_, tol);
 }
 
 }  // namespace swl

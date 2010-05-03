@@ -185,7 +185,15 @@
 			UniqueIdentifier="{4C7AA9CB-17C2-4b39-ACE5-7A1DDF1E4CE1}"
 			>
 			<File
+				RelativePath=".\ConvexHull.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Coordinates.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GeometryUtil.cpp"
 				>
 			</File>
 			<File
@@ -223,6 +231,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ConvexHull.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\math\Coordinates.h"
 				>
 			</File>
@@ -232,6 +244,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\math\ExportMath.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\math\GeometryUtil.h"
 				>
 			</File>
 			<File

@@ -267,7 +267,7 @@ public:
 	/*virtual*/ RegionOfInterest * clone() const;
 
 	//
-	/*virtual*/ bool include(const point_type &pt, const real_type & /*tol*/) const;
+	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
 };
 
 }  // namespace swl
