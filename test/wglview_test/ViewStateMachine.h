@@ -49,10 +49,11 @@ struct EvtZoomOut: public boost::statechart::event<EvtZoomOut> {};
 struct EvtPickObject: public boost::statechart::event<EvtPickObject> {};
 struct EvtPickAndDragObject: public boost::statechart::event<EvtPickAndDragObject> {};
 struct EvtHandleROI: public boost::statechart::event<EvtHandleROI> {};
-struct EvtHandleLineROI: public boost::statechart::event<EvtHandleLineROI> {};
-struct EvtHandleRectangleROI: public boost::statechart::event<EvtHandleRectangleROI> {};
-struct EvtHandlePolylineROI: public boost::statechart::event<EvtHandlePolylineROI> {};
-struct EvtHandlePolygonROI: public boost::statechart::event<EvtHandlePolygonROI> {};
+struct EvtManipulateROI: public boost::statechart::event<EvtManipulateROI> {};
+struct EvtCreateLineROI: public boost::statechart::event<EvtCreateLineROI> {};
+struct EvtCreateRectangleROI: public boost::statechart::event<EvtCreateRectangleROI> {};
+struct EvtCreatePolylineROI: public boost::statechart::event<EvtCreatePolylineROI> {};
+struct EvtCreatePolygonROI: public boost::statechart::event<EvtCreatePolygonROI> {};
 struct EvtBackToPreviousState: public boost::statechart::event<EvtBackToPreviousState> {};
 
 //-----------------------------------------------------------------------------------
@@ -73,10 +74,11 @@ struct PickObjectState;
 struct PickAndDragObjectState;
 
 // sub-states in HandleROIState
-struct HandleLineROIState;
-struct HandleRectangleROIState;
-struct HandlePolylineROIState;
-struct HandlePolygonROIState;
+struct ManipulateROIState;
+struct CreateLineROIState;
+struct CreateRectangleROIState;
+struct CreatePolylineROIState;
+struct CreatePolygonROIState;
 
 //-----------------------------------------------------------------------------------
 // 
@@ -417,7 +419,7 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct HandleROIState: public boost::statechart::simple_state<HandleROIState, ViewStateMachine, HandleRectangleROIState>
+struct HandleROIState: public boost::statechart::simple_state<HandleROIState, ViewStateMachine, ManipulateROIState>
 {
 public:
 	typedef boost::mpl::list<
@@ -428,18 +430,19 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-struct HandleLineROIState: public IViewEventHandler, public boost::statechart::simple_state<HandleLineROIState, HandleROIState>
+struct ManipulateROIState: public IViewEventHandler, public boost::statechart::simple_state<ManipulateROIState, HandleROIState>
 {
 public:
 	typedef boost::mpl::list<
-		boost::statechart::transition<EvtHandleRectangleROI, HandleRectangleROIState>,
-		boost::statechart::transition<EvtHandlePolylineROI, HandlePolylineROIState>,
-		boost::statechart::transition<EvtHandlePolygonROI, HandlePolygonROIState>
+		boost::statechart::transition<EvtCreateLineROI, CreateLineROIState>,
+		boost::statechart::transition<EvtCreateRectangleROI, CreateRectangleROIState>,
+		boost::statechart::transition<EvtCreatePolylineROI, CreatePolylineROIState>,
+		boost::statechart::transition<EvtCreatePolygonROI, CreatePolygonROIState>
 	> reactions;
 
 public:
-	HandleLineROIState();
-	~HandleLineROIState();
+	ManipulateROIState();
+	~ManipulateROIState();
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt);
@@ -467,18 +470,59 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct HandleRectangleROIState: public IViewEventHandler, public boost::statechart::simple_state<HandleRectangleROIState, HandleROIState>
+struct CreateLineROIState: public IViewEventHandler, public boost::statechart::simple_state<CreateLineROIState, HandleROIState>
 {
 public:
 	typedef boost::mpl::list<
-		boost::statechart::transition<EvtHandleLineROI, HandleLineROIState>,
-		boost::statechart::transition<EvtHandlePolylineROI, HandlePolylineROIState>,
-		boost::statechart::transition<EvtHandlePolygonROI, HandlePolygonROIState>
+		boost::statechart::transition<EvtManipulateROI, ManipulateROIState>,
+		boost::statechart::transition<EvtCreateRectangleROI, CreateRectangleROIState>,
+		boost::statechart::transition<EvtCreatePolylineROI, CreatePolylineROIState>,
+		boost::statechart::transition<EvtCreatePolygonROI, CreatePolygonROIState>
 	> reactions;
 
 public:
-	HandleRectangleROIState();
-	~HandleRectangleROIState();
+	CreateLineROIState();
+	~CreateLineROIState();
+
+public:
+	/*virtual*/ void pressMouse(const MouseEvent &evt);
+	/*virtual*/ void releaseMouse(const MouseEvent &evt);
+	/*virtual*/ void moveMouse(const MouseEvent &evt);
+	/*virtual*/ void wheelMouse(const MouseEvent &evt)  {}
+
+	/*virtual*/ void clickMouse(const MouseEvent &evt)  {}
+	/*virtual*/ void doubleClickMouse(const MouseEvent &evt)  {}
+
+	/*virtual*/ void pressKey(const KeyEvent &evt)  {}
+	/*virtual*/ void releaseKey(const KeyEvent &evt)  {}
+
+	/*virtual*/ void hitKey(const KeyEvent &evt)  {}
+
+private:
+	typedef LineROI roi_type;
+
+private:
+	bool isDragging_;
+	int initX_, initY_;
+	int prevX_, prevY_;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+struct CreateRectangleROIState: public IViewEventHandler, public boost::statechart::simple_state<CreateRectangleROIState, HandleROIState>
+{
+public:
+	typedef boost::mpl::list<
+		boost::statechart::transition<EvtManipulateROI, ManipulateROIState>,
+		boost::statechart::transition<EvtCreateLineROI, CreateLineROIState>,
+		boost::statechart::transition<EvtCreatePolylineROI, CreatePolylineROIState>,
+		boost::statechart::transition<EvtCreatePolygonROI, CreatePolygonROIState>
+	> reactions;
+
+public:
+	CreateRectangleROIState();
+	~CreateRectangleROIState();
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt);
@@ -507,18 +551,19 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct HandlePolylineROIState: public IViewEventHandler, public boost::statechart::simple_state<HandlePolylineROIState, HandleROIState>
+struct CreatePolylineROIState: public IViewEventHandler, public boost::statechart::simple_state<CreatePolylineROIState, HandleROIState>
 {
 public:
 	typedef boost::mpl::list<
-		boost::statechart::transition<EvtHandleLineROI, HandleLineROIState>,
-		boost::statechart::transition<EvtHandleRectangleROI, HandleRectangleROIState>,
-		boost::statechart::transition<EvtHandlePolygonROI, HandlePolygonROIState>
+		boost::statechart::transition<EvtManipulateROI, ManipulateROIState>,
+		boost::statechart::transition<EvtCreateLineROI, CreateLineROIState>,
+		boost::statechart::transition<EvtCreateRectangleROI, CreateRectangleROIState>,
+		boost::statechart::transition<EvtCreatePolygonROI, CreatePolygonROIState>
 	> reactions;
 
 public:
-	HandlePolylineROIState();
-	~HandlePolylineROIState();
+	CreatePolylineROIState();
+	~CreatePolylineROIState();
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt)  {}
@@ -548,18 +593,19 @@ private:
 //-----------------------------------------------------------------------------
 //
 
-struct HandlePolygonROIState: public IViewEventHandler, public boost::statechart::simple_state<HandlePolygonROIState, HandleROIState>
+struct CreatePolygonROIState: public IViewEventHandler, public boost::statechart::simple_state<CreatePolygonROIState, HandleROIState>
 {
 public:
 	typedef boost::mpl::list<
-		boost::statechart::transition<EvtHandleLineROI, HandleLineROIState>,
-		boost::statechart::transition<EvtHandleRectangleROI, HandleRectangleROIState>,
-		boost::statechart::transition<EvtHandlePolylineROI, HandlePolylineROIState>
+		boost::statechart::transition<EvtManipulateROI, ManipulateROIState>,
+		boost::statechart::transition<EvtCreateLineROI, CreateLineROIState>,
+		boost::statechart::transition<EvtCreateRectangleROI, CreateRectangleROIState>,
+		boost::statechart::transition<EvtCreatePolylineROI, CreatePolylineROIState>
 	> reactions;
 
 public:
-	HandlePolygonROIState();
-	~HandlePolygonROIState();
+	CreatePolygonROIState();
+	~CreatePolygonROIState();
 
 public:
 	/*virtual*/ void pressMouse(const MouseEvent &evt)  {}

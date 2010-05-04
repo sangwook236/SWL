@@ -841,16 +841,114 @@ void PickAndDragObjectState::moveMouse(const MouseEvent &evt)
 //-----------------------------------------------------------------------------------
 // 
 
-HandleLineROIState::HandleLineROIState()
+ManipulateROIState::ManipulateROIState()
 : isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
 }
 
-HandleLineROIState::~HandleLineROIState()
+ManipulateROIState::~ManipulateROIState()
 {
 }
 
-void HandleLineROIState::pressMouse(const MouseEvent &evt)
+void ManipulateROIState::pressMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+
+	try
+	{
+		if (RegionOfInterestMgr::getInstance().pickROI(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+		{
+			isDragging_ = true;
+			initX_ = prevX_ = evt.x;
+			initY_ = prevY_ = evt.y;
+		}
+	}
+	catch (const std::bad_cast &)
+	{std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void ManipulateROIState::releaseMouse(const MouseEvent &evt)
+{
+	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
+	if (!isDragging_) return;
+
+	isDragging_ = false;
+	if (!RegionOfInterestMgr::getInstance().getPickedROI()) return;
+
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+
+		const roi_type::point_type delta(roi_type::real_type(evt.x - initX_), roi_type::real_type(evt.y - initY_));
+		RegionOfInterestMgr::getInstance().isVertexPicked() ?
+			RegionOfInterestMgr::getInstance().moveVertexInPickedROI(roi_type::point_type((roi_type::real_type)initX_, (roi_type::real_type)initY_), delta) :
+			RegionOfInterestMgr::getInstance().movePickedROI(delta);
+		view.raiseDrawEvent(false);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+}
+
+void ManipulateROIState::moveMouse(const MouseEvent &evt)
+{
+	if (isDragging_)
+	{
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			drawLineRubberBand(view, initX_, initY_, prevX_, prevY_, evt.x, evt.y, true, true);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+
+		prevX_ = evt.x;
+		prevY_ = evt.y;
+	}
+	else
+	{
+		try
+		{
+			ViewStateMachine &fsm = context<ViewStateMachine>();
+			IView &view = fsm.getView();
+
+			const RegionOfInterestMgr::roi_type *prevPickedROI = RegionOfInterestMgr::getInstance().getPickedROI();
+			const bool prevIsVertex = RegionOfInterestMgr::getInstance().isVertexPicked();
+			if (RegionOfInterestMgr::getInstance().pickROI(roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y)))
+			{
+				const RegionOfInterestMgr::roi_type *pickedROI = RegionOfInterestMgr::getInstance().getPickedROI();
+				const bool isVertex = RegionOfInterestMgr::getInstance().isVertexPicked();
+				if (prevPickedROI != pickedROI || prevIsVertex != isVertex) view.raiseDrawEvent(false);
+			}
+			else if (prevPickedROI) view.raiseDrawEvent(false);
+		}
+		catch (const std::bad_cast &)
+		{
+			std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------------
+// 
+
+CreateLineROIState::CreateLineROIState()
+: isDragging_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
+{
+}
+
+CreateLineROIState::~CreateLineROIState()
+{
+}
+
+void CreateLineROIState::pressMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 
@@ -878,12 +976,13 @@ void HandleLineROIState::pressMouse(const MouseEvent &evt)
 	}
 }
 
-void HandleLineROIState::releaseMouse(const MouseEvent &evt)
+void CreateLineROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 	if (!isDragging_) return;
 
 	isDragging_ = false;
+	if (evt.x == initX_ && evt.y == initY_) return;
 
 	try
 	{
@@ -897,8 +996,7 @@ void HandleLineROIState::releaseMouse(const MouseEvent &evt)
 			roi_type roi(
 				roi_type::point_type((roi_type::real_type)initX_, (roi_type::real_type)initY_),
 				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
-				// TODO [fix] >> color
-				true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f)
+				true, RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getLineWidth()
 			);
 			RegionOfInterestMgr::getInstance().addROI(roi);
 			view.raiseDrawEvent(false);
@@ -915,7 +1013,7 @@ void HandleLineROIState::releaseMouse(const MouseEvent &evt)
 	}
 }
 
-void HandleLineROIState::moveMouse(const MouseEvent &evt)
+void CreateLineROIState::moveMouse(const MouseEvent &evt)
 {
 	if (!isDragging_) return;
 
@@ -938,16 +1036,16 @@ void HandleLineROIState::moveMouse(const MouseEvent &evt)
 //-----------------------------------------------------------------------------------
 // 
 
-HandleRectangleROIState::HandleRectangleROIState()
+CreateRectangleROIState::CreateRectangleROIState()
 : isDragging_(false), isJustPressed_(false), initX_(0), initY_(0), prevX_(0), prevY_(0)
 {
 }
 
-HandleRectangleROIState::~HandleRectangleROIState()
+CreateRectangleROIState::~CreateRectangleROIState()
 {
 }
 
-void HandleRectangleROIState::pressMouse(const MouseEvent &evt)
+void CreateRectangleROIState::pressMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 
@@ -976,7 +1074,7 @@ void HandleRectangleROIState::pressMouse(const MouseEvent &evt)
 	}
 }
 
-void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
+void CreateRectangleROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) != swl::MouseEvent::BT_LEFT) return;
 	if (!isDragging_) return;
@@ -984,6 +1082,7 @@ void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
 	const bool isJustPressed = isJustPressed_;
 	isDragging_ = false;
 	isJustPressed_ = false;
+	if (evt.x == initX_ && evt.y == initY_) return;
 
 	try
 	{
@@ -997,8 +1096,7 @@ void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
 			roi_type roi(roi_type::point_type(
 				(roi_type::real_type)initX_, (roi_type::real_type)initY_),
 				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
-				// TODO [fix] >> color
-				true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f)
+				true, RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getLineWidth()
 			);
 			RegionOfInterestMgr::getInstance().addROI(roi);
 			view.raiseDrawEvent(false);
@@ -1015,7 +1113,7 @@ void HandleRectangleROIState::releaseMouse(const MouseEvent &evt)
 	}
 }
 
-void HandleRectangleROIState::moveMouse(const MouseEvent &evt)
+void CreateRectangleROIState::moveMouse(const MouseEvent &evt)
 {
 	if (!isDragging_) return;
 
@@ -1039,17 +1137,16 @@ void HandleRectangleROIState::moveMouse(const MouseEvent &evt)
 //-----------------------------------------------------------------------------------
 // 
 
-HandlePolylineROIState::HandlePolylineROIState()
-// TODO [fix] >> color
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
+CreatePolylineROIState::CreatePolylineROIState()
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::real_type(1))
 {
 }
 
-HandlePolylineROIState::~HandlePolylineROIState()
+CreatePolylineROIState::~CreatePolylineROIState()
 {
 }
 
-void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
+void CreatePolylineROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) == swl::MouseEvent::BT_LEFT)
 	{
@@ -1118,7 +1215,12 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 			IView &view = fsm.getView();
 
 			if (roi_.countPoint() < 2) roi_.clearAllPoints();
-			else RegionOfInterestMgr::getInstance().addROI(roi_);
+			else
+			{
+				roi_.setColor(RegionOfInterestMgr::getInstance().getLineColor());
+				roi_.setDrawingSize(RegionOfInterestMgr::getInstance().getLineWidth());
+				RegionOfInterestMgr::getInstance().addROI(roi_);
+			}
 			view.raiseDrawEvent(false);
 		}
 		catch (const std::bad_cast &)
@@ -1128,7 +1230,7 @@ void HandlePolylineROIState::releaseMouse(const MouseEvent &evt)
 	}
 }
 
-void HandlePolylineROIState::moveMouse(const MouseEvent &evt)
+void CreatePolylineROIState::moveMouse(const MouseEvent &evt)
 {
 	if (!isSelectingRegion_) return;
 
@@ -1151,17 +1253,16 @@ void HandlePolylineROIState::moveMouse(const MouseEvent &evt)
 //-----------------------------------------------------------------------------------
 // 
 
-HandlePolygonROIState::HandlePolygonROIState()
-// TODO [fix] >> color
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
+CreatePolygonROIState::CreatePolygonROIState()
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::real_type(1))
 {
 }
 
-HandlePolygonROIState::~HandlePolygonROIState()
+CreatePolygonROIState::~CreatePolygonROIState()
 {
 }
 
-void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
+void CreatePolygonROIState::releaseMouse(const MouseEvent &evt)
 {
 	if ((evt.button | swl::MouseEvent::BT_LEFT) == swl::MouseEvent::BT_LEFT)
 	{
@@ -1230,7 +1331,12 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 			IView &view = fsm.getView();
 
 			if (roi_.countPoint() < 3) roi_.clearAllPoints();
-			else RegionOfInterestMgr::getInstance().addROI(roi_);
+			else
+			{
+				roi_.setColor(RegionOfInterestMgr::getInstance().getLineColor());
+				roi_.setDrawingSize(RegionOfInterestMgr::getInstance().getLineWidth());
+				RegionOfInterestMgr::getInstance().addROI(roi_);
+			}
 			view.raiseDrawEvent(false);
 		}
 		catch (const std::bad_cast &)
@@ -1240,7 +1346,7 @@ void HandlePolygonROIState::releaseMouse(const MouseEvent &evt)
 	}
 }
 
-void HandlePolygonROIState::moveMouse(const MouseEvent &evt)
+void CreatePolygonROIState::moveMouse(const MouseEvent &evt)
 {
 	if (!isSelectingRegion_) return;
 

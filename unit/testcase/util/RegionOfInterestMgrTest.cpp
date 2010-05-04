@@ -46,14 +46,14 @@ public:
 
 		swl::RegionOfInterestMgr &roiMgr = swl::RegionOfInterestMgr::getInstance();
 
-		swl::LineROI roi1(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()), swl::RegionOfInterest::point_type((swl::RegionOfInterestMgr::real_type)std::rand(), (swl::RegionOfInterestMgr::real_type)std::rand()), true, swl::RegionOfInterest::color_type());
-		swl::RectangleROI roi2(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()), swl::RegionOfInterest::point_type((swl::RegionOfInterestMgr::real_type)std::rand(), (swl::RegionOfInterestMgr::real_type)std::rand()), true, swl::RegionOfInterest::color_type());
-		swl::PolylineROI roi3(true, swl::RegionOfInterest::color_type());
+		swl::LineROI roi1(swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		swl::RectangleROI roi2(swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		swl::PolylineROI roi3(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1));
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
-			roi3.addPoint(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()));
-		swl::PolygonROI roi4(true, swl::RegionOfInterest::color_type());
+			roi3.addPoint(swl::PolylineROI::point_type((swl::PolylineROI::real_type)std::rand(), (swl::PolylineROI::real_type)std::rand()));
+		swl::PolygonROI roi4(true, swl::PolygonROI::color_type(), swl::PolygonROI::real_type(1));
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
-			roi4.addPoint(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()));
+			roi4.addPoint(swl::PolygonROI::point_type((swl::PolygonROI::real_type)std::rand(), (swl::PolygonROI::real_type)std::rand()));
 
 		BOOST_CHECK(roi3.containPoint());
 		BOOST_CHECK(roi4.containPoint());
@@ -163,14 +163,14 @@ public:
 	{
 		swl::RegionOfInterestMgr &roiMgr = swl::RegionOfInterestMgr::getInstance();
 
-		swl::LineROI roi1(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()), swl::RegionOfInterest::point_type((swl::RegionOfInterestMgr::real_type)std::rand(), (swl::RegionOfInterestMgr::real_type)std::rand()), true, swl::RegionOfInterest::color_type());
-		swl::RectangleROI roi2(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()), swl::RegionOfInterest::point_type((swl::RegionOfInterestMgr::real_type)std::rand(), (swl::RegionOfInterestMgr::real_type)std::rand()), true, swl::RegionOfInterest::color_type());
-		swl::PolylineROI roi3(true, swl::RegionOfInterest::color_type());
+		swl::LineROI roi1(swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		swl::RectangleROI roi2(swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		swl::PolylineROI roi3(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1));
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
-			roi3.addPoint(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()));
-		swl::PolygonROI roi4(true, swl::RegionOfInterest::color_type());
+			roi3.addPoint(swl::PolylineROI::point_type((swl::PolylineROI::real_type)std::rand(), (swl::PolylineROI::real_type)std::rand()));
+		swl::PolygonROI roi4(true, swl::PolygonROI::color_type(), swl::PolygonROI::real_type(1));
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
-			roi4.addPoint(swl::RegionOfInterest::point_type((swl::RegionOfInterest::real_type)std::rand(), (swl::RegionOfInterest::real_type)std::rand()));
+			roi4.addPoint(swl::PolygonROI::point_type((swl::PolygonROI::real_type)std::rand(), (swl::PolygonROI::real_type)std::rand()));
 
 		CPPUNIT_ASSERT(roi3.containPoint());
 		CPPUNIT_ASSERT(roi4.containPoint());

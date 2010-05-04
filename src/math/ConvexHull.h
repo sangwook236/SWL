@@ -36,16 +36,6 @@ struct point2d
    double y;
 };
 
-class ConvexHull
-{
-   public:
-
-     virtual ~ConvexHull(){};
-     virtual bool operator()(const std::vector<point2d>& pnt, std::vector<point2d>& final_hull) = 0;
-
-};
-
-
 struct gs_point2d
 {
 public:
@@ -102,14 +92,14 @@ private:
 };
 
 
-class GrahamScanConvexHull : public ConvexHull
+class GrahamScanConvexHull
 {
 public:
 
-   GrahamScanConvexHull(){};
-  ~GrahamScanConvexHull(){};
+   GrahamScanConvexHull()  {}
+  ~GrahamScanConvexHull()  {}
 
-   virtual bool operator()(const std::vector < point2d >& pnt, std::vector< point2d >& final_hull);
+   bool operator()(const std::vector < point2d >& pnt, std::vector< point2d >& final_hull);
 
 private:
 

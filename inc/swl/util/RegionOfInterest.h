@@ -26,9 +26,9 @@ public:
 
 protected:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit RegionOfInterest(const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit RegionOfInterest(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit RegionOfInterest(const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit RegionOfInterest(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit RegionOfInterest(const RegionOfInterest &rhs);
 public:
@@ -47,7 +47,7 @@ public:
 	virtual void moveRegion(const point_type &delta) = 0;
 	virtual void moveRegion(const point_type &delta, const region_type &limitRegion) = 0;
 
-	virtual bool isVertex(const point_type &pt, const real_type &radius) const = 0;
+	virtual bool isVertex(const point_type &pt, const real_type &vertexTol) const = 0;
 	virtual bool include(const point_type &pt, const real_type &tol) const = 0;
 
 	//
@@ -57,6 +57,9 @@ public:
 	void setColor(const color_type &color)  {  color_ = color;  }
 	const color_type & getColor() const  {  return color_;  }
 
+	void setDrawingSize(const real_type &drawingSize)  {  drawingSize_ = drawingSize;  }
+	const real_type & getDrawingSize() const  {  return drawingSize_;  }
+
 #if defined(UNICODE) || defined(_UNICODE)
 	void setName(const std::wstring &name)  {  name_ = name;  }
 	std::wstring getName() const  {  return name_;  }
@@ -65,8 +68,9 @@ public:
 	std::string getName() const  {  return name_;  }
 #endif
 
-protected:
 	static bool isNearPoint(const point_type &pt1, const point_type &pt2, const real_type &tol);
+
+protected:
 	static point_type getMovableDistance(const point_type &pt, const point_type &delta, const region_type &limitRegion);
 	static point_type getMovableDistance(const region_type &rgn, const point_type &delta, const region_type &limitRegion);
 
@@ -88,6 +92,7 @@ protected:
 protected:
 	bool isVisible_;
 	color_type color_;
+	real_type drawingSize_;
 #if defined(UNICODE) || defined(_UNICODE)
 	std::wstring name_;
 #else
@@ -105,9 +110,9 @@ public:
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit LineROI(const LineROI &rhs);
 	virtual ~LineROI();
@@ -129,7 +134,7 @@ public:
 	/*virtual*/ void moveRegion(const point_type &delta);
 	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
-	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
+	/*virtual*/ bool isVertex(const point_type &pt, const real_type &vertexTol) const;
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
 
 private:
@@ -146,9 +151,9 @@ public:
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit RectangleROI(const RectangleROI &rhs);
 	virtual ~RectangleROI();
@@ -170,7 +175,7 @@ public:
 	/*virtual*/ void moveRegion(const point_type &delta);
 	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
-	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
+	/*virtual*/ bool isVertex(const point_type &pt, const real_type &vertexTol) const;
 	/*virtual*/ bool include(const point_type &pt, const real_type &tol) const;
 
 private:
@@ -187,11 +192,11 @@ public:
 
 protected:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit ROIWithVariablePoints(const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
-	explicit ROIWithVariablePoints(const points_type &points, const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit ROIWithVariablePoints(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
+	explicit ROIWithVariablePoints(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit ROIWithVariablePoints(const bool isVisible, const color_type &color, const std::string &name = std::string());
-	explicit ROIWithVariablePoints(const points_type &points, const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit ROIWithVariablePoints(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
+	explicit ROIWithVariablePoints(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit ROIWithVariablePoints(const ROIWithVariablePoints &rhs);
 public:
@@ -214,7 +219,7 @@ public:
 	/*virtual*/ void moveRegion(const point_type &delta);
 	/*virtual*/ void moveRegion(const point_type &delta, const region_type &limitRegion);
 
-	/*virtual*/ bool isVertex(const point_type &pt, const real_type &radius) const;
+	/*virtual*/ bool isVertex(const point_type &pt, const real_type &vertexTol) const;
 
 protected:
 	points_type points_;
@@ -230,11 +235,11 @@ public:
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit PolylineROI(const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
-	explicit PolylineROI(const points_type &points, const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit PolylineROI(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
+	explicit PolylineROI(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit PolylineROI(const bool isVisible, const color_type &color, const std::string &name = std::string());
-	explicit PolylineROI(const points_type &points, const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit PolylineROI(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
+	explicit PolylineROI(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit PolylineROI(const PolylineROI &rhs);
 	virtual ~PolylineROI();
@@ -260,11 +265,11 @@ public:
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
-	explicit PolygonROI(const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
-	explicit PolygonROI(const points_type &points, const bool isVisible, const color_type &color, const std::wstring &name = std::wstring());
+	explicit PolygonROI(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
+	explicit PolygonROI(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::wstring &name = std::wstring());
 #else
-	explicit PolygonROI(const bool isVisible, const color_type &color, const std::string &name = std::string());
-	explicit PolygonROI(const points_type &points, const bool isVisible, const color_type &color, const std::string &name = std::string());
+	explicit PolygonROI(const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
+	explicit PolygonROI(const points_type &points, const bool isVisible, const color_type &color, const real_type &drawingSize, const std::string &name = std::string());
 #endif
 	explicit PolygonROI(const PolygonROI &rhs);
 	virtual ~PolygonROI();

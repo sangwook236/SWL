@@ -80,4 +80,48 @@ bool RegionOfInterestMgr::isInValidRegion(const point_type &pt) const
 	return !validRegion_ ? true : validRegion_->isIncluded(pt, tol);
 }
 
+bool RegionOfInterestMgr::pickROI(const point_type &pt)
+{
+	pickedVertex_ = roi_type::point_type();
+
+	for (rois_type::reverse_iterator rit = ROIs_.rbegin(); rit != ROIs_.rend(); ++rit)
+	{
+		if (*rit && (*rit)->isVertex(pt, vertexTol_))
+		{
+			pickedROI_ = rit->get();
+			isVertexPicked_ = true;
+			pickedVertex_ = pt;
+			return true;
+		}
+	}
+
+	for (rois_type::reverse_iterator rit = ROIs_.rbegin(); rit != ROIs_.rend(); ++rit)
+	{
+		if (*rit && (*rit)->include(pt, vertexTol_))
+		{
+			pickedROI_ = rit->get();
+			isVertexPicked_ = false;
+			return true;
+		}
+	}
+
+	pickedROI_ = NULL;
+	return false;
+}
+
+bool RegionOfInterestMgr::isPickedVertex(const point_type &pt) const
+{
+	return pickedROI_ && isVertexPicked_ && roi_type::isNearPoint(pt, pickedVertex_, vertexTol_);
+}
+
+bool RegionOfInterestMgr::moveVertexInPickedROI(const point_type &pt, const point_type &delta)
+{
+	return validRegion_ ? pickedROI_->moveVertex(pt, delta, *validRegion_, vertexTol_) : pickedROI_->moveVertex(pt, delta, vertexTol_);
+}
+
+void RegionOfInterestMgr::movePickedROI(const point_type &delta)
+{
+	validRegion_ ? pickedROI_->moveRegion(delta, *validRegion_) : pickedROI_->moveRegion(delta);
+}
+
 }  // namespace swl
