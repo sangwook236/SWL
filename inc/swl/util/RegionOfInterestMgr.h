@@ -51,6 +51,8 @@ public:
 	roi_type & getROI(const roi_id_type &id);
 	const roi_type & getROI(const roi_id_type &id) const;
 
+	bool swap(const roi_id_type &lhs, const roi_id_type &rhs);
+
 	//
 	void setValidRegion(const region_type &validRegion);
 	void resetValidRegion();

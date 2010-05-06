@@ -36,18 +36,23 @@ void RegionOfInterestMgr::addROI(const roi_type &roi)
 
 void RegionOfInterestMgr::removeROI(const roi_id_type &id)
 {
+	const size_t count = ROIs_.size();
+	if (id >= count) return;
+
 	rois_type::iterator it = ROIs_.begin();
 	std::advance(it, id);
-	// TODO [check] >>
 	if (ROIs_.end() != it) ROIs_.erase(it);
 }
 
 RegionOfInterestMgr::roi_type & RegionOfInterestMgr::getROI(const roi_id_type &id)
 {
+	const size_t count = ROIs_.size();
+	if (id >= count)
+		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
+
 	rois_type::iterator it = ROIs_.begin();
 	std::advance(it, id);
 
-	// TODO [check] >>
 	if (ROIs_.end() != it && *it) return *(it->get());
 	else
 		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
@@ -55,13 +60,31 @@ RegionOfInterestMgr::roi_type & RegionOfInterestMgr::getROI(const roi_id_type &i
 
 const RegionOfInterestMgr::roi_type & RegionOfInterestMgr::getROI(const roi_id_type &id) const
 {
+	const size_t count = ROIs_.size();
+	if (id >= count)
+		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
+
 	rois_type::const_iterator it = ROIs_.begin();
 	std::advance(it, id);
 
-	// TODO [check] >>
 	if (ROIs_.end() != it && *it) return *(it->get());
 	else
 		throw LogException(LogException::L_ERROR, "invalid ID", __FILE__, __LINE__, __FUNCTION__);
+}
+
+bool RegionOfInterestMgr::swap(const roi_id_type &lhs, const roi_id_type &rhs)
+{
+	const size_t count = ROIs_.size();
+	if (lhs >= count || rhs >= count) return false;
+
+	rois_type::iterator itLhs = ROIs_.begin(), itRhs = itLhs;
+	std::advance(itLhs, lhs);
+	std::advance(itRhs, rhs);
+
+	if (ROIs_.end() == itLhs || ROIs_.end() == itRhs) return false;
+
+	std::iter_swap(itLhs, itRhs);
+	return true;
 }
 
 void RegionOfInterestMgr::setValidRegion(const region_type &validRegion)

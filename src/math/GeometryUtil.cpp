@@ -28,6 +28,39 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 
 }
 
+/*static*/ void GeometryUtil::getConvexHull(const std::list<Point2<float> > &points, std::list<Point2<float> > &convexHull)
+{
+#if 0
+	boost::geometry::polygon_2d poly;
+	boost::geometry::ring_type<boost::geometry::polygon_2d>::type &ring = exterior_ring(poly);
+	for (std::list<Point2<float> >::const_iterator it = points.begin(); it != points.end(); ++it)
+		append(ring, boost::geometry::make<boost::geometry::point_2d>(it->x, it->y));
+	append(ring, boost::geometry::make<boost::geometry::point_2d>(points.front().x, points.front().y));
+
+	// TODO [check] >>
+	correct(poly);
+
+	boost::geometry::polygon_2d hull;
+	convex_hull(poly, hull);
+
+	// FIXME [fix] >>
+	const boost::geometry::polygon_2d::ring_type &outer_ring = hull.outer();
+	for (boost::geometry::polygon_2d::iterator it = hull.begin(); it != hull.end(); ++it)
+		convexHull.push_back(Point2<float>(it->x, it->y));
+#else
+	std::vector<point2d> pts;
+	std::vector<point2d> hull;
+
+	for (std::list<Point2<float> >::const_iterator it = points.begin(); it != points.end(); ++it)
+		pts.push_back(point2d(it->x, it->y));
+
+	GrahamScanConvexHull()(pts, hull);
+
+	for (std::vector<point2d>::iterator it = hull.begin(); it != hull.end(); ++it)
+		convexHull.push_back(Point2<float>(it->x, it->y));
+#endif
+}
+
 /*static*/ bool GeometryUtil::within(const Point2<float> &pt, const std::list<Point2<float> > &points, const float tol)
 {
 	if (points.size() < 3) return false;
@@ -48,26 +81,26 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 	return within(boost::geometry::make<boost::geometry::point_2d>(pt.x, pt.y), hull);  // not boundary point, but internal point
 #else
 	std::vector<point2d> pts;
-	std::vector<point2d> convex_hull;
+	std::vector<point2d> hull;
 
 	for (std::list<Point2<float> >::const_iterator it = points.begin(); it != points.end(); ++it)
 		pts.push_back(point2d(it->x, it->y));
 
-	GrahamScanConvexHull()(pts, convex_hull);
+	GrahamScanConvexHull()(pts, hull);
 
-	const size_t count = convex_hull.size();
+	const size_t count = hull.size();
 	if (count < 2) return false;
 	else if (2 == count)
 	{
-		const point2d &pt1 = convex_hull.front();
-		const point2d &pt2 = convex_hull.back();
+		const point2d &pt1 = hull.front();
+		const point2d &pt2 = hull.back();
 
 		return LineSegment2<float>(Point2<float>((float)pt1.x, (float)pt1.y), Point2<float>((float)pt2.x, (float)pt2.y)).include(pt, tol);
 	}
 	else
 	{
 		point2d center(0, 0);
-		for (std::vector<point2d>::iterator it = convex_hull.begin(); it != convex_hull.end(); ++it)
+		for (std::vector<point2d>::iterator it = hull.begin(); it != hull.end(); ++it)
 		{
 			center.x += it->x;
 			center.y += it->y;
@@ -75,20 +108,50 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 		center.x /= (double)count;
 		center.y /= (double)count;
 
-		std::vector<point2d>::iterator itPrev = convex_hull.begin();
-		std::vector<point2d>::iterator it = itPrev;
+		std::vector<point2d>::iterator itPrev = hull.begin(), it = itPrev;
 		++it;
-		//if (convex_hull.end() == itPrev || convex_hull.end() == it) return false;
+		//if (hull.end() == itPrev || hull.end() == it) return false;
 
-		for (; it != convex_hull.end(); ++it)
+		for (; it != hull.end(); ++it)
 		{
 			if (!isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
 			itPrev = it;
 		}
-		it = convex_hull.begin();
+		it = hull.begin();
 		return isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
 	}
 #endif
+}
+
+/*static*/ bool GeometryUtil::withinConvexHull(const Point2<float> &pt, const std::list<Point2<float> > &convexHull, const float tol)
+{
+	const size_t count = convexHull.size();
+	if (count < 2) return false;
+	else if (2 == count)
+		return LineSegment2<float>(convexHull.front(), convexHull.back()).include(pt, tol);
+	else
+	{
+		Point2<float> center(0, 0);
+		for (std::list<Point2<float> >::const_iterator it = convexHull.begin(); it != convexHull.end(); ++it)
+		{
+			center.x += it->x;
+			center.y += it->y;
+		}
+		center.x /= (double)count;
+		center.y /= (double)count;
+
+		std::list<Point2<float> >::const_iterator itPrev = convexHull.begin(), it = itPrev;
+		++it;
+		//if (convexHull.end() == itPrev || convexHull.end() == it) return false;
+
+		for (; it != convexHull.end(); ++it)
+		{
+			if (!isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
+			itPrev = it;
+		}
+		it = convexHull.begin();
+		return isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
+	}
 }
 
 }  //  namespace swl

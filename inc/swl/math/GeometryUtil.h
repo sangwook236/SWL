@@ -15,8 +15,10 @@ namespace swl {
 struct SWL_MATH_API GeometryUtil
 {
 public:
-	///
+	//
+	static void getConvexHull(const std::list<Point2<float> > &points, std::list<Point2<float> > &convexHull);
 	static bool within(const Point2<float> &pt, const std::list<Point2<float> > &points, const float tol);
+	static bool withinConvexHull(const Point2<float> &pt, const std::list<Point2<float> > &convexHull, const float tol);
 };
 
 }  // namespace swl

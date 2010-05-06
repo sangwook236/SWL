@@ -103,7 +103,7 @@ protected:
 //-----------------------------------------------------------------------------------------
 //
 
-struct SWL_UTIL_API LineROI: public RegionOfInterest
+class SWL_UTIL_API LineROI: public RegionOfInterest
 {
 public:
 	typedef RegionOfInterest base_type;
@@ -144,7 +144,7 @@ private:
 //-----------------------------------------------------------------------------------------
 //
 
-struct SWL_UTIL_API RectangleROI: public RegionOfInterest
+class SWL_UTIL_API RectangleROI: public RegionOfInterest
 {
 public:
 	typedef RegionOfInterest base_type;
@@ -228,7 +228,7 @@ protected:
 //-----------------------------------------------------------------------------------------
 //
 
-struct SWL_UTIL_API PolylineROI: public ROIWithVariablePoints
+class SWL_UTIL_API PolylineROI: public ROIWithVariablePoints
 {
 public:
 	typedef ROIWithVariablePoints base_type;
@@ -258,7 +258,7 @@ public:
 //-----------------------------------------------------------------------------------------
 //
 
-struct SWL_UTIL_API PolygonROI: public ROIWithVariablePoints
+class SWL_UTIL_API PolygonROI: public ROIWithVariablePoints
 {
 public:
 	typedef ROIWithVariablePoints base_type;
