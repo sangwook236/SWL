@@ -59,7 +59,7 @@ public:
 		const swl::RectangleROI::point_type delta(3.0f, -7.0f);
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), delta, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -71,7 +71,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), delta, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -93,7 +93,7 @@ public:
 		const swl::RectangleROI::region_type limitRegion(swl::RectangleROI::point_type(-5.0f, -5.0f), swl::RectangleROI::point_type(50.0f, 50.0f));
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -104,7 +104,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -115,7 +115,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
 			BOOST_CHECK(comparePoints(roi.point1(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
 			BOOST_CHECK(!comparePoints(roi.point2(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
@@ -123,7 +123,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			BOOST_CHECK(roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
 			BOOST_CHECK(!comparePoints(roi.point1(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
@@ -138,7 +138,7 @@ public:
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
 		const swl::RectangleROI::point_type delta(3.0f, -7.0f);
 
-		swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 		roi.moveRegion(delta);
 		BOOST_CHECK(comparePoints(roi.point1(), pt1 + delta));
 		BOOST_CHECK(comparePoints(roi.point2(), pt2 + delta));
@@ -154,7 +154,7 @@ public:
 		{
 			const swl::RectangleROI::point_type delta(5.0f, 10.0f);
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + delta));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2 + delta));
@@ -164,7 +164,7 @@ public:
 			const swl::RectangleROI::point_type bigDelta(100.0f, -100.0f);
 			const swl::RectangleROI::real_type dx = 10.0f, dy = -15.0f;  // actual displacement
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(bigDelta, limitRegion);
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx, dy)));  // caution: not (-5, -5), but (-10, -5)
 			BOOST_CHECK(comparePoints(roi.point2(), pt2 + swl::RectangleROI::point_type(dx, dy)));
@@ -175,7 +175,7 @@ public:
 			const swl::RectangleROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
 			const swl::RectangleROI::real_type dx2 = 0.0f;  // actual displacement
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			BOOST_CHECK(!comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx2, dy)));
@@ -189,7 +189,7 @@ public:
 		Fixture fixture;
 
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 
 		BOOST_CHECK(roi.isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.5)));
 		BOOST_CHECK(!roi.isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.05)));
@@ -207,7 +207,7 @@ public:
 		Fixture fixture;
 
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 
 		BOOST_CHECK(!roi.include(swl::RectangleROI::point_type(0, 0), swl::RectangleROI::real_type(0.01)));
 		BOOST_CHECK(roi.include(swl::RectangleROI::point_type(30, 20), swl::RectangleROI::real_type(0.01)));
@@ -272,7 +272,7 @@ public:
 		const swl::RectangleROI::point_type delta(3.0f, -7.0f);
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), delta, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -284,7 +284,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), delta, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -304,7 +304,7 @@ public:
 		const swl::RectangleROI::region_type limitRegion(swl::RectangleROI::point_type(-5.0f, -5.0f), swl::RectangleROI::point_type(50.0f, 50.0f));
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -315,7 +315,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -326,7 +326,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(roi.moveVertex(swl::RectangleROI::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
 			CPPUNIT_ASSERT(!comparePoints(roi.point2(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
@@ -334,7 +334,7 @@ public:
 		}
 
 		{
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			CPPUNIT_ASSERT(roi.moveVertex(swl::RectangleROI::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
 			CPPUNIT_ASSERT(!comparePoints(roi.point1(), swl::RectangleROI::point_type(limitRegion.right, limitRegion.bottom)));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
@@ -347,7 +347,7 @@ public:
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
 		const swl::RectangleROI::point_type delta(3.0f, -7.0f);
 
-		swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 		roi.moveRegion(delta);
 		CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + delta));
 		CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + delta));
@@ -361,7 +361,7 @@ public:
 		{
 			const swl::RectangleROI::point_type delta(5.0f, 10.0f);
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + delta));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + delta));
@@ -371,7 +371,7 @@ public:
 			const swl::RectangleROI::point_type bigDelta(100.0f, -100.0f);
 			const swl::RectangleROI::real_type dx = 10.0f, dy = -15.0f;  // actual displacement
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(bigDelta, limitRegion);
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx, dy)));  // caution: not (-5, -5), but (-10, -5)
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + swl::RectangleROI::point_type(dx, dy)));
@@ -382,7 +382,7 @@ public:
 			const swl::RectangleROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
 			const swl::RectangleROI::real_type dx2 = 0.0f;  // actual displacement
 
-			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+			swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			CPPUNIT_ASSERT(!comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + swl::RectangleROI::point_type(dx2, dy)));
@@ -394,7 +394,7 @@ public:
 	void testIsVertex()
 	{
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 
 		CPPUNIT_ASSERT(roi.isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.5)));
 		CPPUNIT_ASSERT(!roi.isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.05)));
@@ -410,7 +410,7 @@ public:
 	void testInclude()
 	{
 		const swl::RectangleROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
+		const swl::RectangleROI roi(pt1, pt2, true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
 
 		CPPUNIT_ASSERT(!roi.include(swl::RectangleROI::point_type(0, 0), swl::RectangleROI::real_type(0.01)));
 		CPPUNIT_ASSERT(roi.include(swl::RectangleROI::point_type(30, 20), swl::RectangleROI::real_type(0.01)));

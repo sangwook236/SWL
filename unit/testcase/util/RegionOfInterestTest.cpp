@@ -51,7 +51,7 @@ public:
 	{
 		Fixture fixture;
 
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		BOOST_CHECK_EQUAL(roi->isVisible(), true);
@@ -63,11 +63,11 @@ public:
 		BOOST_CHECK_EQUAL(roi->isVisible(), true);
 	}
 
-	void testColor()
+	void testLineColor()
 	{
 		Fixture fixture;
 
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		BOOST_CHECK(compareColors(roi->getColor(), swl::RegionOfInterest::color_type()));
@@ -81,15 +81,15 @@ public:
 		BOOST_CHECK(compareColors(roi->getColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
 	}
 
-	void testDrawingSize()
+	void testLineWidth()
 	{
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
-		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(1), roi->getDrawingSize());
+		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(1), roi->getLineWidth());
 
-		roi->setDrawingSize(12.345);
-		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(12.345), roi->getDrawingSize());
+		roi->setLineWidth(12.345);
+		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(12.345), roi->getLineWidth());
 	}
 
 
@@ -97,7 +97,7 @@ public:
 	{
 		Fixture fixture;
 
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -134,8 +134,10 @@ struct RegionOfInterestTestSuite: public boost::unit_test_framework::test_suite
 		boost::shared_ptr<RegionOfInterestTest> test(new RegionOfInterestTest());
 
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testVisible, test), 0);
-		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testColor, test), 0);
-		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testDrawingSize, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testLineWidth, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testLineColor, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testPointSize, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::PointColor, test), 0);
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testName, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);
@@ -154,8 +156,10 @@ struct RegionOfInterestTest: public CppUnit::TestFixture
 private:
 	CPPUNIT_TEST_SUITE(RegionOfInterestTest);
 	CPPUNIT_TEST(testVisible);
-	CPPUNIT_TEST(testColor);
-	CPPUNIT_TEST(testDrawingSize);
+	CPPUNIT_TEST(testLineWidth);
+	CPPUNIT_TEST(testLineColor);
+	CPPUNIT_TEST(testPointSize);
+	CPPUNIT_TEST(testPointColor);
 	CPPUNIT_TEST(testName);
 	CPPUNIT_TEST_SUITE_END();
 
@@ -170,7 +174,7 @@ public:
 
 	void testVisible()
 	{
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
 		CPPUNIT_ASSERT_EQUAL(roi->isVisible(), true);
@@ -182,36 +186,63 @@ public:
 		CPPUNIT_ASSERT_EQUAL(roi->isVisible(), true);
 	}
 
-	void testColor()
+	void testLineWidth()
 	{
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
-		CPPUNIT_ASSERT(compareColors(roi->getColor(), swl::RegionOfInterest::color_type()));
+		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(1), roi->getLineWidth());
+
+		roi->setLineWidth(12.345f);
+		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(12.345f), roi->getLineWidth());
+	}
+
+	void testLineColor()
+	{
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+		CPPUNIT_ASSERT(roi);
+
+		CPPUNIT_ASSERT(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type()));
 
 		// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
 		// but it's working normally
-		roi->setColor(swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f));
-		CPPUNIT_ASSERT(compareColors(roi->getColor(), swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f)));
+		roi->setLineColor(swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f));
+		CPPUNIT_ASSERT(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f)));
 
-		roi->setColor(swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f));
-		CPPUNIT_ASSERT(compareColors(roi->getColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
+		roi->setLineColor(swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f));
+		CPPUNIT_ASSERT(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
 	}
 
-	void testDrawingSize()
+	void testPointSize()
 	{
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
-		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(1), roi->getDrawingSize());
+		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(1), roi->getPointSize());
 
-		roi->setDrawingSize(12.345);
-		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(12.345), roi->getDrawingSize());
+		roi->setPointSize(5.302f);
+		CPPUNIT_ASSERT_EQUAL(swl::RegionOfInterest::real_type(5.302f), roi->getPointSize());
+	}
+
+	void testPointColor()
+	{
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+		CPPUNIT_ASSERT(roi);
+
+		CPPUNIT_ASSERT(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type()));
+
+		// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
+		// but it's working normally
+		roi->setPointColor(swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f));
+		CPPUNIT_ASSERT(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f)));
+
+		roi->setPointColor(swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f));
+		CPPUNIT_ASSERT(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f)));
 	}
 
 	void testName()
 	{
-		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::color_type(), swl::LineROI::real_type(1)));
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
 #if defined(UNICODE) || defined(_UNICODE)

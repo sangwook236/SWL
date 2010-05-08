@@ -627,6 +627,18 @@ PickObjectState::PickObjectState()
 
 PickObjectState::~PickObjectState()
 {
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw) vw->createDisplayList(false);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
 	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
@@ -724,6 +736,18 @@ PickAndDragObjectState::PickAndDragObjectState()
 
 PickAndDragObjectState::~PickAndDragObjectState()
 {
+	try
+	{
+		ViewStateMachine &fsm = context<ViewStateMachine>();
+		IView &view = fsm.getView();
+		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
+		if (vw) vw->createDisplayList(false);
+	}
+	catch (const std::bad_cast &)
+	{
+		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
+	}
+
 	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
@@ -996,7 +1020,8 @@ void CreateLineROIState::releaseMouse(const MouseEvent &evt)
 			roi_type roi(
 				roi_type::point_type((roi_type::real_type)initX_, (roi_type::real_type)initY_),
 				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
-				true, RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getLineWidth()
+				true, RegionOfInterestMgr::getInstance().getLineWidth(), RegionOfInterestMgr::getInstance().getPointSize(),
+				RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getPointColor()
 			);
 			RegionOfInterestMgr::getInstance().addROI(roi);
 			view.raiseDrawEvent(false);
@@ -1096,7 +1121,8 @@ void CreateRectangleROIState::releaseMouse(const MouseEvent &evt)
 			roi_type roi(roi_type::point_type(
 				(roi_type::real_type)initX_, (roi_type::real_type)initY_),
 				roi_type::point_type((roi_type::real_type)evt.x, (roi_type::real_type)evt.y),
-				true, RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getLineWidth()
+				true, RegionOfInterestMgr::getInstance().getLineWidth(), RegionOfInterestMgr::getInstance().getPointSize(),
+				RegionOfInterestMgr::getInstance().getLineColor(), RegionOfInterestMgr::getInstance().getPointColor()
 			);
 			RegionOfInterestMgr::getInstance().addROI(roi);
 			view.raiseDrawEvent(false);
@@ -1138,7 +1164,7 @@ void CreateRectangleROIState::moveMouse(const MouseEvent &evt)
 // 
 
 CreatePolylineROIState::CreatePolylineROIState()
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::real_type(1))
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::real_type(1), roi_type::real_type(1), roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
 {
 }
 
@@ -1217,8 +1243,10 @@ void CreatePolylineROIState::releaseMouse(const MouseEvent &evt)
 			if (roi_.countPoint() < 2) roi_.clearAllPoints();
 			else
 			{
-				roi_.setColor(RegionOfInterestMgr::getInstance().getLineColor());
-				roi_.setDrawingSize(RegionOfInterestMgr::getInstance().getLineWidth());
+				roi_.setLineWidth(RegionOfInterestMgr::getInstance().getLineWidth());
+				roi_.setLineColor(RegionOfInterestMgr::getInstance().getLineColor());
+				roi_.setPointSize(RegionOfInterestMgr::getInstance().getPointSize());
+				roi_.setPointColor(RegionOfInterestMgr::getInstance().getPointColor());
 				RegionOfInterestMgr::getInstance().addROI(roi_);
 			}
 			view.raiseDrawEvent(false);
@@ -1254,7 +1282,7 @@ void CreatePolylineROIState::moveMouse(const MouseEvent &evt)
 // 
 
 CreatePolygonROIState::CreatePolygonROIState()
-: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::real_type(1))
+: isSelectingRegion_(false), initX_(0), initY_(0), prevX_(0), prevY_(0), roi_(true, roi_type::real_type(1), roi_type::real_type(1), roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f), roi_type::color_type(1.0f, 1.0f, 1.0f, 1.0f))
 {
 }
 
@@ -1333,8 +1361,10 @@ void CreatePolygonROIState::releaseMouse(const MouseEvent &evt)
 			if (roi_.countPoint() < 3) roi_.clearAllPoints();
 			else
 			{
-				roi_.setColor(RegionOfInterestMgr::getInstance().getLineColor());
-				roi_.setDrawingSize(RegionOfInterestMgr::getInstance().getLineWidth());
+				roi_.setLineWidth(RegionOfInterestMgr::getInstance().getLineWidth());
+				roi_.setLineColor(RegionOfInterestMgr::getInstance().getLineColor());
+				roi_.setPointSize(RegionOfInterestMgr::getInstance().getPointSize());
+				roi_.setPointColor(RegionOfInterestMgr::getInstance().getPointColor());
 				RegionOfInterestMgr::getInstance().addROI(roi_);
 			}
 			view.raiseDrawEvent(false);

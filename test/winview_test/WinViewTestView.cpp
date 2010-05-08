@@ -505,7 +505,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 					CBrush brush(RGB(240, 240, 240));
 					CBrush *oldBrush = pDC->SelectObject(&brush);
 					const swl::Region2<double> bound = camera.getViewBound();
-					pDC->Rectangle(bound.left, bound.bottom, bound.right, bound.top);
+					pDC->Rectangle((int)bound.left, (int)bound.bottom, (int)bound.right, (int)bound.top);
 					pDC->SelectObject(oldBrush);
 					pDC->SelectObject(oldPen);
 				}
@@ -561,7 +561,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			{
 				// draw contents
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), (Gdiplus::REAL)lineWidth1);
 					Gdiplus::SolidBrush brush(Gdiplus::Color(255, 240, 240, 240));
 					const swl::Region2<double> bound = camera.getViewBound();
 					graphics->DrawRectangle(&pen, (Gdiplus::REAL)bound.left, (Gdiplus::REAL)bound.bottom, (Gdiplus::REAL)bound.getWidth(), (Gdiplus::REAL)bound.getHeight());
@@ -571,14 +571,14 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				const swl::Region2<double> rgn = camera.getCurrentViewRegion();
 
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), (Gdiplus::REAL)lineWidth1);
 					graphics->DrawLine(&pen, 100, 200, 300, 400);
 					graphics->DrawLine(&pen, -500, -500, 1500, 1500);
 				}
 
 				if (data1_.size() > 1)
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), (Gdiplus::REAL)lineWidth2);
 					data_type::iterator prevIt = data1_.begin();
 					data_type::iterator it = data1_.begin();
 					for (++it; it != data1_.end(); ++prevIt, ++it)
@@ -587,7 +587,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 
 				if (data2_.size() > 1)
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), (Gdiplus::REAL)lineWidth3);
 					data_type::iterator prevIt = data2_.begin();
 					data_type::iterator it = data2_.begin();
 					for (++it; it != data2_.end(); ++prevIt, ++it)
@@ -676,7 +676,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				int vx1, vy1, vx2, vy2;
 
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), lineWidth1);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), (Gdiplus::REAL)lineWidth1);
 					const swl::Region2<double> bound = camera.getViewBound();
 					camera.mapCanvasToWindow(bound.left, bound.bottom, vx1, vy1);
 					camera.mapCanvasToWindow(bound.right, bound.top, vx2, vy2);
@@ -684,7 +684,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 				}
 
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), lineWidth1);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 0), (Gdiplus::REAL)lineWidth1);
 					camera.mapCanvasToWindow(100, 200, vx1, vy1);
 					camera.mapCanvasToWindow(300, 400, vx2, vy2);
 					graphics->DrawLine(&pen, vx1, vy1, vx2, vy2);
@@ -692,7 +692,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 
 				if (data1_.size() > 1)
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), lineWidth2);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 255, 0), (Gdiplus::REAL)lineWidth2);
 					data_type::iterator prevIt = data1_.begin();
 					data_type::iterator it = data1_.begin();
 					for (++it; it != data1_.end(); ++prevIt, ++it)
@@ -705,7 +705,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 
 				if (data2_.size() > 1)
 				{
-					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), lineWidth3);
+					Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255), (Gdiplus::REAL)lineWidth3);
 					data_type::iterator prevIt = data2_.begin();
 					data_type::iterator it = data2_.begin();
 					for (++it; it != data2_.end(); ++prevIt, ++it)

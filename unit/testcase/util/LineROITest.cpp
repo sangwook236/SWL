@@ -59,7 +59,7 @@ public:
 		const swl::LineROI::point_type delta(3.0f, -7.0f);
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -71,7 +71,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -93,7 +93,7 @@ public:
 		const swl::LineROI::region_type limitRegion(swl::LineROI::point_type(-5.0f, -5.0f), swl::LineROI::point_type(50.0f, 50.0f));
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -104,7 +104,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(!roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2));
@@ -115,7 +115,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
 			BOOST_CHECK(comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
 			BOOST_CHECK(!comparePoints(roi.point2(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
@@ -123,7 +123,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			BOOST_CHECK(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
 			BOOST_CHECK(!comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
 			BOOST_CHECK(comparePoints(roi.point1(), pt1));
@@ -138,7 +138,7 @@ public:
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
 		const swl::LineROI::point_type delta(3.0f, -7.0f);
 
-		swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 		roi.moveRegion(delta);
 		BOOST_CHECK(comparePoints(roi.point1(), pt1 + delta));
 		BOOST_CHECK(comparePoints(roi.point2(), pt2 + delta));
@@ -154,7 +154,7 @@ public:
 		{
 			const swl::LineROI::point_type delta(5.0f, 10.0f);
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + delta));
 			BOOST_CHECK(comparePoints(roi.point2(), pt2 + delta));
@@ -164,7 +164,7 @@ public:
 			const swl::LineROI::point_type bigDelta(100.0f, -100.0f);
 			const swl::LineROI::real_type dx = 10.0f, dy = -15.0f;  // actual displacement
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(bigDelta, limitRegion);
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-5, -5), but (-10, -5)
 			BOOST_CHECK(comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
@@ -175,7 +175,7 @@ public:
 			const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
 			const swl::LineROI::real_type dx2 = 15.0f;  // actual displacement
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			BOOST_CHECK(!comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
 			BOOST_CHECK(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
@@ -189,7 +189,7 @@ public:
 		Fixture fixture;
 
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 
 		BOOST_CHECK(roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.5)));
 		BOOST_CHECK(!roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.05)));
@@ -204,7 +204,7 @@ public:
 		Fixture fixture;
 
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 
 		BOOST_CHECK(!roi.include(swl::LineROI::point_type(0, 0), swl::LineROI::real_type(0.01)));
 		BOOST_CHECK(roi.include((pt1 + pt2) / swl::LineROI::real_type(2), swl::LineROI::real_type(0.01)));
@@ -268,7 +268,7 @@ public:
 		const swl::LineROI::point_type delta(3.0f, -7.0f);
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -280,7 +280,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
@@ -300,7 +300,7 @@ public:
 		const swl::LineROI::region_type limitRegion(swl::LineROI::point_type(-5.0f, -5.0f), swl::LineROI::point_type(50.0f, 50.0f));
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -311,7 +311,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(!roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2));
@@ -322,7 +322,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
 			CPPUNIT_ASSERT(!comparePoints(roi.point2(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
@@ -330,7 +330,7 @@ public:
 		}
 
 		{
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			CPPUNIT_ASSERT(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
 			CPPUNIT_ASSERT(!comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1));
@@ -343,7 +343,7 @@ public:
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
 		const swl::LineROI::point_type delta(3.0f, -7.0f);
 
-		swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 		roi.moveRegion(delta);
 		CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + delta));
 		CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + delta));
@@ -357,7 +357,7 @@ public:
 		{
 			const swl::LineROI::point_type delta(5.0f, 10.0f);
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + delta));
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + delta));
@@ -367,7 +367,7 @@ public:
 			const swl::LineROI::point_type bigDelta(100.0f, -100.0f);
 			const swl::LineROI::real_type dx = 10.0f, dy = -15.0f;  // actual displacement
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(bigDelta, limitRegion);
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-5, -5), but (-10, -5)
 			CPPUNIT_ASSERT(comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
@@ -378,7 +378,7 @@ public:
 			const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
 			const swl::LineROI::real_type dx2 = 0.0f;  // actual displacement
 
-			swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
 			CPPUNIT_ASSERT(!comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
 			CPPUNIT_ASSERT(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
@@ -390,7 +390,7 @@ public:
 	void testIsVertex()
 	{
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 
 		CPPUNIT_ASSERT(roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.5)));
 		CPPUNIT_ASSERT(!roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.05)));
@@ -403,7 +403,7 @@ public:
 	void testInclude()
 	{
 		const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
-		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
+		const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 
 		CPPUNIT_ASSERT(!roi.include(swl::LineROI::point_type(0, 0), swl::LineROI::real_type(0.01)));
 		CPPUNIT_ASSERT(roi.include((pt1 + pt2) / swl::LineROI::real_type(2), swl::LineROI::real_type(0.01)));
