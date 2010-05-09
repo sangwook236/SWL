@@ -57,7 +57,7 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 	GrahamScanConvexHull()(pts, hull);
 
 	for (std::vector<point2d>::iterator it = hull.begin(); it != hull.end(); ++it)
-		convexHull.push_back(Point2<float>(it->x, it->y));
+		convexHull.push_back(Point2<float>((float)it->x, (float)it->y));
 #endif
 }
 
@@ -137,8 +137,8 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 			center.x += it->x;
 			center.y += it->y;
 		}
-		center.x /= (double)count;
-		center.y /= (double)count;
+		center.x /= (float)count;
+		center.y /= (float)count;
 
 		std::list<Point2<float> >::const_iterator itPrev = convexHull.begin(), it = itPrev;
 		++it;

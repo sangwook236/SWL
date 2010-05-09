@@ -28,7 +28,7 @@
 //-----------------------------------------------------------------------------
 //
 
-void ClippedSphereShape::draw() const
+void TrimmedSphereShape::draw() const
 {
 	const GLenum drawingFace = getDrawingFace() == swl::attrib::POLYGON_FACE_FRONT ? GL_FRONT :
 		(getDrawingFace() == swl::attrib::POLYGON_FACE_BACK ? GL_BACK :
@@ -52,8 +52,8 @@ void ClippedSphereShape::draw() const
 		const double clippingPlane1[] = { -1.0, 0.0, 0.0, 300.0 };
 
 		// draw clipping areas
-		drawClippingArea(GL_CLIP_PLANE0, clippingPlane0);
-		drawClippingArea(GL_CLIP_PLANE1, clippingPlane1);
+		drawClippingRegion(GL_CLIP_PLANE0, clippingPlane0);
+		drawClippingRegion(GL_CLIP_PLANE1, clippingPlane1);
 
 		// enables clipping planes
 		glEnable(GL_CLIP_PLANE0);
@@ -88,7 +88,7 @@ void ClippedSphereShape::draw() const
 	glPolygonMode(drawingFace, oldPolygonMode[1]);
 }
 
-void ClippedSphereShape::drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
+void TrimmedSphereShape::drawClippingRegion(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const
 {
 	glEnable(clippingPlaneId);
 	glClipPlane(clippingPlaneId, clippingPlaneEqn);
@@ -233,13 +233,13 @@ void ColoredMeshShape::draw() const
 #endif
 
 				temp1 = mesh_[h * meshWidth_ + w];
-				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				z1 = temp1 * zScaleFactor_ + zOffset_;
 				temp2 = mesh_[h * meshWidth_ + (w+1)];
-				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				z2 = temp2 * zScaleFactor_ + zOffset_;
 				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
-				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				z3 = temp3 * zScaleFactor_ + zOffset_;
 				temp4 = mesh_[(h+1) * meshWidth_ + w];
-				z4 = (temp4 + zOffset_) * zScaleFactor_;
+				z4 = temp4 * zScaleFactor_ + zOffset_;
 
 				//glEdgeFlag(GL_TRUE);
 
@@ -491,13 +491,13 @@ void TexturedMeshShape::drawTexturedMesh() const
 #endif
 
 				temp1 = mesh_[h * meshWidth_ + w];
-				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				z1 = temp1 * zScaleFactor_ + zOffset_;
 				temp2 = mesh_[h * meshWidth_ + (w+1)];
-				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				z2 = temp2 * zScaleFactor_ + zOffset_;
 				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
-				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				z3 = temp3 * zScaleFactor_ + zOffset_;
 				temp4 = mesh_[(h+1) * meshWidth_ + w];
-				z4 = (temp4 + zOffset_) * zScaleFactor_;
+				z4 = temp4 * zScaleFactor_ + zOffset_;
 
 				//glEdgeFlag(GL_TRUE);
 
@@ -582,13 +582,13 @@ void TexturedMeshShape::drawMesh() const
 #endif
 
 				temp1 = mesh_[h * meshWidth_ + w];
-				z1 = (temp1 + zOffset_) * zScaleFactor_;
+				z1 = temp1 * zScaleFactor_ + zOffset_;
 				temp2 = mesh_[h * meshWidth_ + (w+1)];
-				z2 = (temp2 + zOffset_) * zScaleFactor_;
+				z2 = temp2 * zScaleFactor_ + zOffset_;
 				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
-				z3 = (temp3 + zOffset_) * zScaleFactor_;
+				z3 = temp3 * zScaleFactor_ + zOffset_;
 				temp4 = mesh_[(h+1) * meshWidth_ + w];
-				z4 = (temp4 + zOffset_) * zScaleFactor_;
+				z4 = temp4 * zScaleFactor_ + zOffset_;
 
 				//glEdgeFlag(GL_TRUE);
 

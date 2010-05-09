@@ -740,16 +740,16 @@ void CWglSceneGraphView::constructSceneGraph()
 	rootSceneNode_->addChild(texturedMeshNode);
 #else
 	//
-	// a clipped sphere
+	// a trimmed sphere
 	//
-	boost::shared_ptr<swl::GLShape> clippedSphereShape(new ClippedSphereShape());
-	clippedSphereShape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
+	boost::shared_ptr<swl::GLShape> trimmedSphereShape(new TrimmedSphereShape());
+	trimmedSphereShape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
 #if defined(UNICODE) || defined(_UNICODE)
-	boost::shared_ptr<scene_node_type> clippedSphereNode(new swl::GLShapeSceneNode<visitor_type>(clippedSphereShape, L"clipped sphere"));
+	boost::shared_ptr<scene_node_type> trimmedSphereNode(new swl::GLShapeSceneNode<visitor_type>(trimmedSphereShape, L"trimmed sphere"));
 #else
-	boost::shared_ptr<scene_node_type> clippedSphereNode(new swl::GLShapeSceneNode<visitor_type>(clippedSphereShape, "clipped sphere"));
+	boost::shared_ptr<scene_node_type> trimmedSphereNode(new swl::GLShapeSceneNode<visitor_type>(trimmedSphereShape, "trimmed sphere"));
 #endif
-	rootSceneNode_->addChild(clippedSphereNode);
+	rootSceneNode_->addChild(trimmedSphereNode);
 
 	//
 	// a simple cube

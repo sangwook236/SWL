@@ -10,13 +10,13 @@
 //-----------------------------------------------------------------------------
 //
 
-class ClippedSphereShape: public swl::GLShape
+class TrimmedSphereShape: public swl::GLShape
 {
 public:
 	typedef swl::GLShape base_type;
 
 public:
-	ClippedSphereShape()
+	TrimmedSphereShape()
 	: base_type(1u, false, true, true, swl::attrib::POLYGON_FILL, swl::attrib::POLYGON_FACE_FRONT_AND_BACK)
 	{}
 
@@ -24,7 +24,7 @@ public:
 	/*virtual*/ void draw() const;
 
 private:
-	void drawClippingArea(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
+	void drawClippingRegion(const unsigned int clippingPlaneId, const double *clippingPlaneEqn) const;
 };
 
 //-----------------------------------------------------------------------------

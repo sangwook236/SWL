@@ -627,18 +627,6 @@ PickObjectState::PickObjectState()
 
 PickObjectState::~PickObjectState()
 {
-	try
-	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
-		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
-		if (vw) vw->createDisplayList(false);
-	}
-	catch (const std::bad_cast &)
-	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
-
 	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
@@ -736,18 +724,6 @@ PickAndDragObjectState::PickAndDragObjectState()
 
 PickAndDragObjectState::~PickAndDragObjectState()
 {
-	try
-	{
-		ViewStateMachine &fsm = context<ViewStateMachine>();
-		IView &view = fsm.getView();
-		WglViewBase *vw = dynamic_cast<WglViewBase *>(&view);
-		if (vw) vw->createDisplayList(false);
-	}
-	catch (const std::bad_cast &)
-	{
-		std::cerr << "caught bad_cast at " << __LINE__ << " in " << __FILE__ << std::endl;
-	}
-
 	swl::ObjectPickerMgr::getInstance().stopPicking();
 }
 
