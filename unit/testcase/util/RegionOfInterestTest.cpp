@@ -70,15 +70,15 @@ public:
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
-		BOOST_CHECK(compareColors(roi->getColor(), swl::RegionOfInterest::color_type()));
+		BOOST_CHECK(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type()));
 
 		// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
 		// but it's working normally
-		roi->setColor(swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f));
-		BOOST_CHECK(compareColors(roi->getColor(), swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f)));
+		roi->setLineColor(swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f));
+		BOOST_CHECK(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f)));
 
-		roi->setColor(swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f));
-		BOOST_CHECK(compareColors(roi->getColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
+		roi->setLineColor(swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f));
+		BOOST_CHECK(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
 	}
 
 	void testLineWidth()
@@ -92,6 +92,32 @@ public:
 		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(12.345), roi->getLineWidth());
 	}
 
+	void testPointSize()
+	{
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+		BOOST_CHECK(roi);
+
+		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(1), roi->getPointSize());
+
+		roi->setPointSize(5.302f);
+		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(5.302f), roi->getPointSize());
+	}
+
+	void testPointColor()
+	{
+		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+		BOOST_CHECK(roi);
+
+		BOOST_CHECK(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type()));
+
+		// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
+		// but it's working normally
+		roi->setPointColor(swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f));
+		BOOST_CHECK(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f)));
+
+		roi->setPointColor(swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f));
+		BOOST_CHECK(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f)));
+	}
 
 	void testName()
 	{
@@ -137,7 +163,7 @@ struct RegionOfInterestTestSuite: public boost::unit_test_framework::test_suite
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testLineWidth, test), 0);
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testLineColor, test), 0);
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testPointSize, test), 0);
-		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::PointColor, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testPointColor, test), 0);
 		add(BOOST_CLASS_TEST_CASE(&RegionOfInterestTest::testName, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);

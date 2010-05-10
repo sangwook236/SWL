@@ -51,12 +51,12 @@ LogException::LogException(const unsigned int level, const std::string &message,
 	 report();
 }
 
-LogException::~LogException() throw()
+LogException::LogException(const LogException &rhs)
+: level_(rhs.level_), message_(rhs.message_), filePath_(rhs.filePath_), lineNo_(rhs.lineNo_), methodName_(rhs.methodName_)
 {
 }
 
-LogException::LogException(const LogException &rhs)
-: level_(rhs.level_), message_(rhs.message_), filePath_(rhs.filePath_), lineNo_(rhs.lineNo_), methodName_(rhs.methodName_)
+LogException::~LogException() throw()
 {
 }
 

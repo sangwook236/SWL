@@ -67,8 +67,8 @@ public:
 
 public:
 	/**
-	 *	@brief  [ctor] contructor.
-	 *	@param[in]  level  exception이 log level 수준.
+	 *	@brief  [ctor] constructor.
+	 *	@param[in]  level  exception의 log level 수준.
 	 *	@param[in]  message  exception message가 저장되는 곳.
 	 *	@param[in]  filePath  exception이 발생한 파일의 전체 경로.
 	 *	@param[in]  lineNo  exception이 발생한 파일의 줄 번호.
@@ -80,12 +80,18 @@ public:
 	LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	/**
+	 *	@brief  [copy ctor] copy constructor.
+	 *	@param[in]  rhs  복사되는 원본 객체.
+	 *
+	 *	인자로 입력된 객체를 복사하여 새로운 객체를 생성한다..
+	 */
+	LogException(const LogException &rhs);
+	/**
 	 *	@brief  [dtor] virtual default destructor.
 	 *
 	 *	해당 class로부터 자식 class 파생이 가능하도록 virtual로 선언되어 있다.
 	 */
 	virtual ~LogException() throw();
-	LogException(const LogException &rhs);
 
 private:
 	LogException & operator=(const LogException &);
@@ -95,11 +101,7 @@ public:
 	 *	@brief  발생한 exception의 log level 값을 반환.
 	 *	@return  log level 값이 unsigned int 형 값으로 반환.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
 	unsigned int getLevel() const  {  return level_;  }
-#else
-	unsigned int getLevel() const  {  return level_;  }
-#endif
 
 	/**
 	 *	@brief  발생한 exception의 log message를 반환.
@@ -141,11 +143,7 @@ public:
 	 *	@brief  exception을 발생시킨 파일의 줄 번호.
 	 *	@return  exception이 발생한 파일의 줄 번호를 반환.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
 	long getLineNumber() const  {  return lineNo_;  }
-#else
-	long getLineNumber() const  {  return lineNo_;  }
-#endif
 
 	/**
 	 *	@brief  exception을 발생시킨 class의 이름.
@@ -201,6 +199,7 @@ private:
 
 private:
 	const unsigned int level_;
+
 #if defined(UNICODE) || defined(_UNICODE)
 	const std::wstring message_;
 #else

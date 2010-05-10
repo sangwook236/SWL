@@ -36,7 +36,7 @@ private:
 
 public:
 	/**
-	 *	@brief  [ctor] default contructor.
+	 *	@brief  [ctor] default constructor.
 	 *
 	 *	내부 data buffer를 초기화한다.
 	 */

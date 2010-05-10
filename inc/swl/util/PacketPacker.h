@@ -54,7 +54,7 @@ public:
 
 public:
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  packetSize  통신 규약의 길이. packetSize가 0이라면 가변 길이 protocol이 됨.
 	 *	@param[in]  isLittleEndian  multi-byte data가 little-endian (reverse order)으로 packing되는지 지정.
 	 *

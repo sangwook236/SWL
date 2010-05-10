@@ -44,7 +44,7 @@ public:
 
 public:
 	/**
-	 *	@brief  [ctor] default contructor.
+	 *	@brief  [ctor] default constructor.
 	 *
 	 *	serial 통신을 위해 필요한 설정값들을 초기화한다.
 	 */

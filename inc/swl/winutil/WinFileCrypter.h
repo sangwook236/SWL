@@ -19,7 +19,7 @@ namespace swl {
 class SWL_WIN_UTIL_API WinFileCrypter
 {
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  filename  파일 암호화 및 복호화가 적용될 파일명을 지정.
 	 *	@param[in]  isEcrypted  파일을 암호화할 것인지 복호화할 것인지 지정.
 	 */

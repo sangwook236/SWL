@@ -50,7 +50,7 @@ public:
 
 		const swl::PolylineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 
-		swl::PolylineROI roi(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1));
+		swl::PolylineROI roi(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type());
 
 		roi.addPoint(pt1);
 		roi.addPoint(pt2);

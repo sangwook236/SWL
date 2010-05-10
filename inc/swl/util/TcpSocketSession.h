@@ -25,7 +25,7 @@ public:
 
 protected:
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  socket  TCP socket 통신을 위한 Boost.ASIO의 socket 객체.
 	 *
 	 *	TCP socket 통신 session을 위해 필요한 설정들을 초기화한다.

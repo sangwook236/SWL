@@ -46,12 +46,12 @@ public:
 
 		swl::RegionOfInterestMgr &roiMgr = swl::RegionOfInterestMgr::getInstance();
 
-		swl::LineROI roi1(swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), true, swl::LineROI::color_type(), swl::LineROI::real_type(1));
-		swl::RectangleROI roi2(swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), true, swl::RectangleROI::color_type(), swl::RectangleROI::real_type(1));
-		swl::PolylineROI roi3(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1));
+		swl::LineROI roi1(swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), swl::LineROI::point_type((swl::LineROI::real_type)std::rand(), (swl::LineROI::real_type)std::rand()), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		swl::RectangleROI roi2(swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), swl::RectangleROI::point_type((swl::RectangleROI::real_type)std::rand(), (swl::RectangleROI::real_type)std::rand()), true, swl::RectangleROI::real_type(1), swl::RectangleROI::real_type(1), swl::RectangleROI::color_type(), swl::RectangleROI::color_type());
+		swl::PolylineROI roi3(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type());
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
 			roi3.addPoint(swl::PolylineROI::point_type((swl::PolylineROI::real_type)std::rand(), (swl::PolylineROI::real_type)std::rand()));
-		swl::PolygonROI roi4(true, swl::PolygonROI::color_type(), swl::PolygonROI::real_type(1));
+		swl::PolygonROI roi4(true, swl::PolygonROI::real_type(1), swl::PolygonROI::real_type(1), swl::PolygonROI::color_type(), swl::PolygonROI::color_type());
 		for (int i = 0; i < ((std::rand() + 1) % 101); ++i)
 			roi4.addPoint(swl::PolygonROI::point_type((swl::PolygonROI::real_type)std::rand(), (swl::PolygonROI::real_type)std::rand()));
 

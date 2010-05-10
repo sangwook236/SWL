@@ -54,7 +54,7 @@ public:
 	{
 		Fixture fixture;
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		BOOST_CHECK(!roi->containPoint());
@@ -104,7 +104,7 @@ public:
 		const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 		const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		roi->addPoint(pt1);
@@ -146,7 +146,7 @@ public:
 		const swl::ROIWithVariablePoints::point_type bigDelta(100.0f, -100.0f);
 		const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		{
@@ -219,7 +219,7 @@ public:
 		const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 		const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		roi->addPoint(pt1);
@@ -243,7 +243,7 @@ public:
 		const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 32.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 		const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		{
@@ -303,7 +303,7 @@ public:
 
 		const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 
-		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::color_type(), swl::PolylineROI::real_type(1)));
+		boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
 		BOOST_CHECK(roi);
 
 		roi->addPoint(pt1);

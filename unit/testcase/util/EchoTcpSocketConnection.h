@@ -31,7 +31,7 @@ public:
 
 private:
 	/**
-	 *	@brief  [ctor] private contructor.
+	 *	@brief  [ctor] private constructor.
 	 *	@param[in]  ioService  TCP socket 통신을 위한 Boost.ASIO의 I/O service 객체.
 	 *
 	 *	TCP socket connection 객체의 초기화를 수행한다.

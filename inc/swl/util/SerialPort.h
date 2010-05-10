@@ -40,7 +40,7 @@ public:
 
 public:
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  ioService  serial 통신을 위한 Boost.ASIO의 I/O service 객체.
 	 *
 	 *	serial 통신을 위해 필요한 설정들을 초기화한다.

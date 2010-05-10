@@ -19,7 +19,7 @@ namespace swl {
 class SWL_WIN_UTIL_API WinFileLocker
 {
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  filename  파일 잠금이 적용될 파일명을 지정.
 	 *
 	 *	지정된 파일에 대한 잠금을 수행한다.

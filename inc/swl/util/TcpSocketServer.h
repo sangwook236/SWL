@@ -41,7 +41,7 @@ public:
 
 public:
 	/**
-	 *	@brief  [ctor] contructor.
+	 *	@brief  [ctor] constructor.
 	 *	@param[in]  ioService  TCP socket 통신을 위한 Boost.ASIO의 I/O service 객체.
 	 *	@param[in]  portNum  TCP socket 통신을 위한 server가 open하는 port 번호.
 	 *
