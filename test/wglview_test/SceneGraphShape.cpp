@@ -210,75 +210,107 @@ void ColoredMeshShape::draw() const
 	// set attributes
 	glDisable(GL_LIGHTING);
 
-	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
-	glBegin(GL_QUADS);
-		for (size_t h = 0; h < meshHeight_ - 1; ++h)
-			for (size_t w = 0; w < meshWidth_ - 1; ++w)
-			{
-				x1 = float(w) + xOffset_;
-				x2 = float(w+1) + xOffset_;
-				x3 = float(w+1) + xOffset_;
-				x4 = float(w) + xOffset_;
+	const GLuint id = reinterpret_cast<GLuint>(this);
+	glPushName(id);
+		bool useObjectColor = false;
+		swl::ObjectPickerMgr::color_type objectColor;
+		if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(id))
+		{
+			objectColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+			useObjectColor = true;
+		}
+		else if (swl::ObjectPickerMgr::getInstance().isPickedObject(id))
+		{
+			objectColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+			useObjectColor = true;
+		}
+
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
+		glBegin(GL_QUADS);
+			for (size_t h = 0; h < meshHeight_ - 1; ++h)
+				for (size_t w = 0; w < meshWidth_ - 1; ++w)
+				{
+					x1 = float(w) + xOffset_;
+					x2 = float(w+1) + xOffset_;
+					x3 = float(w+1) + xOffset_;
+					x4 = float(w) + xOffset_;
 #if 0
-				y1 = float(h) + yOffset_;
-				y2 = float(h) + yOffset_;
-				y3 = float(h+1) + yOffset_;
-				y4 = float(h+1) + yOffset_;
+					y1 = float(h) + yOffset_;
+					y2 = float(h) + yOffset_;
+					y3 = float(h+1) + yOffset_;
+					y4 = float(h+1) + yOffset_;
 #else
-				// flipped image
-				y1 = float(meshHeight_ - h) + yOffset_;
-				y2 = float(meshHeight_ - h) + yOffset_;
-				y3 = float(meshHeight_ - (h+1)) + yOffset_;
-				y4 = float(meshHeight_ - (h+1)) + yOffset_;
+					// flipped image
+					y1 = float(meshHeight_ - h) + yOffset_;
+					y2 = float(meshHeight_ - h) + yOffset_;
+					y3 = float(meshHeight_ - (h+1)) + yOffset_;
+					y4 = float(meshHeight_ - (h+1)) + yOffset_;
 #endif
 
-				temp1 = mesh_[h * meshWidth_ + w];
-				z1 = temp1 * zScaleFactor_ + zOffset_;
-				temp2 = mesh_[h * meshWidth_ + (w+1)];
-				z2 = temp2 * zScaleFactor_ + zOffset_;
-				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
-				z3 = temp3 * zScaleFactor_ + zOffset_;
-				temp4 = mesh_[(h+1) * meshWidth_ + w];
-				z4 = temp4 * zScaleFactor_ + zOffset_;
+					temp1 = mesh_[h * meshWidth_ + w];
+					z1 = temp1 * zScaleFactor_ + zOffset_;
+					temp2 = mesh_[h * meshWidth_ + (w+1)];
+					z2 = temp2 * zScaleFactor_ + zOffset_;
+					temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
+					z3 = temp3 * zScaleFactor_ + zOffset_;
+					temp4 = mesh_[(h+1) * meshWidth_ + w];
+					z4 = temp4 * zScaleFactor_ + zOffset_;
 
-				//glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 
-				//calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+					//calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
 
-				//
-				colorIndex = meshColorIndexes_[h * meshWidth_ + w] * paletteColorDim_;
-				r = palette_[colorIndex] / 255.0f;
-				g = palette_[colorIndex + 1] / 255.0f;
-				b = palette_[colorIndex + 2] / 255.0f;
-				glColor3f(r, g, b);
-				//glNormal3f(nx, ny, nz);
-				glVertex3f(x1, y1, z1);
-				//
-				colorIndex = meshColorIndexes_[h * meshWidth_ + (w+1)] * paletteColorDim_;
-				r = palette_[colorIndex] / 255.0f;
-				g = palette_[colorIndex + 1] / 255.0f;
-				b = palette_[colorIndex + 2] / 255.0f;
-				glColor3f(r, g, b);
-				//glNormal3f(nx, ny, nz);
-				glVertex3f(x2, y2, z2);
-				//
-				colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + (w+1)] * paletteColorDim_;
-				r = palette_[colorIndex] / 255.0f;
-				g = palette_[colorIndex + 1] / 255.0f;
-				b = palette_[colorIndex + 2] / 255.0f;
-				glColor3f(r, g, b);
-				//glNormal3f(nx, ny, nz);
-				glVertex3f(x3, y3, z3);
-				//
-				colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + w] * paletteColorDim_;
-				r = palette_[colorIndex] / 255.0f;
-				g = palette_[colorIndex + 1] / 255.0f;
-				b = palette_[colorIndex + 2] / 255.0f;
-				glColor3f(r, g, b);
-				//glNormal3f(nx, ny, nz);
-				glVertex3f(x4, y4, z4);
-			}
-	glEnd();
+					//
+					if (useObjectColor) glColor4f(objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+					else
+					{
+						colorIndex = meshColorIndexes_[h * meshWidth_ + w] * paletteColorDim_;
+						r = palette_[colorIndex] / 255.0f;
+						g = palette_[colorIndex + 1] / 255.0f;
+						b = palette_[colorIndex + 2] / 255.0f;
+						glColor3f(r, g, b);
+					}
+					//glNormal3f(nx, ny, nz);
+					glVertex3f(x1, y1, z1);
+					//
+					if (useObjectColor) glColor4f(objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+					else
+					{
+						colorIndex = meshColorIndexes_[h * meshWidth_ + (w+1)] * paletteColorDim_;
+						r = palette_[colorIndex] / 255.0f;
+						g = palette_[colorIndex + 1] / 255.0f;
+						b = palette_[colorIndex + 2] / 255.0f;
+						glColor3f(r, g, b);
+					}
+					//glNormal3f(nx, ny, nz);
+					glVertex3f(x2, y2, z2);
+					//
+					if (useObjectColor) glColor4f(objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+					else
+					{
+						colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + (w+1)] * paletteColorDim_;
+						r = palette_[colorIndex] / 255.0f;
+						g = palette_[colorIndex + 1] / 255.0f;
+						b = palette_[colorIndex + 2] / 255.0f;
+						glColor3f(r, g, b);
+					}
+					//glNormal3f(nx, ny, nz);
+					glVertex3f(x3, y3, z3);
+					//
+					if (useObjectColor) glColor4f(objectColor.r, objectColor.g, objectColor.b, objectColor.a);
+					else
+					{
+						colorIndex = meshColorIndexes_[(h+1) * meshWidth_ + w] * paletteColorDim_;
+						r = palette_[colorIndex] / 255.0f;
+						g = palette_[colorIndex + 1] / 255.0f;
+						b = palette_[colorIndex + 2] / 255.0f;
+						glColor3f(r, g, b);
+					}
+					//glNormal3f(nx, ny, nz);
+					glVertex3f(x4, y4, z4);
+				}
+		glEnd();
+	glPopName();
 
 	// pop original attributes
 	glPopAttrib();  // GL_LIGHTING_BIT
@@ -467,61 +499,77 @@ void TexturedMeshShape::drawTexturedMesh() const
 	// set a texture object
 	glBindTexture(GL_TEXTURE_2D, textureObjs_[0]);
 
-	float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
-	float nx, ny, nz;
-	glBegin(GL_QUADS);
-		for (size_t h = 0; h < meshHeight_ - 1; ++h)
-			for (size_t w = 0; w < meshWidth_ - 1; ++w)
-			{
-				x1 = float(w) + xOffset_;
-				x2 = float(w+1) + xOffset_;
-				x3 = float(w+1) + xOffset_;
-				x4 = float(w) + xOffset_;
+	const GLuint id = reinterpret_cast<GLuint>(this);
+	glPushName(id);
+		bool useObjectColor = false;
+		swl::ObjectPickerMgr::color_type objectColor;
+		if (swl::ObjectPickerMgr::getInstance().isPicking() && swl::ObjectPickerMgr::getInstance().isTemporarilyPickedObject(id))
+		{
+			objectColor = swl::ObjectPickerMgr::getInstance().getTemporarilyPickedColor();
+			useObjectColor = true;
+		}
+		else if (swl::ObjectPickerMgr::getInstance().isPickedObject(id))
+		{
+			objectColor = swl::ObjectPickerMgr::getInstance().getPickedColor();
+			useObjectColor = true;
+		}
+
+		float x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, temp1, temp2, temp3, temp4;
+		float nx, ny, nz;
+		glBegin(GL_QUADS);
+			for (size_t h = 0; h < meshHeight_ - 1; ++h)
+				for (size_t w = 0; w < meshWidth_ - 1; ++w)
+				{
+					x1 = float(w) + xOffset_;
+					x2 = float(w+1) + xOffset_;
+					x3 = float(w+1) + xOffset_;
+					x4 = float(w) + xOffset_;
 #if 0
-				y1 = float(h) + yOffset_;
-				y2 = float(h) + yOffset_;
-				y3 = float(h+1) + yOffset_;
-				y4 = float(h+1) + yOffset_;
+					y1 = float(h) + yOffset_;
+					y2 = float(h) + yOffset_;
+					y3 = float(h+1) + yOffset_;
+					y4 = float(h+1) + yOffset_;
 #else
-				// flipped image
-				y1 = float(meshHeight_ - h) + yOffset_;
-				y2 = float(meshHeight_ - h) + yOffset_;
-				y3 = float(meshHeight_ - (h+1)) + yOffset_;
-				y4 = float(meshHeight_ - (h+1)) + yOffset_;
+					// flipped image
+					y1 = float(meshHeight_ - h) + yOffset_;
+					y2 = float(meshHeight_ - h) + yOffset_;
+					y3 = float(meshHeight_ - (h+1)) + yOffset_;
+					y4 = float(meshHeight_ - (h+1)) + yOffset_;
 #endif
 
-				temp1 = mesh_[h * meshWidth_ + w];
-				z1 = temp1 * zScaleFactor_ + zOffset_;
-				temp2 = mesh_[h * meshWidth_ + (w+1)];
-				z2 = temp2 * zScaleFactor_ + zOffset_;
-				temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
-				z3 = temp3 * zScaleFactor_ + zOffset_;
-				temp4 = mesh_[(h+1) * meshWidth_ + w];
-				z4 = temp4 * zScaleFactor_ + zOffset_;
+					temp1 = mesh_[h * meshWidth_ + w];
+					z1 = temp1 * zScaleFactor_ + zOffset_;
+					temp2 = mesh_[h * meshWidth_ + (w+1)];
+					z2 = temp2 * zScaleFactor_ + zOffset_;
+					temp3 = mesh_[(h+1) * meshWidth_ + (w+1)];
+					z3 = temp3 * zScaleFactor_ + zOffset_;
+					temp4 = mesh_[(h+1) * meshWidth_ + w];
+					z4 = temp4 * zScaleFactor_ + zOffset_;
 
-				//glEdgeFlag(GL_TRUE);
+					//glEdgeFlag(GL_TRUE);
 
-				calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
-				glColor4f(red(), green(), blue(), alpha());
+					calculateNormal(x2 - x1, y2 - y1, z2 - z1, x3 - x1, y3 - y1, z3 - z1, nx, ny, nz);
+					glColor4f(red(), green(), blue(), alpha());
 
-				//
-				glNormal3f(nx, ny, nz);
-				glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
-				glVertex3f(x1, y1, z1);
-				//
-				glNormal3f(nx, ny, nz);
-				glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
-				glVertex3f(x2, y2, z2);
-				//
-				glNormal3f(nx, ny, nz);
-				glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
-				glVertex3f(x3, y3, z3);
-				//
-				glNormal3f(nx, ny, nz);
-				glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
-				glVertex3f(x4, y4, z4);
-			}
-	glEnd();
+					//
+					glNormal3f(nx, ny, nz);
+					glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
+					glVertex3f(x1, y1, z1);
+					//
+					glNormal3f(nx, ny, nz);
+					glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h) / float(meshHeight_ - 1));
+					glVertex3f(x2, y2, z2);
+					//
+					glNormal3f(nx, ny, nz);
+					glTexCoord2f(float(w+1) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
+					glVertex3f(x3, y3, z3);
+					//
+					glNormal3f(nx, ny, nz);
+					glTexCoord2f(float(w) / float(meshWidth_ - 1), float(h+1) / float(meshHeight_ - 1));
+					glVertex3f(x4, y4, z4);
+				}
+		glEnd();
+	glPopName();
 
 	// restore to the unnamed default texture
 	//glBindTexture(GL_TEXTURE_2D, 0);
