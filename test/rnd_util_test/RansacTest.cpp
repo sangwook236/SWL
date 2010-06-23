@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/math/MathConstant.h"
-#include "swl/rnd_base/Ransac.h"
+#include "swl/rnd_util/Ransac.h"
 #include <iostream>
 #include <ctime>
 #include <cmath>

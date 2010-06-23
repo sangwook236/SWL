@@ -86,7 +86,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_test", "
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_base_test", "..\test\rnd_base_test\swl_rnd_base_test_msvc90.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test", "..\test\rnd_util_test\swl_rnd_util_test_msvc90.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
@@ -100,7 +100,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision", "..\sr
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_base", "..\src\rnd_base\swl_rnd_base_msvc90.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util", "..\src\rnd_util\swl_rnd_util_msvc90.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
 	ProjectSection(ProjectDependencies) = postProject
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 	EndProjectSection

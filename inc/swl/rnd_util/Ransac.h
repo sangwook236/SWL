@@ -1,8 +1,8 @@
-#if !defined(__SWL_RND_BASE__RANSAC__H_)
-#define __SWL_RND_BASE__RANSAC__H_ 1
+#if !defined(__SWL_RND_UTIL__RANSAC__H_)
+#define __SWL_RND_UTIL__RANSAC__H_ 1
 
 
-#include "swl/rnd_base/ExportRndBase.h"
+#include "swl/rnd_util/ExportRndUtil.h"
 #include <vector>
 
 
@@ -11,7 +11,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //
 
-class SWL_RND_BASE_API Ransac
+class SWL_RND_UTIL_API Ransac
 {
 public:
 	//typedef Ransac base_type;
@@ -78,4 +78,4 @@ protected:
 }  // namespace swl
 
 
-#endif  // __SWL_RND_BASE__RANSAC__H_
+#endif  // __SWL_RND_UTIL__RANSAC__H_

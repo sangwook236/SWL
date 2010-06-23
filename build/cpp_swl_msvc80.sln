@@ -131,7 +131,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_test", "..\test
 		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_base", "..\src\rnd_base\swl_rnd_base_msvc80.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util", "..\src\rnd_util\swl_rnd_util_msvc80.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
@@ -151,7 +151,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision", "..\sr
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_base_test", "..\test\rnd_base_test\swl_rnd_base_test_msvc80.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test", "..\test\rnd_util_test\swl_rnd_util_test_msvc80.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
