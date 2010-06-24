@@ -61,9 +61,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib"
+				AdditionalDependencies="swl_base.lib libgslcblas_d.lib libgsl_d.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
+				IgnoreDefaultLibraryNames="LIBCMTD.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				ImportLibrary="../../lib/$(ConfigurationName)/$(TargetName).lib"
@@ -138,9 +139,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_base.lib"
+				AdditionalDependencies="swl_base.lib libgslcblas.lib libgsl.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
+				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -183,6 +185,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\ExtendedKalmanFilter.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\KalmanFilter.cpp"
 				>
 			</File>
@@ -198,6 +204,10 @@
 			>
 			<File
 				RelativePath="..\..\inc\swl\rnd_util\ExportRndUtil.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h"
 				>
 			</File>
 			<File
