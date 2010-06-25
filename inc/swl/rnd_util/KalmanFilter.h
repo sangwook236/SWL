@@ -57,20 +57,22 @@ private:
 	virtual gsl_vector * getMeasurement(const size_t step) const = 0;
 
 	// for continuous Kalman filter
-	virtual gsl_matrix * getSystemMatrix(const size_t step) const = 0;
+	virtual gsl_matrix * getSystemMatrix(const size_t step) const = 0;  // A
 	// for discrete Kalman filter
-	virtual gsl_matrix * getStateTransitionMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getInputMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getOutputMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;
+	virtual gsl_matrix * getStateTransitionMatrix(const size_t step) const = 0;  // Phi
 
-	virtual gsl_vector * getControlInput(const size_t step) const = 0;
+	virtual gsl_matrix * getOutputMatrix(const size_t step) const = 0;  // C or Cd
+	virtual gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const = 0;  // G
+	virtual gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // H
+	virtual gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd
+	virtual gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R
+
+	virtual gsl_vector * getControlInput(const size_t step) const = 0;  // Bu = B * u or Bd * u
 
 protected:
 	// estimated state vector
 	gsl_vector *x_hat_;
-	// estimated output vector
+	// estimated output(measurement) vector
 	gsl_vector *y_hat_;
 	// state error covariance matrix
 	gsl_matrix *P_;

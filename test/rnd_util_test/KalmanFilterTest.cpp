@@ -85,16 +85,18 @@ private:
 	// for continuous Kalman filter
 	/*virtual*/ gsl_matrix * getSystemMatrix(const size_t step) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * getInputMatrix(const size_t step) const
-	{  throw std::runtime_error("this function doesn't have to be called");  }
+
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step) const  {  return H_;  }
+	/*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return R_;  }
 
-	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd(t) * u(t)
+	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd * u
 
 protected:
 	gsl_matrix *Phi_;
@@ -103,7 +105,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *R_;
 
-	// control input: Bu = Bd(t) * u(t). Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
 	gsl_vector *Bu_;
 	// actual measurement
 	gsl_vector *y_tilde_;
@@ -215,16 +217,18 @@ private:
 	// for continuous Kalman filter
 	/*virtual*/ gsl_matrix * getSystemMatrix(const size_t step) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * getInputMatrix(const size_t step) const
-	{  throw std::runtime_error("this function doesn't have to be called");  }
+
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step) const  {  return H_;  }
+	/*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return R_;  }
 
-	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd(t) * u(t)
+	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd * u
 
 protected:
 	gsl_matrix *Phi_;
@@ -233,7 +237,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *R_;
 
-	// control input: Bu = Bd(t) * u(t). Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
 	gsl_vector *Bu_;
 	// actual measurement
 	gsl_vector *y_tilde_;
@@ -314,8 +318,8 @@ public:
 		R_ = gsl_matrix_alloc(outputDim_, outputDim_);
 		gsl_matrix_set_all(R_, R);
 
-		// driving force: Bu = Bd(t) * u(t)
-		//	Bd = A^-1 * (Ad - I) * B. Ad = Phi = exp(A * T). B = [0 ; 12]. u(t) = 1
+		// driving force: Bu = Bd * u
+		//	where Bd = A^-1 * (Ad - I) * B. Ad = Phi = exp(A * T). B = [0 ; 12]. u(t) = 1
 		Bu_ = gsl_vector_alloc(stateDim_);
 #if 0
 		gsl_vector_set(Bu_, 0, 12.0 * (1.0 - lambda*(c-zeta*s*xi/psi)) / (omega*omega));  gsl_vector_set(Bu_, 1, 12.0 * lambda*s / (omega*xi));
@@ -354,16 +358,18 @@ private:
 	// for continuous Kalman filter
 	/*virtual*/ gsl_matrix * getSystemMatrix(const size_t step) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * getInputMatrix(const size_t step) const
-	{  throw std::runtime_error("this function doesn't have to be called");  }
+
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step) const  {  return H_;  }
+	/*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return R_;  }
 
-	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd(t) * u(t)
+	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd * u
 
 protected:
 	gsl_matrix *Phi_;
@@ -372,7 +378,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *R_;
 
-	// control input: Bu = Bd(t) * u(t). Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
 	gsl_vector *Bu_;
 	// actual measurement
 	gsl_vector *y_tilde_;
@@ -477,19 +483,19 @@ private:
 
 	// for continuous Kalman filter
 	/*virtual*/ gsl_matrix * getSystemMatrix(const size_t step) const
-	{
-		throw std::runtime_error("this function doesn't have to be called");
-	}
-
+	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * getInputMatrix(const size_t step) const
-	{  throw std::runtime_error("this function doesn't have to be called");  }
+
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step) const  {  return H_;  }
+	/*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return R_;  }
 
-	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd(t) * u(t)
+	/*virtual*/ gsl_vector * getControlInput(const size_t step) const  {  return Bu_;  }  // Bu = Bd * u
 
 protected:
 	gsl_matrix *Phi_;
@@ -498,7 +504,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *R_;
 
-	// control input: Bu = Bd(t) * u(t). Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
 	gsl_vector *Bu_;
 	// actual measurement
 	gsl_vector *y_tilde_;

@@ -60,30 +60,52 @@ KalmanFilter::~KalmanFilter()
 
 bool KalmanFilter::propagate(const double time)
 {
+	//-------------------------------------------------------------------------
+	// the continuous plant:
+	//
+	// dx(t)/dt = A(t) * x(t) + B(t) * u(t) + G(t) * w(t)
+	// y(t) = C(t) * x(t) + D(t) * u(t) + H(t) * w(t) + v(t)
+	// where E[w(t)] = E[v(t)] = 0, Q(t) = E[w(t) * w(t)^T], R(t) = E[v(t) * v(t)^T], N(t) = E[w(t) * v(t)^T]
+	//
+	// currently, this code is implemented only for D(t) = H(t) = N(t) = 0
+	// in case of D(t) != 0 || H(t) != 0 || N(t) != 0, refer to Kalman filter in Matlab's help
+
 #if 0
 	if (!x_hat_ || !y_hat_ || !P_ || !K_) return false;
 
-	const gsl_matrix *A = getSystemMatrix(step);
-	const gsl_matrix *G = getInputMatrix(step);
-	const gsl_matrix *C = getOutputMatrix(step);
-	const gsl_matrix *Q = getProcessNoiseCovarianceMatrix(step);  // Q, but not Qd
-	const gsl_matrix *R = getMeasurementNoiseCovarianceMatrix(step);
+	const gsl_matrix *A = getSystemMatrix(time);
+	const gsl_matrix *C = getOutputMatrix(time);
+	const gsl_matrix *G = getProcessNoiseCouplingMatrix(time);
+	const gsl_matrix *H = getMeasurementNoiseCouplingMatrix(time);
+	const gsl_matrix *Q = getProcessNoiseCovarianceMatrix(time);  // Q, but not Qd
+	const gsl_matrix *R = getMeasurementNoiseCovarianceMatrix(time);
 
-	const gsl_vector *Bu = getControlInput(step);
-	const gsl_vector *y_tilde = getMeasurement(step);
+	const gsl_vector *Bu = getControlInput(time);  // Bu = B * u
+	const gsl_vector *y_tilde = getMeasurement(time);  // actual measurement
 	if (!A || !G || !C || !Q || !R || !Bu || !y_tilde) return false;
 
 	// gsl_blas_dgemv: y = a op(A) x + b y
 	// gsl_blas_dgemm: C = a op(A) op(B) + b C
 	//	CBLAS_TRANSPOSE_t: CblasNoTrans, CblasTrans, CblasConjTrans
 
-	// calculate Kalman gain
+	//-------------------------------------------------------------------------
+	// continuous Kalman filter time update equations (prediction)
 
-	// update measurement
+	// 1. propagate time
+	// dx(t)/dt = A * x(t) + B * u
+	// dP(t)/dt = A * P(t) + P(t) * A^T + G * Q * G^T
 
-	// update covariance
+	// preserve symmetry of P
+	//gsl_matrix_transpose_memcpy(M_, P_);
+	//gsl_matrix_add(P_, M_);
+	//gsl_matrix_scale(P_, 0.5);
 
-	// propagate time
+	//-------------------------------------------------------------------------
+	// continuous Kalman filter measurement update equations (correction)
+
+	// 1. calculate Kalman gain: K(t) = P(t) * C^T * R^-1
+	// 2. update measurement: dx(t)/dt = A * x(t) + B * u + K(t) * (y_tilde - y_hat) where y_hat = C * x-(t)
+	// 3. update covariance: dP(t)/dt = A * P(t) + P(t) * A^T + G * Q * G^T - K(t) * C * P(t)
 
 	// preserve symmetry of P
 	gsl_matrix_transpose_memcpy(M_, P_);
@@ -98,38 +120,36 @@ bool KalmanFilter::propagate(const double time)
 
 bool KalmanFilter::propagate(const size_t step)  // 1-based time step. 0-th time step is initial
 {
+	//-------------------------------------------------------------------------
+	// the discrete plant:
+	//
+	// x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + G(k) * w(k)
+	// y(k) = Cd(k) * x(k) + Dd(k) * u(k) + H(k) * w(k) + v(k)
+	// where E[w(k)] = E[v(k)] = 0, Q(k) = E[w(k) * w(k)^T], R(k) = E[v(k) * v(k)^T], N(k) = E[w(k) * v(k)^T], Qd(k) = G(k) * Q(k) * G(k)^T
+	//
+	// currently, this code is implemented only for Dd(k) = H(k) = N(k) = 0
+	// in case of Dd(k) != 0 || H(k) != 0 || N(k) != 0, refer to Kalman filter in Matlab's help
+
 	if (!x_hat_ || !y_hat_ || !P_ || !K_) return false;
 
 	const gsl_matrix *Phi = getStateTransitionMatrix(step);
-	const gsl_matrix *H = getOutputMatrix(step);
+	const gsl_matrix *Cd = getOutputMatrix(step);
 	const gsl_matrix *Qd = getProcessNoiseCovarianceMatrix(step);  // Qd, but not Q
 	const gsl_matrix *R = getMeasurementNoiseCovarianceMatrix(step);
 
-	const gsl_vector *Bu = getControlInput(step);
-	const gsl_vector *y_tilde = getMeasurement(step);
-	if (!Phi || !H || !Qd || !R || !Bu || !y_tilde) return false;
+	const gsl_vector *Bu = getControlInput(step);  // Bu = Bd * u
+	const gsl_vector *y_tilde = getMeasurement(step);  // actual measurement
+	if (!Phi || !Cd || !Qd || !R || !Bu || !y_tilde) return false;
 
 	// gsl_blas_dgemv: y = a op(A) x + b y
-	// gsl_blas_dgemm: H = a op(A) op(B) + b H
+	// gsl_blas_dgemm: C = a op(A) op(B) + b C
 	//	CBLAS_TRANSPOSE_t: CblasNoTrans, CblasTrans, CblasConjTrans
 
-	// 1. propagate time
-#if 0
-	// using Q
-	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, Phi, P_, 0.0, M_) ||
-		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M_, Phi, 0.0, M_) ||
-		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, G, Qd, 0.0, M2_) ||
-		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M2_, G, 0.0, P_) ||
-		GSL_SUCCESS != gsl_matrix_add(P_, M_))
-		return false;
-#else
-	// using Qd = Gamma * Q * Gamma^T
-	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, Phi, P_, 0.0, M_) ||
-		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M_, Phi, 0.0, P_) ||
-		GSL_SUCCESS != gsl_matrix_add(P_, Qd))
-		return false;
-#endif
+	//-------------------------------------------------------------------------
+	// discrete Kalman filter time update equations (prediction)
 
+	// 1. propagate time
+	// x-(k) = Phi * x(k-1) + Bd * u
 #if 0
 	// not working
 	if (GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, 1.0, Phi, x_hat_, 0.0, x_hat_) ||
@@ -142,11 +162,36 @@ bool KalmanFilter::propagate(const size_t step)  // 1-based time step. 0-th time
 		return false;
 #endif
 
-	// 2. calculate Kalman gain
+	// P-(k) = Phi * P(k-1) * Phi^T + Qd
+#if 0
+	// using Q
+	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, Phi, P_, 0.0, M_) ||
+		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M_, Phi, 0.0, M_) ||
+		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, G, Qd, 0.0, M2_) ||
+		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M2_, G, 0.0, P_) ||
+		GSL_SUCCESS != gsl_matrix_add(P_, M_))
+		return false;
+#else
+	// using Qd = G * Q * G^T
+	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, Phi, P_, 0.0, M_) ||
+		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, M_, Phi, 0.0, P_) ||
+		GSL_SUCCESS != gsl_matrix_add(P_, Qd))
+		return false;
+#endif
+
+	// preserve symmetry of P
+	//gsl_matrix_transpose_memcpy(M_, P_);
+	//gsl_matrix_add(P_, M_);
+	//gsl_matrix_scale(P_, 0.5);
+
+	//-------------------------------------------------------------------------
+	// discrete Kalman filter measurement update equations (correction)
+
+	// 1. calculate Kalman gain: K(k) = P-(k) * Cd^T * (Cd * P-(k) * Cd^T + R)^-1
 	// inverse of matrix using LU decomposition
 	gsl_matrix_memcpy(RR_, R);
-	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, P_, H, 0.0, PHt_) ||
-		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, H, PHt_, 1.0, RR_))
+	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, P_, Cd, 0.0, PHt_) ||
+		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, Cd, PHt_, 1.0, RR_))
 		return false;
 
 	int signum;
@@ -157,37 +202,37 @@ bool KalmanFilter::propagate(const size_t step)  // 1-based time step. 0-th time
 	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, PHt_, invRR_, 0.0, K_))  // calculate Kalman gain
 		return false;
 
-	// 3. update measurement
+	// 2. update measurement: x(k) = x-(k) + K(k) * (y_tilde - y_hat) where y_hat = Cd * x-(k)
 #if 1
-	if (GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, 1.0, H, x_hat_, 0.0, y_hat_))  // calcuate y_hat
+	if (GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, 1.0, Cd, x_hat_, 0.0, y_hat_))  // calcuate y_hat
 		return false;
 	gsl_vector_memcpy(r_, y_hat_);
 	if (GSL_SUCCESS != gsl_vector_sub(r_, y_tilde) ||  // calculate residual = y_tilde - y_hat
 		GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, -1.0, K_, r_, 1.0, x_hat_))  // calculate x_hat
 		return false;
 #else
-	if (GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, 1.0, H, x_hat_, 0.0, r_) ||  // calcuate y_hat
+	if (GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, 1.0, Cd, x_hat_, 0.0, r_) ||  // calcuate y_hat
 		GSL_SUCCESS != gsl_vector_sub(r_, y_tilde) ||  // calculate residual = y_tilde - y_hat
 		GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, -1.0, K_, r_, 1.0, x_hat_))  // calculate x_hat
 		return false;
 #endif
 
-	// 4. update covariance
+	// 3. update covariance: P(k) = (I - K(k) * Cd) * P-(k)
 #if 0
 	// not working
 	gsl_matrix_set_identity(M_);
-	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, -1.0, K_, H, 1.0, M_) ||
+	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, -1.0, K_, Cd, 1.0, M_) ||
 		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, M_, P_, 0.0, P_))
 		return false;
 #else
 	gsl_matrix_set_identity(M_);
-	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, -1.0, K_, H, 1.0, M_) ||
+	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, -1.0, K_, Cd, 1.0, M_) ||
 		GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasNoTrans, 1.0, M_, P_, 0.0, M2_))
 		return false;
 	gsl_matrix_memcpy(P_, M2_);
 #endif
 
-	// 5. preserve symmetry of P
+	// preserve symmetry of P
 	gsl_matrix_transpose_memcpy(M_, P_);
 	gsl_matrix_add(P_, M_);
 	gsl_matrix_scale(P_, 0.5);
