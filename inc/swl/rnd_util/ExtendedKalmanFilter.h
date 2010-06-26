@@ -40,13 +40,13 @@ private:
 	ExtendedKalmanFilter & operator=(const ExtendedKalmanFilter &rhs);
 
 public:
-	// for continuous Kalman filter
+	// for continuous extended Kalman filter
 	bool propagate(const double time);
-	// for discrete Kalman filter
+	// for discrete extended Kalman filter
 	bool propagate(const size_t step);  // 1-based time step. 0-th time step is initial
 
-	const gsl_vector * getState() const  {  return x_;  }
-	const gsl_vector * getOutput() const  {  return y_;  }
+	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
+	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }
 	const gsl_matrix * getStateErrorCovarianceMatrix() const  {  return P_;  }
 	const gsl_matrix * getKalmanGain() const  {  return K_;  }
 
@@ -55,24 +55,27 @@ public:
 	size_t getOutputDim() const  {  return outputDim_;  }
 
 private:
-	virtual gsl_vector * getMeasurement(const size_t step) const = 0;
+	// for continuous extended Kalman filter
+	virtual gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const = 0;  // A
+	// for discrete extended Kalman filter
+	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi
+	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C == Cd
 
-	// for continuous Kalman filter
-	virtual gsl_matrix * getSystemMatrix(const size_t step) const = 0;
-	// for discrete Kalman filter
-	virtual gsl_matrix * getStateTransitionMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getInputMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getOutputMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const = 0;
-	virtual gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;
+	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W
+	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V
+	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
+	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
 
-	virtual gsl_vector * getControlInput(const size_t step) const = 0;
+	virtual gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const = 0;  // f = f(k, x(k), u(k), 0)
+	virtual gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const = 0;  // h = h(k, x(k), u(k), 0)
+
+	virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
 
 protected:
-	// state vector
-	gsl_vector *x_;
-	// computed output vector
-	gsl_vector *y_;
+	// estimated state vector
+	gsl_vector *x_hat_;
+	// estimated measurement vector
+	//gsl_vector *y_hat_;
 	// state error covariance matrix
 	gsl_matrix *P_;
 	// Kalman gain
@@ -81,6 +84,20 @@ protected:
 	const size_t stateDim_;
 	const size_t inputDim_;
 	const size_t outputDim_;
+
+private:
+	// residual = y_tilde - y_hat
+	gsl_vector *residual_;
+
+	gsl_matrix *RR_;
+	gsl_matrix *invRR_;
+	gsl_matrix *PCt_;
+	gsl_permutation *permutation_;
+
+	// for temporary computation
+	gsl_vector *v_;
+	gsl_matrix *M_;
+	gsl_matrix *M2_;
 };
 
 }  // namespace swl

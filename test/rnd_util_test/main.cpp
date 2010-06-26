@@ -9,8 +9,8 @@ int main()
 
 	//estimate_3d_plane_using_ransac();
 
-	kalman_filter();
-	//extended_kalman_filter();
+	//kalman_filter();
+	extended_kalman_filter();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;
 	std::wcout.flush();

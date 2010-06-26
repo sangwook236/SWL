@@ -1,6 +1,13 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
+#include <boost/random/linear_congruential.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <cmath>
+#include <ctime>
+#include <cassert>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -11,8 +18,248 @@
 
 namespace {
 
+// "Kalman Filtering: Theory and Practice Using MATLAB" Example 5.3 (pp. 184)
+//	1) continuous ==> discrete
+//	2) driving force exits
+class LinearMassStringDamperSystemExtendedKalmanFilter: public swl::ExtendedKalmanFilter
+{
+public:
+	typedef swl::ExtendedKalmanFilter base_type;
+
+private:
+	static const double T;
+	static const double zeta;
+	static const double omega;
+	static const double Q;
+	static const double R;
+	static const double Fd;  // driving force
+
+public:
+	LinearMassStringDamperSystemExtendedKalmanFilter(const gsl_vector *x0, const gsl_matrix *P0, const size_t stateDim, const size_t inputDim, const size_t outputDim)
+	: base_type(x0, P0, stateDim, inputDim, outputDim),
+	  Phi_hat_(NULL), Cd_(NULL), /*W_(NULL), V_(NULL),*/ Qd_hat_(NULL), Rd_hat_(NULL), f_eval_(NULL), h_eval_(NULL), y_tilde_(NULL), driving_force_(NULL)
+	{
+		//A_ = gsl_matrix_alloc(stateDim_, stateDim_);
+		//gsl_matrix_set(A_, 0, 0, 0.0);  gsl_matrix_set(A_, 0, 1, 1.0);
+		//gsl_matrix_set(A_, 1, 0, -omega * omega);  gsl_matrix_set(A_, 1, 1, -2.0 * zeta * omega);
+
+		const double lambda = std::exp(-T * omega * zeta);
+		const double psi    = 1.0 - zeta * zeta;
+		const double xi     = std::sqrt(psi);
+		const double theta  = xi * omega * T;
+		const double c = cos(theta);
+		const double s = sin(theta);
+
+		// Phi = exp(T * A) -> I + T * A where A = df/dt
+		// the EKF approximation for Phi is I + T * A
+		Phi_hat_ = gsl_matrix_alloc(stateDim_, stateDim_);
+		gsl_matrix_set_zero(Phi_hat_);
+
+		// C = [ 1 0 0 ]
+		Cd_ = gsl_matrix_alloc(outputDim_, stateDim_);
+		gsl_matrix_set(Cd_, 0, 0, 1.0);  gsl_matrix_set(Cd_, 0, 1, 0.0);  gsl_matrix_set(Cd_, 0, 2, 0.0);
+
+		// W = [ 0 1 0 ]^T
+		//W_ = gsl_matrix_alloc(stateDim_, inputDim_);
+		//gsl_matrix_set(W_, 0, 0, 0.0);  gsl_matrix_set(W_, 1, 0, 1.0);  gsl_matrix_set(W_, 2, 0, 0.0);
+
+		// V = [ 1 ]
+		//V_ = gsl_matrix_alloc(outputDim_, outputDim_);
+		//gsl_matrix_set_identity(V_);
+
+		// Qd = W * Q * W^T where 
+		//	the EKF approximation of Qd will be W * [ T * Q ] * W^T
+		Qd_hat_ = gsl_matrix_alloc(stateDim_, stateDim_);
+		gsl_matrix_set_zero(Qd_hat_);
+		gsl_matrix_set(Qd_hat_, 1, 1, Q * T);
+
+		// Rd = V * R * V^T
+		Rd_hat_ = gsl_matrix_alloc(outputDim_, outputDim_);
+		gsl_matrix_set_all(Rd_hat_, R);
+
+		//
+		f_eval_ = gsl_vector_alloc(stateDim_);
+		gsl_vector_set_zero(f_eval_);
+
+		//
+		h_eval_ = gsl_vector_alloc(outputDim_);
+		gsl_vector_set_zero(h_eval_);
+
+		//
+		y_tilde_ = gsl_vector_alloc(outputDim_);
+		gsl_vector_set_zero(y_tilde_);
+
+		// driving force: Bu = Bd * u
+		//	where Bd = A^-1 * (Ad - I) * B, Ad = Phi = exp(A * T), B = [ 0 Fd 0 ]^T, u(t) = 1
+		driving_force_ = gsl_vector_alloc(stateDim_);
+#if 0
+		gsl_vector_set(driving_force_, 0, Fd * (1.0 - lambda*(c-zeta*s*xi/psi)) / (omega*omega));
+		gsl_vector_set(driving_force_, 1, Fd * lambda*s / (omega*xi));
+		gsl_vector_set(driving_force_, 2, 0.0);
+#else
+		gsl_vector_set(driving_force_, 0, Fd * (1.0 - lambda*(c-zeta*s/xi)) / (omega*omega));
+		gsl_vector_set(driving_force_, 1, Fd * lambda*s / (omega*xi));
+		gsl_vector_set(driving_force_, 2, 0.0);
+#endif
+
+	}
+	~LinearMassStringDamperSystemExtendedKalmanFilter()
+	{
+		gsl_matrix_free(Phi_hat_);  Phi_hat_ = NULL;
+		gsl_matrix_free(Cd_);  Cd_ = NULL;
+		//gsl_matrix_free(W_);  W_ = NULL;
+		//gsl_matrix_free(V_);  V_ = NULL;
+		gsl_matrix_free(Qd_hat_);  Qd_hat_ = NULL;
+		gsl_matrix_free(Rd_hat_);  Rd_hat_ = NULL;
+
+		gsl_vector_free(f_eval_);  f_eval_ = NULL;
+		gsl_vector_free(h_eval_);  h_eval_ = NULL;
+
+		gsl_vector_free(y_tilde_);  y_tilde_ = NULL;
+
+		gsl_vector_free(driving_force_);  driving_force_ = NULL;
+	}
+
+private:
+	LinearMassStringDamperSystemExtendedKalmanFilter(const LinearMassStringDamperSystemExtendedKalmanFilter &rhs);
+	LinearMassStringDamperSystemExtendedKalmanFilter & operator=(const LinearMassStringDamperSystemExtendedKalmanFilter &rhs);
+
+private:
+	// for continuous Kalman filter
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	// for discrete Kalman filter
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const
+	{
+		gsl_matrix_set_zero(Phi_hat_);
+		gsl_matrix_set(Phi_hat_, 0, 0, 1.0);  gsl_matrix_set(Phi_hat_, 0, 1, 1.0);
+		gsl_matrix_set(Phi_hat_, 1, 0, -omega*omega);  gsl_matrix_set(Phi_hat_, 1, 1, 1.0-2.0*omega*gsl_vector_get(state, 2));  gsl_matrix_set(Phi_hat_, 1, 2, -2.0*omega*gsl_vector_get(state, 1));
+		gsl_matrix_set(Phi_hat_, 2, 2, 1.0);
+		return Phi_hat_;
+	}
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return Cd_;  }
+
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }
+	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_hat_;  }  // Qd = W * Q * W^t, but not Q
+	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_hat_;  }  // Rd = V * R * V^T, but not R
+
+	/*virtual*/ gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const  // f = f(k, x(k), u(k), 0)
+	{
+#if 0
+		const double x1 = gsl_vector_get(state, 0);
+		const double x2 = gsl_vector_get(state, 1);
+		const double x3 = gsl_vector_get(state, 2);
+		gsl_vector_set(f_eval_, 0, x2);
+		gsl_vector_set(f_eval_, 0, -omega*omega*x1 - 2.0*x2*x3*omega);
+		gsl_vector_set(f_eval_, 0, 0.0);
+#else
+		const gsl_matrix *Phi_hat = doGetStateTransitionMatrix(step, state);
+		gsl_vector_memcpy(f_eval_, driving_force_);
+		gsl_blas_dgemv(CblasNoTrans, 1.0, Phi_hat, state, 1.0, f_eval_);
+#endif
+
+		return f_eval_;
+	}
+	/*virtual*/ gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const  // h = h(k, x(k), u(k), 0)
+	{
+		gsl_vector_set(h_eval_, 0, gsl_vector_get(state, 0));
+		return h_eval_;
+	}
+
+	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
+	{
+		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0));  // measurement (no noise)
+		return y_tilde_;
+	}
+
+protected:
+	gsl_matrix *Phi_hat_;
+	gsl_matrix *Cd_;  // Cd = C
+	//gsl_matrix *W_;
+	//gsl_matrix *V_;
+	gsl_matrix *Qd_hat_;
+	gsl_matrix *Rd_hat_;
+
+	// evalution of the plant equation: f = f(k, x(k), u(k), 0)
+	gsl_vector *f_eval_;
+	// evalution of the measurement equation: h = h(k, x(k), u(k), 0)
+	gsl_vector *h_eval_;
+
+	// actual measurement
+	gsl_vector *y_tilde_;
+
+	// driving force input
+	gsl_vector *driving_force_;
+};
+
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::T = 0.01;
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::zeta = 0.2;
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::omega = 5.0;
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::Q = 4.47;
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::R = 0.01;
+/*static*/ const double LinearMassStringDamperSystemExtendedKalmanFilter::Fd = 12.0;
+
+void linear_mass_spring_damper_system_extended_kalman_filter()
+{
+	const size_t stateDim = 3;
+	const size_t inputDim = 1;
+	const size_t outputDim = 1;
+
+	gsl_vector *x0 = gsl_vector_alloc(stateDim);
+	gsl_vector_set_zero(x0);
+	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
+	gsl_matrix_set_identity(P0);
+	gsl_matrix_scale(P0, 2.0);
+
+	LinearMassStringDamperSystemExtendedKalmanFilter filter(x0, P0, stateDim, inputDim, outputDim);
+
+	gsl_vector_free(x0);  x0 = NULL;
+	gsl_matrix_free(P0);  P0 = NULL;
+
+	//
+	const size_t Nstep = 100;
+	std::vector<double> pos, vel, damp;
+	std::vector<double> posGain, velGain, dampGain;
+	std::vector<double> posErrVar, velErrVar, dampErrVar;
+	pos.reserve(Nstep);
+	vel.reserve(Nstep);
+	damp.reserve(Nstep);
+	posGain.reserve(Nstep);
+	velGain.reserve(Nstep);
+	dampGain.reserve(Nstep);
+	posErrVar.reserve(Nstep);
+	velErrVar.reserve(Nstep);
+	dampErrVar.reserve(Nstep);
+
+	for (size_t i = 0; i < Nstep; ++i)
+	{
+#if 0
+		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
+#else
+		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
+#endif
+		assert(retval);
+		
+		const gsl_vector *x_hat = filter.getEstimatedState();
+		const gsl_matrix *K = filter.getKalmanGain();
+		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+		pos.push_back(gsl_vector_get(x_hat, 0));
+		vel.push_back(gsl_vector_get(x_hat, 1));
+		damp.push_back(gsl_vector_get(x_hat, 2));
+		posGain.push_back(gsl_matrix_get(K, 0, 0));
+		velGain.push_back(gsl_matrix_get(K, 1, 0));
+		dampGain.push_back(gsl_matrix_get(K, 2, 0));
+		posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+		velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+		dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+	}
+}
+
 }  // unnamed namespace
 
 void extended_kalman_filter()
 {
+	linear_mass_spring_damper_system_extended_kalman_filter();
 }
