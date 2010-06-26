@@ -40,9 +40,11 @@ private:
 
 public:
 	// for continuous Kalman filter
-	bool propagate(const double time);
+	bool updateMeasurement(const double time);
+	bool updateTime(const double time);
 	// for discrete Kalman filter
-	bool propagate(const size_t step);  // 1-based time step. 0-th time step is initial
+	bool updateMeasurement(const size_t step);
+	bool updateTime(const size_t step);
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }

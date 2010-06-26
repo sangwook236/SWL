@@ -597,27 +597,89 @@ void simple_system_kalman_filter()
 	//
 	const size_t Nstep = 2;
 	std::vector<double> state, gain, errVar;
-	state.reserve(Nstep);
+	state.reserve(Nstep * 2);
 	gain.reserve(Nstep);
-	errVar.reserve(Nstep);
+	errVar.reserve(Nstep * 2);
 
-	for (size_t i = 0; i < Nstep; ++i)
-	{
 #if 0
-		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
-#else
-		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
-#endif
-		assert(retval);
+	// method #1
+	// 1-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x(0) & P(0)
 
-		const gsl_vector *x_hat = filter.getEstimatedState();
-		const gsl_matrix *K = filter.getKalmanGain();
-		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval1 = filter.updateTime(step);
+		assert(retval1);
 
-		state.push_back(gsl_vector_get(x_hat, 0));
-		gain.push_back(gsl_matrix_get(K, 0, 0));
-		errVar.push_back(gsl_matrix_get(P, 0, 0));
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			state.push_back(gsl_vector_get(x_hat, 0));
+			errVar.push_back(gsl_matrix_get(P, 0, 0));
+		}
+
+		// advance time step
+		++step;
+
+		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval2 = filter.updateMeasurement(step);
+		assert(retval2);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			state.push_back(gsl_vector_get(x_hat, 0));
+			gain.push_back(gsl_matrix_get(K, 0, 0));
+			errVar.push_back(gsl_matrix_get(P, 0, 0));
+		}
 	}
+#else
+	// method #2
+	// 0-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x-(0) & P-(0)
+
+		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval1 = filter.updateMeasurement(step);
+		assert(retval1);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			state.push_back(gsl_vector_get(x_hat, 0));
+			gain.push_back(gsl_matrix_get(K, 0, 0));
+			errVar.push_back(gsl_matrix_get(P, 0, 0));
+		}
+
+		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval2 = filter.updateTime(step);
+		assert(retval2);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			state.push_back(gsl_vector_get(x_hat, 0));
+			errVar.push_back(gsl_matrix_get(P, 0, 0));
+		}
+
+		// advance time step
+		++step;
+	}
+#endif
 }
 
 void aided_INS_kalman_filter()
@@ -641,39 +703,115 @@ void aided_INS_kalman_filter()
 	std::vector<double> pos, vel, bias;
 	std::vector<double> posGain, velGain, biasGain;
 	std::vector<double> posErrVar, velErrVar, biasErrVar;
-	pos.reserve(Nstep);
-	vel.reserve(Nstep);
-	bias.reserve(Nstep);
+	pos.reserve(Nstep * 2);
+	vel.reserve(Nstep * 2);
+	bias.reserve(Nstep * 2);
 	posGain.reserve(Nstep);
 	velGain.reserve(Nstep);
 	biasGain.reserve(Nstep);
-	posErrVar.reserve(Nstep);
-	velErrVar.reserve(Nstep);
-	biasErrVar.reserve(Nstep);
+	posErrVar.reserve(Nstep * 2);
+	velErrVar.reserve(Nstep * 2);
+	biasErrVar.reserve(Nstep * 2);
 
-	for (size_t i = 0; i < Nstep; ++i)
-	{
 #if 0
-		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
-#else
-		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
-#endif
-		assert(retval);
-		
-		const gsl_vector *x_hat = filter.getEstimatedState();
-		const gsl_matrix *K = filter.getKalmanGain();
-		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+	// method #1
+	// 1-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x(0) & P(0)
 
-		pos.push_back(gsl_vector_get(x_hat, 0));
-		vel.push_back(gsl_vector_get(x_hat, 1));
-		bias.push_back(gsl_vector_get(x_hat, 2));
-		posGain.push_back(gsl_matrix_get(K, 0, 0));
-		velGain.push_back(gsl_matrix_get(K, 1, 0));
-		biasGain.push_back(gsl_matrix_get(K, 2, 0));
-		posErrVar.push_back(gsl_matrix_get(P, 0, 0));
-		velErrVar.push_back(gsl_matrix_get(P, 1, 1));
-		biasErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval1 = filter.updateTime(step);
+		assert(retval1);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			bias.push_back(gsl_vector_get(x_hat, 2));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			biasErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// advance time step
+		++step;
+
+		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval2 = filter.updateMeasurement(step);
+		assert(retval2);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			bias.push_back(gsl_vector_get(x_hat, 2));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			biasGain.push_back(gsl_matrix_get(K, 2, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			biasErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
 	}
+#else
+	// method #2
+	// 0-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x-(0) & P-(0)
+
+		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval1 = filter.updateMeasurement(step);
+		assert(retval1);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			bias.push_back(gsl_vector_get(x_hat, 2));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			biasGain.push_back(gsl_matrix_get(K, 2, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			biasErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval2 = filter.updateTime(step);
+		assert(retval2);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			bias.push_back(gsl_vector_get(x_hat, 2));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			biasErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// advance time step
+		++step;
+	}
+#endif
 }
 
 void linear_mass_spring_damper_system_kalman_filter()
@@ -699,36 +837,111 @@ void linear_mass_spring_damper_system_kalman_filter()
 	std::vector<double> posGain, velGain;
 	std::vector<double> posErrVar, velErrVar;
 	std::vector<double> corrCoeff;
-	pos.reserve(Nstep);
-	vel.reserve(Nstep);
+	pos.reserve(Nstep * 2);
+	vel.reserve(Nstep * 2);
 	posGain.reserve(Nstep);
 	velGain.reserve(Nstep);
-	posErrVar.reserve(Nstep);
-	velErrVar.reserve(Nstep);
-	corrCoeff.reserve(Nstep);
+	posErrVar.reserve(Nstep * 2);
+	velErrVar.reserve(Nstep * 2);
+	corrCoeff.reserve(Nstep * 2);
 
-	for (size_t i = 0; i < Nstep; ++i)
-	{
 #if 0
-		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
-#else
-		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
-#endif
-		assert(retval);
-		
-		const gsl_vector *x_hat = filter.getEstimatedState();
-		const gsl_matrix *K = filter.getKalmanGain();
-		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+	// method #1
+	// 1-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x(0) & P(0)
 
-		pos.push_back(gsl_vector_get(x_hat, 0));
-		vel.push_back(gsl_vector_get(x_hat, 1));
-		posGain.push_back(gsl_matrix_get(K, 0, 0));
-		velGain.push_back(gsl_matrix_get(K, 1, 0));
-		posErrVar.push_back(gsl_matrix_get(P, 0, 0));
-		velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval1 = filter.updateTime(step);
+		assert(retval1);
 
-		corrCoeff.push_back(gsl_matrix_get(P, 0, 1) / (std::sqrt(posErrVar[i]) * std::sqrt(velErrVar[i])));
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+
+			corrCoeff.push_back(gsl_matrix_get(P, 0, 1) / (std::sqrt(posErrVar[step]) * std::sqrt(velErrVar[step])));
+		}
+
+		// advance time step
+		++step;
+
+		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval2 = filter.updateMeasurement(step);
+		assert(retval2);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+
+			corrCoeff.push_back(gsl_matrix_get(P, 0, 1) / (std::sqrt(posErrVar[step]) * std::sqrt(velErrVar[step])));
+		}
 	}
+#else
+	// method #2
+	// 0-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x-(0) & P-(0)
+
+		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval1 = filter.updateMeasurement(step);
+		assert(retval1);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+
+			corrCoeff.push_back(gsl_matrix_get(P, 0, 1) / (std::sqrt(posErrVar[step]) * std::sqrt(velErrVar[step])));
+		}
+
+		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval2 = filter.updateTime(step);
+		assert(retval2);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+
+			corrCoeff.push_back(gsl_matrix_get(P, 0, 1) / (std::sqrt(posErrVar[step]) * std::sqrt(velErrVar[step])));
+		}
+
+		// advance time step
+		++step;
+	}
+#endif
 }
 
 void radar_tracking_system_kalman_filter()
@@ -764,59 +977,159 @@ void radar_tracking_system_kalman_filter()
 	std::vector<double> range, rangeRate, rangeRateNoise, bearing, bearingRate, bearingRateNoise;
 	std::vector<double> rangeGain, rangeRateGain, rangeRateNoiseGain, bearingGain, bearingRateGain, bearingRateNoiseGain;
 	std::vector<double> rangeErrVar, rangeRateErrVar, rangeRateNoiseErrVar, bearingErrVar, bearingRateErrVar, bearingRateNoiseErrVar;
-	range.reserve(Nstep);
-	rangeRate.reserve(Nstep);
-	rangeRateNoise.reserve(Nstep);
-	bearing.reserve(Nstep);
-	bearingRate.reserve(Nstep);
-	bearingRateNoise.reserve(Nstep);
+	range.reserve(Nstep * 2);
+	rangeRate.reserve(Nstep * 2);
+	rangeRateNoise.reserve(Nstep * 2);
+	bearing.reserve(Nstep * 2);
+	bearingRate.reserve(Nstep * 2);
+	bearingRateNoise.reserve(Nstep * 2);
 	rangeGain.reserve(Nstep);
 	rangeRateGain.reserve(Nstep);
 	rangeRateNoiseGain.reserve(Nstep);
 	bearingGain.reserve(Nstep);
 	bearingRateGain.reserve(Nstep);
 	bearingRateNoiseGain.reserve(Nstep);
-	rangeErrVar.reserve(Nstep);
-	rangeRateErrVar.reserve(Nstep);
-	rangeRateNoiseErrVar.reserve(Nstep);
-	bearingErrVar.reserve(Nstep);
-	bearingRateErrVar.reserve(Nstep);
-	bearingRateNoiseErrVar.reserve(Nstep);
-
-	for (size_t i = 0; i < Nstep; ++i)
-	{
+	rangeErrVar.reserve(Nstep * 2);
+	rangeRateErrVar.reserve(Nstep * 2);
+	rangeRateNoiseErrVar.reserve(Nstep * 2);
+	bearingErrVar.reserve(Nstep * 2);
+	bearingRateErrVar.reserve(Nstep * 2);
+	bearingRateNoiseErrVar.reserve(Nstep * 2);
 #if 0
-		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
-#else
-		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
-#endif
-		assert(retval);
-		
-		const gsl_vector *x_hat = filter.getEstimatedState();
-		const gsl_matrix *K = filter.getKalmanGain();
-		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+	// method #1
+	// 1-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x(0) & P(0)
 
-		range.push_back(gsl_vector_get(x_hat, 0));
-		rangeRate.push_back(gsl_vector_get(x_hat, 1));
-		rangeRateNoise.push_back(gsl_vector_get(x_hat, 2));
-		bearing.push_back(gsl_vector_get(x_hat, 3));
-		bearingRate.push_back(gsl_vector_get(x_hat, 4));
-		bearingRateNoise.push_back(gsl_vector_get(x_hat, 5));
+		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval1 = filter.updateTime(step);
+		assert(retval1);
 
-		rangeGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 0, 0),2)+std::pow(gsl_matrix_get(K, 0, 1),2)));
-		rangeRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 1, 0),2)+std::pow(gsl_matrix_get(K, 1, 1),2)));
-		rangeRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 2, 0),2)+std::pow(gsl_matrix_get(K, 2, 1),2)));
-		bearingGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 3, 0),2)+std::pow(gsl_matrix_get(K, 3, 1),2)));
-		bearingRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 4, 0),2)+std::pow(gsl_matrix_get(K, 4, 1),2)));
-		bearingRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 5, 0),2)+std::pow(gsl_matrix_get(K, 5, 1),2)));
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
-		rangeErrVar.push_back(gsl_matrix_get(P, 0, 0));
-		rangeRateErrVar.push_back(gsl_matrix_get(P, 1, 1));
-		rangeRateNoiseErrVar.push_back(gsl_matrix_get(P, 2, 2));
-		bearingErrVar.push_back(gsl_matrix_get(P, 3, 3));
-		bearingRateErrVar.push_back(gsl_matrix_get(P, 4, 4));
-		bearingRateNoiseErrVar.push_back(gsl_matrix_get(P, 5, 5));
+			range.push_back(gsl_vector_get(x_hat, 0));
+			rangeRate.push_back(gsl_vector_get(x_hat, 1));
+			rangeRateNoise.push_back(gsl_vector_get(x_hat, 2));
+			bearing.push_back(gsl_vector_get(x_hat, 3));
+			bearingRate.push_back(gsl_vector_get(x_hat, 4));
+			bearingRateNoise.push_back(gsl_vector_get(x_hat, 5));
+
+			rangeErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			rangeRateErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			rangeRateNoiseErrVar.push_back(gsl_matrix_get(P, 2, 2));
+			bearingErrVar.push_back(gsl_matrix_get(P, 3, 3));
+			bearingRateErrVar.push_back(gsl_matrix_get(P, 4, 4));
+			bearingRateNoiseErrVar.push_back(gsl_matrix_get(P, 5, 5));
+		}
+
+		// advance time step
+		++step;
+
+		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval2 = filter.updateMeasurement(step);
+		assert(retval2);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			range.push_back(gsl_vector_get(x_hat, 0));
+			rangeRate.push_back(gsl_vector_get(x_hat, 1));
+			rangeRateNoise.push_back(gsl_vector_get(x_hat, 2));
+			bearing.push_back(gsl_vector_get(x_hat, 3));
+			bearingRate.push_back(gsl_vector_get(x_hat, 4));
+			bearingRateNoise.push_back(gsl_vector_get(x_hat, 5));
+
+			rangeGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 0, 0),2)+std::pow(gsl_matrix_get(K, 0, 1),2)));
+			rangeRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 1, 0),2)+std::pow(gsl_matrix_get(K, 1, 1),2)));
+			rangeRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 2, 0),2)+std::pow(gsl_matrix_get(K, 2, 1),2)));
+			bearingGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 3, 0),2)+std::pow(gsl_matrix_get(K, 3, 1),2)));
+			bearingRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 4, 0),2)+std::pow(gsl_matrix_get(K, 4, 1),2)));
+			bearingRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 5, 0),2)+std::pow(gsl_matrix_get(K, 5, 1),2)));
+
+			rangeErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			rangeRateErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			rangeRateNoiseErrVar.push_back(gsl_matrix_get(P, 2, 2));
+			bearingErrVar.push_back(gsl_matrix_get(P, 3, 3));
+			bearingRateErrVar.push_back(gsl_matrix_get(P, 4, 4));
+			bearingRateNoiseErrVar.push_back(gsl_matrix_get(P, 5, 5));
+		}
 	}
+#else
+	// method #2
+	// 0-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x-(0) & P-(0)
+
+		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval1 = filter.updateMeasurement(step);
+		assert(retval1);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			range.push_back(gsl_vector_get(x_hat, 0));
+			rangeRate.push_back(gsl_vector_get(x_hat, 1));
+			rangeRateNoise.push_back(gsl_vector_get(x_hat, 2));
+			bearing.push_back(gsl_vector_get(x_hat, 3));
+			bearingRate.push_back(gsl_vector_get(x_hat, 4));
+			bearingRateNoise.push_back(gsl_vector_get(x_hat, 5));
+
+			rangeGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 0, 0),2)+std::pow(gsl_matrix_get(K, 0, 1),2)));
+			rangeRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 1, 0),2)+std::pow(gsl_matrix_get(K, 1, 1),2)));
+			rangeRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 2, 0),2)+std::pow(gsl_matrix_get(K, 2, 1),2)));
+			bearingGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 3, 0),2)+std::pow(gsl_matrix_get(K, 3, 1),2)));
+			bearingRateGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 4, 0),2)+std::pow(gsl_matrix_get(K, 4, 1),2)));
+			bearingRateNoiseGain.push_back(std::sqrt(std::pow(gsl_matrix_get(K, 5, 0),2)+std::pow(gsl_matrix_get(K, 5, 1),2)));
+
+			rangeErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			rangeRateErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			rangeRateNoiseErrVar.push_back(gsl_matrix_get(P, 2, 2));
+			bearingErrVar.push_back(gsl_matrix_get(P, 3, 3));
+			bearingRateErrVar.push_back(gsl_matrix_get(P, 4, 4));
+			bearingRateNoiseErrVar.push_back(gsl_matrix_get(P, 5, 5));
+		}
+
+		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval2 = filter.updateTime(step);
+		assert(retval2);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			range.push_back(gsl_vector_get(x_hat, 0));
+			rangeRate.push_back(gsl_vector_get(x_hat, 1));
+			rangeRateNoise.push_back(gsl_vector_get(x_hat, 2));
+			bearing.push_back(gsl_vector_get(x_hat, 3));
+			bearingRate.push_back(gsl_vector_get(x_hat, 4));
+			bearingRateNoise.push_back(gsl_vector_get(x_hat, 5));
+
+			rangeErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			rangeRateErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			rangeRateNoiseErrVar.push_back(gsl_matrix_get(P, 2, 2));
+			bearingErrVar.push_back(gsl_matrix_get(P, 3, 3));
+			bearingRateErrVar.push_back(gsl_matrix_get(P, 4, 4));
+			bearingRateNoiseErrVar.push_back(gsl_matrix_get(P, 5, 5));
+		}
+
+		// advance time step
+		++step;
+	}
+#endif
 }
 
 }  // unnamed namespace

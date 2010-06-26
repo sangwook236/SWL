@@ -222,39 +222,115 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 	std::vector<double> pos, vel, damp;
 	std::vector<double> posGain, velGain, dampGain;
 	std::vector<double> posErrVar, velErrVar, dampErrVar;
-	pos.reserve(Nstep);
-	vel.reserve(Nstep);
-	damp.reserve(Nstep);
+	pos.reserve(Nstep * 2);
+	vel.reserve(Nstep * 2);
+	damp.reserve(Nstep * 2);
 	posGain.reserve(Nstep);
 	velGain.reserve(Nstep);
 	dampGain.reserve(Nstep);
-	posErrVar.reserve(Nstep);
-	velErrVar.reserve(Nstep);
-	dampErrVar.reserve(Nstep);
+	posErrVar.reserve(Nstep * 2);
+	velErrVar.reserve(Nstep * 2);
+	dampErrVar.reserve(Nstep * 2);
 
-	for (size_t i = 0; i < Nstep; ++i)
-	{
 #if 0
-		const bool retval = filter.propagate(i + 1);  // 1-based time step. 0-th time step is initial
-#else
-		const bool retval = filter.propagate(i);  // 0-based time step. 0-th time step is initial
-#endif
-		assert(retval);
-		
-		const gsl_vector *x_hat = filter.getEstimatedState();
-		const gsl_matrix *K = filter.getKalmanGain();
-		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+	// method #1
+	// 1-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x(0) & P(0)
 
-		pos.push_back(gsl_vector_get(x_hat, 0));
-		vel.push_back(gsl_vector_get(x_hat, 1));
-		damp.push_back(gsl_vector_get(x_hat, 2));
-		posGain.push_back(gsl_matrix_get(K, 0, 0));
-		velGain.push_back(gsl_matrix_get(K, 1, 0));
-		dampGain.push_back(gsl_matrix_get(K, 2, 0));
-		posErrVar.push_back(gsl_matrix_get(P, 0, 0));
-		velErrVar.push_back(gsl_matrix_get(P, 1, 1));
-		dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval1 = filter.updateTime(step);
+		assert(retval1);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			damp.push_back(gsl_vector_get(x_hat, 2));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// advance time step
+		++step;
+
+		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval2 = filter.updateMeasurement(step);
+		assert(retval2);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			damp.push_back(gsl_vector_get(x_hat, 2));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			dampGain.push_back(gsl_matrix_get(K, 2, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
 	}
+#else
+	// method #2
+	// 0-based time step. 0-th time step is initial
+	size_t step = 0;
+	while (step < Nstep)
+	{
+		// 0. initial estimates: x-(0) & P-(0)
+
+		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+		const bool retval1 = filter.updateMeasurement(step);
+		assert(retval1);
+
+		// save K(k), x(k) & P(k)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *K = filter.getKalmanGain();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			damp.push_back(gsl_vector_get(x_hat, 2));
+			posGain.push_back(gsl_matrix_get(K, 0, 0));
+			velGain.push_back(gsl_matrix_get(K, 1, 0));
+			dampGain.push_back(gsl_matrix_get(K, 2, 0));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+		const bool retval2 = filter.updateTime(step);
+		assert(retval2);
+
+		// save x-(k+1) & P-(k+1)
+		{
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
+
+			pos.push_back(gsl_vector_get(x_hat, 0));
+			vel.push_back(gsl_vector_get(x_hat, 1));
+			damp.push_back(gsl_vector_get(x_hat, 2));
+			posErrVar.push_back(gsl_matrix_get(P, 0, 0));
+			velErrVar.push_back(gsl_matrix_get(P, 1, 1));
+			dampErrVar.push_back(gsl_matrix_get(P, 2, 2));
+		}
+
+		// advance time step
+		++step;
+	}
+#endif
 }
 
 }  // unnamed namespace

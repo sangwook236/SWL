@@ -41,9 +41,11 @@ private:
 
 public:
 	// for continuous extended Kalman filter
-	bool propagate(const double time);
+	bool updateTime(const double time);
+	bool updateMeasurement(const double time);
 	// for discrete extended Kalman filter
-	bool propagate(const size_t step);  // 1-based time step. 0-th time step is initial
+	bool updateTime(const size_t step);
+	bool updateMeasurement(const size_t step);
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }
@@ -55,9 +57,9 @@ public:
 	size_t getOutputDim() const  {  return outputDim_;  }
 
 private:
-	// for continuous extended Kalman filter
+	// for continuous Kalman filter
 	virtual gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const = 0;  // A
-	// for discrete extended Kalman filter
+	// for discrete Kalman filter
 	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi
 	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C == Cd
 
