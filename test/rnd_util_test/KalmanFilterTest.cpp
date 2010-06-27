@@ -86,19 +86,19 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
 	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
+	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
@@ -217,19 +217,19 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
 	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
+	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
@@ -397,19 +397,19 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
 	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
+	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
@@ -524,19 +524,19 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
 	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
+	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const

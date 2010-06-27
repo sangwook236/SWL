@@ -57,18 +57,18 @@ public:
 
 private:
 	// for continuous Kalman filter
-	virtual gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const = 0;  // A
+	virtual gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const = 0;  // A(t)
 	// for discrete Kalman filter
-	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi
-	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C = Cd
+	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi(k) = exp(A(k) * T)
+	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C(t) or Cd(k) (C == Cd)
 
-	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W
-	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V
+	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W(t) or W(k)
+	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V(t) or V(k)
 	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
 	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
 
-	virtual gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const = 0;  // Bu = B * u or Bd * u
-	virtual gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const = 0;  // Du = D * u (Dd = D)
+	virtual gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const = 0;  // Bu(t) = B(t) * u(t) or Bu(k) = Bd(k) * u(k)
+	virtual gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const = 0;  // Du(t) = D(t) * u(t) or Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
 	virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
