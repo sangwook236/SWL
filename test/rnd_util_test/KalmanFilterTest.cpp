@@ -86,7 +86,7 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
@@ -100,9 +100,10 @@ private:
 	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
 	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
 
+	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
 	{
-#if 0  // 1-based time step
+#if 1  // 1-based time step
 		if (1 == step) gsl_vector_set(y_tilde_, 0, 2.0);
 		else if (2 == step) gsl_vector_set(y_tilde_, 0, 3.0);
 #else  // 0-based time step
@@ -216,7 +217,7 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
@@ -230,6 +231,7 @@ private:
 	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
 	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
 
+	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
 	{
 #if 0
@@ -310,8 +312,8 @@ public:
 		const double psi    = 1.0 - zeta * zeta;
 		const double xi     = std::sqrt(psi);
 		const double theta  = xi * omega * T;
-		const double c = cos(theta);
-		const double s = sin(theta);
+		const double c = std::cos(theta);
+		const double s = std::sin(theta);
 
 		// Phi = exp(T * A)
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
@@ -395,7 +397,7 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
@@ -409,6 +411,7 @@ private:
 	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
 	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
 
+	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
 	{
 		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0));  // measurement (no noise)
@@ -521,7 +524,7 @@ private:
 
 private:
 	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
 	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }
@@ -535,6 +538,7 @@ private:
 	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu = Bd * u
 	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du = D * u
 
+	// actual measurement
 	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
 	{
 		typedef boost::minstd_rand base_generator_type;
@@ -601,7 +605,7 @@ void simple_system_kalman_filter()
 	gain.reserve(Nstep);
 	errVar.reserve(Nstep * 2);
 
-#if 0
+#if 1
 	// method #1
 	// 1-based time step. 0-th time step is initial
 	size_t step = 0;
@@ -845,7 +849,7 @@ void linear_mass_spring_damper_system_kalman_filter()
 	velErrVar.reserve(Nstep * 2);
 	corrCoeff.reserve(Nstep * 2);
 
-#if 0
+#if 1
 	// method #1
 	// 1-based time step. 0-th time step is initial
 	size_t step = 0;
@@ -995,7 +999,7 @@ void radar_tracking_system_kalman_filter()
 	bearingErrVar.reserve(Nstep * 2);
 	bearingRateErrVar.reserve(Nstep * 2);
 	bearingRateNoiseErrVar.reserve(Nstep * 2);
-#if 0
+#if 1
 	// method #1
 	// 1-based time step. 0-th time step is initial
 	size_t step = 0;

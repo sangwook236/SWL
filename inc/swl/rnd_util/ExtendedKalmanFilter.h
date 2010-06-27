@@ -58,19 +58,20 @@ public:
 
 private:
 	// for continuous Kalman filter
-	virtual gsl_matrix * doGetSystemMatrix(const size_t step, const gsl_vector *state) const = 0;  // A
+	virtual gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const = 0;  // A(t) = df(t, x(t), u(t), 0)/dx
 	// for discrete Kalman filter
-	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi
-	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C == Cd
+	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi(k) = exp(A(k) * T) where A(k) = df(k, x(k), u(k), 0)/dx
+	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C(t) = dh(t, x(t), u(t), 0)/dx or Cd(k) = dh(k, x(k), u(k), 0)/dx
 
-	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W
-	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V
+	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W(t) = df(t, x(t), u(t), 0)/dw or W(k) = df(k, x(k), u(k), 0)/dw
+	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V(t) = dh(t, x(t), u(t), 0)/dv or V(k) = dh(k, x(k), u(k), 0)/dv
 	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
 	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
 
-	virtual gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const = 0;  // f = f(k, x(k), u(k), 0)
-	virtual gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const = 0;  // h = h(k, x(k), u(k), 0)
+	virtual gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const = 0;  // f = f(t, x(t), u(t), 0) or f = f(k, x(k), u(k), 0)
+	virtual gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const = 0;  // h = h(t, x(t), u(t), 0) or h = h(k, x(k), u(k), 0)
 
+	// actual measurement
 	virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
 
 protected:

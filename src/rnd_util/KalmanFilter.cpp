@@ -163,7 +163,7 @@ bool KalmanFilter::updateTime(const size_t step)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
-	const gsl_matrix *Phi = doGetStateTransitionMatrix(step, x_hat_);
+	const gsl_matrix *Phi = doGetStateTransitionMatrix(step, x_hat_);  // Phi(k) = exp(A * T)
 #if 0
 	const gsl_matrix *W = doGetProcessNoiseCouplingMatrix(step);
 	const gsl_matrix *Q = doGetProcessNoiseCovarianceMatrix(step);  // Q(k)
