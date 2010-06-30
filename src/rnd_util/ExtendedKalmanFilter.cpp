@@ -68,7 +68,7 @@ ExtendedKalmanFilter::~ExtendedKalmanFilter()
 // currently, this code is implemented only for N(t) = 0
 
 // time update (prediction)
-bool ExtendedKalmanFilter::updateTime(const double time)
+bool ExtendedKalmanFilter::updateTime(const double time, const gsl_vector *f_eval)  // f = f(t, x(t), u(t), 0)
 {
 #if 0
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
@@ -80,7 +80,7 @@ bool ExtendedKalmanFilter::updateTime(const double time)
 #else
 	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(time);  // Qd(t) = W * Q(t) * W(t)^T
 #endif
-	const gsl_vector *f_eval = doEvaluatePlantEquation(time, x_hat_);  // f = f(t, x(t), u(t), 0)
+	//const gsl_vector *f_eval = doEvaluatePlantEquation(time, x_hat_);  // f = f(t, x(t), u(t), 0)
 	if (!A || !Qd || !f_eval) return false;
 
 	// 1. propagate time
@@ -99,7 +99,7 @@ bool ExtendedKalmanFilter::updateTime(const double time)
 }
 
 // measurement update (correction)
-bool ExtendedKalmanFilter::updateMeasurement(const double time)
+bool ExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(t, x(t), u(t), 0)
 {
 #if 0
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
@@ -111,9 +111,9 @@ bool ExtendedKalmanFilter::updateMeasurement(const double time)
 #else
 	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(time);  // Rd(t) = V(t) * R(t) * V(t)^T
 #endif
-	const gsl_vector *h_eval = doEvaluateMeasurementEquation(time, x_hat_);  // h = h(t, x(t), u(t), 0)
-	const gsl_vector *y_tilde = doGetMeasurement(time, x_hat_);  // actual measurement
-	if (!C || !Rd || !h_eval || !y_tilde) return false;
+	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(time, x_hat_);  // h = h(t, x(t), u(t), 0)
+	//const gsl_vector *actualMeasurement = doGetMeasurement(time, x_hat_);  // actual measurement
+	if (!C || !Rd || !h_eval || !actualMeasurement) return false;
 
 	// 1. calculate Kalman gain: K(t) = P(t) * C(t)^T * Rd(t)^-1 where C(t) = dh(t, x(t), u(t), 0)/dx, Rd(t) = V(t) * R(t) * V(t)^T, V(t) = dh(t, x(t), u(t), 0)/dv
 	// 2. update measurement: dx(t)/dt = f(t, x(t), u(t), 0) + K(t) * (y_tilde(t) - y_hat(t)) where y_hat(t) = h(t, x(t), u(t), 0) ???
@@ -156,7 +156,7 @@ bool ExtendedKalmanFilter::updateMeasurement(const double time)
 //	==> 0-based time step. 0-th time step is initial
 
 // time update (prediction)
-bool ExtendedKalmanFilter::updateTime(const size_t step)
+bool ExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eval)  // f = f(k, x(k), u(k), 0)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
@@ -167,7 +167,7 @@ bool ExtendedKalmanFilter::updateTime(const size_t step)
 #else
 	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(step);  // Qd(k) = W * Q(k) * W(k)^T
 #endif
-	const gsl_vector *f_eval = doEvaluatePlantEquation(step, x_hat_);  // f = f(k, x(k), u(k), 0)
+	//const gsl_vector *f_eval = doEvaluatePlantEquation(step, x_hat_);  // f = f(k, x(k), u(k), 0)
 	if (!Phi || !Qd || !f_eval) return false;
 
 	// 1. propagate time
@@ -200,7 +200,7 @@ bool ExtendedKalmanFilter::updateTime(const size_t step)
 }
 
 // measurement update (correction)
-bool ExtendedKalmanFilter::updateMeasurement(const size_t step)
+bool ExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(k, x(k), u(k), 0)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
@@ -211,9 +211,9 @@ bool ExtendedKalmanFilter::updateMeasurement(const size_t step)
 #else
 	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(step);  // Rd(k) = V(k) * R(k) * V(k)^T
 #endif
-	const gsl_vector *h_eval = doEvaluateMeasurementEquation(step, x_hat_);  // h = h(k, x(k), u(k), 0)
-	const gsl_vector *y_tilde = doGetMeasurement(step, x_hat_);  // actual measurement
-	if (!Cd || !Rd || !h_eval || !y_tilde) return false;
+	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(step, x_hat_);  // h = h(k, x(k), u(k), 0)
+	//const gsl_vector *actualMeasurement = doGetMeasurement(step, x_hat_);  // actual measurement
+	if (!Cd || !Rd || !h_eval || !actualMeasurement) return false;
 
 	// 1. calculate Kalman gain: K(k) = P-(k) * Cd(k)^T * (Cd(k) * P-(k) * Cd(k)^T + Rd(k))^-1 where Cd(k) = dh(k, x-(k), u(k), 0)/dx, Rd(k) = V(k) * R(k) * V(k)^T, V(k) = dh(k, x-(k), u(k), 0)/dv
 	// inverse of matrix using LU decomposition
@@ -231,17 +231,17 @@ bool ExtendedKalmanFilter::updateMeasurement(const size_t step)
 	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, PCt_, invRR_, 0.0, K_))  // calculate Kalman gain
 		return false;
 
-	// 2. update measurement: x(k) = x-(k) + K(k) * (y_tilde(k) - y_hat(k)) where y_hat(k) = h(k, x-(k), u(k), 0)
+	// 2. update measurement: x(k) = x-(k) + K(k) * (actualMeasurement(k) - y_hat(k)) where y_hat(k) = h(k, x-(k), u(k), 0)
 #if 0
 	// save an estimated measurement, y_hat
 	gsl_vector_memcpy(y_hat_, h_eval);
 	gsl_vector_memcpy(residual_, y_hat_);
-	if (GSL_SUCCESS != gsl_vector_sub(residual_, y_tilde) ||  // calculate residual = y_tilde(k) - y_hat(k)
+	if (GSL_SUCCESS != gsl_vector_sub(residual_, actualMeasurement) ||  // calculate residual = y_tilde(k) - y_hat(k)
 		GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, -1.0, K_, residual_, 1.0, x_hat_))  // calculate x_hat(k)
 		return false;
 #else
 	gsl_vector_memcpy(residual_, h_eval);
-	if (GSL_SUCCESS != gsl_vector_sub(residual_, y_tilde) ||  // calculate residual = y_tilde(k) - y_hat(k)
+	if (GSL_SUCCESS != gsl_vector_sub(residual_, actualMeasurement) ||  // calculate residual = y_tilde(k) - y_hat(k)
 		GSL_SUCCESS != gsl_blas_dgemv(CblasNoTrans, -1.0, K_, residual_, 1.0, x_hat_))  // calculate x_hat(k)
 		return false;
 #endif

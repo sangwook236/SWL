@@ -187,6 +187,17 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ImuKalmanFilter.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
 				RelativePath=".\KalmanFilterTest.cpp"
 				>
 			</File>

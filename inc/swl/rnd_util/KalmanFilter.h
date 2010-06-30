@@ -40,11 +40,11 @@ private:
 
 public:
 	// for continuous Kalman filter
-	bool updateMeasurement(const double time);
-	bool updateTime(const double time);
+	bool updateTime(const double time, const gsl_vector *Bu);  // Bu(t) = B(t) * u(t)
+	bool updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *Du);  // Du(t) = D(t) * u(t)
 	// for discrete Kalman filter
-	bool updateMeasurement(const size_t step);
-	bool updateTime(const size_t step);
+	bool updateTime(const size_t step, const gsl_vector *Bu);  // Bu(k) = Bd(k) * u(k)
+	bool updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *Du);  // Du(k) = Dd(k) * u(k)
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }
@@ -67,11 +67,11 @@ private:
 	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
 	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
 
-	virtual gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const = 0;  // Bu(t) = B(t) * u(t) or Bu(k) = Bd(k) * u(k)
-	virtual gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const = 0;  // Du(t) = D(t) * u(t) or Du(k) = D(k) * u(k) (D == Dd)
+	//virtual gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const = 0;  // Bu(t) = B(t) * u(t) or Bu(k) = Bd(k) * u(k)
+	//virtual gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const = 0;  // Du(t) = D(t) * u(t) or Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
-	virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
+	//virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
 
 protected:
 	// estimated state vector

@@ -29,7 +29,7 @@ public:
 	: base_type(x0, P0, stateDim, inputDim, outputDim),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
-		// Phi = exp(T * A) = [ 1 ]
+		// Phi = exp(A * Ts) = [ 1 ]
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set(Phi_, 0, 0, 1.0);
 
@@ -84,24 +84,12 @@ private:
 	SimpleSystemKalmanFilter(const SimpleSystemKalmanFilter &rhs);
 	SimpleSystemKalmanFilter & operator=(const SimpleSystemKalmanFilter &rhs);
 
-private:
-	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
-	{  throw std::runtime_error("this function doesn't have to be called");  }
-	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
-
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
-	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
-	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
-
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
+public:
+	gsl_vector * calculateControlInput(const size_t step) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	gsl_vector * calculateMeasurementInput(const size_t step) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
-	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
+	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
 	{
 #if 1  // 1-based time step
 		if (1 == step) gsl_vector_set(y_tilde_, 0, 2.0);
@@ -114,6 +102,19 @@ private:
 		return y_tilde_;
 	}
 
+private:
+	// for continuous Kalman filter
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	// for discrete Kalman filter
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
+
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
+	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
+	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
+
 protected:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
@@ -122,7 +123,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *Rd_;
 
-	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = integrate(exp(A * t), {t, 0, Ts}) * B or A^-1 * (Ad - I) * B if A is nonsingular
 	gsl_vector *Bu_;
 	// measurement input: Du = Dd * u where Dd = D
 	gsl_vector *Du_;
@@ -138,7 +139,7 @@ public:
 	typedef swl::KalmanFilter base_type;
 
 private:
-	static const double T;
+	static const double Ts;
 	static const double Rv;
 	static const double Qb;
 	static const double Rp;
@@ -148,15 +149,14 @@ public:
 	: base_type(x0, P0, stateDim, inputDim, outputDim),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
-		// Phi = exp(A * T) = [ 1 T T^2/2 ; 0 1 T ; 0 0 1 ]
+		// Phi = exp(A * Ts) = [ 1 Ts Ts^2/2 ; 0 1 Ts ; 0 0 1 ]
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set_identity(Phi_);
-		gsl_matrix_set(Phi_, 0, 1, 1.0);  gsl_matrix_set(Phi_, 0, 2, 0.5);  gsl_matrix_set(Phi_, 1, 2, 1.0);
+		gsl_matrix_set(Phi_, 0, 1, Ts);  gsl_matrix_set(Phi_, 0, 2, 0.5*Ts*Ts);  gsl_matrix_set(Phi_, 1, 2, Ts);
 
 		// C = [ 1 0 0 ]
 		C_ = gsl_matrix_alloc(outputDim_, stateDim_);
-		gsl_matrix_set_identity(C_);
-		gsl_matrix_set(C_, 0, 0, 1.0);  gsl_matrix_set(C_, 0, 1, 0.0);  gsl_matrix_set(C_, 0, 2, 1.0);
+		gsl_matrix_set(C_, 0, 0, 1.0);  gsl_matrix_set(C_, 0, 1, 0.0);  gsl_matrix_set(C_, 0, 2, 0.0);
 
 		// W = [ 0 0 ; 1 0 ; 0 1 ]
 		//W_ = gsl_matrix_alloc(stateDim_, inputDim_);
@@ -174,7 +174,13 @@ public:
 		gsl_matrix_set_zero(Qd_);
 		gsl_matrix_set(Qd_, 0, 0, Rv);  gsl_matrix_set(Qd_, 1, 1, Qb);
 #else
-		// Qd, but not Q
+		// continuous system  -->  discrete system
+		// Qd = integrate(Phi(t) * W(t) * Q(t) * W(t)^T * Phi(t)^T, {t, 0, Ts})
+		//	Q = [ Rv 0 ; 0 Qb ]
+		//	W = [ 0 0 ; 1 0 ; 0 1 ]
+		//	Qd = [ (Qb*Ts^5)/20 + (Rv*Ts^3)/3, (Qb*Ts^4)/8 + (Rv*Ts^2)/2, (Qb*Ts^3)/6]
+		//	     [  (Qb*Ts^4)/8 + (Rv*Ts^2)/2,       (Qb*Ts^3)/3 + Rv*Ts, (Qb*Ts^2)/2]
+		//	     [                (Qb*Ts^3)/6,               (Qb*Ts^2)/2,       Qb*Ts]
 		gsl_matrix_set(Qd_, 0, 0, Rv/3+Qb/20);  gsl_matrix_set(Qd_, 0, 1, Rv/2+Qb/8);  gsl_matrix_set(Qd_, 0, 2, Qb/6);
 		gsl_matrix_set(Qd_, 1, 0, Rv/2+Qb/8);  gsl_matrix_set(Qd_, 1, 1, Rv+Qb/3);  gsl_matrix_set(Qd_, 1, 2, Qb/2);
 		gsl_matrix_set(Qd_, 2, 0, Qb/6);  gsl_matrix_set(Qd_, 2, 1, Qb/2);  gsl_matrix_set(Qd_, 2, 2, Qb);
@@ -215,24 +221,12 @@ private:
 	AidedINSKalmanFilter(const AidedINSKalmanFilter &rhs);
 	AidedINSKalmanFilter & operator=(const AidedINSKalmanFilter &rhs);
 
-private:
-	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
-	{  throw std::runtime_error("this function doesn't have to be called");  }
-	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
-
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
-	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
-	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
-
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
+public:
+	gsl_vector * calculateControlInput(const size_t step) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	gsl_vector * calculateMeasurementInput(const size_t step) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
-	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
+	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
 	{
 #if 0
 		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0));  // measurement (no noise)
@@ -261,6 +255,19 @@ private:
 		return y_tilde_;
 	}
 
+private:
+	// for continuous Kalman filter
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	// for discrete Kalman filter
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
+
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
+	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
+	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
+
 protected:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
@@ -269,7 +276,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *Rd_;
 
-	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = integrate(exp(A * t), {t, 0, Ts}) * B or A^-1 * (Ad - I) * B if A is nonsingular
 	gsl_vector *Bu_;
 	// measurement input: Du = Dd * u where Dd = D
 	gsl_vector *Du_;
@@ -278,7 +285,7 @@ protected:
 	gsl_vector *y_tilde_;
 };
 
-/*static*/ const double AidedINSKalmanFilter::T = 1.0;
+/*static*/ const double AidedINSKalmanFilter::Ts = 1.0;
 /*static*/ const double AidedINSKalmanFilter::Rv = 2.5e-3;
 /*static*/ const double AidedINSKalmanFilter::Qb = 1.0e-6;
 /*static*/ const double AidedINSKalmanFilter::Rp = 3.0;
@@ -292,7 +299,7 @@ public:
 	typedef swl::KalmanFilter base_type;
 
 private:
-	static const double T;
+	static const double Ts;
 	static const double zeta;
 	static const double omega;
 	static const double Q;
@@ -308,14 +315,14 @@ public:
 		//gsl_matrix_set(A_, 0, 0, 0.0);  gsl_matrix_set(A_, 0, 1, 1.0);
 		//gsl_matrix_set(A_, 1, 0, -omega * omega);  gsl_matrix_set(A_, 1, 1, -2.0 * zeta * omega);
 
-		const double lambda = std::exp(-T * omega * zeta);
+		const double lambda = std::exp(-Ts * omega * zeta);
 		const double psi    = 1.0 - zeta * zeta;
 		const double xi     = std::sqrt(psi);
-		const double theta  = xi * omega * T;
+		const double theta  = xi * omega * Ts;
 		const double c = std::cos(theta);
 		const double s = std::sin(theta);
 
-		// Phi = exp(T * A)
+		// Phi = exp(A * Ts)
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
 #if 1
 		gsl_matrix_set(Phi_, 0, 0, lambda*c + zeta*s/xi);  gsl_matrix_set(Phi_, 0, 1, lambda*s/(omega*xi));
@@ -330,7 +337,7 @@ public:
 		C_ = gsl_matrix_alloc(outputDim_, stateDim_);
 		gsl_matrix_set(C_, 0, 0, 1.0);  gsl_matrix_set(C_, 0, 1, 0.0);
 
-		// W = [ 0 1 ]^T
+		// W = [ 0 ; 1 ]
 		//W_ = gsl_matrix_alloc(stateDim_, inputDim_);
 		//gsl_matrix_set(W_, 0, 0, 0.0);  gsl_matrix_set(W_, 1, 0, 1.0);
 
@@ -341,9 +348,9 @@ public:
 		// Qd = W * Q * W^T
 		Qd_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		const double l1  = zeta * zeta;
-		const double l4  = std::exp(-2.0 * omega * zeta * T);
+		const double l4  = std::exp(-2.0 * omega * zeta * Ts);
 		const double l6  = std::sqrt(1-l1);
-		const double l8  = l6 * omega * T;
+		const double l8  = l6 * omega * Ts;
 		const double l9  = std::cos(2.0 * l8);
 		const double l11 = l4 * l9 * l1;
 		const double l15 = l4 * std::sin(2.0 * l8) * l6 * zeta;
@@ -359,8 +366,10 @@ public:
 		Rd_ = gsl_matrix_alloc(outputDim_, outputDim_);
 		gsl_matrix_set_all(Rd_, R);
 
-		// driving force: Bu = Bd * u
-		//	where Bd = A^-1 * (Ad - I) * B, Ad = Phi = exp(A * T), B = [ 0 Fd ]^T, u(t) = 1
+		// driving force: Bu = Bd * u where u(t) = 1
+		//	Bd = integrate(exp(A * t), {t, 0, Ts}) * B or A^-1 * (Ad - I) * B if A is nonsingular
+		//	Ad = Phi = exp(A * Ts)
+		//	B = [ 0 ; Fd ]
 		Bu_ = gsl_vector_alloc(stateDim_);
 #if 0
 		gsl_vector_set(Bu_, 0, Fd * (1.0 - lambda*(c-zeta*s*xi/psi)) / (omega*omega));  gsl_vector_set(Bu_, 1, Fd * lambda*s / (omega*xi));
@@ -395,28 +404,29 @@ private:
 	LinearMassStringDamperSystemKalmanFilter(const LinearMassStringDamperSystemKalmanFilter &rhs);
 	LinearMassStringDamperSystemKalmanFilter & operator=(const LinearMassStringDamperSystemKalmanFilter &rhs);
 
+public:
+	gsl_vector * calculateControlInput(const size_t step) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	gsl_vector * calculateMeasurementInput(const size_t step) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
+
+	// actual measurement
+	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
+	{
+		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0));  // measurement (no noise)
+		return y_tilde_;
+	}
+
 private:
 	// for continuous Kalman filter
 	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 
 	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
-	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
+	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
-
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
-
-	// actual measurement
-	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
-	{
-		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0));  // measurement (no noise)
-		return y_tilde_;
-	}
 
 protected:
 	gsl_matrix *Phi_;
@@ -426,7 +436,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *Rd_;
 
-	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = integrate(exp(A * t), {t, 0, Ts}) * B or A^-1 * (Ad - I) * B if A is nonsingular
 	gsl_vector *Bu_;
 	// measurement input: Du = Dd * u where Dd = D
 	gsl_vector *Du_;
@@ -435,7 +445,7 @@ protected:
 	gsl_vector *y_tilde_;
 };
 
-/*static*/ const double LinearMassStringDamperSystemKalmanFilter::T = 0.01;
+/*static*/ const double LinearMassStringDamperSystemKalmanFilter::Ts = 0.01;
 /*static*/ const double LinearMassStringDamperSystemKalmanFilter::zeta = 0.2;
 /*static*/ const double LinearMassStringDamperSystemKalmanFilter::omega = 5.0;
 /*static*/ const double LinearMassStringDamperSystemKalmanFilter::Q = 4.47;
@@ -449,7 +459,7 @@ public:
 	typedef swl::KalmanFilter base_type;
 
 public:
-	static const double T;
+	static const double Ts;
 	static const double rho;
 	static const double var_r;
 	static const double var_theta;
@@ -461,11 +471,11 @@ public:
 	: base_type(x0, P0, stateDim, inputDim, outputDim),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
-		// Phi = exp(A * T)
+		// Phi = exp(A * Ts)
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set_identity(Phi_);
-		gsl_matrix_set(Phi_, 0, 1, T);  gsl_matrix_set(Phi_, 1, 2, 1.0);  gsl_matrix_set(Phi_, 2, 2, rho);
-		gsl_matrix_set(Phi_, 3, 4, T);  gsl_matrix_set(Phi_, 4, 5, 1.0);  gsl_matrix_set(Phi_, 5, 5, rho);
+		gsl_matrix_set(Phi_, 0, 1, Ts);  gsl_matrix_set(Phi_, 1, 2, 1.0);  gsl_matrix_set(Phi_, 2, 2, rho);
+		gsl_matrix_set(Phi_, 3, 4, Ts);  gsl_matrix_set(Phi_, 4, 5, 1.0);  gsl_matrix_set(Phi_, 5, 5, rho);
 
 		// C = [ 1 0 0 0 0 0 ; 0 0 0 1 0 0 ]
 		C_ = gsl_matrix_alloc(outputDim_, stateDim_);
@@ -522,24 +532,12 @@ private:
 	RadarTrackingSystemKalmanFilter(const RadarTrackingSystemKalmanFilter &rhs);
 	RadarTrackingSystemKalmanFilter & operator=(const RadarTrackingSystemKalmanFilter &rhs);
 
-private:
-	// for continuous Kalman filter
-	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
-	{  throw std::runtime_error("this function doesn't have to be called");  }
-	// for discrete Kalman filter
-	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * T)
-	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
-
-	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
-	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
-	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^t, but not Q
-	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
-
-	/*virtual*/ gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
-	/*virtual*/ gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
+public:
+	gsl_vector * calculateControlInput(const size_t step) const  {  return Bu_;  }  // Bu(k) = Bd(k) * u(k)
+	gsl_vector * calculateMeasurementInput(const size_t step) const  {  return Du_;  }  // Du(k) = D(k) * u(k) (D == Dd)
 
 	// actual measurement
-	/*virtual*/ gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const
+	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
 	{
 		typedef boost::minstd_rand base_generator_type;
 		typedef boost::normal_distribution<> distribution_type;
@@ -556,6 +554,19 @@ private:
 		return y_tilde_;
 	}
 
+private:
+	// for continuous Kalman filter
+	/*virtual*/ gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const  // A(t)
+	{  throw std::runtime_error("this function doesn't have to be called");  }
+	// for discrete Kalman filter
+	/*virtual*/ gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
+	/*virtual*/ gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
+
+	///*virtual*/ gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
+	///*virtual*/ gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
+	/*virtual*/ gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
+	/*virtual*/ gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
+
 protected:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
@@ -564,7 +575,7 @@ protected:
 	gsl_matrix *Qd_;
 	gsl_matrix *Rd_;
 
-	// control input: Bu = Bd * u where Bd = A^-1 * (Ad - I) * B
+	// control input: Bu = Bd * u where Bd = integrate(exp(A * t), {t, 0, Ts}) * B or A^-1 * (Ad - I) * B if A is nonsingular
 	gsl_vector *Bu_;
 	// measurement input: Du = Dd * u where Dd = D
 	gsl_vector *Du_;
@@ -573,9 +584,9 @@ protected:
 	gsl_vector *y_tilde_;
 };
 
-///*static*/ const double RadarTrackingSystemKalmanFilter::T = 5.0;
-///*static*/ const double RadarTrackingSystemKalmanFilter::T = 10.0;
-/*static*/ const double RadarTrackingSystemKalmanFilter::T = 15.0;
+///*static*/ const double RadarTrackingSystemKalmanFilter::Ts = 5.0;
+///*static*/ const double RadarTrackingSystemKalmanFilter::Ts = 10.0;
+/*static*/ const double RadarTrackingSystemKalmanFilter::Ts = 15.0;
 /*static*/ const double RadarTrackingSystemKalmanFilter::rho = 0.5;
 /*static*/ const double RadarTrackingSystemKalmanFilter::var_r = 1000.0 * 1000.0;
 /*static*/ const double RadarTrackingSystemKalmanFilter::var_theta = 0.017 * 0.017;
@@ -614,7 +625,8 @@ void simple_system_kalman_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval1 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval1 = filter.updateTime(step, Bu);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -630,7 +642,9 @@ void simple_system_kalman_filter()
 		++step;
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval2 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -653,7 +667,9 @@ void simple_system_kalman_filter()
 		// 0. initial estimates: x-(0) & P-(0)
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval1 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -668,7 +684,8 @@ void simple_system_kalman_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval2 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval2 = filter.updateTime(step, Bu);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)
@@ -726,7 +743,8 @@ void aided_INS_kalman_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval1 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval1 = filter.updateTime(step, Bu);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -746,7 +764,9 @@ void aided_INS_kalman_filter()
 		++step;
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval2 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -775,7 +795,9 @@ void aided_INS_kalman_filter()
 		// 0. initial estimates: x-(0) & P-(0)
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval1 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -796,7 +818,8 @@ void aided_INS_kalman_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval2 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval2 = filter.updateTime(step, Bu);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)
@@ -858,7 +881,8 @@ void linear_mass_spring_damper_system_kalman_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval1 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval1 = filter.updateTime(step, Bu);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -878,7 +902,9 @@ void linear_mass_spring_damper_system_kalman_filter()
 		++step;
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval2 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -906,7 +932,9 @@ void linear_mass_spring_damper_system_kalman_filter()
 		// 0. initial estimates: x-(0) & P-(0)
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval1 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -926,7 +954,8 @@ void linear_mass_spring_damper_system_kalman_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval2 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval2 = filter.updateTime(step, Bu);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)
@@ -954,7 +983,7 @@ void radar_tracking_system_kalman_filter()
 	const size_t inputDim = 2;
 	const size_t outputDim = 2;
 
-	const double &T = RadarTrackingSystemKalmanFilter::T;
+	const double &Ts = RadarTrackingSystemKalmanFilter::Ts;
 	const double &var_r = RadarTrackingSystemKalmanFilter::var_r;
 	const double &var_theta = RadarTrackingSystemKalmanFilter::var_theta;
 	const double &var_1 = RadarTrackingSystemKalmanFilter::var_1;
@@ -964,11 +993,11 @@ void radar_tracking_system_kalman_filter()
 	gsl_vector_set_zero(x0);
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_zero(P0);
-	gsl_matrix_set(P0, 0, 0, var_r);  gsl_matrix_set(P0, 0, 1, var_r / T);
-	gsl_matrix_set(P0, 1, 0, var_r / T);  gsl_matrix_set(P0, 1, 1, 2.0 * var_r / (T*T) + var_1);
+	gsl_matrix_set(P0, 0, 0, var_r);  gsl_matrix_set(P0, 0, 1, var_r / Ts);
+	gsl_matrix_set(P0, 1, 0, var_r / Ts);  gsl_matrix_set(P0, 1, 1, 2.0 * var_r / (Ts*Ts) + var_1);
 	gsl_matrix_set(P0, 2, 2, var_1);
-	gsl_matrix_set(P0, 3, 3, var_theta);  gsl_matrix_set(P0, 3, 4, var_theta / T);
-	gsl_matrix_set(P0, 4, 3, var_theta / T);  gsl_matrix_set(P0, 4, 4, 2.0 * var_theta / (T*T) + var_2);
+	gsl_matrix_set(P0, 3, 3, var_theta);  gsl_matrix_set(P0, 3, 4, var_theta / Ts);
+	gsl_matrix_set(P0, 4, 3, var_theta / Ts);  gsl_matrix_set(P0, 4, 4, 2.0 * var_theta / (Ts*Ts) + var_2);
 	gsl_matrix_set(P0, 5, 5, var_2);
 
 	RadarTrackingSystemKalmanFilter filter(x0, P0, stateDim, inputDim, outputDim);
@@ -1008,7 +1037,8 @@ void radar_tracking_system_kalman_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval1 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval1 = filter.updateTime(step, Bu);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -1035,7 +1065,9 @@ void radar_tracking_system_kalman_filter()
 		++step;
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval2 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -1075,7 +1107,9 @@ void radar_tracking_system_kalman_filter()
 		// 0. initial estimates: x-(0) & P-(0)
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		const bool retval1 = filter.updateMeasurement(step);
+		const gsl_vector *actualMeasurement = filter.simulateMeasurement(step, filter.getEstimatedState());
+		const gsl_vector *Du = filter.calculateMeasurementInput(step);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, Du);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -1107,7 +1141,8 @@ void radar_tracking_system_kalman_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const bool retval2 = filter.updateTime(step);
+		const gsl_vector *Bu = filter.calculateControlInput(step);
+		const bool retval2 = filter.updateTime(step, Bu);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)

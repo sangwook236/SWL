@@ -41,11 +41,11 @@ private:
 
 public:
 	// for continuous extended Kalman filter
-	bool updateTime(const double time);
-	bool updateMeasurement(const double time);
+	bool updateTime(const double time, const gsl_vector *f_eval);  // f = f(t, x(t), u(t), 0)
+	bool updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval);  // h = h(t, x(t), u(t), 0)
 	// for discrete extended Kalman filter
-	bool updateTime(const size_t step);
-	bool updateMeasurement(const size_t step);
+	bool updateTime(const size_t step, const gsl_vector *f_eval);  // f = f(k, x(k), u(k), 0)
+	bool updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval);  // h = h(k, x(k), u(k), 0)
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }
@@ -68,11 +68,11 @@ private:
 	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
 	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
 
-	virtual gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const = 0;  // f = f(t, x(t), u(t), 0) or f = f(k, x(k), u(k), 0)
-	virtual gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const = 0;  // h = h(t, x(t), u(t), 0) or h = h(k, x(k), u(k), 0)
+	//virtual gsl_vector * doEvaluatePlantEquation(const size_t step, const gsl_vector *state) const = 0;  // f = f(t, x(t), u(t), 0) or f = f(k, x(k), u(k), 0)
+	//virtual gsl_vector * doEvaluateMeasurementEquation(const size_t step, const gsl_vector *state) const = 0;  // h = h(t, x(t), u(t), 0) or h = h(k, x(k), u(k), 0)
 
 	// actual measurement
-	virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
+	//virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
 
 protected:
 	// estimated state vector
