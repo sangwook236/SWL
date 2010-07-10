@@ -189,13 +189,10 @@
 			<File
 				RelativePath=".\ImuKalmanFilter.cpp"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\ImuKalmanFilterTest.cpp"
+				>
 			</File>
 			<File
 				RelativePath=".\KalmanFilterTest.cpp"
@@ -235,6 +232,10 @@
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath=".\ImuKalmanFilter.h"
+				>
+			</File>
 			<File
 				RelativePath=".\stdafx.h"
 				>
