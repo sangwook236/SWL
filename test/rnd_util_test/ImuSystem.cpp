@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "ImuKalmanFilter.h"
+#include "swl/rnd_util/KalmanFilter.h"
+#include "ImuSystem.h"
 #include <cmath>
 #include <ctime>
 #include <cassert>
@@ -17,7 +18,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //
 
-bool ImuKalmanFilter::runStep(size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate)
+bool ImuSystem::runStep(KalmanFilter &filter, size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate) const
 {
 #if 0
 	// method #1
@@ -28,13 +29,13 @@ bool ImuKalmanFilter::runStep(size_t step, const gsl_vector *Bu, const gsl_vecto
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		if (!updateTime(step, Bu))
+		if (!filter.updateTime(step, Bu))
 			return false;
 
 		// save x-(k+1) & P-(k+1)
 		{
-			const gsl_vector *x_hat = getEstimatedState();
-			//const gsl_matrix *P = getStateErrorCovarianceMatrix();
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			//const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
 			prioriEstimate = gsl_vector_get(x_hat, 0);
 		}
@@ -43,14 +44,14 @@ bool ImuKalmanFilter::runStep(size_t step, const gsl_vector *Bu, const gsl_vecto
 		++step;
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		if (!updateMeasurement(step, actualMeasurement, Du))
+		if (!filter.updateMeasurement(step, actualMeasurement, Du))
 			return false;
 
 		// save K(k), x(k) & P(k)
 		{
-			const gsl_vector *x_hat = getEstimatedState();
-			//const gsl_matrix *K = getKalmanGain();
-			//const gsl_matrix *P = getStateErrorCovarianceMatrix();
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			//const gsl_matrix *K = filter.getKalmanGain();
+			//const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
 			posterioriEstimate = gsl_vector_get(x_hat, 0);
 		}
@@ -64,26 +65,26 @@ bool ImuKalmanFilter::runStep(size_t step, const gsl_vector *Bu, const gsl_vecto
 		// 0. initial estimates: x-(0) & P-(0)
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-		if (!updateMeasurement(step, actualMeasurement, Du))
+		if (!filter.updateMeasurement(step, actualMeasurement, Du))
 			return false;
 
 		// save K(k), x(k) & P(k)
 		{
-			const gsl_vector *x_hat = getEstimatedState();
-			//const gsl_matrix *K = getKalmanGain();
-			//const gsl_matrix *P = getStateErrorCovarianceMatrix();
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			//const gsl_matrix *K = filter.getKalmanGain();
+			//const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
 			posterioriEstimate = gsl_vector_get(x_hat, 0);
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		if (!updateTime(step, Bu))
+		if (!filter.updateTime(step, Bu))
 			return false;
 
 		// save x-(k+1) & P-(k+1)
 		{
-			const gsl_vector *x_hat = getEstimatedState();
-			//const gsl_matrix *P = getStateErrorCovarianceMatrix();
+			const gsl_vector *x_hat = filter.getEstimatedState();
+			//const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
 			prioriEstimate = gsl_vector_get(x_hat, 0);
 		}
@@ -99,8 +100,8 @@ bool ImuKalmanFilter::runStep(size_t step, const gsl_vector *Bu, const gsl_vecto
 //--------------------------------------------------------------------------
 //
 
-AccelKalmanFilter::AccelKalmanFilter(const double Ts, const double beta, const double Qv, const double Qa, const double Qb, const double Ra, const gsl_vector *x0, const gsl_matrix *P0)
-: base_type(x0, P0, stateDim, inputDim, outputDim),
+AccelSystem::AccelSystem(const double Ts, const double beta, const double Qv, const double Qa, const double Qb, const double Ra)
+: base_type(stateDim, inputDim, outputDim),
   Ts_(Ts), beta_(beta), Qv_(Qv), Qa_(Qa), Qb_(Qb), Ra_(Ra),
   Phi_(NULL), C_(NULL), Qd_(NULL), Rd_(NULL), Bd_(NULL)
 {
@@ -174,7 +175,7 @@ AccelKalmanFilter::AccelKalmanFilter(const double Ts, const double beta, const d
 #endif
 }
 
-AccelKalmanFilter::~AccelKalmanFilter()
+AccelSystem::~AccelSystem()
 {
 	gsl_matrix_free(Phi_);  Phi_ = NULL;
 	gsl_matrix_free(C_);  C_ = NULL;
@@ -187,8 +188,8 @@ AccelKalmanFilter::~AccelKalmanFilter()
 //--------------------------------------------------------------------------
 //
 
-GyroKalmanFilter::GyroKalmanFilter(const double Ts, const double beta, const double Qw, const double Qb, const double Rg, const gsl_vector *x0, const gsl_matrix *P0)
-: base_type(x0, P0, stateDim, inputDim, outputDim),
+GyroSystem::GyroSystem(const double Ts, const double beta, const double Qw, const double Qb, const double Rg)
+: base_type(stateDim, inputDim, outputDim),
   Ts_(Ts), beta_(beta), Qw_(Qw), Qb_(Qb), Rg_(Rg),
   Phi_(NULL), C_(NULL), Qd_(NULL), Rd_(NULL)
 {
@@ -250,7 +251,7 @@ GyroKalmanFilter::GyroKalmanFilter(const double Ts, const double beta, const dou
 #endif
 }
 
-GyroKalmanFilter::~GyroKalmanFilter()
+GyroSystem::~GyroSystem()
 {
 	gsl_matrix_free(Phi_);  Phi_ = NULL;
 	gsl_matrix_free(C_);  C_ = NULL;

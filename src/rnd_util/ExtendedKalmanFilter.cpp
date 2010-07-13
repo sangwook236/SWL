@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
+#include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #include <gsl/gsl_linalg.h>
 
 
@@ -11,27 +12,31 @@
 
 namespace swl {
 
-ExtendedKalmanFilter::ExtendedKalmanFilter(const gsl_vector *x0, const gsl_matrix *P0, const size_t stateDim, const size_t inputDim, const size_t outputDim)
-: x_hat_(NULL), /*y_hat_(NULL),*/ P_(NULL), K_(NULL), stateDim_(stateDim), inputDim_(inputDim), outputDim_(outputDim),
+ExtendedKalmanFilter::ExtendedKalmanFilter(const DiscreteNonlinearStochasticSystem &system, const gsl_vector *x0, const gsl_matrix *P0)
+: system_(system), x_hat_(NULL), /*y_hat_(NULL),*/ P_(NULL), K_(NULL),
   residual_(NULL), RR_(NULL), invRR_(NULL), PCt_(NULL), permutation_(NULL), v_(NULL), M_(NULL)//, M2_(NULL)
 {
-	if (x0 && P0 && stateDim_ && inputDim_ && outputDim_ &&
-		stateDim_ == x0->size && stateDim_ == P0->size1 && stateDim_ == P0->size2)
+	const size_t &stateDim = system_.getStateDim();
+	const size_t &inputDim = system_.getInputDim();
+	const size_t &outputDim = system_.getOutputDim();
+
+	if (x0 && P0 && stateDim && inputDim && outputDim &&
+		stateDim == x0->size && stateDim == P0->size1 && stateDim == P0->size2)
 	{
-		x_hat_ = gsl_vector_alloc(stateDim_);
-		//y_hat_ = gsl_vector_alloc(outputDim_);
-		P_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		K_ = gsl_matrix_alloc(stateDim_, outputDim_);
+		x_hat_ = gsl_vector_alloc(stateDim);
+		//y_hat_ = gsl_vector_alloc(outputDim);
+		P_ = gsl_matrix_alloc(stateDim, stateDim);
+		K_ = gsl_matrix_alloc(stateDim, outputDim);
 
-		residual_ = gsl_vector_alloc(outputDim_);
-		RR_ = gsl_matrix_alloc(outputDim_, outputDim_);
-		invRR_ = gsl_matrix_alloc(outputDim_, outputDim_);
-		PCt_ = gsl_matrix_alloc(stateDim_, outputDim_);
-		permutation_ = gsl_permutation_alloc(outputDim_);
+		residual_ = gsl_vector_alloc(outputDim);
+		RR_ = gsl_matrix_alloc(outputDim, outputDim);
+		invRR_ = gsl_matrix_alloc(outputDim, outputDim);
+		PCt_ = gsl_matrix_alloc(stateDim, outputDim);
+		permutation_ = gsl_permutation_alloc(outputDim);
 
-		v_ = gsl_vector_alloc(stateDim_);
-		M_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		M2_ = gsl_matrix_alloc(stateDim_, stateDim_);
+		v_ = gsl_vector_alloc(stateDim);
+		M_ = gsl_matrix_alloc(stateDim, stateDim);
+		M2_ = gsl_matrix_alloc(stateDim, stateDim);
 
 		gsl_vector_memcpy(x_hat_, x0);
 		//gsl_vector_set_zero(y_hat_);
@@ -160,14 +165,14 @@ bool ExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eva
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
-	const gsl_matrix *Phi = doGetStateTransitionMatrix(step, x_hat_);  // Phi(k) = exp(A(k) * T) where A(k) = df(k, x(k), u(k), 0)/dx
+	const gsl_matrix *Phi = system_.getStateTransitionMatrix(step, x_hat_);  // Phi(k) = exp(A(k) * T) where A(k) = df(k, x(k), u(k), 0)/dx
 #if 0
-	const gsl_matrix *W = doGetProcessNoiseCouplingMatrix(step);  // W(k) = df(k, x(k), u(k), 0)/dw
-	const gsl_matrix *Q = doGetProcessNoiseCovarianceMatrix(step);  // Q(k)
+	const gsl_matrix *W = system_.getProcessNoiseCouplingMatrix(step);  // W(k) = df(k, x(k), u(k), 0)/dw
+	const gsl_matrix *Q = system_.getProcessNoiseCovarianceMatrix(step);  // Q(k)
 #else
-	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(step);  // Qd(k) = W * Q(k) * W(k)^T
+	const gsl_matrix *Qd = system_.getProcessNoiseCovarianceMatrix(step);  // Qd(k) = W * Q(k) * W(k)^T
 #endif
-	//const gsl_vector *f_eval = doEvaluatePlantEquation(step, x_hat_);  // f = f(k, x(k), u(k), 0)
+	//const gsl_vector *f_eval = system_.evaluatePlantEquation(step, x_hat_);  // f = f(k, x(k), u(k), 0)
 	if (!Phi || !Qd || !f_eval) return false;
 
 	// 1. propagate time
@@ -204,15 +209,15 @@ bool ExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
-	const gsl_matrix *Cd = doGetOutputMatrix(step, x_hat_);  // Cd(k) = dh(k, x-(k), u(k), 0)/dx
+	const gsl_matrix *Cd = system_.getOutputMatrix(step, x_hat_);  // Cd(k) = dh(k, x-(k), u(k), 0)/dx
 #if 0
-	const gsl_matrix *V = doGetMeasurementNoiseCouplingMatrix(step);  // V(k) = dh(k, x-(k), u(k), 0)/dv
-	const gsl_matrix *R = doGetMeasurementNoiseCovarianceMatrix(step);  // R(k)
+	const gsl_matrix *V = system_.getMeasurementNoiseCouplingMatrix(step);  // V(k) = dh(k, x-(k), u(k), 0)/dv
+	const gsl_matrix *R = system_.getMeasurementNoiseCovarianceMatrix(step);  // R(k)
 #else
-	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(step);  // Rd(k) = V(k) * R(k) * V(k)^T
+	const gsl_matrix *Rd = system_.getMeasurementNoiseCovarianceMatrix(step);  // Rd(k) = V(k) * R(k) * V(k)^T
 #endif
-	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(step, x_hat_);  // h = h(k, x(k), u(k), 0)
-	//const gsl_vector *actualMeasurement = doGetMeasurement(step, x_hat_);  // actual measurement
+	//const gsl_vector *h_eval = system_.evaluateMeasurementEquation(step, x_hat_);  // h = h(k, x(k), u(k), 0)
+	//const gsl_vector *actualMeasurement = system_.getMeasurement(step, x_hat_);  // actual measurement
 	if (!Cd || !Rd || !h_eval || !actualMeasurement) return false;
 
 	// 1. calculate Kalman gain: K(k) = P-(k) * Cd(k)^T * (Cd(k) * P-(k) * Cd(k)^T + Rd(k))^-1 where Cd(k) = dh(k, x-(k), u(k), 0)/dx, Rd(k) = V(k) * R(k) * V(k)^T, V(k) = dh(k, x-(k), u(k), 0)/dv

@@ -21,6 +21,8 @@ typedef struct gsl_permutation_struct gsl_permutation;
 
 namespace swl {
 
+class DiscreteLinearStochasticSystem;
+
 //--------------------------------------------------------------------------
 //
 
@@ -29,9 +31,8 @@ class SWL_RND_UTIL_API KalmanFilter
 public:
 	//typedef KalmanFilter base_type;
 
-protected:
-	KalmanFilter(const gsl_vector *x0, const gsl_matrix *P0, const size_t stateDim, const size_t inputDim, const size_t outputDim);
 public:
+	KalmanFilter(const DiscreteLinearStochasticSystem &system, const gsl_vector *x0, const gsl_matrix *P0);
 	virtual ~KalmanFilter();
 
 private:
@@ -51,29 +52,9 @@ public:
 	const gsl_matrix * getStateErrorCovarianceMatrix() const  {  return P_;  }
 	const gsl_matrix * getKalmanGain() const  {  return K_;  }
 
-	size_t getStateDim() const  {  return stateDim_;  }
-	size_t getInputDim() const  {  return inputDim_;  }
-	size_t getOutputDim() const  {  return outputDim_;  }
-
-private:
-	// for continuous Kalman filter
-	virtual gsl_matrix * doGetSystemMatrix(const double time, const gsl_vector *state) const = 0;  // A(t)
-	// for discrete Kalman filter
-	virtual gsl_matrix * doGetStateTransitionMatrix(const size_t step, const gsl_vector *state) const = 0;  // Phi(k) = exp(A(k) * T)
-	virtual gsl_matrix * doGetOutputMatrix(const size_t step, const gsl_vector *state) const = 0;  // C(t) or Cd(k) (C == Cd)
-
-	//virtual gsl_matrix * doGetProcessNoiseCouplingMatrix(const size_t step) const = 0;  // W(t) or W(k)
-	//virtual gsl_matrix * doGetMeasurementNoiseCouplingMatrix(const size_t step) const = 0;  // V(t) or V(k)
-	virtual gsl_matrix * doGetProcessNoiseCovarianceMatrix(const size_t step) const = 0;  // Q or Qd = W * Q * W^T
-	virtual gsl_matrix * doGetMeasurementNoiseCovarianceMatrix(const size_t step) const = 0;  // R or Rd = V * R * V^T
-
-	//virtual gsl_vector * doGetControlInput(const size_t step, const gsl_vector *state) const = 0;  // Bu(t) = B(t) * u(t) or Bu(k) = Bd(k) * u(k)
-	//virtual gsl_vector * doGetMeasurementInput(const size_t step, const gsl_vector *state) const = 0;  // Du(t) = D(t) * u(t) or Du(k) = D(k) * u(k) (D == Dd)
-
-	// actual measurement
-	//virtual gsl_vector * doGetMeasurement(const size_t step, const gsl_vector *state) const = 0;
-
 protected:
+	const DiscreteLinearStochasticSystem &system_;
+
 	// estimated state vector
 	gsl_vector *x_hat_;
 	// estimated measurement vector
@@ -82,10 +63,6 @@ protected:
 	gsl_matrix *P_;
 	// Kalman gain
 	gsl_matrix *K_;
-
-	const size_t stateDim_;
-	const size_t inputDim_;
-	const size_t outputDim_;
 
 private:
 	// residual = y_tilde - y_hat

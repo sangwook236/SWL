@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "ImuKalmanFilter.h"
+#include "ImuSystem.h"
+#include "swl/rnd_util/KalmanFilter.h"
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -110,8 +111,8 @@ void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 
 void imu_kalman_filter()
 {
-	gsl_vector *Xa0 = gsl_vector_alloc(swl::AccelKalmanFilter::stateDim);
-	gsl_matrix *Pa0 = gsl_matrix_alloc(swl::AccelKalmanFilter::stateDim, swl::AccelKalmanFilter::stateDim);
+	gsl_vector *Xa0 = gsl_vector_alloc(swl::AccelSystem::stateDim);
+	gsl_matrix *Pa0 = gsl_matrix_alloc(swl::AccelSystem::stateDim, swl::AccelSystem::stateDim);
 	gsl_vector_set_zero(Xa0);
 	gsl_matrix_set_zero(Pa0);
 
@@ -155,25 +156,28 @@ void imu_kalman_filter()
 	const double Qab_x = 0.00015, Qab_y = 0.00015, Qab_z = 0.00015;  // variance of a process noise related to an acceleration's bias state  ==>  colored noise model
 	const double Ra_x = 0.001, Ra_y = 0.001, Ra_z = 0.001;  // variance of a measurement noise
 #endif
-	swl::AccelKalmanFilter xAccelFilter(Ts, beta_a_x, Qv_x, Qa_x, Qab_x, Ra_x, Xa0, Pa0);
-	swl::AccelKalmanFilter yAccelFilter(Ts, beta_a_y, Qv_y, Qa_y, Qab_y, Ra_y, Xa0, Pa0);
-	swl::AccelKalmanFilter zAccelFilter(Ts, beta_a_z, Qv_z, Qa_z, Qab_z, Ra_z, Xa0, Pa0);
+	const swl::AccelSystem xAccelSystem(Ts, beta_a_x, Qv_x, Qa_x, Qab_x, Ra_x);
+	swl::KalmanFilter xAccelFilter(xAccelSystem, Xa0, Pa0);
+	const swl::AccelSystem yAccelSystem(Ts, beta_a_y, Qv_y, Qa_y, Qab_y, Ra_y);
+	swl::KalmanFilter yAccelFilter(yAccelSystem, Xa0, Pa0);
+	const swl::AccelSystem zAccelSystem(Ts, beta_a_z, Qv_z, Qa_z, Qab_z, Ra_z);
+	swl::KalmanFilter zAccelFilter(zAccelSystem, Xa0, Pa0);
 
 	gsl_vector_free(Xa0);  Xa0 = NULL;
 	gsl_matrix_free(Pa0);  Pa0 = NULL;
 
-	gsl_vector *accelU = gsl_vector_alloc(swl::AccelKalmanFilter::inputDim);
+	gsl_vector *accelU = gsl_vector_alloc(swl::AccelSystem::inputDim);
 	gsl_vector_set_zero(accelU);
-	gsl_vector *accelBu = gsl_vector_alloc(swl::AccelKalmanFilter::stateDim);
+	gsl_vector *accelBu = gsl_vector_alloc(swl::AccelSystem::stateDim);
 	gsl_vector_set_zero(accelBu);
-	gsl_vector *accelDu = gsl_vector_alloc(swl::AccelKalmanFilter::outputDim);
+	gsl_vector *accelDu = gsl_vector_alloc(swl::AccelSystem::outputDim);
 	gsl_vector_set_zero(accelDu);
-	gsl_vector *accelMeasurement = gsl_vector_alloc(swl::AccelKalmanFilter::outputDim);
+	gsl_vector *accelMeasurement = gsl_vector_alloc(swl::AccelSystem::outputDim);
 	gsl_vector_set_zero(accelMeasurement);
 
 	//
-	gsl_vector *Xg0 = gsl_vector_alloc(swl::GyroKalmanFilter::stateDim);
-	gsl_matrix *Pg0 = gsl_matrix_alloc(swl::GyroKalmanFilter::stateDim, swl::GyroKalmanFilter::stateDim);
+	gsl_vector *Xg0 = gsl_vector_alloc(swl::GyroSystem::stateDim);
+	gsl_matrix *Pg0 = gsl_matrix_alloc(swl::GyroSystem::stateDim, swl::GyroSystem::stateDim);
 	gsl_vector_set_zero(Xg0);
 	gsl_matrix_set_zero(Pg0);
 
@@ -208,18 +212,21 @@ void imu_kalman_filter()
 	const double Qwb_x = 0.01, Qwb_y = 0.01, Qwb_z = 0.01;  // variance of a process noise related to an angular velocity's bias state  ==>  colored noise model
 	const double Rg_x = 0.35, Rg_y = 0.35, Rg_z = 0.35;  // variance of a measurement noise
 #endif
-	swl::GyroKalmanFilter xGyroFilter(Ts, beta_g_x, Qw_x, Qwb_x, Rg_x, Xg0, Pg0);
-	swl::GyroKalmanFilter yGyroFilter(Ts, beta_g_y, Qw_y, Qwb_y, Rg_y, Xg0, Pg0);
-	swl::GyroKalmanFilter zGyroFilter(Ts, beta_g_z, Qw_z, Qwb_z, Rg_z, Xg0, Pg0);
+	const swl::GyroSystem xGyroSystem(Ts, beta_g_x, Qw_x, Qwb_x, Rg_x);
+	swl::KalmanFilter xGyroFilter(xGyroSystem, Xa0, Pa0);
+	const swl::GyroSystem yGyroSystem(Ts, beta_g_y, Qw_y, Qwb_y, Rg_y);
+	swl::KalmanFilter yGyroFilter(yGyroSystem, Xa0, Pa0);
+	const swl::GyroSystem zGyroSystem(Ts, beta_g_z, Qw_z, Qwb_z, Rg_z);
+	swl::KalmanFilter zGyroFilter(zGyroSystem, Xa0, Pa0);
 
 	gsl_vector_free(Xg0);  Xg0 = NULL;
 	gsl_matrix_free(Pg0);  Pg0 = NULL;
 
-	gsl_vector *gyroBu = gsl_vector_alloc(swl::GyroKalmanFilter::stateDim);
+	gsl_vector *gyroBu = gsl_vector_alloc(swl::GyroSystem::stateDim);
 	gsl_vector_set_zero(gyroBu);
-	gsl_vector *gyroDu = gsl_vector_alloc(swl::GyroKalmanFilter::outputDim);
+	gsl_vector *gyroDu = gsl_vector_alloc(swl::GyroSystem::outputDim);
 	gsl_vector_set_zero(gyroDu);
-	gsl_vector *gyroMeasurement = gsl_vector_alloc(swl::GyroKalmanFilter::outputDim);
+	gsl_vector *gyroMeasurement = gsl_vector_alloc(swl::GyroSystem::outputDim);
 	gsl_vector_set_zero(gyroMeasurement);
 
 	//
@@ -231,7 +238,7 @@ void imu_kalman_filter()
 	std::list<Acceleration>::iterator itAccel = accels.begin(), itAccelEnd = accels.end();
 	std::list<Gyro>::iterator itGyro = gyros.begin(), itGyroEnd = gyros.end();
 
-#if 0
+#if 1
 	double prioriEstimate, posterioriEstimate;
 	size_t step = 0;
 	while (itAccel != itAccelEnd && itGyro != itGyroEnd)
@@ -239,7 +246,7 @@ void imu_kalman_filter()
 		{
 			// g_x: the x-component of gravity, a_Fx: the x-component of the acceleration exerted by the robot's input force
 			// Bu = Bd * (g_x + a_Fx)
-			const gsl_matrix *Bd = xAccelFilter.getInputMatrix();
+			const gsl_matrix *Bd = xAccelSystem.getInputMatrix();
 			// FIMXE [modify] >> 
 			const double g_x = 0.0;
 			const double a_Fx = 0.0;
@@ -251,7 +258,7 @@ void imu_kalman_filter()
 			const double accelActualMeasurement = 0.0;
 			gsl_vector_set(accelMeasurement, 0, accelActualMeasurement);
 
-			const bool retval = xAccelFilter.runStep(step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = xAccelSystem.runStep(xAccelFilter, step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = xAccelFilter.getEstimatedState();
@@ -263,7 +270,7 @@ void imu_kalman_filter()
 		{
 			// g_y: the y-component of gravity, a_Fy: the y-component of the acceleration exerted by the robot's input force
 			// Bu = Bd * (g_y + a_Fy)
-			const gsl_matrix *Bd = yAccelFilter.getInputMatrix();
+			const gsl_matrix *Bd = yAccelSystem.getInputMatrix();
 			// FIMXE [modify] >> 
 			const double g_y = 0.0;
 			const double a_Fy = 0.0;
@@ -275,7 +282,7 @@ void imu_kalman_filter()
 			const double accelActualMeasurement = 0.0;
 			gsl_vector_set(accelMeasurement, 0, accelActualMeasurement);
 
-			const bool retval = yAccelFilter.runStep(step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = yAccelSystem.runStep(yAccelFilter, step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = yAccelFilter.getEstimatedState();
@@ -287,7 +294,7 @@ void imu_kalman_filter()
 		{
 			// g_z: the z-component of gravity, a_Fz: the z-component of the acceleration exerted by the robot's input force
 			// Bu = Bd * (g_z + a_Fz)
-			const gsl_matrix *Bd = zAccelFilter.getInputMatrix();
+			const gsl_matrix *Bd = zAccelSystem.getInputMatrix();
 			// FIMXE [modify] >> 
 			const double g_z = 0.0;
 			const double a_Fz = 0.0;
@@ -299,7 +306,7 @@ void imu_kalman_filter()
 			const double accelActualMeasurement = 0.0;
 			gsl_vector_set(accelMeasurement, 0, accelActualMeasurement);
 
-			const bool retval = zAccelFilter.runStep(step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = zAccelSystem.runStep(zAccelFilter, step, accelBu, accelDu, accelMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = zAccelFilter.getEstimatedState();
@@ -314,7 +321,7 @@ void imu_kalman_filter()
 			const double gyroActualMeasurement = 0.0;
 			gsl_vector_set(gyroMeasurement, 0, gyroActualMeasurement);
 
-			const bool retval = xGyroFilter.runStep(step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = xGyroSystem.runStep(xGyroFilter, step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = xGyroFilter.getEstimatedState();
@@ -328,7 +335,7 @@ void imu_kalman_filter()
 			const double gyroActualMeasurement = 0.0;
 			gsl_vector_set(gyroMeasurement, 0, gyroActualMeasurement);
 
-			const bool retval = yGyroFilter.runStep(step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = yGyroSystem.runStep(yGyroFilter, step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = yGyroFilter.getEstimatedState();
@@ -342,7 +349,7 @@ void imu_kalman_filter()
 			const double gyroActualMeasurement = 0.0;
 			gsl_vector_set(gyroMeasurement, 0, gyroActualMeasurement);
 
-			const bool retval = zGyroFilter.runStep(step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
+			const bool retval = zGyroSystem.runStep(zGyroFilter, step, gyroBu, gyroDu, gyroMeasurement, prioriEstimate, posterioriEstimate);
 			assert(retval);
 
 			const gsl_vector *x_hat = zGyroFilter.getEstimatedState();
@@ -373,8 +380,10 @@ void imu_kalman_filter()
 	while (itAccel != itAccelEnd && itGyro != itGyroEnd)
 	{
 #if 0  // x-axis
-		swl::AccelKalmanFilter &accelFilter = xAccelFilter;
-		swl::GyroKalmanFilter &gyroFilter = xGyroFilter;
+		const swl::AccelSystem &accelSystem = xAccelSystem;
+		const swl::GyroSystem &gyroSystem = xGyroSystem;
+		swl::KalmanFilter &accelFilter = xAccelFilter;
+		swl::KalmanFilter &gyroFilter = xGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->x;
@@ -383,8 +392,10 @@ void imu_kalman_filter()
 		const double a_Fx = 0.0;
 		const double accelInput = g_x + a_Fx;
 #elif 0  // y-axis
-		swl::AccelKalmanFilter &accelFilter = yAccelFilter;
-		swl::GyroKalmanFilter &gyroFilter = yGyroFilter;
+		const swl::AccelSystem &accelSystem = yAccelSystem;
+		const swl::GyroSystem &gyroSystem = yGyroSystem;
+		swl::KalmanFilter &accelFilter = yAccelFilter;
+		swl::KalmanFilter &gyroFilter = yGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->y;
@@ -393,8 +404,10 @@ void imu_kalman_filter()
 		const double a_Fy = 0.0;
 		const double accelInput = g_y + a_Fy;
 #elif 1  // z-axis
-		swl::AccelKalmanFilter &accelFilter = zAccelFilter;
-		swl::GyroKalmanFilter &gyroFilter = zGyroFilter;
+		const swl::AccelSystem &accelSystem = zAccelSystem;
+		const swl::GyroSystem &gyroSystem = zGyroSystem;
+		swl::KalmanFilter &accelFilter = zAccelFilter;
+		swl::KalmanFilter &gyroFilter = zGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->z;
@@ -428,7 +441,7 @@ void imu_kalman_filter()
 			// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
 			// g_x: the x-component of gravity, a_Fx: the x-component of the acceleration exerted by the robot's input force
 			// Bu = Bd * (g_x + a_Fx)
-			const gsl_matrix *Bd = accelFilter.getInputMatrix();
+			const gsl_matrix *Bd = accelSystem.getInputMatrix();
 			gsl_vector_set(accelU, 0, accelInput);
 			gsl_blas_dgemv(CblasNoTrans, 1.0, Bd, accelU, 0.0, accelBu);
 

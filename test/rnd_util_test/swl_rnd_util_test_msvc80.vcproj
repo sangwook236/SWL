@@ -187,11 +187,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ImuKalmanFilter.cpp"
+				RelativePath=".\ImuKalmanFilterTest.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuKalmanFilterTest.cpp"
+				RelativePath=".\ImuSystem.cpp"
 				>
 			</File>
 			<File
@@ -233,7 +233,7 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\ImuKalmanFilter.h"
+				RelativePath=".\ImuSystem.h"
 				>
 			</File>
 			<File

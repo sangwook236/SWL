@@ -203,6 +203,22 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\inc\swl\rnd_util\ExportRndUtil.h"
 				>
 			</File>
