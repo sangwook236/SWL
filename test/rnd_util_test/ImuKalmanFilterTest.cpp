@@ -157,11 +157,11 @@ void imu_kalman_filter()
 	const double Ra_x = 0.001, Ra_y = 0.001, Ra_z = 0.001;  // variance of a measurement noise
 #endif
 	const swl::AccelSystem xAccelSystem(Ts, beta_a_x, Qv_x, Qa_x, Qab_x, Ra_x);
-	swl::KalmanFilter xAccelFilter(xAccelSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter xAccelFilter(xAccelSystem, Xa0, Pa0);
 	const swl::AccelSystem yAccelSystem(Ts, beta_a_y, Qv_y, Qa_y, Qab_y, Ra_y);
-	swl::KalmanFilter yAccelFilter(yAccelSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter yAccelFilter(yAccelSystem, Xa0, Pa0);
 	const swl::AccelSystem zAccelSystem(Ts, beta_a_z, Qv_z, Qa_z, Qab_z, Ra_z);
-	swl::KalmanFilter zAccelFilter(zAccelSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter zAccelFilter(zAccelSystem, Xa0, Pa0);
 
 	gsl_vector_free(Xa0);  Xa0 = NULL;
 	gsl_matrix_free(Pa0);  Pa0 = NULL;
@@ -213,11 +213,11 @@ void imu_kalman_filter()
 	const double Rg_x = 0.35, Rg_y = 0.35, Rg_z = 0.35;  // variance of a measurement noise
 #endif
 	const swl::GyroSystem xGyroSystem(Ts, beta_g_x, Qw_x, Qwb_x, Rg_x);
-	swl::KalmanFilter xGyroFilter(xGyroSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter xGyroFilter(xGyroSystem, Xa0, Pa0);
 	const swl::GyroSystem yGyroSystem(Ts, beta_g_y, Qw_y, Qwb_y, Rg_y);
-	swl::KalmanFilter yGyroFilter(yGyroSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter yGyroFilter(yGyroSystem, Xa0, Pa0);
 	const swl::GyroSystem zGyroSystem(Ts, beta_g_z, Qw_z, Qwb_z, Rg_z);
-	swl::KalmanFilter zGyroFilter(zGyroSystem, Xa0, Pa0);
+	swl::DiscreteKalmanFilter zGyroFilter(zGyroSystem, Xa0, Pa0);
 
 	gsl_vector_free(Xg0);  Xg0 = NULL;
 	gsl_matrix_free(Pg0);  Pg0 = NULL;
@@ -382,8 +382,8 @@ void imu_kalman_filter()
 #if 0  // x-axis
 		const swl::AccelSystem &accelSystem = xAccelSystem;
 		const swl::GyroSystem &gyroSystem = xGyroSystem;
-		swl::KalmanFilter &accelFilter = xAccelFilter;
-		swl::KalmanFilter &gyroFilter = xGyroFilter;
+		swl::DiscreteKalmanFilter &accelFilter = xAccelFilter;
+		swl::DiscreteKalmanFilter &gyroFilter = xGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->x;
@@ -394,8 +394,8 @@ void imu_kalman_filter()
 #elif 0  // y-axis
 		const swl::AccelSystem &accelSystem = yAccelSystem;
 		const swl::GyroSystem &gyroSystem = yGyroSystem;
-		swl::KalmanFilter &accelFilter = yAccelFilter;
-		swl::KalmanFilter &gyroFilter = yGyroFilter;
+		swl::DiscreteKalmanFilter &accelFilter = yAccelFilter;
+		swl::DiscreteKalmanFilter &gyroFilter = yGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->y;
@@ -406,8 +406,8 @@ void imu_kalman_filter()
 #elif 1  // z-axis
 		const swl::AccelSystem &accelSystem = zAccelSystem;
 		const swl::GyroSystem &gyroSystem = zGyroSystem;
-		swl::KalmanFilter &accelFilter = zAccelFilter;
-		swl::KalmanFilter &gyroFilter = zGyroFilter;
+		swl::DiscreteKalmanFilter &accelFilter = zAccelFilter;
+		swl::DiscreteKalmanFilter &gyroFilter = zGyroFilter;
 
 		// FIMXE [modify] >> 
 		const double &accelVal = itAccel->z;

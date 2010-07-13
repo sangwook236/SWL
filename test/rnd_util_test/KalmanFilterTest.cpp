@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/KalmanFilter.h"
 #include "swl/rnd_util/DiscreteLinearStochasticSystem.h"
+#include "swl/rnd_util/KalmanFilter.h"
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/normal_distribution.hpp>
@@ -616,7 +616,7 @@ void simple_system_kalman_filter()
 	gsl_matrix_set(P0, 0, 0, 10.0);
 
 	const SimpleLinearSystem system(stateDim, inputDim, outputDim);
-	swl::KalmanFilter filter(system, x0, P0);
+	swl::DiscreteKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -727,7 +727,7 @@ void aided_INS_kalman_filter()
 	gsl_matrix_set_zero(P0);
 
 	const AidedINSSystem system(stateDim, inputDim, outputDim);
-	swl::KalmanFilter filter(system, x0, P0);
+	swl::DiscreteKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -867,7 +867,7 @@ void linear_mass_spring_damper_system_kalman_filter()
 	gsl_matrix_set(P0, 0, 0, 2.0);  gsl_matrix_set(P0, 1, 1, 2.0);
 
 	LinearMassStringDamperSystem system(stateDim, inputDim, outputDim);
-	swl::KalmanFilter filter(system, x0, P0);
+	swl::DiscreteKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -1015,7 +1015,7 @@ void radar_tracking_system_kalman_filter()
 	gsl_matrix_set(P0, 5, 5, var_2);
 
 	RadarTrackingSystem system(stateDim, inputDim, outputDim);
-	swl::KalmanFilter filter(system, x0, P0);
+	swl::DiscreteKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;

@@ -18,7 +18,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //
 
-bool ImuSystem::runStep(KalmanFilter &filter, size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate) const
+bool ImuSystem::runStep(DiscreteKalmanFilter &filter, size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate) const
 {
 #if 0
 	// method #1

@@ -397,7 +397,7 @@ void simple_system_kalman_filter()
 	gsl_matrix_set(P0, 0, 0, 10.0);
 
 	const SimpleLinearSystem system(stateDim, inputDim, outputDim);
-	swl::ExtendedKalmanFilter filter(system, x0, P0);
+	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -509,7 +509,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 	gsl_matrix_scale(P0, 2.0);
 
 	const LinearMassStringDamperSystem system(stateDim, inputDim, outputDim);
-	swl::ExtendedKalmanFilter filter(system, x0, P0);
+	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;

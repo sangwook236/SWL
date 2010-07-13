@@ -14,7 +14,7 @@
 
 namespace swl {
 
-class KalmanFilter;
+class DiscreteKalmanFilter;
 
 //--------------------------------------------------------------------------
 //
@@ -30,7 +30,7 @@ protected:
 	{}
 
 public:
-	bool runStep(KalmanFilter &filter, size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate) const;
+	bool runStep(DiscreteKalmanFilter &filter, size_t step, const gsl_vector *Bu, const gsl_vector *Du, const gsl_vector *actualMeasurement, double &prioriEstimate, double &posterioriEstimate) const;
 
 public:
 	virtual const gsl_matrix * getInputMatrix() const = 0;

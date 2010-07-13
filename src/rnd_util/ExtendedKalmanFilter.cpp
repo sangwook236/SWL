@@ -1,6 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
+#include "swl/rnd_util/ContinuousNonlinearStochasticSystem.h"
 #include <gsl/gsl_linalg.h>
 
 
@@ -12,7 +13,30 @@
 
 namespace swl {
 
-ExtendedKalmanFilter::ExtendedKalmanFilter(const DiscreteNonlinearStochasticSystem &system, const gsl_vector *x0, const gsl_matrix *P0)
+//-------------------------------------------------------------------------
+// the Kalman filter for the discrete nonlinear stochastic system
+
+// x(k+1) = f(k, x(k), u(k), w(k))
+// y(k) = h(k, x(k), u(k), v(k))
+// where E[w(k)] = E[v(k)] = 0, Q(k) = E[w(k) * w(k)^T], R(k) = E[v(k) * v(k)^T], N(k) = E[w(k) * v(k)^T]
+//
+// currently, this code is implemented only for N(k) = 0
+
+// ***** method #1
+// 0. initial estimates: x(0) & P(0)
+// 1. time update (prediction): x(k-1) & P(k-1)  ==>  x-(k) & P-(k)
+// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+//	==> result: posterior estimates, x(k) & P(k), conditioned on all available measurements at time k
+//	==> 1-based time step. 0-th time step is initial
+
+// ***** method #2
+// 0. initial estimates: x-(0) & P-(0)
+// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+//	==> result: prior estimates, x-(k+1) & P-(k+1), conditioned on all prior measurements except the one at time k+1
+//	==> 0-based time step. 0-th time step is initial
+
+DiscreteExtendedKalmanFilter::DiscreteExtendedKalmanFilter(const DiscreteNonlinearStochasticSystem &system, const gsl_vector *x0, const gsl_matrix *P0)
 : system_(system), x_hat_(NULL), /*y_hat_(NULL),*/ P_(NULL), K_(NULL),
   residual_(NULL), RR_(NULL), invRR_(NULL), PCt_(NULL), permutation_(NULL), v_(NULL), M_(NULL)//, M2_(NULL)
 {
@@ -45,7 +69,7 @@ ExtendedKalmanFilter::ExtendedKalmanFilter(const DiscreteNonlinearStochasticSyst
 	}
 }
 
-ExtendedKalmanFilter::~ExtendedKalmanFilter()
+DiscreteExtendedKalmanFilter::~DiscreteExtendedKalmanFilter()
 {
 	gsl_vector_free(x_hat_);  x_hat_ = NULL;
 	//gsl_vector_free(y_hat_);  y_hat_ = NULL;
@@ -63,105 +87,8 @@ ExtendedKalmanFilter::~ExtendedKalmanFilter()
 	gsl_matrix_free(M2_);  M2_ = NULL;
 }
 
-//-------------------------------------------------------------------------
-// the continuous plant:
-//
-// dx(t)/dt = f(t, x(t), u(t), w(t))
-// y(t) = h(t, x(t), u(t), v(t))
-// where E[w(t)] = E[v(t)] = 0, Q(t) = E[w(t) * w(t)^T], R(t) = E[v(t) * v(t)^T], N(t) = E[w(t) * v(t)^T]
-//
-// currently, this code is implemented only for N(t) = 0
-
 // time update (prediction)
-bool ExtendedKalmanFilter::updateTime(const double time, const gsl_vector *f_eval)  // f = f(t, x(t), u(t), 0)
-{
-#if 0
-	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
-
-	const gsl_matrix *A = doGetStateTransitionMatrix(time, x_hat_);  // A(t) = df(t, x(t), u(t), 0)/dx
-#if 0
-	const gsl_matrix *W = doGetProcessNoiseCouplingMatrix(time);  // W(t) = df(t, x(t), u(t), 0)/dw
-	const gsl_matrix *Q = doGetProcessNoiseCovarianceMatrix(time);  // Q(t)
-#else
-	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(time);  // Qd(t) = W * Q(t) * W(t)^T
-#endif
-	//const gsl_vector *f_eval = doEvaluatePlantEquation(time, x_hat_);  // f = f(t, x(t), u(t), 0)
-	if (!A || !Qd || !f_eval) return false;
-
-	// 1. propagate time
-	// dx(t)/dt = f(t, x(t), u(t), 0)
-	// dP(t)/dt = A(t) * P(t) + P(t) * A(t)^T + Qd(t) where A(t) = df(t, x(t), u(t), 0)/dx, Qd(t) = W(t) * Q(t) * W(t)^T, W(t) = df(t, x(t), u(t), 0)/dw
-
-	// preserve symmetry of P
-	gsl_matrix_transpose_memcpy(M_, P_);
-	gsl_matrix_add(P_, M_);
-	gsl_matrix_scale(P_, 0.5);
-
-	return true;
-#else
-	throw std::runtime_error("not yet implemented");
-#endif
-}
-
-// measurement update (correction)
-bool ExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(t, x(t), u(t), 0)
-{
-#if 0
-	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
-
-	const gsl_matrix *C = doGetOutputMatrix(time, x_hat_);  // C(t) = dh(t, x(t), u(t), 0)/dx
-#if 0
-	const gsl_matrix *V = doGetMeasurementNoiseCouplingMatrix(time);  // V(t) = dh(t, x(t), u(t), 0)/dv
-	const gsl_matrix *R = doGetMeasurementNoiseCovarianceMatrix(time);  // R(t)
-#else
-	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(time);  // Rd(t) = V(t) * R(t) * V(t)^T
-#endif
-	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(time, x_hat_);  // h = h(t, x(t), u(t), 0)
-	//const gsl_vector *actualMeasurement = doGetMeasurement(time, x_hat_);  // actual measurement
-	if (!C || !Rd || !h_eval || !actualMeasurement) return false;
-
-	// 1. calculate Kalman gain: K(t) = P(t) * C(t)^T * Rd(t)^-1 where C(t) = dh(t, x(t), u(t), 0)/dx, Rd(t) = V(t) * R(t) * V(t)^T, V(t) = dh(t, x(t), u(t), 0)/dv
-	// 2. update measurement: dx(t)/dt = f(t, x(t), u(t), 0) + K(t) * (y_tilde(t) - y_hat(t)) where y_hat(t) = h(t, x(t), u(t), 0) ???
-	// 3. update covariance:
-	//	dP(t)/dt = A(t) * P(t) + P(t) * A(t)^T + Qd(t) - P(t) * C(t)^T * Rd(t)^-1 * C(t) * P(t) : the matrix Riccati differential equation
-	//	         = A(t) * P(t) + P(t) * A(t)^T + Qd(t) - K(t) * Rd(t) * K(t)^T
-
-	// preserve symmetry of P
-	gsl_matrix_transpose_memcpy(M_, P_);
-	gsl_matrix_add(P_, M_);
-	gsl_matrix_scale(P_, 0.5);
-
-	return true;
-#else
-	throw std::runtime_error("not yet implemented");
-#endif
-}
-
-//-------------------------------------------------------------------------
-// the discrete plant:
-//
-// x(k+1) = f(k, x(k), u(k), w(k))
-// y(k) = h(k, x(k), u(k), v(k))
-// where E[w(k)] = E[v(k)] = 0, Q(k) = E[w(k) * w(k)^T], R(k) = E[v(k) * v(k)^T], N(k) = E[w(k) * v(k)^T]
-//
-// currently, this code is implemented only for N(k) = 0
-
-// ***** method #1
-// 0. initial estimates: x(0) & P(0)
-// 1. time update (prediction): x(k-1) & P(k-1)  ==>  x-(k) & P-(k)
-// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-//	==> result: posterior estimates, x(k) & P(k), conditioned on all available measurements at time k
-//	==> 1-based time step. 0-th time step is initial
-
-// ***** method #2
-// 0. initial estimates: x-(0) & P-(0)
-// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-//	==> result: prior estimates, x-(k+1) & P-(k+1), conditioned on all prior measurements except the one at time k+1
-//	==> 0-based time step. 0-th time step is initial
-
-// time update (prediction)
-bool ExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eval)  // f = f(k, x(k), u(k), 0)
+bool DiscreteExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eval)  // f = f(k, x(k), u(k), 0)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
@@ -205,7 +132,7 @@ bool ExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eva
 }
 
 // measurement update (correction)
-bool ExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(k, x(k), u(k), 0)
+bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(k, x(k), u(k), 0)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
 
@@ -272,6 +199,124 @@ bool ExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector
 	gsl_matrix_scale(P_, 0.5);
 
 	return true;
+}
+
+//-------------------------------------------------------------------------
+// the extended Kalman filter for the continuous nonlinear stochastic system
+
+// dx(t)/dt = f(t, x(t), u(t), w(t))
+// y(t) = h(t, x(t), u(t), v(t))
+// where E[w(t)] = E[v(t)] = 0, Q(t) = E[w(t) * w(t)^T], R(t) = E[v(t) * v(t)^T], N(t) = E[w(t) * v(t)^T]
+//
+// currently, this code is implemented only for N(t) = 0
+
+// ***** method #1
+// 0. initial estimates: x(0) & P(0)
+// 1. time update (prediction): x(k-1) & P(k-1)  ==>  x-(k) & P-(k)
+// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+//	==> result: posterior estimates, x(k) & P(k), conditioned on all available measurements at time k
+//	==> 1-based time step. 0-th time step is initial
+
+// ***** method #2
+// 0. initial estimates: x-(0) & P-(0)
+// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
+// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+//	==> result: prior estimates, x-(k+1) & P-(k+1), conditioned on all prior measurements except the one at time k+1
+//	==> 0-based time step. 0-th time step is initial
+
+ContinuousExtendedKalmanFilter::ContinuousExtendedKalmanFilter(const ContinuousNonlinearStochasticSystem &system, const gsl_vector *x0, const gsl_matrix *P0)
+: system_(system), x_hat_(NULL), /*y_hat_(NULL),*/ P_(NULL), K_(NULL)
+{
+	const size_t &stateDim = system_.getStateDim();
+	const size_t &inputDim = system_.getInputDim();
+	const size_t &outputDim = system_.getOutputDim();
+
+	if (x0 && P0 && stateDim && inputDim && outputDim &&
+		stateDim == x0->size && stateDim == P0->size1 && stateDim == P0->size2)
+	{
+		x_hat_ = gsl_vector_alloc(stateDim);
+		//y_hat_ = gsl_vector_alloc(outputDim);
+		P_ = gsl_matrix_alloc(stateDim, stateDim);
+		K_ = gsl_matrix_alloc(stateDim, outputDim);
+
+		gsl_vector_memcpy(x_hat_, x0);
+		//gsl_vector_set_zero(y_hat_);
+		gsl_matrix_memcpy(P_, P0);
+		//gsl_matrix_set_identity(K_);
+	}
+}
+
+ContinuousExtendedKalmanFilter::~ContinuousExtendedKalmanFilter()
+{
+	gsl_vector_free(x_hat_);  x_hat_ = NULL;
+	//gsl_vector_free(y_hat_);  y_hat_ = NULL;
+	gsl_matrix_free(P_);  P_ = NULL;
+	gsl_matrix_free(K_);  K_ = NULL;
+}
+
+// time update (prediction)
+bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vector *f_eval)  // f = f(t, x(t), u(t), 0)
+{
+#if 0
+	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_matrix *A = doGetStateTransitionMatrix(time, x_hat_);  // A(t) = df(t, x(t), u(t), 0)/dx
+#if 0
+	const gsl_matrix *W = doGetProcessNoiseCouplingMatrix(time);  // W(t) = df(t, x(t), u(t), 0)/dw
+	const gsl_matrix *Q = doGetProcessNoiseCovarianceMatrix(time);  // Q(t)
+#else
+	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(time);  // Qd(t) = W * Q(t) * W(t)^T
+#endif
+	//const gsl_vector *f_eval = doEvaluatePlantEquation(time, x_hat_);  // f = f(t, x(t), u(t), 0)
+	if (!A || !Qd || !f_eval) return false;
+
+	// 1. propagate time
+	// dx(t)/dt = f(t, x(t), u(t), 0)
+	// dP(t)/dt = A(t) * P(t) + P(t) * A(t)^T + Qd(t) where A(t) = df(t, x(t), u(t), 0)/dx, Qd(t) = W(t) * Q(t) * W(t)^T, W(t) = df(t, x(t), u(t), 0)/dw
+
+	// preserve symmetry of P
+	gsl_matrix_transpose_memcpy(M_, P_);
+	gsl_matrix_add(P_, M_);
+	gsl_matrix_scale(P_, 0.5);
+
+	return true;
+#else
+	throw std::runtime_error("not yet implemented");
+#endif
+}
+
+// measurement update (correction)
+bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(t, x(t), u(t), 0)
+{
+#if 0
+	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_matrix *C = doGetOutputMatrix(time, x_hat_);  // C(t) = dh(t, x(t), u(t), 0)/dx
+#if 0
+	const gsl_matrix *V = doGetMeasurementNoiseCouplingMatrix(time);  // V(t) = dh(t, x(t), u(t), 0)/dv
+	const gsl_matrix *R = doGetMeasurementNoiseCovarianceMatrix(time);  // R(t)
+#else
+	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(time);  // Rd(t) = V(t) * R(t) * V(t)^T
+#endif
+	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(time, x_hat_);  // h = h(t, x(t), u(t), 0)
+	//const gsl_vector *actualMeasurement = doGetMeasurement(time, x_hat_);  // actual measurement
+	if (!C || !Rd || !h_eval || !actualMeasurement) return false;
+
+	// 1. calculate Kalman gain: K(t) = P(t) * C(t)^T * Rd(t)^-1 where C(t) = dh(t, x(t), u(t), 0)/dx, Rd(t) = V(t) * R(t) * V(t)^T, V(t) = dh(t, x(t), u(t), 0)/dv
+	// 2. update measurement: dx(t)/dt = f(t, x(t), u(t), 0) + K(t) * (y_tilde(t) - y_hat(t)) where y_hat(t) = h(t, x(t), u(t), 0) ???
+	// 3. update covariance:
+	//	dP(t)/dt = A(t) * P(t) + P(t) * A(t)^T + Qd(t) - P(t) * C(t)^T * Rd(t)^-1 * C(t) * P(t) : the matrix Riccati differential equation
+	//	         = A(t) * P(t) + P(t) * A(t)^T + Qd(t) - K(t) * Rd(t) * K(t)^T
+
+	// preserve symmetry of P
+	gsl_matrix_transpose_memcpy(M_, P_);
+	gsl_matrix_add(P_, M_);
+	gsl_matrix_scale(P_, 0.5);
+
+	return true;
+#else
+	throw std::runtime_error("not yet implemented");
+#endif
 }
 
 }  // namespace swl
