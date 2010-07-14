@@ -1,0 +1,10 @@
+#Mon Aug 24 00:47:22 KST 2009
+useQuickDiffPrefPage=true
+wizard.preferred.toolchains=cdt.managedbuild.toolchain.gnu.mingw.exe.debug cdt.managedbuild.toolchain.gnu.mingw.so.debug cdt.managedbuild.toolchain.gnu.mingw.lib.debug
+useAnnotationsPrefPage=true
+sourceHoverBackgroundColor=255,255,225
+org.eclipse.cdt.ui.text.custom_code_templates=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?><templates/>
+properties.multi.write.mode=4
+spelling_locale_initialized=true
+eclipse.preferences.version=1
+properties.multi.displ.mode=1

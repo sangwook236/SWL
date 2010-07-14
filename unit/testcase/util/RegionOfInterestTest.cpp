@@ -88,7 +88,7 @@ public:
 
 		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(1), roi->getLineWidth());
 
-		roi->setLineWidth(12.345);
+		roi->setLineWidth(12.345f);
 		BOOST_CHECK_EQUAL(swl::RegionOfInterest::real_type(12.345), roi->getLineWidth());
 	}
 

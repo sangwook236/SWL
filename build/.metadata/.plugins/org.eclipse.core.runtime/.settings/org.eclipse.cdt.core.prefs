@@ -1,0 +1,18 @@
+#Wed Jul 14 15:01:01 KST 2010
+indexer/indexerId=org.eclipse.cdt.core.fastIndexer
+indexer/skipImplicitReferences=false
+indexer/indexUnusedHeadersWithDefaultLang=false
+environment/workspace=
+indexer/updatePolicy=0
+indexer/filesToParseUpFront=cstdarg, cstdio, sys/resource.h, ctime, stdarg.h, stddef.h, sys/types.h
+environment/workspace/appendContributed=true
+org.eclipse.cdt.core.taskPriorities=normal,normal,normal
+indexer/skipTypeReferences=false
+indexer/skipReferences=false
+macros/workspace=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<macros/>\r\n
+indexer/skipMacroReferences=false
+indexer/indexAllFiles=true
+eclipse.preferences.version=1
+environment/workspace/append=true
+indexer/useHeuristicIncludeResolution=true
+org.eclipse.cdt.core.taskTags=TODO,FIXME,XXX

@@ -1,0 +1,18 @@
+
+**** Build of configuration Debug for project swl_machine_vision_test ****
+
+make all 
+Building file: ../HoughTransformTest.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"HoughTransformTest.d" -MT"HoughTransformTest.d" -o"HoughTransformTest.o" "../HoughTransformTest.cpp"
+In file included from ../HoughTransformTest.cpp:1:
+../stdafx.h:13:19: warning: tchar.h: No such file or directory
+../HoughTransformTest.cpp: In member function ?˜void<unnamed>::RectangleHoughTransform::vote(const std::vector<<unnamed>::ShapeInfo, std::allocator<<unnamed>::ShapeInfo> >&)??
+../HoughTransformTest.cpp:179: error: ?˜memset??was not declared in this scope
+../HoughTransformTest.cpp: In member function ?˜bool<unnamed>::RectangleHoughTransform::isLocalMaximum(size_t, size_t, size_t, size_t, size_t, size_t) const??
+../HoughTransformTest.cpp:269: warning: comparison between signed and unsigned integer expressions
+../HoughTransformTest.cpp:276: warning: comparison between signed and unsigned integer expressions
+../HoughTransformTest.cpp:283: warning: comparison between signed and unsigned integer expressions
+../HoughTransformTest.cpp:290: warning: comparison between signed and unsigned integer expressions
+../HoughTransformTest.cpp:297: warning: comparison between signed and unsigned integer expressions
+make: *** [HoughTransformTest.o] Error 1

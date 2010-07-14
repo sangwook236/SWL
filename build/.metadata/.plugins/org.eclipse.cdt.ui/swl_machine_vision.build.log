@@ -1,0 +1,14 @@
+
+**** Build of configuration Debug for project swl_machine_vision ****
+
+make all 
+Building file: ../HoughTransform.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"HoughTransform.d" -MT"HoughTransform.d" -o"HoughTransform.o" "../HoughTransform.cpp"
+Finished building: ../HoughTransform.cpp
+ 
+Building target: swl_machine_vision.dll
+Invoking: Cygwin C++ Linker
+g++ -L"../../../lib/Debug" -LE:/work_center/sw_dev/cpp/ext/lib -LE:/work_center/sw_dev/cpp/rnd/lib -shared -o"swl_machine_vision.dll"  ./HoughTransform.o   
+Finished building target: swl_machine_vision.dll
+ 

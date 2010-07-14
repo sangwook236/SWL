@@ -1,0 +1,1007 @@
+!SESSION 2009-08-23 23:59:55.437 -----------------------------------------------
+eclipse.buildId=I20090611-1540
+java.version=1.6.0_15
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:02:15.359
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:02:28.437
+!MESSAGE Indexed 'base' (4 sources, 72 headers) in 13.42 sec: 29,162 declarations; 38,870 references; 13 unresolved inclusions; 0 syntax errors; 272 unresolved names (0.40%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:03:09.375
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:03:09.437
+!MESSAGE Indexed 'graphics' (0 sources, 21 headers) in 0.17 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:03:29.968
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:03:32.593
+!MESSAGE Indexed 'math' (3 sources, 73 headers) in 2.45 sec: 6,544 declarations; 8,733 references; 10 unresolved inclusions; 0 syntax errors; 385 unresolved names (2.46%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:03:48.187
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:03:48.296
+!MESSAGE Indexed 'oglview' (1 sources, 21 headers) in 0.22 sec: 706 declarations; 1,020 references; 5 unresolved inclusions; 0 syntax errors; 203 unresolved names (10.52%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:04:06.500
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:04:12.687
+!MESSAGE Indexed 'util' (14 sources, 111 headers) in 4.50 sec: 12,365 declarations; 21,448 references; 31 unresolved inclusions; 3 syntax errors; 1,267 unresolved names (3.61%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:04:20.656
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:04:22.234
+!MESSAGE Indexed 'view' (4 sources, 69 headers) in 1.11 sec: 5,412 declarations; 5,869 references; 10 unresolved inclusions; 0 syntax errors; 1,338 unresolved names (10.60%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:04:40.125
+!MESSAGE Indexed 'winutil' (7 sources, 11 headers) in 0.55 sec: 112 declarations; 201 references; 31 unresolved inclusions; 0 syntax errors; 823 unresolved names (72.45%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:05:18.125
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:05:25.328
+!MESSAGE Indexed 'winutil' (7 sources, 153 headers) in 7.36 sec: 40,002 declarations; 58,463 references; 17 unresolved inclusions; 0 syntax errors; 851 unresolved names (0.86%)
+
+!ENTRY org.eclipse.core.resources 4 2 2009-08-24 00:05:32.750
+!MESSAGE Problems occurred when invoking code from plug-in: "org.eclipse.core.resources".
+!STACK 0
+org.eclipse.team.svn.core.operation.UnreportableException: Selected SVN connector library is not available or cannot be loaded.
+If you selected native JavaHL connector, please check if binaries are available or install and select pure Java Subversion connector from the plug-in connectors update site.
+If connectors already installed then you can change the selected one at: Window->Preferences->Team->SVN->SVN Client.
+	at org.eclipse.team.svn.core.extension.factory.ISVNConnectorFactory$1.newInstance(ISVNConnectorFactory.java:105)
+	at org.eclipse.team.svn.core.utility.SVNUtility.getSVNInfoForNotConnected(SVNUtility.java:760)
+	at org.eclipse.team.svn.core.SVNFolderListener$1$1.visit(SVNFolderListener.java:70)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:68)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:79)
+	at org.eclipse.core.internal.events.ResourceDelta.accept(ResourceDelta.java:48)
+	at org.eclipse.team.svn.core.SVNFolderListener$1.run(SVNFolderListener.java:56)
+	at org.eclipse.core.internal.resources.Workspace.run(Workspace.java:1800)
+	at org.eclipse.team.svn.core.SVNFolderListener.resourceChanged(SVNFolderListener.java:54)
+	at org.eclipse.core.internal.events.NotificationManager$2.run(NotificationManager.java:291)
+	at org.eclipse.core.runtime.SafeRunner.run(SafeRunner.java:42)
+	at org.eclipse.core.internal.events.NotificationManager.notify(NotificationManager.java:285)
+	at org.eclipse.core.internal.events.NotificationManager.broadcastChanges(NotificationManager.java:149)
+	at org.eclipse.core.internal.resources.Workspace.broadcastBuildEvent(Workspace.java:297)
+	at org.eclipse.core.internal.events.AutoBuildJob.doBuild(AutoBuildJob.java:136)
+	at org.eclipse.core.internal.events.AutoBuildJob.run(AutoBuildJob.java:238)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:05:38.578
+!MESSAGE Indexed 'winview' (17 sources, 106 headers) in 3.25 sec: 15,417 declarations; 22,003 references; 68 unresolved inclusions; 354 syntax errors; 3,429 unresolved names (8.39%)
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: missingOneOfTwoAttributes in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: categoryNotDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: actionNotDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: actionAlreadyDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: presetNotDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: templateNotDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.000
+!MESSAGE NLS unused message: invalidActionType in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: invalidEventHandlerType in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: invalidRequiresConstraint in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: invalidConflictsConstraint in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: deprecatedRuntimeChangedAction in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: tracingActionSorting in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: tracingFrameworkActivationStarting in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS unused message: tracingFrameworkActivationFinished in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS missing message: problemCaseNotRecognized in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.osgi 2 1 2009-08-24 00:06:12.015
+!MESSAGE NLS missing message: runtimeComponentTypeNotDefined in: org.eclipse.wst.common.project.facet.core.internal.FacetedProjectFrameworkImpl
+
+!ENTRY org.eclipse.wst.common.project.facet.core 4 0 2009-08-24 00:06:12.031
+!MESSAGE Project facet jst.web has not been defined. It is used in plugin org.eclipse.wst.jsdt.web.core.
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:09.890
+!MESSAGE Indexed 'oglview' (1 sources, 21 headers) in 0.22 sec: 706 declarations; 1,020 references; 5 unresolved inclusions; 0 syntax errors; 203 unresolved names (10.52%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:12.562
+!MESSAGE Indexed 'util' (14 sources, 111 headers) in 2.66 sec: 12,365 declarations; 21,448 references; 31 unresolved inclusions; 3 syntax errors; 1,267 unresolved names (3.61%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:13.484
+!MESSAGE Indexed 'view' (4 sources, 69 headers) in 0.91 sec: 5,412 declarations; 5,869 references; 10 unresolved inclusions; 0 syntax errors; 1,338 unresolved names (10.60%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:20.546
+!MESSAGE Indexed 'winutil' (7 sources, 153 headers) in 7.05 sec: 40,002 declarations; 58,463 references; 17 unresolved inclusions; 0 syntax errors; 851 unresolved names (0.86%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:23.859
+!MESSAGE Indexed 'winview' (17 sources, 106 headers) in 3.28 sec: 15,417 declarations; 22,003 references; 68 unresolved inclusions; 354 syntax errors; 3,429 unresolved names (8.39%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:28.515
+!MESSAGE Indexed 'base' (4 sources, 72 headers) in 4.64 sec: 29,162 declarations; 38,870 references; 13 unresolved inclusions; 0 syntax errors; 272 unresolved names (0.40%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:28.640
+!MESSAGE Indexed 'graphics' (0 sources, 21 headers) in 0.11 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:08:29.750
+!MESSAGE Indexed 'math' (3 sources, 73 headers) in 1.09 sec: 6,544 declarations; 8,733 references; 10 unresolved inclusions; 0 syntax errors; 385 unresolved names (2.46%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:13:44.828
+!MESSAGE Indexed 'graphics' (0 sources, 21 headers) in 0.20 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:14:25.031
+!MESSAGE Indexed 'math' (3 sources, 87 headers) in 2.11 sec: 8,487 declarations; 11,869 references; 2 unresolved inclusions; 0 syntax errors; 61 unresolved names (0.30%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:14:51.328
+!MESSAGE Indexed 'oglview' (1 sources, 30 headers) in 0.45 sec: 1,503 declarations; 3,058 references; 3 unresolved inclusions; 0 syntax errors; 32 unresolved names (0.70%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:15:16.468
+!MESSAGE Indexed 'util' (14 sources, 136 headers) in 3.64 sec: 14,534 declarations; 25,888 references; 18 unresolved inclusions; 0 syntax errors; 688 unresolved names (1.67%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:15:28.859
+!MESSAGE Indexed 'view' (4 sources, 69 headers) in 1.02 sec: 5,412 declarations; 5,869 references; 10 unresolved inclusions; 0 syntax errors; 1,338 unresolved names (10.60%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:15:42.406
+!MESSAGE Indexed 'view' (4 sources, 87 headers) in 1.91 sec: 7,680 declarations; 10,683 references; 4 unresolved inclusions; 0 syntax errors; 120 unresolved names (0.65%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:16:11.109
+!MESSAGE Indexed 'winutil' (7 sources, 170 headers) in 7.50 sec: 40,973 declarations; 60,755 references; 5 unresolved inclusions; 0 syntax errors; 100 unresolved names (0.10%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:16:44.593
+!MESSAGE Indexed 'winview' (17 sources, 193 headers) in 8.91 sec: 45,266 declarations; 67,795 references; 14 unresolved inclusions; 0 syntax errors; 296 unresolved names (0.26%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:25:13.609
+!MESSAGE Indexed 'graphics' (0 sources, 21 headers) in 0.19 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:25:32.937
+!MESSAGE Indexed 'math' (3 sources, 87 headers) in 1.64 sec: 8,487 declarations; 11,869 references; 2 unresolved inclusions; 0 syntax errors; 61 unresolved names (0.30%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:25:53.453
+!MESSAGE Indexed 'oglview' (1 sources, 30 headers) in 0.38 sec: 1,503 declarations; 3,058 references; 3 unresolved inclusions; 0 syntax errors; 32 unresolved names (0.70%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:26:57.718
+!MESSAGE Indexed 'util' (14 sources, 886 headers) in 44.11 sec: 72,395 declarations; 232,917 references; 3 unresolved inclusions; 66 syntax errors; 1,218 unresolved names (0.40%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:27:07.171
+!MESSAGE Indexed 'view' (4 sources, 510 headers) in 9.44 sec: 32,494 declarations; 75,388 references; 2 unresolved inclusions; 66 syntax errors; 965 unresolved names (0.89%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:27:24.234
+!MESSAGE Indexed 'winutil' (7 sources, 614 headers) in 17.05 sec: 64,223 declarations; 186,370 references; 3 unresolved inclusions; 35 syntax errors; 852 unresolved names (0.34%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:29:47.390
+!MESSAGE Indexed 'winview' (17 sources, 298 headers) in 8.62 sec: 46,428 declarations; 69,936 references; 8 unresolved inclusions; 0 syntax errors; 107 unresolved names (0.09%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:44:00.750
+!MESSAGE Indexed 'test' (0 sources, 21 headers) in 0.14 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:47:25.734
+!MESSAGE Indexed 'math' (3 sources, 87 headers) in 3.12 sec: 8,487 declarations; 11,869 references; 2 unresolved inclusions; 0 syntax errors; 61 unresolved names (0.30%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:47:25.843
+!MESSAGE Indexed 'graphics' (0 sources, 21 headers) in 0.11 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:47:26.234
+!MESSAGE Indexed 'oglview' (1 sources, 30 headers) in 0.39 sec: 1,503 declarations; 3,058 references; 3 unresolved inclusions; 0 syntax errors; 32 unresolved names (0.70%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:48:09.843
+!MESSAGE Indexed 'util' (14 sources, 886 headers) in 43.61 sec: 72,395 declarations; 232,917 references; 3 unresolved inclusions; 66 syntax errors; 1,218 unresolved names (0.40%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:48:20.250
+!MESSAGE Indexed 'view' (4 sources, 510 headers) in 10.39 sec: 32,494 declarations; 75,388 references; 2 unresolved inclusions; 66 syntax errors; 965 unresolved names (0.89%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:48:38.500
+!MESSAGE Indexed 'winutil' (7 sources, 614 headers) in 18.24 sec: 64,223 declarations; 186,370 references; 3 unresolved inclusions; 35 syntax errors; 852 unresolved names (0.34%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:48:47.734
+!MESSAGE Indexed 'winview' (17 sources, 298 headers) in 9.22 sec: 46,428 declarations; 69,936 references; 8 unresolved inclusions; 0 syntax errors; 107 unresolved names (0.09%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 00:48:55.046
+!MESSAGE Indexed 'base' (4 sources, 245 headers) in 7.11 sec: 38,770 declarations; 53,043 references; 2 unresolved inclusions; 0 syntax errors; 74 unresolved names (0.08%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:10:57.234
+!MESSAGE Indexed 'swl_base' (0 sources, 21 headers) in 0.12 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:03.984
+!MESSAGE Indexed 'swl_graphics' (0 sources, 21 headers) in 0.14 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:08.218
+!MESSAGE Indexed 'swl_math' (0 sources, 21 headers) in 0.12 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:11.906
+!MESSAGE Indexed 'swl_oglview' (0 sources, 21 headers) in 0.11 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:15.265
+!MESSAGE Indexed 'swl_util' (0 sources, 21 headers) in 0.14 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:18.375
+!MESSAGE Indexed 'swl_view' (0 sources, 21 headers) in 0.11 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:21.968
+!MESSAGE Indexed 'swl_winutil' (0 sources, 21 headers) in 0.11 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2009-08-24 01:11:27.750
+!MESSAGE Indexed 'swl_winview' (0 sources, 21 headers) in 0.14 sec: 676 declarations; 886 references; 2 unresolved inclusions; 0 syntax errors; 15 unresolved names (0.95%)
+!SESSION 2010-07-14 14:58:26.187 -----------------------------------------------
+eclipse.buildId=I20100608-0911
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.core.resources 4 567 2010-07-14 14:58:41.422
+!MESSAGE Workspace restored, but some problems occurred.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.422
+!MESSAGE Could not read metadata for 'swl_base'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_base' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.423
+!MESSAGE The project description file (.project) for 'swl_base' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.423
+!MESSAGE Could not read metadata for 'swl_math'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_math' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.424
+!MESSAGE The project description file (.project) for 'swl_math' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.424
+!MESSAGE Could not read metadata for 'swl_oglview'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_oglview' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.424
+!MESSAGE The project description file (.project) for 'swl_oglview' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.424
+!MESSAGE Could not read metadata for 'swl_util'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_util' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.425
+!MESSAGE The project description file (.project) for 'swl_util' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.425
+!MESSAGE Could not read metadata for 'swl_view'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_view' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.426
+!MESSAGE The project description file (.project) for 'swl_view' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.426
+!MESSAGE Could not read metadata for 'swl_winutil'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_winutil' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.426
+!MESSAGE The project description file (.project) for 'swl_winutil' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+!SUBENTRY 1 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.427
+!MESSAGE Could not read metadata for 'swl_winview'.
+!STACK 1
+org.eclipse.core.internal.resources.ResourceException: The project description file (.project) for 'swl_winview' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+	at org.eclipse.core.internal.localstore.FileSystemResourceManager.read(FileSystemResourceManager.java:756)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:852)
+	at org.eclipse.core.internal.resources.SaveManager.restoreMetaInfo(SaveManager.java:832)
+	at org.eclipse.core.internal.resources.SaveManager.restore(SaveManager.java:681)
+	at org.eclipse.core.internal.resources.SaveManager.startup(SaveManager.java:1503)
+	at org.eclipse.core.internal.resources.Workspace.startup(Workspace.java:2134)
+	at org.eclipse.core.internal.resources.Workspace.open(Workspace.java:1883)
+	at org.eclipse.core.resources.ResourcesPlugin.start(ResourcesPlugin.java:406)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl$1.run(BundleContextImpl.java:783)
+	at java.security.AccessController.doPrivileged(Native Method)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.startActivator(BundleContextImpl.java:774)
+	at org.eclipse.osgi.framework.internal.core.BundleContextImpl.start(BundleContextImpl.java:755)
+	at org.eclipse.osgi.framework.internal.core.BundleHost.startWorker(BundleHost.java:370)
+	at org.eclipse.osgi.framework.internal.core.AbstractBundle.start(AbstractBundle.java:284)
+	at org.eclipse.osgi.framework.util.SecureAction.start(SecureAction.java:417)
+	at org.eclipse.osgi.internal.loader.BundleLoader.setLazyTrigger(BundleLoader.java:265)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseLazyStarter.postFindLocalClass(EclipseLazyStarter.java:106)
+	at org.eclipse.osgi.baseadaptor.loader.ClasspathManager.findLocalClass(ClasspathManager.java:453)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.findLocalClass(DefaultClassLoader.java:216)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findLocalClass(BundleLoader.java:393)
+	at org.eclipse.osgi.internal.loader.SingleSourcePackage.loadClass(SingleSourcePackage.java:33)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClassInternal(BundleLoader.java:466)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:422)
+	at org.eclipse.osgi.internal.loader.BundleLoader.findClass(BundleLoader.java:410)
+	at org.eclipse.osgi.internal.baseadaptor.DefaultClassLoader.loadClass(DefaultClassLoader.java:107)
+	at java.lang.ClassLoader.loadClass(Unknown Source)
+	at org.eclipse.ui.internal.ide.application.IDEApplication.start(IDEApplication.java:116)
+	at org.eclipse.equinox.internal.app.EclipseAppHandle.run(EclipseAppHandle.java:196)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.runApplication(EclipseAppLauncher.java:110)
+	at org.eclipse.core.runtime.internal.adaptor.EclipseAppLauncher.start(EclipseAppLauncher.java:79)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:369)
+	at org.eclipse.core.runtime.adaptor.EclipseStarter.run(EclipseStarter.java:179)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(Unknown Source)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(Unknown Source)
+	at java.lang.reflect.Method.invoke(Unknown Source)
+	at org.eclipse.equinox.launcher.Main.invokeFramework(Main.java:619)
+	at org.eclipse.equinox.launcher.Main.basicRun(Main.java:574)
+	at org.eclipse.equinox.launcher.Main.run(Main.java:1407)
+	at org.eclipse.equinox.launcher.Main.main(Main.java:1383)
+!SUBENTRY 2 org.eclipse.core.resources 4 567 2010-07-14 14:58:41.427
+!MESSAGE The project description file (.project) for 'swl_winview' is missing.  This file contains important information about the project.  The project will not function properly until this file is restored.
+
+!ENTRY com.google.gdt.eclipse.suite 1 0 2010-07-14 14:58:47.093
+!MESSAGE Registering: com.google.appengine.eclipse.sdkbundle.1.3.5_1.3.5.v201006301309
+
+!ENTRY com.google.gdt.eclipse.suite 1 0 2010-07-14 14:58:47.617
+!MESSAGE Registering: com.google.gwt.eclipse.sdkbundle.2.0.4_2.0.4.v201006301309
+
+!ENTRY org.eclipse.jface 2 0 2010-07-14 14:58:54.590
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-07-14 14:58:54.590
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+
+!ENTRY org.eclipse.epp.usagedata.recording 1 0 2010-07-14 14:59:15.247
+!MESSAGE Usage data uploaded to http://udc.eclipse.org/upload.php in 7623 milliseconds.
+
+!ENTRY org.eclipse.ui 4 4 2010-07-14 14:59:16.035
+!MESSAGE Invalid preference page path: CSS Files
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:00:16.485
+!MESSAGE Failed to load properties file for project 'swl_graphics'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:01.755
+!MESSAGE Indexed 'swl_graphics' (0 sources, 11 headers) in 0.82 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.855
+!MESSAGE Failed to load properties file for project 'swl_base'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.857
+!MESSAGE Failed to load properties file for project 'swl_math'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.857
+!MESSAGE Failed to load properties file for project 'swl_oglview'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.858
+!MESSAGE Failed to load properties file for project 'swl_util'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.859
+!MESSAGE Failed to load properties file for project 'swl_view'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.859
+!MESSAGE Failed to load properties file for project 'swl_winutil'
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:01:23.860
+!MESSAGE Failed to load properties file for project 'swl_winview'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:28.856
+!MESSAGE Indexed 'swl_winview' (0 sources, 11 headers) in 0.05 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:28.916
+!MESSAGE Indexed 'swl_util' (0 sources, 11 headers) in 0.03 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:28.939
+!MESSAGE Indexed 'swl_winutil' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:28.974
+!MESSAGE Indexed 'swl_view' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:28.997
+!MESSAGE Indexed 'swl_oglview' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:29.037
+!MESSAGE Indexed 'swl_math' (0 sources, 11 headers) in 0.04 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:01:30.101
+!MESSAGE Indexed 'swl_base' (5 sources, 20 headers) in 1.06 sec: 251 declarations; 286 references; 23 unresolved inclusions; 0 syntax errors; 353 unresolved names (39.66%)
+!SESSION 2010-07-14 15:06:43.663 -----------------------------------------------
+eclipse.buildId=I20100608-0911
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.jface 2 0 2010-07-14 15:07:03.803
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-07-14 15:07:03.804
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+!SESSION 2010-07-14 15:10:28.568 -----------------------------------------------
+eclipse.buildId=I20100608-0911
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.jface 2 0 2010-07-14 15:10:39.417
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-07-14 15:10:39.417
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:11:25.356
+!MESSAGE Failed to load properties file for project 'swl_glutil'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:11:26.553
+!MESSAGE Indexed 'swl_glutil' (0 sources, 11 headers) in 0.23 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:12:23.823
+!MESSAGE Failed to load properties file for project 'swl_kinematics'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:12:25.178
+!MESSAGE Indexed 'swl_kinematics' (20 sources, 11 headers) in 1.00 sec: 427 declarations; 1,670 references; 67 unresolved inclusions; 0 syntax errors; 2,021 unresolved names (49.08%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:13:03.909
+!MESSAGE Failed to load properties file for project 'swl_machine_learning'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:13:03.986
+!MESSAGE Indexed 'swl_machine_learning' (1 sources, 11 headers) in 0.03 sec: 3 declarations; 4 references; 13 unresolved inclusions; 0 syntax errors; 6 unresolved names (46.15%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:13:26.908
+!MESSAGE Failed to load properties file for project 'swl_machine_vision'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:13:27.006
+!MESSAGE Indexed 'swl_machine_vision' (1 sources, 11 headers) in 0.03 sec: 2 declarations; 1 references; 13 unresolved inclusions; 0 syntax errors; 8 unresolved names (72.73%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:13:53.374
+!MESSAGE Failed to load properties file for project 'swl_rnd_util'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:13:53.674
+!MESSAGE Indexed 'swl_rnd_util' (4 sources, 11 headers) in 0.24 sec: 157 declarations; 336 references; 31 unresolved inclusions; 0 syntax errors; 802 unresolved names (61.93%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:15:13.846
+!MESSAGE Failed to load properties file for project 'swl_kinematics_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:15:13.964
+!MESSAGE Indexed 'swl_kinematics_test' (2 sources, 12 headers) in 0.07 sec: 3 declarations; 1 references; 14 unresolved inclusions; 0 syntax errors; 10 unresolved names (71.43%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:15:32.539
+!MESSAGE Failed to load properties file for project 'swl_machine_learning_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:15:33.162
+!MESSAGE Indexed 'swl_machine_learning_test' (5 sources, 14 headers) in 0.57 sec: 286 declarations; 1,001 references; 32 unresolved inclusions; 0 syntax errors; 412 unresolved names (24.25%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:15:47.200
+!MESSAGE Failed to load properties file for project 'swl_machine_vision_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:15:47.518
+!MESSAGE Indexed 'swl_machine_vision_test' (3 sources, 12 headers) in 0.27 sec: 250 declarations; 688 references; 24 unresolved inclusions; 0 syntax errors; 688 unresolved names (42.31%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:16:02.353
+!MESSAGE Failed to load properties file for project 'swl_rnd_util_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:16:03.126
+!MESSAGE Indexed 'swl_rnd_util_test' (8 sources, 13 headers) in 0.70 sec: 924 declarations; 2,061 references; 63 unresolved inclusions; 0 syntax errors; 1,799 unresolved names (37.60%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:16:17.787
+!MESSAGE Failed to load properties file for project 'swl_serial_port_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:16:17.977
+!MESSAGE Indexed 'swl_serial_port_test' (3 sources, 12 headers) in 0.06 sec: 42 declarations; 64 references; 21 unresolved inclusions; 0 syntax errors; 141 unresolved names (57.09%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:16:32.880
+!MESSAGE Failed to load properties file for project 'swl_tcp_socket_client_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:16:33.112
+!MESSAGE Indexed 'swl_tcp_socket_client_test' (1 sources, 11 headers) in 0.19 sec: 122 declarations; 438 references; 23 unresolved inclusions; 0 syntax errors; 765 unresolved names (57.74%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:16:50.387
+!MESSAGE Failed to load properties file for project 'swl_tcp_socket_server_test'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:16:50.508
+!MESSAGE Indexed 'swl_tcp_socket_server_test' (3 sources, 13 headers) in 0.07 sec: 48 declarations; 49 references; 23 unresolved inclusions; 0 syntax errors; 232 unresolved names (70.52%)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-07-14 15:17:49.534
+!MESSAGE Failed to load properties file for project 'swl_unit_test_text_ui'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:17:49.650
+!MESSAGE Indexed 'swl_unit_test_text_ui' (1 sources, 12 headers) in 0.03 sec: 2 declarations; 5 references; 16 unresolved inclusions; 0 syntax errors; 15 unresolved names (68.18%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:31:37.405
+!MESSAGE Indexed 'swl_glutil' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:35:11.848
+!MESSAGE Indexed 'swl_graphics' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:37:14.591
+!MESSAGE Indexed 'swl_base' (5 sources, 20 headers) in 0.19 sec: 251 declarations; 286 references; 23 unresolved inclusions; 0 syntax errors; 353 unresolved names (39.66%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:37:47.785
+!MESSAGE Indexed 'swl_base' (5 sources, 118 headers) in 1.31 sec: 1,404 declarations; 2,199 references; 47 unresolved inclusions; 0 syntax errors; 418 unresolved names (10.40%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:55:28.768
+!MESSAGE Indexed 'swl_winutil' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:56:37.886
+!MESSAGE Indexed 'swl_view' (0 sources, 11 headers) in 0.01 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:58:24.288
+!MESSAGE Indexed 'swl_util' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 15:59:32.022
+!MESSAGE Indexed 'swl_unit_test_text_ui' (1 sources, 46 headers) in 0.29 sec: 421 declarations; 459 references; 33 unresolved inclusions; 1 syntax errors; 128 unresolved names (12.70%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:00:48.627
+!MESSAGE Indexed 'swl_tcp_socket_server_test' (3 sources, 647 headers) in 20.58 sec: 35,131 declarations; 91,583 references; 308 unresolved inclusions; 51 syntax errors; 5,494 unresolved names (4.16%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:02:00.863
+!MESSAGE Indexed 'swl_tcp_socket_client_test' (1 sources, 645 headers) in 15.42 sec: 35,187 declarations; 92,070 references; 314 unresolved inclusions; 51 syntax errors; 5,767 unresolved names (4.34%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:02:55.156
+!MESSAGE Indexed 'swl_serial_port_test' (3 sources, 645 headers) in 15.29 sec: 35,103 declarations; 91,294 references; 311 unresolved inclusions; 51 syntax errors; 5,500 unresolved names (4.17%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:03:36.618
+!MESSAGE Indexed 'swl_rnd_util_test' (8 sources, 103 headers) in 1.28 sec: 10,868 declarations; 7,698 references; 104 unresolved inclusions; 7 syntax errors; 3,757 unresolved names (16.83%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:04:38.030
+!MESSAGE Indexed 'swl_rnd_util' (4 sources, 79 headers) in 0.91 sec: 10,097 declarations; 5,417 references; 69 unresolved inclusions; 0 syntax errors; 2,597 unresolved names (14.34%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:05:48.151
+!MESSAGE Indexed 'swl_math' (0 sources, 11 headers) in 0.01 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:07:00.210
+!MESSAGE Indexed 'swl_machine_vision_test' (3 sources, 332 headers) in 5.66 sec: 13,611 declarations; 107,694 references; 88 unresolved inclusions; 73 syntax errors; 1,992 unresolved names (1.62%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:07:47.918
+!MESSAGE Indexed 'swl_machine_vision' (1 sources, 14 headers) in 0.04 sec: 14 declarations; 7 references; 13 unresolved inclusions; 0 syntax errors; 13 unresolved names (38.24%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:08:49.863
+!MESSAGE Indexed 'swl_machine_learning_test' (5 sources, 23 headers) in 0.17 sec: 525 declarations; 1,389 references; 35 unresolved inclusions; 0 syntax errors; 475 unresolved names (19.88%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:09:37.895
+!MESSAGE Indexed 'swl_machine_learning' (1 sources, 14 headers) in 0.04 sec: 27 declarations; 35 references; 12 unresolved inclusions; 0 syntax errors; 8 unresolved names (11.43%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:10:38.722
+!MESSAGE Indexed 'swl_kinematics_test' (2 sources, 12 headers) in 0.04 sec: 3 declarations; 1 references; 14 unresolved inclusions; 0 syntax errors; 10 unresolved names (71.43%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:11:28.278
+!MESSAGE Indexed 'swl_kinematics' (20 sources, 45 headers) in 1.04 sec: 2,575 declarations; 7,540 references; 28 unresolved inclusions; 0 syntax errors; 999 unresolved names (8.99%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:11:58.279
+!MESSAGE Indexed 'swl_graphics' (0 sources, 11 headers) in 0.01 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)

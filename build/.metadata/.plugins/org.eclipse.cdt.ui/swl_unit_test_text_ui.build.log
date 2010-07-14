@@ -1,0 +1,79 @@
+
+**** Build of configuration Debug for project swl_unit_test_text_ui ****
+
+make all 
+Building file: ../TextUiUnitTestMain.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"TextUiUnitTestMain.d" -MT"TextUiUnitTestMain.d" -o"TextUiUnitTestMain.o" "../TextUiUnitTestMain.cpp"
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:4,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:4,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Portability.h:14:37: warning: cppunit/config-auto.h: No such file or directory
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Portability.h:209:5: error: #error Cannot define CppUnit::OStringStream.
+In file included from ../TextUiUnitTestMain.cpp:2:
+../../UnitTestConfig.h:28: warning: ignoring #pragma comment 
+../../UnitTestConfig.h:32: warning: ignoring #pragma comment 
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:5,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:4,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Message.h:39: warning: ?˜Message??has a field ?˜Message::m_shortDescription??whose type uses the anonymous namespace
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Message.h:39: warning: ?˜Message??has a field ?˜Message::m_details??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:6,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:4,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/SourceLine.h:31: warning: ?˜SourceLine??has a field ?˜SourceLine::m_fileName??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:4,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:20: warning: ?˜Exception??has a field ?˜Exception::<anonymous>??whose type uses the anonymous namespace
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:20: warning: ?˜Exception??has a field ?˜Exception::m_whatMessage??whose type uses the anonymous namespace
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/Exception.h:20: warning: ?˜Exception??has a base ??unnamed>::exception??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCase.h:6,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:5,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestAssert.h: In static member function ?˜static<unnamed>::string assertion_traits<T>::toString(const T&)??
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestAssert.h:45: error: ?˜OStringStream??was not declared in this scope
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestAssert.h:45: error: expected `;' before ?˜ost??E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestAssert.h:46: error: ?˜ost??was not declared in this scope
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCaller.h:5,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:9,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCase.h: At global scope:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestCase.h:29: warning: ?˜TestCase??has a field ?˜TestCase::m_name??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestSuite.h:11,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:10,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestComposite.h:18: warning: ?˜TestComposite??has a field ?˜TestComposite::m_name??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:10,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/TestSuite.h:41: warning: ?˜TestSuite??has a field ?˜TestSuite::m_tests??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/AutoRegisterSuite.h:5,
+                 from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:11,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/TestFactoryRegistry.h:81: warning: ?˜TestFactoryRegistry??has a field ?˜TestFactoryRegistry::m_factories??whose type uses the anonymous namespace
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/TestFactoryRegistry.h:81: warning: ?˜TestFactoryRegistry??has a field ?˜TestFactoryRegistry::m_name??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:14,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/TestNamer.h:51: warning: ?˜TestNamer??has a field ?˜TestNamer::m_fixtureName??whose type uses the anonymous namespace
+In file included from E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/HelperMacros.h:15,
+                 from ../../UnitTestConfig.h:19,
+                 from ../TextUiUnitTestMain.cpp:2:
+E:/work_center/sw_dev/cpp/ext/inc/cppunit/extensions/TestSuiteBuilderContext.h:30: warning: ?˜TestSuiteBuilderContextBase??has a field ?˜TestSuiteBuilderContextBase::m_properties??whose type uses the anonymous namespace
+../TextUiUnitTestMain.cpp: In function ?˜int main()??
+../TextUiUnitTestMain.cpp:67: error: ?˜CppUnit??has not been declared
+../TextUiUnitTestMain.cpp:67: error: expected `;' before ?˜runner??../TextUiUnitTestMain.cpp:68: error: ?˜runner??was not declared in this scope
+../TextUiUnitTestMain.cpp:68: error: ?˜CppUnit??has not been declared
+make: *** [TextUiUnitTestMain.o] Error 1

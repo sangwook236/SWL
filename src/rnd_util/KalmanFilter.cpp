@@ -330,4 +330,5 @@ bool ContinuousKalmanFilter::updateMeasurement(const double time, const gsl_vect
 	throw std::runtime_error("not yet implemented");
 #endif
 }
+
 }  // namespace swl

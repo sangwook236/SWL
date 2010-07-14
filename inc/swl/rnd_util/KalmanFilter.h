@@ -4,7 +4,6 @@
 
 #include "swl/rnd_util/ExportRndUtil.h"
 #include <gsl/gsl_blas.h>
-#include <vector>
 
 
 #ifdef __cplusplus

@@ -1,0 +1,10 @@
+
+**** Build of configuration Debug for project swl_rnd_util ****
+
+make all 
+Building file: ../ExtendedKalmanFilter.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"ExtendedKalmanFilter.d" -MT"ExtendedKalmanFilter.d" -o"ExtendedKalmanFilter.o" "../ExtendedKalmanFilter.cpp"
+../ExtendedKalmanFilter.cpp: In member function ?˜bool swl::ContinuousExtendedKalmanFilter::updateTime(double, const gsl_vector*)??
+../ExtendedKalmanFilter.cpp:284: error: ?˜runtime_error??is not a member of ?˜std??../ExtendedKalmanFilter.cpp: In member function ?˜bool swl::ContinuousExtendedKalmanFilter::updateMeasurement(double, const gsl_vector*, const gsl_vector*)??
+../ExtendedKalmanFilter.cpp:318: error: ?˜runtime_error??is not a member of ?˜std??make: *** [ExtendedKalmanFilter.o] Error 1

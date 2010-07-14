@@ -1,0 +1,30 @@
+
+**** Build of configuration Debug for project swl_rnd_util_test ****
+
+make all 
+Building file: ../ExtendedKalmanFilterTest.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"ExtendedKalmanFilterTest.d" -MT"ExtendedKalmanFilterTest.d" -o"ExtendedKalmanFilterTest.o" "../ExtendedKalmanFilterTest.cpp"
+In file included from ../ExtendedKalmanFilterTest.cpp:1:
+../stdafx.h:13:19: warning: tchar.h: No such file or directory
+Finished building: ../ExtendedKalmanFilterTest.cpp
+ 
+Building file: ../ImuKalmanFilterTest.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"ImuKalmanFilterTest.d" -MT"ImuKalmanFilterTest.d" -o"ImuKalmanFilterTest.o" "../ImuKalmanFilterTest.cpp"
+In file included from ../ImuKalmanFilterTest.cpp:1:
+../stdafx.h:13:19: warning: tchar.h: No such file or directory
+../ImuKalmanFilterTest.cpp:12:20: warning: direct.h: No such file or directory
+In file included from ../ImuKalmanFilterTest.cpp:3:
+../ImuSystem.h: In member function ?˜virtual gsl_vector* swl::AccelSystem::getControlInput(size_t, const gsl_vector*) const??
+../ImuSystem.h:64: error: ?˜runtime_error??is not a member of ?˜std??../ImuSystem.h:64: warning: no return statement in function returning non-void
+../ImuSystem.h: In member function ?˜virtual gsl_vector* swl::AccelSystem::getMeasurementInput(size_t, const gsl_vector*) const??
+../ImuSystem.h:70: error: ?˜runtime_error??is not a member of ?˜std??../ImuSystem.h:70: warning: no return statement in function returning non-void
+../ImuSystem.h: In member function ?˜virtual gsl_vector* swl::GyroSystem::getControlInput(size_t, const gsl_vector*) const??
+../ImuSystem.h:121: error: ?˜runtime_error??is not a member of ?˜std??../ImuSystem.h:121: warning: no return statement in function returning non-void
+../ImuSystem.h: In member function ?˜virtual gsl_vector* swl::GyroSystem::getMeasurementInput(size_t, const gsl_vector*) const??
+../ImuSystem.h:127: error: ?˜runtime_error??is not a member of ?˜std??../ImuSystem.h:127: warning: no return statement in function returning non-void
+../ImuSystem.h: In member function ?˜virtual const gsl_matrix* swl::GyroSystem::getInputMatrix() const??
+../ImuSystem.h:135: error: ?˜runtime_error??is not a member of ?˜std??../ImuSystem.h:135: warning: no return statement in function returning non-void
+../ImuKalmanFilterTest.cpp: In function ?˜void imu_kalman_filter()??
+../ImuKalmanFilterTest.cpp:266: warning: unused variable ?˜accelEstimate??../ImuKalmanFilterTest.cpp:290: warning: unused variable ?˜accelEstimate??../ImuKalmanFilterTest.cpp:314: warning: unused variable ?˜accelEstimate??../ImuKalmanFilterTest.cpp:328: warning: unused variable ?˜angularVelEstimate??../ImuKalmanFilterTest.cpp:342: warning: unused variable ?˜angularVelEstimate??../ImuKalmanFilterTest.cpp:356: warning: unused variable ?˜angularVelEstimate??make: *** [ImuKalmanFilterTest.o] Error 1

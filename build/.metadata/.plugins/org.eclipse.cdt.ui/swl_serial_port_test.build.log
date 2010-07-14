@@ -1,0 +1,105 @@
+
+**** Build of configuration Debug for project swl_serial_port_test ****
+
+make all 
+Building file: ../main.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"main.d" -MT"main.d" -o"main.o" "../main.cpp"
+In file included from ../main.cpp:1:
+../stdafx.h:13:19: warning: tchar.h: No such file or directory
+Finished building: ../main.cpp
+ 
+Building file: ../serial_port_test.cpp
+Invoking: Cygwin C++ Compiler
+g++ -I../../../inc -IE:/work_center/sw_dev/cpp/ext/inc -IE:/work_center/sw_dev/cpp/rnd/inc -O0 -g3 -Wall -c -fmessage-length=0 -MMD -MP -MF"serial_port_test.d" -MT"serial_port_test.d" -o"serial_port_test.o" "../serial_port_test.cpp"
+In file included from ../serial_port_test.cpp:1:
+../stdafx.h:13:19: warning: tchar.h: No such file or directory
+In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_iocp_io_service_fwd.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/io_service.hpp:37,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_io_object.hpp:20,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_socket.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_datagram_socket.hpp:25,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:20,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/socket_types.hpp:73:5: error: #error You must add -D__USE_W32_SOCKETS to your compiler options.
+In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/socket_types.hpp:79,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_iocp_io_service_fwd.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/io_service.hpp:37,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_io_object.hpp:20,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_socket.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_datagram_socket.hpp:25,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:20,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+/usr/lib/gcc/i686-pc-cygwin/4.3.4/../../../../include/w32api/winsock2.h:103:2: warning: #warning "fd_set and associated macros have been defined in sys/types.      This may cause runtime problems with W32 sockets"
+In file included from ../../../inc/swl/util/SerialPort.h:6,
+                 from ../serial_port_test.cpp:3:
+../../../inc/swl/util/GuardedBuffer.h: In member function ?˜bool swl::GuardedBuffer<T>::pop(size_t)??
+../../../inc/swl/util/GuardedBuffer.h:139: error: expected `;' before ?˜itBegin??../../../inc/swl/util/GuardedBuffer.h:140: error: expected `;' before ?˜it??../../../inc/swl/util/GuardedBuffer.h:141: error: ?˜it??was not declared in this scope
+../../../inc/swl/util/GuardedBuffer.h:142: error: ?˜itBegin??was not declared in this scope
+../../../inc/swl/util/GuardedBuffer.h: In member function ?˜bool swl::GuardedBuffer<T>::top(T*, size_t) const??
+../../../inc/swl/util/GuardedBuffer.h:181: error: expected `;' before ?˜itBegin??../../../inc/swl/util/GuardedBuffer.h:182: error: expected `;' before ?˜it??../../../inc/swl/util/GuardedBuffer.h:183: error: ?˜it??was not declared in this scope
+../../../inc/swl/util/GuardedBuffer.h:184: error: ?˜itBegin??was not declared in this scope
+In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/socket_types.hpp:79,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_iocp_io_service_fwd.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/io_service.hpp:37,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_io_object.hpp:20,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_socket.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_datagram_socket.hpp:25,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:20,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+/usr/lib/gcc/i686-pc-cygwin/4.3.4/../../../../include/w32api/winsock2.h: At global scope:
+/usr/lib/gcc/i686-pc-cygwin/4.3.4/../../../../include/w32api/winsock2.h:632: error: declaration of C function ?˜int select(int, _types_fd_set*, _types_fd_set*, _types_fd_set*, const timeval*)??conflicts with
+/usr/include/sys/select.h:31: error: previous declaration ?˜int select(int, _types_fd_set*, _types_fd_set*, _types_fd_set*, timeval*)??here
+/usr/lib/gcc/i686-pc-cygwin/4.3.4/../../../../include/w32api/winsock2.h:635: error: declaration of C function ?˜int gethostname(char*, int)??conflicts with
+/usr/include/sys/unistd.h:232: error: previous declaration ?˜int gethostname(char*, size_t)??here
+In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/impl/io_service.ipp:28,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/io_service.hpp:641,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_io_object.hpp:20,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_socket.hpp:24,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_datagram_socket.hpp:25,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:20,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_iocp_io_service.hpp:726: warning: ?˜boost::asio::detail::win_iocp_io_service::operation??is already a friend of ?˜boost::asio::detail::win_iocp_io_service??In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/fd_set_adapter.hpp:25,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/select_reactor.hpp:32,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_iocp_socket_service.hpp:39,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/datagram_socket_service.hpp:30,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/basic_datagram_socket.hpp:26,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:20,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_fd_set_adapter.hpp: In member function ?˜bool boost::asio::detail::win_fd_set_adapter::is_set(boost::asio::detail::socket_type) const??
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/detail/win_fd_set_adapter.hpp:56: error: ??_WSAFDIsSet??was not declared in this scope
+In file included from E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address.hpp:31,
+                 from E:/work_center/sw_dev/cpp/ext/inc/boost/asio.hpp:46,
+                 from ../../../inc/swl/util/SerialPort.h:7,
+                 from ../serial_port_test.cpp:3:
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp: In constructor ?˜boost::asio::ip::address_v6::address_v6()??
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp:62: warning: missing braces around initializer for ?˜in6_addr::<anonymous union>??E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp:62: warning: missing braces around initializer for ?˜u_char [16]??E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp: In static member function ?˜static boost::asio::ip::address_v6 boost::asio::ip::address_v6::loopback()??
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp:359: warning: missing braces around initializer for ?˜in6_addr::<anonymous union>??E:/work_center/sw_dev/cpp/ext/inc/boost/asio/ip/address_v6.hpp:359: warning: missing braces around initializer for ?˜u_char [16]??../../../inc/swl/util/GuardedBuffer.h: In member function ?˜bool swl::GuardedBuffer<T>::top(T*, size_t) const [with T = unsigned char]??
+../serial_port_test.cpp:167:   instantiated from here
+../../../inc/swl/util/GuardedBuffer.h:181: error: dependent-name ?˜std::deque::const_iterator??is parsed as a non-type, but instantiation yields a type
+../../../inc/swl/util/GuardedBuffer.h:181: note: say ?˜typename std::deque::const_iterator??if a type is meant
+../../../inc/swl/util/GuardedBuffer.h:182: error: dependent-name ?˜std::deque::const_iterator??is parsed as a non-type, but instantiation yields a type
+../../../inc/swl/util/GuardedBuffer.h:182: note: say ?˜typename std::deque::const_iterator??if a type is meant
+../../../inc/swl/util/GuardedBuffer.h: In member function ?˜bool swl::GuardedBuffer<T>::pop(size_t) [with T = unsigned char]??
+../serial_port_test.cpp:168:   instantiated from here
+../../../inc/swl/util/GuardedBuffer.h:139: error: dependent-name ?˜std::deque::iterator??is parsed as a non-type, but instantiation yields a type
+../../../inc/swl/util/GuardedBuffer.h:139: note: say ?˜typename std::deque::iterator??if a type is meant
+../../../inc/swl/util/GuardedBuffer.h:140: error: dependent-name ?˜std::deque::iterator??is parsed as a non-type, but instantiation yields a type
+../../../inc/swl/util/GuardedBuffer.h:140: note: say ?˜typename std::deque::iterator??if a type is meant
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp: At global scope:
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp:353: warning: ?˜boost::asio::error::system_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp:355: warning: ?˜boost::asio::error::netdb_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp:357: warning: ?˜boost::asio::error::addrinfo_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp:359: warning: ?˜boost::asio::error::misc_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/asio/error.hpp:361: warning: ?˜boost::asio::error::ssl_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/system/error_code.hpp:208: warning: ?˜boost::system::system_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/system/error_code.hpp:209: warning: ?˜boost::system::generic_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/system/error_code.hpp:214: warning: ?˜boost::system::posix_category??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/system/error_code.hpp:215: warning: ?˜boost::system::errno_ecat??defined but not used
+E:/work_center/sw_dev/cpp/ext/inc/boost/system/error_code.hpp:216: warning: ?˜boost::system::native_ecat??defined but not used
+make: *** [serial_port_test.o] Error 1
