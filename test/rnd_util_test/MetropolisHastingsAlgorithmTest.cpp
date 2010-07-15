@@ -1,8 +1,9 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/MetropolisHastingsAlgorithm.h"
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
+#include <boost/random/normal_distribution.hpp>
+#include <boost/math/distributions/normal.hpp>
+#include <iostream>
 #include <vector>
 #include <cmath>
 
@@ -15,79 +16,86 @@
 
 namespace {
 
+// [ref]
+// "An Introduction to MCMC for Machine Learning", Christophe Andrieu, Nando de Freitas, Arnaud Doucet, and Michael I. Jordan
+//	Machine Learning, 50, pp. 5-43, 2003
+
 struct TargetDistribution: public swl::MetropolisHastingsAlgorithm::TargetDistribution
 {
-	/*virtual*/ double evaluate(const gsl_vector *x, const gsl_vector *param = NULL) const
+	/*virtual*/ double evaluate(const swl::MetropolisHastingsAlgorithm::vector_type &x, const swl::MetropolisHastingsAlgorithm::vector_type *param = NULL) const
 	{
-		const double v = gsl_vector_get(x, 0);
+		const double &v = x[0];
 		return 0.3 * std::exp(-0.2 * v * v) + 0.7 * std::exp(-0.2 * (v - 10.0) * (v - 10.0));
 	}
 };
 
 struct ProposalDistribution: public swl::MetropolisHastingsAlgorithm::ProposalDistribution
 {
-	/*virtual*/ double evaluate(const gsl_vector *x, const gsl_vector *param) const
+	ProposalDistribution(const double sigma)
+	: sigma_(sigma), baseGenerator_(static_cast<unsigned int>(std::time(NULL))), generator_(baseGenerator_, boost::normal_distribution<>(0.0, sigma_))
+	{}
+
+	/*virtual*/ double evaluate(const swl::MetropolisHastingsAlgorithm::vector_type &x, const swl::MetropolisHastingsAlgorithm::vector_type &param) const
 	{
-		const double v = gsl_vector_get(x, 0);
-		const double mean = gsl_vector_get(param, 0);
-		return gsl_ran_gaussian_pdf(v - mean, sigma_);
+		const double &mean = param[0];
+		boost::math::normal dist(mean, sigma_);
+		return boost::math::pdf(dist, x[0]);
 	}
-	/*virtual*/ void sample(const gsl_vector *param, gsl_vector *sample) const
+	/*virtual*/ void sample(const swl::MetropolisHastingsAlgorithm::vector_type &param, swl::MetropolisHastingsAlgorithm::vector_type &sample) const
 	{
-		gsl_rng_env_setup();
-		const gsl_rng_type *T = gsl_rng_default;
-		gsl_rng *r = gsl_rng_alloc(T);
-
-		const double mean = gsl_vector_get(param, 0);
-		const double prob = mean + gsl_ran_gaussian(r, sigma_);
-
-		gsl_rng_free(r);
-
-		gsl_vector_set(sample, 0, prob);
+		const double &mean = param[0];
+		sample[0] = mean + generator_();
 	}
 
 private:
-	static const double sigma_;
+	typedef boost::minstd_rand base_generator_type;
+	typedef boost::variate_generator<base_generator_type &, boost::normal_distribution<> > generator_type;
+
+private:
+	const double sigma_;
+
+	base_generator_type baseGenerator_;
+	mutable generator_type generator_;
 };
-
-/*static*/ const double ProposalDistribution::sigma_ = 100.0;
-
-const double HISTO_MIN = -10.0;
-const double HISTO_MAX = 20.0;
-const size_t HISTO_COUNT = 150;
-
-void constructHistogram(const double v, std::vector<int> &histo)
-{
-	if (v < HISTO_MIN || v >= HISTO_MAX) return;
-
-	const double h = (HISTO_MAX - HISTO_MIN) / HISTO_COUNT;
-	const size_t idx = size_t((v - HISTO_MIN) / h);
-	++histo[idx];
-}
 
 }  // unnamed namespace
 
 void metropolis_hastings_algorithm()
 {
 	const size_t STATE_DIM = 1;
+	const double sigma = 10.0;
 
-	gsl_vector *x0 = gsl_vector_alloc(STATE_DIM);
-	gsl_vector_set_zero(x0);
+	TargetDistribution targetDist;
+	ProposalDistribution proposalDist(sigma);
+	swl::MetropolisHastingsAlgorithm mha(targetDist, proposalDist);
+
+	swl::MetropolisHastingsAlgorithm::vector_type x(STATE_DIM, 0.0);
+	swl::MetropolisHastingsAlgorithm::vector_type newX(STATE_DIM, 0.0);
 
 	//
-	gsl_rng_env_setup();
+	const size_t Nstep = 10000;
 
-	swl::MetropolisHastingsAlgorithm mh(x0, TargetDistribution(), ProposalDistribution());
+	// [min, max] = [-10.0, 20.0], #bins = 150, bin width = 0.2
+	std::vector<double> histogram;
+	histogram.reserve(Nstep);
 
-	gsl_vector_free(x0);
-
-	const size_t Niteration = 100;
-	std::vector<int> histogram(HISTO_COUNT, 0);
-
-	for (size_t i = 0; i < Niteration; ++i)
+	for (size_t i = 0; i < Nstep; ++i)
 	{
-		const gsl_vector *x = mh.sample();
-		const double v = gsl_vector_get(x, 0);
-		constructHistogram(v, histogram);
+#if 1
+		mha.sample(x, newX);
+		histogram.push_back(newX[0]);
+		x.swap(newX);
+#else
+		if (i % 2)
+		{
+			mha.sample(newX, x);
+			histogram.push_back(x[0]);
+		}
+		else
+		{
+			mha.sample(x, newX);
+			histogram.push_back(newX[0]);
+		}
+#endif
 	}
 }

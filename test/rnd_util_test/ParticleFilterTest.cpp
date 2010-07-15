@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
-#include "swl/rnd_util/ExtendedKalmanFilter.h"
+#include "swl/rnd_util/SamplingImportanceResampling.h"
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/normal_distribution.hpp>
@@ -385,7 +385,7 @@ protected:
 /*static*/ const double LinearMassStringDamperSystem::R = 0.01;
 /*static*/ const double LinearMassStringDamperSystem::Fd = 12.0;
 
-void simple_system_extended_kalman_filter()
+void simple_system_particle_filter()
 {
 	const size_t stateDim = 1;
 	const size_t inputDim = 1;
@@ -397,7 +397,7 @@ void simple_system_extended_kalman_filter()
 	gsl_matrix_set(P0, 0, 0, 10.0);
 
 	const SimpleLinearSystem system(stateDim, inputDim, outputDim);
-	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
+	swl::ParticleFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -496,7 +496,7 @@ void simple_system_extended_kalman_filter()
 #endif
 }
 
-void linear_mass_spring_damper_system_extended_kalman_filter()
+void linear_mass_spring_damper_system_particle_filter()
 {
 	const size_t stateDim = 3;
 	const size_t inputDim = 1;
@@ -509,7 +509,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 	gsl_matrix_scale(P0, 2.0);
 
 	const LinearMassStringDamperSystem system(stateDim, inputDim, outputDim);
-	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
+	swl::ParticleFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;
 	gsl_matrix_free(P0);  P0 = NULL;
@@ -638,8 +638,8 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 
 }  // unnamed namespace
 
-void extended_kalman_filter()
+void particle_filter()
 {
-	simple_system_extended_kalman_filter();
-	linear_mass_spring_damper_system_extended_kalman_filter();
+	simple_system_particle_filter();
+	linear_mass_spring_damper_system_particle_filter();
 }

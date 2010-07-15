@@ -48,7 +48,6 @@
 				RuntimeLibrary="3"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -125,7 +124,6 @@
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -199,6 +197,10 @@
 				RelativePath=".\Ransac.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\SamplingImportanceResampling.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -243,6 +245,10 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\rnd_util\Ransac.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h"
 				>
 			</File>
 		</Filter>

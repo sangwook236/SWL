@@ -3,8 +3,10 @@
 
 
 #include "swl/rnd_util/ExportRndUtil.h"
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_blas.h>
+#include <boost/random/linear_congruential.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 
 
 namespace swl {
@@ -16,22 +18,24 @@ class SWL_RND_UTIL_API MetropolisHastingsAlgorithm
 {
 public:
 	//typedef MetropolisHastingsAlgorithm base_type;
+	typedef boost::numeric::ublas::vector<double> vector_type;
 
+public:
 	// target distribution
 	struct TargetDistribution
 	{
-		virtual double evaluate(const gsl_vector *x, const gsl_vector *param = NULL) const = 0;
+		virtual double evaluate(const vector_type &x, const vector_type *param = NULL) const = 0;
 	};
 
 	// proposal distribution
 	struct ProposalDistribution
 	{
-		virtual double evaluate(const gsl_vector *x, const gsl_vector *param) const = 0;
-		virtual void sample(const gsl_vector *param, gsl_vector *sample) const = 0;
+		virtual double evaluate(const vector_type &x, const vector_type &param) const = 0;
+		virtual void sample(const vector_type &param, vector_type &sample) const = 0;
 	};
 
 public:
-	MetropolisHastingsAlgorithm(const gsl_vector *x0, TargetDistribution &targetDistribution, ProposalDistribution &proposalDistribution);
+	MetropolisHastingsAlgorithm(TargetDistribution &targetDistribution, ProposalDistribution &proposalDistribution);
 	~MetropolisHastingsAlgorithm();
 
 private:
@@ -39,18 +43,18 @@ private:
 	MetropolisHastingsAlgorithm & operator=(const MetropolisHastingsAlgorithm &rhs);
 
 public:
-	const gsl_vector * sample();
+	void sample(const vector_type &x, vector_type &newX) const;
 
 private:
-	const size_t dim_;
+	typedef boost::minstd_rand base_generator_type;
+	typedef boost::variate_generator<base_generator_type &, boost::uniform_real<> > generator_type;
 
+private:
 	TargetDistribution &targetDistribution_;
 	ProposalDistribution &proposalDistribution_;
 
-	gsl_vector *x_;
-	gsl_vector *x_star_;
-
-	gsl_rng *r_;
+	base_generator_type baseGenerator_;
+	mutable generator_type generator_;
 };
 
 }  // namespace swl
