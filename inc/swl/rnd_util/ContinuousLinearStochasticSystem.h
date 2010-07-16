@@ -26,14 +26,15 @@ namespace swl {
 
 // the stochastic differential equation: dx/dt(t) = A(t) * x(t) + B(t) * u(t) + W(t) * w(t)
 // the observation equation: y(t) = C(t) * x(t) + D(t) * u(t) + V(t) * v(t)
+
 class ContinuousLinearStochasticSystem
 {
 public:
 	//typedef ContinuousLinearStochasticSystem base_type;
 
 protected:
-	ContinuousLinearStochasticSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: stateDim_(stateDim), inputDim_(inputDim), outputDim_(outputDim)
+	ContinuousLinearStochasticSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim, const size_t processNoiseDim, const size_t observationNoiseDim)
+	: stateDim_(stateDim), inputDim_(inputDim), outputDim_(outputDim), processNoiseDim_(processNoiseDim), observationNoiseDim_(observationNoiseDim)
 	{}
 public:
 	virtual ~ContinuousLinearStochasticSystem()  {}
@@ -43,16 +44,17 @@ private:
 	ContinuousLinearStochasticSystem & operator=(const ContinuousLinearStochasticSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: dx/dt = A(t) * x(t) + B(t) * u(t) + W(t) * w(t)
 	virtual gsl_matrix * getSystemMatrix(const double time, const gsl_vector *state) const = 0;  // A(t)
 	virtual gsl_vector * getControlInput(const double time, const gsl_vector *state) const = 0;  // Bu(t) = B(t) * u(t)
 	//virtual gsl_matrix * getProcessNoiseCouplingMatrix(const double time) const = 0;  // W(t)
 
-	// the observation equation
+	// the observation equation: y(t) = C(t) * x(t) + D(t) * u(t) + V(t) * v(t)
 	virtual gsl_matrix * getOutputMatrix(const double time, const gsl_vector *state) const = 0;  // C(t)
 	virtual gsl_vector * getMeasurementInput(const double time, const gsl_vector *state) const = 0;  // Du(t) = D(t) * u(t)
 	//virtual gsl_matrix * getMeasurementNoiseCouplingMatrix(const double time) const = 0;  // V(t)
 
+	// noise covariance matrices
 	virtual gsl_matrix * getProcessNoiseCovarianceMatrix(const double time) const = 0;  // Q or Qd = W * Q * W^T
 	virtual gsl_matrix * getMeasurementNoiseCovarianceMatrix(const double time) const = 0;  // R or Rd = V * R * V^T
 
@@ -62,11 +64,15 @@ public:
 	size_t getStateDim() const  {  return stateDim_;  }
 	size_t getInputDim() const  {  return inputDim_;  }
 	size_t getOutputDim() const  {  return outputDim_;  }
+	size_t getProcessNoiseDim() const  {  return processNoiseDim_;  }
+	size_t getObservationNoiseDim() const  {  return observationNoiseDim_;  }
 
 protected:
 	const size_t stateDim_;
 	const size_t inputDim_;
 	const size_t outputDim_;
+	const size_t processNoiseDim_;
+	const size_t observationNoiseDim_;
 };
 
 }  // namespace swl

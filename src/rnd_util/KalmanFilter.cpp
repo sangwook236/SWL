@@ -22,6 +22,8 @@ namespace swl {
 //
 // currently, this code is implemented only for H(k) = N(k) = 0
 // in case of H(k) != 0 || N(k) != 0, refer to Kalman filter in Matlab's help
+// without loss of generality, N(k) = E[w(k) * v(k)^T] can be transformed into N(k) = E[w'(k) * v(k)^T] = 0
+//	[ref] "Kalman Filtering and Neural Networks", Simon Haykin, ch. 6, pp. 206
 
 // ***** method #1
 // 0. initial estimates: x(0) & P(0)
@@ -165,7 +167,6 @@ bool DiscreteKalmanFilter::updateMeasurement(const size_t step, const gsl_vector
 		GSL_SUCCESS != gsl_linalg_LU_invert(RR_, permutation_, invRR_))
 		return false;
 
-	//
 	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, PCt_, invRR_, 0.0, K_))  // calculate Kalman gain
 		return false;
 
@@ -219,6 +220,8 @@ bool DiscreteKalmanFilter::updateMeasurement(const size_t step, const gsl_vector
 //
 // currently, this code is implemented only for H(t) = N(t) = 0
 // in case of H(t) != 0 || N(t) != 0, refer to Kalman filter in Matlab's help
+// without loss of generality, N(t) = E[w(t) * v(t)^T] can be transformed into N(t) = E[w'(t) * v(t)^T] = 0
+//	[ref] "Kalman Filtering and Neural Networks", Simon Haykin, ch. 6, pp. 206
 
 // ***** method #1
 // 0. initial estimates: x(0) & P(0)

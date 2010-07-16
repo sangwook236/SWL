@@ -14,13 +14,15 @@
 namespace swl {
 
 //-------------------------------------------------------------------------
-// the Kalman filter for the discrete nonlinear stochastic system
+// the extended Kalman filter for the discrete nonlinear stochastic system
 
 // x(k+1) = f(k, x(k), u(k), w(k))
 // y(k) = h(k, x(k), u(k), v(k))
 // where E[w(k)] = E[v(k)] = 0, Q(k) = E[w(k) * w(k)^T], R(k) = E[v(k) * v(k)^T], N(k) = E[w(k) * v(k)^T]
 //
 // currently, this code is implemented only for N(k) = 0
+// without loss of generality, N(k) = E[w(k) * v(k)^T] can be transformed into N(k) = E[w'(k) * v(k)^T] = 0
+//	[ref] "Kalman Filtering and Neural Networks", Simon Haykin, ch. 6, pp. 206
 
 // ***** method #1
 // 0. initial estimates: x(0) & P(0)
@@ -88,9 +90,11 @@ DiscreteExtendedKalmanFilter::~DiscreteExtendedKalmanFilter()
 }
 
 // time update (prediction)
-bool DiscreteExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *f_eval)  // f = f(k, x(k), u(k), 0)
+bool DiscreteExtendedKalmanFilter::updateTime(const size_t step, const gsl_vector *input)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_vector *f_eval = system_.evaluatePlantEquation(step, x_hat_, input, NULL);  // f = f(k, x(k), u(k), 0)
 
 	const gsl_matrix *Phi = system_.getStateTransitionMatrix(step, x_hat_);  // Phi(k) = exp(A(k) * T) where A(k) = df(k, x(k), u(k), 0)/dx
 #if 0
@@ -99,7 +103,6 @@ bool DiscreteExtendedKalmanFilter::updateTime(const size_t step, const gsl_vecto
 #else
 	const gsl_matrix *Qd = system_.getProcessNoiseCovarianceMatrix(step);  // Qd(k) = W * Q(k) * W(k)^T
 #endif
-	//const gsl_vector *f_eval = system_.evaluatePlantEquation(step, x_hat_);  // f = f(k, x(k), u(k), 0)
 	if (!Phi || !Qd || !f_eval) return false;
 
 	// 1. propagate time
@@ -132,9 +135,11 @@ bool DiscreteExtendedKalmanFilter::updateTime(const size_t step, const gsl_vecto
 }
 
 // measurement update (correction)
-bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(k, x(k), u(k), 0)
+bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *input)
 {
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_vector *h_eval = system_.evaluateMeasurementEquation(step, x_hat_, input, NULL);  // h = h(k, x(k), u(k), 0)
 
 	const gsl_matrix *Cd = system_.getOutputMatrix(step, x_hat_);  // Cd(k) = dh(k, x-(k), u(k), 0)/dx
 #if 0
@@ -143,8 +148,6 @@ bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gs
 #else
 	const gsl_matrix *Rd = system_.getMeasurementNoiseCovarianceMatrix(step);  // Rd(k) = V(k) * R(k) * V(k)^T
 #endif
-	//const gsl_vector *h_eval = system_.evaluateMeasurementEquation(step, x_hat_);  // h = h(k, x(k), u(k), 0)
-	//const gsl_vector *actualMeasurement = system_.getMeasurement(step, x_hat_);  // actual measurement
 	if (!Cd || !Rd || !h_eval || !actualMeasurement) return false;
 
 	// 1. calculate Kalman gain: K(k) = P-(k) * Cd(k)^T * (Cd(k) * P-(k) * Cd(k)^T + Rd(k))^-1 where Cd(k) = dh(k, x-(k), u(k), 0)/dx, Rd(k) = V(k) * R(k) * V(k)^T, V(k) = dh(k, x-(k), u(k), 0)/dv
@@ -159,11 +162,10 @@ bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gs
 		GSL_SUCCESS != gsl_linalg_LU_invert(RR_, permutation_, invRR_))
 		return false;
 
-	//
 	if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, 1.0, PCt_, invRR_, 0.0, K_))  // calculate Kalman gain
 		return false;
 
-	// 2. update measurement: x(k) = x-(k) + K(k) * (actualMeasurement(k) - y_hat(k)) where y_hat(k) = h(k, x-(k), u(k), 0)
+	// 2. update measurement: x(k) = x-(k) + K(k) * (y_tilde(k) - y_hat(k)) where y_hat(k) = h(k, x-(k), u(k), 0)
 #if 0
 	// save an estimated measurement, y_hat
 	gsl_vector_memcpy(y_hat_, h_eval);
@@ -209,6 +211,8 @@ bool DiscreteExtendedKalmanFilter::updateMeasurement(const size_t step, const gs
 // where E[w(t)] = E[v(t)] = 0, Q(t) = E[w(t) * w(t)^T], R(t) = E[v(t) * v(t)^T], N(t) = E[w(t) * v(t)^T]
 //
 // currently, this code is implemented only for N(t) = 0
+// without loss of generality, N(t) = E[w(t) * v(t)^T] can be transformed into N(t) = E[w'(t) * v(t)^T] = 0
+//	[ref] "Kalman Filtering and Neural Networks", Simon Haykin, ch. 6, pp. 206
 
 // ***** method #1
 // 0. initial estimates: x(0) & P(0)
@@ -255,10 +259,12 @@ ContinuousExtendedKalmanFilter::~ContinuousExtendedKalmanFilter()
 }
 
 // time update (prediction)
-bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vector *f_eval)  // f = f(t, x(t), u(t), 0)
+bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vector *input)
 {
 #if 0
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_vector *f_eval = system_.evaluatePlantEquation(time, x_hat_, input, NULL);  // f = f(t, x(t), u(t), w(t))
 
 	const gsl_matrix *A = doGetStateTransitionMatrix(time, x_hat_);  // A(t) = df(t, x(t), u(t), 0)/dx
 #if 0
@@ -267,7 +273,6 @@ bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vec
 #else
 	const gsl_matrix *Qd = doGetProcessNoiseCovarianceMatrix(time);  // Qd(t) = W * Q(t) * W(t)^T
 #endif
-	//const gsl_vector *f_eval = doEvaluatePlantEquation(time, x_hat_);  // f = f(t, x(t), u(t), 0)
 	if (!A || !Qd || !f_eval) return false;
 
 	// 1. propagate time
@@ -286,10 +291,12 @@ bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vec
 }
 
 // measurement update (correction)
-bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval)  // h = h(t, x(t), u(t), 0)
+bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *input)
 {
 #if 0
 	if (!x_hat_ || /*!y_hat_ ||*/ !P_ || !K_) return false;
+
+	const gsl_vector *h_eval = system_.evaluateMeasurementEquation(step, x_hat_, input, NULL);  // h = h(t, x(t), u(t), v(t))
 
 	const gsl_matrix *C = doGetOutputMatrix(time, x_hat_);  // C(t) = dh(t, x(t), u(t), 0)/dx
 #if 0
@@ -298,8 +305,6 @@ bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const 
 #else
 	const gsl_matrix *Rd = doGetMeasurementNoiseCovarianceMatrix(time);  // Rd(t) = V(t) * R(t) * V(t)^T
 #endif
-	//const gsl_vector *h_eval = doEvaluateMeasurementEquation(time, x_hat_);  // h = h(t, x(t), u(t), 0)
-	//const gsl_vector *actualMeasurement = doGetMeasurement(time, x_hat_);  // actual measurement
 	if (!C || !Rd || !h_eval || !actualMeasurement) return false;
 
 	// 1. calculate Kalman gain: K(t) = P(t) * C(t)^T * Rd(t)^-1 where C(t) = dh(t, x(t), u(t), 0)/dx, Rd(t) = V(t) * R(t) * V(t)^T, V(t) = dh(t, x(t), u(t), 0)/dv

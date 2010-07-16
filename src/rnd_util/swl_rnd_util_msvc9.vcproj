@@ -201,6 +201,14 @@
 				RelativePath=".\SamplingImportanceResampling.cpp"
 				>
 			</File>
+			<File
+				RelativePath=".\UnscentedKalmanFilter.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\UnscentedKalmanFilterWithAdditiveNoise.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -249,6 +257,14 @@
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h"
 				>
 			</File>
 		</Filter>

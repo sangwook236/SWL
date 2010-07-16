@@ -251,6 +251,14 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\UnscentedKalmanFilterTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\UnscentedKalmanFilterWithAdditiveNoiseTest.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"

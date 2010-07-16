@@ -6,6 +6,7 @@
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <fstream>
 #include <cmath>
 #include <ctime>
 #include <cassert>
@@ -25,9 +26,14 @@ class SimpleLinearSystem: public swl::DiscreteLinearStochasticSystem
 public:
 	typedef swl::DiscreteLinearStochasticSystem base_type;
 
+private:
+	static const double Ts;
+	static const double Q;
+	static const double R;
+
 public:
 	SimpleLinearSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
 		// Phi = exp(A * Ts) = [ 1 ]
@@ -48,11 +54,11 @@ public:
 
 		// Qd = W * Q * W^T
 		Qd_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		gsl_matrix_set(Qd_, 0, 0, 1.0);
+		gsl_matrix_set(Qd_, 0, 0, Q);
 
 		// Rd = V * R * V^T
 		Rd_ = gsl_matrix_alloc(outputDim_, outputDim_);
-		gsl_matrix_set(Rd_, 0, 0, 2.0);
+		gsl_matrix_set(Rd_, 0, 0, R);
 
 		// no control input
 		Bu_ = gsl_vector_alloc(stateDim_);
@@ -86,18 +92,19 @@ private:
 	SimpleLinearSystem & operator=(const SimpleLinearSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
-	// the observation equation
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k) + V(k) * v(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -119,7 +126,7 @@ public:
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
 	//gsl_matrix *W_;
@@ -136,6 +143,10 @@ protected:
 	gsl_vector *y_tilde_;
 };
 
+/*static*/ const double SimpleLinearSystem::Ts = 1.0;
+/*static*/ const double SimpleLinearSystem::Q = 1.0;
+/*static*/ const double SimpleLinearSystem::R = 2.0;
+
 // "The Global Positioning System and Inertial Navigation" Example (pp. 110)
 class AidedINSSystem: public swl::DiscreteLinearStochasticSystem
 {
@@ -150,7 +161,7 @@ private:
 
 public:
 	AidedINSSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
 		// Phi = exp(A * Ts) = [ 1 Ts Ts^2/2 ; 0 1 Ts ; 0 0 1 ]
@@ -182,9 +193,9 @@ public:
 		// Qd = integrate(Phi(t) * W(t) * Q(t) * W(t)^T * Phi(t)^T, {t, 0, Ts})
 		//	Q = [ Rv 0 ; 0 Qb ]
 		//	W = [ 0 0 ; 1 0 ; 0 1 ]
-		//	Qd = [ (Qb*Ts^5)/20 + (Rv*Ts^3)/3, (Qb*Ts^4)/8 + (Rv*Ts^2)/2, (Qb*Ts^3)/6]
-		//	     [  (Qb*Ts^4)/8 + (Rv*Ts^2)/2,       (Qb*Ts^3)/3 + Rv*Ts, (Qb*Ts^2)/2]
-		//	     [                (Qb*Ts^3)/6,               (Qb*Ts^2)/2,       Qb*Ts]
+		//	Qd = [ (Qb*Ts^5)/20 + (Rv*Ts^3)/3, (Qb*Ts^4)/8 + (Rv*Ts^2)/2, (Qb*Ts^3)/6 ]
+		//	     [  (Qb*Ts^4)/8 + (Rv*Ts^2)/2,       (Qb*Ts^3)/3 + Rv*Ts, (Qb*Ts^2)/2 ]
+		//	     [                (Qb*Ts^3)/6,               (Qb*Ts^2)/2,       Qb*Ts ]
 		gsl_matrix_set(Qd_, 0, 0, Rv/3+Qb/20);  gsl_matrix_set(Qd_, 0, 1, Rv/2+Qb/8);  gsl_matrix_set(Qd_, 0, 2, Qb/6);
 		gsl_matrix_set(Qd_, 1, 0, Rv/2+Qb/8);  gsl_matrix_set(Qd_, 1, 1, Rv+Qb/3);  gsl_matrix_set(Qd_, 1, 2, Qb/2);
 		gsl_matrix_set(Qd_, 2, 0, Qb/6);  gsl_matrix_set(Qd_, 2, 1, Qb/2);  gsl_matrix_set(Qd_, 2, 2, Qb);
@@ -226,18 +237,19 @@ private:
 	AidedINSSystem & operator=(const AidedINSSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
-	// the observation equation
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k) + V(k) * v(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -275,7 +287,7 @@ public:
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
 	//gsl_matrix *W_;
@@ -315,13 +327,9 @@ private:
 
 public:
 	LinearMassStringDamperSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
-		//A_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		//gsl_matrix_set(A_, 0, 0, 0.0);  gsl_matrix_set(A_, 0, 1, 1.0);
-		//gsl_matrix_set(A_, 1, 0, -omega * omega);  gsl_matrix_set(A_, 1, 1, -2.0 * zeta * omega);
-
 		const double lambda = std::exp(-Ts * omega * zeta);
 		const double psi    = 1.0 - zeta * zeta;
 		const double xi     = std::sqrt(psi);
@@ -330,6 +338,7 @@ public:
 		const double s = std::sin(theta);
 
 		// Phi = exp(A * Ts)
+		//	A = [ 0 1 ; -omega^2 -2*zeta*omega ]
 		Phi_ = gsl_matrix_alloc(stateDim_, stateDim_);
 #if 1
 		gsl_matrix_set(Phi_, 0, 0, lambda*c + zeta*s/xi);  gsl_matrix_set(Phi_, 0, 1, lambda*s/(omega*xi));
@@ -412,18 +421,19 @@ private:
 	LinearMassStringDamperSystem & operator=(const LinearMassStringDamperSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
-	// the observation equation
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k) + V(k) * v(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -438,7 +448,7 @@ public:
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
 	//gsl_matrix *W_;
@@ -478,7 +488,7 @@ public:
 
 public:
 	RadarTrackingSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), y_tilde_(NULL)
 	{
 		// Phi = exp(A * Ts)
@@ -543,16 +553,19 @@ private:
 	RadarTrackingSystem & operator=(const RadarTrackingSystem &rhs);
 
 public:
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -578,7 +591,7 @@ public:
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
 	//gsl_matrix *W_;
@@ -713,6 +726,16 @@ void simple_system_kalman_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\kalman_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "state", state);
+		output_data_to_file(stream, "gain", gain);
+		output_data_to_file(stream, "errVar", errVar);
+	}
 }
 
 void aided_INS_kalman_filter()
@@ -852,6 +875,22 @@ void aided_INS_kalman_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "pos", pos);
+		output_data_to_file(stream, "vel", vel);
+		output_data_to_file(stream, "bias", bias);
+		output_data_to_file(stream, "posGain", posGain);
+		output_data_to_file(stream, "velGain", velGain);
+		output_data_to_file(stream, "biasGain", biasGain);
+		output_data_to_file(stream, "posErrVar", posErrVar);
+		output_data_to_file(stream, "velErrVar", velErrVar);
+		output_data_to_file(stream, "biasErrVar", biasErrVar);
+	}
 }
 
 void linear_mass_spring_damper_system_kalman_filter()
@@ -989,6 +1028,19 @@ void linear_mass_spring_damper_system_kalman_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "pos", pos);
+		output_data_to_file(stream, "vel", vel);
+		output_data_to_file(stream, "posGain", posGain);
+		output_data_to_file(stream, "velGain", velGain);
+		output_data_to_file(stream, "posErrVar", posErrVar);
+		output_data_to_file(stream, "velErrVar", velErrVar);
+	}
 }
 
 void radar_tracking_system_kalman_filter()
@@ -1184,6 +1236,26 @@ void radar_tracking_system_kalman_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "rangeGain", rangeGain);
+		output_data_to_file(stream, "rangeRateGain", rangeRateGain);
+		output_data_to_file(stream, "rangeRateNoiseGain", rangeRateNoiseGain);
+		output_data_to_file(stream, "bearingGain", bearingGain);
+		output_data_to_file(stream, "bearingRateGain", bearingRateGain);
+		output_data_to_file(stream, "bearingRateNoiseGain", bearingRateNoiseGain);
+
+		output_data_to_file(stream, "rangeErrVar", rangeErrVar);
+		output_data_to_file(stream, "rangeRateErrVar", rangeRateErrVar);
+		output_data_to_file(stream, "rangeRateNoiseErrVar", rangeRateNoiseErrVar);
+		output_data_to_file(stream, "bearingErrVar", bearingErrVar);
+		output_data_to_file(stream, "bearingRateErrVar", bearingRateErrVar);
+		output_data_to_file(stream, "bearingRateNoiseErrVar", bearingRateNoiseErrVar);
+	}
 }
 
 }  // unnamed namespace

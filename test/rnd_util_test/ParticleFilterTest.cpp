@@ -6,6 +6,7 @@
 #include <boost/random/uniform_real.hpp>
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
+#include <fstream>
 #include <cmath>
 #include <ctime>
 #include <cassert>
@@ -25,9 +26,14 @@ class SimpleLinearSystem: public swl::DiscreteNonlinearStochasticSystem
 public:
 	typedef swl::DiscreteNonlinearStochasticSystem base_type;
 
+private:
+	static const double Ts;
+	static const double Q;
+	static const double R;
+
 public:
 	SimpleLinearSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), f_eval_(NULL), h_eval_(NULL), y_tilde_(NULL)
 	{
 		// Phi = exp(A * Ts) = [ 1 ]
@@ -48,11 +54,11 @@ public:
 
 		// Qd = W * Q * W^T
 		Qd_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		gsl_matrix_set(Qd_, 0, 0, 1.0);
+		gsl_matrix_set(Qd_, 0, 0, Q);
 
 		// Rd = V * R * V^T
 		Rd_ = gsl_matrix_alloc(outputDim_, outputDim_);
-		gsl_matrix_set(Rd_, 0, 0, 2.0);
+		gsl_matrix_set(Rd_, 0, 0, R);
 
 		// no control input
 		Bu_ = gsl_vector_alloc(stateDim_);
@@ -97,8 +103,8 @@ private:
 	SimpleLinearSystem & operator=(const SimpleLinearSystem &rhs);
 
 public:
-	// the stochastic differential equation
-	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state) const  // f = f(k, x(k), u(k), 0)
+	// the stochastic differential equation: f = f(k, x(k), u(k), w(k))
+	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Phi = getStateTransitionMatrix(step, state);
 		gsl_vector_memcpy(f_eval_, Bu_);
@@ -110,8 +116,8 @@ public:
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
-	// the observation equation
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state) const  // h = h(k, x(k), u(k), 0)
+	// the observation equation: h = h(k, x(k), u(k), v(k))
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Cd = getOutputMatrix(step, state);
 		gsl_vector_memcpy(h_eval_, Du_);
@@ -123,6 +129,7 @@ public:
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -140,7 +147,7 @@ public:
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_;
 	gsl_matrix *C_;  // Cd = C
 	//gsl_matrix *W_;
@@ -162,6 +169,10 @@ protected:
 	gsl_vector *y_tilde_;
 };
 
+/*static*/ const double SimpleLinearSystem::Ts = 1.0;
+/*static*/ const double SimpleLinearSystem::Q = 1.0;
+/*static*/ const double SimpleLinearSystem::R = 2.0;
+
 // "Kalman Filtering: Theory and Practice Using MATLAB" Example 5.3 (pp. 184)
 //	1) continuous ==> discrete
 //	2) driving force exits
@@ -180,14 +191,10 @@ private:
 
 public:
 	LinearMassStringDamperSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim),
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
 	  Phi_hat_(NULL), Cd_(NULL), /*W_(NULL), V_(NULL),*/ Qd_hat_(NULL), Rd_hat_(NULL), f_eval_(NULL), h_eval_(NULL), y_tilde_(NULL), driving_force_(NULL),
 	  Phi_(NULL), x_(NULL)
 	{
-		//A_ = gsl_matrix_alloc(stateDim_, stateDim_);
-		//gsl_matrix_set(A_, 0, 0, 0.0);  gsl_matrix_set(A_, 0, 1, 1.0);
-		//gsl_matrix_set(A_, 1, 0, -omega * omega);  gsl_matrix_set(A_, 1, 1, -2.0 * zeta * omega);
-
 		const double lambda = std::exp(-Ts * omega * zeta);
 		const double psi    = 1.0 - zeta * zeta;
 		const double xi     = std::sqrt(psi);
@@ -195,8 +202,9 @@ public:
 		const double c = std::cos(theta);
 		const double s = std::sin(theta);
 
-		// Phi = exp(A * Ts) -> I + A * Ts where A = df/dt
+		// Phi = exp(A * Ts) -> I + A * Ts where A = df/dx
 		//	the EKF approximation for Phi is I + A * Ts
+		//	A = [ 0 1 0 ; -omega^2 -2*omega*x3 -2*omega*x2 ; 0 0 0 ]  <==  A = df/dx
 		Phi_hat_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set_zero(Phi_hat_);
 
@@ -293,8 +301,8 @@ private:
 	LinearMassStringDamperSystem & operator=(const LinearMassStringDamperSystem &rhs);
 
 public:
-	// the stochastic differential equation
-	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state) const  // f = f(k, x(k), u(k), 0)
+	// the stochastic differential equation: f = f(k, x(k), u(k), w(k))
+	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
 	{
 		// update of true state w/o noise
 		gsl_vector *v = gsl_vector_alloc(stateDim_);
@@ -320,11 +328,17 @@ public:
 	}
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  // Phi(k) = exp(A(k) * Ts) where A(k) = df(k, x(k), u(k), 0)/dx
 	{
-		// Phi = exp(A * Ts) -> I + A * Ts where A = df/dt
+		const double &x1 = gsl_vector_get(state, 0);
+		const double &x2 = gsl_vector_get(state, 1);
+		const double &x3 = gsl_vector_get(state, 2);
+
+		// Phi = exp(A * Ts) -> I + A * Ts where A = df/dx
 		//	the EKF approximation for Phi is I + A * Ts
+		//	A = [ 0 1 0 ; -omega^2 -2*omega*x3 -2*omega*x2 ; 0 0 0 ]  <==  A = df/dx
+
 		gsl_matrix_set_zero(Phi_hat_);
 		gsl_matrix_set(Phi_hat_, 0, 0, 1.0);  gsl_matrix_set(Phi_hat_, 0, 1, Ts);
-		gsl_matrix_set(Phi_hat_, 1, 0, -Ts*omega*omega);  gsl_matrix_set(Phi_hat_, 1, 1, 1.0-2.0*Ts*omega*gsl_vector_get(state, 2));  gsl_matrix_set(Phi_hat_, 1, 2, -Ts*2.0*omega*gsl_vector_get(state, 1));
+		gsl_matrix_set(Phi_hat_, 1, 0, -Ts*omega*omega);  gsl_matrix_set(Phi_hat_, 1, 1, 1.0-2.0*Ts*omega*x3);  gsl_matrix_set(Phi_hat_, 1, 2, -2.0*Ts*omega*x2);
 		gsl_matrix_set(Phi_hat_, 2, 2, 1.0);
 		return Phi_hat_;
 	}
@@ -332,8 +346,8 @@ public:
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
-	// the observation equation
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state) const  // h = h(k, x(k), u(k), 0)
+	// the observation equation: h = h(k, x(k), u(k), v(k))
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
 	{
 		gsl_vector_set(h_eval_, 0, gsl_vector_get(state, 0));
 		return h_eval_;
@@ -344,18 +358,19 @@ public:
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_hat_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_hat_;  }  // Rd = V * R * V^T, but not R
 
 	// actual measurement
 	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
 	{
-		// x_, but not state
+		// true state, but not estimated state
 		gsl_vector_set(y_tilde_, 0, gsl_vector_get(x_, 0));  // measurement (no noise)
 		return y_tilde_;
 	}
 
-protected:
+private:
 	gsl_matrix *Phi_hat_;
 	gsl_matrix *Cd_;  // Cd = C
 	//gsl_matrix *W_;
@@ -418,8 +433,7 @@ void simple_system_particle_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const gsl_vector *f_eval = system.evaluatePlantEquation(step, filter.getEstimatedState());
-		const bool retval1 = filter.updateTime(step, f_eval);
+		const bool retval1 = filter.updateTime(step, NULL, NULL);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -436,8 +450,7 @@ void simple_system_particle_filter()
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		const gsl_vector *actualMeasurement = system.simulateMeasurement(step, filter.getEstimatedState());
-		const gsl_vector *h_eval = system.evaluateMeasurementEquation(step, filter.getEstimatedState());
-		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, h_eval);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, NULL, NULL);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -461,8 +474,7 @@ void simple_system_particle_filter()
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		const gsl_vector *actualMeasurement = system.simulateMeasurement(step, filter.getEstimatedState());
-		const gsl_vector *h_eval = system.evaluateMeasurementEquation(step, filter.getEstimatedState());
-		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, h_eval);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, NULL, NULL);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -477,8 +489,7 @@ void simple_system_particle_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const gsl_vector *f_eval = system.evaluatePlantEquation(step, filter.getEstimatedState());
-		const bool retval2 = filter.updateTime(step, f_eval);
+		const bool retval2 = filter.updateTime(step, NULL, NULL);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)
@@ -494,6 +505,16 @@ void simple_system_particle_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\particle_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "state", state);
+		output_data_to_file(stream, "gain", gain);
+		output_data_to_file(stream, "errVar", errVar);
+	}
 }
 
 void linear_mass_spring_damper_system_particle_filter()
@@ -538,8 +559,7 @@ void linear_mass_spring_damper_system_particle_filter()
 		// 0. initial estimates: x(0) & P(0)
 
 		// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const gsl_vector *f_eval = system.evaluatePlantEquation(step, filter.getEstimatedState());
-		const bool retval1 = filter.updateTime(step, f_eval);
+		const bool retval1 = filter.updateTime(step, NULL, NULL);
 		assert(retval1);
 
 		// save x-(k+1) & P-(k+1)
@@ -560,8 +580,7 @@ void linear_mass_spring_damper_system_particle_filter()
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		const gsl_vector *actualMeasurement = system.simulateMeasurement(step, filter.getEstimatedState());
-		const gsl_vector *h_eval = system.evaluateMeasurementEquation(step, filter.getEstimatedState());
-		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, h_eval);
+		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, NULL, NULL);
 		assert(retval2);
 
 		// save K(k), x(k) & P(k)
@@ -591,8 +610,7 @@ void linear_mass_spring_damper_system_particle_filter()
 
 		// 1. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		const gsl_vector *actualMeasurement = system.simulateMeasurement(step, filter.getEstimatedState());
-		const gsl_vector *h_eval = system.evaluateMeasurementEquation(step, filter.getEstimatedState());
-		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, h_eval);
+		const bool retval1 = filter.updateMeasurement(step, actualMeasurement, NULL, NULL);
 		assert(retval1);
 
 		// save K(k), x(k) & P(k)
@@ -613,8 +631,7 @@ void linear_mass_spring_damper_system_particle_filter()
 		}
 
 		// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-		const gsl_vector *f_eval = system.evaluatePlantEquation(step, filter.getEstimatedState());
-		const bool retval2 = filter.updateTime(step, f_eval);
+		const bool retval2 = filter.updateTime(step, NULL, NULL);
 		assert(retval2);
 
 		// save x-(k+1) & P-(k+1)
@@ -634,6 +651,22 @@ void linear_mass_spring_damper_system_particle_filter()
 		++step;
 	}
 #endif
+
+	//
+	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+	std::ofstream stream("..\\data\\particle_filter.dat", std::ios::out | std::ios::trunc);
+	if (stream)
+	{
+		output_data_to_file(stream, "pos", pos);
+		output_data_to_file(stream, "vel", vel);
+		output_data_to_file(stream, "damp", damp);
+		output_data_to_file(stream, "posGain", posGain);
+		output_data_to_file(stream, "velGain", velGain);
+		output_data_to_file(stream, "dampGain", dampGain);
+		output_data_to_file(stream, "posErrVar", posErrVar);
+		output_data_to_file(stream, "velErrVar", velErrVar);
+		output_data_to_file(stream, "dampErrVar", dampErrVar);
+	}
 }
 
 }  // unnamed namespace

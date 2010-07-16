@@ -41,8 +41,8 @@ private:
 	DiscreteExtendedKalmanFilter & operator=(const DiscreteExtendedKalmanFilter &rhs);
 
 public:
-	bool updateTime(const size_t step, const gsl_vector *f_eval);  // f = f(k, x(k), u(k), 0)
-	bool updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *h_eval);  // h = h(k, x(k), u(k), 0)
+	bool updateTime(const size_t step, const gsl_vector *input);
+	bool updateMeasurement(const size_t step, const gsl_vector *actualMeasurement, const gsl_vector *input);
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }
@@ -93,8 +93,8 @@ private:
 	ContinuousExtendedKalmanFilter & operator=(const ContinuousExtendedKalmanFilter &rhs);
 
 public:
-	bool updateTime(const double time, const gsl_vector *f_eval);  // f = f(t, x(t), u(t), 0)
-	bool updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *h_eval);  // h = h(t, x(t), u(t), 0)
+	bool updateTime(const double time, const gsl_vector *input);
+	bool updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *inputl);
 
 	const gsl_vector * getEstimatedState() const  {  return x_hat_;  }
 	//const gsl_vector * getEstimatedMeasurement() const  {  return y_hat_;  }

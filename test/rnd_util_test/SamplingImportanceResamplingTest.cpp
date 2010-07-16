@@ -18,7 +18,11 @@ namespace {
 
 // [ref]
 // "On sequential Monte Carlo sampling methods for Bayesian filtering", Arnaud Doucet, Simon Godsill, and Christophe Andrieu,
-//	Statistics and Computing, 10, pp. 197-208, 2000  ==> pp. 206
+//	Statistics and Computing, 10, pp. 197-208, 2000  ==>  pp. 206
+// "Novel approach to nonlinear/non-Gaussian Bayesian state estimation", N. J. Gordon, D. J. Salmond, and A. F. M. Smith,
+//	IEE Proceedings, vol. 140, no. 2, pp. 107-113, 1993  ==>  pp. 109
+// "A Tutorial on Particle Filters for Online Nonlinear/Non-Gaussian Bayesian Tracking", M. S. Arulampalam, Simon Maskell, Neil Gordon, and Time Clapp,
+//	Trans. on Signal Processing, vol. 50, no. 2, pp. 174-188, 2002  ==>  pp. 183
 // "An Introduction to Sequential Monte Carlo Methods", Arnaud Doucet, Nando de Freitas, and Neil Gordon, 2001  ==>  pp. 12
 
 struct TransitionDistribution: public swl::SamplingImportanceResampling::TransitionDistribution

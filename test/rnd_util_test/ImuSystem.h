@@ -26,7 +26,7 @@ public:
 
 protected:
 	ImuSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim)
+	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1)
 	{}
 
 public:
@@ -58,25 +58,26 @@ private:
 	AccelSystem & operator=(const AccelSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
-	// the observation equation
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
 	//
 	/*virtual*/ const gsl_matrix * getInputMatrix() const  {  return Bd_;  }
 
-protected:
+private:
 	const double Ts_;  // sampling time
 	const double beta_;  // correlation time (time constant)
 	const double Qv_;  // variance of a process noise related to a velocity state
@@ -115,18 +116,19 @@ private:
 	GyroSystem & operator=(const GyroSystem &rhs);
 
 public:
-	// the stochastic differential equation
+	// the stochastic differential equation: x(k+1) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
 	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts)
 	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k)
 
-	// the observation equation
+	// the observation equation: y(k) = Cd(k) * x(k) + Dd(k) * u(k)
 	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) (C == Cd)
 	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k)
 
+	// noise covariance matrices
 	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
 	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
@@ -134,7 +136,7 @@ public:
 	/*virtual*/ const gsl_matrix * getInputMatrix() const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 
-protected:
+private:
 	const double Ts_;  // sampling time
 	const double beta_;  // correlation time (time constant)
 	const double Qw_;  // variance of a process noise related to an angular velocity state

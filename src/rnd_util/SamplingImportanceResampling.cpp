@@ -86,7 +86,7 @@ void SamplingImportanceResampling::sample(const size_t step, const size_t partic
 	}
 	else  // sampling importance resampling (SIR)
 	{
-		// FIXME [modify] >>
+		// FIXME [modify] >> efficiency ==> cdf & resampledXs
 
 		std::vector<double> cdf(particleNum);
 		cdf[0] = weights[0];
@@ -110,6 +110,8 @@ void SamplingImportanceResampling::sample(const size_t step, const size_t partic
 		// "Kalman Filtering and Neural Networks", Simon Haykin, 2001, Ch. 7
 		// "An Introduction to MCMC for Machine Learning", Christophe Andrieu, Nando de Freitas, Arnaud Doucet, and Michael I. Jordan
 		//	Machine Learning, 50, pp. 5-43, 2003
+
+		// TODO [implement] >>
 	}
 }
 
