@@ -514,6 +514,8 @@ void simple_system_extended_kalman_filter()
 		output_data_to_file(stream, "state", state);
 		output_data_to_file(stream, "gain", gain);
 		output_data_to_file(stream, "errVar", errVar);
+
+		stream.close();
 	}
 }
 
@@ -666,6 +668,8 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 		output_data_to_file(stream, "posErrVar", posErrVar);
 		output_data_to_file(stream, "velErrVar", velErrVar);
 		output_data_to_file(stream, "dampErrVar", dampErrVar);
+
+		stream.close();
 	}
 }
 

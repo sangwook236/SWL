@@ -690,6 +690,8 @@ void simple_system_unscented_kalman_filter()
 		output_data_to_file(stream, "state", state);
 		output_data_to_file(stream, "gain", gain);
 		output_data_to_file(stream, "errVar", errVar);
+
+		stream.close();
 	}
 }
 
@@ -817,6 +819,8 @@ void linear_mass_spring_damper_system_unscented_kalman_filter()
 		output_data_to_file(stream, "posErrVar", posErrVar);
 		output_data_to_file(stream, "velErrVar", velErrVar);
 		output_data_to_file(stream, "dampErrVar", dampErrVar);
+
+		stream.close();
 	}
 }
 
@@ -985,6 +989,8 @@ void simple_nonlinear_system_unscented_kalman_filter()
 		output_data_to_file(stream, "estPos", estPos);
 		output_data_to_file(stream, "estVel", estVel);
 		output_data_to_file(stream, "estAccel", estAccel);
+
+		stream.close();
 	}
 }
 
@@ -1092,6 +1098,8 @@ void nonstationary_growth_system_unscented_kalman_filter()
 		output_data_to_file(stream, "state", state);
 		output_data_to_file(stream, "gain", gain);
 		output_data_to_file(stream, "errVar", errVar);
+
+		stream.close();
 	}
 }
 

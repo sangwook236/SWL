@@ -9,7 +9,6 @@
 #include <cmath>
 #include <ctime>
 #include <cassert>
-#include <direct.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

@@ -6,25 +6,29 @@
 
 int main()
 {
+	void hough_transform();
 	void estimate_3d_plane_using_ransac();
 	void sampling_importance_resampling();
 	void metropolis_hastings_algorithm();
 	void kalman_filter();
 	void extended_kalman_filter();
 	void unscented_kalman_filter();
-	void imu_kalman_filter();
 	void unscented_kalman_filter_with_additive_noise();
+	void imu_calibration();
+	void imu_kalman_filter();
 
+	//hough_transform();
 	//estimate_3d_plane_using_ransac();
 
 	//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter
 	//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC)
 
 	//kalman_filter();
-	extended_kalman_filter();
+	//extended_kalman_filter();
 	//unscented_kalman_filter();
 	//unscented_kalman_filter_with_additive_noise();
 
+	imu_calibration();
 	//imu_kalman_filter();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;

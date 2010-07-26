@@ -186,6 +186,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HoughTransform.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\KalmanFilter.cpp"
 				>
 			</File>
@@ -232,15 +236,15 @@
 				>
 			</File>
 			<File
-				RelativePath="..\..\inc\swl\rnd_util\ExportRndBase.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\inc\swl\rnd_util\ExportRndUtil.h"
 				>
 			</File>
 			<File
 				RelativePath="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\inc\swl\rnd_util\HoughTransform.h"
 				>
 			</File>
 			<File

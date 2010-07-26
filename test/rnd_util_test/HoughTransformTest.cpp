@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/machine_vision/HoughTransform.h"
+#include "swl/rnd_util/HoughTransform.h"
 #include "swl/math/MathConstant.h"
 #include <boost/multi_array.hpp>
 #include <boost/tuple/tuple.hpp>

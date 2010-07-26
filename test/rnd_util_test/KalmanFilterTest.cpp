@@ -735,6 +735,8 @@ void simple_system_kalman_filter()
 		output_data_to_file(stream, "state", state);
 		output_data_to_file(stream, "gain", gain);
 		output_data_to_file(stream, "errVar", errVar);
+
+		stream.close();
 	}
 }
 
@@ -890,6 +892,8 @@ void aided_INS_kalman_filter()
 		output_data_to_file(stream, "posErrVar", posErrVar);
 		output_data_to_file(stream, "velErrVar", velErrVar);
 		output_data_to_file(stream, "biasErrVar", biasErrVar);
+
+		stream.close();
 	}
 }
 
@@ -1040,6 +1044,8 @@ void linear_mass_spring_damper_system_kalman_filter()
 		output_data_to_file(stream, "velGain", velGain);
 		output_data_to_file(stream, "posErrVar", posErrVar);
 		output_data_to_file(stream, "velErrVar", velErrVar);
+
+		stream.close();
 	}
 }
 
@@ -1255,6 +1261,8 @@ void radar_tracking_system_kalman_filter()
 		output_data_to_file(stream, "bearingErrVar", bearingErrVar);
 		output_data_to_file(stream, "bearingRateErrVar", bearingRateErrVar);
 		output_data_to_file(stream, "bearingRateNoiseErrVar", bearingRateNoiseErrVar);
+
+		stream.close();
 	}
 }
 

@@ -184,6 +184,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\HoughTransformTest.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ImuCalibration.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ImuKalmanFilterTest.cpp"
 				>
 			</File>

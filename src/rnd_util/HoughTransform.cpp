@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/machine_vision/HoughTransform.h"
+#include "swl/rnd_util/HoughTransform.h"
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -21,7 +21,8 @@ GeneralizedHoughTransform::~GeneralizedHoughTransform()
 bool GeneralizedHoughTransform::run()
 {
 	// FIXME [add] >>
-	return false;
+	//	ref: rnd_util_test/HoughTransformTest.cpp
+	throw std::runtime_error("not yet implemented");
 }
 
 }  // namespace swl

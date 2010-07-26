@@ -1,8 +1,8 @@
-#if !defined(__SWL_MACHINE_VISION__HOUGH_TRANSFORM__H_)
-#define __SWL_MACHINE_VISION__HOUGH_TRANSFORM__H_ 1
+#if !defined(__SWL_RND_UTIL__HOUGH_TRANSFORM__H_)
+#define __SWL_RND_UTIL__HOUGH_TRANSFORM__H_ 1
 
 
-#include "swl/machine_vision/ExportMachineVision.h"
+#include "swl/rnd_util/ExportRndUtil.h"
 #include <map>
 #include <set>
 
@@ -12,7 +12,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 //
 
-class SWL_MACHINE_VISION_API GeneralizedHoughTransform
+class SWL_RND_UTIL_API GeneralizedHoughTransform
 {
 public:
 	//typedef GeneralizedHoughTransform base_type;
@@ -39,4 +39,4 @@ protected:
 }  // namespace swl
 
 
-#endif  // __SWL_MACHINE_VISION__HOUGH_TRANSFORM__H_
+#endif  // __SWL_RND_UTIL__HOUGH_TRANSFORM__H_
