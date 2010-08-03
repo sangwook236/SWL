@@ -14,8 +14,9 @@ int main()
 	void extended_kalman_filter();
 	void unscented_kalman_filter();
 	void unscented_kalman_filter_with_additive_noise();
-	void imu_calibration();
 	void imu_kalman_filter();
+	void imu_calibration();
+	void imu_filter_with_calibration();
 
 	//hough_transform();
 	//estimate_3d_plane_using_ransac();
@@ -28,8 +29,9 @@ int main()
 	//unscented_kalman_filter();
 	//unscented_kalman_filter_with_additive_noise();
 
-	imu_calibration();
 	//imu_kalman_filter();
+	imu_calibration();
+	//imu_filter_with_calibration();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;
 	std::wcout.flush();

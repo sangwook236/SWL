@@ -46,7 +46,7 @@ struct Gyro
 void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 {
 #if 0
-	std::ifstream stream("..\\data\\adis16350_raw_data_20100701.txt");
+	std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_20100701.txt");
 
 	if (!stream.is_open())
 	{
@@ -69,12 +69,12 @@ void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 
 	stream.close();
 #elif 1
-	std::ifstream stream("..\\data\\adis16350_raw_data_no_motion_20100706.txt");
-	//std::ifstream stream("..\\data\\adis16350_raw_data_x_20100706.txt");
-	//std::ifstream stream("..\\data\\adis16350_raw_data_y_20100706.txt");
-	//std::ifstream stream("..\\data\\adis16350_raw_data_xy45_20100706.txt");
-	//std::ifstream stream("..\\data\\adis16350_raw_data_rotation_small_circle_20100706.txt");
-	//std::ifstream stream("..\\data\\adis16350_raw_data_rotation_large_circle_20100706.txt");
+	std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_no_motion_20100706.txt");
+	//std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_x_20100706.txt");
+	//std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_y_20100706.txt");
+	//std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_xy45_20100706.txt");
+	//std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_rotation_small_circle_20100706.txt");
+	//std::ifstream stream("..\\data\\adis16350_data_20100706\\adis16350_raw_data_rotation_large_circle_20100706.txt");
 
 	// data format:
 	//	gpsPos_.latitude / gpsPos_.longitude / compass_.heading_ / adjustOrientation /
