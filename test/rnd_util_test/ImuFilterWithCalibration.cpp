@@ -387,36 +387,36 @@ public:
 		gsl_matrix_set(A_, 5, 12, 2.0 * (E1*Ap + E2*Aq));
 
 		gsl_matrix_set(A_, 9, 9, 0.0);
-		gsl_matrix_set(A_, 9, 10, Wp);
-		gsl_matrix_set(A_, 9, 11, Wq);
-		gsl_matrix_set(A_, 9, 12, Wr);
-		gsl_matrix_set(A_, 9, 13, E1);
-		gsl_matrix_set(A_, 9, 14, E2);
-		gsl_matrix_set(A_, 9, 15, E3);
+		gsl_matrix_set(A_, 9, 10, -0.5 * Wp);
+		gsl_matrix_set(A_, 9, 11, -0.5 * Wq);
+		gsl_matrix_set(A_, 9, 12, -0.5 * Wr);
+		gsl_matrix_set(A_, 9, 13, -0.5 * E1);
+		gsl_matrix_set(A_, 9, 14, -0.5 * E2);
+		gsl_matrix_set(A_, 9, 15, -0.5 * E3);
 
-		gsl_matrix_set(A_, 10, 9, -Wp);
+		gsl_matrix_set(A_, 10, 9, -0.5 * -Wp);
 		gsl_matrix_set(A_, 10, 10, 0.0);
-		gsl_matrix_set(A_, 10, 11, -Wr);
-		gsl_matrix_set(A_, 10, 12, Wq);
-		gsl_matrix_set(A_, 10, 13, -E0);
-		gsl_matrix_set(A_, 10, 14, E3);
-		gsl_matrix_set(A_, 10, 15, -E2);
+		gsl_matrix_set(A_, 10, 11, -0.5 * -Wr);
+		gsl_matrix_set(A_, 10, 12, -0.5 * Wq);
+		gsl_matrix_set(A_, 10, 13, -0.5 * -E0);
+		gsl_matrix_set(A_, 10, 14, -0.5 * E3);
+		gsl_matrix_set(A_, 10, 15, -0.5 * -E2);
 
-		gsl_matrix_set(A_, 11, 9, -Wq);
-		gsl_matrix_set(A_, 11, 10, Wr);
+		gsl_matrix_set(A_, 11, 9, -0.5 * -Wq);
+		gsl_matrix_set(A_, 11, 10, -0.5 * Wr);
 		gsl_matrix_set(A_, 11, 11, 0.0);
-		gsl_matrix_set(A_, 11, 12, -Wp);
-		gsl_matrix_set(A_, 11, 13, -E3);
-		gsl_matrix_set(A_, 11, 14, -E0);
-		gsl_matrix_set(A_, 11, 15, E1);
+		gsl_matrix_set(A_, 11, 12, -0.5 * -Wp);
+		gsl_matrix_set(A_, 11, 13, -0.5 * -E3);
+		gsl_matrix_set(A_, 11, 14, -0.5 * -E0);
+		gsl_matrix_set(A_, 11, 15, -0.5 * E1);
 
-		gsl_matrix_set(A_, 12, 9, -Wr);
-		gsl_matrix_set(A_, 12, 10, -Wq);
-		gsl_matrix_set(A_, 12, 11, Wp);
+		gsl_matrix_set(A_, 12, 9, -0.5 * -Wr);
+		gsl_matrix_set(A_, 12, 10, -0.5 * -Wq);
+		gsl_matrix_set(A_, 12, 11, -0.5 * Wp);
 		gsl_matrix_set(A_, 12, 12, 0.0);
-		gsl_matrix_set(A_, 12, 13, E2);
-		gsl_matrix_set(A_, 12, 14, -E1);
-		gsl_matrix_set(A_, 12, 15, -E0);
+		gsl_matrix_set(A_, 12, 13, -0.5 * E2);
+		gsl_matrix_set(A_, 12, 14, -0.5 * -E1);
+		gsl_matrix_set(A_, 12, 15, -0.5 * -E0);
 
 		// Phi = exp(A * Ts) -> I + A * Ts where A = df/dx
 		//	the EKF approximation for Phi is I + A * Ts
@@ -436,7 +436,7 @@ public:
 
 		// TODO [check] >>
 		//	integrate(exp(A * t), {t, 0, Ts}) -> integrate(I + A * t, {t, 0, Ts}) -> I * Ts + A * Ts^2 / 2
-		//	Bd = integrate(exp(A * t), {t, 0, Ts}) * B -> (I * Ts + A * Ts^2 / 2) * B
+		//	Bd = integrate(exp(A * t), {t, 0, Ts}) * B -> integrate(I + A * t, {t, 0, Ts}) * B -> (I * Ts + A * Ts^2 / 2) * B ???
 		gsl_matrix_memcpy(A_tmp_, A_);
 		gsl_matrix_scale(A_tmp_, 0.5 * Ts_*Ts_);
 		for (size_t i = 0; i < stateDim_; ++i)
@@ -608,7 +608,8 @@ void imu_filter_with_calibration()
 	const size_t inputDim = 3;
 	const size_t outputDim = 6;
 
-	const double Ts = 0.01;  // [sec]
+	//const double Ts = 0.01;  // [sec]
+	const double Ts = 0.016 / 5;  // [sec]
 
 	//
 	gsl_vector *accel_calibration_param = gsl_vector_alloc(numAccelParam);
@@ -626,6 +627,9 @@ void imu_filter_with_calibration()
 	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
 	load_calibration_param(calibration_filename, numAccelParam, numGyroParam, accel_calibration_param, accel_calibration_covar, gyro_calibration_param, gyro_calibration_covar);
 
+	gsl_matrix_free(accel_calibration_covar);
+	gsl_matrix_free(gyro_calibration_covar);
+
 #if defined(__USE_VALIDATION_DATA)
 	// load validation data
 	const size_t Ninitial = 10000;
@@ -642,84 +646,105 @@ void imu_filter_with_calibration()
 	// set an initial gravity
 	std::cout << "set an initial gravity ..." << std::endl;
 	gsl_vector *g_initial = gsl_vector_alloc(inputDim);
+	//gsl_vector *w_initial = gsl_vector_alloc(inputDim);
 
 	{
 #if !defined(__USE_VALIDATION_DATA)
 		const size_t Ninitial = 10000;
 #endif
 
-		double x_sum = 0.0, y_sum = 0.0, z_sum = 0.0;
+		double accel_x_sum = 0.0, accel_y_sum = 0.0, accel_z_sum = 0.0;
+		double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
 		for (size_t i = 0; i < Ninitial; ++i)
 		{
 #if defined(__USE_VALIDATION_DATA)
 			gsl_vector_set(accel_measurement, 0, accels[i].x);
 			gsl_vector_set(accel_measurement, 1, accels[i].y);
 			gsl_vector_set(accel_measurement, 2, accels[i].z);
+			gsl_vector_set(gyro_measurement, 0, accels[i].x);
+			gsl_vector_set(gyro_measurement, 1, accels[i].y);
+			gsl_vector_set(gyro_measurement, 2, accels[i].z);
 #else
 			// FIXME [add] >>
 			gsl_vector_set(accel_measurement, 0, );
 			gsl_vector_set(accel_measurement, 1, );
 			gsl_vector_set(accel_measurement, 2, );
+			gsl_vector_set(gyro_measurement, 0, );
+			gsl_vector_set(gyro_measurement, 1, );
+			gsl_vector_set(gyro_measurement, 2, );
 #endif
 
 			calculate_calibrated_acceleration(accel_calibration_param, accel_measurement, accel_measurement_calibrated);
+			//calculate_calibrated_angular_rate(gyro_calibration_param, gyro_measurement, gyro_measurement_calibrated);
 
-			x_sum += gsl_vector_get(accel_measurement_calibrated, 0);
-			y_sum += gsl_vector_get(accel_measurement_calibrated, 1);
-			z_sum += gsl_vector_get(accel_measurement_calibrated, 2);
+			accel_x_sum += gsl_vector_get(accel_measurement_calibrated, 0);
+			accel_y_sum += gsl_vector_get(accel_measurement_calibrated, 1);
+			accel_z_sum += gsl_vector_get(accel_measurement_calibrated, 2);
+			//gyro_x_sum += gsl_vector_get(gyro_measurement_calibrated, 0);
+			//gyro_y_sum += gsl_vector_get(gyro_measurement_calibrated, 1);
+			//gyro_z_sum += gsl_vector_get(gyro_measurement_calibrated, 2);
 		}
 
-		gsl_vector_set(g_initial, 0, x_sum / Ninitial);
-		gsl_vector_set(g_initial, 1, y_sum / Ninitial);
-		gsl_vector_set(g_initial, 2, z_sum / Ninitial);
+		gsl_vector_set(g_initial, 0, accel_x_sum / Ninitial);
+		gsl_vector_set(g_initial, 1, accel_y_sum / Ninitial);
+		gsl_vector_set(g_initial, 2, accel_z_sum / Ninitial);
+		//gsl_vector_set(w_initial, 0, gyro_x_sum / Ninitial);
+		//gsl_vector_set(w_initial, 1, gyro_y_sum / Ninitial);
+		//gsl_vector_set(w_initial, 2, gyro_z_sum / Ninitial);
 	}
 
 	// extended Kalman filtering
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_vector_set_zero(x0);
+	gsl_vector_set(x0, 6, -gsl_vector_get(g_initial, 0));  // a_p = g_initial_x
+	gsl_vector_set(x0, 7, -gsl_vector_get(g_initial, 1));  // a_q = g_initial_y
+	gsl_vector_set(x0, 8, -gsl_vector_get(g_initial, 2));  // a_r = g_initial_z
+	gsl_vector_set(x0, 9, 1.0);  // e0 = 1.0
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_identity(P0);
-	gsl_matrix_scale(P0, 2.0);
+	gsl_matrix_scale(P0, 1.0e-8);  // the initial estimate is completely unknown
 
 	// Qd = W * Q * W^T where W = I
 	//	the EKF approximation of Qd will be W * [ Q * Ts ] * W^T
 	gsl_matrix *Qd = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_zero(Qd);
 	// FIXME [modify] >>
-	gsl_matrix_set(Qd, 0, 0, 1.0);
-	gsl_matrix_set(Qd, 1, 1, 1.0);
-	gsl_matrix_set(Qd, 2, 2, 1.0);
-	gsl_matrix_set(Qd, 3, 3, 1.0);
-	gsl_matrix_set(Qd, 4, 4, 1.0);
-	gsl_matrix_set(Qd, 5, 5, 1.0);
-	gsl_matrix_set(Qd, 6, 6, 1.0);
-	gsl_matrix_set(Qd, 7, 7, 1.0);
-	gsl_matrix_set(Qd, 8, 8, 1.0);
-	gsl_matrix_set(Qd, 9, 9, 1.0);
-	gsl_matrix_set(Qd, 10, 10, 1.0);
-	gsl_matrix_set(Qd, 11, 11, 1.0);
-	gsl_matrix_set(Qd, 12, 12, 1.0);
-	gsl_matrix_set(Qd, 13, 13, 1.0);
-	gsl_matrix_set(Qd, 14, 14, 1.0);
-	gsl_matrix_set(Qd, 15, 15, 1.0);
-	gsl_matrix_set(Qd, 16, 16, 1.0);
-	gsl_matrix_set(Qd, 17, 17, 1.0);
-	gsl_matrix_set(Qd, 18, 18, 1.0);
-	gsl_matrix_set(Qd, 19, 19, 1.0);
-	gsl_matrix_set(Qd, 20, 20, 1.0);
-	gsl_matrix_set(Qd, 21, 21, 1.0);
+	const double QQ = 1.0e-8;
+	gsl_matrix_set(Qd, 0, 0, QQ);
+	gsl_matrix_set(Qd, 1, 1, QQ);
+	gsl_matrix_set(Qd, 2, 2, QQ);
+	gsl_matrix_set(Qd, 3, 3, QQ);
+	gsl_matrix_set(Qd, 4, 4, QQ);
+	gsl_matrix_set(Qd, 5, 5, QQ);
+	gsl_matrix_set(Qd, 6, 6, QQ);
+	gsl_matrix_set(Qd, 7, 7, QQ);
+	gsl_matrix_set(Qd, 8, 8, QQ);
+	gsl_matrix_set(Qd, 9, 9, QQ);
+	gsl_matrix_set(Qd, 10, 10, QQ);
+	gsl_matrix_set(Qd, 11, 11, QQ);
+	gsl_matrix_set(Qd, 12, 12, QQ);
+	gsl_matrix_set(Qd, 13, 13, QQ);
+	gsl_matrix_set(Qd, 14, 14, QQ);
+	gsl_matrix_set(Qd, 15, 15, QQ);
+	gsl_matrix_set(Qd, 16, 16, QQ);
+	gsl_matrix_set(Qd, 17, 17, QQ);
+	gsl_matrix_set(Qd, 18, 18, QQ);
+	gsl_matrix_set(Qd, 19, 19, QQ);
+	gsl_matrix_set(Qd, 20, 20, QQ);
+	gsl_matrix_set(Qd, 21, 21, QQ);
 	gsl_matrix_scale(Qd, Ts);
 
 	// Rd = V * R * V^T where V = I
 	gsl_matrix *Rd = gsl_matrix_alloc(outputDim, outputDim);
 	gsl_matrix_set_zero(Rd);
 	// FIXME [modify] >>
-	gsl_matrix_set(Rd, 0, 0, 1.0);
-	gsl_matrix_set(Rd, 1, 1, 1.0);
-	gsl_matrix_set(Rd, 2, 2, 1.0);
-	gsl_matrix_set(Rd, 3, 3, 1.0);
-	gsl_matrix_set(Rd, 4, 4, 1.0);
-	gsl_matrix_set(Rd, 5, 5, 1.0);
+	const double RR = 1.0e-8;
+	gsl_matrix_set(Rd, 0, 0, RR);
+	gsl_matrix_set(Rd, 1, 1, RR);
+	gsl_matrix_set(Rd, 2, 2, RR);
+	gsl_matrix_set(Rd, 3, 3, RR);
+	gsl_matrix_set(Rd, 4, 4, RR);
+	gsl_matrix_set(Rd, 5, 5, RR);
 
 	const ImuSystem system(Ts, stateDim, inputDim, outputDim, g_initial, Qd, Rd);
 	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
@@ -731,6 +756,19 @@ void imu_filter_with_calibration()
 	gsl_matrix_free(Rd);  Rd = NULL;
 
 	std::cout << "start extended Kalman filtering ..." << std::endl;
+
+	gsl_vector *pos_curr = gsl_vector_alloc(axisDim);
+	gsl_vector *pos_prev = gsl_vector_alloc(axisDim);
+	gsl_vector *vel_curr = gsl_vector_alloc(axisDim);
+	gsl_vector *vel_prev = gsl_vector_alloc(axisDim);
+	gsl_vector *ang_curr = gsl_vector_alloc(axisDim);
+	gsl_vector *ang_prev = gsl_vector_alloc(axisDim);
+	gsl_vector_set_zero(pos_curr);  // initially stationary
+	gsl_vector_set_zero(pos_prev);  // initially stationary
+	gsl_vector_set_zero(vel_curr);  // initially stationary
+	gsl_vector_set_zero(vel_prev);  // initially stationary
+	gsl_vector_set_zero(ang_curr);  // initially stationary
+	gsl_vector_set_zero(ang_prev);  // initially stationary
 
 	// method #1
 	// 1-based time step. 0-th time step is initial
@@ -763,9 +801,6 @@ void imu_filter_with_calibration()
 			//gsl_matrix_get(P, 8, 8);
 		}
 
-		// advance time step
-		++step;
-
 		//
 		// FIXME [add] >>
 #if defined(__USE_VALIDATION_DATA)
@@ -795,6 +830,9 @@ void imu_filter_with_calibration()
 		gsl_vector_set(actualMeasurement, 4, gsl_vector_get(gyro_measurement_calibrated, 1));
 		gsl_vector_set(actualMeasurement, 5, gsl_vector_get(gyro_measurement_calibrated, 2));
 
+		// advance time step
+		++step;
+
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		const bool retval2 = filter.updateMeasurement(step, actualMeasurement, NULL);
 		assert(retval2);
@@ -817,13 +855,37 @@ void imu_filter_with_calibration()
 			//gsl_matrix_get(P, 6, 6);
 			//gsl_matrix_get(P, 7, 7);
 			//gsl_matrix_get(P, 8, 8);
+
+			//std::cout << Ax << ", " << Ay << ", " << Az << " ; " << Wx << ", " << Wy << ", " << Wz << std::endl;
+
+			gsl_vector_set(vel_curr, 0, gsl_vector_get(vel_prev, 0) + Ax * Ts);
+			gsl_vector_set(pos_curr, 0, gsl_vector_get(pos_prev, 0) + gsl_vector_get(vel_prev, 0) * Ts + 0.5 * Ax * Ts*Ts);
+			gsl_vector_set(vel_curr, 1, gsl_vector_get(vel_prev, 1) + Ay * Ts);
+			gsl_vector_set(pos_curr, 1, gsl_vector_get(pos_prev, 1) + gsl_vector_get(vel_prev, 1) * Ts + 0.5 * Ay * Ts*Ts);
+			gsl_vector_set(vel_curr, 2, gsl_vector_get(vel_prev, 2) + Az * Ts);
+			gsl_vector_set(pos_curr, 2, gsl_vector_get(pos_prev, 2) + gsl_vector_get(vel_prev, 2) * Ts + 0.5 * Az * Ts*Ts);
+			gsl_vector_set(ang_curr, 0, gsl_vector_get(ang_prev, 0) + Wx * Ts);
+			gsl_vector_set(ang_curr, 1, gsl_vector_get(ang_prev, 1) + Wy * Ts);
+			gsl_vector_set(ang_curr, 2, gsl_vector_get(ang_prev, 2) + Wz * Ts);
+
+			gsl_vector_memcpy(pos_prev, pos_curr);
+			gsl_vector_memcpy(vel_prev, vel_curr);
+			gsl_vector_memcpy(ang_prev, ang_curr);
+
+			std::cout << step << " : " << gsl_vector_get(pos_curr, 0) << ", " << gsl_vector_get(pos_curr, 1) << ", " << gsl_vector_get(pos_curr, 2) << " ; " <<
+				gsl_vector_get(ang_curr, 0) << ", " << gsl_vector_get(ang_curr, 1) << ", " << gsl_vector_get(ang_curr, 2) << std::endl;
 		}
 	}
 
+	gsl_vector_free(pos_curr);
+	gsl_vector_free(pos_prev);
+	gsl_vector_free(vel_curr);
+	gsl_vector_free(vel_prev);
+	gsl_vector_free(ang_curr);
+	gsl_vector_free(ang_prev);
+
 	gsl_vector_free(accel_calibration_param);
-	gsl_matrix_free(accel_calibration_covar);
 	gsl_vector_free(gyro_calibration_param);
-	gsl_matrix_free(gyro_calibration_covar);
 	gsl_vector_free(accel_measurement);
 	gsl_vector_free(gyro_measurement);
 	gsl_vector_free(accel_measurement_calibrated);

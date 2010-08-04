@@ -30,8 +30,8 @@ int main()
 	//unscented_kalman_filter_with_additive_noise();
 
 	//imu_kalman_filter();
-	imu_calibration();
-	//imu_filter_with_calibration();
+	//imu_calibration();
+	imu_filter_with_calibration();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;
 	std::wcout.flush();
