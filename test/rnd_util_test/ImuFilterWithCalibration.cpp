@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "swl/Config.h"
+#include "AdisUsbz.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include <gsl/gsl_blas.h>
@@ -22,7 +23,28 @@
 #define new DEBUG_NEW
 #endif
 
-#define __USE_VALIDATION_DATA 1
+#define __USE_ADIS16350_DATA 1
+
+#if defined(__USE_ADIS16350_DATA)
+const char ADIS16350_SUPPLY_OUT =	0x02;
+const char ADIS16350_XGYRO_OUT =	0x04;
+const char ADIS16350_YGYRO_OUT =	0x06;
+const char ADIS16350_ZGYRO_OUT =	0x08;
+const char ADIS16350_XACCL_OUT =	0x0A;
+const char ADIS16350_YACCL_OUT =	0x0C;
+const char ADIS16350_ZACCL_OUT =	0x0E;
+const char ADIS16350_XTEMP_OUT =	0x10;
+const char ADIS16350_YTEMP_OUT =	0x12;
+const char ADIS16350_ZTEMP_OUT =	0x14;
+const char ADIS16350_AUX_ADC =		0x16;
+
+const double ADIS16350_SUPLY_SCALE_FACTOR =		1.8315e-1;  // binary, [V]
+const double ADIS16350_GYRO_SCALE_FACTOR =		0.07326;  // 2's complement, [deg/sec]
+//const double ADIS16350_GYRO_SCALE_FACTOR =	0.07326 * boost::math::constants::pi<double>() / 180.0;  // 2's complement, [rad/sec]
+const double ADIS16350_ACCL_SCALE_FACTOR =		2.522e-3;  // 2's complement, [g]
+const double ADIS16350_TEMP_SCALE_FACTOR =		0.1453;  // 2's complement, [deg]
+const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
+#endif
 
 
 namespace {
@@ -572,6 +594,36 @@ void load_imu_data(const std::string &filename, const double ref_gravity, std::v
 	stream.close();
 }
 
+void read_adis16350(AdisUsbz &adis, const double ref_gravity, Acceleration &accel, Gyro &gyro)
+{
+	const short rawXGyro = adis.ReadInt14(ADIS16350_XGYRO_OUT) & 0x3FFF;
+	const short rawYGyro = adis.ReadInt14(ADIS16350_YGYRO_OUT) & 0x3FFF;
+	const short rawZGyro = adis.ReadInt14(ADIS16350_ZGYRO_OUT) & 0x3FFF;
+	const short rawXAccel = adis.ReadInt14(ADIS16350_XACCL_OUT) & 0x3FFF;
+	const short rawYAccel = adis.ReadInt14(ADIS16350_YACCL_OUT) & 0x3FFF;
+	const short rawZAccel = adis.ReadInt14(ADIS16350_ZACCL_OUT) & 0x3FFF;
+
+	accel.x = ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR;
+	accel.y = ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR;
+	accel.z = ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR;
+
+	gyro.x = ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR;
+	gyro.y = ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR;
+	gyro.z = ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR;
+}
+
+void adis_usbz_test(AdisUsbz &adis, const double ref_gravity)
+{
+	Acceleration accel(0.0, 0.0, 0.0);
+	Gyro gyro(0.0, 0.0, 0.0);
+	while (true)
+	{
+		read_adis16350(adis, ref_gravity, accel, gyro);
+
+		std::cout << accel.x << ", " << accel.y << ", " << accel.z << " ; " << gyro.x << ", " << gyro.y << ", " << gyro.z << std::endl;
+	}
+}
+
 }  // unnamed namespace
 
 // "Sigma-Point Kalman Filters for Integrated Navigation", R. van der Merwe and Eric A. Wan,
@@ -630,7 +682,25 @@ void imu_filter_with_calibration()
 	gsl_matrix_free(accel_calibration_covar);
 	gsl_matrix_free(gyro_calibration_covar);
 
-#if defined(__USE_VALIDATION_DATA)
+#if defined(__USE_ADIS16350_DATA)
+	AdisUsbz adis;
+
+#if defined(UNICODE) || defined(_UNICODE)
+	if (!adis.Initialize(L"\\\\.\\Ezusb-0"))
+#else
+	if (!adis.Initialize("\\\\.\\Ezusb-0"))
+#endif
+	{
+		std::cout << "fail to initialize ADISUSBZ" << std::endl;
+		return;
+	}
+
+	// test ADISUSBZ
+	//adis_usbz_test(adis, g_true);
+
+		Acceleration accel_measured(0.0, 0.0, 0.0);
+		Gyro gyro_measured(0.0, 0.0, 0.0);
+#else
 	// load validation data
 	const size_t Ninitial = 10000;
 	const size_t Nstep = Ninitial;
@@ -649,7 +719,7 @@ void imu_filter_with_calibration()
 	//gsl_vector *w_initial = gsl_vector_alloc(inputDim);
 
 	{
-#if !defined(__USE_VALIDATION_DATA)
+#if defined(__USE_ADIS16350_DATA)
 		const size_t Ninitial = 10000;
 #endif
 
@@ -657,21 +727,22 @@ void imu_filter_with_calibration()
 		double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
 		for (size_t i = 0; i < Ninitial; ++i)
 		{
-#if defined(__USE_VALIDATION_DATA)
+#if defined(__USE_ADIS16350_DATA)
+			read_adis16350(adis, g_true, accel_measured, gyro_measured);
+
+			gsl_vector_set(accel_measurement, 0, accel_measured.x);
+			gsl_vector_set(accel_measurement, 1, accel_measured.y);
+			gsl_vector_set(accel_measurement, 2, accel_measured.z);
+			gsl_vector_set(gyro_measurement, 0, gyro_measured.x);
+			gsl_vector_set(gyro_measurement, 1, gyro_measured.y);
+			gsl_vector_set(gyro_measurement, 2, gyro_measured.z);
+#else
 			gsl_vector_set(accel_measurement, 0, accels[i].x);
 			gsl_vector_set(accel_measurement, 1, accels[i].y);
 			gsl_vector_set(accel_measurement, 2, accels[i].z);
 			gsl_vector_set(gyro_measurement, 0, accels[i].x);
 			gsl_vector_set(gyro_measurement, 1, accels[i].y);
 			gsl_vector_set(gyro_measurement, 2, accels[i].z);
-#else
-			// FIXME [add] >>
-			gsl_vector_set(accel_measurement, 0, );
-			gsl_vector_set(accel_measurement, 1, );
-			gsl_vector_set(accel_measurement, 2, );
-			gsl_vector_set(gyro_measurement, 0, );
-			gsl_vector_set(gyro_measurement, 1, );
-			gsl_vector_set(gyro_measurement, 2, );
 #endif
 
 			calculate_calibrated_acceleration(accel_calibration_param, accel_measurement, accel_measurement_calibrated);
@@ -773,7 +844,7 @@ void imu_filter_with_calibration()
 	// method #1
 	// 1-based time step. 0-th time step is initial
 	gsl_vector *actualMeasurement = gsl_vector_alloc(outputDim);
-#if !defined(__USE_VALIDATION_DATA)
+#if defined(__USE_ADIS16350_DATA)
 	const size_t Nstep = 10000;
 #endif
 	size_t step = 0;
@@ -802,22 +873,22 @@ void imu_filter_with_calibration()
 		}
 
 		//
-		// FIXME [add] >>
-#if defined(__USE_VALIDATION_DATA)
+#if defined(__USE_ADIS16350_DATA)
+		read_adis16350(adis, g_true, accel_measured, gyro_measured);
+
+		gsl_vector_set(accel_measurement, 0, accel_measured.x);
+		gsl_vector_set(accel_measurement, 1, accel_measured.y);
+		gsl_vector_set(accel_measurement, 2, accel_measured.z);
+		gsl_vector_set(gyro_measurement, 0, gyro_measured.x);
+		gsl_vector_set(gyro_measurement, 1, gyro_measured.y);
+		gsl_vector_set(gyro_measurement, 2, gyro_measured.z);
+#else
 		gsl_vector_set(accel_measurement, 0, accels[step].x);
 		gsl_vector_set(accel_measurement, 1, accels[step].y);
 		gsl_vector_set(accel_measurement, 2, accels[step].z);
 		gsl_vector_set(gyro_measurement, 0, gyros[step].x);
 		gsl_vector_set(gyro_measurement, 1, gyros[step].y);
 		gsl_vector_set(gyro_measurement, 2, gyros[step].z);
-#else
-		// FIXME [add] >>
-		gsl_vector_set(accel_measurement, 0, );
-		gsl_vector_set(accel_measurement, 1, );
-		gsl_vector_set(accel_measurement, 2, );
-		gsl_vector_set(gyro_measurement, 0, );
-		gsl_vector_set(gyro_measurement, 1, );
-		gsl_vector_set(gyro_measurement, 2, );
 #endif
 
 		calculate_calibrated_acceleration(accel_calibration_param, accel_measurement, accel_measurement_calibrated);
