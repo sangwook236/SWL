@@ -286,6 +286,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ImuFilterRunner.h"
+				>
+			</File>
+			<File
 				RelativePath=".\ImuSystem.h"
 				>
 			</File>

@@ -1,5 +1,5 @@
-#if !defined(__SWL_RND_UTIL_TEST_ADIS_USBZ__H_)
-#define __SWL_RND_UTIL_TEST_ADIS_USBZ__H_ 1
+#if !defined(__SWL_RND_UTIL_TEST__ADIS_USBZ__H_)
+#define __SWL_RND_UTIL_TEST__ADIS_USBZ__H_ 1
 
 
 // Internal file : BaseProcessing/AdisUsbz.h
@@ -35,4 +35,4 @@ private:
 };
 
 
-#endif  // __SWL_RND_UTIL_TEST_ADIS_USBZ__H_
+#endif  // __SWL_RND_UTIL_TEST__ADIS_USBZ__H_
