@@ -196,6 +196,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ImuFilterRunner.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ImuFilterWithCalibration.cpp"
 				>
 			</File>

@@ -6,6 +6,9 @@
 #include <boost/smart_ptr.hpp>
 #include <vector>
 
+//#define __USE_ADIS16350_DATA 1
+
+
 namespace swl {
 class DiscreteExtendedKalmanFilter;
 }
