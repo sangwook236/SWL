@@ -649,11 +649,6 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial)
 
 void ImuFilterRunner::initializeGravity(const size_t Ninitial, const std::vector<Acceleration> &accels, const std::vector<Gyro> &gyros)
 {
-	gsl_vector *measuredAccel_ = gsl_vector_alloc(3);
-	gsl_vector *measuredAngularVel_ = gsl_vector_alloc(3);
-	gsl_vector *calibratedAccel_ = gsl_vector_alloc(3);
-	gsl_vector *calibratedAngularVel_ = gsl_vector_alloc(3);
-
 	double accel_x_sum = 0.0, accel_y_sum = 0.0, accel_z_sum = 0.0;
 	double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
 
@@ -662,9 +657,9 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial, const std::vector
 		gsl_vector_set(measuredAccel_, 0, accels[i].x);
 		gsl_vector_set(measuredAccel_, 1, accels[i].y);
 		gsl_vector_set(measuredAccel_, 2, accels[i].z);
-		gsl_vector_set(measuredAngularVel_, 0, gyros[i].x);
-		gsl_vector_set(measuredAngularVel_, 1, gyros[i].y);
-		gsl_vector_set(measuredAngularVel_, 2, gyros[i].z);
+		//gsl_vector_set(measuredAngularVel_, 0, gyros[i].x);
+		//gsl_vector_set(measuredAngularVel_, 1, gyros[i].y);
+		//gsl_vector_set(measuredAngularVel_, 2, gyros[i].z);
 
 		calculateCalibratedAcceleration(measuredAccel_, calibratedAccel_);
 		//calculateCalibratedAngularRate(measuredAngularVel_, calibratedAngularVel_);
@@ -882,10 +877,19 @@ void imu_filter_with_calibration()
 		return;
 	}
 
+	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, &adis);
+#else
+	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, NULL);
+#endif
+
+	// load calibration parameters
+	std::cout << "load calibration parameters ..." << std::endl;
+	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
+	runner.loadCalibrationParam(calibration_filename);
+
+#if defined(__USE_ADIS16350_DATA)
 	// test ADISUSBZ
 	//ImuFilterRunner::testAdisUsbz(Ntest);
-
-	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, &adis);
 
 	std::cout << "set an initial gravity ..." << std::endl;
 	// set an initial gravity
@@ -899,8 +903,6 @@ void imu_filter_with_calibration()
 	// load validation data
 	ImuFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", accels, gyros);
 	//ImuFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", accels, gyros);
-
-	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, NULL);
 
 	std::cout << "set an initial gravity ..." << std::endl;
 	// set an initial gravity
@@ -970,18 +972,13 @@ void imu_filter_with_calibration()
 	gsl_matrix_free(Qd);  Qd = NULL;
 	gsl_matrix_free(Rd);  Rd = NULL;
 
-	// load calibration parameters
-	std::cout << "load calibration parameters ..." << std::endl;
-	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
-	runner.loadCalibrationParam(calibration_filename);
-
 	// extended Kalman filtering
 	std::cout << "start extended Kalman filtering ..." << std::endl;
 
 #if defined(__USE_ADIS16350_DATA)
 	const size_t Nstep = 10000;
 #else
-	const size_t Nstep = 100;
+	const size_t Nstep = Ninitial;
 #endif
 
 	gsl_vector *measuredAccel = gsl_vector_alloc(3);
