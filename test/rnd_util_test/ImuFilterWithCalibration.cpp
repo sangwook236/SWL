@@ -296,7 +296,7 @@ void imu_filter_with_calibration()
 	const size_t Ninitial = 10000;
 
 	//
-#if defined(__USE_ADIS16350_DATA)
+#if defined(__USE_ADISUSBZ_DATA)
 	AdisUsbz adis;
 
 #if defined(UNICODE) || defined(_UNICODE)
@@ -319,7 +319,7 @@ void imu_filter_with_calibration()
 	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
 	runner.loadCalibrationParam(calibration_filename);
 
-#if defined(__USE_ADIS16350_DATA)
+#if defined(__USE_ADISUSBZ_DATA)
 	// test ADISUSBZ
 	//ImuFilterRunner::testAdisUsbz(Ntest);
 
@@ -407,7 +407,7 @@ void imu_filter_with_calibration()
 	// extended Kalman filtering
 	std::cout << "start extended Kalman filtering ..." << std::endl;
 
-#if defined(__USE_ADIS16350_DATA)
+#if defined(__USE_ADISUSBZ_DATA)
 	const size_t Nstep = 10000;
 #else
 	const size_t Nstep = Ninitial;
@@ -419,7 +419,7 @@ void imu_filter_with_calibration()
 	size_t step = 0;
 	while (step < Nstep)
 	{
-#if defined(__USE_ADIS16350_DATA)
+#if defined(__USE_ADISUSBZ_DATA)
 		runner.readAdisData(measuredAccel, measuredAngularVel);
 #else
 		gsl_vector_set(measuredAccel, 0, accels[step].x);
@@ -439,11 +439,11 @@ void imu_filter_with_calibration()
 		const gsl_vector *pos = runner.getFilteredPos();
 		const gsl_vector *vel = runner.getFilteredVel();
 		const gsl_vector *accel = runner.getFilteredAccel();
-		const gsl_vector *ang = runner.getFilteredAngle();
+		const gsl_vector *quat = runner.getFilteredQuaternion();
 		const gsl_vector *angVel = runner.getFilteredAngularVel();
 
 		std::cout << (step + 1) << " : " << gsl_vector_get(pos, 0) << ", " << gsl_vector_get(pos, 1) << ", " << gsl_vector_get(pos, 2) << " ; " <<
-			gsl_vector_get(ang, 0) << ", " << gsl_vector_get(ang, 1) << ", " << gsl_vector_get(ang, 2) << std::endl;
+			gsl_vector_get(quat, 0) << ", " << gsl_vector_get(quat, 1) << ", " << gsl_vector_get(quat, 2) << ", " << gsl_vector_get(quat, 3) << std::endl;
 
 		++step;
 	}

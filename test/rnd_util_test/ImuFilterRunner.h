@@ -6,7 +6,7 @@
 #include <boost/smart_ptr.hpp>
 #include <vector>
 
-//#define __USE_ADIS16350_DATA 1
+//#define __USE_ADISUSBZ_DATA 1
 
 
 namespace swl {
@@ -72,7 +72,7 @@ public:
 	const gsl_vector * getFilteredPos() const  {  return currPos_;  }
 	const gsl_vector * getFilteredVel() const  {  return currVel_;  }
 	const gsl_vector * getFilteredAccel() const  {  return currAccel_;  }
-	const gsl_vector * getFilteredAngle() const  {  return currAngle_;  }
+	const gsl_vector * getFilteredQuaternion() const  {  return currQuaternion_;  }
 	const gsl_vector * getFilteredAngularVel() const  {  return currAngularVel_;  }
 
 	bool testAdisUsbz(const size_t loopCount);
@@ -111,11 +111,11 @@ private:
 	gsl_vector *prevPos_;  // wrt initial frame
 	gsl_vector *currVel_;  // wrt initial frame
 	gsl_vector *prevVel_;  // wrt initial frame
-	gsl_vector *currAngle_;  // wrt initial frame
-	gsl_vector *prevAngle_;  // wrt initial frame
+	gsl_vector *currQuaternion_;  // wrt initial frame
+	gsl_vector *prevQuaternion_;  // wrt initial frame
 
-	gsl_vector *currAccel_;  // wrt body frame
-	gsl_vector *currAngularVel_;  // wrt body frame
+	gsl_vector *currAccel_;  // wrt initial frame
+	gsl_vector *currAngularVel_;  // wrt initial frame
 };
 
 

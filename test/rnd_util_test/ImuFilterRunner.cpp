@@ -62,7 +62,7 @@ ImuFilterRunner::ImuFilterRunner(const double Ts, const size_t stateDim, const s
 : numAccelParam_(9), numGyroParam_(3), dim_(3), Ts_(Ts), adis_(adis),
   initialGravity_(NULL), accelCalibrationParam_(NULL), accelCalibrationCovariance_(NULL), gyroCalibrationParam_(NULL), gyroCalibrationCovariance_(NULL),
   measuredAccel_(NULL), measuredAngularVel_(NULL), calibratedAccel_(NULL), calibratedAngularVel_(NULL), currAccel_(NULL), currAngularVel_(NULL),
-  actualMeasurement_(NULL), currPos_(NULL), prevPos_(NULL), currVel_(NULL), prevVel_(NULL), currAngle_(NULL), prevAngle_(NULL)
+  actualMeasurement_(NULL), currPos_(NULL), prevPos_(NULL), currVel_(NULL), prevVel_(NULL), currQuaternion_(NULL), prevQuaternion_(NULL)
 {
 	initialGravity_ = gsl_vector_alloc(dim_);
 	//initialAngularVel_ = gsl_vector_alloc(dim_);
@@ -83,15 +83,15 @@ ImuFilterRunner::ImuFilterRunner(const double Ts, const size_t stateDim, const s
 	prevPos_ = gsl_vector_alloc(dim_);
 	currVel_ = gsl_vector_alloc(dim_);
 	prevVel_ = gsl_vector_alloc(dim_);
-	currAngle_ = gsl_vector_alloc(dim_);
-	prevAngle_ = gsl_vector_alloc(dim_);
+	currQuaternion_ = gsl_vector_alloc(4);
+	prevQuaternion_ = gsl_vector_alloc(4);
 
 	gsl_vector_set_zero(currPos_);  // initially stationary
 	gsl_vector_set_zero(prevPos_);  // initially stationary
 	gsl_vector_set_zero(currVel_);  // initially stationary
 	gsl_vector_set_zero(prevVel_);  // initially stationary
-	gsl_vector_set_zero(currAngle_);  // initially stationary
-	gsl_vector_set_zero(prevAngle_);  // initially stationary
+	gsl_vector_set_zero(currQuaternion_);  // initially stationary
+	gsl_vector_set_zero(prevQuaternion_);  // initially stationary
 
 	currAccel_ = gsl_vector_alloc(dim_);
 	currAngularVel_ = gsl_vector_alloc(dim_);
@@ -118,8 +118,8 @@ ImuFilterRunner::~ImuFilterRunner()
 	gsl_vector_free(prevPos_);  prevPos_ = NULL;
 	gsl_vector_free(currVel_);  currVel_ = NULL;
 	gsl_vector_free(prevVel_);  prevVel_ = NULL;
-	gsl_vector_free(currAngle_);  currAngle_ = NULL;
-	gsl_vector_free(prevAngle_);  prevAngle_ = NULL;
+	gsl_vector_free(currQuaternion_);  currQuaternion_ = NULL;
+	gsl_vector_free(prevQuaternion_);  prevQuaternion_ = NULL;
 
 	gsl_vector_free(currAccel_);  currAccel_ = NULL;
 	gsl_vector_free(currAngularVel_);  currAngularVel_ = NULL;
@@ -357,7 +357,7 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial)
 
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
-#if defined(__USE_ADIS16350_DATA)
+#if defined(__USE_ADISUSBZ_DATA)
 		ImuFilterRunner::readAdisData(measuredAccel_, measuredAngularVel_);
 #endif
 
@@ -541,18 +541,49 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 		const gsl_matrix *K = filter.getKalmanGain();
 		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
-		const double Ax = gsl_vector_get(x_hat, 6);
-		const double Ay = gsl_vector_get(x_hat, 7);
-		const double Az = gsl_vector_get(x_hat, 8);
-		const double Wx = gsl_vector_get(x_hat, 13);
-		const double Wy = gsl_vector_get(x_hat, 14);
-		const double Wz = gsl_vector_get(x_hat, 15);
+#if 1
+		// FIXME [modify] >> wrt body frame, but not initial frame
+		const double &Ax = gsl_vector_get(x_hat, 6);
+		const double &Ay = gsl_vector_get(x_hat, 7);
+		const double &Az = gsl_vector_get(x_hat, 8);
+		const double &E0 = gsl_vector_get(x_hat, 9);
+		const double &E1 = gsl_vector_get(x_hat, 10);
+		const double &E2 = gsl_vector_get(x_hat, 11);
+		const double &E3 = gsl_vector_get(x_hat, 12);
+		const double &Wx = gsl_vector_get(x_hat, 13);
+		const double &Wy = gsl_vector_get(x_hat, 14);
+		const double &Wz = gsl_vector_get(x_hat, 15);
 		//gsl_matrix_get(K, 6, 6);
 		//gsl_matrix_get(K, 7, 7);
 		//gsl_matrix_get(K, 8, 8);
 		//gsl_matrix_get(P, 6, 6);
 		//gsl_matrix_get(P, 7, 7);
 		//gsl_matrix_get(P, 8, 8);
+#else
+		//const double &Px = gsl_vector_get(x_hat, 0);
+		//const double &Py = gsl_vector_get(x_hat, 1);
+		//const double &Pz = gsl_vector_get(x_hat, 2);
+		//const double &Vx = gsl_vector_get(x_hat, 3);
+		//const double &Vy = gsl_vector_get(x_hat, 4);
+		//const double &Vz = gsl_vector_get(x_hat, 5);
+		const double &Ap = gsl_vector_get(x_hat, 6);
+		const double &Aq = gsl_vector_get(x_hat, 7);
+		const double &Ar = gsl_vector_get(x_hat, 8);
+		const double &E0 = gsl_vector_get(x_hat, 9);
+		const double &E1 = gsl_vector_get(x_hat, 10);
+		const double &E2 = gsl_vector_get(x_hat, 11);
+		const double &E3 = gsl_vector_get(x_hat, 12);
+		const double &Wp = gsl_vector_get(x_hat, 13);
+		const double &Wq = gsl_vector_get(x_hat, 14);
+		const double &Wr = gsl_vector_get(x_hat, 15);
+
+		const double Ax = 2.0 * ((0.5 - E2*E2 - E3*E3) * Ap + (E1*E2 - E0*E3) * Aq + (E1*E3 + E0*E2) * Ar);
+		const double Ay = 2.0 * ((E1*E2 + E0*E3) * Ap + (0.5 - E1*E1 - E3*E3) * Aq + (E2*E3 - E0*E1) * Ar);
+		const double Az = 2.0 * ((E1*E3 - E0*E2) * Ap + (E2*E3 + E0*E1) * Aq + (0.5 - E1*E1 - E2*E2) * Ar);
+		const double Wx = 2.0 * ((0.5 - E2*E2 - E3*E3) * Wp + (E1*E2 - E0*E3) * Wq + (E1*E3 + E0*E2) * Wr);
+		const double Wy = 2.0 * ((E1*E2 + E0*E3) * Wp + (0.5 - E1*E1 - E3*E3) * Wq + (E2*E3 - E0*E1) * Wr);
+		const double Wz = 2.0 * ((E1*E3 - E0*E2) * Wp + (E2*E3 + E0*E1) * Wq + (0.5 - E1*E1 - E2*E2) * Wr);
+#endif
 
 		gsl_vector_set(currAccel_, 0, Ax);
 		gsl_vector_set(currAccel_, 1, Ay);
@@ -561,19 +592,24 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 		gsl_vector_set(currAngularVel_, 1, Wy);
 		gsl_vector_set(currAngularVel_, 2, Wz);
 
+		// TODO [check] >>
 		gsl_vector_set(currVel_, 0, gsl_vector_get(prevVel_, 0) + Ax * Ts_);
 		gsl_vector_set(currPos_, 0, gsl_vector_get(prevPos_, 0) + gsl_vector_get(prevVel_, 0) * Ts_ + 0.5 * Ax * Ts_*Ts_);
 		gsl_vector_set(currVel_, 1, gsl_vector_get(prevVel_, 1) + Ay * Ts_);
 		gsl_vector_set(currPos_, 1, gsl_vector_get(prevPos_, 1) + gsl_vector_get(prevVel_, 1) * Ts_ + 0.5 * Ay * Ts_*Ts_);
 		gsl_vector_set(currVel_, 2, gsl_vector_get(prevVel_, 2) + Az * Ts_);
 		gsl_vector_set(currPos_, 2, gsl_vector_get(prevPos_, 2) + gsl_vector_get(prevVel_, 2) * Ts_ + 0.5 * Az * Ts_*Ts_);
-		gsl_vector_set(currAngle_, 0, gsl_vector_get(prevAngle_, 0) + Wx * Ts_);
-		gsl_vector_set(currAngle_, 1, gsl_vector_get(prevAngle_, 1) + Wy * Ts_);
-		gsl_vector_set(currAngle_, 2, gsl_vector_get(prevAngle_, 2) + Wz * Ts_);
+		//gsl_vector_set(currAngle_, 0, gsl_vector_get(prevAngle_, 0) + Wx * Ts_);
+		//gsl_vector_set(currAngle_, 1, gsl_vector_get(prevAngle_, 1) + Wy * Ts_);
+		//gsl_vector_set(currAngle_, 2, gsl_vector_get(prevAngle_, 2) + Wz * Ts_);
+		gsl_vector_set(currQuaternion_, 0, E0);
+		gsl_vector_set(currQuaternion_, 1, E1);
+		gsl_vector_set(currQuaternion_, 2, E2);
+		gsl_vector_set(currQuaternion_, 3, E3);
 
 		gsl_vector_memcpy(prevPos_, currPos_);
 		gsl_vector_memcpy(prevVel_, currVel_);
-		gsl_vector_memcpy(prevAngle_, currAngle_);
+		gsl_vector_memcpy(prevQuaternion_, currQuaternion_);
 	}
 
 	return true;
