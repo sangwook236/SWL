@@ -6,7 +6,7 @@
 #include <boost/smart_ptr.hpp>
 #include <vector>
 
-//#define __USE_ADISUSBZ_DATA 1
+//#define __USE_RECEIVED_DATA_FROM_ADISUSBZ 1
 
 
 namespace swl {

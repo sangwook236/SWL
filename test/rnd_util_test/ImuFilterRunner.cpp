@@ -357,7 +357,7 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial)
 
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
-#if defined(__USE_ADISUSBZ_DATA)
+#if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 		ImuFilterRunner::readAdisData(measuredAccel_, measuredAngularVel_);
 #endif
 
