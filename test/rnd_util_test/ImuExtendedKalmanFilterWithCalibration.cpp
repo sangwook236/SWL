@@ -1,11 +1,12 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "ImuFilterRunner.h"
+#include "ImuExtendedKalmanFilterRunner.h"
 #include "AdisUsbz.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #include <gsl/gsl_blas.h>
 #include <iostream>
+#include <cmath>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -283,17 +284,93 @@ private:
 // "A new multi-position calibration method for MEMS inertial navigation systems", Z. F. Syed, P. Aggarwal, C. Goodall, X. Niu, and N. El-Sheimy,
 //	Measurement Science and Technology, vol. 18, pp. 1897-1907, 2007
 
-void imu_filter_with_calibration()
+void imu_extended_Kalman_filter_with_calibration()
 {
 	const size_t stateDim = 22;
 	const size_t inputDim = 3;
 	const size_t outputDim = 6;
 
+	//
+#if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 	// sampling interval
-	//const double Ts = 0.01;  // [sec]
-	const double Ts = 0.016 / 5;  // [sec]
+	const double Ts = 0.01;  // [sec]
 
 	const size_t Ninitial = 10000;
+
+	// test ADISUSBZ
+	//ImuExtendedKalmanFilterRunner::testAdisUsbz(Ntest);
+#else
+	std::vector<ImuExtendedKalmanFilterRunner::Acceleration> accels;
+	std::vector<ImuExtendedKalmanFilterRunner::Gyro> gyros;
+
+	// load validation data
+	//const size_t Nsample = 10000;
+	//const double Ts = 29.46875 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec
+	//const size_t Nsample = 10000;
+	//const double Ts = 30.03125 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\04_x_neg.csv", Nsample, accels, gyros);  // 10000 sample, 30.03125 sec
+	//const size_t Nsample = 10000;
+	//const double Ts = 31.07813 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\05_y_pos.csv", Nsample, accels, gyros);  // 10000 sample, 31.07813 sec
+	//const size_t Nsample = 10000;
+	//const double Ts = 29.28125 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\06_y_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.28125 sec
+	//const size_t Nsample = 10000;
+	//const double Ts = 30.29688 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", Nsample, accels, gyros);  // 10000 sample, 30.29688 sec
+	//const size_t Nsample = 10000;
+	//const double Ts = 29.04688 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec
+
+	//const size_t Nsample = 300;
+	//const double Ts = 12.89111 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
+	const size_t Nsample = 300;
+	const double Ts = 12.82764 / Nsample;
+	ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.82764 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.70313 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.70313 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.78076 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.78076 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.875 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.875 sec, 50 cm
+	//const size_t Nsample = 250;
+	//const double Ts = 10.88989 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.88989 sec, 50 cm
+	//const size_t Nsample = 250;
+	//const double Ts = 10.86011 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
+	//const size_t Nsample = 250;
+	//const double Ts = 10.86011 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 13.04712 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.04712 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.96802 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96802 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.93701 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.93701 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.96875 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 13.01611 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01611 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 13.01514 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01514 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 13.03076 / Nsample;
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.03076 sec, 50 cm
+
+	const size_t Ninitial = Nsample;
+#endif
 
 	//
 #if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
@@ -309,9 +386,9 @@ void imu_filter_with_calibration()
 		return;
 	}
 
-	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, &adis);
+	ImuExtendedKalmanFilterRunner runner(Ts, stateDim, inputDim, outputDim, &adis);
 #else
-	ImuFilterRunner runner(Ts, stateDim, inputDim, outputDim, NULL);
+	ImuExtendedKalmanFilterRunner runner(Ts, stateDim, inputDim, outputDim, NULL);
 #endif
 
 	// load calibration parameters
@@ -319,25 +396,11 @@ void imu_filter_with_calibration()
 	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
 	runner.loadCalibrationParam(calibration_filename);
 
-#if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
-	// test ADISUSBZ
-	//ImuFilterRunner::testAdisUsbz(Ntest);
-
-	std::cout << "set an initial gravity ..." << std::endl;
 	// set an initial gravity
+	std::cout << "set an initial gravity ..." << std::endl;
+#if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 	runner.initializeGravity(Ninitial);
 #else
-	std::vector<ImuFilterRunner::Acceleration> accels;
-	std::vector<ImuFilterRunner::Gyro> gyros;
-	accels.reserve(Ninitial);
-	gyros.reserve(Ninitial);
-
-	// load validation data
-	ImuFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", accels, gyros);
-	//ImuFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", accels, gyros);
-
-	std::cout << "set an initial gravity ..." << std::endl;
-	// set an initial gravity
 	runner.initializeGravity(Ninitial, accels, gyros);
 #endif
 
@@ -359,7 +422,7 @@ void imu_filter_with_calibration()
 	gsl_matrix *Qd = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_zero(Qd);
 	// FIXME [modify] >>
-	const double QQ = 1.0e-8;
+	const double QQ = 1.0e-10;
 	gsl_matrix_set(Qd, 0, 0, QQ);
 	gsl_matrix_set(Qd, 1, 1, QQ);
 	gsl_matrix_set(Qd, 2, 2, QQ);
@@ -388,7 +451,7 @@ void imu_filter_with_calibration()
 	gsl_matrix *Rd = gsl_matrix_alloc(outputDim, outputDim);
 	gsl_matrix_set_zero(Rd);
 	// FIXME [modify] >>
-	const double RR = 1.0e-8;
+	const double RR = 1.0e-10;
 	gsl_matrix_set(Rd, 0, 0, RR);
 	gsl_matrix_set(Rd, 1, 1, RR);
 	gsl_matrix_set(Rd, 2, 2, RR);
@@ -442,7 +505,7 @@ void imu_filter_with_calibration()
 		const gsl_vector *quat = runner.getFilteredQuaternion();
 		const gsl_vector *angVel = runner.getFilteredAngularVel();
 
-		std::cout << (step + 1) << " : " << gsl_vector_get(pos, 0) << ", " << gsl_vector_get(pos, 1) << ", " << gsl_vector_get(pos, 2) << " ; " <<
+		std::cout << (step + 1) << ": " << gsl_vector_get(pos, 0) << ", " << gsl_vector_get(pos, 1) << ", " << gsl_vector_get(pos, 2) << " ; " <<
 			gsl_vector_get(quat, 0) << ", " << gsl_vector_get(quat, 1) << ", " << gsl_vector_get(quat, 2) << ", " << gsl_vector_get(quat, 3) << std::endl;
 
 		++step;

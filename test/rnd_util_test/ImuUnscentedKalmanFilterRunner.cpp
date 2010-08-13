@@ -1,8 +1,8 @@
 #include "stdafx.h"
 #include "swl/Config.h"
-#include "ImuFilterRunner.h"
+#include "ImuUnscentedKalmanFilterRunner.h"
 #include "AdisUsbz.h"
-#include "swl/rnd_util/ExtendedKalmanFilter.h"
+#include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
@@ -25,6 +25,8 @@
 #endif
 
 
+namespace {
+
 const char ADIS16350_SUPPLY_OUT =	0x02;
 const char ADIS16350_XGYRO_OUT =	0x04;
 const char ADIS16350_YGYRO_OUT =	0x06;
@@ -44,21 +46,24 @@ const double ADIS16350_ACCL_SCALE_FACTOR =		2.522e-3;  // 2's complement, [g]
 const double ADIS16350_TEMP_SCALE_FACTOR =		0.1453;  // 2's complement, [deg]
 const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
 
-// [ref] wikipedia
-// (latitude, longitude, altitude) = (phi, lambda, h) = (36.36800, 127.35532, ?)
-// g(phi, h) = 9.780327 * (1 + 0.0053024 * sin(phi)^2 - 0.0000058 * sin(2 * phi)^2) - 3.086 * 10^-6 * h
 const double deg2rad = boost::math::constants::pi<double>() / 180.0;
 const double phi = 36.36800 * deg2rad;  // latitude [rad]
 const double lambda = 127.35532 * deg2rad;  // longitude [rad]
 const double h = 0.0;  // altitude: unknown [m]
 const double sin_phi = std::sin(phi);
 const double sin_2phi = std::sin(2 * phi);
-/*static*/ const double ImuFilterRunner::REF_GRAVITY_ = 9.780327 * (1 + 0.0053024 * sin_phi*sin_phi - 0.0000058 * sin_2phi*sin_2phi) - 3.086e-6 * h;  // [m/sec^2]
+
+}  // unnamed namespace
+
+// [ref] wikipedia
+// (latitude, longitude, altitude) = (phi, lambda, h) = (36.36800, 127.35532, ?)
+// g(phi, h) = 9.780327 * (1 + 0.0053024 * sin(phi)^2 - 0.0000058 * sin(2 * phi)^2) - 3.086 * 10^-6 * h
+/*static*/ const double ImuUnscentedKalmanFilterRunner::REF_GRAVITY_ = 9.780327 * (1.0 + 0.0053024 * sin_phi*sin_phi - 0.0000058 * sin_2phi*sin_2phi) - 3.086e-6 * h;  // [m/sec^2]
 
 // [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Mattthew Barth, pp. 22
-/*static*/ const double ImuFilterRunner::REF_ANGULAR_VEL_ = 7.292115e-5;  // [rad/sec]
+/*static*/ const double ImuUnscentedKalmanFilterRunner::REF_ANGULAR_VEL_ = 7.292115e-5;  // [rad/sec]
 
-ImuFilterRunner::ImuFilterRunner(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, AdisUsbz *adis)
+ImuUnscentedKalmanFilterRunner::ImuUnscentedKalmanFilterRunner(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, AdisUsbz *adis)
 : numAccelParam_(9), numGyroParam_(3), dim_(3), Ts_(Ts), adis_(adis),
   initialGravity_(NULL), accelCalibrationParam_(NULL), accelCalibrationCovariance_(NULL), gyroCalibrationParam_(NULL), gyroCalibrationCovariance_(NULL),
   measuredAccel_(NULL), measuredAngularVel_(NULL), calibratedAccel_(NULL), calibratedAngularVel_(NULL), currAccel_(NULL), currAngularVel_(NULL),
@@ -97,7 +102,7 @@ ImuFilterRunner::ImuFilterRunner(const double Ts, const size_t stateDim, const s
 	currAngularVel_ = gsl_vector_alloc(dim_);
 }
 
-ImuFilterRunner::~ImuFilterRunner()
+ImuUnscentedKalmanFilterRunner::~ImuUnscentedKalmanFilterRunner()
 {
 	gsl_vector_free(initialGravity_);  initialGravity_ = NULL;
 	//gsl_vector_free(initialAngularVel_);  initialAngularVel_ = NULL;
@@ -125,7 +130,7 @@ ImuFilterRunner::~ImuFilterRunner()
 	gsl_vector_free(currAngularVel_);  currAngularVel_ = NULL;
 }
 
-void ImuFilterRunner::calculateCalibratedAcceleration(const gsl_vector *lg, gsl_vector *a_calibrated) const
+void ImuUnscentedKalmanFilterRunner::calculateCalibratedAcceleration(const gsl_vector *lg, gsl_vector *a_calibrated) const
 {
 	const double &b_gx = gsl_vector_get(accelCalibrationParam_, 0);
 	const double &b_gy = gsl_vector_get(accelCalibrationParam_, 1);
@@ -158,7 +163,7 @@ void ImuFilterRunner::calculateCalibratedAcceleration(const gsl_vector *lg, gsl_
 	gsl_vector_set(a_calibrated, 2, g_z);
 }
 
-void ImuFilterRunner::calculateCalibratedAngularRate(const gsl_vector *lw, gsl_vector *w_calibrated) const
+void ImuUnscentedKalmanFilterRunner::calculateCalibratedAngularRate(const gsl_vector *lw, gsl_vector *w_calibrated) const
 {
 	const double &b_wx = gsl_vector_get(gyroCalibrationParam_, 0);
 	const double &b_wy = gsl_vector_get(gyroCalibrationParam_, 1);
@@ -177,7 +182,7 @@ void ImuFilterRunner::calculateCalibratedAngularRate(const gsl_vector *lw, gsl_v
 	gsl_vector_set(w_calibrated, 2, w_z);
 }
 
-bool ImuFilterRunner::loadCalibrationParam(const std::string &filename)
+bool ImuUnscentedKalmanFilterRunner::loadCalibrationParam(const std::string &filename)
 {
 	std::ifstream stream(filename.c_str());
 	if (!stream)
@@ -328,7 +333,7 @@ bool ImuFilterRunner::loadCalibrationParam(const std::string &filename)
 	return true;
 }
 
-bool ImuFilterRunner::readAdisData(gsl_vector *accel, gsl_vector *gyro) const
+bool ImuUnscentedKalmanFilterRunner::readAdisData(gsl_vector *accel, gsl_vector *gyro) const
 {
 	if (!adis_) return false;
 
@@ -350,15 +355,15 @@ bool ImuFilterRunner::readAdisData(gsl_vector *accel, gsl_vector *gyro) const
 	return true;
 }
 
-void ImuFilterRunner::initializeGravity(const size_t Ninitial)
+void ImuUnscentedKalmanFilterRunner::initializeGravity(const size_t Ninitial)
 {
 	double accel_x_sum = 0.0, accel_y_sum = 0.0, accel_z_sum = 0.0;
-	double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
+	//double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
 
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
 #if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
-		ImuFilterRunner::readAdisData(measuredAccel_, measuredAngularVel_);
+		ImuUnscentedKalmanFilterRunner::readAdisData(measuredAccel_, measuredAngularVel_);
 #endif
 
 		calculateCalibratedAcceleration(measuredAccel_, calibratedAccel_);
@@ -380,10 +385,10 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial)
 	//gsl_vector_set(initialAngularVel, 2, gyro_z_sum / Ninitial);
 }
 
-void ImuFilterRunner::initializeGravity(const size_t Ninitial, const std::vector<Acceleration> &accels, const std::vector<Gyro> &gyros)
+void ImuUnscentedKalmanFilterRunner::initializeGravity(const size_t Ninitial, const std::vector<Acceleration> &accels, const std::vector<Gyro> &gyros)
 {
 	double accel_x_sum = 0.0, accel_y_sum = 0.0, accel_z_sum = 0.0;
-	double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
+	//double gyro_x_sum = 0.0, gyro_y_sum = 0.0, gyro_z_sum = 0.0;
 
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
@@ -413,7 +418,7 @@ void ImuFilterRunner::initializeGravity(const size_t Ninitial, const std::vector
 	//gsl_vector_set(initialAngularVel, 2, gyro_z_sum / Ninitial);
 }
 
-bool ImuFilterRunner::testAdisUsbz(const size_t loopCount)
+bool ImuUnscentedKalmanFilterRunner::testAdisUsbz(const size_t loopCount)
 {
 	size_t loop = 0;
 	while (loop++ < loopCount)
@@ -428,7 +433,7 @@ bool ImuFilterRunner::testAdisUsbz(const size_t loopCount)
 	return true;
 }
 
-/*static*/ bool ImuFilterRunner::loadSavedImuData(const std::string &filename, std::vector<Acceleration> &accels, std::vector<Gyro> &gyros)
+/*static*/ bool ImuUnscentedKalmanFilterRunner::loadSavedImuData(const std::string &filename, const size_t &Nsample, std::vector<Acceleration> &accels, std::vector<Gyro> &gyros)
 {
 	std::ifstream stream(filename.c_str());
 
@@ -440,6 +445,9 @@ bool ImuFilterRunner::testAdisUsbz(const size_t loopCount)
 		std::cout << "file open error !!!" << std::endl;
 		return false;
 	}
+
+	accels.reserve(Nsample);
+	gyros.reserve(Nsample);
 
 	// eliminate the 1st 7 lines
 	{
@@ -490,34 +498,35 @@ bool ImuFilterRunner::testAdisUsbz(const size_t loopCount)
 	return true;
 }
 
-bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel)
+bool ImuUnscentedKalmanFilterRunner::runImuFilter(swl::UnscentedKalmanFilterWithAdditiveNoise &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel, const gsl_matrix *Q, const gsl_matrix *R)
 {
 	size_t step2 = step;
 
 	// method #1
 	// 1-based time step. 0-th time step is initial
 
-	// 0. initial estimates: x(0) & P(0)
+	// 1. unscented transformation
+	filter.performUnscentedTransformation();
 
-	// 1. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
-	if (!filter.updateTime(step2, NULL)) return false;
-
+	// 2. time update (prediction): x(k) & P(k)  ==>  x-(k+1) & P-(k+1)
+	if (!filter.updateTime(step2, NULL, Q)) return false;
+/*
 	// save x-(k+1) & P-(k+1)
 	{
 		const gsl_vector *x_hat = filter.getEstimatedState();
 		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
-		const double Ax = gsl_vector_get(x_hat, 6);
-		const double Ay = gsl_vector_get(x_hat, 7);
-		const double Az = gsl_vector_get(x_hat, 8);
-		const double Wx = gsl_vector_get(x_hat, 13);
-		const double Wy = gsl_vector_get(x_hat, 14);
-		const double Wz = gsl_vector_get(x_hat, 15);
+		const double &Ax = gsl_vector_get(x_hat, 6);
+		const double &Ay = gsl_vector_get(x_hat, 7);
+		const double &Az = gsl_vector_get(x_hat, 8);
+		const double &Wx = gsl_vector_get(x_hat, 13);
+		const double &Wy = gsl_vector_get(x_hat, 14);
+		const double &Wz = gsl_vector_get(x_hat, 15);
 		//gsl_matrix_get(P, 6, 6);
 		//gsl_matrix_get(P, 7, 7);
 		//gsl_matrix_get(P, 8, 8);
 	}
-
+*/
 	//
 	calculateCalibratedAcceleration(measuredAccel, calibratedAccel_);
 	calculateCalibratedAngularRate(measuredAngularVel, calibratedAngularVel_);
@@ -533,7 +542,7 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 	++step2;
 
 	// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
-	if (!filter.updateMeasurement(step2, actualMeasurement_, NULL)) return false;
+	if (!filter.updateMeasurement(step2, actualMeasurement_, NULL, R)) return false;
 
 	// save K(k), x(k) & P(k)
 	{
@@ -541,7 +550,7 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 		const gsl_matrix *K = filter.getKalmanGain();
 		const gsl_matrix *P = filter.getStateErrorCovarianceMatrix();
 
-#if 1
+#if 0
 		// FIXME [modify] >> wrt body frame, but not initial frame
 		const double &Ax = gsl_vector_get(x_hat, 6);
 		const double &Ay = gsl_vector_get(x_hat, 7);
@@ -560,12 +569,12 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 		//gsl_matrix_get(P, 7, 7);
 		//gsl_matrix_get(P, 8, 8);
 #else
-		//const double &Px = gsl_vector_get(x_hat, 0);
-		//const double &Py = gsl_vector_get(x_hat, 1);
-		//const double &Pz = gsl_vector_get(x_hat, 2);
-		//const double &Vx = gsl_vector_get(x_hat, 3);
-		//const double &Vy = gsl_vector_get(x_hat, 4);
-		//const double &Vz = gsl_vector_get(x_hat, 5);
+		const double &Px = gsl_vector_get(x_hat, 0);
+		const double &Py = gsl_vector_get(x_hat, 1);
+		const double &Pz = gsl_vector_get(x_hat, 2);
+		const double &Vx = gsl_vector_get(x_hat, 3);
+		const double &Vy = gsl_vector_get(x_hat, 4);
+		const double &Vz = gsl_vector_get(x_hat, 5);
 		const double &Ap = gsl_vector_get(x_hat, 6);
 		const double &Aq = gsl_vector_get(x_hat, 7);
 		const double &Ar = gsl_vector_get(x_hat, 8);
@@ -593,12 +602,21 @@ bool ImuFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, co
 		gsl_vector_set(currAngularVel_, 2, Wz);
 
 		// TODO [check] >>
+#if 1
 		gsl_vector_set(currVel_, 0, gsl_vector_get(prevVel_, 0) + Ax * Ts_);
 		gsl_vector_set(currPos_, 0, gsl_vector_get(prevPos_, 0) + gsl_vector_get(prevVel_, 0) * Ts_ + 0.5 * Ax * Ts_*Ts_);
 		gsl_vector_set(currVel_, 1, gsl_vector_get(prevVel_, 1) + Ay * Ts_);
 		gsl_vector_set(currPos_, 1, gsl_vector_get(prevPos_, 1) + gsl_vector_get(prevVel_, 1) * Ts_ + 0.5 * Ay * Ts_*Ts_);
 		gsl_vector_set(currVel_, 2, gsl_vector_get(prevVel_, 2) + Az * Ts_);
 		gsl_vector_set(currPos_, 2, gsl_vector_get(prevPos_, 2) + gsl_vector_get(prevVel_, 2) * Ts_ + 0.5 * Az * Ts_*Ts_);
+#else
+		gsl_vector_set(currPos_, 0, Py);
+		gsl_vector_set(currPos_, 1, Py);
+		gsl_vector_set(currPos_, 2, Pz);
+		gsl_vector_set(currVel_, 0, Vx);
+		gsl_vector_set(currVel_, 1, Vy);
+		gsl_vector_set(currVel_, 2, Vz);
+#endif
 		//gsl_vector_set(currAngle_, 0, gsl_vector_get(prevAngle_, 0) + Wx * Ts_);
 		//gsl_vector_set(currAngle_, 1, gsl_vector_get(prevAngle_, 1) + Wy * Ts_);
 		//gsl_vector_set(currAngle_, 2, gsl_vector_get(prevAngle_, 2) + Wz * Ts_);

@@ -196,11 +196,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ImuFilterRunner.cpp"
+				RelativePath=".\ImuExtendedKalmanFilterRunner.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuFilterWithCalibration.cpp"
+				RelativePath=".\ImuExtendedKalmanFilterWithCalibration.cpp"
 				>
 			</File>
 			<File
@@ -209,6 +209,14 @@
 			</File>
 			<File
 				RelativePath=".\ImuSystem.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ImuUnscentedKalmanFilterRunner.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\ImuUnscentedKalmanFilterWithCalibration.cpp"
 				>
 			</File>
 			<File
@@ -290,11 +298,15 @@
 				>
 			</File>
 			<File
-				RelativePath=".\ImuFilterRunner.h"
+				RelativePath=".\ImuExtendedKalmanFilterRunner.h"
 				>
 			</File>
 			<File
 				RelativePath=".\ImuSystem.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ImuUnscentedKalmanFilterRunner.h"
 				>
 			</File>
 			<File

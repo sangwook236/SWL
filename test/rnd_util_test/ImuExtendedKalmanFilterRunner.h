@@ -1,5 +1,5 @@
-#if !defined(__SWL_RND_UTIL_TEST__IMU_FILTER_WITH_CALIBRATION__H_)
-#define __SWL_RND_UTIL_TEST__IMU_FILTER_WITH_CALIBRATION__H_ 1
+#if !defined(__SWL_RND_UTIL_TEST__IMU_EXTENDED_KALMAN_FILTER_WITH_CALIBRATION__H_)
+#define __SWL_RND_UTIL_TEST__IMU_EXTENDED_KALMAN_FILTER_WITH_CALIBRATION__H_ 1
 
 
 #include <gsl/gsl_blas.h>
@@ -16,10 +16,10 @@ class DiscreteExtendedKalmanFilter;
 class AdisUsbz;
 
 
-class ImuFilterRunner
+class ImuExtendedKalmanFilterRunner
 {
 public:
-	//typedef ImuFilterRunner base_type;
+	//typedef ImuExtendedKalmanFilterRunner base_type;
 
 private:
 	static const double REF_GRAVITY_;
@@ -51,12 +51,12 @@ public:
 	};
 
 public:
-	ImuFilterRunner(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, AdisUsbz *adis);
-	~ImuFilterRunner();
+	ImuExtendedKalmanFilterRunner(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, AdisUsbz *adis);
+	~ImuExtendedKalmanFilterRunner();
 
 private:
-	ImuFilterRunner(const ImuFilterRunner &rhs);
-	ImuFilterRunner & operator=(const ImuFilterRunner &rhs);
+	ImuExtendedKalmanFilterRunner(const ImuExtendedKalmanFilterRunner &rhs);
+	ImuExtendedKalmanFilterRunner & operator=(const ImuExtendedKalmanFilterRunner &rhs);
 
 public:
 	bool runImuFilter(swl::DiscreteExtendedKalmanFilter &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel);
@@ -77,7 +77,7 @@ public:
 
 	bool testAdisUsbz(const size_t loopCount);
 
-	static bool loadSavedImuData(const std::string &filename, std::vector<Acceleration> &accels, std::vector<Gyro> &gyros);
+	static bool loadSavedImuData(const std::string &filename, const size_t &Nsample, std::vector<Acceleration> &accels, std::vector<Gyro> &gyros);
 
 private:
 	void calculateCalibratedAcceleration(const gsl_vector *lg, gsl_vector *a_calibrated) const;
@@ -119,4 +119,4 @@ private:
 };
 
 
-#endif  // __SWL_RND_UTIL_TEST__IMU_FILTER_WITH_CALIBRATION__H_
+#endif  // __SWL_RND_UTIL_TEST__IMU_EXTENDED_KALMAN_FILTER_WITH_CALIBRATION__H_
