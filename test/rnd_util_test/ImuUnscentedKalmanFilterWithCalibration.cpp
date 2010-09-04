@@ -103,14 +103,21 @@ public:
 		const double &w20 = noise ? gsl_vector_get(noise, 20) : 0.0;
 		const double &w21 = noise ? gsl_vector_get(noise, 21) : 0.0;
 
-		// FIXME [check] >> compensate the local grivity
-		const double &g_ix = 0.0;  //gsl_vector_get(initial_gravity_, 0);
-		const double &g_iy = 0.0;  //gsl_vector_get(initial_gravity_, 1);
-		const double &g_iz = 0.0;  //gsl_vector_get(initial_gravity_, 2);
+#if 0
+		// compensate the local grivity
+		const double &g_ix = gsl_vector_get(initial_gravity_, 0);
+		const double &g_iy = gsl_vector_get(initial_gravity_, 1);
+		const double &g_iz = gsl_vector_get(initial_gravity_, 2);
 
 		const double dvdt_x = 2.0 * ((0.5 - E2*E2 - E3*E3)*Ap + (E1*E2 - E0*E3)*Aq + (E1*E3 + E0*E2)*Ar) + g_ix;
 		const double dvdt_y = 2.0 * ((E1*E2 + E0*E3)*Ap + (0.5 - E1*E1 - E3*E3)*Aq + (E2*E3 - E0*E1)*Ar) + g_iy;
 		const double dvdt_z = 2.0 * ((E1*E3 - E0*E2)*Ap + (E2*E3 + E0*E1)*Aq + (0.5 - E1*E1 - E2*E2)*Ar) + g_iz;
+#else
+		// compensate the local grivity in acceleration's measurements
+		const double dvdt_x = 2.0 * ((0.5 - E2*E2 - E3*E3)*Ap + (E1*E2 - E0*E3)*Aq + (E1*E3 + E0*E2)*Ar);
+		const double dvdt_y = 2.0 * ((E1*E2 + E0*E3)*Ap + (0.5 - E1*E1 - E3*E3)*Aq + (E2*E3 - E0*E1)*Ar);
+		const double dvdt_z = 2.0 * ((E1*E3 - E0*E2)*Ap + (E2*E3 + E0*E1)*Aq + (0.5 - E1*E1 - E2*E2)*Ar);
+#endif
 
 		const double dPhi = Wp * Ts_;
 		const double dTheta = Wq * Ts_;
@@ -135,7 +142,7 @@ public:
 		const double f7 = Aq + w7 * Ts_;
 		const double f8 = Ar + w8 * Ts_;
 #elif 0
-		// FIXME [check] >> compensate the local grivity
+		// compensate the local grivity
 		const double g_p = 2.0 * ((0.5 - E2*E2 - E3*E3)*g_ix + (E1*E2 + E0*E3)*g_iy + (E1*E3 - E0*E2)*g_iz);
 		const double g_q = 2.0 * ((E1*E2 - E0*E3)*g_ix + (0.5 - E1*E1 - E3*E3)*g_iy + (E2*E3 + E0*E1)*g_iz);
 		const double g_r = 2.0 * ((E1*E3 + E0*E2)*g_ix + (E2*E3 - E0*E1)*g_iy + (0.5 - E1*E1 - E2*E2)*g_iz);
@@ -145,7 +152,7 @@ public:
 		const double f7 = (Aq + g_q) * exp_bat + w7 * (1.0 - exp_bat);
 		const double f8 = (Ar + g_r) * exp_bat + w8 * (1.0 - exp_bat);
 #else
-		// FIXME [check] >> compensate the local grivity in acceleration's measurements
+		// compensate the local grivity in acceleration's measurements
 		const double exp_bat = std::exp(-beta_a_ * Ts_);
 		const double f6 = Ap * exp_bat + w6 * (1.0 - exp_bat);
 		const double f7 = Aq * exp_bat + w7 * (1.0 - exp_bat);
@@ -160,7 +167,7 @@ public:
 		const double f14 = Wq + w14 * Ts_;
 		const double f15 = Wr + w15 * Ts_;
 #elif 0
-		// FIXME [check] >> compensate the earth's angular rate
+		// compensate the earth's angular rate
 		const double wc_p = 0.0;
 		const double wc_q = 0.0;
 		const double wc_r = 0.0;
@@ -170,7 +177,7 @@ public:
 		const double f14 = (Wq - wc_q) * exp_bwt + w14 * (1.0 - exp_bwt);
 		const double f15 = (Wr - wc_r) * exp_bwt + w15 * (1.0 - exp_bwt);
 #else
-		// FIXME [check] >> compensate the earth's angular rate in angular rate's measurements
+		// compensate the earth's angular rate in angular rate's measurements
 		const double exp_bwt = std::exp(-beta_w_ * Ts_);
 		const double f13 = Wp * exp_bwt + w13 * (1.0 - exp_bwt);
 		const double f14 = Wq * exp_bwt + w14 * (1.0 - exp_bwt);
