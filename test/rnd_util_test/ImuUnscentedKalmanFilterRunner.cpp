@@ -550,11 +550,6 @@ bool ImuUnscentedKalmanFilterRunner::runImuFilter(swl::UnscentedKalmanFilterWith
 		const double wc_q = 0.0;
 		const double wc_r = 0.0;
 
-		// FIXME [delete] >>
-		const double &ax = gsl_vector_get(calibratedAccel_, 0);
-		const double &ay = gsl_vector_get(calibratedAccel_, 1);
-		const double &az = gsl_vector_get(calibratedAccel_, 2);
-
 		gsl_vector_set(actualMeasurement_, 0, gsl_vector_get(calibratedAccel_, 0) - g_p);
 		gsl_vector_set(actualMeasurement_, 1, gsl_vector_get(calibratedAccel_, 1) - g_q);
 		gsl_vector_set(actualMeasurement_, 2, gsl_vector_get(calibratedAccel_, 2) - g_r);
