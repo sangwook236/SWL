@@ -411,8 +411,8 @@ void imu_extended_Kalman_filter_with_calibration()
 
 	// load calibration parameters
 	std::cout << "load calibration parameters ..." << std::endl;
-	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
-	runner.loadCalibrationParam(calibration_filename);
+	const std::string calibration_param_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
+	runner.loadCalibrationParam(calibration_param_filename);
 
 	// set an initial gravity
 	std::cout << "set an initial gravity ..." << std::endl;

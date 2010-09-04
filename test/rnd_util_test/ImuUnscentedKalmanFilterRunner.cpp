@@ -498,7 +498,7 @@ bool ImuUnscentedKalmanFilterRunner::testAdisUsbz(const size_t loopCount)
 	return true;
 }
 
-bool ImuUnscentedKalmanFilterRunner::runImuFilter(swl::UnscentedKalmanFilterWithAdditiveNoise &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel, const gsl_matrix *Q, const gsl_matrix *R)
+bool ImuUnscentedKalmanFilterRunner::runImuFilter(swl::UnscentedKalmanFilterWithAdditiveNoise &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel, const gsl_matrix *Q, const gsl_matrix *R, const gsl_vector *initialGravity)
 {
 	size_t step2 = step;
 
@@ -531,12 +531,37 @@ bool ImuUnscentedKalmanFilterRunner::runImuFilter(swl::UnscentedKalmanFilterWith
 	calculateCalibratedAcceleration(measuredAccel, calibratedAccel_);
 	calculateCalibratedAngularRate(measuredAngularVel, calibratedAngularVel_);
 
-	gsl_vector_set(actualMeasurement_, 0, gsl_vector_get(calibratedAccel_, 0));
-	gsl_vector_set(actualMeasurement_, 1, gsl_vector_get(calibratedAccel_, 1));
-	gsl_vector_set(actualMeasurement_, 2, gsl_vector_get(calibratedAccel_, 2));
-	gsl_vector_set(actualMeasurement_, 3, gsl_vector_get(calibratedAngularVel_, 0));
-	gsl_vector_set(actualMeasurement_, 4, gsl_vector_get(calibratedAngularVel_, 1));
-	gsl_vector_set(actualMeasurement_, 5, gsl_vector_get(calibratedAngularVel_, 2));
+	// compensate the local gravity & the earth's angular rate
+	{
+		const gsl_vector *x_hat = filter.getEstimatedState();
+		const double &E0 = gsl_vector_get(x_hat, 9);
+		const double &E1 = gsl_vector_get(x_hat, 10);
+		const double &E2 = gsl_vector_get(x_hat, 11);
+		const double &E3 = gsl_vector_get(x_hat, 12);
+	
+		const double &g_ix = gsl_vector_get(initialGravity, 0);
+		const double &g_iy = gsl_vector_get(initialGravity, 1);
+		const double &g_iz = gsl_vector_get(initialGravity, 2);
+
+		const double g_p = 2.0 * ((0.5 - E2*E2 - E3*E3)*g_ix + (E1*E2 + E0*E3)*g_iy + (E1*E3 - E0*E2)*g_iz);
+		const double g_q = 2.0 * ((E1*E2 - E0*E3)*g_ix + (0.5 - E1*E1 - E3*E3)*g_iy + (E2*E3 + E0*E1)*g_iz);
+		const double g_r = 2.0 * ((E1*E3 + E0*E2)*g_ix + (E2*E3 - E0*E1)*g_iy + (0.5 - E1*E1 - E2*E2)*g_iz);
+		const double wc_p = 0.0;
+		const double wc_q = 0.0;
+		const double wc_r = 0.0;
+
+		// FIXME [delete] >>
+		const double &ax = gsl_vector_get(calibratedAccel_, 0);
+		const double &ay = gsl_vector_get(calibratedAccel_, 1);
+		const double &az = gsl_vector_get(calibratedAccel_, 2);
+
+		gsl_vector_set(actualMeasurement_, 0, gsl_vector_get(calibratedAccel_, 0) - g_p);
+		gsl_vector_set(actualMeasurement_, 1, gsl_vector_get(calibratedAccel_, 1) - g_q);
+		gsl_vector_set(actualMeasurement_, 2, gsl_vector_get(calibratedAccel_, 2) - g_r);
+		gsl_vector_set(actualMeasurement_, 3, gsl_vector_get(calibratedAngularVel_, 0) - wc_p);
+		gsl_vector_set(actualMeasurement_, 4, gsl_vector_get(calibratedAngularVel_, 1) - wc_q);
+		gsl_vector_set(actualMeasurement_, 5, gsl_vector_get(calibratedAngularVel_, 2) - wc_r);
+	}
 
 	// advance time step
 	++step2;

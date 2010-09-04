@@ -26,7 +26,7 @@ public:
 	ImuSystem(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, const size_t processNoiseDim, const size_t observationNoiseDim, const gsl_vector *initial_gravity)
 	: base_type(stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim),
 	  Ts_(Ts), f_eval_(NULL), h_eval_(NULL), initial_gravity_(NULL),
-	  beta_a_(1.0), beta_w_(1.0)
+	  beta_a_(10.0), beta_w_(10.0)
 	{
 		//
 		f_eval_ = gsl_vector_alloc(stateDim_);
@@ -103,9 +103,10 @@ public:
 		const double &w20 = noise ? gsl_vector_get(noise, 20) : 0.0;
 		const double &w21 = noise ? gsl_vector_get(noise, 21) : 0.0;
 
-		const double &g_ix = gsl_vector_get(initial_gravity_, 0);
-		const double &g_iy = gsl_vector_get(initial_gravity_, 1);
-		const double &g_iz = gsl_vector_get(initial_gravity_, 2);
+		// FIXME [check] >> compensate the local grivity
+		const double &g_ix = 0.0;  //gsl_vector_get(initial_gravity_, 0);
+		const double &g_iy = 0.0;  //gsl_vector_get(initial_gravity_, 1);
+		const double &g_iz = 0.0;  //gsl_vector_get(initial_gravity_, 2);
 
 		const double dvdt_x = 2.0 * ((0.5 - E2*E2 - E3*E3)*Ap + (E1*E2 - E0*E3)*Aq + (E1*E3 + E0*E2)*Ar) + g_ix;
 		const double dvdt_y = 2.0 * ((E1*E2 + E0*E3)*Ap + (0.5 - E1*E1 - E3*E3)*Aq + (E2*E3 - E0*E1)*Ar) + g_iy;
@@ -134,10 +135,15 @@ public:
 		const double f7 = Aq + w7 * Ts_;
 		const double f8 = Ar + w8 * Ts_;
 #else
+		// FIXME [check] >> compensate the local grivity
+		const double g_p = 0.0;  //2.0 * ((0.5 - E2*E2 - E3*E3)*g_ix + (E1*E2 + E0*E3)*g_iy + (E1*E3 - E0*E2)*g_iz);
+		const double g_q = 0.0;  //2.0 * ((E1*E2 - E0*E3)*g_ix + (0.5 - E1*E1 - E3*E3)*g_iy + (E2*E3 + E0*E1)*g_iz);
+		const double g_r = 0.0;  //2.0 * ((E1*E3 + E0*E2)*g_ix + (E2*E3 - E0*E1)*g_iy + (0.5 - E1*E1 - E2*E2)*g_iz);
+
 		const double exp_bat = std::exp(-beta_a_ * Ts_);
-		const double f6 = Ap * exp_bat + w6 * (1.0 - exp_bat);
-		const double f7 = Aq * exp_bat + w7 * (1.0 - exp_bat);
-		const double f8 = Ar * exp_bat + w8 * (1.0 - exp_bat);
+		const double f6 = (Ap + g_p) * exp_bat + w6 * (1.0 - exp_bat);
+		const double f7 = (Aq + g_q) * exp_bat + w7 * (1.0 - exp_bat);
+		const double f8 = (Ar + g_r) * exp_bat + w8 * (1.0 - exp_bat);
 #endif
 		const double f9 = coeff1 * E0 - coeff2 * (dPhi*E1 + dTheta*E2 + dPsi*E3);
 		const double f10 = coeff1 * E1 - coeff2 * (-dPhi*E0 - dPsi*E2 + dTheta*E3);
@@ -148,10 +154,15 @@ public:
 		const double f14 = Wq + w14 * Ts_;
 		const double f15 = Wr + w15 * Ts_;
 #else
+		// FIXME [check] >> compensate the earth's angular rate
+		const double wc_p = 0.0;
+		const double wc_q = 0.0;
+		const double wc_r = 0.0;
+
 		const double exp_bwt = std::exp(-beta_w_ * Ts_);
-		const double f13 = Wp * exp_bwt + w13 * (1.0 - exp_bwt);
-		const double f14 = Wq * exp_bwt + w14 * (1.0 - exp_bwt);
-		const double f15 = Wr * exp_bwt + w15 * (1.0 - exp_bwt);
+		const double f13 = (Wp - wc_p) * exp_bwt + w13 * (1.0 - exp_bwt);
+		const double f14 = (Wq - wc_q) * exp_bwt + w14 * (1.0 - exp_bwt);
+		const double f15 = (Wr - wc_r) * exp_bwt + w15 * (1.0 - exp_bwt);
 #endif
 		const double f16 = Abp + w16 * Ts_;
 		const double f17 = Abq + w17 * Ts_;
@@ -386,8 +397,8 @@ void imu_unscented_Kalman_filter_with_calibration()
 
 	// load calibration parameters
 	std::cout << "load calibration parameters ..." << std::endl;
-	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
-	runner.loadCalibrationParam(calibration_filename);
+	const std::string calibration_param_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
+	runner.loadCalibrationParam(calibration_param_filename);
 
 	// set an initial gravity
 	std::cout << "set an initial gravity ..." << std::endl;
@@ -402,9 +413,9 @@ void imu_unscented_Kalman_filter_with_calibration()
 	//
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_vector_set_zero(x0);
-	gsl_vector_set(x0, 6, -gsl_vector_get(initialGravity, 0));  // a_p = g_initial_x
-	gsl_vector_set(x0, 7, -gsl_vector_get(initialGravity, 1));  // a_q = g_initial_y
-	gsl_vector_set(x0, 8, -gsl_vector_get(initialGravity, 2));  // a_r = g_initial_z
+	//gsl_vector_set(x0, 6, -gsl_vector_get(initialGravity, 0));  // a_p = g_initial_x
+	//gsl_vector_set(x0, 7, -gsl_vector_get(initialGravity, 1));  // a_q = g_initial_y
+	//gsl_vector_set(x0, 8, -gsl_vector_get(initialGravity, 2));  // a_r = g_initial_z
 	gsl_vector_set(x0, 9, 1.0);  // e0 = 1.0
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_identity(P0);
@@ -486,7 +497,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 		gsl_vector_set(measuredAngularVel, 2, gyros[step].z);
 #endif
 
-		if (!runner.runImuFilter(filter, step, measuredAccel, measuredAngularVel, Q, R))
+		if (!runner.runImuFilter(filter, step, measuredAccel, measuredAngularVel, Q, R, initialGravity))
 		{
 			std::cout << "IMU filtering error !!!" << std::endl;
 			return;

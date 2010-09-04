@@ -59,7 +59,7 @@ private:
 	ImuUnscentedKalmanFilterRunner & operator=(const ImuUnscentedKalmanFilterRunner &rhs);
 
 public:
-	bool runImuFilter(swl::UnscentedKalmanFilterWithAdditiveNoise &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel, const gsl_matrix *Q, const gsl_matrix *R);
+	bool runImuFilter(swl::UnscentedKalmanFilterWithAdditiveNoise &filter, const size_t step, const gsl_vector *measuredAccel, const gsl_vector *measuredAngularVel, const gsl_matrix *Q, const gsl_matrix *R, const gsl_vector *initialGravity);
 
 	void initializeGravity(const size_t Ninitial);
 	void initializeGravity(const size_t Ninitial, const std::vector<Acceleration> &accels, const std::vector<Gyro> &gyros);
