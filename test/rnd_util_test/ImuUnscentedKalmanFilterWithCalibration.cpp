@@ -25,7 +25,8 @@ public:
 public:
 	ImuSystem(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, const size_t processNoiseDim, const size_t observationNoiseDim, const gsl_vector *initial_gravity)
 	: base_type(stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim),
-	  Ts_(Ts), f_eval_(NULL), h_eval_(NULL), initial_gravity_(NULL)
+	  Ts_(Ts), f_eval_(NULL), h_eval_(NULL), initial_gravity_(NULL),
+	  beta_a_(1.0), beta_w_(1.0)
 	{
 		//
 		f_eval_ = gsl_vector_alloc(stateDim_);
@@ -128,16 +129,30 @@ public:
 		const double f3 = Vx + dvdt_x * Ts_;
 		const double f4 = Vy + dvdt_y * Ts_;
 		const double f5 = Vz + dvdt_z * Ts_;
+#if 0
 		const double f6 = Ap + w6 * Ts_;
 		const double f7 = Aq + w7 * Ts_;
 		const double f8 = Ar + w8 * Ts_;
+#else
+		const double exp_bat = std::exp(-beta_a_ * Ts_);
+		const double f6 = Ap * exp_bat + w6 * (1.0 - exp_bat);
+		const double f7 = Aq * exp_bat + w7 * (1.0 - exp_bat);
+		const double f8 = Ar * exp_bat + w8 * (1.0 - exp_bat);
+#endif
 		const double f9 = coeff1 * E0 - coeff2 * (dPhi*E1 + dTheta*E2 + dPsi*E3);
 		const double f10 = coeff1 * E1 - coeff2 * (-dPhi*E0 - dPsi*E2 + dTheta*E3);
 		const double f11 = coeff1 * E2 - coeff2 * (-dTheta*E0 + dPsi*E1 - dPhi*E3);
 		const double f12 = coeff1 * E3 - coeff2 * (-dPsi*E0 - dTheta*E1 + dPhi*E2);
+#if 0
 		const double f13 = Wp + w13 * Ts_;
 		const double f14 = Wq + w14 * Ts_;
 		const double f15 = Wr + w15 * Ts_;
+#else
+		const double exp_bwt = std::exp(-beta_w_ * Ts_);
+		const double f13 = Wp * exp_bwt + w13 * (1.0 - exp_bwt);
+		const double f14 = Wq * exp_bwt + w14 * (1.0 - exp_bwt);
+		const double f15 = Wr * exp_bwt + w15 * (1.0 - exp_bwt);
+#endif
 		const double f16 = Abp + w16 * Ts_;
 		const double f17 = Abq + w17 * Ts_;
 		const double f18 = Abr + w18 * Ts_;
@@ -240,6 +255,10 @@ private:
 
 	// initial gravity
 	gsl_vector *initial_gravity_;
+
+	//
+	const double beta_a_;
+	const double beta_w_;
 };
 
 }  // unnamed namespace
@@ -278,28 +297,28 @@ void imu_unscented_Kalman_filter_with_calibration()
 	std::vector<ImuUnscentedKalmanFilterRunner::Gyro> gyros;
 
 	// load validation data
-	//const size_t Nsample = 10000;
-	//const double Ts = 29.46875 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec
+	const size_t Nsample = 10000;
+	const double Ts = 29.46875 / Nsample;
+	ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 30.03125 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\04_x_neg.csv", Nsample, accels, gyros);  // 10000 sample, 30.03125 sec
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\04_x_neg.csv", Nsample, accels, gyros);  // 10000 sample, 30.03125 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 31.07813 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\05_y_pos.csv", Nsample, accels, gyros);  // 10000 sample, 31.07813 sec
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\05_y_pos.csv", Nsample, accels, gyros);  // 10000 sample, 31.07813 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 29.28125 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\06_y_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.28125 sec
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\06_y_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.28125 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 30.29688 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", Nsample, accels, gyros);  // 10000 sample, 30.29688 sec
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", Nsample, accels, gyros);  // 10000 sample, 30.29688 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 29.04688 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec, 0 cm
 
-	const size_t Nsample = 300;
-	const double Ts = 12.89111 / Nsample;
-	ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.89111 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.82764 / Nsample;
 	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.82764 sec, 50 cm

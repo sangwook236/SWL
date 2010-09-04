@@ -47,9 +47,9 @@ const double ADIS16350_TEMP_SCALE_FACTOR =		0.1453;  // 2's complement, [deg]
 const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
 
 const double deg2rad = boost::math::constants::pi<double>() / 180.0;
-const double phi = 36.36800 * deg2rad;  // latitude [rad]
-const double lambda = 127.35532 * deg2rad;  // longitude [rad]
-const double h = 0.0;  // altitude: unknown [m]
+const double phi = 36.368 * deg2rad;  // latitude [rad]
+const double lambda = 127.364 * deg2rad;  // longitude [rad]
+const double h = 71.0;  // altitude: 71 ~ 82 [m]
 const double sin_phi = std::sin(phi);
 const double sin_2phi = std::sin(2 * phi);
 

@@ -707,9 +707,9 @@ void imu_calibration()
 	// (latitude, longitude, altitude) = (phi, lambda, h) = (36.36800, 127.35532, ?)
 	// g(phi, h) = 9.780327 * (1 + 0.0053024 * sin(phi)^2 - 0.0000058 * sin(2 * phi)^2) - 3.086 * 10^-6 * h
 	const double deg2rad = boost::math::constants::pi<double>() / 180.0;
-	const double phi = 36.36800 * deg2rad;  // latitude [rad]
-	const double lambda = 127.35532 * deg2rad;  // longitude [rad]
-	const double h = 0.0;  // altitude: unknown [m]
+	const double phi = 36.368 * deg2rad;  // latitude [rad]
+	const double lambda = 127.364 * deg2rad;  // longitude [rad]
+	const double h = 71.0;  // altitude: 71 ~ 82 [m]
 	const double sin_phi = std::sin(phi);
 	const double sin_2phi = std::sin(2 * phi);
 	const double g_true = 9.780327 * (1 + 0.0053024 * sin_phi*sin_phi - 0.0000058 * sin_2phi*sin_2phi) - 3.086e-6 * h;  // [m/sec^2]

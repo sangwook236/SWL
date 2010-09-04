@@ -32,8 +32,8 @@ int main()
 
 	//imu_kalman_filter();
 	//imu_calibration();
-	imu_extended_Kalman_filter_with_calibration();
-	//imu_unscented_Kalman_filter_with_calibration();
+	//imu_extended_Kalman_filter_with_calibration();
+	imu_unscented_Kalman_filter_with_calibration();
 
 	std::wcout << L"press any key to exit !!!" << std::endl;
 	std::wcout.flush();
