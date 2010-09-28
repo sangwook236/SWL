@@ -703,18 +703,19 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 // "Accuracy Improvement of Low Cost INS/GPS for Land Applications", Eun-Hwan Shin, UCGE Reports, 2001
 void imu_calibration()
 {
-	// [ref] wikipedia
-	// (latitude, longitude, altitude) = (phi, lambda, h) = (36.36800, 127.35532, ?)
-	// g(phi, h) = 9.780327 * (1 + 0.0053024 * sin(phi)^2 - 0.0000058 * sin(2 * phi)^2) - 3.086 * 10^-6 * h
 	const double deg2rad = boost::math::constants::pi<double>() / 180.0;
-	const double phi = 36.368 * deg2rad;  // latitude [rad]
-	const double lambda = 127.364 * deg2rad;  // longitude [rad]
+	const double lambda = 36.368 * deg2rad;  // latitude [rad]
+	const double phi = 127.364 * deg2rad;  // longitude [rad]
 	const double h = 71.0;  // altitude: 71 ~ 82 [m]
-	const double sin_phi = std::sin(phi);
-	const double sin_2phi = std::sin(2 * phi);
-	const double g_true = 9.780327 * (1 + 0.0053024 * sin_phi*sin_phi - 0.0000058 * sin_2phi*sin_2phi) - 3.086e-6 * h;  // [m/sec^2]
+	const double sin_lambda = std::sin(lambda);
+	const double sin_2lambda = std::sin(2 * lambda);
 
-	// [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Mattthew Barth, pp. 22
+	// [ref] wikipedia: Gravity of Earth
+	// (latitude, longitude, altitude) = (lambda, phi, h) = (36.368, 127.364, 71.0)
+	// g(lambda, h) = 9.780327 * (1 + 0.0053024 * sin(lambda)^2 - 0.0000058 * sin(2 * lambda)^2) - 3.086 * 10^-6 * h
+	const double g_true = 9.780327 * (1 + 0.0053024 * sin_lambda*sin_lambda - 0.0000058 * sin_2lambda*sin_2lambda) - 3.086e-6 * h;  // [m/sec^2]
+
+	// [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Matthew Barth, pp. 22
 	const double w_true = 7.292115e-5;  // [rad/sec]
 
 #if 1

@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuUnscentedKalmanFilterRunner.h"
-#include "AdisUsbz.h"
 #include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
+#include "adisusbz/AdisUsbz.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_statistics.h>
@@ -47,20 +47,20 @@ const double ADIS16350_TEMP_SCALE_FACTOR =		0.1453;  // 2's complement, [deg]
 const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
 
 const double deg2rad = boost::math::constants::pi<double>() / 180.0;
-const double phi = 36.368 * deg2rad;  // latitude [rad]
-const double lambda = 127.364 * deg2rad;  // longitude [rad]
+const double lambda = 36.368 * deg2rad;  // latitude [rad]
+const double phi = 127.364 * deg2rad;  // longitude [rad]
 const double h = 71.0;  // altitude: 71 ~ 82 [m]
-const double sin_phi = std::sin(phi);
-const double sin_2phi = std::sin(2 * phi);
+const double sin_lambda = std::sin(lambda);
+const double sin_2lambda = std::sin(2 * lambda);
 
 }  // unnamed namespace
 
-// [ref] wikipedia
-// (latitude, longitude, altitude) = (phi, lambda, h) = (36.36800, 127.35532, ?)
-// g(phi, h) = 9.780327 * (1 + 0.0053024 * sin(phi)^2 - 0.0000058 * sin(2 * phi)^2) - 3.086 * 10^-6 * h
-/*static*/ const double ImuUnscentedKalmanFilterRunner::REF_GRAVITY_ = 9.780327 * (1.0 + 0.0053024 * sin_phi*sin_phi - 0.0000058 * sin_2phi*sin_2phi) - 3.086e-6 * h;  // [m/sec^2]
+// [ref] wikipedia: Gravity of Earth
+// (latitude, longitude, altitude) = (lambda, phi, h) = (36.368, 127.364, 71.0)
+// g(lambda, h) = 9.780327 * (1 + 0.0053024 * sin(lambda)^2 - 0.0000058 * sin(2 * lambda)^2) - 3.086 * 10^-6 * h
+/*static*/ const double ImuUnscentedKalmanFilterRunner::REF_GRAVITY_ = 9.780327 * (1.0 + 0.0053024 * sin_lambda*sin_lambda - 0.0000058 * sin_2lambda*sin_2lambda) - 3.086e-6 * h;  // [m/sec^2]
 
-// [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Mattthew Barth, pp. 22
+// [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Matthew Barth, pp. 22
 /*static*/ const double ImuUnscentedKalmanFilterRunner::REF_ANGULAR_VEL_ = 7.292115e-5;  // [rad/sec]
 
 ImuUnscentedKalmanFilterRunner::ImuUnscentedKalmanFilterRunner(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, AdisUsbz *adis)

@@ -1,0 +1,365 @@
+#include "stdafx.h"
+#include "swl/Config.h"
+#include "GpsInterface.h"
+#include <nmea/nmea.h>
+#include <iostream>
+
+
+#if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
+#include "swl/ResourceLeakageCheck.h"
+#define new DEBUG_NEW
+#endif
+
+
+namespace swl {
+
+namespace {
+
+//-----------------------------------------------------------------------------
+//
+
+struct WinSerialPortThreadFunctor
+{
+	WinSerialPortThreadFunctor(WinSerialPort &serialPort, GuardedByteBuffer &recvBuffer)
+	: serialPort_(serialPort), recvBuffer_(recvBuffer)
+	{}
+	~WinSerialPortThreadFunctor()
+	{}
+
+public:
+	void operator()()
+	{
+		std::cout << "win serial port worker thread is started" << std::endl;
+
+		const unsigned long timeoutInterval_msec = 10;
+		const size_t bufferLen = 0;
+		while (true)
+		{
+			serialPort_.receive(recvBuffer_, timeoutInterval_msec, bufferLen);
+
+			boost::this_thread::yield();
+		}
+
+		std::cout << "win serial port worker thread is terminated" << std::endl;
+	}
+
+private:
+	WinSerialPort &serialPort_;
+	GuardedByteBuffer &recvBuffer_;
+};
+
+}  // unnamed namespace
+
+//-----------------------------------------------------------------------------
+//
+
+class NmeaParserImpl
+{
+public:
+	enum NMEA_TYPE { NT_NO_SENTENSE, NT_UNDEFINED, NT_RMC, NT_GGA, NT_GSV };
+
+public:
+	NmeaParserImpl()
+	{
+		nmea_property()->trace_func = &NmeaParserImpl::handleTrace;
+		nmea_property()->error_func = &NmeaParserImpl::handleError;
+
+		nmea_parser_init(&parser_);
+	}
+	~NmeaParserImpl()
+	{
+		nmea_parser_destroy(&parser_);
+	}
+
+public:
+	bool parse(double &latitude, double &longitude, double &altitude, double &speed, const unsigned char *buf = NULL, const size_t len = 0)
+	{
+		if (NULL != buf && 0 < len) std::copy(buf, buf + len, std::back_inserter(buf_));
+
+		std::vector<unsigned char> sentence;
+		const NMEA_TYPE &type = getNmeaSentence(sentence);
+		if (NT_RMC == type)
+		//if (NT_RMC == type || NT_GGA == type)
+		{
+			doParse(&sentence[0], sentence.size(), latitude, altitude, longitude, speed);
+			return true;
+		}
+		else if (NT_NO_SENTENSE == type)
+		{
+			//latitude = longitude = 0.0;
+			return false;
+		}
+		else return true;
+	}
+
+private:
+	static void handleTrace(const char *str, int len)
+	{
+		//printf("Trace: ");
+		//write(1, str, len);
+		//printf("\n");
+	}
+	static void handleError(const char *str, int len)
+	{
+		//printf("Error: ");
+		//write(1, str, len);
+		//printf("\n");
+	}
+
+	void doParse(const unsigned char *buf, const size_t len, double &latitude, double &longitude, double &altitude, double &speed)
+	{
+		nmeaINFO info;
+		nmea_zero_INFO(&info);  // initialization
+
+		nmea_parse(&parser_, (const char *)buf, len, &info);
+		nmeaPOS dpos;
+		nmea_info2pos(&info, &dpos);
+
+		//std::cout << "latitude: " << dpos.lat << ", longitude: " << dpos.lon << ", sig: " << info.sig << ", fix: " << info.fix << std::endl;
+
+		latitude = dpos.lat;
+		longitude = dpos.lon;
+
+		//sig = info.sig;
+		//fix = info.fix;
+
+		speed = info.speed;
+		altitude = info.elv;
+		//direction = info.direction;
+		//declination = info.declination;
+
+		//PDOP = info.PDOP;
+		//HDOP = info.HDOP;
+		//VDOP = info.VDOP;
+	}
+
+	NMEA_TYPE getNmeaSentence(std::vector<unsigned char> &sentence)
+	{
+		if (buf_.empty()) return NT_NO_SENTENSE;
+
+		//std::cout << "1***** ";
+		//std::copy(buf_.begin(), buf_.end(), std::ostream_iterator<char>(std::cout, ""));
+		//std::cout << std::endl;
+
+		for (std::deque<unsigned char>::iterator it = buf_.begin(); it != buf_.end(); )
+		{
+			if ('$' == *it)
+			{
+				++it;
+				break;
+			}
+			else it = buf_.erase(it);
+		}
+
+		if (buf_.empty()) return NT_NO_SENTENSE;
+
+		std::deque<unsigned char> sent;
+		sent.push_back('$');
+
+		std::deque<unsigned char>::iterator it = buf_.begin();
+		++it;
+		for (; it != buf_.end(); ++it)
+		{
+			if ('$' == *it)
+			{
+				it = buf_.erase(buf_.begin(), it);
+
+				sent.clear();
+				sent.push_back('$');
+			}
+			else if ('\r' == *it)
+			{
+				sent.push_back('\r');
+
+				std::deque<unsigned char>::iterator it2 = it + 1;
+				if (it2 != buf_.end() && '\n' == *it2)
+				{
+					++it2;
+					buf_.erase(buf_.begin(), it2);
+
+					sent.push_back('\n');
+					sentence.assign(sent.begin(), sent.end());
+					//std::cout << "3***** ";
+					//std::copy(sentence.begin(), sentence.end(), std::ostream_iterator<char>(std::cout, ""));
+					//std::cout << std::endl;
+					//std::cout << "2***** ";
+					//std::copy(buf_.begin(), buf_.end(), std::ostream_iterator<char>(std::cout, ""));
+					//std::cout << std::endl;
+					return getNmeaSentenceType(sentence);
+				}
+			}
+			else sent.push_back(*it);
+		}
+
+		//std::cout << "2***** ";
+		//std::copy(buf_.begin(), buf_.end(), std::ostream_iterator<char>(std::cout, ""));
+		//std::cout << std::endl;
+		return NT_NO_SENTENSE;
+	}
+
+	NMEA_TYPE getNmeaSentenceType(const std::vector<unsigned char> &sentence) const
+	{
+		const std::string str(sentence.begin(), sentence.end());
+		const std::string ss = str.substr(1, 5);
+		if (stricmp("GPRMC", ss.c_str()) == 0)
+			return NT_RMC;
+		else if (stricmp("GPGGA", ss.c_str()) == 0)
+			return NT_GGA;
+		else if (stricmp("GPGSV", ss.c_str()) == 0)
+			return NT_GSV;
+		else return NT_UNDEFINED;
+	}
+
+private:
+	nmeaPARSER parser_;
+	std::deque<unsigned char> buf_;
+};
+
+//-----------------------------------------------------------------------------
+//
+
+#if defined(_UNICODE) || defined(UNICODE)
+GpsInterface::GpsInterface(const std::wstring &portName, const unsigned int baudRate)
+#else
+GpsInterface::GpsInterface(const std::string &portName, const unsigned int baudRate)
+#endif
+: serialPort_(), recvBuffer_(), nmeaParser_(new NmeaParserImpl()),
+  portName_(portName), baudRate_(baudRate), isConnected_(false)
+{
+	if (!nmeaParser_)
+		throw std::runtime_error("fail to create NmeaParserImpl");
+
+	const size_t inQueueSize = 8192, outQueueSize = 8192;
+	isConnected_ = serialPort_.connect(portName_.c_str(), baudRate_, inQueueSize, outQueueSize);
+	if (isConnected_)
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wcout << L"serial port connected ==> port : " << portName_ << L", baud-rate : " << baudRate_ << std::endl;
+#else
+		std::cout << "serial port connected ==> port : " << portName_ << ", baud-rate : " << baudRate_ << std::endl;
+#endif
+		
+		// create serial port worker thread
+		workerThread_.reset(new boost::thread(WinSerialPortThreadFunctor(serialPort_, recvBuffer_)));
+	}
+	else
+		throw std::runtime_error("fail to connect a serial port for GPS");
+}
+
+GpsInterface::~GpsInterface()
+{
+	workerThread_.reset();
+	if (isConnected_)
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wcout << L"serial port disconnected ==> port : " << portName_ << L", baud-rate : " << baudRate_ << std::endl;
+#else
+		std::cout << "serial port disconnected ==> port : " << portName_ << ", baud-rate : " << baudRate_ << std::endl;
+#endif
+
+		serialPort_.disconnect();
+	}
+}
+
+bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed) const
+{
+	if (!isConnected_ || !nmeaParser_) return false;
+
+	//std::srand((unsigned int)time(NULL));
+
+	const size_t msgLen = 4095;
+	unsigned char msg[msgLen + 1] = { '\0', };
+
+	//
+	if (!recvBuffer_.isEmpty())
+	{
+		memset(msg, 0, msgLen + 1);
+
+		const size_t len = recvBuffer_.getSize();
+		const size_t len2 = len > msgLen ? msgLen : len;
+		recvBuffer_.top(msg, len2);
+		recvBuffer_.pop(len2);
+
+		//std::cout << msg << std::endl;
+
+		pos.lat = pos.lon = pos.alt = speed.val = 0.0;
+		if (nmeaParser_->parse(pos.lat, pos.lon, pos.alt, speed.val, msg, len2))
+		{
+			//std::cout << "latitude : " << pos.lat << " [rad], longitude : " << pos.lon << " [rad], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
+			//std::cout << "latitude : " << nmea_radian2degree(pos.lat) << " [deg], longitude : " << nmea_radian2degree(pos.lon) << " [deg], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
+
+			pos.lat = pos.lon = pos.alt = speed.val = 0.0;
+			while (nmeaParser_->parse(pos.lat, pos.lon, pos.alt, speed.val))
+			{
+				//std::cout << "latitude : " << pos.lat << " [rad], longitude : " << pos.lon << " [rad], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
+				//std::cout << "latitude : " << nmea_radian2degree(pos.lat) << " [deg], longitude : " << nmea_radian2degree(pos.lon) << " [deg], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
+			}
+		}
+	}
+
+	Sleep(0);
+
+	return true;
+}
+
+bool GpsInterface::setInitialState(const size_t Ninitial, EarthData::ECEF &initialPosition, EarthData::Speed &initialSpeed) const
+{
+	EarthData::ECEF sumECEF(0.0, 0.0, 0.0);
+	EarthData::Speed sumSpeed(0.0);
+
+	EarthData::Geodetic measuredGeodetic(0.0, 0.0, 0.0);
+	EarthData::ECEF measuredECEF(0.0, 0.0, 0.0);
+	EarthData::Speed measuredSpeed(0.0);
+	for (size_t i = 0; i < Ninitial; ++i)
+	{
+		if (!readData(measuredGeodetic, measuredSpeed))
+			return false;
+
+		EarthData::geodetic_to_ecef(measuredGeodetic, measuredECEF);
+
+		sumECEF.x += measuredECEF.x;
+		sumECEF.y += measuredECEF.y;
+		sumECEF.z += measuredECEF.z;
+		sumSpeed.val += measuredSpeed.val;
+	}
+
+	initialPosition.x = sumECEF.x / Ninitial;
+	initialPosition.y = sumECEF.y / Ninitial;
+	initialPosition.z = sumECEF.z / Ninitial;
+	initialSpeed.val = sumSpeed.val / Ninitial;
+
+	return true;
+}
+
+void GpsInterface::setInitialState(const std::vector<EarthData::Geodetic> &positions, const std::vector<EarthData::Speed> &speeds, EarthData::ECEF &initialPosition, EarthData::Speed &initialSpeed) const
+{
+	const size_t Npos = positions.size();
+
+	EarthData::ECEF sumECEF(0.0, 0.0, 0.0);
+	EarthData::ECEF measuredECEF(0.0, 0.0, 0.0);
+	for (std::vector<EarthData::Geodetic>::const_iterator it = positions.begin(); it != positions.end(); ++it)
+	{
+		EarthData::geodetic_to_ecef(*it, measuredECEF);
+
+		sumECEF.x += measuredECEF.x;
+		sumECEF.y += measuredECEF.y;
+		sumECEF.z += measuredECEF.z;
+	}
+
+	//
+	const size_t Nspeed = speeds.size();
+
+	EarthData::Speed sumSpeed(0.0);
+	for (std::vector<EarthData::Speed>::const_iterator it = speeds.begin(); it != speeds.end(); ++it)
+	{
+		sumSpeed.val += it->val;
+	}
+
+	//
+	initialPosition.x = sumECEF.x / Npos;
+	initialPosition.y = sumECEF.y / Npos;
+	initialPosition.z = sumECEF.z / Npos;
+	initialSpeed.val = sumSpeed.val / Nspeed;
+}
+
+}  // namespace swl

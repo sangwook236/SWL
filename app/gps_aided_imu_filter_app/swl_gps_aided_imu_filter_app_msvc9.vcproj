@@ -2,11 +2,11 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="swl_rnd_util_test"
-	ProjectGUID="{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
-	RootNamespace="swl_rnd_util_test"
-	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
+	Name="swl_gps_aided_imu_filter_app"
+	ProjectGUID="{5BC48680-BFFF-490D-A226-6EBB047D4F31}"
+	RootNamespace="swl_gps_aided_imu_filter_app"
+	Keyword="MFCProj"
+	TargetFrameworkVersion="196613"
 	>
 	<Platforms>
 		<Platform
@@ -21,6 +21,7 @@
 			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			UseOfMFC="2"
 			CharacterSet="1"
 			>
 			<Tool
@@ -37,12 +38,15 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="false"
+				ValidateParameters="true"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_WINDOWS;_DEBUG"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -55,20 +59,21 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="_DEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(IntDir)"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_math.lib swl_rnd_util.lib cblas_mtd.lib gsl_mtd.lib adisusbz_d.lib"
+				AdditionalDependencies="swl_math.lib swl_rnd_util.lib swl_winutil.lib cblas_mtd.lib gsl_mtd.lib nmea_d.lib adisusbz_d.lib"
 				LinkIncremental="2"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				IgnoreDefaultLibraryNames="LIBCMTD.lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
+				SubSystem="2"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -98,6 +103,7 @@
 			OutputDirectory="../../bin/$(ConfigurationName)"
 			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
+			UseOfMFC="2"
 			CharacterSet="1"
 			WholeProgramOptimization="1"
 			>
@@ -115,12 +121,19 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
+				PreprocessorDefinitions="NDEBUG"
+				MkTypLibCompatible="false"
+				ValidateParameters="true"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
+				Optimization="2"
+				EnableIntrinsicFunctions="true"
 				AdditionalIncludeDirectories="../../inc"
-				PreprocessorDefinitions="WIN32;NDEBUG;_CONSOLE"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG"
+				MinimalRebuild="false"
 				RuntimeLibrary="2"
+				EnableFunctionLevelLinking="true"
 				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -130,22 +143,23 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
+				PreprocessorDefinitions="NDEBUG"
+				Culture="1033"
+				AdditionalIncludeDirectories="$(IntDir)"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="swl_math.lib swl_rnd_util.lib cblas_mt.lib gsl_mt.lib adisusbz.lib"
+				AdditionalDependencies="swl_math.lib swl_rnd_util.lib swl_winutil.lib cblas_mt.lib gsl_mt.lib nmea.lib adisusbz.lib"
 				LinkIncremental="1"
 				AdditionalLibraryDirectories="../../lib/$(ConfigurationName)"
 				IgnoreDefaultLibraryNames="LIBCMT.lib"
 				GenerateDebugInformation="true"
-				SubSystem="1"
+				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -180,79 +194,23 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\ExtendedKalmanFilterTest.cpp"
+				RelativePath=".\Adis16350Interface.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\HoughTransformTest.cpp"
+				RelativePath=".\DataDefinition.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuCalibration.cpp"
+				RelativePath=".\GpsAidedImuFilterRunner.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuExtendedKalmanFilterRunner.cpp"
+				RelativePath=".\GpsAidedImuSystem.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuExtendedKalmanFilterWithCalibration.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ImuKalmanFilterTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ImuSystem.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ImuUnscentedKalmanFilterRunner.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ImuUnscentedKalmanFilterWithCalibration.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\KalmanFilterTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\main.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\MetropolisHastingsAlgorithmTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\ParticleFilterTest.cpp"
-				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-					/>
-				</FileConfiguration>
-			</File>
-			<File
-				RelativePath=".\RansacTest.cpp"
-				>
-			</File>
-			<File
-				RelativePath=".\SamplingImportanceResamplingTest.cpp"
+				RelativePath=".\GpsInterface.cpp"
 				>
 			</File>
 			<File
@@ -276,11 +234,11 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath=".\UnscentedKalmanFilterTest.cpp"
+				RelativePath=".\swl_gps_aided_imu_filter_app.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\UnscentedKalmanFilterWithAdditiveNoiseTest.cpp"
+				RelativePath=".\swl_gps_aided_imu_filter_appDlg.cpp"
 				>
 			</File>
 		</Filter>
@@ -290,19 +248,43 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath=".\ImuExtendedKalmanFilterRunner.h"
+				RelativePath=".\Adis16350Interface.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuSystem.h"
+				RelativePath=".\DataDefinition.h"
 				>
 			</File>
 			<File
-				RelativePath=".\ImuUnscentedKalmanFilterRunner.h"
+				RelativePath=".\GpsAidedImuFilterRunner.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpsAidedImuSystem.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpsInterface.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Resource.h"
 				>
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\swl_gps_aided_imu_filter_app.h"
+				>
+			</File>
+			<File
+				RelativePath=".\swl_gps_aided_imu_filter_appDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\targetver.h"
 				>
 			</File>
 		</Filter>
@@ -311,6 +293,18 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath=".\res\swl_gps_aided_imu_filter_app.ico"
+				>
+			</File>
+			<File
+				RelativePath=".\swl_gps_aided_imu_filter_app.rc"
+				>
+			</File>
+			<File
+				RelativePath=".\res\swl_gps_aided_imu_filter_app.rc2"
+				>
+			</File>
 		</Filter>
 		<File
 			RelativePath=".\ReadMe.txt"
@@ -318,5 +312,9 @@
 		</File>
 	</Files>
 	<Globals>
+		<Global
+			Name="RESOURCE_FILE"
+			Value="swl_gps_aided_imu_filter_app.rc"
+		/>
 	</Globals>
 </VisualStudioProject>

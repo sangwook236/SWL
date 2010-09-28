@@ -1,9 +1,9 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuUnscentedKalmanFilterRunner.h"
-#include "AdisUsbz.h"
 #include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
+#include "adisusbz/AdisUsbz.h"
 #include <gsl/gsl_blas.h>
 #include <iostream>
 #include <cmath>
@@ -13,6 +13,10 @@
 #include "swl/ResourceLeakageCheck.h"
 #define new DEBUG_NEW
 #endif
+
+#define __USE_IMU_DATASET_DATE 20100801
+//#define __USE_IMU_DATASET_DATE 20100813
+//#define __USE_IMU_DATASET_DATE 20100903
 
 
 namespace {
@@ -26,7 +30,8 @@ public:
 	ImuSystem(const double Ts, const size_t stateDim, const size_t inputDim, const size_t outputDim, const size_t processNoiseDim, const size_t observationNoiseDim, const gsl_vector *initial_gravity)
 	: base_type(stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim),
 	  Ts_(Ts), f_eval_(NULL), h_eval_(NULL), initial_gravity_(NULL),
-	  beta_a_(10.0), beta_w_(10.0)
+	  //beta_ax_(2.0), beta_ay_(1.0), beta_az_(2.0), beta_wx_(2.0), beta_wy_(1.0), beta_wz_(2.0)
+	  beta_ax_(10.0), beta_ay_(10.0), beta_az_(10.0), beta_wx_(10.0), beta_wy_(10.0), beta_wz_(10.0)
 	{
 		//
 		f_eval_ = gsl_vector_alloc(stateDim_);
@@ -104,7 +109,7 @@ public:
 		const double &w21 = noise ? gsl_vector_get(noise, 21) : 0.0;
 
 #if 0
-		// compensate the local grivity
+		// compensate the local gravity
 		const double &g_ix = gsl_vector_get(initial_gravity_, 0);
 		const double &g_iy = gsl_vector_get(initial_gravity_, 1);
 		const double &g_iz = gsl_vector_get(initial_gravity_, 2);
@@ -113,7 +118,7 @@ public:
 		const double dvdt_y = 2.0 * ((E1*E2 + E0*E3)*Ap + (0.5 - E1*E1 - E3*E3)*Aq + (E2*E3 - E0*E1)*Ar) + g_iy;
 		const double dvdt_z = 2.0 * ((E1*E3 - E0*E2)*Ap + (E2*E3 + E0*E1)*Aq + (0.5 - E1*E1 - E2*E2)*Ar) + g_iz;
 #else
-		// compensate the local grivity in acceleration's measurements
+		// compensate the local gravity in acceleration's measurements
 		const double dvdt_x = 2.0 * ((0.5 - E2*E2 - E3*E3)*Ap + (E1*E2 - E0*E3)*Aq + (E1*E3 + E0*E2)*Ar);
 		const double dvdt_y = 2.0 * ((E1*E2 + E0*E3)*Ap + (0.5 - E1*E1 - E3*E3)*Aq + (E2*E3 - E0*E1)*Ar);
 		const double dvdt_z = 2.0 * ((E1*E3 - E0*E2)*Ap + (E2*E3 + E0*E1)*Aq + (0.5 - E1*E1 - E2*E2)*Ar);
@@ -123,7 +128,8 @@ public:
 		const double dTheta = Wq * Ts_;
 		const double dPsi = Wr * Ts_;
 		const double s = 0.5 * std::sqrt(dPhi*dPhi + dTheta*dTheta + dPsi*dPsi);
-		const double lambda = 1.0 - std::sqrt(E0*E0 + E1*E1 + E2*E2 + E3*E3);
+		const double e_norm = std::sqrt(E0*E0 + E1*E1 + E2*E2 + E3*E3);
+		const double lambda = 1.0 - e_norm*e_norm;
 		// TODO [check] >>
 		const double eta_dt = 0.9;  // eta * dt < 1.0
 
@@ -138,50 +144,64 @@ public:
 		const double f4 = Vy + dvdt_y * Ts_;
 		const double f5 = Vz + dvdt_z * Ts_;
 #if 0
+		// pure random walk model ==> slowly changing constant
 		const double f6 = Ap + w6 * Ts_;
 		const double f7 = Aq + w7 * Ts_;
 		const double f8 = Ar + w8 * Ts_;
 #elif 0
-		// compensate the local grivity
+		// scalar Gauss-Markov process model ==> high dynamic system
+		// compensate the local gravity
 		const double g_p = 2.0 * ((0.5 - E2*E2 - E3*E3)*g_ix + (E1*E2 + E0*E3)*g_iy + (E1*E3 - E0*E2)*g_iz);
 		const double g_q = 2.0 * ((E1*E2 - E0*E3)*g_ix + (0.5 - E1*E1 - E3*E3)*g_iy + (E2*E3 + E0*E1)*g_iz);
 		const double g_r = 2.0 * ((E1*E3 + E0*E2)*g_ix + (E2*E3 - E0*E1)*g_iy + (0.5 - E1*E1 - E2*E2)*g_iz);
 
-		const double exp_bat = std::exp(-beta_a_ * Ts_);
-		const double f6 = (Ap + g_p) * exp_bat + w6 * (1.0 - exp_bat);
-		const double f7 = (Aq + g_q) * exp_bat + w7 * (1.0 - exp_bat);
-		const double f8 = (Ar + g_r) * exp_bat + w8 * (1.0 - exp_bat);
+		const double exp_baxt = std::exp(-beta_ax_ * Ts_);
+		const double exp_bayt = std::exp(-beta_ay_ * Ts_);
+		const double exp_bazt = std::exp(-beta_az_ * Ts_);
+		const double f6 = (Ap + g_p) * exp_baxt + w6 * (1.0 - exp_baxt);
+		const double f7 = (Aq + g_q) * exp_bayt + w7 * (1.0 - exp_bayt);
+		const double f8 = (Ar + g_r) * exp_bazt + w8 * (1.0 - exp_bazt);
 #else
-		// compensate the local grivity in acceleration's measurements
-		const double exp_bat = std::exp(-beta_a_ * Ts_);
-		const double f6 = Ap * exp_bat + w6 * (1.0 - exp_bat);
-		const double f7 = Aq * exp_bat + w7 * (1.0 - exp_bat);
-		const double f8 = Ar * exp_bat + w8 * (1.0 - exp_bat);
+		// scalar Gauss-Markov process model ==> high dynamic system
+		// compensate the local gravity in acceleration's measurements
+		const double exp_baxt = std::exp(-beta_ax_ * Ts_);
+		const double exp_bayt = std::exp(-beta_ay_ * Ts_);
+		const double exp_bazt = std::exp(-beta_az_ * Ts_);
+		const double f6 = Ap * exp_baxt + w6 * (1.0 - exp_baxt);
+		const double f7 = Aq * exp_bayt + w7 * (1.0 - exp_bayt);
+		const double f8 = Ar * exp_bazt + w8 * (1.0 - exp_bazt);
 #endif
 		const double f9 = coeff1 * E0 - coeff2 * (dPhi*E1 + dTheta*E2 + dPsi*E3);
 		const double f10 = coeff1 * E1 - coeff2 * (-dPhi*E0 - dPsi*E2 + dTheta*E3);
 		const double f11 = coeff1 * E2 - coeff2 * (-dTheta*E0 + dPsi*E1 - dPhi*E3);
 		const double f12 = coeff1 * E3 - coeff2 * (-dPsi*E0 - dTheta*E1 + dPhi*E2);
 #if 0
+		// pure random walk model ==> slowly changing constant
 		const double f13 = Wp + w13 * Ts_;
 		const double f14 = Wq + w14 * Ts_;
 		const double f15 = Wr + w15 * Ts_;
 #elif 0
+		// scalar Gauss-Markov process model ==> high dynamic system
 		// compensate the earth's angular rate
 		const double wc_p = 0.0;
 		const double wc_q = 0.0;
 		const double wc_r = 0.0;
 
-		const double exp_bwt = std::exp(-beta_w_ * Ts_);
-		const double f13 = (Wp - wc_p) * exp_bwt + w13 * (1.0 - exp_bwt);
-		const double f14 = (Wq - wc_q) * exp_bwt + w14 * (1.0 - exp_bwt);
-		const double f15 = (Wr - wc_r) * exp_bwt + w15 * (1.0 - exp_bwt);
+		const double exp_bwxt = std::exp(-beta_wx_ * Ts_);
+		const double exp_bwyt = std::exp(-beta_wy_ * Ts_);
+		const double exp_bwzt = std::exp(-beta_wz_ * Ts_);
+		const double f13 = (Wp - wc_p) * exp_bwxt + w13 * (1.0 - exp_bwxt);
+		const double f14 = (Wq - wc_q) * exp_bwyt + w14 * (1.0 - exp_bwyt);
+		const double f15 = (Wr - wc_r) * exp_bwzt + w15 * (1.0 - exp_bwzt);
 #else
+		// scalar Gauss-Markov process model ==> high dynamic system
 		// compensate the earth's angular rate in angular rate's measurements
-		const double exp_bwt = std::exp(-beta_w_ * Ts_);
-		const double f13 = Wp * exp_bwt + w13 * (1.0 - exp_bwt);
-		const double f14 = Wq * exp_bwt + w14 * (1.0 - exp_bwt);
-		const double f15 = Wr * exp_bwt + w15 * (1.0 - exp_bwt);
+		const double exp_bwxt = std::exp(-beta_wx_ * Ts_);
+		const double exp_bwyt = std::exp(-beta_wy_ * Ts_);
+		const double exp_bwzt = std::exp(-beta_wz_ * Ts_);
+		const double f13 = Wp * exp_bwxt + w13 * (1.0 - exp_bwxt);
+		const double f14 = Wq * exp_bwyt + w14 * (1.0 - exp_bwyt);
+		const double f15 = Wr * exp_bwzt + w15 * (1.0 - exp_bwzt);
 #endif
 		const double f16 = Abp + w16 * Ts_;
 		const double f17 = Abq + w17 * Ts_;
@@ -287,8 +307,8 @@ private:
 	gsl_vector *initial_gravity_;
 
 	//
-	const double beta_a_;
-	const double beta_w_;
+	const double beta_ax_, beta_ay_, beta_az_;
+	const double beta_wx_, beta_wy_, beta_wz_;
 };
 
 }  // unnamed namespace
@@ -327,6 +347,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 	std::vector<ImuUnscentedKalmanFilterRunner::Gyro> gyros;
 
 	// load validation data
+#if defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100801
 	const size_t Nsample = 10000;
 	const double Ts = 29.46875 / Nsample;
 	ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec, 0 cm
@@ -345,10 +366,10 @@ void imu_unscented_Kalman_filter_with_calibration()
 	//const size_t Nsample = 10000;
 	//const double Ts = 29.04688 / Nsample;
 	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec, 0 cm
-
-	//const size_t Nsample = 300;
-	//const double Ts = 12.89111 / Nsample;
-	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
+#elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100813
+	const size_t Nsample = 300;
+	const double Ts = 12.89111 / Nsample;
+	ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.82764 / Nsample;
 	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.82764 sec, 50 cm
@@ -391,8 +412,50 @@ void imu_unscented_Kalman_filter_with_calibration()
 	//const size_t Nsample = 300;
 	//const double Ts = 13.03076 / Nsample;
 	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.03076 sec, 50 cm
+#elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100903
+	//const size_t Nsample = 300;
+	//const double Ts = 12.53125 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	const size_t Nsample = 300;
+	const double Ts = 12.45313 / Nsample;
+	ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.5 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
 
-	const size_t Ninitial = Nsample;
+	//const size_t Nsample = 300;
+	//const double Ts = 12.5 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.54688 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.46875 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+
+	//const size_t Nsample = 300;
+	//const double Ts = 12.46875 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.54688 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.54688 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+
+	//const size_t Nsample = 300;
+	//const double Ts = 12.48438 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.45313 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//const size_t Nsample = 300;
+	//const double Ts = 12.4375 / Nsample;
+	//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+#else
+#error incorrect IMU dataset
+#endif
+
 #endif
 
 	//
@@ -424,7 +487,30 @@ void imu_unscented_Kalman_filter_with_calibration()
 #if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 	runner.initializeGravity(Ninitial);
 #else
+
+#if defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100801
+	const size_t Ninitial = Nsample;
 	runner.initializeGravity(Ninitial, accels, gyros);
+#elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100813
+#error incorrect IMU dataset
+#elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100903
+	const size_t Ninitial = 1000;
+
+	{
+		std::vector<ImuUnscentedKalmanFilterRunner::Acceleration> initial_accels;
+		std::vector<ImuUnscentedKalmanFilterRunner::Gyro> initial_gyros;
+
+		ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuUnscentedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+
+		runner.initializeGravity(Ninitial, initial_accels, initial_gyros);
+	}
+#else
+#error incorrect IMU dataset
+#endif
+
 #endif
 
 	const gsl_vector *initialGravity = runner.getInitialGravity();
@@ -432,9 +518,11 @@ void imu_unscented_Kalman_filter_with_calibration()
 	//
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_vector_set_zero(x0);
-	//gsl_vector_set(x0, 6, -gsl_vector_get(initialGravity, 0));  // a_p = g_initial_x
-	//gsl_vector_set(x0, 7, -gsl_vector_get(initialGravity, 1));  // a_q = g_initial_y
-	//gsl_vector_set(x0, 8, -gsl_vector_get(initialGravity, 2));  // a_r = g_initial_z
+#if 0
+	gsl_vector_set(x0, 6, -gsl_vector_get(initialGravity, 0));  // a_p = g_initial_x
+	gsl_vector_set(x0, 7, -gsl_vector_get(initialGravity, 1));  // a_q = g_initial_y
+	gsl_vector_set(x0, 8, -gsl_vector_get(initialGravity, 2));  // a_r = g_initial_z
+#endif
 	gsl_vector_set(x0, 9, 1.0);  // e0 = 1.0
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_identity(P0);
@@ -496,7 +584,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 #if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 	const size_t Nstep = 10000;
 #else
-	const size_t Nstep = Ninitial;
+	const size_t Nstep = Nsample;
 #endif
 
 	gsl_vector *measuredAccel = gsl_vector_alloc(3);
@@ -533,6 +621,10 @@ void imu_unscented_Kalman_filter_with_calibration()
 
 		++step;
 	}
+
+	const gsl_vector *pos = runner.getFilteredPos();
+	const double dist = std::sqrt(gsl_vector_get(pos, 0)*gsl_vector_get(pos, 0) + gsl_vector_get(pos, 1)*gsl_vector_get(pos, 1) + gsl_vector_get(pos, 2)*gsl_vector_get(pos, 2));
+	std::cout << "==> total distance: " << dist << std::endl;
 
 	gsl_vector_free(w);  w = NULL;
 	gsl_vector_free(v);  v = NULL;

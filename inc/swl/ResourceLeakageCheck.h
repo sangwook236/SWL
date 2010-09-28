@@ -50,7 +50,8 @@ void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #elif (_MSC_VER < 1310)  // VC2002
 #elif (_MSC_VER < 1400)  // VC2003
 #elif (_MSC_VER < 1500)  // VC2005
-#elif (_MSC_VER >= 1500)  // VC2008 and higher
+#elif (_MSC_VER < 1600)  // VC2008
+#elif (_MSC_VER >= 1600)  // VC2010 and higher
 #endif
 
 #endif  // _MSC_VER

@@ -177,6 +177,13 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_test",
 		{6305D0E0-1595-4EBE-9332-102782B20D0C} = {6305D0E0-1595-4EBE-9332-102782B20D0C}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_app", "..\app\gps_aided_imu_filter_app\swl_gps_aided_imu_filter_app_msvc9.vcproj", "{5BC48680-BFFF-490D-A226-6EBB047D4F31}"
+	ProjectSection(ProjectDependencies) = postProject
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -275,6 +282,10 @@ Global
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Debug|Win32.Build.0 = Debug|Win32
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Release|Win32.ActiveCfg = Release|Win32
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Release|Win32.Build.0 = Release|Win32
+		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Debug|Win32.Build.0 = Debug|Win32
+		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Release|Win32.ActiveCfg = Release|Win32
+		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
