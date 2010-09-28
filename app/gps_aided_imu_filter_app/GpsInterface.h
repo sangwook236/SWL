@@ -12,9 +12,6 @@
 
 namespace swl {
 
-class NmeaParserImpl;
-
-
 class GpsInterface
 {
 public:
@@ -44,7 +41,6 @@ private:
 	WinSerialPort serialPort_;
 	mutable GuardedByteBuffer recvBuffer_;
 
-	boost::scoped_ptr<NmeaParserImpl> nmeaParser_;
 	boost::scoped_ptr<boost::thread> workerThread_;
 
 #if defined(_UNICODE) || defined(UNICODE)

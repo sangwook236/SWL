@@ -18,41 +18,6 @@ namespace {
 //-----------------------------------------------------------------------------
 //
 
-struct WinSerialPortThreadFunctor
-{
-	WinSerialPortThreadFunctor(WinSerialPort &serialPort, GuardedByteBuffer &recvBuffer)
-	: serialPort_(serialPort), recvBuffer_(recvBuffer)
-	{}
-	~WinSerialPortThreadFunctor()
-	{}
-
-public:
-	void operator()()
-	{
-		std::cout << "win serial port worker thread is started" << std::endl;
-
-		const unsigned long timeoutInterval_msec = 10;
-		const size_t bufferLen = 0;
-		while (true)
-		{
-			serialPort_.receive(recvBuffer_, timeoutInterval_msec, bufferLen);
-
-			boost::this_thread::yield();
-		}
-
-		std::cout << "win serial port worker thread is terminated" << std::endl;
-	}
-
-private:
-	WinSerialPort &serialPort_;
-	GuardedByteBuffer &recvBuffer_;
-};
-
-}  // unnamed namespace
-
-//-----------------------------------------------------------------------------
-//
-
 class NmeaParserImpl
 {
 public:
@@ -218,27 +183,121 @@ private:
 //-----------------------------------------------------------------------------
 //
 
+boost::condition_variable gps_data_cond_var;
+boost::mutex gps_data_mutex;
+bool gps_data_ready = false;
+bool gps_data_required = false;
+double gps_data_lat, gps_data_lon, gps_data_alt, gps_data_speed;
+
+struct WinSerialPortThreadFunctor
+{
+	WinSerialPortThreadFunctor(WinSerialPort &serialPort, GuardedByteBuffer &recvBuffer)
+	: serialPort_(serialPort), recvBuffer_(recvBuffer)
+	{}
+	~WinSerialPortThreadFunctor()
+	{}
+
+public:
+	void operator()()
+	{
+		std::cout << "win serial port worker thread is started" << std::endl;
+
+		NmeaParserImpl nmeaParser;
+
+		const size_t msgLen = 4095;
+		unsigned char msg[msgLen + 1] = { '\0', };
+
+		const unsigned long timeoutInterval_msec = 10;
+		const size_t bufferLen = 0;
+		double lat, lon, alt, speed;
+		double lat_last, lon_last, alt_last, speed_last;
+		while (true)
+		{
+			serialPort_.receive(recvBuffer_, timeoutInterval_msec, bufferLen);
+
+			//
+			if (!recvBuffer_.isEmpty())
+			{
+				memset(msg, 0, msgLen + 1);
+
+				const size_t len = recvBuffer_.getSize();
+				const size_t len2 = len > msgLen ? msgLen : len;
+				recvBuffer_.top(msg, len2);
+				recvBuffer_.pop(len2);
+
+				//std::cout << msg << std::endl;
+
+				lat = lon = alt = speed = 0.0;
+				if (nmeaParser.parse(lat, lon, alt, speed, msg, len2))
+				{
+					//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
+					//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
+
+					lat_last = lat;
+					lon_last = lon;
+					alt_last = alt;
+					speed_last = speed;
+
+					lat = lon = alt = speed = 0.0;
+					while (nmeaParser.parse(lat, lon, alt, speed))
+					{
+						//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
+						//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
+
+						lat_last = lat;
+						lon_last = lon;
+						alt_last = alt;
+						speed_last = speed;
+					}
+
+					// extract the last GPS data
+					if (gps_data_required)
+					{
+						{
+							boost::lock_guard<boost::mutex> lock(gps_data_mutex);
+
+							gps_data_lat = lat_last;
+							gps_data_lon = lon_last;
+							gps_data_alt = alt_last;
+							gps_data_speed = speed_last;
+
+							gps_data_ready = true;
+						}
+
+						gps_data_required = false;
+						gps_data_cond_var.notify_one();
+					}
+				}
+			}
+
+			boost::this_thread::yield();
+		}
+
+		std::cout << "win serial port worker thread is terminated" << std::endl;
+	}
+
+private:
+	WinSerialPort &serialPort_;
+	GuardedByteBuffer &recvBuffer_;
+};
+
+}  // unnamed namespace
+
+//-----------------------------------------------------------------------------
+//
+
 #if defined(_UNICODE) || defined(UNICODE)
 GpsInterface::GpsInterface(const std::wstring &portName, const unsigned int baudRate)
 #else
 GpsInterface::GpsInterface(const std::string &portName, const unsigned int baudRate)
 #endif
-: serialPort_(), recvBuffer_(), nmeaParser_(new NmeaParserImpl()),
+: serialPort_(), recvBuffer_(), 
   portName_(portName), baudRate_(baudRate), isConnected_(false)
 {
-	if (!nmeaParser_)
-		throw std::runtime_error("fail to create NmeaParserImpl");
-
 	const size_t inQueueSize = 8192, outQueueSize = 8192;
 	isConnected_ = serialPort_.connect(portName_.c_str(), baudRate_, inQueueSize, outQueueSize);
 	if (isConnected_)
 	{
-#if defined(_UNICODE) || defined(UNICODE)
-		std::wcout << L"serial port connected ==> port : " << portName_ << L", baud-rate : " << baudRate_ << std::endl;
-#else
-		std::cout << "serial port connected ==> port : " << portName_ << ", baud-rate : " << baudRate_ << std::endl;
-#endif
-		
 		// create serial port worker thread
 		workerThread_.reset(new boost::thread(WinSerialPortThreadFunctor(serialPort_, recvBuffer_)));
 	}
@@ -249,55 +308,26 @@ GpsInterface::GpsInterface(const std::string &portName, const unsigned int baudR
 GpsInterface::~GpsInterface()
 {
 	workerThread_.reset();
-	if (isConnected_)
-	{
-#if defined(_UNICODE) || defined(UNICODE)
-		std::wcout << L"serial port disconnected ==> port : " << portName_ << L", baud-rate : " << baudRate_ << std::endl;
-#else
-		std::cout << "serial port disconnected ==> port : " << portName_ << ", baud-rate : " << baudRate_ << std::endl;
-#endif
-
-		serialPort_.disconnect();
-	}
+	if (isConnected_) serialPort_.disconnect();
 }
 
 bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed) const
 {
-	if (!isConnected_ || !nmeaParser_) return false;
-
-	//std::srand((unsigned int)time(NULL));
-
-	const size_t msgLen = 4095;
-	unsigned char msg[msgLen + 1] = { '\0', };
+	if (!isConnected_) return false;
 
 	//
-	if (!recvBuffer_.isEmpty())
-	{
-		memset(msg, 0, msgLen + 1);
+	gps_data_ready = false;
+	gps_data_required = true;
+    boost::unique_lock<boost::mutex> lock(gps_data_mutex);
+    while (!gps_data_ready)
+    {
+        gps_data_cond_var.wait(lock);
+    }
 
-		const size_t len = recvBuffer_.getSize();
-		const size_t len2 = len > msgLen ? msgLen : len;
-		recvBuffer_.top(msg, len2);
-		recvBuffer_.pop(len2);
-
-		//std::cout << msg << std::endl;
-
-		pos.lat = pos.lon = pos.alt = speed.val = 0.0;
-		if (nmeaParser_->parse(pos.lat, pos.lon, pos.alt, speed.val, msg, len2))
-		{
-			//std::cout << "latitude : " << pos.lat << " [rad], longitude : " << pos.lon << " [rad], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
-			//std::cout << "latitude : " << nmea_radian2degree(pos.lat) << " [deg], longitude : " << nmea_radian2degree(pos.lon) << " [deg], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
-
-			pos.lat = pos.lon = pos.alt = speed.val = 0.0;
-			while (nmeaParser_->parse(pos.lat, pos.lon, pos.alt, speed.val))
-			{
-				//std::cout << "latitude : " << pos.lat << " [rad], longitude : " << pos.lon << " [rad], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
-				//std::cout << "latitude : " << nmea_radian2degree(pos.lat) << " [deg], longitude : " << nmea_radian2degree(pos.lon) << " [deg], altitude : " << pos.alt << " [m], speed : " << speed.val << " [km/h]" << std::endl;
-			}
-		}
-	}
-
-	Sleep(0);
+	pos.lat = gps_data_lat;
+	pos.lon = gps_data_lon;
+	pos.alt = gps_data_alt;
+	speed.val = gps_data_speed;
 
 	return true;
 }

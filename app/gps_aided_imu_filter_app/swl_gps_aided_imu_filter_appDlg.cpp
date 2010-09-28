@@ -105,6 +105,7 @@ BOOL Cswl_gps_aided_imu_filter_appDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	std::srand((unsigned int)time(NULL));
+	GetDlgItem(IDC_EDIT_GPS_LAT)->SetWindowText(_T("abc"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -174,7 +175,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckImu()
 			return;
 		}
 	}
-
+/*
 	// set the initial local gravity & the initial Earth's angular velocity
 	swl::ImuData::Accel initialGravity(0.0, 0.0, 0.0);
 	swl::ImuData::Gyro initialAngularVel(0.0, 0.0, 0.0);
@@ -183,7 +184,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckImu()
 		AfxMessageBox(_T("fail to set the initial local gravity & the initial Earth's angular velocity"), MB_ICONERROR | MB_OK);
 		return;
 	}
-
+*/
 	//
 	GetDlgItem(IDC_BUTTON_CHECK_IMU)->EnableWindow(FALSE);
 
@@ -223,9 +224,9 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 
 	// initialize GPS
 #if defined(_UNICODE) || defined(UNICODE)
-	const std::wstring gpsPortName = L"COM4";
+	const std::wstring gpsPortName = L"COM3";
 #else
-	const std::string gpsPortName = "COM4";
+	const std::string gpsPortName = "COM3";
 #endif
 	const unsigned int gpsBaudRate = 9600;
 
@@ -235,7 +236,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 		AfxMessageBox(_T("fail to connect a GPS"), MB_ICONERROR | MB_OK);
 		return;
 	}
-
+/*
 	// set the initial position and spped of GPS
 	swl::EarthData::ECEF initialGpsECEF(0.0, 0.0, 0.0);
 	swl::EarthData::Speed initialGpsSpeed(0.0);
@@ -244,7 +245,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 		AfxMessageBox(_T("fail to set the initial position & speed of the GPS"), MB_ICONERROR | MB_OK);
 		return;
 	}
-
+*/
 	//
 	GetDlgItem(IDC_BUTTON_CHECK_GPS)->EnableWindow(FALSE);
 
@@ -252,14 +253,30 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 	swl::EarthData::ECEF measuredGpsECEF(0.0, 0.0, 0.0);
 	swl::EarthData::Speed measuredGpsSpeed(0.0);
 
-	const size_t Nstep = 1000;
+	const size_t Nstep = 10;
+	CString msg;
 	for (size_t i = 0; i < Nstep; ++i)
 	{
 		// get measurements of GPS
 		gps.readData(measuredGpsGeodetic, measuredGpsSpeed);
 
 		swl::EarthData::geodetic_to_ecef(measuredGpsGeodetic, measuredGpsECEF);
+
+		msg.Format(_T("%f"), measuredGpsGeodetic.lat);
+		GetDlgItem(IDC_EDIT_GPS_LAT)->SetWindowText(_T("def"));
+		msg.Format(_T("%f"), measuredGpsGeodetic.lon);
+		GetDlgItem(IDC_EDIT_GPS_LON)->SetWindowText(msg);
+		msg.Format(_T("%f"), measuredGpsGeodetic.alt);
+		GetDlgItem(IDC_EDIT_GPS_ALT)->SetWindowText(msg);
+		msg.Format(_T("%f"), measuredGpsECEF.x);
+		GetDlgItem(IDC_EDIT_GPS_X)->SetWindowText(msg);
+		msg.Format(_T("%f"), measuredGpsECEF.y);
+		GetDlgItem(IDC_EDIT_GPS_Y)->SetWindowText(msg);
+		msg.Format(_T("%f"), measuredGpsECEF.z);
+		GetDlgItem(IDC_EDIT_GPS_Z)->SetWindowText(msg);
+		msg.Format(_T("%f"), measuredGpsSpeed.val);
+		GetDlgItem(IDC_EDIT_GPS_SPEED)->SetWindowText(msg);
 	}
 
-	GetDlgItem(IDC_BUTTON_CHECK_IMU)->EnableWindow(TRUE);
+	GetDlgItem(IDC_BUTTON_CHECK_GPS)->EnableWindow(TRUE);
 }
