@@ -37,7 +37,7 @@ public:
 	}
 
 public:
-	bool parse(double &latitude, double &longitude, double &altitude, double &speed, const unsigned char *buf = NULL, const size_t len = 0)
+	bool parse(double &latitude, double &longitude, double &altitude, double &speed, int &hour, int &min, int &sec, int &hsec, const unsigned char *buf = NULL, const size_t len = 0)
 	{
 		if (NULL != buf && 0 < len) std::copy(buf, buf + len, std::back_inserter(buf_));
 
@@ -46,7 +46,7 @@ public:
 		if (NT_RMC == type)
 		//if (NT_RMC == type || NT_GGA == type)
 		{
-			doParse(&sentence[0], sentence.size(), latitude, altitude, longitude, speed);
+			doParse(&sentence[0], sentence.size(), latitude, longitude, altitude, speed, hour, min, sec, hsec);
 			return true;
 		}
 		else if (NT_NO_SENTENSE == type)
@@ -71,7 +71,7 @@ private:
 		//printf("\n");
 	}
 
-	void doParse(const unsigned char *buf, const size_t len, double &latitude, double &longitude, double &altitude, double &speed)
+	void doParse(const unsigned char *buf, const size_t len, double &latitude, double &longitude, double &altitude, double &speed, int &hour, int &min, int &sec, int &hsec)
 	{
 		nmeaINFO info;
 		nmea_zero_INFO(&info);  // initialization
@@ -84,6 +84,11 @@ private:
 
 		latitude = dpos.lat;
 		longitude = dpos.lon;
+
+		hour = info.utc.hour;
+		min = info.utc.min;
+		sec = info.utc.sec;
+		hsec = info.utc.hsec;
 
 		//sig = info.sig;
 		//fix = info.fix;
@@ -189,6 +194,7 @@ bool gps_data_ready = false;
 bool gps_data_required = false;
 bool gps_worker_thread_is_running = false;
 double gps_data_lat, gps_data_lon, gps_data_alt, gps_data_speed;
+int gps_data_hour, gps_data_min, gps_data_sec, gps_data_hsec;
 
 struct WinSerialPortThreadFunctor
 {
@@ -211,6 +217,7 @@ public:
 		const unsigned long timeoutInterval_msec = 10;
 		const size_t bufferLen = 0;
 		double lat, lon, alt, speed;
+		int hour, min, sec, hsec;
 
 		gps_worker_thread_is_running = true;
 		while (gps_worker_thread_is_running)
@@ -218,7 +225,7 @@ public:
 			serialPort_.receive(recvBuffer_, timeoutInterval_msec, bufferLen);
 
 			//
-			if (!recvBuffer_.isEmpty())
+			if (!recvBuffer_.isEmpty() && gps_worker_thread_is_running)
 			{
 				memset(msg, 0, msgLen + 1);
 
@@ -230,13 +237,15 @@ public:
 				//std::cout << msg << std::endl;
 
 				lat = lon = alt = speed = 0.0;
-				if (nmeaParser.parse(lat, lon, alt, speed, msg, len2))
+				hour = min = sec = hsec = 0;
+				if (nmeaParser.parse(lat, lon, alt, speed, hour, min, sec, hsec, msg, len2))
 				{
 					//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 					//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 
 					//lat = lon = alt = speed = 0.0;
-					while (nmeaParser.parse(lat, lon, alt, speed))
+					//hour = min = sec = hsec = 0;
+					while (nmeaParser.parse(lat, lon, alt, speed, hour, min, sec, hsec))
 					{
 						//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 						//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
@@ -252,6 +261,10 @@ public:
 							gps_data_lon = lon;
 							gps_data_alt = alt;
 							gps_data_speed = speed;
+							gps_data_hour = hour;
+							gps_data_min = min;
+							gps_data_sec = sec;
+							gps_data_hsec = hsec;
 
 							gps_data_ready = true;
 						}
@@ -301,10 +314,14 @@ GpsInterface::~GpsInterface()
 {
 	gps_worker_thread_is_running = false;
 	workerThread_.reset();
-	if (isConnected_) serialPort_.disconnect();
+	if (isConnected_)
+	{
+		serialPort_.disconnect();
+		isConnected_ = false;
+	}
 }
 
-bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed) const
+bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed, EarthData::Time &utc) const
 {
 	if (!isConnected_) return false;
 
@@ -322,6 +339,12 @@ bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed) c
 	pos.alt = gps_data_alt;
 	speed.val = gps_data_speed;
 
+	utc.hour = gps_data_hour;
+	utc.min = gps_data_min;
+	utc.sec = gps_data_sec;
+	// FIXME [check] >>
+	utc.msec = gps_data_hsec;  //* 10;
+
 	//Sleep(0);
 
 	return true;
@@ -335,9 +358,10 @@ bool GpsInterface::setInitialState(const size_t Ninitial, EarthData::ECEF &initi
 	EarthData::Geodetic measuredGeodetic(0.0, 0.0, 0.0);
 	EarthData::ECEF measuredECEF(0.0, 0.0, 0.0);
 	EarthData::Speed measuredSpeed(0.0);
+	EarthData::Time gpsUtc(0, 0, 0, 0);
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
-		if (!readData(measuredGeodetic, measuredSpeed))
+		if (!readData(measuredGeodetic, measuredSpeed, gpsUtc))
 			return false;
 
 		EarthData::geodetic_to_ecef(measuredGeodetic, measuredECEF);
@@ -348,10 +372,19 @@ bool GpsInterface::setInitialState(const size_t Ninitial, EarthData::ECEF &initi
 		sumSpeed.val += measuredSpeed.val;
 	}
 
+#if 0
+	// use the average
 	initialPosition.x = sumECEF.x / Ninitial;
 	initialPosition.y = sumECEF.y / Ninitial;
 	initialPosition.z = sumECEF.z / Ninitial;
 	initialSpeed.val = sumSpeed.val / Ninitial;
+#else
+	// use the last value
+	initialPosition.x = measuredECEF.x;
+	initialPosition.y = measuredECEF.y;
+	initialPosition.z = measuredECEF.z;
+	initialSpeed.val = sumSpeed.val / Ninitial;
+#endif
 
 	return true;
 }

@@ -32,7 +32,7 @@ private:
 public:
 	bool isConnected() const  {  return isConnected_;  }
 
-	bool readData(EarthData::Geodetic &pos, EarthData::Speed &speed) const;
+	bool readData(EarthData::Geodetic &pos, EarthData::Speed &speed, EarthData::Time &utc) const;
 
 	bool setInitialState(const size_t Ninitial, EarthData::ECEF &initialPosition, EarthData::Speed &initialSpeed) const;
 	void setInitialState(const std::vector<EarthData::Geodetic> &positions, const std::vector<EarthData::Speed> &speeds, EarthData::ECEF &initialPosition, EarthData::Speed &initialSpeed) const;

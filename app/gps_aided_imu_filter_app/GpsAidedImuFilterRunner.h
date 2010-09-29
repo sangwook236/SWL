@@ -34,7 +34,7 @@ public:
 	void finalize();
 
 	//
-	bool runStep(const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::Speed &measuredGpsSpeed);
+	bool runStep(const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::ECEF &measuredGpsVel, const EarthData::Speed &measuredGpsSpeed);
 
 	//
 	const gsl_vector * getFilteredPos() const  {  return currPos_;  }

@@ -78,7 +78,7 @@ void GpsAidedImuFilterRunner::initialize()
 	//
 	const size_t stateDim = 16;
 	const size_t inputDim = 3;
-	const size_t outputDim = 4;
+	const size_t outputDim = 6;
 	const size_t processNoiseDim = stateDim;
 	const size_t observationNoiseDim = outputDim;
 
@@ -145,6 +145,8 @@ void GpsAidedImuFilterRunner::initialize()
 		gsl_matrix_set(R_, 1, 1, Rc);
 		gsl_matrix_set(R_, 2, 2, Rc);
 		gsl_matrix_set(R_, 3, 3, Rc);
+		gsl_matrix_set(R_, 4, 4, Rc);
+		gsl_matrix_set(R_, 5, 5, Rc);
 	}
 
 	actualMeasurement_ = gsl_vector_alloc(outputDim);
@@ -158,7 +160,7 @@ void GpsAidedImuFilterRunner::finalize()
 	gsl_vector_free(actualMeasurement_);  actualMeasurement_ = NULL;
 }
 
-bool GpsAidedImuFilterRunner::runStep(const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::Speed &measuredGpsSpeed)
+bool GpsAidedImuFilterRunner::runStep(const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::ECEF &measuredGpsVel, const EarthData::Speed &measuredGpsSpeed)
 {
 	{
 		// method #1
@@ -230,7 +232,10 @@ bool GpsAidedImuFilterRunner::runStep(const ImuData::Accel &measuredAccel, const
 		gsl_vector_set(actualMeasurement_, 0, measuredGpsECEF.x);
 		gsl_vector_set(actualMeasurement_, 1, measuredGpsECEF.y);
 		gsl_vector_set(actualMeasurement_, 2, measuredGpsECEF.z);
-		gsl_vector_set(actualMeasurement_, 3, measuredGpsSpeed.val);
+		gsl_vector_set(actualMeasurement_, 3, measuredGpsVel.x);
+		gsl_vector_set(actualMeasurement_, 4, measuredGpsVel.y);
+		gsl_vector_set(actualMeasurement_, 5, measuredGpsVel.z);
+		//gsl_vector_set(actualMeasurement_, 6, measuredGpsSpeed.val);
 
 		// 2. measurement update (correction): x-(k), P-(k) & y_tilde(k)  ==>  K(k), x(k) & P(k)
 		if (!filter_->updateMeasurement(step_, actualMeasurement_, NULL, R_)) return false;
@@ -326,95 +331,3 @@ bool GpsAidedImuFilterRunner::runStep(const ImuData::Accel &measuredAccel, const
 }
 
 }  // namespace swl
-
-void runMainLoop()
-{
-	const size_t Ninitial = 10000;
-
-	// initialize ADIS16350 & GPS
-#if defined(_UNICODE) || defined(UNICODE)
-	const std::wstring gpsPortName = L"COM4";
-#else
-	const std::string gpsPortName = "COM4";
-#endif
-	const unsigned int gpsBaudRate = 9600;
-
-	swl::Adis16350Interface imu;
-	swl::GpsInterface gps(gpsPortName, gpsBaudRate);
-	if (!gps.isConnected())
-		throw std::runtime_error("fail to connect a GPS");
-
-	// load calibration parameters
-	{
-		const std::string calibration_param_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
-		if (!imu.loadCalibrationParam(calibration_param_filename))
-			throw std::runtime_error("fail to load a IMU's calibration parameters");
-	}
-
-	// set the initial local gravity & the initial Earth's angular velocity
-	swl::ImuData::Accel initialGravity(0.0, 0.0, 0.0);
-	swl::ImuData::Gyro initialAngularVel(0.0, 0.0, 0.0);
-	if (!imu.setInitialAttitude(Ninitial, initialGravity, initialAngularVel))
-		throw std::runtime_error("fail to set the initial local gravity & the initial Earth's angular velocity");
-
-	// FIXME [modify] >>
-	initialAngularVel.x = initialAngularVel.y = initialAngularVel.z = 0.0;
-
-	// set the initial position and spped of GPS
-	swl::EarthData::ECEF initialGpsECEF(0.0, 0.0, 0.0);
-	swl::EarthData::Speed initialGpsSpeed(0.0);
-	if (!gps.setInitialState(Ninitial, initialGpsECEF, initialGpsSpeed))
-		throw std::runtime_error("fail to set the initial position & speed of the GPS");
-
-	// FIXME [modify] >>
-	initialGpsSpeed.val = 0.0;
-
-	//
-	swl::GpsAidedImuFilterRunner runner(initialGravity, initialAngularVel);
-	runner.initialize();
-
-	//
-	swl::ImuData::Accel measuredAccel(0.0, 0.0, 0.0), calibratedAccel(0.0, 0.0, 0.0);
-	swl::ImuData::Gyro measuredAngularVel(0.0, 0.0, 0.0), calibratedAngularVel(0.0, 0.0, 0.0);
-	swl::EarthData::Geodetic measuredGpsGeodetic(0.0, 0.0, 0.0);
-	swl::EarthData::ECEF measuredGpsECEF(0.0, 0.0, 0.0);
-	swl::EarthData::Speed measuredGpsSpeed(0.0);
-
-	const size_t Nstep = 10000;
-	for (size_t i = 0; i < Nstep; ++i)
-	{
-		// get measurements of IMU & GPS
-		imu.readData(measuredAccel, measuredAngularVel);
-		gps.readData(measuredGpsGeodetic, measuredGpsSpeed);
-
-		imu.calculateCalibratedAcceleration(measuredAccel, calibratedAccel);
-		imu.calculateCalibratedAngularRate(measuredAngularVel, calibratedAngularVel);
-
-		swl::EarthData::geodetic_to_ecef(measuredGpsGeodetic, measuredGpsECEF);
-
-		measuredGpsECEF.x -= initialGpsECEF.x;
-		measuredGpsECEF.y -= initialGpsECEF.y;
-		measuredGpsECEF.z -= initialGpsECEF.z;
-
-		//
-		if (!runner.runStep(calibratedAccel, calibratedAngularVel, measuredGpsECEF, measuredGpsSpeed))
-			throw std::runtime_error("GPS-aided IMU filter error !!!");
-
-		//
-		const gsl_vector *pos = runner.getFilteredPos();
-		const gsl_vector *vel = runner.getFilteredVel();
-		const gsl_vector *accel = runner.getFilteredAccel();
-		const gsl_vector *quat = runner.getFilteredQuaternion();
-		const gsl_vector *angVel = runner.getFilteredAngularVel();
-
-		std::cout << (i + 1) << ": " << gsl_vector_get(pos, 0) << ", " << gsl_vector_get(pos, 1) << ", " << gsl_vector_get(pos, 2) << " ; " <<
-			gsl_vector_get(quat, 0) << ", " << gsl_vector_get(quat, 1) << ", " << gsl_vector_get(quat, 2) << ", " << gsl_vector_get(quat, 3) << std::endl;
-	}
-
-	const gsl_vector *pos = runner.getFilteredPos();
-	const double dist = std::sqrt(gsl_vector_get(pos, 0)*gsl_vector_get(pos, 0) + gsl_vector_get(pos, 1)*gsl_vector_get(pos, 1) + gsl_vector_get(pos, 2)*gsl_vector_get(pos, 2));
-	std::cout << "==> total distance: " << dist << std::endl;
-
-	//
-	runner.finalize();
-}

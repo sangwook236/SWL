@@ -4,6 +4,12 @@
 
 #pragma once
 
+#include "Adis16350Interface.h"
+#include "GpsInterface.h"
+#include "GpsAidedImuFilterRunner.h"
+#include <boost/smart_ptr.hpp>
+#include <string>
+
 
 // Cswl_gps_aided_imu_filter_appDlg dialog
 class Cswl_gps_aided_imu_filter_appDlg : public CDialog
@@ -17,6 +23,35 @@ public:
 
 	protected:
 	virtual void DoDataExchange(CDataExchange* pDX);	// DDX/DDV support
+
+private:
+	void checkImu();
+	void checkGps();
+	void runFilter();
+
+private:
+	static const UINT IMU_TIMER_ID = 1;
+	static const UINT GPS_TIMER_ID = 2;
+	static const UINT FILTER_TIMER_ID = 3;
+
+#if defined(_UNICODE) || defined(UNICODE)
+	const std::wstring gpsPortName_;
+#else
+	const std::string gpsPortName_;
+#endif
+	const unsigned int gpsBaudRate_;
+
+	boost::scoped_ptr<swl::Adis16350Interface> imu_;
+	boost::scoped_ptr<swl::GpsInterface> gps_;
+	boost::scoped_ptr<swl::GpsAidedImuFilterRunner> runner_;
+
+	swl::EarthData::ECEF initialGpsECEF_;
+	swl::EarthData::Speed initialGpsSpeed_;
+
+	LARGE_INTEGER freq_;
+	LARGE_INTEGER prevPerformanceCount_;
+	swl::EarthData::Time prevGpsUtc_;
+	swl::EarthData::ECEF prevGpsECEF_;
 
 
 // Implementation
@@ -32,4 +67,6 @@ protected:
 public:
 	afx_msg void OnBnClickedButtonCheckImu();
 	afx_msg void OnBnClickedButtonCheckGps();
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
+	afx_msg void OnBnClickedButtonRunFilter();
 };

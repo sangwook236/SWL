@@ -2,6 +2,10 @@
 #define __SWL_GPS_AIDED_IMU_FILTER_APP__DATA_DEFINITION__H_ 1
 
 
+#if defined(min)
+#undef min
+#endif
+
 namespace swl {
 
 //-----------------------------------------------------------------------------
@@ -46,6 +50,18 @@ struct EarthData
 		{}
 
 		double val;
+	};
+
+	struct Time
+	{
+		Time(const int &_hour, const int &_min, const int &_sec, const int &_msec)
+		: hour(_hour), min(_min), sec(_sec), msec(_msec)
+		{}
+		Time(const Time &rhs)
+		: hour(rhs.hour), min(rhs.min), sec(rhs.sec), msec(rhs.msec)
+		{}
+
+		int hour, min, sec, msec;
 	};
 
 	// transform from geodetic coordinates to rectangular ECEF coordinates

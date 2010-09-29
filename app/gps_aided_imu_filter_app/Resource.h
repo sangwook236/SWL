@@ -20,9 +20,28 @@
 #define IDC_EDIT_GPS_LON                1009
 #define IDC_EDIT_GPS_ALT                1010
 #define IDC_EDIT_GPS_SPEED              1011
+#define IDC_EDIT_IMU_ELAPSED_TIME       1012
+#define IDC_EDIT_GPS_ELAPSED_TIME       1013
 #define IDC_EDIT_GPS_X                  1014
 #define IDC_EDIT_GPS_Y                  1015
 #define IDC_EDIT_GPS_Z                  1016
+#define IDC_BUTTON_RUN_FILTER           1017
+#define IDC_EDIT_STATE_POS_X            1018
+#define IDC_EDIT_STATE_POS_Y            1019
+#define IDC_EDIT_GPS_VEL_X              1020
+#define IDC_EDIT_GPS_VEL_Y              1021
+#define IDC_EDIT_GPS_VEL_Z              1022
+#define IDC_EDIT_STATE_POS_Z            1023
+#define IDC_EDIT_STATE_VEL_X            1024
+#define IDC_EDIT_STATE_VEL_Y            1025
+#define IDC_EDIT_STATE_VEL_Z            1026
+#define IDC_EDIT_STATE_E3               1027
+#define IDC_EDIT_STATE_E0               1028
+#define IDC_EDIT_STATE_E1               1029
+#define IDC_EDIT_STATE_E2               1030
+#define IDC_EDIT_DISTANCE               1031
+#define IDC_EDIT_STATE_VEL_Z2           1033
+#define IDC_EDIT_MESSAGE                1033
 
 // Next default values for new objects
 // 

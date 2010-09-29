@@ -27,7 +27,7 @@ private:
 	Adis16350Interface & operator=(const Adis16350Interface &rhs);
 
 public:
-	bool readData(ImuData::Accel &accel, ImuData::Gyro &gyro) const;
+	bool readData(ImuData::Accel &accel, ImuData::Gyro &gyro, LARGE_INTEGER &performanceCount) const;
 
 	bool loadCalibrationParam(const std::string &filename);
 

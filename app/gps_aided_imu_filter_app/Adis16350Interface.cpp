@@ -98,9 +98,13 @@ Adis16350Interface::~Adis16350Interface()
 	adis_.reset();
 }
 
-bool Adis16350Interface::readData(ImuData::Accel &accel, ImuData::Gyro &gyro) const
+bool Adis16350Interface::readData(ImuData::Accel &accel, ImuData::Gyro &gyro, LARGE_INTEGER &performanceCount) const
 {
 	if (!adis_) return false;
+
+	performanceCount.LowPart = 0;
+	performanceCount.HighPart = 0;
+	QueryPerformanceCounter(&performanceCount);
 
 	const short rawXGyro = adis_->ReadInt14(ADIS16350_XGYRO_OUT) & 0x3FFF;
 	const short rawYGyro = adis_->ReadInt14(ADIS16350_YGYRO_OUT) & 0x3FFF;
@@ -124,11 +128,12 @@ bool Adis16350Interface::testAdisUsbz(const size_t loopCount)
 {
 	ImuData::Accel accel(0.0, 0.0, 0.0);
 	ImuData::Gyro gyro(0.0, 0.0, 0.0);
+	LARGE_INTEGER performanceCount;
 
 	size_t loop = 0;
 	while (loop++ < loopCount)
 	{
-		if (!readData(accel, gyro))
+		if (!readData(accel, gyro, performanceCount))
 			return false;
 
 		std::cout << accel.x << ", " << accel.y << ", " << accel.z << " ; " <<
@@ -345,12 +350,13 @@ bool Adis16350Interface::setInitialAttitude(const size_t Ninitial, ImuData::Acce
 {
 	ImuData::Accel sumAccel(0.0, 0.0, 0.0);
 	ImuData::Gyro sumGyro(0.0, 0.0, 0.0);
+	LARGE_INTEGER performanceCount;
 
 	ImuData::Accel measuredAccel(0.0, 0.0, 0.0), calibratedAccel(0.0, 0.0, 0.0);
 	ImuData::Gyro measuredAngularVel(0.0, 0.0, 0.0), calibratedAngularVel(0.0, 0.0, 0.0);
 	for (size_t i = 0; i < Ninitial; ++i)
 	{
-		if (!readData(measuredAccel, measuredAngularVel))
+		if (!readData(measuredAccel, measuredAngularVel, performanceCount))
 			return false;
 
 		calculateCalibratedAcceleration(measuredAccel, calibratedAccel);
