@@ -3,6 +3,7 @@
 #include "Adis16350Interface.h"
 #include "adisusbz/AdisUsbz.h"
 #include <boost/math/constants/constants.hpp>
+#include <boost/thread.hpp>
 #include <fstream>
 #include <iostream>
 #include <cmath>
@@ -40,6 +41,8 @@ const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
 //-----------------------------------------------------------------------------
 //
 
+bool adis16350_worker_thread_is_running = false;
+
 struct Adis16350ThreadFunctor
 {
 	Adis16350ThreadFunctor()
@@ -52,7 +55,8 @@ public:
 	{
 		std::cout << "ADIS16350 worker thread is started" << std::endl;
 
-		while (true)
+		adis16350_worker_thread_is_running = true;
+		while (adis16350_worker_thread_is_running)
 		{
 			// FIXME [add] >>
 
@@ -89,6 +93,7 @@ Adis16350Interface::Adis16350Interface()
 
 Adis16350Interface::~Adis16350Interface()
 {
+	//adis16350_worker_thread_is_running = false;
 	//workerThread_.reset();
 	adis_.reset();
 }

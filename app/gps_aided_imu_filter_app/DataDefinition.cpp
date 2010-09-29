@@ -43,7 +43,7 @@ const double sin_2lambda = std::sin(2 * lambda);
 	// the flatness of the ellipsoid
 	const double f = (a - b) / a;
 	// the eccentricity of the ellipsoid
-	const double e = std::sqrt(f * (2.0- f));
+	const double e = std::sqrt(f * (2.0 - f));
 
 	const double sin_lambda = std::sin(geodetic.lat);
 	const double cos_lambda = std::cos(geodetic.lat);

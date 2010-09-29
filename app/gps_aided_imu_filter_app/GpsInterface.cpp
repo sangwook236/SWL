@@ -187,6 +187,7 @@ boost::condition_variable gps_data_cond_var;
 boost::mutex gps_data_mutex;
 bool gps_data_ready = false;
 bool gps_data_required = false;
+bool gps_worker_thread_is_running = false;
 double gps_data_lat, gps_data_lon, gps_data_alt, gps_data_speed;
 
 struct WinSerialPortThreadFunctor
@@ -210,8 +211,9 @@ public:
 		const unsigned long timeoutInterval_msec = 10;
 		const size_t bufferLen = 0;
 		double lat, lon, alt, speed;
-		double lat_last, lon_last, alt_last, speed_last;
-		while (true)
+
+		gps_worker_thread_is_running = true;
+		while (gps_worker_thread_is_running)
 		{
 			serialPort_.receive(recvBuffer_, timeoutInterval_msec, bufferLen);
 
@@ -233,21 +235,11 @@ public:
 					//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 					//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 
-					lat_last = lat;
-					lon_last = lon;
-					alt_last = alt;
-					speed_last = speed;
-
-					lat = lon = alt = speed = 0.0;
+					//lat = lon = alt = speed = 0.0;
 					while (nmeaParser.parse(lat, lon, alt, speed))
 					{
 						//std::cout << "latitude : " << lat << " [rad], longitude : " << lon << " [rad], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
 						//std::cout << "latitude : " << nmea_radian2degree(lat) << " [deg], longitude : " << nmea_radian2degree(lon) << " [deg], altitude : " << alt << " [m], speed : " << speed << " [km/h]" << std::endl;
-
-						lat_last = lat;
-						lon_last = lon;
-						alt_last = alt;
-						speed_last = speed;
 					}
 
 					// extract the last GPS data
@@ -256,10 +248,10 @@ public:
 						{
 							boost::lock_guard<boost::mutex> lock(gps_data_mutex);
 
-							gps_data_lat = lat_last;
-							gps_data_lon = lon_last;
-							gps_data_alt = alt_last;
-							gps_data_speed = speed_last;
+							gps_data_lat = lat;
+							gps_data_lon = lon;
+							gps_data_alt = alt;
+							gps_data_speed = speed;
 
 							gps_data_ready = true;
 						}
@@ -307,6 +299,7 @@ GpsInterface::GpsInterface(const std::string &portName, const unsigned int baudR
 
 GpsInterface::~GpsInterface()
 {
+	gps_worker_thread_is_running = false;
 	workerThread_.reset();
 	if (isConnected_) serialPort_.disconnect();
 }
@@ -328,6 +321,8 @@ bool GpsInterface::readData(EarthData::Geodetic &pos, EarthData::Speed &speed) c
 	pos.lon = gps_data_lon;
 	pos.alt = gps_data_alt;
 	speed.val = gps_data_speed;
+
+	//Sleep(0);
 
 	return true;
 }

@@ -105,7 +105,6 @@ BOOL Cswl_gps_aided_imu_filter_appDlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	std::srand((unsigned int)time(NULL));
-	GetDlgItem(IDC_EDIT_GPS_LAT)->SetWindowText(_T("abc"));
 
 	return TRUE;  // return TRUE  unless you set the focus to a control
 }
@@ -196,7 +195,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckImu()
 	for (size_t i = 0; i < Nstep; ++i)
 	{
 		// get measurements of IMU
-		imu.readData(measuredAccel, measuredAngularVel);
+		if (!imu.readData(measuredAccel, measuredAngularVel)) continue;
 
 		imu.calculateCalibratedAcceleration(measuredAccel, calibratedAccel);
 		imu.calculateCalibratedAngularRate(measuredAngularVel, calibratedAngularVel);
@@ -258,12 +257,12 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 	for (size_t i = 0; i < Nstep; ++i)
 	{
 		// get measurements of GPS
-		gps.readData(measuredGpsGeodetic, measuredGpsSpeed);
+		if (!gps.readData(measuredGpsGeodetic, measuredGpsSpeed)) continue;
 
 		swl::EarthData::geodetic_to_ecef(measuredGpsGeodetic, measuredGpsECEF);
 
 		msg.Format(_T("%f"), measuredGpsGeodetic.lat);
-		GetDlgItem(IDC_EDIT_GPS_LAT)->SetWindowText(_T("def"));
+		GetDlgItem(IDC_EDIT_GPS_LAT)->SetWindowText(msg);
 		msg.Format(_T("%f"), measuredGpsGeodetic.lon);
 		GetDlgItem(IDC_EDIT_GPS_LON)->SetWindowText(msg);
 		msg.Format(_T("%f"), measuredGpsGeodetic.alt);

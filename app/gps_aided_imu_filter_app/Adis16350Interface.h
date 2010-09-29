@@ -4,7 +4,7 @@
 
 #include "DataDefinition.h"
 #include <boost/smart_ptr.hpp>
-#include <boost/thread.hpp>
+//#include <boost/thread.hpp>
 #include <string>
 #include <vector>
 
