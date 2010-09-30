@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "swl_gps_aided_imu_filter_app.h"
 #include "swl_gps_aided_imu_filter_appDlg.h"
+#include <fstream>
 #include <cstdlib>
 #include <ctime>
 
@@ -308,20 +309,74 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonSaveRawData()
 			return;
 		}
 
+		freq_.LowPart = 0;
+		freq_.HighPart = 0;
+		QueryPerformanceFrequency(&freq_);
+		prevPerformanceCount_.LowPart = 0;
+		prevPerformanceCount_.HighPart = 0;
+		QueryPerformanceCounter(&prevPerformanceCount_);
+		prevGpsUtc_.hour = prevGpsUtc_.min = prevGpsUtc_.sec = prevGpsUtc_.msec = 0;
+		prevGpsECEF_.x = prevGpsECEF_.y = prevGpsECEF_.z = 0.0;
+
+		step_ = 0;
+
+		imuTimeStamps_.clear();
+		imuAccels_.clear();
+		imuGyros_.clear();
+		gpsTimeStamps_.clear();
+		gpsGeodetics_.clear();
+		gpsSpeeds_.clear();
+
 		//
 		GetDlgItem(IDC_BUTTON_RUN_FILTER)->SetWindowText(_T("Stop Saving Raw Data"));
-		SetTimer(FILTER_TIMER_ID, 100, NULL);
+		SetTimer(SAVER_TIMER_ID, SAVER_SAMPLING_INTERVAL, NULL);
 
 		toggle = false;
 	}
 	else
 	{
+		GetDlgItem(IDC_BUTTON_SAVE_RAW_DATA)->SetWindowText(_T("Start Saving Raw Data"));
+		KillTimer(SAVER_TIMER_ID);
+
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate ADIS16350 & GPS"));
 		imu_.reset();
 		gps_.reset();
 
-		GetDlgItem(IDC_BUTTON_SAVE_RAW_DATA)->SetWindowText(_T("Start Saving Raw Data"));
-		KillTimer(FILTER_TIMER_ID);
+		//
+		const std::string raw_data_filename("..\\data\\adis16350_data_20100801\\mesaured_raw_data.txt");
+		std::ofstream stream(raw_data_filename.c_str());
+		if (stream)
+		{
+			if (imuTimeStamps_.size() != step_ || imuAccels_.size() != step_ || imuGyros_.size() != step_ ||
+				gpsTimeStamps_.size() != step_ || gpsGeodetics_.size() != step_ || gpsSpeeds_.size() != step_)
+			{
+				AfxMessageBox(_T("the sizes of measured raw datasets are not matched"), MB_ICONERROR | MB_OK);
+				return;
+			}
+
+			std::list<__int64>::iterator itImuTimeStamp = imuTimeStamps_.begin();
+			std::list<swl::ImuData::Accel>::iterator itImuAccel = imuAccels_.begin();
+			std::list<swl::ImuData::Gyro>::iterator itImuGyro = imuGyros_.begin();
+			std::list<long>::iterator itGpsTimeStamp = gpsTimeStamps_.begin();
+			std::list<swl::EarthData::Geodetic>::iterator itGpsGeodetic = gpsGeodetics_.begin();
+			std::list<swl::EarthData::Speed>::iterator itGpsSpeed = gpsSpeeds_.begin();
+
+			for (size_t i = 0; i < step_; ++i)
+			{
+				stream << *itImuTimeStamp << ' ' << itImuAccel->x << ' ' << itImuAccel->y << ' ' << itImuAccel->z << ' ' << itImuGyro->x << ' ' << itImuGyro->y << ' ' << itImuGyro->z
+					<< *itGpsTimeStamp << ' ' << itGpsGeodetic->lat << ' ' << itGpsGeodetic->lon << ' ' << itGpsGeodetic->alt << ' ' << itGpsSpeed->val << std::endl;
+
+				++itImuTimeStamp;
+				++itImuAccel;
+				++itImuGyro;
+				++itGpsTimeStamp;
+				++itGpsGeodetic;
+				++itGpsSpeed;
+			}
+
+			stream.flush();
+			stream.close();
+		}
 
 		toggle = true;
 	}
@@ -390,17 +445,17 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckImu()
 
 		//
 		GetDlgItem(IDC_BUTTON_CHECK_IMU)->SetWindowText(_T("Stop IMU"));
-		SetTimer(IMU_TIMER_ID, 50, NULL);
+		SetTimer(IMU_TIMER_ID, IMU_SAMPLING_INTERVAL, NULL);
 
 		toggle = false;
 	}
 	else
 	{
-		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate ADIS16350"));
-		imu_.reset();
-
 		GetDlgItem(IDC_BUTTON_CHECK_IMU)->SetWindowText(_T("Start IMU"));
 		KillTimer(IMU_TIMER_ID);
+
+		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate ADIS16350"));
+		imu_.reset();
 
 		toggle = true;
 	}
@@ -461,17 +516,17 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckGps()
 
 		//
 		GetDlgItem(IDC_BUTTON_CHECK_GPS)->SetWindowText(_T("Stop GPS"));
-		SetTimer(GPS_TIMER_ID, 100, NULL);
+		SetTimer(GPS_TIMER_ID, GPS_SAMPLING_INTERVAL, NULL);
 
 		toggle = false;
 	}
 	else
 	{
-		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate GPS"));
-		gps_.reset();
-
 		GetDlgItem(IDC_BUTTON_CHECK_GPS)->SetWindowText(_T("Start GPS"));
 		KillTimer(GPS_TIMER_ID);
+
+		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate GPS"));
+		gps_.reset();
 
 		toggle = true;
 	}
@@ -587,12 +642,15 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonRunFilter()
 
 		//
 		GetDlgItem(IDC_BUTTON_RUN_FILTER)->SetWindowText(_T("Stop GPS-aided IMU Filter"));
-		SetTimer(FILTER_TIMER_ID, 100, NULL);
+		SetTimer(FILTER_TIMER_ID, FILTER_SAMPLING_INTERVAL, NULL);
 
 		toggle = false;
 	}
 	else
 	{
+		GetDlgItem(IDC_BUTTON_RUN_FILTER)->SetWindowText(_T("Start GPS-aided IMU Filter"));
+		KillTimer(FILTER_TIMER_ID);
+
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate a runner of GPS-aided IMU filter"));
 		runner_->finalize();
 		runner_.reset();
@@ -600,9 +658,6 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonRunFilter()
 		imu_.reset();
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("terminate GPS"));
 		gps_.reset();
-
-		GetDlgItem(IDC_BUTTON_RUN_FILTER)->SetWindowText(_T("Start GPS-aided IMU Filter"));
-		KillTimer(FILTER_TIMER_ID);
 
 		toggle = true;
 	}
@@ -684,7 +739,7 @@ void Cswl_gps_aided_imu_filter_appDlg::checkGps()
 
 	// elpased time [msec]
 	// TODO [check] >>
-	const long elapsedTime = (gpsUtc.sec - prevGpsUtc_.sec) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+	const long elapsedTime = ((gpsUtc.min - prevGpsUtc_.min) * 60 + (gpsUtc.sec - prevGpsUtc_.sec)) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
 
 	//
 	msg.Format(_T("%f"), measuredGpsGeodetic.lat);
@@ -744,7 +799,7 @@ void Cswl_gps_aided_imu_filter_appDlg::runFilter()
 
 	//
 	const __int64 imuElapsedTime = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart - prevPerformanceCount_.QuadPart) * 1000 / freq_.QuadPart);
-	const long gpsElapsedTime = (gpsUtc.sec - prevGpsUtc_.sec) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+	const long gpsElapsedTime = ((gpsUtc.min - prevGpsUtc_.min) * 60 + (gpsUtc.sec - prevGpsUtc_.sec)) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
 	measuredGpsVel.x = (measuredGpsECEF.x - prevGpsECEF_.x) / gpsElapsedTime * 1000;
 	measuredGpsVel.y = (measuredGpsECEF.y - prevGpsECEF_.y) / gpsElapsedTime * 1000;
 	measuredGpsVel.z = (measuredGpsECEF.z - prevGpsECEF_.z) / gpsElapsedTime * 1000;
@@ -884,12 +939,10 @@ bool Cswl_gps_aided_imu_filter_appDlg::initializeSensors()
 
 void Cswl_gps_aided_imu_filter_appDlg::saveRawData()
 {
-	swl::ImuData::Accel measuredAccel(0.0, 0.0, 0.0), calibratedAccel(0.0, 0.0, 0.0);
-	swl::ImuData::Gyro measuredAngularVel(0.0, 0.0, 0.0), calibratedAngularVel(0.0, 0.0, 0.0);
+	swl::ImuData::Accel measuredAccel(0.0, 0.0, 0.0);
+	swl::ImuData::Gyro measuredAngularVel(0.0, 0.0, 0.0);
 	LARGE_INTEGER performanceCount;
 	swl::EarthData::Geodetic measuredGpsGeodetic(0.0, 0.0, 0.0);
-	swl::EarthData::ECEF measuredGpsECEF(0.0, 0.0, 0.0);
-	swl::EarthData::ECEF measuredGpsVel(0.0, 0.0, 0.0);
 	swl::EarthData::Speed measuredGpsSpeed(0.0);
 	swl::EarthData::Time gpsUtc(0, 0, 0, 0);
 
@@ -900,9 +953,25 @@ void Cswl_gps_aided_imu_filter_appDlg::saveRawData()
 		!gps_->readData(measuredGpsGeodetic, measuredGpsSpeed, gpsUtc))
 		return;
 
+	const __int64 imuTimeStamp = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart) * 1000 / freq_.QuadPart);
+	const long gpsTimeStamp = (gpsUtc.min * 60 + gpsUtc.sec) * 1000 + gpsUtc.msec;
+
+	imuTimeStamps_.push_back(imuTimeStamp);
+	imuAccels_.push_back(measuredAccel);
+	imuGyros_.push_back(measuredAngularVel);
+	gpsTimeStamps_.push_back(gpsTimeStamp);
+	gpsGeodetics_.push_back(measuredGpsGeodetic);
+	gpsSpeeds_.push_back(measuredGpsSpeed);
+
 	//
 	const __int64 imuElapsedTime = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart - prevPerformanceCount_.QuadPart) * 1000 / freq_.QuadPart);
-	const long gpsElapsedTime = (gpsUtc.sec - prevGpsUtc_.sec) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+	const long gpsElapsedTime = ((gpsUtc.min - prevGpsUtc_.min) * 60 + (gpsUtc.sec - prevGpsUtc_.sec)) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+
+	//
+	prevPerformanceCount_ = performanceCount;
+	prevGpsUtc_ = gpsUtc;
+
+	++step_;
 
 	//
 	msg.Format(_T("%f"), measuredAccel.x);
@@ -937,7 +1006,6 @@ void Cswl_gps_aided_imu_filter_appDlg::saveRawData()
 	msg.Format(_T("%d"), gpsElapsedTime);
 	GetDlgItem(IDC_EDIT_GPS_ELAPSED_TIME)->SetWindowText(msg);
 
-	//
-	prevPerformanceCount_ = performanceCount;
-	prevGpsUtc_ = gpsUtc;
+	msg.Format(_T("%d"), step_);
+	GetDlgItem(IDC_EDIT_STEP)->SetWindowText(msg);
 }

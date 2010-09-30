@@ -38,6 +38,11 @@ private:
 	static const UINT FILTER_TIMER_ID = 3;
 	static const UINT SAVER_TIMER_ID = 4;
 
+	static const size_t SAVER_SAMPLING_INTERVAL = 50;
+	static const size_t IMU_SAMPLING_INTERVAL = 50;
+	static const size_t GPS_SAMPLING_INTERVAL = 100;
+	static const size_t FILTER_SAMPLING_INTERVAL = 50;
+
 #if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring gpsPortName_;
 #else
@@ -60,6 +65,14 @@ private:
 	swl::EarthData::ECEF prevGpsECEF_;
 
 	bool isSensorsInitialized_;
+	size_t step_;
+
+	std::list<__int64> imuTimeStamps_;
+	std::list<swl::ImuData::Accel> imuAccels_;
+	std::list<swl::ImuData::Gyro> imuGyros_;
+	std::list<long> gpsTimeStamps_;
+	std::list<swl::EarthData::Geodetic> gpsGeodetics_;
+	std::list<swl::EarthData::Speed> gpsSpeeds_;
 
 // Implementation
 protected:

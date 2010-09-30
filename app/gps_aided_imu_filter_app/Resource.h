@@ -45,8 +45,9 @@
 #define IDC_EDIT_MESSAGE                1033
 #define IDC_BUTTON_CHECK_GPS3           1034
 #define IDC_BUTTON_SAVE_RAW_DATA        1034
-#define IDC_EDIT_IMU_ELAPSED_TIME2      1035
 #define IDC_EDIT_FILTER_ELAPSED_TIME    1035
+#define IDC_EDIT_MESSAGE2               1036
+#define IDC_EDIT_STEP                   1036
 
 // Next default values for new objects
 // 
