@@ -28,12 +28,15 @@ private:
 	void checkImu();
 	void checkGps();
 	void runFilter();
+
+	bool initializeSensors();
 	void saveRawData();
 
 private:
 	static const UINT IMU_TIMER_ID = 1;
 	static const UINT GPS_TIMER_ID = 2;
 	static const UINT FILTER_TIMER_ID = 3;
+	static const UINT SAVER_TIMER_ID = 4;
 
 #if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring gpsPortName_;
@@ -56,6 +59,7 @@ private:
 	swl::EarthData::Time prevGpsUtc_;
 	swl::EarthData::ECEF prevGpsECEF_;
 
+	bool isSensorsInitialized_;
 
 // Implementation
 protected:
@@ -72,4 +76,6 @@ public:
 	afx_msg void OnBnClickedButtonCheckGps();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnBnClickedButtonRunFilter();
+	afx_msg void OnBnClickedButtonInitializeImuAndGps();
+	afx_msg void OnBnClickedButtonSaveRawData();
 };
