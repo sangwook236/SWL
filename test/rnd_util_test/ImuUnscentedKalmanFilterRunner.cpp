@@ -344,13 +344,15 @@ bool ImuUnscentedKalmanFilterRunner::readAdisData(gsl_vector *accel, gsl_vector 
 	const short rawYAccel = adis_->ReadInt14(ADIS16350_YACCL_OUT) & 0x3FFF;
 	const short rawZAccel = adis_->ReadInt14(ADIS16350_ZACCL_OUT) & 0x3FFF;
 
-	gsl_vector_set(accel, 0, ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR);
-	gsl_vector_set(accel, 1, ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR);
-	gsl_vector_set(accel, 2, ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR);
+	// [m/sec^2]
+	gsl_vector_set(accel, 0, ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
+	gsl_vector_set(accel, 1, ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
+	gsl_vector_set(accel, 2, ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
 
-	gsl_vector_set(gyro, 0, ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR);
-	gsl_vector_set(gyro, 1, ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR);
-	gsl_vector_set(gyro, 2, ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR);
+	// [rad/sec]
+	gsl_vector_set(gyro, 0, ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
+	gsl_vector_set(gyro, 1, ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
+	gsl_vector_set(gyro, 2, ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
 
 	return true;
 }

@@ -57,7 +57,7 @@ Cswl_gps_aided_imu_filter_appDlg::Cswl_gps_aided_imu_filter_appDlg(CWnd* pParent
 	  gpsPortName_("COM8"),
 #endif
 	  gpsBaudRate_(9600),
-	  initialGpsECEF_(0.0, 0.0, 0.0), initialGpsSpeed_(0.0),
+	  initialGravity_(0.0, 0.0, 0.0), initialAngularVel_(0.0, 0.0, 0.0), initialGpsECEF_(0.0, 0.0, 0.0), initialGpsSpeed_(0.0),
 	  prevGpsUtc_(0, 0, 0, 0), prevGpsECEF_(0.0, 0.0, 0.0)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
@@ -214,9 +214,9 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonCheckImu()
 /*
 		// set the initial local gravity & the initial Earth's angular velocity
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("set the initial local gravity & the initial Earth's angular velocity"));
-		swl::ImuData::Accel initialGravity(0.0, 0.0, 0.0);
-		swl::ImuData::Gyro initialAngularVel(0.0, 0.0, 0.0);
-		if (!imu_->setInitialAttitude(Ninitial, initialGravity, initialAngularVel))
+		initialGravity_.x = initialGravity_.y = initialGravity_.z = 0.0;
+		initialAngularVel_.x = initialAngularVel_.y = initialAngularVel_.z = 0.0;
+		if (!imu_->setInitialAttitude(Ninitial, initialGravity_, initialAngularVel_))
 		{
 			AfxMessageBox(_T("fail to set the initial local gravity & the initial Earth's angular velocity"), MB_ICONERROR | MB_OK);
 			return;
@@ -374,16 +374,16 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonRunFilter()
 
 		// set the initial local gravity & the initial Earth's angular velocity
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("set the initial local gravity & the initial Earth's angular velocity"));
-		swl::ImuData::Accel initialGravity(0.0, 0.0, 0.0);
-		swl::ImuData::Gyro initialAngularVel(0.0, 0.0, 0.0);
-		if (!imu_->setInitialAttitude(Nimu, initialGravity, initialAngularVel))
+		initialGravity_.x = initialGravity_.y = initialGravity_.z = 0.0;
+		initialAngularVel_.x = initialAngularVel_.y = initialAngularVel_.z = 0.0;
+		if (!imu_->setInitialAttitude(Nimu, initialGravity_, initialAngularVel_))
 		{
 			AfxMessageBox(_T("fail to set the initial local gravity & the initial Earth's angular velocity"), MB_ICONERROR | MB_OK);
 			return;
 		}
 
 		// FIXME [modify] >>
-		initialAngularVel.x = initialAngularVel.y = initialAngularVel.z = 0.0;
+		initialAngularVel_.x = initialAngularVel_.y = initialAngularVel_.z = 0.0;
 
 		// set the initial position and speed of GPS
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("set the initial position and speed of GPS"));
@@ -408,7 +408,7 @@ void Cswl_gps_aided_imu_filter_appDlg::OnBnClickedButtonRunFilter()
 
 		//
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("initialize a runner of GPS-aided IMU filter"));
-		runner_.reset(new swl::GpsAidedImuFilterRunner(initialGravity, initialAngularVel));
+		runner_.reset(new swl::GpsAidedImuFilterRunner(initialGravity_, initialAngularVel_));
 		runner_->initialize();
 
 		//
@@ -538,6 +538,86 @@ void Cswl_gps_aided_imu_filter_appDlg::checkGps()
 }
 
 void Cswl_gps_aided_imu_filter_appDlg::runFilter()
+{
+	//
+	swl::ImuData::Accel measuredAccel(0.0, 0.0, 0.0), calibratedAccel(0.0, 0.0, 0.0);
+	swl::ImuData::Gyro measuredAngularVel(0.0, 0.0, 0.0), calibratedAngularVel(0.0, 0.0, 0.0);
+	LARGE_INTEGER performanceCount;
+	swl::EarthData::Geodetic measuredGpsGeodetic(0.0, 0.0, 0.0);
+	swl::EarthData::ECEF measuredGpsECEF(0.0, 0.0, 0.0);
+	swl::EarthData::ECEF measuredGpsVel(0.0, 0.0, 0.0);
+	swl::EarthData::Speed measuredGpsSpeed(0.0);
+	swl::EarthData::Time gpsUtc(0, 0, 0, 0);
+
+	CString msg;
+
+	// get measurements of IMU & GPS
+	if (!imu_->readData(measuredAccel, measuredAngularVel, performanceCount) ||
+		!gps_->readData(measuredGpsGeodetic, measuredGpsSpeed, gpsUtc))
+		return;
+
+	//
+	imu_->calculateCalibratedAcceleration(measuredAccel, calibratedAccel);
+	imu_->calculateCalibratedAngularRate(measuredAngularVel, calibratedAngularVel);
+
+	swl::EarthData::geodetic_to_ecef(measuredGpsGeodetic, measuredGpsECEF);
+
+	measuredGpsECEF.x -= initialGpsECEF_.x;
+	measuredGpsECEF.y -= initialGpsECEF_.y;
+	measuredGpsECEF.z -= initialGpsECEF_.z;
+
+	//
+	{
+		const __int64 imuElapsedTime = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart - prevPerformanceCount_.QuadPart) * 1000 / freq_.QuadPart);
+		const long gpsElapsedTime = (gpsUtc.sec - prevGpsUtc_.sec) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+		measuredGpsVel.x = (measuredGpsECEF.x - prevGpsECEF_.x) / gpsElapsedTime * 1000;
+		measuredGpsVel.y = (measuredGpsECEF.y - prevGpsECEF_.y) / gpsElapsedTime * 1000;
+		measuredGpsVel.z = (measuredGpsECEF.z - prevGpsECEF_.z) / gpsElapsedTime * 1000;
+	}
+
+	//
+	if (!runner_->runStep(calibratedAccel, calibratedAngularVel, measuredGpsECEF, measuredGpsVel, measuredGpsSpeed))
+		throw std::runtime_error("GPS-aided IMU filter error !!!");
+
+	//
+	prevPerformanceCount_ = performanceCount;
+	prevGpsUtc_ = gpsUtc;
+	prevGpsECEF_ = measuredGpsECEF;
+
+	//
+	const gsl_vector *pos = runner_->getFilteredPos();
+	const gsl_vector *vel = runner_->getFilteredVel();
+	const gsl_vector *accel = runner_->getFilteredAccel();
+	const gsl_vector *quat = runner_->getFilteredQuaternion();
+	const gsl_vector *angVel = runner_->getFilteredAngularVel();
+
+	const double dist = std::sqrt(gsl_vector_get(pos, 0)*gsl_vector_get(pos, 0) + gsl_vector_get(pos, 1)*gsl_vector_get(pos, 1) + gsl_vector_get(pos, 2)*gsl_vector_get(pos, 2));
+
+	msg.Format(_T("%f"), gsl_vector_get(pos, 0));
+	GetDlgItem(IDC_EDIT_STATE_POS_X)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(pos, 1));
+	GetDlgItem(IDC_EDIT_STATE_POS_Y)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(pos, 2));
+	GetDlgItem(IDC_EDIT_STATE_POS_Z)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(vel, 0));
+	GetDlgItem(IDC_EDIT_STATE_VEL_X)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(vel, 1));
+	GetDlgItem(IDC_EDIT_STATE_VEL_Y)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(vel, 2));
+	GetDlgItem(IDC_EDIT_STATE_VEL_Z)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(quat, 0));
+	GetDlgItem(IDC_EDIT_STATE_E0)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(quat, 1));
+	GetDlgItem(IDC_EDIT_STATE_E1)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(quat, 2));
+	GetDlgItem(IDC_EDIT_STATE_E2)->SetWindowText(msg);
+	msg.Format(_T("%f"), gsl_vector_get(quat, 3));
+	GetDlgItem(IDC_EDIT_STATE_E3)->SetWindowText(msg);
+	msg.Format(_T("%f"), dist);
+	GetDlgItem(IDC_EDIT_DISTANCE)->SetWindowText(msg);
+}
+
+void Cswl_gps_aided_imu_filter_appDlg::saveRawData()
 {
 	//
 	swl::ImuData::Accel measuredAccel(0.0, 0.0, 0.0), calibratedAccel(0.0, 0.0, 0.0);

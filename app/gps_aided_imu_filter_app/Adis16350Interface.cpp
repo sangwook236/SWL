@@ -38,6 +38,8 @@ const double ADIS16350_ACCL_SCALE_FACTOR =		2.522e-3;  // 2's complement, [g]
 const double ADIS16350_TEMP_SCALE_FACTOR =		0.1453;  // 2's complement, [deg]
 const double ADIS16350_ADC_SCALE_FACTOR =		0.6105e-3;  // binary, [V]
 
+const double deg2rad = boost::math::constants::pi<double>() / 180.0;
+
 //-----------------------------------------------------------------------------
 //
 
@@ -113,13 +115,15 @@ bool Adis16350Interface::readData(ImuData::Accel &accel, ImuData::Gyro &gyro, LA
 	const short rawYAccel = adis_->ReadInt14(ADIS16350_YACCL_OUT) & 0x3FFF;
 	const short rawZAccel = adis_->ReadInt14(ADIS16350_ZACCL_OUT) & 0x3FFF;
 
-	accel.x = ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR;
-	accel.y = ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR;
-	accel.z = ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR;
+	// [m/sec^2]
+	accel.x = ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR * EarthData::REF_GRAVITY;
+	accel.y = ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR * EarthData::REF_GRAVITY;
+	accel.z = ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR * EarthData::REF_GRAVITY;
 
-	gyro.x = ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR;
-	gyro.y = ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR;
-	gyro.z = ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR;
+	// [rad/sec]
+	gyro.x = ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad;
+	gyro.y = ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad;
+	gyro.z = ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad;
 
 	return true;
 }

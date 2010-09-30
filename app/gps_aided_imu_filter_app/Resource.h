@@ -40,8 +40,10 @@
 #define IDC_EDIT_STATE_E1               1029
 #define IDC_EDIT_STATE_E2               1030
 #define IDC_EDIT_DISTANCE               1031
-#define IDC_EDIT_STATE_VEL_Z2           1033
+#define IDC_BUTTON_INITIALIZE_IMU_AND_GPS 1032
 #define IDC_EDIT_MESSAGE                1033
+#define IDC_BUTTON_CHECK_GPS3           1034
+#define IDC_BUTTON_SAVE_RAW_DATA        1034
 
 // Next default values for new objects
 // 

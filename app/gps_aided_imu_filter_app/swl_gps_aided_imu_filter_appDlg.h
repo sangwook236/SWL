@@ -28,6 +28,7 @@ private:
 	void checkImu();
 	void checkGps();
 	void runFilter();
+	void saveRawData();
 
 private:
 	static const UINT IMU_TIMER_ID = 1;
@@ -45,6 +46,8 @@ private:
 	boost::scoped_ptr<swl::GpsInterface> gps_;
 	boost::scoped_ptr<swl::GpsAidedImuFilterRunner> runner_;
 
+	swl::ImuData::Accel initialGravity_;
+	swl::ImuData::Gyro initialAngularVel_;
 	swl::EarthData::ECEF initialGpsECEF_;
 	swl::EarthData::Speed initialGpsSpeed_;
 

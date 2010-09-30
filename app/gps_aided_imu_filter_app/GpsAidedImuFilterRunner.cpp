@@ -95,12 +95,7 @@ void GpsAidedImuFilterRunner::initialize()
 	// set x0 & P0
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_vector_set_zero(x0);
-#if 0
-	gsl_vector_set(x0, 6, -gsl_vector_get(initialGravity_, 0));  // a_p = g_initial_x
-	gsl_vector_set(x0, 7, -gsl_vector_get(initialGravity_, 1));  // a_q = g_initial_y
-	gsl_vector_set(x0, 8, -gsl_vector_get(initialGravity_, 2));  // a_r = g_initial_z
-#endif
-	gsl_vector_set(x0, 9, 1.0);  // e0 = 1.0
+	gsl_vector_set(x0, 6, 1.0);  // e0 = 1.0
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
 	gsl_matrix_set_identity(P0);
 	gsl_matrix_scale(P0, 1.0e-8);  // the initial estimate is completely unknown
