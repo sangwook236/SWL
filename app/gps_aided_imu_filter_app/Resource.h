@@ -6,14 +6,24 @@
 #define IDD_ABOUTBOX                    100
 #define IDS_ABOUTBOX                    101
 #define IDD_SWL_GPS_AIDED_IMU_FILTER_APP_DIALOG 102
+#define IDD_GPS_AIDED_IMU_FILTER_DIALOG 103
+#define IDR_HTML_FILEBASEDFILTERINGDIALOG 104
 #define IDR_MAINFRAME                   128
+#define IDD_FILE_BASE_FILTERING_DIALOG  129
+#define IDD_FILE_BASED_FILTERING_DIALOG 129
 #define IDC_BUTTON_CHECK_IMU            1000
 #define IDC_BUTTON_CHECK_GPS            1001
 #define IDC_EDIT_IMU_ACCEL_X            1002
 #define IDC_EDIT_IMU_ACCEL_Y            1003
+#define IDC_BUTTON_USE_SENSOR_INPUT     1003
 #define IDC_EDIT_IMU_ACCEL_Z            1004
+#define IDC_BUTTON_USE_FILE_INPUT       1004
+#define IDC_BUTTON_OPEN_FILE            1004
 #define IDC_EDIT_IMU_GYRO_X             1005
+#define IDC_EDIT_FILENAME               1005
+#define IDC_BUTTON_USE_SYNTHESIZED_DATA 1005
 #define IDC_EDIT_IMU_GYRO_Y             1006
+#define IDC_BUTTON_START_FILTERING      1006
 #define IDC_EDIT_IMU_Z_GYRO             1007
 #define IDC_EDIT_IMU_GYRO_Z             1007
 #define IDC_EDIT_GPS_LAT                1008
@@ -46,16 +56,15 @@
 #define IDC_BUTTON_CHECK_GPS3           1034
 #define IDC_BUTTON_SAVE_RAW_DATA        1034
 #define IDC_EDIT_FILTER_ELAPSED_TIME    1035
-#define IDC_EDIT_MESSAGE2               1036
 #define IDC_EDIT_STEP                   1036
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        129
+#define _APS_NEXT_RESOURCE_VALUE        131
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1003
-#define _APS_NEXT_SYMED_VALUE           101
+#define _APS_NEXT_CONTROL_VALUE         1006
+#define _APS_NEXT_SYMED_VALUE           105
 #endif
 #endif

@@ -202,6 +202,14 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FileBasedFilteringDialog.cpp"
+				>
+			</File>
+			<File
+				RelativePath=".\GpsAidedImuFilterDialog.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\GpsAidedImuFilterRunner.cpp"
 				>
 			</File>
@@ -253,6 +261,14 @@
 			</File>
 			<File
 				RelativePath=".\DataDefinition.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FileBasedFilteringDialog.h"
+				>
+			</File>
+			<File
+				RelativePath=".\GpsAidedImuFilterDialog.h"
 				>
 			</File>
 			<File
