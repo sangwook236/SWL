@@ -3,6 +3,7 @@
 #include "Adis16350Interface.h"
 #include "GpsInterface.h"
 #include "GpsAidedImuFilterRunner.h"
+#include <gsl/gsl_blas.h>
 #include <boost/smart_ptr.hpp>
 #include <string>
 
@@ -69,6 +70,9 @@ private:
 	std::list<long> gpsTimeStamps_;
 	std::list<swl::EarthData::Geodetic> gpsGeodetics_;
 	std::list<swl::EarthData::Speed> gpsSpeeds_;
+
+	gsl_matrix *Q_;
+	gsl_matrix *R_;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support

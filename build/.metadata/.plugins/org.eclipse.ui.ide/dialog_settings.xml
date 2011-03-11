@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.internal.ide.dialogs.ProjectContentsLocationArea">
-		<item value="E:\working_copy\swl_cpp_https\src\rnd_util" key="OUTSIDE_LOCATION"/>
+		<item value="E:\working_copy\swl_cpp_https\app\gps_aided_imu_filter_app" key="OUTSIDE_LOCATION"/>
 	</section>
 	<section name="ExternalProjectImportWizard">
 		<item value="false" key="WizardProjectsImportPage.STORE_ARCHIVE_SELECTED"/>

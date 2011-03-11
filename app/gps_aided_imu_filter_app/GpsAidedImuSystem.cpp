@@ -150,7 +150,7 @@ gsl_vector * GpsAidedImuSystem::evaluatePlantEquation(const size_t step, const g
 
 	const double eps = 1.0e-10;
 	const double coeff1 = std::cos(s) + eta_dt * lambda;
-	const double coeff2 = std::fabs(s) <= eps ? 0.0 : 0.5 * std::sin(s) / s;
+	const double coeff2 = std::fabs(s) <= eps ? 0.0 : (0.5 * std::sin(s) / s);
 
 	const double f0 = Px + Vx * Ts_;
 	const double f1 = Py + Vy * Ts_;
@@ -215,8 +215,10 @@ gsl_vector * GpsAidedImuSystem::evaluateMeasurementEquation(const size_t step, c
 	const double &v4 = noise ? gsl_vector_get(noise, 4) : 0.0;
 	const double &v5 = noise ? gsl_vector_get(noise, 5) : 0.0;
 
-	// FIXME [add] >> save p_k, v_k, w_k
+#if 0
+	// FIXME [add] >> save current states: p_k, v_k, w_k
 
+	// use time-delayed data by N samples due to sensor latency
 	const double &p_k_N_x = gsl_vector_get(p_k_N_, 0);
 	const double &p_k_N_y = gsl_vector_get(p_k_N_, 1);
 	const double &p_k_N_z = gsl_vector_get(p_k_N_, 2);
@@ -226,13 +228,27 @@ gsl_vector * GpsAidedImuSystem::evaluateMeasurementEquation(const size_t step, c
 	const double &w_k_N_p = gsl_vector_get(w_k_N_, 0);
 	const double &w_k_N_q = gsl_vector_get(w_k_N_, 1);
 	const double &w_k_N_r = gsl_vector_get(w_k_N_, 2);
+#else
+	// use current states ==> ignore sensor latency
+	const double &p_k_N_x = Px;
+	const double &p_k_N_y = Py;
+	const double &p_k_N_z = Pz;
+	const double &v_k_N_x = Vx;
+	const double &v_k_N_y = Vy;
+	const double &v_k_N_z = Vz;
+	// FIXME [modify] >> now assume no rotational motion
+	const double &w_k_N_p = 0.0;
+	const double &w_k_N_q = 0.0;
+	const double &w_k_N_r = 0.0;
+#endif
+
 	const double &r_GPS_p = gsl_vector_get(r_GPS_, 0);
 	const double &r_GPS_q = gsl_vector_get(r_GPS_, 1);
 	const double &r_GPS_r = gsl_vector_get(r_GPS_, 2);
-
 	const double r_GPS_x = 2.0 * ((0.5 - E2*E2 - E3*E3)*r_GPS_p + (E1*E2 - E0*E3)*r_GPS_q + (E1*E3 + E0*E2)*r_GPS_r);
 	const double r_GPS_y = 2.0 * ((E1*E2 + E0*E3)*r_GPS_p + (0.5 - E1*E1 - E3*E3)*r_GPS_q + (E2*E3 - E0*E1)*r_GPS_r);
 	const double r_GPS_z = 2.0 * ((E1*E3 - E0*E2)*r_GPS_p + (E2*E3 + E0*E1)*r_GPS_q + (0.5 - E1*E1 - E2*E2)*r_GPS_r);
+
 	// v_GPS = w_GPS x r_GPS
 	const double v_GPS_p = w_k_N_q * r_GPS_r - w_k_N_r * r_GPS_q;
 	const double v_GPS_q = w_k_N_r * r_GPS_p - w_k_N_p * r_GPS_r;

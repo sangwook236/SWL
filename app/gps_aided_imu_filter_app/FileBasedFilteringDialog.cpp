@@ -22,7 +22,8 @@ CFileBasedFilteringDialog::CFileBasedFilteringDialog(CWnd* pParent /*=NULL*/)
 	: CDialog(CFileBasedFilteringDialog::IDD, pParent),
 	  initialGravity_(0.0, 0.0, 0.0), initialAngularVel_(0.0, 0.0, 0.0), initialGpsECEF_(0.0, 0.0, 0.0), initialGpsSpeed_(0.0),
 	  prevGpsUtc_(0, 0, 0, 0), prevGpsECEF_(0.0, 0.0, 0.0),
-	  Ndata_(0)
+	  Ndata_(0),
+	  Q_(NULL), R_(NULL)
 {
 
 }
@@ -216,9 +217,64 @@ void CFileBasedFilteringDialog::OnBnClickedButtonStartFiltering()
 		step_ = 0;
 
 		//
+		const double Ts = 0.1;  // [sec]
+		const size_t stateDim = 16;
+		const size_t inputDim = 3;
+		const size_t outputDim = 6;
+		const size_t processNoiseDim = stateDim;
+		const size_t observationNoiseDim = outputDim;
+
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("initialize a runner of GPS-aided IMU filter"));
-		runner_.reset(new swl::GpsAidedImuFilterRunner(initialGravity_, initialAngularVel_));
-		runner_->initialize();
+		runner_.reset(new swl::GpsAidedImuFilterRunner(Ts, initialGravity_, initialAngularVel_));
+
+		// set x0 & P0
+		gsl_vector *x0 = gsl_vector_alloc(stateDim);
+		gsl_vector_set_zero(x0);
+		gsl_vector_set(x0, 6, 1.0);  // e0 = 1.0
+		gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
+		gsl_matrix_set_identity(P0);
+		gsl_matrix_scale(P0, 1.0e-10);  // the initial estimate is completely unknown
+
+		runner_->initialize(stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim, x0, P0);
+
+		gsl_vector_free(x0);  x0 = NULL;
+		gsl_matrix_free(P0);  P0 = NULL;
+
+		// set Q & R
+		Q_ = gsl_matrix_alloc(processNoiseDim, processNoiseDim);
+		gsl_matrix_set_identity(Q_);
+		R_ = gsl_matrix_alloc(observationNoiseDim, observationNoiseDim);
+		gsl_matrix_set_identity(R_);
+
+		{
+			// FIXME [modify] >>
+			const double Qc = 0.01;
+			gsl_matrix_set(Q_, 0, 0, Qc);
+			gsl_matrix_set(Q_, 1, 1, Qc);
+			gsl_matrix_set(Q_, 2, 2, Qc);
+			gsl_matrix_set(Q_, 3, 3, Qc);
+			gsl_matrix_set(Q_, 4, 4, Qc);
+			gsl_matrix_set(Q_, 5, 5, Qc);
+			gsl_matrix_set(Q_, 6, 6, Qc);
+			gsl_matrix_set(Q_, 7, 7, Qc);
+			gsl_matrix_set(Q_, 8, 8, Qc);
+			gsl_matrix_set(Q_, 9, 9, Qc);
+			gsl_matrix_set(Q_, 10, 10, Qc);
+			gsl_matrix_set(Q_, 11, 11, Qc);
+			gsl_matrix_set(Q_, 12, 12, Qc);
+			gsl_matrix_set(Q_, 13, 13, Qc);
+			gsl_matrix_set(Q_, 14, 14, Qc);
+			gsl_matrix_set(Q_, 15, 15, Qc);
+
+			// FIXME [modify] >>
+			const double Rc = 0.01;
+			gsl_matrix_set(R_, 0, 0, Rc);
+			gsl_matrix_set(R_, 1, 1, Rc);
+			gsl_matrix_set(R_, 2, 2, Rc);
+			gsl_matrix_set(R_, 3, 3, Rc);
+			gsl_matrix_set(R_, 4, 4, Rc);
+			gsl_matrix_set(R_, 5, 5, Rc);
+		}
 
 		//
 		GetDlgItem(IDC_BUTTON_START_FILTERING)->SetWindowText(_T("Stop GPS-aided IMU Filter"));
@@ -235,6 +291,9 @@ void CFileBasedFilteringDialog::OnBnClickedButtonStartFiltering()
 		runner_->finalize();
 		runner_.reset();
 
+		gsl_matrix_free(Q_);  Q_ = NULL;
+		gsl_matrix_free(R_);  R_ = NULL;
+
 		toggle = true;
 	}
 }
@@ -242,10 +301,8 @@ void CFileBasedFilteringDialog::OnBnClickedButtonStartFiltering()
 bool CFileBasedFilteringDialog::loadData(const CString &filename)
 {
 #if defined(UNIODE) || defined(_UNICODE)
-	const wchar_t *aa = (wchar_t *)(LPCTSTR)filename;
-	std::wifstream stream(aa);
+	std::wifstream stream((wchar_t *)(LPCTSTR)filename);
 #else
-	const char *aa = (char *)(LPCTSTR)filename;
 	std::ifstream stream((char *)(LPCTSTR)filename);
 #endif
 
@@ -256,7 +313,6 @@ bool CFileBasedFilteringDialog::loadData(const CString &filename)
 	{
 		stream >> pos_x >> pos_y >> pos_z >> vel_x >> vel_y >> vel_z >> accel_x >> accel_y >> accel_z;
 
-		std::list<swl::EarthData::ECEF> pos_, vel_, accel_;
 		poses_.push_back(swl::EarthData::ECEF(pos_x, pos_y, pos_z));
 		vels_.push_back(swl::EarthData::ECEF(vel_x, vel_y, vel_z));
 		accels_.push_back(swl::EarthData::ECEF(accel_x, accel_y, accel_z));
@@ -278,8 +334,6 @@ void CFileBasedFilteringDialog::runFilter()
 	swl::EarthData::Speed measuredGpsSpeed(0.0);
 	swl::EarthData::Time gpsUtc(0, 0, 0, 0);
 
-	CString msg;
-
 #if 0
 	// get measurements of IMU & GPS
 	if (!imu_->readData(measuredAccel, measuredAngularVel, performanceCount) ||
@@ -299,26 +353,31 @@ void CFileBasedFilteringDialog::runFilter()
 	//
 	const __int64 imuElapsedTime = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart - prevPerformanceCount_.QuadPart) * 1000 / freq_.QuadPart);
 	const __int64 gpsElapsedTime = ((gpsUtc.min - prevGpsUtc_.min) * 60 + (gpsUtc.sec - prevGpsUtc_.sec)) * 1000 + (gpsUtc.msec - prevGpsUtc_.msec);
+
+	measuredGpsVel.x = (measuredGpsECEF.x - prevGpsECEF_.x) / gpsElapsedTime * 1000;
+	measuredGpsVel.y = (measuredGpsECEF.y - prevGpsECEF_.y) / gpsElapsedTime * 1000;
+	measuredGpsVel.z = (measuredGpsECEF.z - prevGpsECEF_.z) / gpsElapsedTime * 1000;
 #else
 	performanceCount.LowPart = 0;
 	performanceCount.HighPart = 0;
 	QueryPerformanceCounter(&performanceCount);
 
-	measuredAccel.x = measuredAccel.y = measuredAccel.z = 0.0;
+	measuredAccel.x = accels_[step_].x;  measuredAccel.y = accels_[step_].y;  measuredAccel.z = accels_[step_].z;
+	// FIXME [modify] >> now assume no rotational motion
 	measuredAngularVel.x = measuredAngularVel.y = measuredAngularVel.z = 0.0;
-	measuredGpsECEF.x = measuredGpsECEF.y = measuredGpsECEF.z = 0.0;
+	measuredGpsECEF = poses_[step_];
+	measuredGpsVel = vels_[step_];
 	measuredGpsSpeed.val = 0.0;
+
+	calibratedAccel = measuredAccel;
+	calibratedAngularVel = measuredAngularVel;
 
 	const __int64 imuElapsedTime = (0 == performanceCount.HighPart && 0 == performanceCount.LowPart) ? 0 : ((performanceCount.QuadPart - prevPerformanceCount_.QuadPart) * 1000 / freq_.QuadPart);
 	const __int64 gpsElapsedTime = imuElapsedTime;
 #endif
 
-	measuredGpsVel.x = (measuredGpsECEF.x - prevGpsECEF_.x) / gpsElapsedTime * 1000;
-	measuredGpsVel.y = (measuredGpsECEF.y - prevGpsECEF_.y) / gpsElapsedTime * 1000;
-	measuredGpsVel.z = (measuredGpsECEF.z - prevGpsECEF_.z) / gpsElapsedTime * 1000;
-
 	//
-	if (!runner_->runStep(calibratedAccel, calibratedAngularVel, measuredGpsECEF, measuredGpsVel, measuredGpsSpeed))
+	if (!runner_->runStep(Q_, R_, calibratedAccel, calibratedAngularVel, measuredGpsECEF, measuredGpsVel, measuredGpsSpeed))
 		throw std::runtime_error("GPS-aided IMU filter error !!!");
 
 	//
@@ -329,14 +388,15 @@ void CFileBasedFilteringDialog::runFilter()
 	//
 	const gsl_vector *pos = runner_->getFilteredPos();
 	const gsl_vector *vel = runner_->getFilteredVel();
-	const gsl_vector *accel = runner_->getFilteredAccel();
+	//const gsl_vector *accel = runner_->getFilteredAccel();
 	const gsl_vector *quat = runner_->getFilteredQuaternion();
-	const gsl_vector *angVel = runner_->getFilteredAngularVel();
+	//const gsl_vector *angVel = runner_->getFilteredAngularVel();
 
 	const double dist = std::sqrt(gsl_vector_get(pos, 0)*gsl_vector_get(pos, 0) + gsl_vector_get(pos, 1)*gsl_vector_get(pos, 1) + gsl_vector_get(pos, 2)*gsl_vector_get(pos, 2));
 
 	++step_;
 
+	CString msg;
 	msg.Format(_T("%f"), gsl_vector_get(pos, 0));
 	GetDlgItem(IDC_EDIT_STATE_POS_X)->SetWindowText(msg);
 	msg.Format(_T("%f"), gsl_vector_get(pos, 1));
@@ -359,7 +419,7 @@ void CFileBasedFilteringDialog::runFilter()
 	GetDlgItem(IDC_EDIT_STATE_E3)->SetWindowText(msg);
 	msg.Format(_T("%f"), dist);
 	GetDlgItem(IDC_EDIT_FILTER_DISTANCE)->SetWindowText(msg);
-	msg.Format(_T("%d"), std::max(imuElapsedTime, (__int64)gpsElapsedTime));
+	msg.Format(_T("%d"), std::max(imuElapsedTime, gpsElapsedTime));
 	GetDlgItem(IDC_EDIT_FILTER_ELAPSED_TIME)->SetWindowText(msg);
 
 	msg.Format(_T("%d"), step_);

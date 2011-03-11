@@ -1005,3 +1005,565 @@ Binding(CTRL+SHIFT+T,
 
 !ENTRY org.eclipse.cdt.core 1 0 2010-07-14 16:11:58.279
 !MESSAGE Indexed 'swl_graphics' (0 sources, 11 headers) in 0.01 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+!SESSION 2010-10-05 16:02:31.982 -----------------------------------------------
+eclipse.buildId=I20100608-0911
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.jface 2 0 2010-10-05 16:03:14.641
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-10-05 16:03:14.641
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+
+!ENTRY org.eclipse.epp.usagedata.recording 1 0 2010-10-05 16:03:26.035
+!MESSAGE Usage data uploaded to http://udc.eclipse.org/upload.php in 5643 milliseconds.
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.380
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.383
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":keyboard-state, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.386
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":keyboard-state, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.389
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.391
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.393
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.395
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.397
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":keyboard-state, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.399
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":screen-size, "http://schemas.android.com/sdk/android/layout-devices/1":screen-ratio, "http://schemas.android.com/sdk/android/layout-devices/1":pixel-density, "http://schemas.android.com/sdk/android/layout-devices/1":touch-type, "http://schemas.android.com/sdk/android/layout-devices/1":text-input-method, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.400
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:03:46.403
+!MESSAGE Error validating E:\platform_center\android\android-sdk-windows\tools\lib\devices.xml
+!STACK 0
+org.xml.sax.SAXParseException: cvc-complex-type.2.4.a: Invalid content was found starting with element 'd:nav-state'. One of '{"http://schemas.android.com/sdk/android/layout-devices/1":country-code, "http://schemas.android.com/sdk/android/layout-devices/1":network-code, "http://schemas.android.com/sdk/android/layout-devices/1":nav-method, "http://schemas.android.com/sdk/android/layout-devices/1":screen-dimension, "http://schemas.android.com/sdk/android/layout-devices/1":xdpi, "http://schemas.android.com/sdk/android/layout-devices/1":ydpi}' is expected.
+	at org.apache.xerces.util.ErrorHandlerWrapper.createSAXParseException(Unknown Source)
+	at org.apache.xerces.util.ErrorHandlerWrapper.error(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.XMLErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator$XSIErrorReporter.reportError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.reportSchemaError(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.handleStartElement(Unknown Source)
+	at org.apache.xerces.impl.xs.XMLSchemaValidator.startElement(Unknown Source)
+	at org.apache.xerces.impl.XMLNSDocumentScannerImpl.scanStartElement(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl$FragmentContentDispatcher.dispatch(Unknown Source)
+	at org.apache.xerces.impl.XMLDocumentFragmentScannerImpl.scanDocument(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.parsers.XML11Configuration.parse(Unknown Source)
+	at org.apache.xerces.jaxp.validation.StreamValidatorHelper.validate(Unknown Source)
+	at org.apache.xerces.jaxp.validation.ValidatorImpl.validate(Unknown Source)
+	at javax.xml.validation.Validator.validate(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.parseLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultLayoutDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.LayoutDeviceManager.loadDefaultAndUserDevices(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.<init>(Unknown Source)
+	at com.android.ide.eclipse.adt.internal.sdk.Sdk.loadSdk(Unknown Source)
+	at com.android.ide.eclipse.adt.AdtPlugin$13.run(Unknown Source)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY com.android.ide.eclipse.adt 4 0 2010-10-05 16:04:55.819
+!MESSAGE Failed to load properties file for project 'gps_aided_imu_filter_app'
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 16:04:59.789
+!MESSAGE Indexed 'gps_aided_imu_filter_app' (10 sources, 23 headers) in 2.35 sec: 996 declarations; 3,428 references; 75 unresolved inclusions; 28 syntax errors; 2,064 unresolved names (31.81%)
+
+!ENTRY org.eclipse.equinox.p2.core 4 0 2010-10-05 16:10:11.925
+!MESSAGE Provisioning exception
+!STACK 1
+org.eclipse.equinox.p2.core.ProvisionException: No repository found at http://opensource.zylin.com/zylincdt.
+	at org.eclipse.equinox.internal.p2.repository.helpers.AbstractRepositoryManager.fail(AbstractRepositoryManager.java:392)
+	at org.eclipse.equinox.internal.p2.repository.helpers.AbstractRepositoryManager.loadRepository(AbstractRepositoryManager.java:676)
+	at org.eclipse.equinox.internal.p2.metadata.repository.MetadataRepositoryManager.loadRepository(MetadataRepositoryManager.java:96)
+	at org.eclipse.equinox.internal.p2.metadata.repository.MetadataRepositoryManager.loadRepository(MetadataRepositoryManager.java:92)
+	at org.eclipse.equinox.p2.ui.LoadMetadataRepositoryJob.doLoad(LoadMetadataRepositoryJob.java:115)
+	at org.eclipse.equinox.p2.ui.LoadMetadataRepositoryJob.runModal(LoadMetadataRepositoryJob.java:100)
+	at org.eclipse.equinox.internal.p2.ui.sdk.PreloadingRepositoryHandler$2.runModal(PreloadingRepositoryHandler.java:82)
+	at org.eclipse.equinox.p2.operations.ProvisioningJob.run(ProvisioningJob.java:177)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+!SUBENTRY 1 org.eclipse.equinox.p2.metadata.repository 4 1000 2010-10-05 16:10:11.925
+!MESSAGE No repository found at http://opensource.zylin.com/zylincdt.
+!SESSION 2010-10-05 17:26:30.405 -----------------------------------------------
+eclipse.buildId=M20100909-0800
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY org.eclipse.jface 2 0 2010-10-05 17:27:22.936
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-10-05 17:27:22.936
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:30.620
+!MESSAGE Indexed 'swl_base' (5 sources, 118 headers) in 3.64 sec: 1,404 declarations; 2,207 references; 47 unresolved inclusions; 0 syntax errors; 409 unresolved names (10.17%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:30.675
+!MESSAGE Indexed 'swl_glutil' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:30.732
+!MESSAGE Indexed 'swl_graphics' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:33.971
+!MESSAGE Indexed 'swl_kinematics' (20 sources, 45 headers) in 3.16 sec: 2,575 declarations; 7,540 references; 28 unresolved inclusions; 0 syntax errors; 999 unresolved names (8.99%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.066
+!MESSAGE Indexed 'swl_kinematics_test' (2 sources, 12 headers) in 0.05 sec: 3 declarations; 1 references; 14 unresolved inclusions; 0 syntax errors; 10 unresolved names (71.43%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.212
+!MESSAGE Indexed 'swl_machine_learning' (1 sources, 14 headers) in 0.10 sec: 27 declarations; 35 references; 12 unresolved inclusions; 0 syntax errors; 8 unresolved names (11.43%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.802
+!MESSAGE Indexed 'swl_machine_learning_test' (5 sources, 23 headers) in 0.55 sec: 525 declarations; 1,389 references; 35 unresolved inclusions; 0 syntax errors; 475 unresolved names (19.88%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.854
+!MESSAGE Indexed 'swl_machine_vision' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.923
+!MESSAGE Indexed 'swl_machine_vision_test' (2 sources, 12 headers) in 0.04 sec: 1 declarations; 1 references; 14 unresolved inclusions; 0 syntax errors; 10 unresolved names (83.33%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:34.983
+!MESSAGE Indexed 'swl_math' (0 sources, 11 headers) in 0.03 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:27:47.906
+!MESSAGE Indexed 'swl_rnd_util' (4 sources, 437 headers) in 12.86 sec: 26,325 declarations; 44,757 references; 129 unresolved inclusions; 71 syntax errors; 4,891 unresolved names (6.44%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:28:05.553
+!MESSAGE Indexed 'swl_rnd_util_test' (8 sources, 702 headers) in 17.60 sec: 40,255 declarations; 97,972 references; 225 unresolved inclusions; 72 syntax errors; 8,626 unresolved names (5.87%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:28:24.719
+!MESSAGE Indexed 'swl_serial_port_test' (3 sources, 645 headers) in 19.12 sec: 35,103 declarations; 91,284 references; 311 unresolved inclusions; 51 syntax errors; 5,491 unresolved names (4.16%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:28:43.580
+!MESSAGE Indexed 'swl_tcp_socket_client_test' (1 sources, 645 headers) in 18.81 sec: 35,187 declarations; 92,058 references; 314 unresolved inclusions; 51 syntax errors; 5,758 unresolved names (4.33%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:28:59.549
+!MESSAGE Indexed 'swl_tcp_socket_server_test' (3 sources, 647 headers) in 15.94 sec: 35,131 declarations; 91,565 references; 308 unresolved inclusions; 51 syntax errors; 5,485 unresolved names (4.15%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:29:00.017
+!MESSAGE Indexed 'swl_unit_test_text_ui' (1 sources, 46 headers) in 0.40 sec: 421 declarations; 457 references; 33 unresolved inclusions; 1 syntax errors; 128 unresolved names (12.72%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:29:00.098
+!MESSAGE Indexed 'swl_util' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:29:00.136
+!MESSAGE Indexed 'swl_view' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:29:00.189
+!MESSAGE Indexed 'swl_winutil' (0 sources, 11 headers) in 0.02 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.cdt.core 1 0 2010-10-05 17:29:00.256
+!MESSAGE Indexed 'swl_winview' (0 sources, 11 headers) in 0.03 sec: 0 declarations; 0 references; 11 unresolved inclusions; 0 syntax errors; 0 unresolved names (0.00%)
+
+!ENTRY org.eclipse.equinox.p2.core 4 0 2010-10-05 17:32:56.305
+!MESSAGE Provisioning exception
+!STACK 1
+org.eclipse.equinox.p2.core.ProvisionException: No repository found at http://opensource.zylin.com/zylincdt.
+	at org.eclipse.equinox.internal.p2.repository.helpers.AbstractRepositoryManager.fail(AbstractRepositoryManager.java:391)
+	at org.eclipse.equinox.internal.p2.repository.helpers.AbstractRepositoryManager.loadRepository(AbstractRepositoryManager.java:675)
+	at org.eclipse.equinox.internal.p2.metadata.repository.MetadataRepositoryManager.loadRepository(MetadataRepositoryManager.java:96)
+	at org.eclipse.equinox.internal.p2.metadata.repository.MetadataRepositoryManager.loadRepository(MetadataRepositoryManager.java:92)
+	at org.eclipse.equinox.p2.ui.LoadMetadataRepositoryJob.doLoad(LoadMetadataRepositoryJob.java:115)
+	at org.eclipse.equinox.p2.ui.LoadMetadataRepositoryJob.runModal(LoadMetadataRepositoryJob.java:100)
+	at org.eclipse.equinox.internal.p2.ui.sdk.PreloadingRepositoryHandler$2.runModal(PreloadingRepositoryHandler.java:82)
+	at org.eclipse.equinox.p2.operations.ProvisioningJob.run(ProvisioningJob.java:177)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+!SUBENTRY 1 org.eclipse.equinox.p2.metadata.repository 4 1000 2010-10-05 17:32:56.306
+!MESSAGE No repository found at http://opensource.zylin.com/zylincdt.
+
+!ENTRY org.eclipse.equinox.p2.repository 2 0 2010-10-05 17:38:56.604
+!MESSAGE Connection to http://www.eclipse.org/downloads/download.php?format=xml&file=/releases/helios/201006230900/aggregate/&protocol=http&countryCode=kr&timeZone=9&format=xml failed on Software caused connection abort: recv failed. Retry attempt 0 started
+!STACK 0
+java.net.SocketException: Software caused connection abort: recv failed
+	at java.net.SocketInputStream.socketRead0(Native Method)
+	at java.net.SocketInputStream.read(Unknown Source)
+	at java.io.BufferedInputStream.fill(Unknown Source)
+	at java.io.BufferedInputStream.read(Unknown Source)
+	at org.apache.commons.httpclient.HttpParser.readRawLine(HttpParser.java:78)
+	at org.apache.commons.httpclient.HttpParser.readLine(HttpParser.java:106)
+	at org.apache.commons.httpclient.HttpConnection.readLine(HttpConnection.java:1116)
+	at org.apache.commons.httpclient.MultiThreadedHttpConnectionManager$HttpConnectionAdapter.readLine(MultiThreadedHttpConnectionManager.java:1413)
+	at org.apache.commons.httpclient.HttpMethodBase.readStatusLine(HttpMethodBase.java:1973)
+	at org.apache.commons.httpclient.HttpMethodBase.readResponse(HttpMethodBase.java:1735)
+	at org.apache.commons.httpclient.HttpMethodBase.execute(HttpMethodBase.java:1098)
+	at org.eclipse.ecf.provider.filetransfer.httpclient.HttpClientRetrieveFileTransfer$GzipGetMethod.execute(HttpClientRetrieveFileTransfer.java:117)
+	at org.apache.commons.httpclient.HttpMethodDirector.executeWithRetry(HttpMethodDirector.java:398)
+	at org.apache.commons.httpclient.HttpMethodDirector.executeMethod(HttpMethodDirector.java:171)
+	at org.apache.commons.httpclient.HttpClient.executeMethod(HttpClient.java:397)
+	at org.apache.commons.httpclient.HttpClient.executeMethod(HttpClient.java:346)
+	at org.eclipse.ecf.provider.filetransfer.httpclient.HttpClientRetrieveFileTransfer.performConnect(HttpClientRetrieveFileTransfer.java:1142)
+	at org.eclipse.ecf.provider.filetransfer.httpclient.HttpClientRetrieveFileTransfer.openStreams(HttpClientRetrieveFileTransfer.java:710)
+	at org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer.sendRetrieveRequest(AbstractRetrieveFileTransfer.java:889)
+	at org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer.sendRetrieveRequest(AbstractRetrieveFileTransfer.java:576)
+	at org.eclipse.ecf.provider.filetransfer.retrieve.MultiProtocolRetrieveAdapter.sendRetrieveRequest(MultiProtocolRetrieveAdapter.java:98)
+	at org.eclipse.equinox.internal.p2.repository.FileReader.sendRetrieveRequest(FileReader.java:342)
+	at org.eclipse.equinox.internal.p2.repository.FileReader.read(FileReader.java:206)
+	at org.eclipse.equinox.internal.p2.repository.RepositoryTransport.stream(RepositoryTransport.java:154)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorSelector.computeMirrors(MirrorSelector.java:205)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorSelector.initMirrors(MirrorSelector.java:267)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorSelector.selectMirror(MirrorSelector.java:326)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorSelector.getMirrorLocation(MirrorSelector.java:245)
+	at org.eclipse.equinox.internal.p2.artifact.repository.simple.SimpleArtifactRepository.getMirror(SimpleArtifactRepository.java:552)
+	at org.eclipse.equinox.internal.p2.artifact.repository.simple.SimpleArtifactRepository.downloadArtifact(SimpleArtifactRepository.java:508)
+	at org.eclipse.equinox.internal.p2.artifact.repository.simple.SimpleArtifactRepository.getArtifact(SimpleArtifactRepository.java:576)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorRequest.getArtifact(MirrorRequest.java:248)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorRequest.transferSingle(MirrorRequest.java:223)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorRequest.transfer(MirrorRequest.java:179)
+	at org.eclipse.equinox.internal.p2.artifact.repository.MirrorRequest.perform(MirrorRequest.java:115)
+	at org.eclipse.equinox.internal.p2.artifact.repository.simple.SimpleArtifactRepository.getArtifact(SimpleArtifactRepository.java:565)
+	at org.eclipse.equinox.internal.p2.artifact.repository.simple.DownloadJob.run(DownloadJob.java:63)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+
+!ENTRY org.eclipse.equinox.p2.artifact.repository 4 0 2010-10-05 17:38:57.669
+!MESSAGE Error processing mirrors URL: http://www.eclipse.org/downloads/download.php?format=xml&file=/releases/helios/201006230900/aggregate/&protocol=http&countryCode=kr&timeZone=9&format=xml
+!STACK 0
+java.io.IOException: Pipe closed
+	at java.io.PipedInputStream.checkStateForReceive(Unknown Source)
+	at java.io.PipedInputStream.receive(Unknown Source)
+	at java.io.PipedOutputStream.write(Unknown Source)
+	at org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer.handleReceivedData(AbstractRetrieveFileTransfer.java:284)
+	at org.eclipse.ecf.provider.filetransfer.retrieve.AbstractRetrieveFileTransfer$1.performFileTransfer(AbstractRetrieveFileTransfer.java:173)
+	at org.eclipse.ecf.filetransfer.FileTransferJob.run(FileTransferJob.java:74)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:54)
+!SESSION 2010-10-05 17:42:42.174 -----------------------------------------------
+eclipse.buildId=M20100909-0800
+java.version=1.6.0_19
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=ko_KR
+Framework arguments:  -product org.eclipse.epp.package.java.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -product org.eclipse.epp.package.java.product
+
+!ENTRY com.google.gdt.eclipse.suite 1 0 2010-10-05 17:43:27.650
+!MESSAGE Registering: com.google.appengine.eclipse.sdkbundle.1.3.7_1.3.7.v201008311427
+
+!ENTRY org.eclipse.jface 2 0 2010-10-05 17:43:32.592
+!MESSAGE Keybinding conflicts occurred.  They may interfere with normal accelerator operation.
+!SUBENTRY 1 org.eclipse.jface 2 0 2010-10-05 17:43:32.592
+!MESSAGE A conflict occurred for CTRL+SHIFT+T:
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(com.python.pydev.analysis.actions.pyGlobalsBrowserWorkbench,Python Show Class Browser,
+		Show Class Browser,
+		Category(org.python.pydev.ui.category.source,Pydev - Editor,Pydev editor category,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)
+Binding(CTRL+SHIFT+T,
+	ParameterizedCommand(Command(org.eclipse.jdt.ui.navigate.open.type,Open Type,
+		Open a type in a Java editor,
+		Category(org.eclipse.ui.category.navigate,Navigate,null,true),
+		,
+		,,true),null),
+	org.eclipse.ui.defaultAcceleratorConfiguration,
+	org.eclipse.ui.contexts.window,,,system)

@@ -4,6 +4,7 @@
 
 #include "swl/rnd_util/ExportRndUtil.h"
 #include <gsl/gsl_blas.h>
+#include <gsl/gsl_eigen.h>
 
 
 #ifdef __cplusplus
@@ -90,8 +91,13 @@ private:
 	gsl_matrix *Pyy_tmp_;
 	gsl_matrix *invPyy_;
 	gsl_matrix *KPyy_tmp_;
+	gsl_matrix *sqrtQ_;
 
 	gsl_permutation *permutation_;
+
+	gsl_vector *eigenVal_;
+	gsl_matrix *eigenVec_;
+	gsl_eigen_symmv_workspace *eigenWS_;
 };
 
 }  // namespace swl

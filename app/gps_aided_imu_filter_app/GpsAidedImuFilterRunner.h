@@ -21,7 +21,7 @@ public:
 	//typedef GpsAidedImuFilterRunner base_type;
 
 public:
-	GpsAidedImuFilterRunner(const ImuData::Accel &initialGravity, const ImuData::Gyro &initialAngularVel);
+	GpsAidedImuFilterRunner(const double Ts, const ImuData::Accel &initialGravity, const ImuData::Gyro &initialAngularVel);
 	~GpsAidedImuFilterRunner();
 
 private:
@@ -30,18 +30,18 @@ private:
 
 public:
 	//
-	void initialize();
+	void initialize(const size_t stateDim, const size_t inputDim, const size_t outputDim, const size_t processNoiseDim, const size_t observationNoiseDim, const gsl_vector *x0, gsl_matrix *P0);
 	void finalize();
 
 	//
-	bool runStep(const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::ECEF &measuredGpsVel, const EarthData::Speed &measuredGpsSpeed);
+	bool runStep(const gsl_matrix *Q, const gsl_matrix *R, const ImuData::Accel &measuredAccel, const ImuData::Gyro &measuredAngularVel, const EarthData::ECEF &measuredGpsECEF, const EarthData::ECEF &measuredGpsVel, const EarthData::Speed &measuredGpsSpeed);
 
 	//
 	const gsl_vector * getFilteredPos() const  {  return currPos_;  }
 	const gsl_vector * getFilteredVel() const  {  return currVel_;  }
-	const gsl_vector * getFilteredAccel() const  {  return currAccel_;  }
+	//const gsl_vector * getFilteredAccel() const  {  return currAccel_;  }
 	const gsl_vector * getFilteredQuaternion() const  {  return currQuaternion_;  }
-	const gsl_vector * getFilteredAngularVel() const  {  return currAngularVel_;  }
+	//const gsl_vector * getFilteredAngularVel() const  {  return currAngularVel_;  }
 
 private:
 	const size_t dim_;
@@ -53,9 +53,6 @@ private:
 	const ImuData::Accel &initialGravity_;
 	const ImuData::Gyro &initialAngularVel_;
 
-	gsl_matrix *Q_;
-	gsl_matrix *R_;
-
 	gsl_vector *actualMeasurement_;
 
 	gsl_vector *currPos_;  // wrt initial frame
@@ -65,8 +62,8 @@ private:
 	gsl_vector *currQuaternion_;  // wrt initial frame
 	gsl_vector *prevQuaternion_;  // wrt initial frame
 
-	gsl_vector *currAccel_;  // wrt initial frame
-	gsl_vector *currAngularVel_;  // wrt initial frame
+	//gsl_vector *currAccel_;  // wrt initial frame
+	//gsl_vector *currAngularVel_;  // wrt initial frame
 
 	size_t step_;
 };

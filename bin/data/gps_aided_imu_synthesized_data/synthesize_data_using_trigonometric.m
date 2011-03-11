@@ -1,4 +1,5 @@
 T = 100;  % [sec]
+Ts = 0.1;  % [sec]
 L = [ 10 10 10 ];  % [m]
 
 % p(t) = a1 * t + a2 * sin(t) + a3 * sin(2*t) + a4 * sin(3*t) + a5 * cos(t) + a6 * cos(2*t) + a7 * cos(3*t)
@@ -35,12 +36,12 @@ traj_coeffs(:,1) = [ coeff(1,1) predefined_coeffs(1) coeff(2,1) coeff(3,1) coeff
 traj_coeffs(:,2) = [ coeff(1,2) coeff(2,2) predefined_coeffs(2) coeff(3,2) coeff(4,2) coeff(5,2) coeff(6,2) ]';
 traj_coeffs(:,3) = [ coeff(1,3) coeff(2,3) coeff(3,3) predefined_coeffs(3) coeff(4,3) coeff(5,3) coeff(6,3) ]';
 
-time = [0:0.1:T]';
+time = [0:Ts:T]';
 for ii = 1:3
 	[ traj_poses(:,ii) traj_vels(:,ii) traj_accels(:,ii) ] = traj(time, traj_coeffs(:,ii));
-	traj_poses(:,ii) = traj_poses(:,ii) + 2 * randn(size(time));
-	traj_vels(:,ii) = traj_vels(:,ii) + 0.25 * max(traj_vels(:,ii)) * randn(size(time));
-	traj_accels(:,ii) = traj_accels(:,ii) + 0.25 * max(traj_accels(:,ii)) * randn(size(time));
+	traj_poses(:,ii) = traj_poses(:,ii) + 0.2 * randn(size(time));
+	traj_vels(:,ii) = traj_vels(:,ii) + 0.01 * max(traj_vels(:,ii)) * randn(size(time));
+	traj_accels(:,ii) = traj_accels(:,ii) + 0.01 * max(traj_accels(:,ii)) * randn(size(time));
 end;
 
 traj_saved = [ traj_poses traj_vels traj_accels ];

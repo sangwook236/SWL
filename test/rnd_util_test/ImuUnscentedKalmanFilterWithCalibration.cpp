@@ -326,7 +326,14 @@ void imu_unscented_Kalman_filter_with_calibration()
 	const size_t processNoiseDim = stateDim;
 	const size_t observationNoiseDim = outputDim;
 
+	// TODO [check] >>
+#if 0
+	// for unscented Kalman filter
 	const size_t L = stateDim + processNoiseDim + observationNoiseDim;
+#else
+	// for unscented Kalman filter with additive noise
+	const size_t L = stateDim;
+#endif
 	const double alpha = 1.0e-3;
 	const double beta = 2.0;  // for Gaussian distribution
 	const double kappa = 0.0;  // 3.0 - L;

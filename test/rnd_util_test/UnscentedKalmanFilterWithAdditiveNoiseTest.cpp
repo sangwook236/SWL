@@ -595,7 +595,13 @@ void simple_system_unscented_kalman_filter_with_additive_noise()
 	const size_t processNoiseDim = stateDim;
 	const size_t observationNoiseDim = outputDim;
 
+#if 0
+	// for unscented Kalman filter
 	const size_t L = stateDim + processNoiseDim + observationNoiseDim;
+#else
+	// for unscented Kalman filter with additive noise
+	const size_t L = stateDim;
+#endif
 	const double alpha = 1.0e-3;
 	const double beta = 2.0;  // for Gaussian distribution
 	const double kappa = 0.0;  // 3.0 - L;
@@ -699,7 +705,13 @@ void linear_mass_spring_damper_system_unscented_kalman_filter_with_additive_nois
 	const size_t processNoiseDim = stateDim;
 	const size_t observationNoiseDim = outputDim;
 
+#if 0
+	// for unscented Kalman filter
 	const size_t L = stateDim + processNoiseDim + observationNoiseDim;
+#else
+	// for unscented Kalman filter with additive noise
+	const size_t L = stateDim;
+#endif
 	const double alpha = 1.0e-3;
 	const double beta = 2.0;  // for Gaussian distribution
 	const double kappa = 0.0;  // 3.0 - L;
@@ -832,7 +844,13 @@ void simple_nonlinear_system_unscented_kalman_filter_with_additive_noise()
 	const double sigma_v = 0.1;
 
 	//
+#if 0
+	// for unscented Kalman filter
 	const size_t L = stateDim + processNoiseDim + observationNoiseDim;
+#else
+	// for unscented Kalman filter with additive noise
+	const size_t L = stateDim;
+#endif
 	const double alpha = 1.0e-3;
 	const double beta = 2.0;  // for Gaussian distribution
 	const double kappa = 0.0;  // 3.0 - L;
@@ -998,7 +1016,13 @@ void nonstationary_growth_system_unscented_kalman_filter_with_additive_noise()
 	const size_t processNoiseDim = stateDim;
 	const size_t observationNoiseDim = outputDim;
 
+#if 0
+	// for unscented Kalman filter
 	const size_t L = stateDim + processNoiseDim + observationNoiseDim;
+#else
+	// for unscented Kalman filter with additive noise
+	const size_t L = stateDim;
+#endif
 	const double alpha = 1.0e-3;
 	const double beta = 2.0;  // for Gaussian distribution
 	const double kappa = 0.0;  // 3.0 - L;

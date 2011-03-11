@@ -3,9 +3,10 @@
 #include "Adis16350Interface.h"
 #include "GpsInterface.h"
 #include "GpsAidedImuFilterRunner.h"
+#include <gsl/gsl_blas.h>
 #include <boost/smart_ptr.hpp>
 #include <string>
-#include <list>
+#include <deque>
 
 
 // CFileBasedFilteringDialog dialog
@@ -27,7 +28,7 @@ private:
 
 private:
 	static const UINT FILTER_TIMER_ID = 1;
-	static const size_t FILTER_LOOPING_INTERVAL = 1;
+	static const size_t FILTER_LOOPING_INTERVAL = 1000;
 
 	boost::scoped_ptr<swl::GpsAidedImuFilterRunner> runner_;
 
@@ -44,7 +45,10 @@ private:
 	size_t Ndata_;
 	size_t step_;
 
-	std::list<swl::EarthData::ECEF> poses_, vels_, accels_;
+	std::deque<swl::EarthData::ECEF> poses_, vels_, accels_;
+
+	gsl_matrix *Q_;
+	gsl_matrix *R_;
 
 protected:
 	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
