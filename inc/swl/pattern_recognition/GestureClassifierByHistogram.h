@@ -27,22 +27,22 @@ class SWL_PATTERN_RECOGNITION_API GestureClassifierByHistogram: public IGestureC
 public:
 	struct Params
 	{
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_SHORT_TIME_GESTURE;
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_LONG_TIME_GESTURE;
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_THIRD_CLASS_GESTURE;
+		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE;
+		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE;
+		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE;
 		size_t MAX_MATCHED_HISTOGRAM_NUM;
 
-		double histDistThresholdForShortTimeGesture;
-		//double histDistThresholdForShortTimeGesture_LeftMove;
-		//double histDistThresholdForShortTimeGesture_Others;
-		double histDistThresholdForLongTimeGesture;
-		double histDistThresholdForThirdClassGesture;
+		double histDistThresholdForClass1Gesture;
+		//double histDistThresholdForClass1Gesture_LeftMove;
+		//double histDistThresholdForClass1Gesture_Others;
+		double histDistThresholdForClass2Gesture;
+		double histDistThresholdForClass3Gesture;
 
 		double histDistThresholdForGestureIdPattern;
 
-		size_t matchedIndexCountThresholdForShortTimeGesture;
-		size_t matchedIndexCountThresholdForLongTimeGesture;
-		size_t matchedIndexCountThresholdForThirdClassGesture;
+		size_t matchedIndexCountThresholdForClass1Gesture;
+		size_t matchedIndexCountThresholdForClass2Gesture;
+		size_t matchedIndexCountThresholdForClass3Gesture;
 
 		bool doesApplyMagnitudeFiltering;
 		double magnitudeFilteringMinThresholdRatio;
@@ -66,9 +66,9 @@ public:
 	/*virtual*/ bool classifyGesture();
 	/*virtual*/ GestureType::Type getGestureType() const  {  return gestureId_;  }
 
-	void clearShortTimeGestureHistory();
-	void clearLongTimeGestureHistory();
-	void clearThirdClassGestureHistory();
+	void clearClass1GestureHistory();
+	void clearClass2GestureHistory();
+	void clearClass3GestureHistory();
 	void clearTimeSeriesGestureHistory();
 
 	// for display
@@ -76,20 +76,20 @@ public:
 	void destroyWindows() const;
 
 private:
-	bool classifyShortTimeGesture();
-	bool classifyLongTimeGesture();
-	bool classifyThirdClassGesture();
+	bool classifyClass1Gesture();
+	bool classifyClass2Gesture();
+	bool classifyClass3Gesture();
 
-	GestureType::Type classifyShortTimeGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const bool useGestureIdPattern) const;
-	GestureType::Type classifyLongTimeGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
-	GestureType::Type classifyThirdClassGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
+	GestureType::Type classifyClass1Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const bool useGestureIdPattern) const;
+	GestureType::Type classifyClass2Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
+	GestureType::Type classifyClass3Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
 	GestureType::Type classifyTimeSeriesGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
 
 	void createReferenceFullPhaseHistograms();
-	void createReferenceHistogramsForShortTimeGesture();
-	void createReferenceHistogramsForLongTimeGesture();
-	void createReferenceHistogramsForThirdClassGesture();
-	void createGestureIdPatternHistogramsForShortTimeGesture();
+	void createReferenceHistogramsForClass1Gesture();
+	void createReferenceHistogramsForClass2Gesture();
+	void createReferenceHistogramsForClass3Gesture();
+	void createGestureIdPatternHistogramsForClass1Gesture();
 
 	size_t matchHistogramByGestureIdPattern(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::vector<const cv::MatND> &gestureIdPatternHistograms, const double histDistThreshold) const;
 	size_t matchHistogramByFrequency(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const size_t countThreshold) const;
@@ -105,19 +105,21 @@ private:
 
 	std::vector<const cv::MatND> refFullPhaseHistograms_;
 
-	std::vector<const cv::MatND> refHistogramsForShortTimeGesture_;
-	std::vector<const cv::MatND> refHistogramsForLongTimeGesture_;
-	std::vector<const cv::MatND> refHistogramsForThirdClassGesture_;
+	std::vector<const cv::MatND> refHistogramsForClass1Gesture_;
+	std::vector<const cv::MatND> refHistogramsForClass2Gesture_;
+	std::vector<const cv::MatND> refHistogramsForClass3Gesture_;
 
-	std::vector<const cv::MatND> gestureIdPatternHistogramsForShortTimeGesture_;
+	std::vector<const cv::MatND> gestureIdPatternHistogramsForClass1Gesture_;
+	//std::vector<const cv::MatND> gestureIdPatternHistogramsForClass2Gesture_;
+	//std::vector<const cv::MatND> gestureIdPatternHistogramsForClass3Gesture_;
 
-	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForShortTimeGesture_;
-	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForLongTimeGesture_;
-	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForThirdClassGesture_;
+	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForClass1Gesture_;
+	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForClass2Gesture_;
+	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForClass3Gesture_;
 
-	boost::circular_buffer<size_t> matchedHistogramIndexes1ForShortTimeGesture_, matchedHistogramIndexes2ForShortTimeGesture_;
-	boost::circular_buffer<size_t> matchedHistogramIndexesForLongTimeGesture_;
-	boost::circular_buffer<size_t> matchedHistogramIndexesForThirdClassGesture_;
+	boost::circular_buffer<size_t> matchedHistogramIndexes1ForClass1Gesture_, matchedHistogramIndexes2ForClass1Gesture_;
+	boost::circular_buffer<size_t> matchedHistogramIndexesForClass2Gesture_;
+	boost::circular_buffer<size_t> matchedHistogramIndexesForClass3Gesture_;
 
 	GestureType::Type gestureId_;
 };

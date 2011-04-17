@@ -90,6 +90,7 @@
     <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureClassifierByHistogram.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureType.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\IGestureClassifier.h" />
+    <ClInclude Include="..\..\inc\swl\pattern_recognition\IMotionSegmenter.h" />
     <ClInclude Include="HistogramAccumulator.h" />
     <ClInclude Include="HistogramGenerator.h" />
     <ClInclude Include="HistogramMatcher.h" />

@@ -4,6 +4,7 @@
 #include "swl/math/MathConstant.h"
 #include <boost/tuple/tuple.hpp>
 #include <boost/multi_array.hpp>
+#include <boost/smart_ptr.hpp>
 #include <list>
 #include <deque>
 #include <vector>
@@ -25,6 +26,8 @@
 
 
 namespace {
+
+//#define __USE_BOOST_MULTI_ARRAY_DIRECTLY 1
 
 struct ShapeInfo
 {
@@ -94,7 +97,11 @@ private:
 	// (xc, yc) : x & y coordinates of the center
 	// theta : rotational angle about z axis 
 	// (sx, sy) : scale factors along x & y axes
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 	boost::multi_array<size_t, 5> parameterSpace_;
+#else
+	boost::scoped_ptr<boost::multi_array<size_t, 5> > parameterSpace_;
+#endif
 	std::vector<ParameterSpaceInfo> parameterSpaceInfos_;
 
 	// a set of pairs which represents (distance,angle) or (dx,dy) from a reference point (x,y) to the centroid of the shape
@@ -113,12 +120,16 @@ bool RectangleHoughTransform::constructParameterSpace(const std::vector<Paramete
 	const size_t size3 = 0 == parameterSpaceInfos_[3].resolution ? 1 : parameterSpaceInfos_[3].resolution;
 	const size_t size4 = 0 == parameterSpaceInfos_[4].resolution ? 1 : parameterSpaceInfos_[4].resolution;
 
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 #if defined(NDEBUG) || defined(_STLPORT_VERSION)
 	parameterSpace_.resize(boost::extents[size0][size1][size2][size3][size4]);
 #else
+	// FIXME [modify] >>
 	// MSVC: compile-time error in debug build: i don't know why
 	//parameterSpace_.resize(boost::extents[size0][size1][size2][size3][size4]);
-#	error MSVC: compile-time error in debug build
+#endif
+#else
+	parameterSpace_.reset(new boost::multi_array<size_t, 5>(boost::extents[size0][size1][size2][size3][size4]));
 #endif
 
 	return true;
@@ -183,7 +194,11 @@ void RectangleHoughTransform::vote(const std::vector<ShapeInfo> &input)
 	const size_t size3 = 0 == parameterSpaceInfos_[3].resolution ? 1 : parameterSpaceInfos_[3].resolution;
 	const size_t size4 = 0 == parameterSpaceInfos_[4].resolution ? 1 : parameterSpaceInfos_[4].resolution;
 
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 	memset(parameterSpace_.data(), 0, sizeof(size_t) * size0 * size1 * size2 * size3 * size4);
+#else
+	memset(parameterSpace_->data(), 0, sizeof(size_t) * size0 * size1 * size2 * size3 * size4);
+#endif
 
 	const double eps = 1.0e-20;
 
@@ -250,7 +265,11 @@ void RectangleHoughTransform::vote(const std::vector<ShapeInfo> &input)
 							//std::cout << "error: invalid index of center's coordiates !!!" << std::endl;
 						}
 						else
-							++parameterSpace_[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx];
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
+							++parameterSpace_)[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx];
+#else
+							++((*parameterSpace_)[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx]);
+#endif
 					}
 				}
 			}
@@ -260,7 +279,11 @@ void RectangleHoughTransform::vote(const std::vector<ShapeInfo> &input)
 
 bool RectangleHoughTransform::isLocalMaximum(const size_t xcIdx0, const size_t ycIdx0, const size_t thetaIdx0, const size_t sxIdx0, const size_t syIdx0, const size_t minVotingCount) const
 {
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 	const size_t votingCount = parameterSpace_[xcIdx0][ycIdx0][thetaIdx0][sxIdx0][syIdx0];
+#else
+	const size_t votingCount = (*parameterSpace_)[xcIdx0][ycIdx0][thetaIdx0][sxIdx0][syIdx0];
+#endif
 	if (0 == votingCount || votingCount < minVotingCount) return false;
 
 	const size_t size0 = 0 == parameterSpaceInfos_[0].resolution ? 1 : parameterSpaceInfos_[0].resolution;
@@ -307,7 +330,11 @@ bool RectangleHoughTransform::isLocalMaximum(const size_t xcIdx0, const size_t y
 						if (xcIdx0 == xcIdx && ycIdx0 == ycIdx && thetaIdx0 == thetaIdx && sxIdx0 == sxIdx && syIdx0 == syIdx) continue;
 
 						// FIXME [improve] >>
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 						if (parameterSpace_[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx] > votingCount)
+#else
+						if ((*parameterSpace_)[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx] > votingCount)
+#endif
 							return false;
 					}
 				}
@@ -380,7 +407,11 @@ boost::tuple<double, double, double, double, double, size_t> RectangleHoughTrans
 	//const double sy = 0 == parameterSpaceInfos_[4].resolution ? 1.0 : min4 + syIdx * factor4;
 	const double sy = 0 == parameterSpaceInfos_[4].resolution ? 1.0 : std::pow(2.0, min4 + syIdx * factor4);
 
+#if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 	return boost::make_tuple(xc, yc, theta, sx, sy, parameterSpace_[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx]);
+#else
+	return boost::make_tuple(xc, yc, theta, sx, sy, (*parameterSpace_)[xcIdx][ycIdx][thetaIdx][sxIdx][syIdx]);
+#endif
 }
 
 void extract_points_in_rectangle(const double xi, const double  yi, const double xLength, const double yLength, const double rotationAngle, const size_t dataCountPerSide, std::vector<ShapeInfo> &shape)

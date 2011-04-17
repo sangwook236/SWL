@@ -10,7 +10,7 @@
 
 namespace swl {
 
-//#define __VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_ 1
+#define __VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_ 1
 
 
 namespace {
@@ -49,9 +49,9 @@ const int phaseHorzScale = 10, phaseVertScale = 2;
 
 //
 const double refFullPhaseHistogramSigma = 8.0;
-const double shortTimeGestureRefHistogramSigma = 8.0;
-const double longTimeGestureRefHistogramSigma = 16.0;
-const double thirdClassGestureRefHistogramSigma = 20.0;
+const double class1GestureRefHistogramSigma = 8.0;
+const double class2GestureRefHistogramSigma = 16.0;
+const double class3GestureRefHistogramSigma = 20.0;
 const size_t refHistogramBinNum = phaseHistBins;
 const double refHistogramNormalizationFactor = 5000.0;
 const double gesturePatternHistogramSigma = 1.0;
@@ -85,15 +85,15 @@ struct MaxFrequencyComparator
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 const std::string windowName1("gesture recognition - magnitude histogram");
-const std::string windowNameShortTimeGesture1("gesture recognition - (STG) actual histogram");
-const std::string windowNameShortTimeGesture2("gesture recognition - (STG) matched histogram");
-const std::string windowNameShortTimeGesture3("gesture recognition - (STG) matched id histogram");
-const std::string windowNameLongTimeGesture1("gesture recognition - (LTG) actual histogram");
-const std::string windowNameLongTimeGesture2("gesture recognition - (LTG) matched histogram");
-const std::string windowNameLongTimeGesture3("gesture recognition - (LTG) matched id histogram");
-const std::string windowNameThirdClassGesture1("gesture recognition - (TCG) actual histogram");
-const std::string windowNameThirdClassGesture2("gesture recognition - (TCG) matched histogram");
-const std::string windowNameThirdClassGesture3("gesture recognition - (TCG) matched id histogram");
+const std::string windowNameClass1Gesture1("gesture recognition - (STG) actual histogram");
+const std::string windowNameClass1Gesture2("gesture recognition - (STG) matched histogram");
+const std::string windowNameClass1Gesture3("gesture recognition - (STG) matched id histogram");
+const std::string windowNameClass2Gesture1("gesture recognition - (LTG) actual histogram");
+const std::string windowNameClass2Gesture2("gesture recognition - (LTG) matched histogram");
+const std::string windowNameClass2Gesture3("gesture recognition - (LTG) matched id histogram");
+const std::string windowNameClass3Gesture1("gesture recognition - (TCG) actual histogram");
+const std::string windowNameClass3Gesture2("gesture recognition - (TCG) matched histogram");
+const std::string windowNameClass3Gesture3("gesture recognition - (TCG) matched id histogram");
 const std::string windowNameForTemporalPhaseHistogram("gesture recognition - temporal histogram");
 #endif
 
@@ -107,29 +107,29 @@ GestureClassifierByHistogram::GestureClassifierByHistogram(const Params &params)
 : base_type(),
   params_(params),
   refFullPhaseHistograms_(),
-  refHistogramsForShortTimeGesture_(), refHistogramsForLongTimeGesture_(), refHistogramsForThirdClassGesture_(),
-  gestureIdPatternHistogramsForShortTimeGesture_(),
-  histogramAccumulatorForShortTimeGesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_SHORT_TIME_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_SHORT_TIME_GESTURE)),
-  histogramAccumulatorForLongTimeGesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_LONG_TIME_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_LONG_TIME_GESTURE)),
-  histogramAccumulatorForThirdClassGesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_THIRD_CLASS_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_THIRD_CLASS_GESTURE)),
-  matchedHistogramIndexes1ForShortTimeGesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexes2ForShortTimeGesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexesForLongTimeGesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexesForThirdClassGesture_(params_.MAX_MATCHED_HISTOGRAM_NUM),
+  refHistogramsForClass1Gesture_(), refHistogramsForClass2Gesture_(), refHistogramsForClass3Gesture_(),
+  gestureIdPatternHistogramsForClass1Gesture_(),
+  histogramAccumulatorForClass1Gesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE)),
+  histogramAccumulatorForClass2Gesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE)),
+  histogramAccumulatorForClass3Gesture_(params_.doesApplyTimeWeighting ? new HistogramAccumulator(local::getHistogramTimeWeight(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE)) : new HistogramAccumulator(params_.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE)),
+  matchedHistogramIndexes1ForClass1Gesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexes2ForClass1Gesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexesForClass2Gesture_(params_.MAX_MATCHED_HISTOGRAM_NUM), matchedHistogramIndexesForClass3Gesture_(params_.MAX_MATCHED_HISTOGRAM_NUM),
   gestureId_(GestureType::GT_UNDEFINED)
 {
 	createReferenceFullPhaseHistograms();
-	createReferenceHistogramsForShortTimeGesture();
-	createReferenceHistogramsForLongTimeGesture();
-	createReferenceHistogramsForThirdClassGesture();
-	createGestureIdPatternHistogramsForShortTimeGesture();
+	createReferenceHistogramsForClass1Gesture();
+	createReferenceHistogramsForClass2Gesture();
+	createReferenceHistogramsForClass3Gesture();
+	createGestureIdPatternHistogramsForClass1Gesture();
 }
 
 GestureClassifierByHistogram::GestureClassifierByHistogram(const GestureClassifierByHistogram &rhs)
 : base_type(),
   params_(rhs.params_),
   refFullPhaseHistograms_(rhs.refFullPhaseHistograms_),
-  refHistogramsForShortTimeGesture_(rhs.refHistogramsForShortTimeGesture_), refHistogramsForLongTimeGesture_(rhs.refHistogramsForLongTimeGesture_), refHistogramsForThirdClassGesture_(rhs.refHistogramsForThirdClassGesture_),
-  gestureIdPatternHistogramsForShortTimeGesture_(rhs.gestureIdPatternHistogramsForShortTimeGesture_),
-  histogramAccumulatorForShortTimeGesture_(rhs.histogramAccumulatorForShortTimeGesture_), histogramAccumulatorForLongTimeGesture_(rhs.histogramAccumulatorForLongTimeGesture_), histogramAccumulatorForThirdClassGesture_(rhs.histogramAccumulatorForThirdClassGesture_),
-  matchedHistogramIndexes1ForShortTimeGesture_(rhs.matchedHistogramIndexes1ForShortTimeGesture_),  matchedHistogramIndexes2ForShortTimeGesture_(rhs.matchedHistogramIndexes2ForShortTimeGesture_), matchedHistogramIndexesForLongTimeGesture_(rhs.matchedHistogramIndexesForLongTimeGesture_), matchedHistogramIndexesForThirdClassGesture_(rhs.matchedHistogramIndexesForThirdClassGesture_),
+  refHistogramsForClass1Gesture_(rhs.refHistogramsForClass1Gesture_), refHistogramsForClass2Gesture_(rhs.refHistogramsForClass2Gesture_), refHistogramsForClass3Gesture_(rhs.refHistogramsForClass3Gesture_),
+  gestureIdPatternHistogramsForClass1Gesture_(rhs.gestureIdPatternHistogramsForClass1Gesture_),
+  histogramAccumulatorForClass1Gesture_(rhs.histogramAccumulatorForClass1Gesture_), histogramAccumulatorForClass2Gesture_(rhs.histogramAccumulatorForClass2Gesture_), histogramAccumulatorForClass3Gesture_(rhs.histogramAccumulatorForClass3Gesture_),
+  matchedHistogramIndexes1ForClass1Gesture_(rhs.matchedHistogramIndexes1ForClass1Gesture_),  matchedHistogramIndexes2ForClass1Gesture_(rhs.matchedHistogramIndexes2ForClass1Gesture_), matchedHistogramIndexesForClass2Gesture_(rhs.matchedHistogramIndexesForClass2Gesture_), matchedHistogramIndexesForClass3Gesture_(rhs.matchedHistogramIndexesForClass3Gesture_),
   gestureId_(rhs.gestureId_)
 {
 }
@@ -145,17 +145,17 @@ GestureClassifierByHistogram & GestureClassifierByHistogram::operator=(const Ges
 
 	params_ = rhs.params_;
 	refFullPhaseHistograms_.assign(rhs.refFullPhaseHistograms_.begin(), rhs.refFullPhaseHistograms_.end());
-	refHistogramsForShortTimeGesture_.assign(rhs.refHistogramsForShortTimeGesture_.begin(), rhs.refHistogramsForShortTimeGesture_.end());
-	refHistogramsForLongTimeGesture_.assign(rhs.refHistogramsForLongTimeGesture_.begin(), rhs.refHistogramsForLongTimeGesture_.end());
-	refHistogramsForThirdClassGesture_.assign(rhs.refHistogramsForThirdClassGesture_.begin(), rhs.refHistogramsForThirdClassGesture_.end());
-	gestureIdPatternHistogramsForShortTimeGesture_.assign(rhs.gestureIdPatternHistogramsForShortTimeGesture_.begin(), rhs.gestureIdPatternHistogramsForShortTimeGesture_.end());
-	histogramAccumulatorForShortTimeGesture_ = rhs.histogramAccumulatorForShortTimeGesture_;
-	histogramAccumulatorForLongTimeGesture_ = rhs.histogramAccumulatorForLongTimeGesture_;
-	histogramAccumulatorForThirdClassGesture_ = rhs.histogramAccumulatorForThirdClassGesture_;
-	matchedHistogramIndexes1ForShortTimeGesture_.assign(rhs.matchedHistogramIndexes1ForShortTimeGesture_.begin(), rhs.matchedHistogramIndexes1ForShortTimeGesture_.end());
-	matchedHistogramIndexes2ForShortTimeGesture_.assign(rhs.matchedHistogramIndexes2ForShortTimeGesture_.begin(), rhs.matchedHistogramIndexes2ForShortTimeGesture_.end());
-	matchedHistogramIndexesForLongTimeGesture_.assign(rhs.matchedHistogramIndexesForLongTimeGesture_.begin(), rhs.matchedHistogramIndexesForLongTimeGesture_.end());
-	matchedHistogramIndexesForThirdClassGesture_.assign(rhs.matchedHistogramIndexesForThirdClassGesture_.begin(), rhs.matchedHistogramIndexesForThirdClassGesture_.end());
+	refHistogramsForClass1Gesture_.assign(rhs.refHistogramsForClass1Gesture_.begin(), rhs.refHistogramsForClass1Gesture_.end());
+	refHistogramsForClass2Gesture_.assign(rhs.refHistogramsForClass2Gesture_.begin(), rhs.refHistogramsForClass2Gesture_.end());
+	refHistogramsForClass3Gesture_.assign(rhs.refHistogramsForClass3Gesture_.begin(), rhs.refHistogramsForClass3Gesture_.end());
+	gestureIdPatternHistogramsForClass1Gesture_.assign(rhs.gestureIdPatternHistogramsForClass1Gesture_.begin(), rhs.gestureIdPatternHistogramsForClass1Gesture_.end());
+	histogramAccumulatorForClass1Gesture_ = rhs.histogramAccumulatorForClass1Gesture_;
+	histogramAccumulatorForClass2Gesture_ = rhs.histogramAccumulatorForClass2Gesture_;
+	histogramAccumulatorForClass3Gesture_ = rhs.histogramAccumulatorForClass3Gesture_;
+	matchedHistogramIndexes1ForClass1Gesture_.assign(rhs.matchedHistogramIndexes1ForClass1Gesture_.begin(), rhs.matchedHistogramIndexes1ForClass1Gesture_.end());
+	matchedHistogramIndexes2ForClass1Gesture_.assign(rhs.matchedHistogramIndexes2ForClass1Gesture_.begin(), rhs.matchedHistogramIndexes2ForClass1Gesture_.end());
+	matchedHistogramIndexesForClass2Gesture_.assign(rhs.matchedHistogramIndexesForClass2Gesture_.begin(), rhs.matchedHistogramIndexesForClass2Gesture_.end());
+	matchedHistogramIndexesForClass3Gesture_.assign(rhs.matchedHistogramIndexesForClass3Gesture_.begin(), rhs.matchedHistogramIndexesForClass3Gesture_.end());
 	gestureId_ = rhs.gestureId_;
 
 	return *this;
@@ -165,15 +165,15 @@ void GestureClassifierByHistogram::initWindows() const
 {
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 	cv::namedWindow(local::windowName1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameShortTimeGesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameShortTimeGesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameShortTimeGesture3, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameLongTimeGesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameLongTimeGesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameLongTimeGesture3, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameThirdClassGesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameThirdClassGesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameThirdClassGesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass1Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass1Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass1Gesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture3, cv::WINDOW_AUTOSIZE);
 	cv::namedWindow(local::windowNameForTemporalPhaseHistogram, cv::WINDOW_AUTOSIZE);
 #endif
 }
@@ -182,15 +182,15 @@ void GestureClassifierByHistogram::destroyWindows() const
 {
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 	cv::destroyWindow(local::windowName1);
-	cv::destroyWindow(local::windowNameShortTimeGesture1);
-	cv::destroyWindow(local::windowNameShortTimeGesture2);
-	cv::destroyWindow(local::windowNameShortTimeGesture3);
-	cv::destroyWindow(local::windowNameLongTimeGesture1);
-	cv::destroyWindow(local::windowNameLongTimeGesture2);
-	cv::destroyWindow(local::windowNameLongTimeGesture3);
-	cv::destroyWindow(local::windowNameThirdClassGesture1);
-	cv::destroyWindow(local::windowNameThirdClassGesture2);
-	cv::destroyWindow(local::windowNameThirdClassGesture3);
+	cv::destroyWindow(local::windowNameClass1Gesture1);
+	cv::destroyWindow(local::windowNameClass1Gesture2);
+	cv::destroyWindow(local::windowNameClass1Gesture3);
+	cv::destroyWindow(local::windowNameClass2Gesture1);
+	cv::destroyWindow(local::windowNameClass2Gesture2);
+	cv::destroyWindow(local::windowNameClass2Gesture3);
+	cv::destroyWindow(local::windowNameClass3Gesture1);
+	cv::destroyWindow(local::windowNameClass3Gesture2);
+	cv::destroyWindow(local::windowNameClass3Gesture3);
 	cv::destroyWindow(local::windowNameForTemporalPhaseHistogram);
 #endif
 }
@@ -225,8 +225,8 @@ void GestureClassifierByHistogram::destroyWindows() const
 
 		// calculate phase histogram
 		cv::calcHist(&flow_phase, 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
-		histogramAccumulatorForShortTimeGesture_->addHistogram(hist);
-		histogramAccumulatorForLongTimeGesture_->addHistogram(hist);
+		histogramAccumulatorForClass1Gesture_->addHistogram(hist);
+		histogramAccumulatorForClass2Gesture_->addHistogram(hist);
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 		// FIXME [delete] >> draw magnitude histogram
@@ -273,12 +273,12 @@ void GestureClassifierByHistogram::destroyWindows() const
 
 		// calculate phase histogram
 		cv::calcHist(&flow_phase, 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
-		histogramAccumulatorForThirdClassGesture_->addHistogram(hist);
+		histogramAccumulatorForClass3Gesture_->addHistogram(hist);
 	}
 	else
 	{
 		// TODO [check] >>
-		//clearThirdClassGestureHistory();
+		//clearClass3GestureHistory();
 	}
 
 	return true;
@@ -288,36 +288,36 @@ void GestureClassifierByHistogram::destroyWindows() const
 {
 	gestureId_ = GestureType::GT_UNDEFINED;
 
-	// classify long-time gesture
-	//if (histogramAccumulatorForLongTimeGesture_->isFull() && classifyLongTimeGesture()) return true;
+	// classify class 2 gesture
+	//if (histogramAccumulatorForClass2Gesture_->isFull() && classifyClass2Gesture()) return true;
 
-	// classify short-time gesture
-	if (histogramAccumulatorForShortTimeGesture_->isFull() && classifyShortTimeGesture()) return true;
+	// classify class 1 gesture
+	if (histogramAccumulatorForClass1Gesture_->isFull() && classifyClass1Gesture()) return true;
 
 	// TODO [check] >>
-	// classify 3rd-class gesture
-	if (histogramAccumulatorForThirdClassGesture_->isFull() && classifyThirdClassGesture()) return true;
+	// classify class 3 gesture
+	if (histogramAccumulatorForClass3Gesture_->isFull() && classifyClass3Gesture()) return true;
 
 	return false;
 }
 
-void GestureClassifierByHistogram::clearShortTimeGestureHistory()
+void GestureClassifierByHistogram::clearClass1GestureHistory()
 {
-	histogramAccumulatorForShortTimeGesture_->clearAllHistograms();
-	matchedHistogramIndexes1ForShortTimeGesture_.clear();
-	matchedHistogramIndexes2ForShortTimeGesture_.clear();
+	histogramAccumulatorForClass1Gesture_->clearAllHistograms();
+	matchedHistogramIndexes1ForClass1Gesture_.clear();
+	matchedHistogramIndexes2ForClass1Gesture_.clear();
 }
 
-void GestureClassifierByHistogram::clearLongTimeGestureHistory()
+void GestureClassifierByHistogram::clearClass2GestureHistory()
 {
-	histogramAccumulatorForLongTimeGesture_->clearAllHistograms();
-	matchedHistogramIndexesForLongTimeGesture_.clear();
+	histogramAccumulatorForClass2Gesture_->clearAllHistograms();
+	matchedHistogramIndexesForClass2Gesture_.clear();
 }
 
-void GestureClassifierByHistogram::clearThirdClassGestureHistory()
+void GestureClassifierByHistogram::clearClass3GestureHistory()
 {
-	histogramAccumulatorForThirdClassGesture_->clearAllHistograms();
-	matchedHistogramIndexesForThirdClassGesture_.clear();
+	histogramAccumulatorForClass3Gesture_->clearAllHistograms();
+	matchedHistogramIndexesForClass3Gesture_.clear();
 }
 
 void GestureClassifierByHistogram::clearTimeSeriesGestureHistory()
@@ -325,17 +325,17 @@ void GestureClassifierByHistogram::clearTimeSeriesGestureHistory()
 	// FIXME [implement] >>
 }
 
-bool GestureClassifierByHistogram::classifyShortTimeGesture()
+bool GestureClassifierByHistogram::classifyClass1Gesture()
 {
 	// create accumulated phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForShortTimeGesture_->createAccumulatedHistogram();
+	cv::MatND &accumulatedHist = histogramAccumulatorForClass1Gesture_->createAccumulatedHistogram();
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
 	// FIXME [restore] >> have to decide which one is used
 	{
-		//cv::MatND &temporalHist = histogramAccumulatorForShortTimeGesture_->createTemporalHistogram();
-		cv::MatND &temporalHist = histogramAccumulatorForShortTimeGesture_->createTemporalHistogram(refFullPhaseHistograms_, params_.histDistThresholdForShortTimeGesture);
+		//cv::MatND &temporalHist = histogramAccumulatorForClass1Gesture_->createTemporalHistogram();
+		cv::MatND &temporalHist = histogramAccumulatorForClass1Gesture_->createTemporalHistogram(refFullPhaseHistograms_, params_.histDistThresholdForClass1Gesture);
 		// normalize histogram
 		HistogramUtil::normalizeHistogram(temporalHist, local::refHistogramNormalizationFactor);
 
@@ -347,7 +347,7 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 	// draw accumulated phase histogram
-	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameShortTimeGesture1);
+	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameClass1Gesture1);
 #endif
 
 	// match histogram
@@ -356,16 +356,16 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 
 // FIXME [restore] >>
 #if 1
-	if (minHistDist1 < params_.histDistThresholdForShortTimeGesture)
+	if (minHistDist1 < params_.histDistThresholdForClass1Gesture)
 #else
-	if ((((0 <= matchedIdx && matchedIdx <= 4) || (31 <= matchedIdx && matchedIdx <= 35)) && minHistDist < local::histDistThresholdForShortTimeGesture_LeftMove) ||
-		(minHistDist < local::histDistThresholdForShortTimeGesture_Others))
+	if ((((0 <= matchedIdx && matchedIdx <= 4) || (31 <= matchedIdx && matchedIdx <= 35)) && minHistDist < local::histDistThresholdForClass1Gesture_LeftMove) ||
+		(minHistDist < local::histDistThresholdForClass1Gesture_Others))
 #endif
 	{
-		matchedHistogramIndexes1ForShortTimeGesture_.push_back(matchedIdx1);
+		matchedHistogramIndexes1ForClass1Gesture_.push_back(matchedIdx1);
 
-		// classify short-time gesture
-		gestureId_ = classifyShortTimeGesture(matchedHistogramIndexes1ForShortTimeGesture_, true);
+		// classify class 1 gesture
+		gestureId_ = classifyClass1Gesture(matchedHistogramIndexes1ForClass1Gesture_, true);
 
 		// FIXME [delete] >>
 		//std::cout << matchedIdx << ", " << minHistDist << std::endl;
@@ -375,10 +375,10 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 		{
 			// FIXME [modify] >> delete ???
 			// draw matched index histogram
-			drawMatchedIdPatternHistogram(matchedHistogramIndexes1ForShortTimeGesture_, local::windowNameShortTimeGesture3);
+			drawMatchedIdPatternHistogram(matchedHistogramIndexes1ForClass1Gesture_, local::windowNameClass1Gesture3);
 
 			// draw matched reference histogram
-			drawMatchedReferenceHistogram(refFullPhaseHistograms_, matchedIdx1, local::windowNameShortTimeGesture2);
+			drawMatchedReferenceHistogram(refFullPhaseHistograms_, matchedIdx1, local::windowNameClass1Gesture2);
 		}
 #endif
 
@@ -387,26 +387,26 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 	}
 	else
 	{
-		matchedHistogramIndexes1ForShortTimeGesture_.push_back(-1);
+		matchedHistogramIndexes1ForClass1Gesture_.push_back(-1);
 
 		// FIXME [delete] >>
 		//std::cout << "-----------, " << minHistDist << std::endl;
 
-		//cv::imshow(windowNameShortTimeGesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
+		//cv::imshow(windowNameClass1Gesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
 
 		//return false;
 	}
 
 	// FIXME [modify] >> the above & this codes should be integrated
 	double minHistDist2 = std::numeric_limits<double>::max();
-	const size_t &matchedIdx2 = refHistogramsForShortTimeGesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForShortTimeGesture_, accumulatedHist, minHistDist2);
+	const size_t &matchedIdx2 = refHistogramsForClass1Gesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForClass1Gesture_, accumulatedHist, minHistDist2);
 
-	if (minHistDist2 < params_.histDistThresholdForShortTimeGesture)
+	if (minHistDist2 < params_.histDistThresholdForClass1Gesture)
 	{
-		matchedHistogramIndexes2ForShortTimeGesture_.push_back(matchedIdx2);
+		matchedHistogramIndexes2ForClass1Gesture_.push_back(matchedIdx2);
 
-		// classify short-time gesture
-		gestureId_ = classifyShortTimeGesture(matchedHistogramIndexes2ForShortTimeGesture_, false);
+		// classify class 1 gesture
+		gestureId_ = classifyClass1Gesture(matchedHistogramIndexes2ForClass1Gesture_, false);
 
 		// FIXME [delete] >>
 		//std::cout << matchedIdx << ", " << minHistDist << std::endl;
@@ -416,10 +416,10 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 		{
 			// FIXME [modify] >> delete ???
 			// draw matched index histogram
-			drawMatchedIdPatternHistogram(matchedHistogramIndexes2ForShortTimeGesture_, local::windowNameShortTimeGesture3);
+			drawMatchedIdPatternHistogram(matchedHistogramIndexes2ForClass1Gesture_, local::windowNameClass1Gesture3);
 
 			// draw matched reference histogram
-			drawMatchedReferenceHistogram(refHistogramsForShortTimeGesture_, matchedIdx2, local::windowNameShortTimeGesture2);
+			drawMatchedReferenceHistogram(refHistogramsForClass1Gesture_, matchedIdx2, local::windowNameClass1Gesture2);
 		}
 #endif
 
@@ -428,12 +428,12 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 	}
 	else
 	{
-		matchedHistogramIndexes2ForShortTimeGesture_.push_back(-1);
+		matchedHistogramIndexes2ForClass1Gesture_.push_back(-1);
 
 		// FIXME [delete] >>
 		//std::cout << "-----------, " << minHistDist << std::endl;
 
-		//cv::imshow(windowNameShortTimeGesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
+		//cv::imshow(windowNameClass1Gesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
 
 		//return false;
 	}
@@ -441,28 +441,28 @@ bool GestureClassifierByHistogram::classifyShortTimeGesture()
 	return false;
 }
 
-bool GestureClassifierByHistogram::classifyLongTimeGesture()
+bool GestureClassifierByHistogram::classifyClass2Gesture()
 {
 	// accumulate phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForLongTimeGesture_->createAccumulatedHistogram();
+	cv::MatND &accumulatedHist = histogramAccumulatorForClass2Gesture_->createAccumulatedHistogram();
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 	// draw accumulated phase histogram
-	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameLongTimeGesture1);
+	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameClass2Gesture1);
 #endif
 
 	// match histogram
 	double minHistDist = std::numeric_limits<double>::max();
-	const size_t &matchedIdx = refHistogramsForLongTimeGesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForLongTimeGesture_, accumulatedHist, minHistDist);
+	const size_t &matchedIdx = refHistogramsForClass2Gesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForClass2Gesture_, accumulatedHist, minHistDist);
 
-	if (minHistDist < params_.histDistThresholdForLongTimeGesture)
+	if (minHistDist < params_.histDistThresholdForClass2Gesture)
 	{
-		matchedHistogramIndexesForLongTimeGesture_.push_back(matchedIdx);
+		matchedHistogramIndexesForClass2Gesture_.push_back(matchedIdx);
 
-		// classify long-time gesture
-		gestureId_ = classifyLongTimeGesture(matchedHistogramIndexesForLongTimeGesture_);
+		// classify class 2 gesture
+		gestureId_ = classifyClass2Gesture(matchedHistogramIndexesForClass2Gesture_);
 
 		// FIXME [delete] >>
 		//std::cout << matchedIdx << ", " << minHistDist << std::endl;
@@ -472,10 +472,10 @@ bool GestureClassifierByHistogram::classifyLongTimeGesture()
 		{
 			// FIXME [modify] >> delete ???
 			// draw matched index histogram
-			drawMatchedIdPatternHistogram(matchedHistogramIndexesForLongTimeGesture_, local::windowNameLongTimeGesture3);
+			drawMatchedIdPatternHistogram(matchedHistogramIndexesForClass2Gesture_, local::windowNameClass2Gesture3);
 
 			// draw matched reference histogram
-			drawMatchedReferenceHistogram(refHistogramsForLongTimeGesture_, matchedIdx, local::windowNameLongTimeGesture2);
+			drawMatchedReferenceHistogram(refHistogramsForClass2Gesture_, matchedIdx, local::windowNameClass2Gesture2);
 		}
 #endif
 
@@ -484,12 +484,12 @@ bool GestureClassifierByHistogram::classifyLongTimeGesture()
 	}
 	else
 	{
-		matchedHistogramIndexesForLongTimeGesture_.push_back(-1);
+		matchedHistogramIndexesForClass2Gesture_.push_back(-1);
 
 		// FIXME [delete] >>
 		//std::cout << "-----------, " << minHistDist << std::endl;
 
-		//cv::imshow(windowNameLongTimeGesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
+		//cv::imshow(windowNameClass2Gesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
 
 		//return false;
 	}
@@ -497,28 +497,28 @@ bool GestureClassifierByHistogram::classifyLongTimeGesture()
 	return false;
 }
 
-bool GestureClassifierByHistogram::classifyThirdClassGesture()
+bool GestureClassifierByHistogram::classifyClass3Gesture()
 {
 	// accumulate phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForThirdClassGesture_->createAccumulatedHistogram();
+	cv::MatND &accumulatedHist = histogramAccumulatorForClass3Gesture_->createAccumulatedHistogram();
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
 	// draw accumulated phase histogram
-	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameThirdClassGesture1);
+	drawAccumulatedPhaseHistogram(accumulatedHist, local::windowNameClass3Gesture1);
 #endif
 
 	// match histogram
 	double minHistDist = std::numeric_limits<double>::max();
-	const size_t &matchedIdx = refHistogramsForThirdClassGesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForThirdClassGesture_, accumulatedHist, minHistDist);
+	const size_t &matchedIdx = refHistogramsForClass3Gesture_.empty() ? -1 : HistogramMatcher::match(refHistogramsForClass3Gesture_, accumulatedHist, minHistDist);
 
-	if (minHistDist < params_.histDistThresholdForThirdClassGesture)
+	if (minHistDist < params_.histDistThresholdForClass3Gesture)
 	{
-		matchedHistogramIndexesForThirdClassGesture_.push_back(matchedIdx);
+		matchedHistogramIndexesForClass3Gesture_.push_back(matchedIdx);
 
-		// classify 3rd-class gesture
-		gestureId_ = classifyThirdClassGesture(matchedHistogramIndexesForThirdClassGesture_);
+		// classify class 3 gesture
+		gestureId_ = classifyClass3Gesture(matchedHistogramIndexesForClass3Gesture_);
 
 		// FIXME [delete] >>
 		//std::cout << matchedIdx << ", " << minHistDist << std::endl;
@@ -528,10 +528,10 @@ bool GestureClassifierByHistogram::classifyThirdClassGesture()
 		{
 			// FIXME [modify] >> delete ???
 			// draw matched index histogram
-			drawMatchedIdPatternHistogram(matchedHistogramIndexesForThirdClassGesture_, local::windowNameThirdClassGesture3);
+			drawMatchedIdPatternHistogram(matchedHistogramIndexesForClass3Gesture_, local::windowNameClass3Gesture3);
 
 			// draw matched reference histogram
-			drawMatchedReferenceHistogram(refHistogramsForThirdClassGesture_, matchedIdx, local::windowNameThirdClassGesture2);
+			drawMatchedReferenceHistogram(refHistogramsForClass3Gesture_, matchedIdx, local::windowNameClass3Gesture2);
 		}
 #endif
 
@@ -540,12 +540,12 @@ bool GestureClassifierByHistogram::classifyThirdClassGesture()
 	}
 	else
 	{
-		matchedHistogramIndexesForThirdClassGesture_.push_back(-1);
+		matchedHistogramIndexesForClass3Gesture_.push_back(-1);
 
 		// FIXME [delete] >>
 		//std::cout << "-----------, " << minHistDist << std::endl;
 
-		//cv::imshow(windowNameThirdClassGesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
+		//cv::imshow(windowNameClass3Gesture2, cv::Mat::zeros(phaseHistMaxHeight, phaseHistBins*phaseHistBinWidth, CV_8UC3));
 
 		//return false;
 	}
@@ -553,12 +553,12 @@ bool GestureClassifierByHistogram::classifyThirdClassGesture()
 	return false;
 }
 
-GestureType::Type GestureClassifierByHistogram::classifyShortTimeGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const bool useGestureIdPattern) const
+GestureType::Type GestureClassifierByHistogram::classifyClass1Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const bool useGestureIdPattern) const
 {
 	// match histogram by gesture ID pattern
 	if (useGestureIdPattern)
 	{
-		const size_t &matchedIdx = matchHistogramByGestureIdPattern(matchedHistogramIndexes, gestureIdPatternHistogramsForShortTimeGesture_, params_.histDistThresholdForGestureIdPattern);
+		const size_t &matchedIdx = matchHistogramByGestureIdPattern(matchedHistogramIndexes, gestureIdPatternHistogramsForClass1Gesture_, params_.histDistThresholdForGestureIdPattern);
 		switch (matchedIdx)
 		{
 		case 1:
@@ -576,7 +576,7 @@ GestureType::Type GestureClassifierByHistogram::classifyShortTimeGesture(const b
 	{
 		// TODO [adjust] >> design parameter
 		const size_t countThreshold(matchedHistogramIndexes.size() / 2);
-		//const size_t countThreshold(params_.matchedIndexCountThresholdForShortTimeGesture);
+		//const size_t countThreshold(params_.matchedIndexCountThresholdForClass1Gesture);
 
 		const size_t &matchedIdx = matchHistogramByFrequency(matchedHistogramIndexes, countThreshold);
 		switch (matchedIdx)
@@ -591,10 +591,10 @@ GestureType::Type GestureClassifierByHistogram::classifyShortTimeGesture(const b
 	return GestureType::GT_UNDEFINED;
 }
 
-GestureType::Type GestureClassifierByHistogram::classifyLongTimeGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const
+GestureType::Type GestureClassifierByHistogram::classifyClass2Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const
 {
 #if 0
-	const size_t &matchedIdx = matchHistogramByGestureIdPattern(matchedHistogramIndexes, gestureIdPatternHistogramsForLongTimeGesture_, params_.histDistThresholdForGestureIdPattern);
+	const size_t &matchedIdx = matchHistogramByGestureIdPattern(matchedHistogramIndexes, gestureIdPatternHistogramsForClass2Gesture_, params_.histDistThresholdForGestureIdPattern);
 	switch (matchedIdx)
 	{
 	case :
@@ -616,7 +616,7 @@ GestureType::Type GestureClassifierByHistogram::classifyLongTimeGesture(const bo
 #else
 	// TODO [adjust] >> design parameter
 	const size_t countThreshold(matchedHistogramIndexes.size() / 2);
-	//const size_t countThreshold(params_.matchedIndexCountThresholdForLongTimeGesture);
+	//const size_t countThreshold(params_.matchedIndexCountThresholdForClass2Gesture);
 
 	const size_t &matchedIdx = matchHistogramByFrequency(matchedHistogramIndexes, countThreshold);
 	switch (matchedIdx)
@@ -642,7 +642,7 @@ GestureType::Type GestureClassifierByHistogram::classifyLongTimeGesture(const bo
 	return GestureType::GT_UNDEFINED;
 }
 
-GestureType::Type GestureClassifierByHistogram::classifyThirdClassGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const
+GestureType::Type GestureClassifierByHistogram::classifyClass3Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const
 {
 #if 0
 	const size_t &matchedIdx = matchHistogramByGestureIdPattern(matchedHistogramIndexes, gestureIdPatternHistogramsForThirdClassGesture_, params_.histDistThresholdForGestureIdPattern);
@@ -656,7 +656,7 @@ GestureType::Type GestureClassifierByHistogram::classifyThirdClassGesture(const 
 #else
 	// TODO [adjust] >> design parameter
 	const size_t countThreshold(matchedHistogramIndexes.size() / 2);
-	//const size_t countThreshold(params_.matchedIndexCountThresholdForThirdClassGesture);
+	//const size_t countThreshold(params_.matchedIndexCountThresholdForClass3Gesture);
 
 	const size_t &matchedIdx = matchHistogramByFrequency(matchedHistogramIndexes, countThreshold);
 	switch (matchedIdx)
@@ -724,25 +724,25 @@ void GestureClassifierByHistogram::createReferenceFullPhaseHistograms()
 		cv::Mat histImg(cv::Mat::zeros(local::phaseHistMaxHeight, local::phaseHistBins*local::phaseHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::phaseHistBins, maxVal, local::phaseHistBinWidth, local::phaseHistMaxHeight, histImg);
 
-		cv::imshow(local::windowNameShortTimeGesture2, histImg);
+		cv::imshow(local::windowNameClass1Gesture2, histImg);
 		cv::waitKey(0);
 	}
 #endif
 }
 
-void GestureClassifierByHistogram::createReferenceHistogramsForShortTimeGesture()
+void GestureClassifierByHistogram::createReferenceHistogramsForClass1Gesture()
 {
 	// create reference histograms
-	ReferenceHistogramGeneratorForShortTimeGesture refHistogramGenerator(local::shortTimeGestureRefHistogramSigma);
+	ReferenceHistogramGeneratorForClass1Gesture refHistogramGenerator(local::class1GestureRefHistogramSigma);
 	refHistogramGenerator.createHistograms(local::phaseHistBins, local::refHistogramNormalizationFactor);
 	const std::vector<cv::MatND> &refHistograms = refHistogramGenerator.getHistograms();
 
-	refHistogramsForShortTimeGesture_.assign(refHistograms.begin(), refHistograms.end());
+	refHistogramsForClass1Gesture_.assign(refHistograms.begin(), refHistograms.end());
 
 #if 0
 	// FIXME [delete] >>
 	// draw reference histograms
-	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForShortTimeGesture_.begin(); it != refHistogramsForShortTimeGesture_.end(); ++it)
+	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForClass1Gesture_.begin(); it != refHistogramsForClass1Gesture_.end(); ++it)
 	{
 #if 0
 		double maxVal = 0.0;
@@ -755,25 +755,25 @@ void GestureClassifierByHistogram::createReferenceHistogramsForShortTimeGesture(
 		cv::Mat histImg(cv::Mat::zeros(local::phaseHistMaxHeight, local::phaseHistBins*local::phaseHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::phaseHistBins, maxVal, local::phaseHistBinWidth, local::phaseHistMaxHeight, histImg);
 
-		cv::imshow(local::windowNameShortTimeGesture2, histImg);
+		cv::imshow(local::windowNameClass1Gesture2, histImg);
 		cv::waitKey(0);
 	}
 #endif
 }
 
-void GestureClassifierByHistogram::createReferenceHistogramsForLongTimeGesture()
+void GestureClassifierByHistogram::createReferenceHistogramsForClass2Gesture()
 {
 	// create reference histograms
-	ReferenceHistogramGeneratorForLongTimeGesture refHistogramGenerator(local::longTimeGestureRefHistogramSigma);
+	ReferenceHistogramGeneratorForClass2Gesture refHistogramGenerator(local::class2GestureRefHistogramSigma);
 	refHistogramGenerator.createHistograms(local::phaseHistBins, local::refHistogramNormalizationFactor);
 	const std::vector<cv::MatND> &refHistograms = refHistogramGenerator.getHistograms();
 
-	refHistogramsForLongTimeGesture_.assign(refHistograms.begin(), refHistograms.end());
+	refHistogramsForClass2Gesture_.assign(refHistograms.begin(), refHistograms.end());
 
 #if 0
 	// FIXME [delete] >>
 	// draw reference histograms
-	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForLongTimeGesture_.begin(); it != refHistogramsForLongTimeGesture_.end(); ++it)
+	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForClass2Gesture_.begin(); it != refHistogramsForClass2Gesture_.end(); ++it)
 	{
 #if 0
 		double maxVal = 0.0;
@@ -786,25 +786,25 @@ void GestureClassifierByHistogram::createReferenceHistogramsForLongTimeGesture()
 		cv::Mat histImg(cv::Mat::zeros(local::phaseHistMaxHeight, local::phaseHistBins*local::phaseHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::phaseHistBins, maxVal, local::phaseHistBinWidth, local::phaseHistMaxHeight, histImg);
 
-		cv::imshow(local::windowNameShortTimeGesture2, histImg);
+		cv::imshow(local::windowNameClass1Gesture2, histImg);
 		cv::waitKey(0);
 	}
 #endif
 }
 
-void GestureClassifierByHistogram::createReferenceHistogramsForThirdClassGesture()
+void GestureClassifierByHistogram::createReferenceHistogramsForClass3Gesture()
 {
 	// create reference histograms
-	ReferenceHistogramGeneratorForThirdClassGesture refHistogramGenerator(local::thirdClassGestureRefHistogramSigma);
+	ReferenceHistogramGeneratorForClass3Gesture refHistogramGenerator(local::class3GestureRefHistogramSigma);
 	refHistogramGenerator.createHistograms(local::phaseHistBins, local::refHistogramNormalizationFactor);
 	const std::vector<cv::MatND> &refHistograms = refHistogramGenerator.getHistograms();
 
-	refHistogramsForThirdClassGesture_.assign(refHistograms.begin(), refHistograms.end());
+	refHistogramsForClass3Gesture_.assign(refHistograms.begin(), refHistograms.end());
 
 #if 0
 	// FIXME [delete] >>
 	// draw reference histograms
-	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForThirdClassGesture_.begin(); it != refHistogramsForThirdClassGesture_.end(); ++it)
+	for (std::vector<cv::MatND>::const_iterator it = refHistogramsForClass3Gesture_.begin(); it != refHistogramsForClass3Gesture_.end(); ++it)
 	{
 #if 0
 		double maxVal = 0.0;
@@ -817,20 +817,20 @@ void GestureClassifierByHistogram::createReferenceHistogramsForThirdClassGesture
 		cv::Mat histImg(cv::Mat::zeros(local::phaseHistMaxHeight, local::phaseHistBins*local::phaseHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::phaseHistBins, maxVal, local::phaseHistBinWidth, local::phaseHistMaxHeight, histImg);
 
-		cv::imshow(local::windowNameShortTimeGesture2, histImg);
+		cv::imshow(local::windowNameClass1Gesture2, histImg);
 		cv::waitKey(0);
 	}
 #endif
 }
 
-void GestureClassifierByHistogram::createGestureIdPatternHistogramsForShortTimeGesture()
+void GestureClassifierByHistogram::createGestureIdPatternHistogramsForClass1Gesture()
 {
 	// create gesture pattern histograms
-	GestureIdPatternHistogramGeneratorForShortTimeGesture gestureIdPatternHistogramGenerator(local::gesturePatternHistogramSigma);
+	GestureIdPatternHistogramGeneratorForClass1Gesture gestureIdPatternHistogramGenerator(local::gesturePatternHistogramSigma);
 	gestureIdPatternHistogramGenerator.createHistograms(local::gesturePatternHistogramBinNum, local::gesturePatternHistogramNormalizationFactor);
 	const std::vector<cv::MatND> &gesturePatternHistograms = gestureIdPatternHistogramGenerator.getHistograms();
 
-	gestureIdPatternHistogramsForShortTimeGesture_.assign(gesturePatternHistograms.begin(), gesturePatternHistograms.end());
+	gestureIdPatternHistogramsForClass1Gesture_.assign(gesturePatternHistograms.begin(), gesturePatternHistograms.end());
 
 #if 0
 	// FIXME [delete] >>
@@ -848,7 +848,7 @@ void GestureClassifierByHistogram::createGestureIdPatternHistogramsForShortTimeG
 		cv::Mat histImg(cv::Mat::zeros(local::indexHistMaxHeight, local::gesturePatternHistogramBinNum*local::indexHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::gesturePatternHistogramBinNum, maxVal, local::indexHistBinWidth, local::indexHistMaxHeight, histImg);
 
-		cv::imshow(local::windowNameShortTimeGesture2, histImg);
+		cv::imshow(local::windowNameClass1Gesture2, histImg);
 		cv::waitKey(0);
 	}
 #endif

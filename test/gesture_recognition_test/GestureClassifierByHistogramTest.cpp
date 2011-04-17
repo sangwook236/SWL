@@ -124,22 +124,22 @@ void gestureRecognitionByHistogram()
 	// TODO [adjust] >> design parameter of gesture classifier
 	swl::GestureClassifierByHistogram::Params params;
 	{
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_SHORT_TIME_GESTURE = 15;
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_LONG_TIME_GESTURE = 7;
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_THIRD_CLASS_GESTURE = 30;
+		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE = 15;
+		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE = 7;
+		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE = 30;
 		params.MAX_MATCHED_HISTOGRAM_NUM = 10;
 
-		params.histDistThresholdForShortTimeGesture = 0.38;
-		//params.histDistThresholdForShortTimeGesture_LeftMove = 0.4;
-		//params.histDistThresholdForShortTimeGesture_Others = params.histDistThresholdForShortTimeGesture;
-		params.histDistThresholdForLongTimeGesture = 0.5;
-		params.histDistThresholdForThirdClassGesture = 0.5;
+		params.histDistThresholdForClass1Gesture = 0.38;
+		//params.histDistThresholdForClass1Gesture_LeftMove = 0.4;
+		//params.histDistThresholdForClass1Gesture_Others = params.histDistThresholdForClass1Gesture;
+		params.histDistThresholdForClass2Gesture = 0.5;
+		params.histDistThresholdForClass3Gesture = 0.5;
 
 		params.histDistThresholdForGestureIdPattern = 0.8;
 
-		params.matchedIndexCountThresholdForShortTimeGesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
-		params.matchedIndexCountThresholdForLongTimeGesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
-		params.matchedIndexCountThresholdForThirdClassGesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass1Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass2Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass3Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
 
 		params.doesApplyMagnitudeFiltering = true;
 		params.magnitudeFilteringMinThresholdRatio = 0.3;
@@ -156,7 +156,7 @@ void gestureRecognitionByHistogram()
 
 	cv::Mat prevgray, gray, frame, frame2;
 	cv::Mat mhi, img, tmp_img, blurred;
-	// FIXME [check] >> for 3rd-class gesture analysis
+	// FIXME [check] >> for class 3 gesture analysis
 	cv::Mat prevgray2, gray2, mhi2;
 	for (;;)
 	{
@@ -200,7 +200,7 @@ void gestureRecognitionByHistogram()
 
 		cv::cvtColor(gray, img, CV_GRAY2BGR);
 
-		// FIXME [check] >> for 3rd-class gesture analysis
+		// FIXME [check] >> for class 3 gesture analysis
 #if 0
 		cv::pyrDown(gray, blurred);
 		cv::pyrDown(blurred, gray2);
@@ -221,7 +221,7 @@ void gestureRecognitionByHistogram()
 			std::vector<cv::Rect> component_rects;
 			local::segmentMotionUsingMHI(timestamp, MHI_TIME_DURATION, prevgray, gray, mhi, processed_mhi, component_label_map, component_rects);
 
-			// FIXME [check] >> for 3rd-class gesture analysis
+			// FIXME [check] >> for class 3 gesture analysis
 			if (mhi2.empty())
 				mhi2.create(gray2.rows, gray2.cols, CV_32FC1);
 
@@ -280,7 +280,7 @@ void gestureRecognitionByHistogram()
 				}
 			}
 
-			// FIXME [check] >> for 3rd-class gesture analysis
+			// FIXME [check] >> for class 3 gesture analysis
 			cv::Rect selected_rect2;
 			{
 				size_t k = 1;
@@ -321,7 +321,7 @@ void gestureRecognitionByHistogram()
 				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.5, 3, 15, 3, 5, 1.1, 0);
 				cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.25, 7, 15, 3, 7, 1.5, 0);
 
-				// FIXME [check] >> for 3rd-class gesture analysis
+				// FIXME [check] >> for class 3 gesture analysis
 				cv::Mat flow2;
 				if (selected_rect2.area() > 0)
 				{
@@ -336,9 +336,9 @@ void gestureRecognitionByHistogram()
 			{
 				//std::cout << timestamp << ": ************************************************" << std::endl;
 
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
-				gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifierByHistogram->clearClass3GestureHistory();
 				gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
 			}
 
@@ -348,56 +348,56 @@ void gestureRecognitionByHistogram()
 			switch (gestureId)
 			{
 			case swl::GestureType::GT_LEFT_MOVE:
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_RIGHT_MOVE:
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_UP_MOVE:
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_DOWN_MOVE:
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_LEFT_FAST_MOVE:
 				// TODO [check] >> not yet applied
-				//gestureClassifierByHistogram->clearShortTimeGestureHistory();
-				gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_RIGHT_FAST_MOVE:
 				// TODO [check] >> not yet applied
-				//gestureClassifierByHistogram->clearShortTimeGestureHistory();
-				gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				//gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_HORIZONTAL_FLIP:
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_VERTICAL_FLIP:
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_JAMJAM:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_SHAKE:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_LEFT_90_TURN:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_RIGHT_90_TURN:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearLongTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass2GestureHistory();
 				break;
 			case swl::GestureType::GT_CW:
 				// TODO [check] >> not yet applied
@@ -410,19 +410,19 @@ void gestureRecognitionByHistogram()
 			case swl::GestureType::GT_INFINITY:
 				// TODO [check] >>
 				//gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
-				gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_TRIANGLE:
 				// TODO [check] >>
 				//gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
-				gestureClassifierByHistogram->clearThirdClassGestureHistory();
+				gestureClassifierByHistogram->clearClass3GestureHistory();
 				break;
 			case swl::GestureType::GT_HAND_OPEN:
 				if (!isPowered)
 				{
 					isPowered = true;
 				}
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				break;
 			case swl::GestureType::GT_HAND_CLOSE:
 				// TODO [check] >> not yet applied
@@ -430,7 +430,7 @@ void gestureRecognitionByHistogram()
 				{
 					isPowered = false;
 				}
-				gestureClassifierByHistogram->clearShortTimeGestureHistory();
+				gestureClassifierByHistogram->clearClass1GestureHistory();
 				break;
 			default:
 				break;

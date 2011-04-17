@@ -169,7 +169,7 @@ void ReferencePhaseHistogramGeneratorBase::createUniformHistogram(cv::MatND &his
 //-----------------------------------------------------------------------------
 //
 
-/*virtual*/ void ReferenceHistogramGeneratorForShortTimeGesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
+/*virtual*/ void ReferenceHistogramGeneratorForClass1Gesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
 {
 	// create reference histograms
 	histograms_.reserve(REF_HISTOGRAM_NUM);
@@ -217,7 +217,7 @@ void ReferencePhaseHistogramGeneratorBase::createUniformHistogram(cv::MatND &his
 //-----------------------------------------------------------------------------
 //
 
-/*virtual*/ void ReferenceHistogramGeneratorForLongTimeGesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
+/*virtual*/ void ReferenceHistogramGeneratorForClass2Gesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
 {
 	// create reference histograms
 	histograms_.reserve(REF_HISTOGRAM_NUM);
@@ -255,7 +255,7 @@ void ReferencePhaseHistogramGeneratorBase::createUniformHistogram(cv::MatND &his
 //-----------------------------------------------------------------------------
 //
 
-/*virtual*/ void ReferenceHistogramGeneratorForThirdClassGesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
+/*virtual*/ void ReferenceHistogramGeneratorForClass3Gesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
 {
 	// create reference histograms
 	histograms_.reserve(REF_HISTOGRAM_NUM);
@@ -362,7 +362,7 @@ void GestureIdPatternHistogramGeneratorBase::createUniformHistogram(cv::MatND &h
 //-----------------------------------------------------------------------------
 //
 
-/*virtual*/ void GestureIdPatternHistogramGeneratorForShortTimeGesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
+/*virtual*/ void GestureIdPatternHistogramGeneratorForClass1Gesture::createHistograms(const size_t binNum, const double histogramNormalizationFactor)
 {
 	// uniform distribution: for undefined gesture
 	{

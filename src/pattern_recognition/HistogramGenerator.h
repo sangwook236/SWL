@@ -102,7 +102,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-class ReferenceHistogramGeneratorForShortTimeGesture: public ReferencePhaseHistogramGeneratorBase
+class ReferenceHistogramGeneratorForClass1Gesture: public ReferencePhaseHistogramGeneratorBase
 {
 public:
 	// TODO [adjust] >> design parameter
@@ -114,13 +114,13 @@ public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
 
 public:
-	ReferenceHistogramGeneratorForShortTimeGesture(const double sigma)
+	ReferenceHistogramGeneratorForClass1Gesture(const double sigma)
 	: base_type(sigma)
 	{}
 
 private:
-	ReferenceHistogramGeneratorForShortTimeGesture(const ReferenceHistogramGeneratorForShortTimeGesture &rhs);
-	ReferenceHistogramGeneratorForShortTimeGesture & operator=(const ReferenceHistogramGeneratorForShortTimeGesture &rhs);
+	ReferenceHistogramGeneratorForClass1Gesture(const ReferenceHistogramGeneratorForClass1Gesture &rhs);
+	ReferenceHistogramGeneratorForClass1Gesture & operator=(const ReferenceHistogramGeneratorForClass1Gesture &rhs);
 
 public:
 	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
@@ -130,7 +130,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-class ReferenceHistogramGeneratorForLongTimeGesture: public ReferencePhaseHistogramGeneratorBase
+class ReferenceHistogramGeneratorForClass2Gesture: public ReferencePhaseHistogramGeneratorBase
 {
 public:
 	// TODO [adjust] >> design parameter
@@ -142,13 +142,13 @@ public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
 
 public:
-	ReferenceHistogramGeneratorForLongTimeGesture(const double sigma)
+	ReferenceHistogramGeneratorForClass2Gesture(const double sigma)
 	: base_type(sigma)
 	{}
 
 private:
-	ReferenceHistogramGeneratorForLongTimeGesture(const ReferenceHistogramGeneratorForLongTimeGesture &rhs);
-	ReferenceHistogramGeneratorForLongTimeGesture & operator=(const ReferenceHistogramGeneratorForLongTimeGesture &rhs);
+	ReferenceHistogramGeneratorForClass2Gesture(const ReferenceHistogramGeneratorForClass2Gesture &rhs);
+	ReferenceHistogramGeneratorForClass2Gesture & operator=(const ReferenceHistogramGeneratorForClass2Gesture &rhs);
 
 public:
 	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
@@ -158,7 +158,7 @@ public:
 //-----------------------------------------------------------------------------
 //
 
-class ReferenceHistogramGeneratorForThirdClassGesture: public ReferencePhaseHistogramGeneratorBase
+class ReferenceHistogramGeneratorForClass3Gesture: public ReferencePhaseHistogramGeneratorBase
 {
 public:
 	// TODO [adjust] >> design parameter
@@ -171,13 +171,13 @@ public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
 
 public:
-	ReferenceHistogramGeneratorForThirdClassGesture(const double sigma)
+	ReferenceHistogramGeneratorForClass3Gesture(const double sigma)
 	: base_type(sigma)
 	{}
 
 private:
-	ReferenceHistogramGeneratorForThirdClassGesture(const ReferenceHistogramGeneratorForThirdClassGesture &rhs);
-	ReferenceHistogramGeneratorForThirdClassGesture & operator=(const ReferenceHistogramGeneratorForThirdClassGesture &rhs);
+	ReferenceHistogramGeneratorForClass3Gesture(const ReferenceHistogramGeneratorForClass3Gesture &rhs);
+	ReferenceHistogramGeneratorForClass3Gesture & operator=(const ReferenceHistogramGeneratorForClass3Gesture &rhs);
 
 public:
 	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
@@ -213,19 +213,19 @@ protected:
 //-----------------------------------------------------------------------------
 //
 
-class GestureIdPatternHistogramGeneratorForShortTimeGesture: public GestureIdPatternHistogramGeneratorBase
+class GestureIdPatternHistogramGeneratorForClass1Gesture: public GestureIdPatternHistogramGeneratorBase
 {
 public:
 	typedef GestureIdPatternHistogramGeneratorBase base_type;
 
 public:
-	GestureIdPatternHistogramGeneratorForShortTimeGesture(const double sigma)
+	GestureIdPatternHistogramGeneratorForClass1Gesture(const double sigma)
 	: base_type(sigma)
 	{}
 
 private:
-	GestureIdPatternHistogramGeneratorForShortTimeGesture(const GestureIdPatternHistogramGeneratorForShortTimeGesture &rhs);
-	GestureIdPatternHistogramGeneratorForShortTimeGesture & operator=(const GestureIdPatternHistogramGeneratorForShortTimeGesture &rhs);
+	GestureIdPatternHistogramGeneratorForClass1Gesture(const GestureIdPatternHistogramGeneratorForClass1Gesture &rhs);
+	GestureIdPatternHistogramGeneratorForClass1Gesture & operator=(const GestureIdPatternHistogramGeneratorForClass1Gesture &rhs);
 
 public:
 	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
