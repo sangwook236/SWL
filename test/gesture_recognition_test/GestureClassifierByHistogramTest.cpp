@@ -1,7 +1,7 @@
 //#define __USE_IR_SENSOR 1
 
 #include "stdafx.h"
-#include "swl/gesture_recognition/GestureClassifierByHistogram.h"
+#include "swl/pattern_recognition/GestureClassifierByHistogram.h"
 #if defined(__USE_IR_SENSOR)
 #include "VideoInput/videoInput.h"
 #endif

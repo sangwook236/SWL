@@ -4,31 +4,31 @@
 
 #if defined(WIN32)
 #	if defined(_MSC_VER)
-#		if defined(EXPORT_SWL_GL_UTIL)
+#		if defined(SWL_GL_UTIL_EXPORT)
 #		    define SWL_GL_UTIL_API __declspec(dllexport)
-#			define SWL_GL_UTIL_EXPORT_TEMPLATE
+#			define SWL_GL_UTIL_TEMPLATE_EXTERN
 #		else
 #		    define SWL_GL_UTIL_API __declspec(dllimport)
-#			define SWL_GL_UTIL_EXPORT_TEMPLATE extern
-#		endif  // EXPORT_SWL_GL_UTIL
+#			define SWL_GL_UTIL_TEMPLATE_EXTERN extern
+#		endif  // SWL_GL_UTIL_EXPORT
 #	else
 #		define SWL_GL_UTIL_API
-#		define SWL_GL_UTIL_EXPORT_TEMPLATE
+#		define SWL_GL_UTIL_TEMPLATE_EXTERN
 #	endif  // _MSC_VER
 #elif defined(__MINGW32__)
 #	if defined(_USRDLL)
-#		if defined(EXPORT_SWL_GL_UTIL)
+#		if defined(SWL_GL_UTIL_EXPORT)
 #			define SWL_GL_UTIL_API __declspec(dllexport)
 #		else
 #			define SWL_GL_UTIL_API __declspec(dllimport)
-#		endif  // EXPORT_SWL_GL_UTIL
+#		endif  // SWL_GL_UTIL_EXPORT
 #	else
 #		define SWL_GL_UTIL_API
 #	endif  // _USRDLL
-#	define SWL_GL_UTIL_EXPORT_TEMPLATE
+#	define SWL_GL_UTIL_TEMPLATE_EXTERN
 #else
 #   define SWL_GL_UTIL_API
-#	define SWL_GL_UTIL_EXPORT_TEMPLATE
+#	define SWL_GL_UTIL_TEMPLATE_EXTERN
 #endif
 
 

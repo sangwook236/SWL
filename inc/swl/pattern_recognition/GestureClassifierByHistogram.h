@@ -1,8 +1,9 @@
-#if !defined(__SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_)
-#define __SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_ 1
+#if !defined(__SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_)
+#define __SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_ 1
 
 
-#include "swl/gesture_recognition/IGestureClassifier.h"
+#include "swl/pattern_recognition/ExportPatternRecognition.h"
+#include "swl/pattern_recognition/IGestureClassifier.h"
 #include <boost/circular_buffer.hpp>
 #include <boost/smart_ptr.hpp>
 #include <vector>
@@ -21,7 +22,7 @@ class HistogramAccumulator;
 //-----------------------------------------------------------------------------
 //
 
-class GestureClassifierByHistogram: public IGestureClassifier
+class SWL_PATTERN_RECOGNITION_API GestureClassifierByHistogram: public IGestureClassifier
 {
 public:
 	struct Params
@@ -124,4 +125,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_
+#endif  // __SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_BY_HISTOGRAM__H_

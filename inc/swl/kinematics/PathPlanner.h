@@ -16,7 +16,7 @@ class KinematicsBase;
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API std::vector<double>;
+SWL_KINEMATICS_TEMPLATE_EXTERN template class SWL_KINEMATICS_API std::vector<double>;
 #endif
 
 

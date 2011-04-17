@@ -4,31 +4,31 @@
 
 #if defined(WIN32)
 #	if defined(_MSC_VER)
-#		if defined(EXPORT_SWL_VIEW)
+#		if defined(SWL_VIEW_EXPORT)
 #		    define SWL_VIEW_API __declspec(dllexport)
-#			define SWL_VIEW_EXPORT_TEMPLATE
+#			define SWL_VIEW_TEMPLATE_EXTERN
 #		else
 #		    define SWL_VIEW_API __declspec(dllimport)
-#			define SWL_VIEW_EXPORT_TEMPLATE extern
-#		endif  // EXPORT_SWL_VIEW
+#			define SWL_VIEW_TEMPLATE_EXTERN extern
+#		endif  // SWL_VIEW_EXPORT
 #	else
 #		define SWL_VIEW_API
-#		define SWL_VIEW_EXPORT_TEMPLATE
+#		define SWL_VIEW_TEMPLATE_EXTERN
 #	endif  // _MSC_VER
 #elif defined(__MINGW32__)
 #	if defined(_USRDLL)
-#		if defined(EXPORT_SWL_VIEW)
+#		if defined(SWL_VIEW_EXPORT)
 #			define SWL_VIEW_API __declspec(dllexport)
 #		else
 #			define SWL_VIEW_API __declspec(dllimport)
-#		endif  // EXPORT_SWL_VIEW
+#		endif  // SWL_VIEW_EXPORT
 #	else
 #		define SWL_VIEW_API
 #	endif  // _USRDLL
-#	define SWL_VIEW_EXPORT_TEMPLATE
+#	define SWL_VIEW_TEMPLATE_EXTERN
 #else
 #   define SWL_VIEW_API
-#	define SWL_VIEW_EXPORT_TEMPLATE
+#	define SWL_VIEW_TEMPLATE_EXTERN
 #endif
 
 

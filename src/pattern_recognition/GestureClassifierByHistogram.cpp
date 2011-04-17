@@ -1,4 +1,4 @@
-#include "swl/gesture_recognition/GestureClassifierByHistogram.h"
+#include "swl/pattern_recognition/GestureClassifierByHistogram.h"
 #include "HistogramAccumulator.h"
 #include "HistogramMatcher.h"
 #include "HistogramGenerator.h"

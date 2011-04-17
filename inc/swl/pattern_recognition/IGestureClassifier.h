@@ -1,8 +1,8 @@
-#if !defined(__SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_)
-#define __SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_ 1
+#if !defined(__SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_)
+#define __SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_ 1
 
 
-#include "swl/gesture_recognition/GestureType.h"
+#include "swl/pattern_recognition/GestureType.h"
 
 namespace cv {
 
@@ -32,4 +32,4 @@ struct IGestureClassifier
 }  // namespace swl
 
 
-#endif  // __SWL_GESTURE_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_
+#endif  // __SWL_PATTERN_RECOGNITION__GESTURE_CLASSIFIER_INTERFACE__H_

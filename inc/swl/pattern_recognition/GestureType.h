@@ -1,7 +1,8 @@
-#if !defined(__SWL_GESTURE_RECOGNITION__GESTURE_TYPE__H_)
-#define __SWL_GESTURE_RECOGNITION__GESTURE_TYPE__H_ 1
+#if !defined(__SWL_PATTERN_RECOGNITION__GESTURE_TYPE__H_)
+#define __SWL_PATTERN_RECOGNITION__GESTURE_TYPE__H_ 1
 
 
+#include "swl/pattern_recognition/ExportPatternRecognition.h"
 #include <string>
 
 
@@ -10,7 +11,7 @@ namespace swl {
 //-----------------------------------------------------------------------------
 //
 
-struct GestureType
+struct SWL_PATTERN_RECOGNITION_API GestureType
 {
 	enum Type
 	{
@@ -32,4 +33,4 @@ struct GestureType
 }  // namespace swl
 
 
-#endif  // __SWL_GESTURE_RECOGNITION__GESTURE_TYPE__H_
+#endif  // __SWL_PATTERN_RECOGNITION__GESTURE_TYPE__H_

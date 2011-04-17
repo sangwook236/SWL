@@ -13,7 +13,7 @@ namespace swl {
 
 #if defined(_MSC_VER)
 #pragma warning(disable:4231)
-SWL_KINEMATICS_EXPORT_TEMPLATE template class SWL_KINEMATICS_API Vector3<double>;
+SWL_KINEMATICS_TEMPLATE_EXTERN template class SWL_KINEMATICS_API Vector3<double>;
 #endif
 
 

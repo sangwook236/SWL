@@ -1,4 +1,4 @@
-#include "swl/gesture_recognition/GestureType.h"
+#include "swl/pattern_recognition/GestureType.h"
 
 
 namespace swl {

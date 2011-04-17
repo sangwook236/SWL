@@ -4,31 +4,31 @@
 
 #if defined(WIN32)
 #	if defined(_MSC_VER)
-#		if defined(EXPORT_SWL_MACHINE_VISION)
+#		if defined(SWL_MACHINE_VISION_EXPORT)
 #		    define SWL_MACHINE_VISION_API __declspec(dllexport)
-#			define SWL_MACHINE_VISION_EXPORT_TEMPLATE
+#			define SWL_MACHINE_VISION_TEMPLATE_EXTERN
 #		else
 #		    define SWL_MACHINE_VISION_API __declspec(dllimport)
-#			define SWL_MACHINE_VISION_EXPORT_TEMPLATE extern
-#		endif  // EXPORT_SWL_MACHINE_VISION
+#			define SWL_MACHINE_VISION_TEMPLATE_EXTERN extern
+#		endif  // SWL_MACHINE_VISION_EXPORT
 #	else
 #		define SWL_MACHINE_VISION_API
-#		define SWL_MACHINE_VISION_EXPORT_TEMPLATE
+#		define SWL_MACHINE_VISION_TEMPLATE_EXTERN
 #	endif  // _MSC_VER
 #elif defined(__MINGW32__)
 #	if defined(_USRDLL)
-#		if defined(EXPORT_SWL_MACHINE_VISION)
+#		if defined(SWL_MACHINE_VISION_EXPORT)
 #			define SWL_MACHINE_VISION_API __declspec(dllexport)
 #		else
 #			define SWL_MACHINE_VISION_API __declspec(dllimport)
-#		endif  // EXPORT_SWL_MACHINE_VISION
+#		endif  // SWL_MACHINE_VISION_EXPORT
 #	else
 #		define SWL_MACHINE_VISION_API
 #	endif  // _USRDLL
-#	define SWL_MACHINE_VISION_EXPORT_TEMPLATE
+#	define SWL_MACHINE_VISION_TEMPLATE_EXTERN
 #else
 #   define SWL_MACHINE_VISION_API
-#	define SWL_MACHINE_VISION_EXPORT_TEMPLATE
+#	define SWL_MACHINE_VISION_TEMPLATE_EXTERN
 #endif
 
 

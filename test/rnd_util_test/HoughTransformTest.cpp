@@ -2,8 +2,8 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HoughTransform.h"
 #include "swl/math/MathConstant.h"
-#include <boost/multi_array.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/multi_array.hpp>
 #include <list>
 #include <deque>
 #include <vector>
@@ -112,7 +112,14 @@ bool RectangleHoughTransform::constructParameterSpace(const std::vector<Paramete
 	const size_t size2 = 0 == parameterSpaceInfos_[2].resolution ? 1 : parameterSpaceInfos_[2].resolution;
 	const size_t size3 = 0 == parameterSpaceInfos_[3].resolution ? 1 : parameterSpaceInfos_[3].resolution;
 	const size_t size4 = 0 == parameterSpaceInfos_[4].resolution ? 1 : parameterSpaceInfos_[4].resolution;
+
+#if defined(NDEBUG) || defined(_STLPORT_VERSION)
 	parameterSpace_.resize(boost::extents[size0][size1][size2][size3][size4]);
+#else
+	// MSVC: compile-time error in debug build: i don't know why
+	//parameterSpace_.resize(boost::extents[size0][size1][size2][size3][size4]);
+#	error MSVC: compile-time error in debug build
+#endif
 
 	return true;
 }

@@ -4,31 +4,31 @@
 
 #if defined(WIN32)
 #	if defined(_MSC_VER)
-#		if defined(EXPORT_SWL_GRAPHICS)
+#		if defined(SWL_GRAPHICS_EXPORT)
 #		    define SWL_GRAPHICS_API __declspec(dllexport)
-#			define SWL_GRAPHICS_EXPORT_TEMPLATE
+#			define SWL_GRAPHICS_TEMPLATE_EXTERN
 #		else
 #		    define SWL_GRAPHICS_API __declspec(dllimport)
-#			define SWL_GRAPHICS_EXPORT_TEMPLATE extern
-#		endif  // EXPORT_SWL_GRAPHICS
+#			define SWL_GRAPHICS_TEMPLATE_EXTERN extern
+#		endif  // SWL_GRAPHICS_EXPORT
 #	else
 #		define SWL_GRAPHICS_API
-#		define SWL_GRAPHICS_EXPORT_TEMPLATE
+#		define SWL_GRAPHICS_TEMPLATE_EXTERN
 #	endif  // _MSC_VER
 #elif defined(__MINGW32__)
 #	if defined(_USRDLL)
-#		if defined(EXPORT_SWL_GRAPHICS)
+#		if defined(SWL_GRAPHICS_EXPORT)
 #			define SWL_GRAPHICS_API __declspec(dllexport)
 #		else
 #			define SWL_GRAPHICS_API __declspec(dllimport)
-#		endif  // EXPORT_SWL_GRAPHICS
+#		endif  // SWL_GRAPHICS_EXPORT
 #	else
 #		define SWL_GRAPHICS_API
 #	endif  // _USRDLL
-#	define SWL_GRAPHICS_EXPORT_TEMPLATE
+#	define SWL_GRAPHICS_TEMPLATE_EXTERN
 #else
 #   define SWL_GRAPHICS_API
-#	define SWL_GRAPHICS_EXPORT_TEMPLATE
+#	define SWL_GRAPHICS_TEMPLATE_EXTERN
 #endif
 
 

@@ -19,13 +19,11 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <UseOfMfc>false</UseOfMfc>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -51,7 +49,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_GRAPHICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -75,7 +73,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <AdditionalIncludeDirectories>../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;EXPORT_SWL_GRAPHICS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_GRAPHICS_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -121,14 +119,11 @@
     <ClInclude Include="..\..\inc\swl\graphics\ISceneVisitor.h" />
     <ClInclude Include="..\..\inc\swl\graphics\ITransformable.h" />
     <ClInclude Include="..\..\inc\swl\graphics\ObjectPickerMgr.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\PickableAttrib.h" />
     <ClInclude Include="..\..\inc\swl\graphics\PickableInterface.h" />
     <ClInclude Include="..\..\inc\swl\graphics\SceneNode.h" />
     <ClInclude Include="..\..\inc\swl\graphics\Shape.h" />
     <ClInclude Include="..\..\inc\swl\graphics\ShapeSceneNode.h" />
     <ClInclude Include="..\..\inc\swl\graphics\TransformSceneNode.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\TransparentAttrib.h" />
-    <ClInclude Include="..\..\inc\swl\graphics\VisibleAttrib.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_msvc10.vcxproj">

@@ -1,5 +1,5 @@
 // stdafx.cpp : source file that includes just the standard includes
-// swl_gesture_recognition.pch will be the pre-compiled header
+// swl_pattern_recognition.pch will be the pre-compiled header
 // stdafx.obj will contain the pre-compiled type information
 
 #include "stdafx.h"
