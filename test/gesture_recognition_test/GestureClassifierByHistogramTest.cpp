@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "swl/pattern_recognition/GestureClassifierByHistogram.h"
+#include "swl/pattern_recognition/MotionSegmenter.h"
 #if defined(__USE_IR_SENSOR)
 #include "VideoInput/videoInput.h"
 #endif
@@ -13,69 +14,6 @@
 #include <ctime>
 #include <stdio.h>
 #include <iostream>
-
-
-namespace {
-namespace local {
-
-void segmentMotionUsingMHI(const double timestamp, const double mhiTimeDuration, const cv::Mat &prev_gray_img, const cv::Mat &curr_gray_img, cv::Mat &mhi, cv::Mat &processed_mhi, cv::Mat &component_label_map, std::vector<cv::Rect> &component_rects)
-{
-	cv::Mat silh;
-	cv::absdiff(prev_gray_img, curr_gray_img, silh);  // get difference between frames
-
-	const int diff_threshold = 8;
-	cv::threshold(silh, silh, diff_threshold, 1.0, cv::THRESH_BINARY);  // threshold
-	cv::updateMotionHistory(silh, mhi, timestamp, mhiTimeDuration);  // update MHI
-
-	//
-	{
-		const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1)); 
-		const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1)); 
-		const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1)); 
-		cv::erode(mhi, processed_mhi, selement5);
-		cv::dilate(processed_mhi, processed_mhi, selement5);
-
-		mhi.copyTo(processed_mhi, processed_mhi);
-	}
-
-	// calculate motion gradient orientation and valid orientation mask
-/*
-	const int motion_gradient_aperture_size = 3;
-	cv::Mat motion_orientation_mask;  // valid orientation mask
-	cv::Mat motion_orientation;  // orientation
-	cv::calcMotionGradient(processed_mhi, motion_orientation_mask, motion_orientation, MAX_TIME_DELTA, MIN_TIME_DELTA, motion_gradient_aperture_size);
-*/
-
-	const double MAX_TIME_DELTA = 0.5;
-	const double MIN_TIME_DELTA = 0.05;
-	const double motion_segment_threshold = MAX_TIME_DELTA;
-
-	CvMemStorage *storage = cvCreateMemStorage(0);  // temporary storage
-
-	// segment motion: get sequence of motion components
-	// segmask is marked motion components map. it is not used further
-	IplImage *segmask = cvCreateImage(cvSize(curr_gray_img.cols, curr_gray_img.rows), IPL_DEPTH_32F, 1);  // motion segmentation map
-	CvSeq *seq = cvSegmentMotion(&(IplImage)processed_mhi, segmask, storage, timestamp, motion_segment_threshold);
-
-	//cv::Mat(segmask, false).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
-	cv::Mat(segmask, false).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
-
-	// iterate through the motion components
-	component_rects.reserve(seq->total);
-	for (int i = 0; i < seq->total; ++i)
-	{
-		const CvConnectedComp *comp = (CvConnectedComp *)cvGetSeqElem(seq, i);
-		component_rects.push_back(cv::Rect(comp->rect));
-	}
-
-	cvReleaseImage(&segmask);
-
-	//cvClearMemStorage(storage);
-	cvReleaseMemStorage(&storage);
-}
-
-}  // namespace local
-}  // unnamed namespace
 
 void gestureRecognitionByHistogram()
 {
@@ -124,10 +62,10 @@ void gestureRecognitionByHistogram()
 	// TODO [adjust] >> design parameter of gesture classifier
 	swl::GestureClassifierByHistogram::Params params;
 	{
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE = 15;
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE = 7;
-		params.ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE = 30;
-		params.MAX_MATCHED_HISTOGRAM_NUM = 10;
+		params.accumulatedHistogramNumForClass1Gesture = 3;
+		params.accumulatedHistogramNumForClass2Gesture = 15;
+		params.accumulatedHistogramNumForClass3Gesture = 30;
+		params.maxMatchedHistogramNum = 10;
 
 		params.histDistThresholdForClass1Gesture = 0.38;
 		//params.histDistThresholdForClass1Gesture_LeftMove = 0.4;
@@ -137,9 +75,9 @@ void gestureRecognitionByHistogram()
 
 		params.histDistThresholdForGestureIdPattern = 0.8;
 
-		params.matchedIndexCountThresholdForClass1Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
-		params.matchedIndexCountThresholdForClass2Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
-		params.matchedIndexCountThresholdForClass3Gesture = params.MAX_MATCHED_HISTOGRAM_NUM / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass1Gesture = params.maxMatchedHistogramNum / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass2Gesture = params.maxMatchedHistogramNum / 2;  // currently not used
+		params.matchedIndexCountThresholdForClass3Gesture = params.maxMatchedHistogramNum / 2;  // currently not used
 
 		params.doesApplyMagnitudeFiltering = true;
 		params.magnitudeFilteringMinThresholdRatio = 0.3;
@@ -156,7 +94,7 @@ void gestureRecognitionByHistogram()
 
 	cv::Mat prevgray, gray, frame, frame2;
 	cv::Mat mhi, img, tmp_img, blurred;
-	// FIXME [check] >> for class 3 gesture analysis
+	// FIXME [check] >> for fast gesture analysis
 	cv::Mat prevgray2, gray2, mhi2;
 	for (;;)
 	{
@@ -200,7 +138,7 @@ void gestureRecognitionByHistogram()
 
 		cv::cvtColor(gray, img, CV_GRAY2BGR);
 
-		// FIXME [check] >> for class 3 gesture analysis
+		// FIXME [check] >> for fast gesture analysis
 #if 0
 		cv::pyrDown(gray, blurred);
 		cv::pyrDown(blurred, gray2);
@@ -219,15 +157,15 @@ void gestureRecognitionByHistogram()
 
 			cv::Mat processed_mhi, component_label_map;
 			std::vector<cv::Rect> component_rects;
-			local::segmentMotionUsingMHI(timestamp, MHI_TIME_DURATION, prevgray, gray, mhi, processed_mhi, component_label_map, component_rects);
+			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray, gray, mhi, processed_mhi, component_label_map, component_rects);
 
-			// FIXME [check] >> for class 3 gesture analysis
+			// FIXME [check] >> for fast gesture analysis
 			if (mhi2.empty())
 				mhi2.create(gray2.rows, gray2.cols, CV_32FC1);
 
 			cv::Mat processed_mhi2, component_label_map2;
 			std::vector<cv::Rect> component_rects2;
-			local::segmentMotionUsingMHI(timestamp, MHI_TIME_DURATION, prevgray2, gray2, mhi2, processed_mhi2, component_label_map2, component_rects2);
+			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray2, gray2, mhi2, processed_mhi2, component_label_map2, component_rects2);
 
 			//
 			{
@@ -280,7 +218,7 @@ void gestureRecognitionByHistogram()
 				}
 			}
 
-			// FIXME [check] >> for class 3 gesture analysis
+			// FIXME [check] >> for fast gesture analysis
 			cv::Rect selected_rect2;
 			{
 				size_t k = 1;
@@ -315,22 +253,38 @@ void gestureRecognitionByHistogram()
 			{
 				cv::rectangle(img, selected_rect.tl(), selected_rect.br(), CV_RGB(255, 0, 0), 2, 8, 0);
 
-				//
+#if 1
+				// calculate optical flow
 				cv::Mat flow;
 				// FIXME [change] >> change parameters for large motion
 				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.5, 3, 15, 3, 5, 1.1, 0);
-				cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.25, 7, 15, 3, 7, 1.5, 0);
+				cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.5, 7, 15, 3, 7, 1.5, 0);
+				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.25, 7, 15, 3, 7, 1.5, 0);
 
-				// FIXME [check] >> for class 3 gesture analysis
+				// FIXME [check] >> for fast gesture analysis
 				cv::Mat flow2;
 				if (selected_rect2.area() > 0)
 				{
 					// FIXME [change] >> change parameters for large motion
-					cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.5, 3, 15, 3, 5, 1.1, 0);
-					//cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.25, 7, 15, 3, 7, 1.5, 0);
+					cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.5, 5, 15, 3, 5, 1.1, 0);
+					//cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.25, 5, 15, 3, 7, 1.5, 0);
 				}
 
 				gestureClassifier->analyzeOpticalFlow(selected_rect, flow, &flow);
+				// for fast gesture analysis
+				//gestureClassifier->analyzeOpticalFlow(selected_rect, flow, &flow2);
+				//gestureClassifier->analyzeOpticalFlow(selected_rect2, flow2, &flow);  // run-time error
+#else
+				// calculate motion gradient orientation and valid orientation mask
+				const double MAX_TIME_DELTA = 0.5;
+				const double MIN_TIME_DELTA = 0.05;
+				const int motion_gradient_aperture_size = 3;
+				cv::Mat motion_orientation_mask;  // valid orientation mask
+				cv::Mat motion_orientation;  // orientation
+				cv::calcMotionGradient(processed_mhi, motion_orientation_mask, motion_orientation, MIN_TIME_DELTA, MAX_TIME_DELTA, motion_gradient_aperture_size);
+
+				gestureClassifier->analyzeOrientation(selected_rect, motion_orientation);
+#endif
 			}
 			else
 			{

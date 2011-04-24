@@ -27,10 +27,10 @@ class SWL_PATTERN_RECOGNITION_API GestureClassifierByHistogram: public IGestureC
 public:
 	struct Params
 	{
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_1_GESTURE;
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_2_GESTURE;
-		size_t ACCUMULATED_HISTOGRAM_NUM_FOR_CLASS_3_GESTURE;
-		size_t MAX_MATCHED_HISTOGRAM_NUM;
+		size_t accumulatedHistogramNumForClass1Gesture;
+		size_t accumulatedHistogramNumForClass2Gesture;
+		size_t accumulatedHistogramNumForClass3Gesture;
+		size_t maxMatchedHistogramNum;
 
 		double histDistThresholdForClass1Gesture;
 		//double histDistThresholdForClass1Gesture_LeftMove;
@@ -63,6 +63,8 @@ public:
 
 public:
 	/*virtual*/ bool analyzeOpticalFlow(const cv::Rect &roi, const cv::Mat &flow, const cv::Mat *flow2 = NULL);
+	/*virtual*/ bool analyzeOrientation(const cv::Rect &roi, const cv::Mat &orientation);
+
 	/*virtual*/ bool classifyGesture();
 	/*virtual*/ GestureType::Type getGestureType() const  {  return gestureId_;  }
 
@@ -98,7 +100,7 @@ private:
 	void drawMatchedIdPatternHistogram(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::string &windowName) const;
 	void drawMatchedReferenceHistogram(const std::vector<const cv::MatND> &refHistograms, const size_t matchedIdx, const std::string &windowName) const;
 
-	void drawTemporalPhaseHistogram(const cv::MatND &temporalHist, const std::string &windowName) const;
+	void drawTemporalOrientationHistogram(const cv::MatND &temporalHist, const std::string &windowName) const;
 
 private:
 	Params params_;
