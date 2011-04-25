@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "swl/pattern_recognition/GestureClassifierByHistogram.h"
 #include "swl/pattern_recognition/MotionSegmenter.h"
+#include "swl/rnd_util/HistogramUtil.h"
 #if defined(__USE_IR_SENSOR)
 #include "VideoInput/videoInput.h"
 #endif
@@ -14,6 +15,88 @@
 #include <ctime>
 #include <stdio.h>
 #include <iostream>
+
+
+namespace {
+namespace local {
+
+
+// histograms' parameters
+const int histDims = 1;
+const int magHistBins = 30;
+const int magHistSize[] = { magHistBins };
+// magnitude varies from 1 to 30
+const float magHistRange1[] = { 1, magHistBins + 1 };
+const float *magHistRanges[] = { magHistRange1 };
+// we compute the histogram from the 0-th channel
+const int magHistChannels[] = { 0 };
+const int magHistBinWidth = 5, magHistMaxHeight = 100;
+
+const double refHistogramNormalizationFactor = 5000.0;
+
+
+void calcOrientationUsingOpticalFlow(const cv::Mat &flow, const bool doesApplyMagnitudeFiltering, const double magnitudeFilteringMinThresholdRatio, const double magnitudeFilteringMaxThresholdRatio, cv::Mat &orientation)
+{
+	std::vector<cv::Mat> flows;
+	cv::split(flow, flows);
+
+	cv::Mat flow_mag;
+	cv::phase(flows[0], flows[1], orientation, true);  // return type: CV_32F
+	cv::magnitude(flows[0], flows[1], flow_mag);  // return type: CV_32F
+
+	// filter by magnitude
+	if (doesApplyMagnitudeFiltering)
+	{
+		double minVal = 0.0, maxVal = 0.0;
+		cv::minMaxLoc(flow_mag, &minVal, &maxVal, NULL, NULL);
+		const double mag_min_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMinThresholdRatio;
+		const double mag_max_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMaxThresholdRatio;
+
+		// TODO [check] >> magic number, -1 is correct ?
+#if 0
+		orientation.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold);
+		orientation.setTo(cv::Scalar::all(-1), flow_mag > mag_max_threshold);
+#else
+		orientation.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold | flow_mag > mag_max_threshold);
+#endif
+	}
+}
+
+void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool doesApplyMagnitudeFiltering, const double magnitudeFilteringMinThresholdRatio, const double magnitudeFilteringMaxThresholdRatio, cv::Mat &orientation, cv::Mat &magnitude)
+{
+	std::vector<cv::Mat> flows;
+	cv::split(flow, flows);
+
+	cv::phase(flows[0], flows[1], orientation, true);  // return type: CV_32F
+	cv::magnitude(flows[0], flows[1], magnitude);  // return type: CV_32F
+
+	// filter by magnitude
+	if (doesApplyMagnitudeFiltering)
+	{
+		double minVal = 0.0, maxVal = 0.0;
+		cv::minMaxLoc(magnitude, &minVal, &maxVal, NULL, NULL);
+		const double mag_min_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMinThresholdRatio;
+		const double mag_max_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMaxThresholdRatio;
+
+		// TODO [check] >> magic number, -1 is correct ?
+#if 0
+		orientation.setTo(cv::Scalar::all(-1), magnitude < mag_min_threshold);
+		orientation.setTo(cv::Scalar::all(-1), magnitude > mag_max_threshold);
+#else
+		orientation.setTo(cv::Scalar::all(-1), magnitude < mag_min_threshold | magnitude > mag_max_threshold);
+#endif
+
+#if 0
+		magnitude.setTo(cv::Scalar::all(0), magnitude < mag_min_threshold);
+		magnitude.setTo(cv::Scalar::all(0), magnitude > mag_max_threshold);
+#else
+		magnitude.setTo(cv::Scalar::all(0), magnitude < mag_min_threshold | magnitude > mag_max_threshold);
+#endif
+	}
+}
+
+}  // namespace local
+}  // unnamed namespace
 
 void gestureRecognitionByHistogram()
 {
@@ -56,8 +139,10 @@ void gestureRecognitionByHistogram()
 
 	bool isPowered = false;
 
-	const std::string windowName("gesture recognition by histogram");
-	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
+	const std::string windowName1("gesture recognition by histogram");
+	const std::string windowName2("gesture recognition - magnitude histogram");
+	cv::namedWindow(windowName1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(windowName2, cv::WINDOW_AUTOSIZE);
 
 	// TODO [adjust] >> design parameter of gesture classifier
 	swl::GestureClassifierByHistogram::Params params;
@@ -88,7 +173,6 @@ void gestureRecognitionByHistogram()
 
 	// gesture classifier
 	boost::shared_ptr<swl::IGestureClassifier> gestureClassifier(new swl::GestureClassifierByHistogram(params));
-	dynamic_cast<swl::GestureClassifierByHistogram *>(gestureClassifier.get())->initWindows();
 
 	const double MHI_TIME_DURATION = 1.0;
 
@@ -155,7 +239,7 @@ void gestureRecognitionByHistogram()
 			if (mhi.empty())
 				mhi.create(gray.rows, gray.cols, CV_32FC1);
 
-			cv::Mat processed_mhi, component_label_map;
+			cv::Mat processed_mhi(mhi), component_label_map(mhi.size(), CV_8UC1);
 			std::vector<cv::Rect> component_rects;
 			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray, gray, mhi, processed_mhi, component_label_map, component_rects);
 
@@ -163,7 +247,7 @@ void gestureRecognitionByHistogram()
 			if (mhi2.empty())
 				mhi2.create(gray2.rows, gray2.cols, CV_32FC1);
 
-			cv::Mat processed_mhi2, component_label_map2;
+			cv::Mat processed_mhi2(mhi2), component_label_map2(mhi2.size(), CV_8UC1);
 			std::vector<cv::Rect> component_rects2;
 			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray2, gray2, mhi2, processed_mhi2, component_label_map2, component_rects2);
 
@@ -245,8 +329,6 @@ void gestureRecognitionByHistogram()
 				}
 			}
 
-			swl::GestureClassifierByHistogram *gestureClassifierByHistogram = dynamic_cast<swl::GestureClassifierByHistogram *>(gestureClassifier.get());
-
 			if (selected_rect.area() > 0 &&
 				(selected_rect.area() <= gray.rows * gray.cols / 2))  // reject too large area
 				//selected_rect.area() <= 1.5 * average_area)  // reject too much area variation
@@ -255,25 +337,46 @@ void gestureRecognitionByHistogram()
 
 #if 1
 				// calculate optical flow
-				cv::Mat flow;
+				cv::Mat flow1;
 				// FIXME [change] >> change parameters for large motion
-				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.5, 3, 15, 3, 5, 1.1, 0);
-				cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.5, 7, 15, 3, 7, 1.5, 0);
-				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow, 0.25, 7, 15, 3, 7, 1.5, 0);
+				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow1, 0.5, 3, 15, 3, 5, 1.1, 0);
+				cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow1, 0.5, 7, 15, 3, 7, 1.5, 0);
+				//cv::calcOpticalFlowFarneback(prevgray(selected_rect), gray(selected_rect), flow1, 0.25, 7, 15, 3, 7, 1.5, 0);
+
+				cv::Mat flow1_phase, flow1_mag;
+				//local::calcOrientationUsingOpticalFlow(flow1, params.doesApplyMagnitudeFiltering, params.magnitudeFilteringMinThresholdRatio, params.magnitudeFilteringMaxThresholdRatio, flow1_phase);
+				local::calcOrientationAndMagnitudeUsingOpticalFlow(flow1, params.doesApplyMagnitudeFiltering, params.magnitudeFilteringMinThresholdRatio, params.magnitudeFilteringMaxThresholdRatio, flow1_phase, flow1_mag);
+				gestureClassifier->analyzeOrientation(swl::GestureClassifierByHistogram::GCT_CLASS_1 | swl::GestureClassifierByHistogram::GCT_CLASS_2, flow1_phase);
+
+				// FIXME [delete] >> draw magnitude histogram
+				{
+					// calculate magnitude histogram
+					cv::Mat hist;
+					cv::calcHist(&flow1_mag, 1, local::magHistChannels, cv::Mat(), hist, local::histDims, local::magHistSize, local::magHistRanges, true, false);
+					// normalize histogram
+					swl::HistogramUtil::normalizeHistogram(hist, local::refHistogramNormalizationFactor);
+
+					// draw magnitude histogram
+					cv::Mat histImg(cv::Mat::zeros(local::magHistMaxHeight, local::magHistBins*local::magHistBinWidth, CV_8UC3));
+					const double maxVal = local::refHistogramNormalizationFactor;
+					swl::HistogramUtil::drawHistogram1D(hist, local::magHistBins, maxVal, local::magHistBinWidth, local::magHistMaxHeight, histImg);
+
+					cv::imshow(windowName2, histImg);
+				}
 
 				// FIXME [check] >> for fast gesture analysis
-				cv::Mat flow2;
 				if (selected_rect2.area() > 0)
 				{
+					cv::Mat flow2;
 					// FIXME [change] >> change parameters for large motion
 					cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.5, 5, 15, 3, 5, 1.1, 0);
 					//cv::calcOpticalFlowFarneback(prevgray2(selected_rect2), gray2(selected_rect2), flow2, 0.25, 5, 15, 3, 7, 1.5, 0);
-				}
 
-				gestureClassifier->analyzeOpticalFlow(selected_rect, flow, &flow);
-				// for fast gesture analysis
-				//gestureClassifier->analyzeOpticalFlow(selected_rect, flow, &flow2);
-				//gestureClassifier->analyzeOpticalFlow(selected_rect2, flow2, &flow);  // run-time error
+					cv::Mat flow2_phase, flow2_mag;
+					local::calcOrientationUsingOpticalFlow(flow2, params.doesApplyMagnitudeFiltering, params.magnitudeFilteringMinThresholdRatio, params.magnitudeFilteringMaxThresholdRatio, flow2_phase);
+					//local::calcOrientationAndMagnitudeUsingOpticalFlow(flow2, params.doesApplyMagnitudeFiltering, params.magnitudeFilteringMinThresholdRatio, params.magnitudeFilteringMaxThresholdRatio, flow2_phase, flow2_mag);
+					gestureClassifier->analyzeOrientation(swl::GestureClassifierByHistogram::GCT_CLASS_3, flow2_phase);
+				}
 #else
 				// calculate motion gradient orientation and valid orientation mask
 				const double MAX_TIME_DELTA = 0.5;
@@ -283,17 +386,14 @@ void gestureRecognitionByHistogram()
 				cv::Mat motion_orientation;  // orientation
 				cv::calcMotionGradient(processed_mhi, motion_orientation_mask, motion_orientation, MIN_TIME_DELTA, MAX_TIME_DELTA, motion_gradient_aperture_size);
 
-				gestureClassifier->analyzeOrientation(selected_rect, motion_orientation);
+				gestureClassifier->analyzeOrientation(swl::GestureClassifierByHistogram::GCT_CLASS_ALL, motion_orientation(selected_rect));
 #endif
 			}
 			else
 			{
 				//std::cout << timestamp << ": ************************************************" << std::endl;
 
-				gestureClassifierByHistogram->clearClass1GestureHistory();
-				gestureClassifierByHistogram->clearClass2GestureHistory();
-				gestureClassifierByHistogram->clearClass3GestureHistory();
-				gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_ALL);
 			}
 
 			// classify gesture
@@ -302,81 +402,81 @@ void gestureRecognitionByHistogram()
 			switch (gestureId)
 			{
 			case swl::GestureType::GT_LEFT_MOVE:
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_RIGHT_MOVE:
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_UP_MOVE:
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_DOWN_MOVE:
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_LEFT_FAST_MOVE:
 				// TODO [check] >> not yet applied
-				//gestureClassifierByHistogram->clearClass1GestureHistory();
-				gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_RIGHT_FAST_MOVE:
 				// TODO [check] >> not yet applied
-				//gestureClassifierByHistogram->clearClass1GestureHistory();
-				gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_HORIZONTAL_FLIP:
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_VERTICAL_FLIP:
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_JAMJAM:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_SHAKE:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_LEFT_90_TURN:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_RIGHT_90_TURN:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearClass2GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_2);
 				break;
 			case swl::GestureType::GT_CW:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_TIME_SERIES);
 				break;
 			case swl::GestureType::GT_CCW:
 				// TODO [check] >> not yet applied
-				gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_TIME_SERIES);
 				break;
 			case swl::GestureType::GT_INFINITY:
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
-				gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_TIME_SERIES);
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_TRIANGLE:
 				// TODO [check] >>
-				//gestureClassifierByHistogram->clearTimeSeriesGestureHistory();
-				gestureClassifierByHistogram->clearClass3GestureHistory();
+				//gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_TIME_SERIES);
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_3);
 				break;
 			case swl::GestureType::GT_HAND_OPEN:
 				if (!isPowered)
 				{
 					isPowered = true;
 				}
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				break;
 			case swl::GestureType::GT_HAND_CLOSE:
 				// TODO [check] >> not yet applied
@@ -384,14 +484,14 @@ void gestureRecognitionByHistogram()
 				{
 					isPowered = false;
 				}
-				gestureClassifierByHistogram->clearClass1GestureHistory();
+				gestureClassifier->clearGestureHistory(swl::GestureClassifierByHistogram::GCT_CLASS_1);
 				break;
 			default:
 				break;
 			}
 			
 			cv::putText(img, swl::GestureType::getGestureName(gestureId), cv::Point(10, 25), cv::FONT_HERSHEY_COMPLEX, 1.0, CV_RGB(255, 0, 0), 1, 8, false);
-			cv::imshow(windowName, img);
+			cv::imshow(windowName1, img);
 		}
 
 		if (cv::waitKey(1) >= 0)
@@ -401,6 +501,6 @@ void gestureRecognitionByHistogram()
 		std::swap(prevgray2, gray2);
 	}
 
-	dynamic_cast<swl::GestureClassifierByHistogram *>(gestureClassifier.get())->destroyWindows();
-	cv::destroyWindow(windowName);
+	cv::destroyWindow(windowName1);
+	cv::destroyWindow(windowName2);
 }

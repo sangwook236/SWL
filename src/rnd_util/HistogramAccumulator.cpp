@@ -1,5 +1,5 @@
-#include "HistogramAccumulator.h"
-#include "HistogramMatcher.h"
+#include "swl/rnd_util/HistogramAccumulator.h"
+#include "swl/rnd_util/HistogramMatcher.h"
 
 
 namespace swl {

@@ -51,6 +51,15 @@ public:
 		bool doesApplyMagnitudeWeighting;
 	};
 
+	enum GestureClassType
+	{
+		GCT_CLASS_ALL = 0x00,
+		GCT_CLASS_1 = 0x01,
+		GCT_CLASS_2 = 0x02,
+		GCT_CLASS_3 = 0x04,
+		GCT_CLASS_TIME_SERIES = 0x08
+	};
+
 public:
 	typedef IGestureClassifier base_type;
 
@@ -62,20 +71,12 @@ public:
 	GestureClassifierByHistogram & operator=(const GestureClassifierByHistogram &rhs);
 
 public:
-	/*virtual*/ bool analyzeOpticalFlow(const cv::Rect &roi, const cv::Mat &flow, const cv::Mat *flow2 = NULL);
-	/*virtual*/ bool analyzeOrientation(const cv::Rect &roi, const cv::Mat &orientation);
+	/*virtual*/ bool analyzeOrientation(const int gestureClassToApply, const cv::Mat &orientation);
 
 	/*virtual*/ bool classifyGesture();
 	/*virtual*/ GestureType::Type getGestureType() const  {  return gestureId_;  }
 
-	void clearClass1GestureHistory();
-	void clearClass2GestureHistory();
-	void clearClass3GestureHistory();
-	void clearTimeSeriesGestureHistory();
-
-	// for display
-	void initWindows() const;
-	void destroyWindows() const;
+	/*virtual*/ void clearGestureHistory(const int gestureClassToApply);
 
 private:
 	bool classifyClass1Gesture();
@@ -86,6 +87,11 @@ private:
 	GestureType::Type classifyClass2Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
 	GestureType::Type classifyClass3Gesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
 	GestureType::Type classifyTimeSeriesGesture(const boost::circular_buffer<size_t> &matchedHistogramIndexes) const;
+
+	void clearClass1GestureHistory();
+	void clearClass2GestureHistory();
+	void clearClass3GestureHistory();
+	void clearTimeSeriesGestureHistory();
 
 	void createReferenceFullPhaseHistograms();
 	void createReferenceHistogramsForClass1Gesture();
@@ -101,6 +107,10 @@ private:
 	void drawMatchedReferenceHistogram(const std::vector<const cv::MatND> &refHistograms, const size_t matchedIdx, const std::string &windowName) const;
 
 	void drawTemporalOrientationHistogram(const cv::MatND &temporalHist, const std::string &windowName) const;
+
+	// for display
+	void initWindows() const;
+	void destroyWindows() const;
 
 private:
 	Params params_;

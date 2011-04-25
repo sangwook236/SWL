@@ -1,7 +1,8 @@
-#if !defined(__SWL_PATTERN_RECOGNITION__HISTOGRAM_ACCUMULATOR__H_)
-#define __SWL_PATTERN_RECOGNITION__HISTOGRAM_ACCUMULATOR__H_ 1
+#if !defined(__SWL_RND_UTIL__HISTOGRAM_ACCUMULATOR__H_)
+#define __SWL_RND_UTIL__HISTOGRAM_ACCUMULATOR__H_ 1
 
 
+#include "swl/rnd_util/ExportRndUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/core/core.hpp>
 #include <boost/circular_buffer.hpp>
@@ -13,7 +14,7 @@ namespace swl {
 //-----------------------------------------------------------------------------
 //
 
-class HistogramAccumulator
+class SWL_RND_UTIL_API HistogramAccumulator
 {
 public:
 	//typedef HistogramAccumulator base_type;
@@ -47,4 +48,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_PATTERN_RECOGNITION__HISTOGRAM_ACCUMULATOR__H_
+#endif  // __SWL_RND_UTIL__HISTOGRAM_ACCUMULATOR__H_

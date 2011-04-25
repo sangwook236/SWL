@@ -53,12 +53,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_ap
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gesture_recognition_test", "..\test\gesture_recognition_test\swl_gesture_recognition_test_msvc10.vcxproj", "{3A6EE950-7C7F-44F4-9D18-EEDE65C445CF}"
 	ProjectSection(ProjectDependencies) = postProject
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB} = {7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition", "..\src\pattern_recognition\swl_pattern_recognition_msvc10.vcxproj", "{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
 Global

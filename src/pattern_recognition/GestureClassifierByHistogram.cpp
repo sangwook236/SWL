@@ -1,7 +1,8 @@
 #include "swl/pattern_recognition/GestureClassifierByHistogram.h"
-#include "HistogramAccumulator.h"
-#include "HistogramMatcher.h"
 #include "HistogramGenerator.h"
+#include "swl/rnd_util/HistogramAccumulator.h"
+#include "swl/rnd_util/HistogramMatcher.h"
+#include "swl/rnd_util/HistogramUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -27,15 +28,6 @@ const float *phaseHistRanges[] = { phaseHistRange1 };
 // we compute the histogram from the 0-th channel
 const int phaseHistChannels[] = { 0 };
 const int phaseHistBinWidth = 1, phaseHistMaxHeight = 100;
-
-const int magHistBins = 30;
-const int magHistSize[] = { magHistBins };
-// magnitude varies from 1 to 30
-const float magHistRange1[] = { 1, magHistBins + 1 };
-const float *magHistRanges[] = { magHistRange1 };
-// we compute the histogram from the 0-th channel
-const int magHistChannels[] = { 0 };
-const int magHistBinWidth = 5, magHistMaxHeight = 100;
 
 const int indexHistBins = ReferenceFullPhaseHistogramGenerator::REF_HISTOGRAM_NUM;
 const int indexHistSize[] = { indexHistBins };
@@ -84,7 +76,6 @@ struct MaxFrequencyComparator
 };
 
 #if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
-const std::string windowName1("gesture recognition - magnitude histogram");
 const std::string windowNameClass1Gesture1("gesture recognition - (STG) actual histogram");
 const std::string windowNameClass1Gesture2("gesture recognition - (STG) matched histogram");
 const std::string windowNameClass1Gesture3("gesture recognition - (STG) matched id histogram");
@@ -134,10 +125,16 @@ GestureClassifierByHistogram::GestureClassifierByHistogram(const GestureClassifi
   matchedHistogramIndexes1ForClass1Gesture_(rhs.matchedHistogramIndexes1ForClass1Gesture_),  matchedHistogramIndexes2ForClass1Gesture_(rhs.matchedHistogramIndexes2ForClass1Gesture_), matchedHistogramIndexesForClass2Gesture_(rhs.matchedHistogramIndexesForClass2Gesture_), matchedHistogramIndexesForClass3Gesture_(rhs.matchedHistogramIndexesForClass3Gesture_),
   gestureId_(rhs.gestureId_)
 {
+#if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
+	initWindows();
+#endif
 }
 
 GestureClassifierByHistogram::~GestureClassifierByHistogram()
 {
+#if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
+	destroyWindows();
+#endif
 }
 
 GestureClassifierByHistogram & GestureClassifierByHistogram::operator=(const GestureClassifierByHistogram &rhs)
@@ -163,143 +160,18 @@ GestureClassifierByHistogram & GestureClassifierByHistogram::operator=(const Ges
 	return *this;
 }
 
-void GestureClassifierByHistogram::initWindows() const
-{
-#if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
-	cv::namedWindow(local::windowName1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass1Gesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass1Gesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass1Gesture3, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass2Gesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass2Gesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass2Gesture3, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass3Gesture1, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass3Gesture2, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameClass3Gesture3, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameForTemporalOrientationHistogram, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameForHorizontalOrientationHistogram, cv::WINDOW_AUTOSIZE);
-	cv::namedWindow(local::windowNameForVerticalOrientationHistogram, cv::WINDOW_AUTOSIZE);
-#endif
-}
-
-void GestureClassifierByHistogram::destroyWindows() const
-{
-#if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
-	cv::destroyWindow(local::windowName1);
-	cv::destroyWindow(local::windowNameClass1Gesture1);
-	cv::destroyWindow(local::windowNameClass1Gesture2);
-	cv::destroyWindow(local::windowNameClass1Gesture3);
-	cv::destroyWindow(local::windowNameClass2Gesture1);
-	cv::destroyWindow(local::windowNameClass2Gesture2);
-	cv::destroyWindow(local::windowNameClass2Gesture3);
-	cv::destroyWindow(local::windowNameClass3Gesture1);
-	cv::destroyWindow(local::windowNameClass3Gesture2);
-	cv::destroyWindow(local::windowNameClass3Gesture3);
-	cv::destroyWindow(local::windowNameForTemporalOrientationHistogram);
-	cv::destroyWindow(local::windowNameForHorizontalOrientationHistogram);
-	cv::destroyWindow(local::windowNameForVerticalOrientationHistogram);
-#endif
-}
-
-/*virtual*/ bool GestureClassifierByHistogram::analyzeOpticalFlow(const cv::Rect & /*roi*/, const cv::Mat &flow, const cv::Mat *flow2 /*= NULL*/)
-{
-	cv::MatND hist;
-
-	{
-		std::vector<cv::Mat> flows;
-		cv::split(flow, flows);
-
-		cv::Mat flow_phase, flow_mag;
-		cv::phase(flows[0], flows[1], flow_phase, true);  // return type: CV_32F
-		cv::magnitude(flows[0], flows[1], flow_mag);  // return type: CV_32F
-
-		// filter by magnitude
-		if (params_.doesApplyMagnitudeFiltering)
-		{
-			double minVal = 0.0, maxVal = 0.0;
-			cv::minMaxLoc(flow_mag, &minVal, &maxVal, NULL, NULL);
-			const double mag_min_threshold = minVal + (maxVal - minVal) * params_.magnitudeFilteringMinThresholdRatio;
-			const double mag_max_threshold = minVal + (maxVal - minVal) * params_.magnitudeFilteringMaxThresholdRatio;
-
-			// TODO [check] >> magic number, -1 is correct ?
-			flow_phase.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold);
-			flow_phase.setTo(cv::Scalar::all(-1), flow_mag > mag_max_threshold);
-
-			flow_mag.setTo(cv::Scalar::all(0), flow_mag < mag_min_threshold);
-			flow_mag.setTo(cv::Scalar::all(0), flow_mag > mag_max_threshold);
-		}
-
-		// calculate phase histogram
-		cv::calcHist(&flow_phase, 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
-		histogramAccumulatorForClass1Gesture_->addHistogram(hist);
-		histogramAccumulatorForClass2Gesture_->addHistogram(hist);
-
-#if defined(__VISUALIZE_HISTOGRAMS_IN_GESTURE_CLASSIFIER_BY_HISTOGRAM_)
-		// FIXME [delete] >> draw magnitude histogram
-		{
-			// calculate magnitude histogram
-			cv::calcHist(&flow_mag, 1, local::magHistChannels, cv::Mat(), hist, local::histDims, local::magHistSize, local::magHistRanges, true, false);
-			// normalize histogram
-			HistogramUtil::normalizeHistogram(hist, local::refHistogramNormalizationFactor);
-
-			// draw magnitude histogram
-			cv::Mat histImg(cv::Mat::zeros(local::magHistMaxHeight, local::magHistBins*local::magHistBinWidth, CV_8UC3));
-			const double maxVal = local::refHistogramNormalizationFactor;
-			HistogramUtil::drawHistogram1D(hist, local::magHistBins, maxVal, local::magHistBinWidth, local::magHistMaxHeight, histImg);
-
-			cv::imshow(local::windowName1, histImg);
-		}
-#endif
-	}
-
-	if (flow2 && !flow2->empty())
-	{
-		std::vector<cv::Mat> flows;
-		cv::split(*flow2, flows);
-
-		cv::Mat flow_phase, flow_mag;
-		cv::phase(flows[0], flows[1], flow_phase, true);  // return type: CV_32F
-		cv::magnitude(flows[0], flows[1], flow_mag);  // return type: CV_32F
-
-		// filter by magnitude
-		if (params_.doesApplyMagnitudeFiltering)
-		{
-			double minVal = 0.0, maxVal = 0.0;
-			cv::minMaxLoc(flow_mag, &minVal, &maxVal, NULL, NULL);
-			const double mag_min_threshold = minVal + (maxVal - minVal) * params_.magnitudeFilteringMinThresholdRatio;
-			const double mag_max_threshold = minVal + (maxVal - minVal) * params_.magnitudeFilteringMaxThresholdRatio;
-
-			// TODO [check] >> magic number, -1 is correct ?
-			flow_phase.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold);
-			flow_phase.setTo(cv::Scalar::all(-1), flow_mag > mag_max_threshold);
-
-			flow_mag.setTo(cv::Scalar::all(0), flow_mag < mag_min_threshold);
-			flow_mag.setTo(cv::Scalar::all(0), flow_mag > mag_max_threshold);
-		}
-
-		// calculate phase histogram
-		cv::calcHist(&flow_phase, 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
-		histogramAccumulatorForClass3Gesture_->addHistogram(hist);
-	}
-	else
-	{
-		// TODO [check] >>
-		//clearClass3GestureHistory();
-	}
-
-	return true;
-}
-
-bool GestureClassifierByHistogram::analyzeOrientation(const cv::Rect &roi, const cv::Mat &orientation)
+bool GestureClassifierByHistogram::analyzeOrientation(const int gestureClassToApply, const cv::Mat &orientation)
 {
 	// calculate phase histogram
 	cv::MatND hist;
-	cv::calcHist(&orientation(roi), 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
+	cv::calcHist(&orientation, 1, local::phaseHistChannels, cv::Mat(), hist, local::histDims, local::phaseHistSize, local::phaseHistRanges, true, false);
 
+	//
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_1 & gestureClassToApply) == GCT_CLASS_1) histogramAccumulatorForClass1Gesture_->addHistogram(hist);
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_2 & gestureClassToApply) == GCT_CLASS_2) histogramAccumulatorForClass2Gesture_->addHistogram(hist);
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_3 & gestureClassToApply) == GCT_CLASS_3) histogramAccumulatorForClass3Gesture_->addHistogram(hist);
 	// TODO [check] >>
-	histogramAccumulatorForClass1Gesture_->addHistogram(hist);
-	histogramAccumulatorForClass2Gesture_->addHistogram(hist);
-	histogramAccumulatorForClass3Gesture_->addHistogram(hist);
+	//if (GCT_CLASS_TIME_SERIES == gestureClassToApply || (GCT_CLASS_TIME_SERIES & gestureClassToApply) == GCT_CLASS_TIME_SERIES) histogramAccumulatorForClass3Gesture_->addHistogram(hist);
 
 	return true;
 }
@@ -321,28 +193,12 @@ bool GestureClassifierByHistogram::analyzeOrientation(const cv::Rect &roi, const
 	return false;
 }
 
-void GestureClassifierByHistogram::clearClass1GestureHistory()
+void GestureClassifierByHistogram::clearGestureHistory(const int gestureClassToApply)
 {
-	histogramAccumulatorForClass1Gesture_->clearAllHistograms();
-	matchedHistogramIndexes1ForClass1Gesture_.clear();
-	matchedHistogramIndexes2ForClass1Gesture_.clear();
-}
-
-void GestureClassifierByHistogram::clearClass2GestureHistory()
-{
-	histogramAccumulatorForClass2Gesture_->clearAllHistograms();
-	matchedHistogramIndexesForClass2Gesture_.clear();
-}
-
-void GestureClassifierByHistogram::clearClass3GestureHistory()
-{
-	histogramAccumulatorForClass3Gesture_->clearAllHistograms();
-	matchedHistogramIndexesForClass3Gesture_.clear();
-}
-
-void GestureClassifierByHistogram::clearTimeSeriesGestureHistory()
-{
-	// FIXME [implement] >>
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_1 & gestureClassToApply) == GCT_CLASS_1) clearClass1GestureHistory();
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_2 & gestureClassToApply) == GCT_CLASS_2) clearClass2GestureHistory();
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_3 & gestureClassToApply) == GCT_CLASS_3) clearClass3GestureHistory();
+	if (GCT_CLASS_TIME_SERIES == gestureClassToApply || (GCT_CLASS_TIME_SERIES & gestureClassToApply) == GCT_CLASS_TIME_SERIES) clearTimeSeriesGestureHistory();
 }
 
 bool GestureClassifierByHistogram::classifyClass1Gesture()
@@ -718,6 +574,30 @@ GestureType::Type GestureClassifierByHistogram::classifyTimeSeriesGesture(const 
 */
 }
 
+void GestureClassifierByHistogram::clearClass1GestureHistory()
+{
+	histogramAccumulatorForClass1Gesture_->clearAllHistograms();
+	matchedHistogramIndexes1ForClass1Gesture_.clear();
+	matchedHistogramIndexes2ForClass1Gesture_.clear();
+}
+
+void GestureClassifierByHistogram::clearClass2GestureHistory()
+{
+	histogramAccumulatorForClass2Gesture_->clearAllHistograms();
+	matchedHistogramIndexesForClass2Gesture_.clear();
+}
+
+void GestureClassifierByHistogram::clearClass3GestureHistory()
+{
+	histogramAccumulatorForClass3Gesture_->clearAllHistograms();
+	matchedHistogramIndexesForClass3Gesture_.clear();
+}
+
+void GestureClassifierByHistogram::clearTimeSeriesGestureHistory()
+{
+	// FIXME [implement] >>
+}
+
 void GestureClassifierByHistogram::createReferenceFullPhaseHistograms()
 {
 	// create reference histograms
@@ -979,6 +859,38 @@ void GestureClassifierByHistogram::drawTemporalOrientationHistogram(const cv::Ma
 	HistogramUtil::drawHistogram2D(temporalHist, temporalHist.cols, temporalHist.rows, maxVal, local::phaseHorzScale, local::phaseVertScale, histImg);
 
 	cv::imshow(windowName, histImg);
+}
+
+void GestureClassifierByHistogram::initWindows() const
+{
+	cv::namedWindow(local::windowNameClass1Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass1Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass1Gesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass2Gesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture1, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture2, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameClass3Gesture3, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameForTemporalOrientationHistogram, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameForHorizontalOrientationHistogram, cv::WINDOW_AUTOSIZE);
+	cv::namedWindow(local::windowNameForVerticalOrientationHistogram, cv::WINDOW_AUTOSIZE);
+}
+
+void GestureClassifierByHistogram::destroyWindows() const
+{
+	cv::destroyWindow(local::windowNameClass1Gesture1);
+	cv::destroyWindow(local::windowNameClass1Gesture2);
+	cv::destroyWindow(local::windowNameClass1Gesture3);
+	cv::destroyWindow(local::windowNameClass2Gesture1);
+	cv::destroyWindow(local::windowNameClass2Gesture2);
+	cv::destroyWindow(local::windowNameClass2Gesture3);
+	cv::destroyWindow(local::windowNameClass3Gesture1);
+	cv::destroyWindow(local::windowNameClass3Gesture2);
+	cv::destroyWindow(local::windowNameClass3Gesture3);
+	cv::destroyWindow(local::windowNameForTemporalOrientationHistogram);
+	cv::destroyWindow(local::windowNameForHorizontalOrientationHistogram);
+	cv::destroyWindow(local::windowNameForVerticalOrientationHistogram);
 }
 
 }  // namespace swl

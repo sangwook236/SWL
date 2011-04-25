@@ -22,9 +22,7 @@ namespace swl {
 		const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1)); 
 		cv::Mat processed_silh;
 		cv::erode(silh, processed_silh, selement5);
-		cv::dilate(processed_silh, processed_silh, selement5);
-
-		processed_silh.copyTo(silh);
+		cv::dilate(processed_silh, silh, selement5);
 #endif
 	}
 
@@ -32,7 +30,7 @@ namespace swl {
 
 	//
 	{
-#if 1
+#if 0
 		const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1)); 
 		const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1)); 
 		const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1)); 

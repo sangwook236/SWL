@@ -23,11 +23,12 @@ struct IGestureClassifier
 {
 	virtual ~IGestureClassifier()  {}
 
-	virtual bool analyzeOpticalFlow(const cv::Rect &roi, const cv::Mat &flow, const cv::Mat *flow2 = NULL) = 0;
-	virtual bool analyzeOrientation(const cv::Rect &roi, const cv::Mat &orientation) = 0;
+	virtual bool analyzeOrientation(const int gestureClassToApply, const cv::Mat &orientation) = 0;
 
 	virtual bool classifyGesture() = 0;
 	virtual GestureType::Type getGestureType() const = 0;
+
+	virtual void clearGestureHistory(const int gestureClassToApply) = 0;
 };
 
 
