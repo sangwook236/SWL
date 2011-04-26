@@ -180,6 +180,8 @@ void gestureRecognitionByHistogram()
 	cv::Mat mhi, img, tmp_img, blurred;
 	// FIXME [check] >> for fast gesture analysis
 	cv::Mat prevgray2, gray2, mhi2;
+	cv::Mat processed_mhi, component_label_map;
+	cv::Mat processed_mhi2, component_label_map2;
 	for (;;)
 	{
 		const double timestamp = (double)std::clock() / CLOCKS_PER_SEC;  // get current time in seconds
@@ -238,17 +240,27 @@ void gestureRecognitionByHistogram()
 		{
 			if (mhi.empty())
 				mhi.create(gray.rows, gray.cols, CV_32FC1);
+			if (processed_mhi.empty())
+				processed_mhi.create(mhi.size(), mhi.type());
+			if (component_label_map.empty())
+				component_label_map.create(mhi.size(), CV_8UC1);
 
-			cv::Mat processed_mhi(mhi), component_label_map(mhi.size(), CV_8UC1);
 			std::vector<cv::Rect> component_rects;
+			processed_mhi.setTo(cv::Scalar::all(0));
+			component_label_map.setTo(cv::Scalar::all(0));
 			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray, gray, mhi, processed_mhi, component_label_map, component_rects);
 
 			// FIXME [check] >> for fast gesture analysis
 			if (mhi2.empty())
 				mhi2.create(gray2.rows, gray2.cols, CV_32FC1);
+			if (processed_mhi2.empty())
+				processed_mhi2.create(mhi2.size(), mhi2.type());
+			if (component_label_map2.empty())
+				component_label_map2.create(mhi2.size(), CV_8UC1);
 
-			cv::Mat processed_mhi2(mhi2), component_label_map2(mhi2.size(), CV_8UC1);
 			std::vector<cv::Rect> component_rects2;
+			processed_mhi2.setTo(cv::Scalar::all(0));
+			component_label_map2.setTo(cv::Scalar::all(0));
 			swl::MotionSegmenter::segmentUsingMHI(timestamp, MHI_TIME_DURATION, prevgray2, gray2, mhi2, processed_mhi2, component_label_map2, component_rects2);
 
 			//
