@@ -7,12 +7,8 @@
 namespace cv {
 
 class Mat;
-typedef Mat MatND;
-template<typename _Tp> class Rect_;
-typedef Rect_<int> Rect;
 
 }
-
 
 namespace swl {
 
@@ -30,7 +26,6 @@ struct IGestureClassifier
 
 	virtual void clearGestureHistory(const int gestureClassToApply) = 0;
 };
-
 
 }  // namespace swl
 

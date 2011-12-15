@@ -198,7 +198,7 @@ void GestureClassifierByHistogram::clearGestureHistory(const int gestureClassToA
 	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_1 & gestureClassToApply) == GCT_CLASS_1) clearClass1GestureHistory();
 	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_2 & gestureClassToApply) == GCT_CLASS_2) clearClass2GestureHistory();
 	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_3 & gestureClassToApply) == GCT_CLASS_3) clearClass3GestureHistory();
-	if (GCT_CLASS_TIME_SERIES == gestureClassToApply || (GCT_CLASS_TIME_SERIES & gestureClassToApply) == GCT_CLASS_TIME_SERIES) clearTimeSeriesGestureHistory();
+	if (GCT_CLASS_ALL == gestureClassToApply || (GCT_CLASS_TIME_SERIES & gestureClassToApply) == GCT_CLASS_TIME_SERIES) clearTimeSeriesGestureHistory();
 }
 
 bool GestureClassifierByHistogram::classifyClass1Gesture()
