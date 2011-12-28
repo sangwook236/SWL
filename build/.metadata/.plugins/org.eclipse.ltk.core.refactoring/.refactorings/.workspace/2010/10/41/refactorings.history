@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Delete resource &apos;gps_aided_imu_filter_app&apos;" deleteContents="false" description="Delete resource &apos;gps_aided_imu_filter_app&apos;" element1="/gps_aided_imu_filter_app" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1286262322396"/>
+</session>
