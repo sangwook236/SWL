@@ -1,5 +1,5 @@
-#Mon Aug 24 00:08:09 KST 2009
-org.eclipse.cdt.debug.core.cDebug.common_source_containers=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<sourceLookupDirector>\r\n<sourceContainers duplicates\="false"/>\r\n</sourceLookupDirector>\r\n
+#Tue Dec 27 00:28:29 KST 2011
 eclipse.preferences.version=1
 BreakpointActionManager.actionData=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<breakpointActionData/>\r\n
 org.eclipse.cdt.debug.core.cDebug.defaultDebugger=
+org.eclipse.cdt.debug.core.cDebug.default_source_containers=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?>\r\n<sourceLookupDirector>\r\n<sourceContainers duplicates\="false">\r\n<container memento\="AbsolutePath" typeId\="org.eclipse.cdt.debug.core.containerType.absolutePath"/>\r\n<container memento\="programRelativePath" typeId\="org.eclipse.cdt.debug.core.containerType.programRelativePath"/>\r\n<container memento\="&lt;?xml version\=&quot;1.0&quot; encoding\=&quot;UTF-8&quot; standalone\=&quot;no&quot;?&gt;&\#13;&\#10;&lt;project referencedProjects\=&quot;true&quot;/&gt;&\#13;&\#10;" typeId\="org.eclipse.cdt.debug.core.containerType.project"/>\r\n</sourceContainers>\r\n</sourceLookupDirector>\r\n

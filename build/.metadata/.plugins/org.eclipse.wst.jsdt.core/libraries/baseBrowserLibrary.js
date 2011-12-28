@@ -439,6 +439,18 @@ Document.prototype.importNode=function(importedNode, deep){return new Node();};
  */
 Document.prototype.createElementNS=function(namespaceURI, qualifiedName){return new HTMLElement();}; 
 /**
+ * function createEvent(String eventType) 
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
+ * 
+ * @param {String} eventType
+ * @returns {Object}
+ * @throws DOMException
+ * @since Standard ECMA-262 3rd. Edition 
+ * @since Level 2 Document Object Model Core Definition.
+ * @see Element        
+ */
+Document.prototype.createEvent=function(eventType){return new Object();}; 
+/**
  * function createAttributeNS(namespaceURI, qualifiedName)
  * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html
  * 
@@ -1143,6 +1155,47 @@ Element.prototype=new Node();
  */
 Element.prototype.tagName="";
 /**
+ * function addEventListener(Stirng type, Function listener, Boolean useCapture) 
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html 
+ * 
+ * @param {String} type
+ * @param {Function} listener
+ * @param {Boolean} useCapture
+ * @since Standard ECMA-262 3rd. Edition 
+ * @since Level 2 Document Object Model Core Definition.    
+ */
+Element.prototype.addEventListener=function(type, listener, useCapture){}; 
+/**
+ * function attachEvent(String type, Function listener) 
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html 
+ * 
+ * @param {String} type
+ * @param {Function} listener
+ * @since Standard ECMA-262 3rd. Edition 
+ * @since Level 2 Document Object Model Core Definition.    
+ */
+Element.prototype.attachEvent=function(type, listener){}; 
+/**
+ * function detachEvent(String type, Function listener) 
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html 
+ * 
+ * @param {String} type
+ * @param {Function} listener
+ * @since Standard ECMA-262 3rd. Edition 
+ * @since Level 2 Document Object Model Core Definition.    
+ */
+Element.prototype.detachEvent=function(type, listener){}; 
+/**
+ * function dispatchEvent(Object event) 
+ * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html 
+ * 
+ * @param {Object} event
+ * @returns {Boolean}
+ * @since Standard ECMA-262 3rd. Edition 
+ * @since Level 2 Document Object Model Core Definition.    
+ */
+Element.prototype.dispatchEvent=function(event){return false;}; 
+/**
  * function getAttribute(name) 
  * http://www.w3.org/TR/2000/REC-DOM-Level-2-Core-20001113/ecma-script-binding.html 
  *  
@@ -1772,14 +1825,14 @@ HTMLDocument.prototype.close = function(){};
  */
 HTMLDocument.prototype.write = function(text){};
 /**
- * function writeIn(text)
+ * function writeln(text)
  * http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109/html.html
  * 
  * @param {String} text
  * @since Standard ECMA-262 3rd. Edition
  * @since Level 2 Document Object Model HTML Specification.
  */
-HTMLDocument.prototype.writeIn = function(text){};
+HTMLDocument.prototype.writeln = function(text){};
 /**
  * function getElementsByName(elementName)
  * http://www.w3.org/TR/2003/REC-DOM-Level-2-HTML-20030109/html.html
