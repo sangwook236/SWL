@@ -52,12 +52,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_PATTERN_RECOGNITION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.3.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core220.lib;opencv_highgui220.lib;opencv_ml220.lib;opencv_imgproc220.lib;opencv_features2d220.lib;opencv_video220.lib;opencv_calib3d220.lib;opencv_legacy220.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>
@@ -70,14 +70,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_PATTERN_RECOGNITION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.3.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core220.lib;opencv_highgui220.lib;opencv_ml220.lib;opencv_imgproc220.lib;opencv_features2d220.lib;opencv_video220.lib;opencv_calib3d220.lib;opencv_legacy220.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>

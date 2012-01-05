@@ -277,7 +277,7 @@ void gestureRecognitionByHistogram()
 				tmp_img.setTo(cv::Scalar(0), component_label_map == 0);
 
 				cv::cvtColor(tmp_img, img, CV_GRAY2BGR);
-				img.setTo(CV_RGB(0, 0, 255), processed_mhi >= (timestamp - 1.0e-20));  // last silhouette
+				img.setTo(cv::Scalar(255, 0, 0), processed_mhi >= (timestamp - 1.0e-20));  // last silhouette
 			}
 
 			// TODO [check] >> unexpected result
