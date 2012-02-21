@@ -12,14 +12,12 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
 #include <boost/smart_ptr.hpp>
-#include <ctime>
-#include <stdio.h>
 #include <iostream>
+#include <ctime>
 
 
 namespace {
 namespace local {
-
 
 // histograms' parameters
 const int histDims = 1;
@@ -506,7 +504,8 @@ void gestureRecognitionByHistogram()
 			cv::imshow(windowName1, img);
 		}
 
-		if (cv::waitKey(1) >= 0)
+		const int ch = cv::waitKey(1);
+		if ('q' == ch || 27 == ch)  // 'q' or ESC
 			break;
 
 		std::swap(prevgray, gray);

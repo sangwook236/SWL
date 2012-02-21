@@ -1,3 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">&#x0A;<refactoring comment="Delete 7 resources" deleteContents="false" description="Delete 7 resources" element1="/swl_base" element2="/swl_math" element3="/swl_oglview" element4="/swl_util" element5="/swl_view" element6="/swl_winutil" element7="/swl_winview" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="7" stamp="1279087269615"/>&#x0A;<refactoring comment="Delete resource &apos;swl_oglview&apos;" deleteContents="false" description="Delete resource &apos;swl_oglview&apos;" element1="/swl_oglview" flags="7" id="org.eclipse.ltk.core.refactoring.delete.resources" resources="1" stamp="1279087870612"/>
-</session>

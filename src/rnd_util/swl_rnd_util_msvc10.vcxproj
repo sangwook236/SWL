@@ -48,7 +48,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.3.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -59,7 +59,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas_mtd.lib;gsl_mtd.lib;opencv_core220.lib;opencv_highgui220.lib;opencv_ml220.lib;opencv_imgproc220.lib;opencv_features2d220.lib;opencv_video220.lib;opencv_calib3d220.lib;opencv_legacy220.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;cblas_mtd.lib;gsl_mtd.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -73,7 +73,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.3.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>
@@ -82,7 +82,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas_mt.lib;gsl_mt.lib;opencv_core220.lib;opencv_highgui220.lib;opencv_ml220.lib;opencv_imgproc220.lib;opencv_features2d220.lib;opencv_video220.lib;opencv_calib3d220.lib;opencv_legacy220.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;cblas_mt.lib;gsl_mt.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>

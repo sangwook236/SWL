@@ -37,7 +37,7 @@ namespace swl {
 		cv::erode(mhi, processed_mhi, selement3);
 		cv::dilate(processed_mhi, processed_mhi, selement3);
 
-		mhi.copyTo(processed_mhi, processed_mhi);
+		mhi.copyTo(processed_mhi, processed_mhi > 0);
 #else
 		mhi.copyTo(processed_mhi);
 #endif

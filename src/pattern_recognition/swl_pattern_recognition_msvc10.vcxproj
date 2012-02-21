@@ -57,7 +57,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;swl_rnd_util.lib;opencv_core231d.lib;opencv_highgui231d.lib;opencv_ml231d.lib;opencv_imgproc231d.lib;opencv_features2d231d.lib;opencv_video231d.lib;opencv_calib3d231d.lib;opencv_legacy231d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
     </Link>
