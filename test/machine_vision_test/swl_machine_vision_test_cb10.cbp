@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="tcp_socket_server_test" />
+		<Option title="swl_machine_vision_test" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\tcp_socket_server_test" prefix_auto="1" extension_auto="1" />
+				<Option output="..\..\bin\Debug\swl_machine_vision_test" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="..\..\bin\Debug\" />
 				<Option object_output=".\Debug\" />
 				<Option type="1" />
@@ -17,7 +17,7 @@
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\tcp_socket_server_test" prefix_auto="1" extension_auto="1" />
+				<Option output="..\..\bin\Release\swl_machine_vision_test" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="..\..\bin\Release\" />
 				<Option object_output=".\Release\" />
 				<Option type="1" />
@@ -34,11 +34,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="EchoTcpSocketConnection.cpp" />
-		<Unit filename="EchoTcpSocketConnection.h" />
-		<Unit filename="EchoTcpSocketSession.cpp" />
-		<Unit filename="EchoTcpSocketSession.h" />
-		<Unit filename="TcpSocketServerTest.cpp" />
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

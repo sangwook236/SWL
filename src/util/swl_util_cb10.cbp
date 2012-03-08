@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_util" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="..\..\bin\Debug\swl_util" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Debug\" />
+				<Option object_output=".\Debug\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="..\..\bin\Release\swl_util" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="..\..\inc\swl\util\AsyncTcpSocketClient.h" />
+		<Unit filename="..\..\inc\swl\util\ExportUtil.h" />
+		<Unit filename="..\..\inc\swl\util\GuardedBuffer.h" />
+		<Unit filename="..\..\inc\swl\util\IPacketDispatcher.h" />
+		<Unit filename="..\..\inc\swl\util\IniParser.h" />
+		<Unit filename="..\..\inc\swl\util\PacketPacker.h" />
+		<Unit filename="..\..\inc\swl\util\RegionOfInterest.h" />
+		<Unit filename="..\..\inc\swl\util\RegionOfInterestMgr.h" />
+		<Unit filename="..\..\inc\swl\util\SerialPort.h" />
+		<Unit filename="..\..\inc\swl\util\TcpSocketClient.h" />
+		<Unit filename="..\..\inc\swl\util\TcpSocketConnection.h" />
+		<Unit filename="..\..\inc\swl\util\TcpSocketConnectionUsingSession.h" />
+		<Unit filename="..\..\inc\swl\util\TcpSocketServer.h" />
+		<Unit filename="..\..\inc\swl\util\TcpSocketSession.h" />
+		<Unit filename="AsyncTcpSocketClient.cpp" />
+		<Unit filename="GuardedBuffer.cpp" />
+		<Unit filename="IniParser.cpp" />
+		<Unit filename="PacketPacker.cpp" />
+		<Unit filename="RegionOfInterest.cpp" />
+		<Unit filename="RegionOfInterestMgr.cpp" />
+		<Unit filename="SerialPort.cpp" />
+		<Unit filename="TcpSocketClient.cpp" />
+		<Unit filename="TcpSocketConnection.cpp" />
+		<Unit filename="TcpSocketSession.cpp" />
+		<Unit filename="dictionary.cpp" />
+		<Unit filename="dictionary.h" />
+		<Unit filename="iniexample.cpp" />
+		<Unit filename="iniparser_impl.cpp" />
+		<Unit filename="iniparser_impl.h" />
+		<Unit filename="strlib.cpp" />
+		<Unit filename="strlib.h" />
+		<Unit filename="xgetopt.cpp" />
+		<Unit filename="xgetopt.h" />
+		<Unit filename="xgetopt_example.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

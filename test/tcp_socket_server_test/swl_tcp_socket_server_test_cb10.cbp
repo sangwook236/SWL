@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="gesture_recognition_test" />
+		<Option title="swl_tcp_socket_server_test" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\gesture_recognition_test" prefix_auto="1" extension_auto="1" />
+				<Option output="..\..\bin\Debug\swl_tcp_socket_server_test" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="..\..\bin\Debug\" />
 				<Option object_output=".\Debug\" />
 				<Option type="1" />
@@ -17,8 +17,8 @@
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\gesture_recognition_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release" />
+				<Option output="..\..\bin\Release\swl_tcp_socket_server_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
 				<Option object_output=".\Release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -34,11 +34,11 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="GestureClassifierBasedOnTemporalOrientationHistogramTest.cpp" />
-		<Unit filename="GestureClassifierByHistogramTest.cpp" />
-		<Unit filename="HistogramGenerator.cpp" />
-		<Unit filename="HistogramGenerator.h" />
-		<Unit filename="main.cpp" />
+		<Unit filename="EchoTcpSocketConnection.cpp" />
+		<Unit filename="EchoTcpSocketConnection.h" />
+		<Unit filename="EchoTcpSocketSession.cpp" />
+		<Unit filename="EchoTcpSocketSession.h" />
+		<Unit filename="TcpSocketServerTest.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_graphics" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="..\..\bin\Debug\swl_graphics" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Debug\" />
+				<Option object_output=".\Debug\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="..\..\bin\Release\swl_graphics" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="..\..\inc\swl\graphics\Appearance.h" />
+		<Unit filename="..\..\inc\swl\graphics\AppearanceSceneNode.h" />
+		<Unit filename="..\..\inc\swl\graphics\BoundingBox.h" />
+		<Unit filename="..\..\inc\swl\graphics\Color.h" />
+		<Unit filename="..\..\inc\swl\graphics\CoordinateFrame.h" />
+		<Unit filename="..\..\inc\swl\graphics\ExportGraphics.h" />
+		<Unit filename="..\..\inc\swl\graphics\Geometry.h" />
+		<Unit filename="..\..\inc\swl\graphics\GeometryPoolMgr.h" />
+		<Unit filename="..\..\inc\swl\graphics\GeometrySceneNode.h" />
+		<Unit filename="..\..\inc\swl\graphics\GraphicsObj.h" />
+		<Unit filename="..\..\inc\swl\graphics\IDrawable.h" />
+		<Unit filename="..\..\inc\swl\graphics\ISceneVisitor.h" />
+		<Unit filename="..\..\inc\swl\graphics\ITransformable.h" />
+		<Unit filename="..\..\inc\swl\graphics\ObjectPickerMgr.h" />
+		<Unit filename="..\..\inc\swl\graphics\PickableInterface.h" />
+		<Unit filename="..\..\inc\swl\graphics\SceneNode.h" />
+		<Unit filename="..\..\inc\swl\graphics\Shape.h" />
+		<Unit filename="..\..\inc\swl\graphics\ShapeSceneNode.h" />
+		<Unit filename="..\..\inc\swl\graphics\TransformSceneNode.h" />
+		<Unit filename="Appearance.cpp" />
+		<Unit filename="CoordinateFrame.cpp" />
+		<Unit filename="Geometry.cpp" />
+		<Unit filename="GeometryPoolMgr.cpp" />
+		<Unit filename="GraphicsObj.cpp" />
+		<Unit filename="ObjectPickerMgr.cpp" />
+		<Unit filename="PickableInterface.cpp" />
+		<Unit filename="Shape.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

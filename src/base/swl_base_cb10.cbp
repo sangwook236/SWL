@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_base" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="..\..\bin\Debug\swl_base" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Debug\" />
+				<Option object_output=".\Debug\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-g" />
+					<Add option="-DBUILD_DLL" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+					<Add directory="..\..\lib\Debug\" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="..\..\bin\Release\swl_base" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+					<Add directory="..\..\lib\Release\" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add directory="..\..\inc\" />
+			<Add directory="D:\work_center\sw_dev\cpp\ext\inc" />
+		</Compiler>
+		<Linker>
+			<Add directory="..\..\lib\" />
+		</Linker>
+		<Unit filename="..\..\inc\swl\base\ExportBase.h" />
+		<Unit filename="..\..\inc\swl\base\INotifier.h" />
+		<Unit filename="..\..\inc\swl\base\IObserver.h" />
+		<Unit filename="..\..\inc\swl\base\IPrintable.h" />
+		<Unit filename="..\..\inc\swl\base\IVisitable.h" />
+		<Unit filename="..\..\inc\swl\base\LogException.h" />
+		<Unit filename="..\..\inc\swl\base\Logger.h" />
+		<Unit filename="..\..\inc\swl\base\MvcController.h" />
+		<Unit filename="..\..\inc\swl\base\MvcModel.h" />
+		<Unit filename="..\..\inc\swl\base\MvcModelUpdateController.h" />
+		<Unit filename="..\..\inc\swl\base\MvcView.h" />
+		<Unit filename="..\..\inc\swl\base\MvcViewUpdateController.h" />
+		<Unit filename="..\..\inc\swl\base\Point.h" />
+		<Unit filename="..\..\inc\swl\base\Region.h" />
+		<Unit filename="..\..\inc\swl\base\ReturnException.h" />
+		<Unit filename="..\..\inc\swl\base\Size.h" />
+		<Unit filename="..\..\inc\swl\base\String.h" />
+		<Unit filename="..\..\inc\swl\base\Tuple.h" />
+		<Unit filename="INotifier.cpp" />
+		<Unit filename="IObserver.cpp" />
+		<Unit filename="LogException.cpp" />
+		<Unit filename="ReturnException.cpp" />
+		<Unit filename="String.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_view" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="..\..\bin\Debug\swl_view" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Debug\" />
+				<Option object_output=".\Debug\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="..\..\bin\Release\swl_view" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="..\..\inc\swl\view\ExportView.h" />
+		<Unit filename="..\..\inc\swl\view\KeyEvent.h" />
+		<Unit filename="..\..\inc\swl\view\MouseEvent.h" />
+		<Unit filename="..\..\inc\swl\view\ViewBase.h" />
+		<Unit filename="..\..\inc\swl\view\ViewCamera2.h" />
+		<Unit filename="..\..\inc\swl\view\ViewCamera3.h" />
+		<Unit filename="..\..\inc\swl\view\ViewContext.h" />
+		<Unit filename="..\..\inc\swl\view\ViewEventController.h" />
+		<Unit filename="..\..\inc\swl\view\ViewMatrix.h" />
+		<Unit filename="ViewCamera2.cpp" />
+		<Unit filename="ViewCamera3.cpp" />
+		<Unit filename="ViewEventController.cpp" />
+		<Unit filename="ViewMatrix.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

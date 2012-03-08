@@ -2,12 +2,12 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="tcp_socket_client_test" />
+		<Option title="swl_unit_test" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\tcp_socket_client_test" prefix_auto="1" extension_auto="1" />
+				<Option output="..\..\bin\Debug\swl_unit_test" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="..\..\bin\Debug\" />
 				<Option object_output=".\Debug\" />
 				<Option type="1" />
@@ -17,8 +17,8 @@
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\tcp_socket_client_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release\" />
+				<Option output="..\..\bin\Release\swl_unit_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release" />
 				<Option object_output=".\Release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -34,7 +34,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="TcpSocketClientTest.cpp" />
+		<Unit filename="TextUiUnitTestMain.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

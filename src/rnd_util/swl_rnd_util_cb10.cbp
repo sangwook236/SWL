@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_rnd_util" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="..\..\bin\Debug\swl_rnd_util_cb10" prefix_auto="1" extension_auto="1" />
+				<Option object_output=".\Debug\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add library="user32" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="..\..\bin\Release\swl_rnd_util" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
+				<Option type="3" />
+				<Option compiler="gcc" />
+				<Option createDefFile="1" />
+				<Option createStaticLib="1" />
+				<Compiler>
+					<Add option="-Wall" />
+					<Add option="-DBUILD_DLL" />
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+					<Add library="user32" />
+				</Linker>
+			</Target>
+		</Build>
+		<Unit filename="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\HistogramMatcher.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\HistogramUtil.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\HoughTransform.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\KalmanFilter.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\Ransac.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
+		<Unit filename="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
+		<Unit filename="ExtendedKalmanFilter.cpp" />
+		<Unit filename="HistogramAccumulator.cpp" />
+		<Unit filename="HistogramMatcher.cpp" />
+		<Unit filename="HistogramUitl.cpp" />
+		<Unit filename="HoughTransform.cpp" />
+		<Unit filename="KalmanFilter.cpp" />
+		<Unit filename="MetropolisHastingsAlgorithm.cpp" />
+		<Unit filename="Ransac.cpp" />
+		<Unit filename="SamplingImportanceResampling.cpp" />
+		<Unit filename="UnscentedKalmanFilter.cpp" />
+		<Unit filename="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
