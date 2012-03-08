@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_workspace_file>
+	<Workspace title="Workspace">
+		<Project filename="../test/gesture_recognition_test/gesture_recognition_test_cb10.cbp" />
+		<Project filename="../test/kinematics_test/kinematics_test_cb10.cbp" active="1" />
+		<Project filename="../test/machine_learning_test/machine_learning_test_cb10.cbp" />
+		<Project filename="../test/machine_vision_test/machine_vision_test_cb10.cbp" />
+		<Project filename="../test/rnd_util_test/rnd_util_test_cb10.cbp" />
+		<Project filename="../test/serial_port_test/serial_port_test_cb10.cbp" />
+		<Project filename="../test/tcp_socket_client_test/tcp_socket_client_test_cb10.cbp" />
+		<Project filename="../test/tcp_socket_server_test/tcp_socket_server_test_cb10.cbp" />
+	</Workspace>
+</CodeBlocks_workspace_file>
