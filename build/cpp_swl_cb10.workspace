@@ -20,6 +20,7 @@
 		<Project filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
 		<Project filename="../src/util/swl_util_cb10.cbp" />
 		<Project filename="../src/view/swl_view_cb10.cbp" />
-		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp" active="1" />
+		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp" />
+		<Project filename="../unit/qt_ui/swl_unit_test_qt_cb10.cbp" active="1" />
 	</Workspace>
 </CodeBlocks_workspace_file>
