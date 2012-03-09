@@ -1,13 +1,10 @@
-#include <qapplication.h>
+#include <Qt/qapplication.h>
 #include <cppunit/ui/qt/TestRunner.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
+#include <iostream>
 
 
-#if defined(UNICODE) || defined(_UNICODE)
-int wmain(int argc, wchar_t **argv)
-#else
 int main(int argc, char **argv)
-#endif
 {
 	try
 	{

@@ -63,6 +63,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition", "
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt", "..\unit\qt_ui\swl_unit_test_qt_msvc10.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -151,6 +153,10 @@ Global
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Debug|Win32.Build.0 = Debug|Win32
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Release|Win32.ActiveCfg = Release|Win32
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Release|Win32.Build.0 = Release|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.Build.0 = Debug|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.ActiveCfg = Release|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
