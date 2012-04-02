@@ -6,25 +6,25 @@
 
 #if (_MSC_VER >= 1500)  // VC2008
 #if defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
+void * __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #define DEBUG_NEW new(__FILE__, __LINE__)
 #pragma comment(lib, "mfc90ud.lib")
 #endif
 #elif (_MSC_VER >= 1400)  // VC2005
 #if defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
+void * __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #define DEBUG_NEW new(__FILE__, __LINE__)
 #pragma comment(lib, "mfc80ud.lib")
 #endif
 #elif (_MSC_VER >= 1310)  // VC2003
 #if defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
+void * __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #define DEBUG_NEW new(__FILE__, __LINE__)
 #pragma comment(lib, "mfc71ud.lib")
 #endif
 #elif (_MSC_VER >= 1300)  // VC2002
 #if defined(_DEBUG)
-void* __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
+void * __cdecl operator new(size_t nSize, const char* lpszFileName, int nLine);
 #define DEBUG_NEW new(__FILE__, __LINE__)
 #pragma comment(lib, "mfc70ud.lib")
 #endif
