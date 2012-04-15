@@ -7,6 +7,10 @@
 #include <boost/smart_ptr.hpp>
 #include <iostream>
 
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
+
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
@@ -15,6 +19,7 @@
 
 
 namespace {
+namespace local {
 
 struct echo_tcp_socket_server_worker_thread_functor
 {
@@ -33,22 +38,33 @@ struct echo_tcp_socket_server_worker_thread_functor
 	}
 };
 
+}  // namespace local
 }  // unnamed namespace
 
-#if defined(_UNICODE) || defined(UNICODE)
-int wmain()
-#else
-int main()
-#endif
+int main(int argc, char *argv[])
 {
-	std::cout << "start thread for TCP socket servers" << std::endl;
-	boost::scoped_ptr<boost::thread> thrd(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
+	try
+	{
+		std::cout << "start thread for TCP socket servers" << std::endl;
+		boost::scoped_ptr<boost::thread> thrd(new boost::thread(local::echo_tcp_socket_server_worker_thread_functor()));
 
-	if (thrd.get())
-		thrd->join();
-	std::cout << "finish thread for TCP socket servers" << std::endl;
+		if (thrd.get())
+			thrd->join();
+		std::cout << "finish thread for TCP socket servers" << std::endl;
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		return -1;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		return -1;
+	}
 
-	std::cout.flush();
+	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
+
 	return 0;
 }

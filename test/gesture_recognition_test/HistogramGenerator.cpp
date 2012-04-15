@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "HistogramGenerator.h"
 #include "swl/rnd_util/HistogramUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY

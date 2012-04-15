@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/math/MathConstant.h"
 #include "swl/rnd_util/Ransac.h"
@@ -14,6 +14,7 @@
 
 
 namespace {
+namespace local {
 
 struct Point3
 {
@@ -150,6 +151,7 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inliers, const s
 	return inlierCount;
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void estimate_3d_plane_using_ransac()
@@ -160,7 +162,7 @@ void estimate_3d_plane_using_ransac()
 	const size_t N_noise = 100;
 
 	// generate random points
-	std::vector<Point3> samples;
+	std::vector<local::Point3> samples;
 	{
 		const double PLANE_EQ[4] = { 1, -1, 1, -2 };  // { 0.5774, -0.5774, 0.5774, -1.1547 }
 
@@ -169,7 +171,7 @@ void estimate_3d_plane_using_ransac()
 			const double x = std::rand() % 10001 * 0.0006 - 3.0;  // [-3, 3]
 			const double y = std::rand() % 10001 * 0.0006 - 3.0;  // [-3, 3]
 			const double z = -(PLANE_EQ[3] + PLANE_EQ[0] * x + PLANE_EQ[1] * y) / PLANE_EQ[2];
-			samples.push_back(Point3(x, y, z));
+			samples.push_back(local::Point3(x, y, z));
 		}
 
 		for (size_t i = 0; i < N_noise; ++i)
@@ -177,12 +179,12 @@ void estimate_3d_plane_using_ransac()
 			const double x = std::rand() % 10001 * 0.0010 - 5.0;  // [-5, 5]
 			const double y = std::rand() % 10001 * 0.0010 - 5.0;  // [-5, 5]
 			const double z = std::rand() % 10001 * 0.0010 - 5.0;  // [-5, 5]
-			samples.push_back(Point3(x, y, z));
+			samples.push_back(local::Point3(x, y, z));
 		}
 	}
 
 	const size_t minimalSampleSetSize = 3;
-	Plane3RansacEstimator ransac(samples, minimalSampleSetSize);
+	local::Plane3RansacEstimator ransac(samples, minimalSampleSetSize);
 
 	const size_t maxIterationCount = 500;
 	const size_t minInlierCount = 50;

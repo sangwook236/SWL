@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
@@ -22,6 +22,7 @@
 
 
 namespace {
+namespace local {
 
 struct Acceleration
 {
@@ -443,7 +444,9 @@ void load_imu_data(const std::string &filename, const double ref_gravity, Accele
 
 	if (!stream.is_open())
 	{
-		std::cout << "file open error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file open error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -492,7 +495,9 @@ void load_imu_data(const std::string &filename, const double ref_gravity, Accele
 
 	if (accels.empty() || gyros.empty())
 	{
-		std::cout << "data error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "data error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -552,7 +557,9 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	std::ifstream stream(filename.c_str());
 	if (!stream)
 	{
-		std::cout << "file not found !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file not found at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -563,7 +570,9 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -580,14 +589,18 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -595,7 +608,9 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -615,14 +630,18 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -630,7 +649,9 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -647,14 +668,18 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -662,7 +687,9 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -682,20 +709,25 @@ void load_calibration_param(const std::string &filename, const size_t numAccelPa
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
 	stream.close();
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 // "A new multi-position calibration method for MEMS inertial navigation systems", Z. F. Syed, P. Aggarwal, C. Goodall, X. Niu, and N. El-Sheimy,
@@ -726,15 +758,15 @@ void imu_calibration()
 	const size_t numGyroParam = 3;
 	const size_t numMeasurement = 14;
 
-	std::vector<Acceleration> meanAccels, varAccels;
-	std::vector<Gyro> meanGyros, varGyros;
+	std::vector<local::Acceleration> meanAccels, varAccels;
+	std::vector<local::Gyro> meanGyros, varGyros;
 	meanAccels.reserve(numMeasurement);
 	varAccels.reserve(numMeasurement);
 	meanGyros.reserve(numMeasurement);
 	varGyros.reserve(numMeasurement);
 
-	Acceleration meanAccel(0.0, 0.0, 0.0), varAccel(0.0, 0.0, 0.0);
-	Gyro meanGyro(0.0, 0.0, 0.0), varGyro(0.0, 0.0, 0.0);
+	local::Acceleration meanAccel(0.0, 0.0, 0.0), varAccel(0.0, 0.0, 0.0);
+	local::Gyro meanGyro(0.0, 0.0, 0.0), varGyro(0.0, 0.0, 0.0);
 	load_imu_data("..\\data\\adis16350_data_20100801\\01_z_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
@@ -783,7 +815,9 @@ void imu_calibration()
 	std::ofstream stream(calibration_filename.c_str());
 	if (!stream)
 	{
-		std::cout << "file fails to be open !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file open error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return;
 	}
 
@@ -900,17 +934,17 @@ void imu_calibration()
 		gsl_vector *gyro_param = gsl_vector_alloc(numGyroParam);
 		gsl_matrix *gyro_covar = gsl_matrix_alloc(numGyroParam, numGyroParam);
 
-		load_calibration_param(calibration_filename, numAccelParam, numGyroParam, accel_param, accel_covar, gyro_param, gyro_covar);
+		local::load_calibration_param(calibration_filename, numAccelParam, numGyroParam, accel_param, accel_covar, gyro_param, gyro_covar);
 
 		std::cout << "accelerometer x_hat = ";
-		print_gsl_vector(accel_param);
+		local::print_gsl_vector(accel_param);
 		std::cout << "accelerometer Cx_hat = ";
-		print_gsl_matrix(accel_covar);
+		local::print_gsl_matrix(accel_covar);
 
 		std::cout << "gyro x_hat = ";
-		print_gsl_vector(gyro_param);
+		local::print_gsl_vector(gyro_param);
 		std::cout << "gyro Cx_hat = ";
-		print_gsl_matrix(gyro_covar);
+		local::print_gsl_matrix(gyro_covar);
 
 		gsl_vector_free(accel_param);
 		gsl_matrix_free(accel_covar);

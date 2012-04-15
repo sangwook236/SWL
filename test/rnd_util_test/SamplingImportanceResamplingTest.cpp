@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/SamplingImportanceResampling.h"
 #include <boost/random/normal_distribution.hpp>
@@ -15,6 +15,7 @@
 
 
 namespace {
+namespace local {
 
 // [ref]
 // "On sequential Monte Carlo sampling methods for Bayesian filtering", Arnaud Doucet, Simon Godsill, and Christophe Andrieu,
@@ -141,6 +142,7 @@ private:
 	mutable base_generator_type baseGenerator_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
 void sampling_importance_resampling()
@@ -185,7 +187,7 @@ void sampling_importance_resampling()
 	}
 
 	//
-	swl::SamplingImportanceResampling sir(EFFECTIVE_SAMPLE_SIZE, TransitionDistribution(Ts, sigma_v), ObservationDistribution(Ts, sigma_w), ProposalDistribution(Ts, sigma_v, sigma_w));
+	swl::SamplingImportanceResampling sir(EFFECTIVE_SAMPLE_SIZE, local::TransitionDistribution(Ts, sigma_v), local::ObservationDistribution(Ts, sigma_w), local::ProposalDistribution(Ts, sigma_v, sigma_w));
 
 	std::vector<swl::SamplingImportanceResampling::vector_type> xs(PARTICLE_NUM, swl::SamplingImportanceResampling::vector_type(STATE_DIM, x_init));
 	std::vector<swl::SamplingImportanceResampling::vector_type> newXs(PARTICLE_NUM, swl::SamplingImportanceResampling::vector_type(STATE_DIM, x_init));

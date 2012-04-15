@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuUnscentedKalmanFilterRunner.h"
 #include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
@@ -20,6 +20,7 @@
 
 
 namespace {
+namespace local {
 
 class ImuSystem: public swl::DiscreteNonlinearStochasticSystem
 {
@@ -311,6 +312,7 @@ private:
 	const double beta_wx_, beta_wy_, beta_wz_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
 // "Sigma-Point Kalman Filters for Integrated Navigation", R. van der Merwe and Eric A. Wan,
@@ -535,7 +537,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 	gsl_matrix_set_identity(P0);
 	gsl_matrix_scale(P0, 1.0e-8);  // the initial estimate is completely unknown
 
-	const ImuSystem system(Ts, stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim, initialGravity);
+	const local::ImuSystem system(Ts, stateDim, inputDim, outputDim, processNoiseDim, observationNoiseDim, initialGravity);
 	swl::UnscentedKalmanFilterWithAdditiveNoise filter(system, alpha, beta, kappa, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;

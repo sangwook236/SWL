@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/HoughTransform.h"
 #include "swl/math/MathConstant.h"
@@ -26,6 +26,7 @@
 
 
 namespace {
+namespace local {
 
 //#define __USE_BOOST_MULTI_ARRAY_DIRECTLY 1
 
@@ -605,12 +606,13 @@ void generalized_hough_transform_2()
 	}
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void hough_transform()
 {
 	std::cout << "********** generalized Hough transform: a rectangle with the same scale" << std::endl;
-	//generalized_hough_transform_1();
+	//local::generalized_hough_transform_1();
 	std::cout << "********** generalized Hough transform: a rectangle with different scale" << std::endl;
-	generalized_hough_transform_2();
+	local::generalized_hough_transform_2();
 }

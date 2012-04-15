@@ -11,6 +11,10 @@
 #include <ctime>
 #include <cstdlib>
 
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
+
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
@@ -19,6 +23,7 @@
 
 
 namespace {
+namespace local {
 
 const unsigned short serverPortNumber_withoutSession = 6000;
 const unsigned short serverPortNumber_withSession = 7000;
@@ -152,32 +157,6 @@ private:
 	const swl::string_t hostName_;
 	const swl::string_t serviceName_;
 };
-
-}  // unnamed namespace
-
-void testSyncTcpSocketClient();
-void testAsyncTcpSocketClient();
-void testTcpSocketServer_withoutSession();
-void testTcpSocketServer_withSession();
-
-#if defined(_UNICODE) || defined(UNICODE)
-int wmain()
-#else
-int main()
-#endif
-{
-	//
-	//testSyncTcpSocketClient();
-	//testAsyncTcpSocketClient();
-
-	//
-	testTcpSocketServer_withoutSession();
-	//testTcpSocketServer_withSession();
-
-	std::cout.flush();
-	std::cin.get();
-	return 0;
-}
 
 void testSyncTcpSocketClient()
 {
@@ -572,4 +551,36 @@ void testTcpSocketServer_withSession()
 	std::cout << "start thread group of size " << thrds.size() << std::endl;
     thrds.join_all();
 	std::cout << "finish thread group" << std::endl;
+}
+
+}  // namespace local
+}  // unnamed namespace
+
+int main(int argc, char *argv[])
+{
+	try
+	{
+		//
+		//local::testSyncTcpSocketClient();
+		//local::testAsyncTcpSocketClient();
+
+		//
+		local::testTcpSocketServer_withoutSession();
+		//local::testTcpSocketServer_withSession();
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		return -1;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		return -1;
+	}
+
+	std::cout << "press any key to exit ..." << std::endl;
+	std::cin.get();
+
+	return 0;
 }

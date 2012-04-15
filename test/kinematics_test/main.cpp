@@ -1,12 +1,31 @@
-#include "stdafx.h"
+//#include "stdafx.h"
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
 #include <iostream>
+#include <stdexcept>
 
-int wmain(int argc, wchar_t* argv[])
+
+int main(int argc, char *argv[])
 {
-	std::wcout << L"press any key to exit !!!" << std::endl;
-	std::wcout.flush();
-	std::wcin.get();
+	try
+	{
+		throw std::runtime_error("not yet implemented");
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		return -1;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		return -1;
+	}
 
-    return 0;
+	std::cout << "press any key to exit ..." << std::endl;
+	std::cin.get();
+
+	return 0;
 }
 

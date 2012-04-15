@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/util/SerialPort.h"
 #include "swl/winutil/WinSerialPort.h"
@@ -15,6 +15,7 @@
 
 
 namespace {
+namespace local {
 
 struct BoostSerialPortThreadFunctor
 {
@@ -66,6 +67,7 @@ private:
 	swl::GuardedByteBuffer &recvBuffer_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
 void test_boost_serial_port()
@@ -90,7 +92,7 @@ void test_boost_serial_port()
 		
 		// create boost serial port worker thread
 		boost::scoped_ptr<boost::thread> workerThread;
-		workerThread.reset(new boost::thread(BoostSerialPortThreadFunctor(ioService)));
+		workerThread.reset(new boost::thread(local::BoostSerialPortThreadFunctor(ioService)));
 
 		std::srand((unsigned int)time(NULL));
 
@@ -150,7 +152,7 @@ void test_windows_serial_port()
 
 		// create boost serial port worker thread
 		boost::scoped_ptr<boost::thread> workerThread;
-		workerThread.reset(new boost::thread(WinSerialPortThreadFunctor(serialPort, recvBuffer)));
+		workerThread.reset(new boost::thread(local::WinSerialPortThreadFunctor(serialPort, recvBuffer)));
 
 		std::srand((unsigned int)time(NULL));
 

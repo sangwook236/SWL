@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuExtendedKalmanFilterRunner.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
@@ -26,6 +26,7 @@
 
 
 namespace {
+namespace local {
 
 const char ADIS16350_SUPPLY_OUT =	0x02;
 const char ADIS16350_XGYRO_OUT =	0x04;
@@ -53,12 +54,13 @@ const double h = 71.0;  // altitude: 71 ~ 82 [m]
 const double sin_lambda = std::sin(lambda);
 const double sin_2lambda = std::sin(2 * lambda);
 
+}  // namespace local
 }  // unnamed namespace
 
 // [ref] wikipedia: Gravity of Earth
 // (latitude, longitude, altitude) = (lambda, phi, h) = (36.368, 127.364, 71.0)
 // g(lambda, h) = 9.780327 * (1 + 0.0053024 * sin(lambda)^2 - 0.0000058 * sin(2 * lambda)^2) - 3.086 * 10^-6 * h
-/*static*/ const double ImuExtendedKalmanFilterRunner::REF_GRAVITY_ = 9.780327 * (1.0 + 0.0053024 * sin_lambda*sin_lambda - 0.0000058 * sin_2lambda*sin_2lambda) - 3.086e-6 * h;  // [m/sec^2]
+/*static*/ const double ImuExtendedKalmanFilterRunner::REF_GRAVITY_ = 9.780327 * (1.0 + 0.0053024 * local::sin_lambda*local::sin_lambda - 0.0000058 * local::sin_2lambda*local::sin_2lambda) - 3.086e-6 * local::h;  // [m/sec^2]
 
 // [ref] "The Global Positioning System and Inertial Navigation", Jay Farrell & Matthew Barth, pp. 22
 /*static*/ const double ImuExtendedKalmanFilterRunner::REF_ANGULAR_VEL_ = 7.292115e-5;  // [rad/sec]
@@ -187,7 +189,9 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	std::ifstream stream(filename.c_str());
 	if (!stream)
 	{
-		std::cout << "file not found !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file not found at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -198,7 +202,9 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -215,14 +221,18 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -230,7 +240,9 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -250,14 +262,18 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -265,7 +281,9 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -282,14 +300,18 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -317,14 +339,18 @@ bool ImuExtendedKalmanFilterRunner::loadCalibrationParam(const std::string &file
 	}
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
 	if (!stream.eof()) std::getline(stream, line_str);
 	else
 	{
-		std::cout << "file format error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file format error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -337,22 +363,22 @@ bool ImuExtendedKalmanFilterRunner::readAdisData(gsl_vector *accel, gsl_vector *
 {
 	if (!adis_) return false;
 
-	const short rawXGyro = adis_->ReadInt14(ADIS16350_XGYRO_OUT) & 0x3FFF;
-	const short rawYGyro = adis_->ReadInt14(ADIS16350_YGYRO_OUT) & 0x3FFF;
-	const short rawZGyro = adis_->ReadInt14(ADIS16350_ZGYRO_OUT) & 0x3FFF;
-	const short rawXAccel = adis_->ReadInt14(ADIS16350_XACCL_OUT) & 0x3FFF;
-	const short rawYAccel = adis_->ReadInt14(ADIS16350_YACCL_OUT) & 0x3FFF;
-	const short rawZAccel = adis_->ReadInt14(ADIS16350_ZACCL_OUT) & 0x3FFF;
+	const short rawXGyro = adis_->ReadInt14(local::ADIS16350_XGYRO_OUT) & 0x3FFF;
+	const short rawYGyro = adis_->ReadInt14(local::ADIS16350_YGYRO_OUT) & 0x3FFF;
+	const short rawZGyro = adis_->ReadInt14(local::ADIS16350_ZGYRO_OUT) & 0x3FFF;
+	const short rawXAccel = adis_->ReadInt14(local::ADIS16350_XACCL_OUT) & 0x3FFF;
+	const short rawYAccel = adis_->ReadInt14(local::ADIS16350_YACCL_OUT) & 0x3FFF;
+	const short rawZAccel = adis_->ReadInt14(local::ADIS16350_ZACCL_OUT) & 0x3FFF;
 
 	// [m/sec^2]
-	gsl_vector_set(accel, 0, ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
-	gsl_vector_set(accel, 1, ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
-	gsl_vector_set(accel, 2, ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
+	gsl_vector_set(accel, 0, ((rawXAccel & 0x2000) == 0x2000 ? (rawXAccel - 0x4000) : rawXAccel) * local::ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
+	gsl_vector_set(accel, 1, ((rawYAccel & 0x2000) == 0x2000 ? (rawYAccel - 0x4000) : rawYAccel) * local::ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
+	gsl_vector_set(accel, 2, ((rawZAccel & 0x2000) == 0x2000 ? (rawZAccel - 0x4000) : rawZAccel) * local::ADIS16350_ACCL_SCALE_FACTOR * REF_GRAVITY_);
 
 	// [rad/sec]
-	gsl_vector_set(gyro, 0, ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
-	gsl_vector_set(gyro, 1, ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
-	gsl_vector_set(gyro, 2, ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * ADIS16350_GYRO_SCALE_FACTOR * deg2rad);
+	gsl_vector_set(gyro, 0, ((rawXGyro & 0x2000) == 0x2000 ? (rawXGyro - 0x4000) : rawXGyro) * local::ADIS16350_GYRO_SCALE_FACTOR * local::deg2rad);
+	gsl_vector_set(gyro, 1, ((rawYGyro & 0x2000) == 0x2000 ? (rawYGyro - 0x4000) : rawYGyro) * local::ADIS16350_GYRO_SCALE_FACTOR * local::deg2rad);
+	gsl_vector_set(gyro, 2, ((rawZGyro & 0x2000) == 0x2000 ? (rawZGyro - 0x4000) : rawZGyro) * local::ADIS16350_GYRO_SCALE_FACTOR * local::deg2rad);
 
 	return true;
 }
@@ -444,7 +470,9 @@ bool ImuExtendedKalmanFilterRunner::testAdisUsbz(const size_t loopCount)
 
 	if (!stream.is_open())
 	{
-		std::cout << "file open error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "file open error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 
@@ -460,7 +488,9 @@ bool ImuExtendedKalmanFilterRunner::testAdisUsbz(const size_t loopCount)
 				std::getline(stream, str);
 			else
 			{
-				std::cout << "file format error !!!" << std::endl;
+				std::ostringstream stream;
+				stream << "file format error at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
 				return false;
 			}
 		}
@@ -491,7 +521,9 @@ bool ImuExtendedKalmanFilterRunner::testAdisUsbz(const size_t loopCount)
 
 	if (accels.empty() || gyros.empty())
 	{
-		std::cout << "data error !!!" << std::endl;
+		std::ostringstream stream;
+		stream << "data error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
 		return false;
 	}
 

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "CliffWalkingSystem.h"
 #include "swl/machine_learning/Sarsa.h"
 #include "swl/machine_learning/QLearning.h"
@@ -13,6 +13,7 @@
 
 
 namespace {
+namespace local {
 
 typedef CliffWalkingStateActionPair state_action_pair_type;
 
@@ -218,6 +219,7 @@ void q_lambda(const size_t maxEpisodeCount, const state_action_pair_type::policy
 	}
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void td_learning()
@@ -225,14 +227,14 @@ void td_learning()
 	std::srand((unsigned int)std::time(NULL));
 
 	//
-	const state_action_pair_type::policy_type policy = state_action_pair_type::EPSILON_GREEDY_POLICY;
+	const local::state_action_pair_type::policy_type policy = local::state_action_pair_type::EPSILON_GREEDY_POLICY;
 
 	const double gamma = 0.001;  // the discount rate: 0 <= gamma <= 1.0
 
 	const size_t maxEpisodeCount = 20000;
 
-	sarsa(maxEpisodeCount, policy, gamma);
-	q_learning(maxEpisodeCount, policy, gamma);
+	local::sarsa(maxEpisodeCount, policy, gamma);
+	local::q_learning(maxEpisodeCount, policy, gamma);
 }
 
 void td_lambda()
@@ -240,7 +242,7 @@ void td_lambda()
 	std::srand((unsigned int)std::time(NULL));
 
 	//
-	const state_action_pair_type::policy_type policy = state_action_pair_type::EPSILON_GREEDY_POLICY;
+	const local::state_action_pair_type::policy_type policy = local::state_action_pair_type::EPSILON_GREEDY_POLICY;
 
 	const double gamma = 0.001;  // the discount rate: 0 <= gamma <= 1.0
 
@@ -250,6 +252,6 @@ void td_lambda()
 
 	const size_t maxEpisodeCount = 20000;
 
-	sarsa_lambda(maxEpisodeCount, policy, gamma, lambda, isReplacingTrace);
-	q_lambda(maxEpisodeCount, policy, gamma, lambda, isReplacingTrace);
+	local::sarsa_lambda(maxEpisodeCount, policy, gamma, lambda, isReplacingTrace);
+	local::q_lambda(maxEpisodeCount, policy, gamma, lambda, isReplacingTrace);
 }

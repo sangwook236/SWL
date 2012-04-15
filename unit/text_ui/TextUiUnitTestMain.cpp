@@ -1,3 +1,6 @@
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
 #include "swl/Config.h"
 #include "../UnitTestConfig.h"
 
@@ -20,6 +23,7 @@
 #if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
 
 namespace {
+namespace local {
 
 //
 //	runtime configration: command line arguments
@@ -47,9 +51,10 @@ private:
     std::ofstream logStream_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
-//BOOST_GLOBAL_FIXTURE(BoostUnitGlobalFixture);
+//BOOST_GLOBAL_FIXTURE(local::BoostUnitGlobalFixture);
 
 #if !defined(BOOST_TEST_MODULE)
 boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
@@ -62,16 +67,30 @@ boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
-int main()
+int main(int argc, char *argv[])
 {
-	CppUnit::TextUi::TestRunner runner;
-	runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
+	try
+	{
+		CppUnit::TextUi::TestRunner runner;
+		runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
 
-	//runner.setOutputter();
-	runner.run();
+		//runner.setOutputter();
+		runner.run();
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		return -1;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		return -1;
+	}
 
-	std::cout.flush();
+	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
+
 	return 0;
 }
 

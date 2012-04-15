@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
@@ -19,6 +19,7 @@
 
 
 namespace {
+namespace local {
 
 // "Kalman Filtering: Theory and Practice Using MATLAB" Example 4.1 (pp. 123)
 class SimpleLinearSystem: public swl::DiscreteNonlinearStochasticSystem
@@ -1123,12 +1124,13 @@ void nonstationary_growth_system_unscented_kalman_filter_with_additive_noise()
 	}
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void unscented_kalman_filter_with_additive_noise()
 {
-	//simple_system_unscented_kalman_filter_with_additive_noise();
-	linear_mass_spring_damper_system_unscented_kalman_filter_with_additive_noise();
-	//simple_nonlinear_system_unscented_kalman_filter_with_additive_noise();
+	//local::simple_system_unscented_kalman_filter_with_additive_noise();
+	local::linear_mass_spring_damper_system_unscented_kalman_filter_with_additive_noise();
+	//local::simple_nonlinear_system_unscented_kalman_filter_with_additive_noise();
 	//nonstationary_growth_system_unscented_kalman_filter_with_additive_noise();
 }

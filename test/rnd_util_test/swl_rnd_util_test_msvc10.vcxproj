@@ -53,12 +53,12 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;cblas_mtd.lib;gsl_mtd.lib;adisusbz_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;cblas.lib;gsl.lib;adisusbz_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);D:\work_center\sw_dev\cpp\hw_interface\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -74,12 +74,12 @@
       <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\hw_interface\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;cblas_mt.lib;gsl_mt.lib;adisusbz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;cblas.lib;gsl.lib;adisusbz.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);D:\work_center\sw_dev\cpp\hw_interface\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -94,6 +94,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="ExtendedKalmanFilterTest.cpp" />
+    <ClCompile Include="HmmWithMultinomialObservationsTest.cpp" />
+    <ClCompile Include="HmmWithUnivariateGaussianObservationsTest.cpp" />
     <ClCompile Include="HoughTransformTest.cpp" />
     <ClCompile Include="ImuCalibration.cpp" />
     <ClCompile Include="ImuExtendedKalmanFilterRunner.cpp" />

@@ -1,6 +1,6 @@
 //#define __USE_IR_SENSOR 1
 
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/pattern_recognition/GestureClassifierByHistogram.h"
 #include "swl/pattern_recognition/MotionSegmenter.h"
 #include "swl/rnd_util/HistogramUtil.h"

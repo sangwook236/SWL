@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "HistogramGenerator.h"  // FIXME [solve] >> these files are duplicates of ${SWL_ROOT}/src/swl_pattern_recognition/HistogramGenerator.h & .cpp
 #include "swl/pattern_recognition/MotionSegmenter.h"
 #include "swl/rnd_util/HistogramAccumulator.h"

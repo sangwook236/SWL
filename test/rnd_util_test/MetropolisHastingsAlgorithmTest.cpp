@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/MetropolisHastingsAlgorithm.h"
 #include <boost/random/normal_distribution.hpp>
@@ -15,6 +15,7 @@
 
 
 namespace {
+namespace local {
 
 // [ref]
 // "An Introduction to MCMC for Machine Learning", Christophe Andrieu, Nando de Freitas, Arnaud Doucet, and Michael I. Jordan
@@ -58,6 +59,7 @@ private:
 	mutable generator_type generator_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
 void metropolis_hastings_algorithm()
@@ -65,8 +67,8 @@ void metropolis_hastings_algorithm()
 	const size_t STATE_DIM = 1;
 	const double sigma = 10.0;
 
-	TargetDistribution targetDist;
-	ProposalDistribution proposalDist(sigma);
+	local::TargetDistribution targetDist;
+	local::ProposalDistribution proposalDist(sigma);
 	swl::MetropolisHastingsAlgorithm mha(targetDist, proposalDist);
 
 	swl::MetropolisHastingsAlgorithm::vector_type x(STATE_DIM, 0.0);

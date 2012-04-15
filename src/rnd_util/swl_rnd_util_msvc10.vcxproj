@@ -53,13 +53,12 @@
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas_mtd.lib;gsl_mtd.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -76,13 +75,12 @@
       <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.3.1;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas_mt.lib;gsl_mt.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -97,10 +95,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CDHMM.cpp" />
+    <ClCompile Include="DDHMM.cpp" />
     <ClCompile Include="ExtendedKalmanFilter.cpp" />
     <ClCompile Include="HistogramAccumulator.cpp" />
     <ClCompile Include="HistogramMatcher.cpp" />
     <ClCompile Include="HistogramUitl.cpp" />
+    <ClCompile Include="HMM.cpp" />
+    <ClCompile Include="HmmWithMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithMultinomialObservations.cpp" />
+    <ClCompile Include="HmmWithMultivariateGaussianMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithMultivariateGaussianObservations.cpp" />
+    <ClCompile Include="HmmWithUnivariateGaussianMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithUnivariateGaussianObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesFisherMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesFisherObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesObservations.cpp" />
     <ClCompile Include="HoughTransform.cpp" />
     <ClCompile Include="KalmanFilter.cpp" />
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
@@ -110,8 +121,10 @@
     <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
@@ -119,6 +132,17 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateGaussianMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateGaussianObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateGaussianMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateGaussianObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />

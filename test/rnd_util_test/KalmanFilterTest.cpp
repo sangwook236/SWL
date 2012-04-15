@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/DiscreteLinearStochasticSystem.h"
 #include "swl/rnd_util/KalmanFilter.h"
@@ -19,6 +19,7 @@
 
 
 namespace {
+namespace local {
 
 // "Kalman Filtering: Theory and Practice Using MATLAB" Example 4.1 (pp. 123)
 class SimpleLinearSystem: public swl::DiscreteLinearStochasticSystem
@@ -1266,12 +1267,13 @@ void radar_tracking_system_kalman_filter()
 	}
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void kalman_filter()
 {
-	simple_system_kalman_filter();
-	aided_INS_kalman_filter();
-	linear_mass_spring_damper_system_kalman_filter();
-	radar_tracking_system_kalman_filter();
+	local::simple_system_kalman_filter();
+	local::aided_INS_kalman_filter();
+	local::linear_mass_spring_damper_system_kalman_filter();
+	local::radar_tracking_system_kalman_filter();
 }

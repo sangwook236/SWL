@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuSystem.h"
 #include "swl/rnd_util/KalmanFilter.h"
@@ -18,6 +18,7 @@
 
 
 namespace {
+namespace local {
 
 struct Acceleration
 {
@@ -106,6 +107,7 @@ void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 #endif
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 void imu_kalman_filter()
@@ -229,13 +231,13 @@ void imu_kalman_filter()
 	gsl_vector_set_zero(gyroMeasurement);
 
 	//
-	std::list<Acceleration> accels;
-	std::list<Gyro> gyros;
+	std::list<local::Acceleration> accels;
+	std::list<local::Gyro> gyros;
 	read_adis16350(accels, gyros);
 
 	//
-	std::list<Acceleration>::iterator itAccel = accels.begin(), itAccelEnd = accels.end();
-	std::list<Gyro>::iterator itGyro = gyros.begin(), itGyroEnd = gyros.end();
+	std::list<local::Acceleration>::iterator itAccel = accels.begin(), itAccelEnd = accels.end();
+	std::list<local::Gyro>::iterator itGyro = gyros.begin(), itGyroEnd = gyros.end();
 
 #if 1
 	double prioriEstimate, posterioriEstimate;

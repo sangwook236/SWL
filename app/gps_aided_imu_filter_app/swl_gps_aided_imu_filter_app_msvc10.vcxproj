@@ -70,7 +70,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;swl_winutil.lib;cblas_mtd.lib;gsl_mtd.lib;nmea_d.lib;adisusbz_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;swl_winutil.lib;cblas.lib;gsl.lib;nmea_d.lib;adisusbz_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);D:\work_center\sw_dev\cpp\hw_interface\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -102,7 +102,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;swl_winutil.lib;cblas_mt.lib;gsl_mt.lib;nmea.lib;adisusbz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math.lib;swl_rnd_util.lib;swl_winutil.lib;cblas.lib;gsl.lib;nmea.lib;adisusbz.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);D:\work_center\sw_dev\cpp\hw_interface\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>

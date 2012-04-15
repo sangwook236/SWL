@@ -1,4 +1,4 @@
-#include "stdafx.h"
+//#include "stdafx.h"
 #include "swl/Config.h"
 #include "ImuExtendedKalmanFilterRunner.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
@@ -20,6 +20,7 @@
 
 
 namespace {
+namespace local {
 
 class ImuSystem: public swl::DiscreteNonlinearStochasticSystem
 {
@@ -322,6 +323,7 @@ private:
 	gsl_matrix *A_tmp_;
 };
 
+}  // namespace local
 }  // unnamed namespace
 
 // "Sigma-Point Kalman Filters for Integrated Navigation", R. van der Merwe and Eric A. Wan,
@@ -572,7 +574,7 @@ void imu_extended_Kalman_filter_with_calibration()
 	gsl_matrix_set(Rd, 4, 4, RR);
 	gsl_matrix_set(Rd, 5, 5, RR);
 
-	const ImuSystem system(Ts, stateDim, inputDim, outputDim, initialGravity, Qd, Rd);
+	const local::ImuSystem system(Ts, stateDim, inputDim, outputDim, initialGravity, Qd, Rd);
 	swl::DiscreteExtendedKalmanFilter filter(system, x0, P0);
 
 	gsl_vector_free(x0);  x0 = NULL;

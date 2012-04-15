@@ -1,10 +1,13 @@
-#include "stdafx.h"
+//#include "stdafx.h"
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
 #include <string>
 #include <vector>
 #include <iostream>
 
 
-int main()
+int main(int argc, char *argv[])
 {
 	void hough_transform();
 	void estimate_3d_plane_using_ransac();
@@ -19,27 +22,45 @@ int main()
 	void imu_extended_Kalman_filter_with_calibration();
 	void imu_unscented_Kalman_filter_with_calibration();
 
-	//hough_transform();
-	//estimate_3d_plane_using_ransac();
+	void hmm_with_multinomial_observation_densities();
+	void hmm_with_univariate_gaussian_observation_densities();
 
-	//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter
-	//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC)
+	try
+	{
+		//hough_transform();
+		//estimate_3d_plane_using_ransac();
 
-	//kalman_filter();
-	//extended_kalman_filter();
-	//unscented_kalman_filter();
-	//unscented_kalman_filter_with_additive_noise();
+		//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter
+		//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC)
 
-	//imu_kalman_filter();
-	//imu_calibration();
-	//imu_extended_Kalman_filter_with_calibration();
-	imu_unscented_Kalman_filter_with_calibration();
+		//kalman_filter();
+		//extended_kalman_filter();
+		//unscented_kalman_filter();
+		//unscented_kalman_filter_with_additive_noise();
 
-	std::wcout << L"press any key to exit !!!" << std::endl;
-	std::wcout.flush();
-	std::wcin.get();
+		//imu_kalman_filter();
+		//imu_calibration();
+		//imu_extended_Kalman_filter_with_calibration();
+		//imu_unscented_Kalman_filter_with_calibration();
 
-    return 0;
+		hmm_with_multinomial_observation_densities();
+		hmm_with_univariate_gaussian_observation_densities();
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		return -1;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		return -1;
+	}
+
+	std::cout << "press any key to exit ..." << std::endl;
+	std::cin.get();
+
+	return 0;
 }
 
 void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data)
