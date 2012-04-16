@@ -51,7 +51,7 @@ protected:
 		}
 		else  // use an accumulating trace
 		{
-			for (std::map<const state_action_pair_type, double>::iterator it = Q.begin(); it != Q.end(); ++it)
+			for (typename std::map<const state_action_pair_type, double>::iterator it = Q.begin(); it != Q.end(); ++it)
 			{
 				it->second += (*stepSizeFunction_)(iterationStep) * delta * eligibility[it->first];
 				if (isGreedyAction)

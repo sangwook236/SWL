@@ -1,6 +1,5 @@
 #include "swl/pattern_recognition/GestureClassifierByHistogram.h"
 #include "HistogramGenerator.h"
-#include "swl/rnd_util/HistogramAccumulator.h"
 #include "swl/rnd_util/HistogramMatcher.h"
 #include "swl/rnd_util/HistogramUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
@@ -204,14 +203,14 @@ void GestureClassifierByHistogram::clearGestureHistory(const int gestureClassToA
 bool GestureClassifierByHistogram::classifyClass1Gesture()
 {
 	// create accumulated phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForClass1Gesture_->createAccumulatedHistogram();
+	cv::MatND accumulatedHist(histogramAccumulatorForClass1Gesture_->createAccumulatedHistogram());
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
 	{
 		// FIXME [restore] >> have to decide which one is used
 		//cv::MatND &temporalHist = histogramAccumulatorForClass1Gesture_->createTemporalHistogram();
-		cv::MatND &temporalHist = histogramAccumulatorForClass1Gesture_->createTemporalHistogram(refFullPhaseHistograms_, params_.histDistThresholdForClass1Gesture);
+		cv::MatND temporalHist(histogramAccumulatorForClass1Gesture_->createTemporalHistogram(refFullPhaseHistograms_, params_.histDistThresholdForClass1Gesture));
 		// normalize histogram
 		HistogramUtil::normalizeHistogram(temporalHist, local::refHistogramNormalizationFactor);
 
@@ -320,7 +319,7 @@ bool GestureClassifierByHistogram::classifyClass1Gesture()
 bool GestureClassifierByHistogram::classifyClass2Gesture()
 {
 	// accumulate phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForClass2Gesture_->createAccumulatedHistogram();
+	cv::MatND accumulatedHist(histogramAccumulatorForClass2Gesture_->createAccumulatedHistogram());
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
@@ -376,7 +375,7 @@ bool GestureClassifierByHistogram::classifyClass2Gesture()
 bool GestureClassifierByHistogram::classifyClass3Gesture()
 {
 	// accumulate phase histograms
-	cv::MatND &accumulatedHist = histogramAccumulatorForClass3Gesture_->createAccumulatedHistogram();
+	cv::MatND accumulatedHist(histogramAccumulatorForClass3Gesture_->createAccumulatedHistogram());
 	// normalize histogram
 	HistogramUtil::normalizeHistogram(accumulatedHist, local::refHistogramNormalizationFactor);
 
@@ -753,7 +752,7 @@ void GestureClassifierByHistogram::createGestureIdPatternHistogramsForClass1Gest
 #endif
 }
 
-size_t GestureClassifierByHistogram::matchHistogramByGestureIdPattern(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::vector<const cv::MatND> &gestureIdPatternHistograms, const double histDistThreshold) const
+size_t GestureClassifierByHistogram::matchHistogramByGestureIdPattern(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::vector<histogram_type> &gestureIdPatternHistograms, const double histDistThreshold) const
 {
 	// create matched ID histogram
 #if 0
@@ -811,7 +810,14 @@ void GestureClassifierByHistogram::drawMatchedIdPatternHistogram(const boost::ci
 {
 	// calculate matched index histogram
 	cv::MatND hist;
+#if defined(__GNUC__)
+    {
+        cv::Mat tmpmat(std::vector<unsigned char>(matchedHistogramIndexes.begin(), matchedHistogramIndexes.end()));
+        cv::calcHist(&tmpmat, 1, local::indexHistChannels, cv::Mat(), hist, local::histDims, local::indexHistSize, local::indexHistRanges, true, false);
+    }
+#else
 	cv::calcHist(&cv::Mat(std::vector<unsigned char>(matchedHistogramIndexes.begin(), matchedHistogramIndexes.end())), 1, local::indexHistChannels, cv::Mat(), hist, local::histDims, local::indexHistSize, local::indexHistRanges, true, false);
+#endif
 
 	// normalize histogram
 	//HistogramUtil::normalizeHistogram(hist, params_.maxMatchedHistogramNum);
@@ -819,15 +825,15 @@ void GestureClassifierByHistogram::drawMatchedIdPatternHistogram(const boost::ci
 	// draw matched index histogram
 	cv::Mat histImg(cv::Mat::zeros(local::indexHistMaxHeight, local::indexHistBins*local::indexHistBinWidth, CV_8UC3));
 	HistogramUtil::drawHistogram1D(hist, local::indexHistBins, params_.maxMatchedHistogramNum, local::indexHistBinWidth, local::indexHistMaxHeight, histImg);
-				
+
 	std::ostringstream sstream;
 	sstream << "count: " << matchedHistogramIndexes.size();
 	cv::putText(histImg, sstream.str(), cv::Point(10, 15), cv::FONT_HERSHEY_COMPLEX, 0.5, CV_RGB(255, 0, 255), 1, 8, false);
-				
+
 	cv::imshow(windowName, histImg);
 }
 
-void GestureClassifierByHistogram::drawMatchedReferenceHistogram(const std::vector<const cv::MatND> &refHistograms, const size_t matchedIdx, const std::string &windowName) const
+void GestureClassifierByHistogram::drawMatchedReferenceHistogram(const std::vector<histogram_type> &refHistograms, const size_t matchedIdx, const std::string &windowName) const
 {
 #if 0
 	double maxVal = 0.0;

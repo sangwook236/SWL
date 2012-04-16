@@ -48,9 +48,9 @@ public:
 
 	vector_type getDirectionalVector() const  {  return vector_type(point2_ - point1_).unit();  }
 
-	T getSlope() const
+	T getSlope(const T &tol = T(1.0e-5)) const
 	{  return (point2_.x-point1_.x >= -tol && point2_.x-point1_.x <= tol) ? std::numeric_limits<T>::infinity() : ((point2_.y-point1_.y) / (point2_.x-point1_.x));  }
-	T getIntercept() const
+	T getIntercept(const T &tol = T(1.0e-5)) const
 	{  return (point2_.x-point1_.x >= -tol && point2_.x-point1_.x <= tol) ? std::numeric_limits<T>::infinity() : (point1_.y - point1_.x * (point2_.y-point1_.y) / (point2_.x-point1_.x));  }
 
 	//

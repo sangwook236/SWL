@@ -47,7 +47,7 @@ public:
 	point_type & point2()  {  return point2_;  }
 	const point_type & point2() const  {  return point2_;  }
 
-	T getSlope() const
+	T getSlope(const T &tol = T(1.0e-5)) const
 	{  return (point2_.x-point1_.x >= -tol && point2_.x-point1_.x <= tol) ? std::numeric_limits<T>::infinity() : (point2_.y-point1_.y) / (point2_.x-point1_.x);  }
 
 	//
@@ -141,11 +141,11 @@ public:
 	point_type getClosestPoint(const point_type &pt) const
 	{
 		const T eps = T(1.0e-15);
-		if (include(pt, tol)) return pt;
+		if (include(pt, eps)) return pt;
 		else
 		{
 			const point_type &ppt = getPerpendicularPoint(pt);
-			if (include(ppt, tol)) return ppt;
+			if (include(ppt, eps)) return ppt;
 			else
 			{
 				const T dist1 = (point1_.x - pt.x)*(point1_.x - pt.x) + (point1_.y - pt.y)*(point1_.y - pt.y);
@@ -379,11 +379,11 @@ public:
 	point_type getClosestPoint(const point_type &pt) const
 	{
 		const T eps = T(1.0e-15);
-		if (include(pt, tol)) return pt;
+		if (include(pt, eps)) return pt;
 		else
 		{
 			const point_type &ppt = getPerpendicularPoint(pt);
-			if (include(ppt, tol)) return ppt;
+			if (include(ppt, eps)) return ppt;
 			else
 			{
 				const T dist1 = (point1_.x - pt.x)*(point1_.x - pt.x) + (point1_.y - pt.y)*(point1_.y - pt.y) + (point1_.z - pt.z)*(point1_.z - pt.z);

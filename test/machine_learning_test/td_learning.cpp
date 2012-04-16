@@ -4,7 +4,11 @@
 #include "swl/machine_learning/QLearning.h"
 #include "swl/machine_learning/SarsaLambda.h"
 #include "swl/machine_learning/QLambda.h"
+#if defined(WIN32)
 #include "swl/winutil/WinTimer.h"
+#elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
+#include "swl/posixutil/PosixTimer.h"
+#endif
 #include <vector>
 #include <fstream>
 #include <iostream>
@@ -58,9 +62,12 @@ void sarsa(const size_t maxEpisodeCount, const state_action_pair_type::policy_ty
 		return;
 	}
 
-	try
 	{
+#if defined(WIN32)
 		swl::WinTimer aTimer;
+#elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
+		swl::PosixTimer aTimer;
+#endif
 		const swl::Sarsa<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
 		learner.train(maxEpisodeCount, policy, Q);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
@@ -71,10 +78,6 @@ void sarsa(const size_t maxEpisodeCount, const state_action_pair_type::policy_ty
 				std::cout << getActionSymbol(state_action_pair_type::getGreedyAction(state_action_pair_type::state_type(row, col), Q)) << "  ";
 			std::cout << std::endl;
 		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
 	}
 }
 
@@ -101,9 +104,12 @@ void q_learning(const size_t maxEpisodeCount, const state_action_pair_type::poli
 		return;
 	}
 
-	try
 	{
+#if defined(WIN32)
 		swl::WinTimer aTimer;
+#elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
+		swl::PosixTimer aTimer;
+#endif
 		const swl::QLearning<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction);
 		learner.train(maxEpisodeCount, policy, Q);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
@@ -114,10 +120,6 @@ void q_learning(const size_t maxEpisodeCount, const state_action_pair_type::poli
 				std::cout << getActionSymbol(state_action_pair_type::getGreedyAction(state_action_pair_type::state_type(row, col), Q)) << "  ";
 			std::cout << std::endl;
 		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
 	}
 }
 
@@ -150,9 +152,12 @@ void sarsa_lambda(const size_t maxEpisodeCount, const state_action_pair_type::po
 		return;
 	}
 
-	try
 	{
+#if defined(WIN32)
 		swl::WinTimer aTimer;
+#elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
+		swl::PosixTimer aTimer;
+#endif
 		const swl::SarsaLambda<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
 		learner.train(maxEpisodeCount, policy, Q, eligibility);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
@@ -163,10 +168,6 @@ void sarsa_lambda(const size_t maxEpisodeCount, const state_action_pair_type::po
 				std::cout << getActionSymbol(state_action_pair_type::getGreedyAction(state_action_pair_type::state_type(row, col), Q)) << "  ";
 			std::cout << std::endl;
 		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
 	}
 }
 
@@ -199,9 +200,12 @@ void q_lambda(const size_t maxEpisodeCount, const state_action_pair_type::policy
 		return;
 	}
 
-	try
 	{
+#if defined(WIN32)
 		swl::WinTimer aTimer;
+#elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
+		swl::PosixTimer aTimer;
+#endif
 		const swl::QLambda<state_action_pair_type> learner(gamma, &state_action_pair_type::epsilonFunction, &state_action_pair_type::stepSizeFunction, lambda, isReplacingTrace);
 		learner.train(maxEpisodeCount, policy, Q, eligibility);
 		std::cout << "elapsed time: " << aTimer.getElapsedTimeInMilliSecond() << " msec" << std::endl;
@@ -212,10 +216,6 @@ void q_lambda(const size_t maxEpisodeCount, const state_action_pair_type::policy
 				std::cout << getActionSymbol(state_action_pair_type::getGreedyAction(state_action_pair_type::state_type(row, col), Q)) << "  ";
 			std::cout << std::endl;
 		}
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << e.what() << std::endl;
 	}
 }
 

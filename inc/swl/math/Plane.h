@@ -41,7 +41,7 @@ public:
         return *this;
     }
 
-public:    
+public:
 	point_type & point1()  {  return point1_;  }
 	const point_type & point1() const  {  return point1_;  }
 	point_type & point2()  {  return point2_;  }
@@ -75,7 +75,7 @@ public:
 			plane.include(point1_, tol) || plane.include(point2_, tol) || plane.include(point3_, tol));
 	}
 	bool isIntersectedWith(const Plane3<T> &plane, const T &tol = T(1.0e-5)) const
-	{  return isEqual(line, tol) || !isParallel(line, tol);  }
+	{  return isEqual(plane, tol) || !isParallel(plane, tol);  }
 
 	//
 	point_type getIntersectionPoint(const line_type &line) const
@@ -87,6 +87,7 @@ public:
 			return point_type(std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity());
 
 		const T denom = normal.x() * dir.x() + normal.y() * dir.y() + normal.z() * dir.z();
+		const T eps = T(1.0e-15);
 		if (denom >= -eps && denom <= eps)  // error
 			throw LogException(LogException::L_ERROR, "illegal value", __FILE__, __LINE__, __FUNCTION__);
 
@@ -124,19 +125,19 @@ public:
 		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(normal.y() * (pt.x - point1_.x) - normal.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
 		const vector_type &normal = getNormalVector();
-		const T norm = dir.norm();
+		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
+			const T s = (normal.x() * (pt.x - point1_.x) + normal.y() * (pt.y - point1_.y) + normal.z() * (pt.z - point1_.z)) / norm;
+			return point_type(normal.x() * s + point1_.x, normal.y() * s + point1_.y, normal.z() * s + point1_.z);
 		}
 	}
 

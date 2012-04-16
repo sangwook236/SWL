@@ -16,8 +16,8 @@ class SWL_MACHINE_LEARNING_API TDLearningBase
 public:
 	//typedef TDLearningBase base_type;
 
-	typedef double (*epsilon_function_type)(const size_t episodeTrial);
-	typedef double (*step_size_function_type)(const size_t iterationStep);
+	typedef double (*epsilon_function_type)(const std::size_t episodeTrial);
+	typedef double (*step_size_function_type)(const std::size_t iterationStep);
 
 protected:
 	explicit TDLearningBase(const double gamma)
@@ -36,8 +36,8 @@ private:
 	TDLearningBase & operator=(const TDLearningBase &rhs);
 
 private:
-	static double defaultEpsilonFunction(const size_t episodeTrial);
-	static double defaultStepSizeFunction(const size_t iterationStep);
+	static double defaultEpsilonFunction(const std::size_t episodeTrial);
+	static double defaultStepSizeFunction(const std::size_t iterationStep);
 
 protected:
 	const double gamma_;

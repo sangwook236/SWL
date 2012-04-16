@@ -15,8 +15,9 @@ template<typename SceneVisitor>
 class TransformSceneNode: public GroupSceneNode<SceneVisitor>
 {
 public:
-	typedef GroupSceneNode		base_type;
-	typedef TMatrix3<double>	transform_type;
+	typedef GroupSceneNode<SceneVisitor> base_type;
+	typedef TMatrix3<double> transform_type;
+	typedef typename base_type::visitor_type visitor_type;
 
 public:
 	TransformSceneNode()

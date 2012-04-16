@@ -20,7 +20,13 @@ namespace swl {
 
 struct SWL_RND_UTIL_API HistogramMatcher
 {
-	static size_t match(const std::vector<const cv::MatND> &refHistograms, const cv::MatND &hist, double &minDist);
+#if defined(__GNUC__)
+    typedef cv::MatND histogram_type;
+#else
+    typedef const cv::MatND histogram_type;
+#endif
+
+	static std::size_t match(const std::vector<histogram_type> &refHistograms, const cv::MatND &hist, double &minDist);
 };
 
 }  // namespace swl

@@ -1,5 +1,6 @@
 #include "swl/rnd_util/HistogramAccumulator.h"
 #include "swl/rnd_util/HistogramMatcher.h"
+#include <stdexcept>
 
 
 namespace swl {
@@ -26,7 +27,7 @@ cv::MatND HistogramAccumulator::createAccumulatedHistogram() const
 	if (weights_.empty())
 	{
 		// simple running averaging
-		for (boost::circular_buffer<const cv::MatND>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it)
+		for (boost::circular_buffer<histogram_type>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it)
 		{
 			if (accumulatedHistogram.empty()) accumulatedHistogram = *it;
 			else accumulatedHistogram += *it;
@@ -36,7 +37,7 @@ cv::MatND HistogramAccumulator::createAccumulatedHistogram() const
 	{
 		// weighted averaging
 		size_t step = 0;
-		for (boost::circular_buffer<const cv::MatND>::const_reverse_iterator rit = histograms_.rbegin(); rit != histograms_.rend(); ++rit, ++step)
+		for (boost::circular_buffer<histogram_type>::const_reverse_iterator rit = histograms_.rbegin(); rit != histograms_.rend(); ++rit, ++step)
 		{
 			if (accumulatedHistogram.empty()) accumulatedHistogram = (*rit) * weights_[step];
 			else accumulatedHistogram += (*rit) * weights_[step];
@@ -53,23 +54,28 @@ cv::MatND HistogramAccumulator::createTemporalHistogram() const
 	cv::MatND temporalHistogram(cv::Mat::zeros(histograms_.front().rows, histograms_.size(), histograms_.front().type()));
 
 	size_t k = 0;
-	for (boost::circular_buffer<const cv::MatND>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it, ++k)
+	for (boost::circular_buffer<histogram_type>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it, ++k)
 	{
+#if defined(__GNUC__)
+        cv::Mat col(temporalHistogram.col(k));
+		it->copyTo(col);
+#else
 		//temporalHistogram.col(k) = *it;  // not working
 		it->copyTo(temporalHistogram.col(k));
+#endif
 	}
 
 	return temporalHistogram;
 }
 
-cv::MatND HistogramAccumulator::createTemporalHistogram(const std::vector<const cv::MatND> &refHistograms, const double histDistThreshold) const
+cv::MatND HistogramAccumulator::createTemporalHistogram(const std::vector<histogram_type> &refHistograms, const double histDistThreshold) const
 {
 	if (histograms_.empty() || refHistograms.empty()) return cv::MatND();
 
 	cv::MatND temporalHistogram(cv::Mat::zeros(histograms_.front().rows, histograms_.size(), histograms_.front().type()));
 
 	size_t k = 0;
-	for (boost::circular_buffer<const cv::MatND>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it, ++k)
+	for (boost::circular_buffer<histogram_type>::const_iterator it = histograms_.begin(); it != histograms_.end(); ++it, ++k)
 	{
 		// match histogram
 		double minHistDist = std::numeric_limits<double>::max();
@@ -77,8 +83,13 @@ cv::MatND HistogramAccumulator::createTemporalHistogram(const std::vector<const 
 
 		if (minHistDist < histDistThreshold)
 		{
+#if defined(__GNUC__)
+            cv::Mat col(temporalHistogram.col(k));
+			refHistograms[matchedIdx].copyTo(col);
+#else
 			//temporalHistogram.col(k) = refHistograms[matchedIdx];  // not working
 			refHistograms[matchedIdx].copyTo(temporalHistogram.col(k));
+#endif
 		}
 	}
 

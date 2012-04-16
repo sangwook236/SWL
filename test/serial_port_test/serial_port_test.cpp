@@ -1,11 +1,14 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/util/SerialPort.h"
+#if defined(WIN32)
 #include "swl/winutil/WinSerialPort.h"
+#endif
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
 #include <iostream>
 #include <ctime>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -37,6 +40,7 @@ private:
 	boost::asio::io_service &ioService_;
 };
 
+#if defined(WIN32)
 struct WinSerialPortThreadFunctor
 {
 	WinSerialPortThreadFunctor(swl::WinSerialPort &serialPort, swl::GuardedByteBuffer &recvBuffer)
@@ -66,6 +70,7 @@ private:
 	swl::WinSerialPort &serialPort_;
 	swl::GuardedByteBuffer &recvBuffer_;
 };
+#endif
 
 }  // namespace local
 }  // unnamed namespace
@@ -89,7 +94,7 @@ void test_boost_serial_port()
 #else
 		std::cout << "serial port connected ==> port : " << portName << ", baud-rate : " << baudRate << std::endl;
 #endif
-		
+
 		// create boost serial port worker thread
 		boost::scoped_ptr<boost::thread> workerThread;
 		workerThread.reset(new boost::thread(local::BoostSerialPortThreadFunctor(ioService)));
@@ -130,6 +135,7 @@ void test_boost_serial_port()
 
 void test_windows_serial_port()
 {
+#if defined(WIN32)
 	swl::WinSerialPort serialPort;
 
 #if defined(_UNICODE) || defined(UNICODE)
@@ -147,7 +153,7 @@ void test_windows_serial_port()
 #else
 		std::cout << "serial port connected ==> port : " << portName << ", baud-rate : " << baudRate << std::endl;
 #endif
-		
+
 		swl::GuardedByteBuffer recvBuffer;
 
 		// create boost serial port worker thread
@@ -189,4 +195,7 @@ void test_windows_serial_port()
 		workerThread.reset();
 		serialPort.disconnect();
 	}
+#else
+    throw std::runtime_error("this function is supported in WIN32 only");
+#endif
 }

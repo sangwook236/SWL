@@ -4,6 +4,7 @@
 
 #include "swl/machine_learning/TDLearning.h"
 #include <map>
+#include <stdexcept>
 
 
 namespace swl {
@@ -16,6 +17,13 @@ class Sarsa: public TDLearning<StateActionPair>
 {
 public:
 	typedef TDLearning<StateActionPair> base_type;
+	typedef typename base_type::state_type state_type;
+	typedef typename base_type::action_type action_type;
+	typedef typename base_type::policy_type policy_type;
+	typedef typename base_type::reward_type reward_type;
+	typedef typename base_type::epsilon_function_type epsilon_function_type;
+	typedef typename base_type::step_size_function_type step_size_function_type;
+	typedef typename base_type::state_action_pair_type state_action_pair_type;
 
 public:
 	explicit Sarsa(const double gamma)
@@ -33,14 +41,14 @@ private:
 
 public:
 	// Sarsa: a tabular on-policy TD control algorithm
-	/*virtual*/ void train(const size_t maxEpisodeCount, const policy_type &policy, std::map<const state_action_pair_type, double> &Q) const
+	/*virtual*/ void train(const std::size_t maxEpisodeCount, const policy_type &policy, std::map<const state_action_pair_type, double> &Q) const
 	{
 		//std::cout << "processing .";
 
-		size_t episode = 1;
+		std::size_t episode = 1;
 		while (true)
 		{
-			const size_t step = runSingleEpisoide(episode, policy, Q);
+			const std::size_t step = runSingleEpisoide(episode, policy, Q);
 
 			//std::cout << "episode #" << episode << ": step = " << step << std::endl;
 			//if (0 == episode % 500)
@@ -57,9 +65,9 @@ public:
 	}
 
 private:
-	size_t runSingleEpisoide(const size_t episodeTrial, const policy_type &policy, std::map<const state_action_pair_type, double> &Q) const
+	std::size_t runSingleEpisoide(const std::size_t episodeTrial, const policy_type &policy, std::map<const state_action_pair_type, double> &Q) const
 	{
-		size_t step = 1;
+		std::size_t step = 1;
 
 		// initialize a state s
 		state_type currState;

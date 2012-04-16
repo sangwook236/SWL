@@ -44,7 +44,8 @@ template<typename SceneVisitor>
 class ComponentSceneNode: public ISceneNode<SceneVisitor>
 {
 public:
-	typedef ISceneNode base_type;
+	typedef ISceneNode<SceneVisitor> base_type;
+	typedef typename base_type::node_type node_type;
 
 protected:
 #if defined(UNICODE) || defined(_UNICODE)
@@ -85,7 +86,7 @@ public:
 #else
 	void setName(const std::string name)  {  name_ = name;  }
 	std::string & getName()  {  return name_;  }
-	const std::string & getName() const  {  reutn name_;  }
+	const std::string & getName() const  {  return name_;  }
 #endif
 
 private:
@@ -105,7 +106,9 @@ template<typename SceneVisitor>
 class GroupSceneNode: public ComponentSceneNode<SceneVisitor>
 {
 public:
-	typedef ComponentSceneNode base_type;
+	typedef ComponentSceneNode<SceneVisitor> base_type;
+	typedef typename base_type::node_type node_type;
+	typedef typename base_type::visitor_type visitor_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
@@ -158,7 +161,7 @@ public:
 	//
 	void traverse(const visitor_type &visitor) const
 	{
-		for (std::list<node_type>::const_iterator it = children_.begin(); it != children_.end(); ++it)
+		for (typename std::list<node_type>::const_iterator it = children_.begin(); it != children_.end(); ++it)
 			if (*it) (*it)->accept(visitor);
 	}
 	void replace(const node_type &oldNode, const node_type &newNode)
@@ -177,7 +180,8 @@ template<typename SceneVisitor>
 class LeafSceneNode: public ComponentSceneNode<SceneVisitor>
 {
 public:
-	typedef ComponentSceneNode base_type;
+	typedef ComponentSceneNode<SceneVisitor> base_type;
+	typedef typename base_type::node_type node_type;
 
 protected:
 #if defined(UNICODE) || defined(_UNICODE)

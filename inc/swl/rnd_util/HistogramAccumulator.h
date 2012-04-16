@@ -18,6 +18,11 @@ class SWL_RND_UTIL_API HistogramAccumulator
 {
 public:
 	//typedef HistogramAccumulator base_type;
+#if defined(__GNUC__)
+    typedef cv::MatND histogram_type;
+#else
+    typedef const cv::MatND histogram_type;
+#endif
 
 public:
 	HistogramAccumulator(const size_t histogramNum);
@@ -36,13 +41,13 @@ public:
 
 	cv::MatND createAccumulatedHistogram() const;
 	cv::MatND createTemporalHistogram() const;
-	cv::MatND createTemporalHistogram(const std::vector<const cv::MatND> &refHistograms, const double histDistThreshold) const;
+	cv::MatND createTemporalHistogram(const std::vector<histogram_type> &refHistograms, const double histDistThreshold) const;
 
 private:
 	const size_t histogramNum_;
 	const std::vector<float> weights_;
 
-	boost::circular_buffer<const cv::MatND> histograms_;
+	boost::circular_buffer<histogram_type> histograms_;
 };
 
 }  // namespace swl

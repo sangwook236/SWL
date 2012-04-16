@@ -142,12 +142,21 @@ bool UnscentedKalmanFilter::performUnscentedTransformation(const gsl_vector *w, 
 	const size_t &processNoiseDim = system_.getProcessNoiseDim();
 	const size_t &observationNoiseDim = system_.getObservationNoiseDim();
 
-	gsl_vector *pp = NULL, *pa = NULL;
-
 	gsl_matrix_set_zero(P_a_);
+#if defined(__GNUC__)
+    {
+        gsl_matrix submat1(gsl_matrix_submatrix(P_a_, 0, 0, stateDim, stateDim).matrix);
+        gsl_matrix_memcpy(&submat1, P_);
+        gsl_matrix submat2(gsl_matrix_submatrix(P_a_, stateDim, stateDim, processNoiseDim, processNoiseDim).matrix);
+        gsl_matrix_memcpy(&submat2, Q);
+        gsl_matrix submat3(gsl_matrix_submatrix(P_a_, stateDim + processNoiseDim, stateDim + processNoiseDim, observationNoiseDim, observationNoiseDim).matrix);
+        gsl_matrix_memcpy(&submat3, R);
+    }
+#else
 	gsl_matrix_memcpy(&gsl_matrix_submatrix(P_a_, 0, 0, stateDim, stateDim).matrix, P_);
 	gsl_matrix_memcpy(&gsl_matrix_submatrix(P_a_, stateDim, stateDim, processNoiseDim, processNoiseDim).matrix, Q);
 	gsl_matrix_memcpy(&gsl_matrix_submatrix(P_a_, stateDim + processNoiseDim, stateDim + processNoiseDim, observationNoiseDim, observationNoiseDim).matrix, R);
+#endif
 
 	// sqrt(P_a(k-1))
 #if 0
@@ -164,7 +173,12 @@ bool UnscentedKalmanFilter::performUnscentedTransformation(const gsl_vector *w, 
 	gsl_eigen_symmv(P_a_, eigenVal_, eigenVec_, eigenWS_);
 
 	gsl_matrix_set_zero(P_a_);
-	pp = &gsl_matrix_diagonal(P_a_).vector;
+#if defined(__GNUC__)
+    gsl_vector diagvec(gsl_matrix_diagonal(P_a_).vector);
+	gsl_vector *pp = &diagvec;
+#else
+	gsl_vector *pp = &gsl_matrix_diagonal(P_a_).vector;
+#endif
 	for (size_t i = 0; i < eigenVal_->size; ++i)
 		gsl_vector_set(pp, i, std::sqrt(gsl_vector_get(eigenVal_, i)));
 
@@ -177,22 +191,60 @@ bool UnscentedKalmanFilter::performUnscentedTransformation(const gsl_vector *w, 
 
 	// Chi_a(k-1)
 	// TODO [check] >> check if it is correct to use w & v or not
+#if defined(__GNUC__)
+    {
+        gsl_vector subvec1(gsl_vector_subvector(xa_, 0, stateDim).vector);
+        gsl_vector_memcpy(&subvec1, x_hat_);
+        gsl_vector subvec2(gsl_vector_subvector(xa_, stateDim, processNoiseDim).vector);
+        gsl_vector_memcpy(&subvec2, w);
+        gsl_vector subvec3(gsl_vector_subvector(xa_, stateDim + processNoiseDim, observationNoiseDim).vector);
+        gsl_vector_memcpy(&subvec3, v);
+    }
+#else
 	gsl_vector_memcpy(&gsl_vector_subvector(xa_, 0, stateDim).vector, x_hat_);
 	gsl_vector_memcpy(&gsl_vector_subvector(xa_, stateDim, processNoiseDim).vector, w);
 	gsl_vector_memcpy(&gsl_vector_subvector(xa_, stateDim + processNoiseDim, observationNoiseDim).vector, v);
+#endif
 
+#if defined(__GNUC__)
+    {
+        gsl_vector subvec(gsl_matrix_column(Chi_a_, 0).vector);
+        gsl_vector_memcpy(&subvec, xa_);
+    }
+#else
 	gsl_vector_memcpy(&gsl_matrix_column(Chi_a_, 0).vector, xa_);
+#endif
+	gsl_vector *pa = NULL;
 	for (size_t i = 1; i <= L_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecPa(gsl_matrix_column(P_a_, i - 1).vector);
+		pa = &subvecPa;
+#else
 		pa = &gsl_matrix_column(P_a_, i - 1).vector;
+#endif
 
 		gsl_vector_memcpy(xa_tmp_, xa_);
 		gsl_vector_add(xa_tmp_, pa);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChia(gsl_matrix_column(Chi_a_, i).vector);
+            gsl_vector_memcpy(&subvecChia, xa_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_a_, i).vector, xa_tmp_);
+#endif
 
 		gsl_vector_memcpy(xa_tmp_, xa_);
 		gsl_vector_sub(xa_tmp_, pa);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChia(gsl_matrix_column(Chi_a_, L_ + i).vector);
+            gsl_vector_memcpy(&subvecChia, xa_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_a_, L_ + i).vector, xa_tmp_);
+#endif
 	}
 
 	return true;
@@ -214,12 +266,28 @@ bool UnscentedKalmanFilter::updateTime(const size_t step, const gsl_vector *inpu
 	gsl_vector_set_zero(x_hat_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvec1(gsl_matrix_column(Chi_a_, i).vector);
+        xa = &subvec1;
+        gsl_vector subvec2(gsl_vector_subvector(xa, 0, stateDim).vector);
+        xx = &subvec2;
+        gsl_vector subvec3(gsl_vector_subvector(xa, stateDim, processNoiseDim).vector);
+        ww = &subvec3;
+#else
 		xa = &gsl_matrix_column(Chi_a_, i).vector;
 		xx = &gsl_vector_subvector(xa, 0, stateDim).vector;
 		ww = &gsl_vector_subvector(xa, stateDim, processNoiseDim).vector;
+#endif
 
 		f_eval = system_.evaluatePlantEquation(step, xx, input, ww);  // f = f(k, x(k), u(k), w(k))
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+            gsl_vector_memcpy(&subvecChi, f_eval);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_, i).vector, f_eval);
+#endif
 
 		// y = a x + y
 		gsl_blas_daxpy((0 == i ? Wm0_ : Wi_), f_eval, x_hat_);
@@ -229,13 +297,25 @@ bool UnscentedKalmanFilter::updateTime(const size_t step, const gsl_vector *inpu
 	gsl_matrix_set_zero(P_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+            xx = &subvecChi;
+        }
+#else
 		xx = &gsl_matrix_column(Chi_, i).vector;
+#endif
 
 		gsl_vector_memcpy(x_tmp_, xx);
 		gsl_vector_sub(x_tmp_, x_hat_);
 
 		// C = a op(A) op(B) + C
+#if defined(__GNUC__)
+        gsl_matrix submatX(gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix);
+        XX = &submatX;
+#else
 		XX = &gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix;
+#endif
 		if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), XX, XX, 1.0, P_))
 			return false;
 	}
@@ -264,12 +344,28 @@ bool UnscentedKalmanFilter::updateMeasurement(const size_t step, const gsl_vecto
 	gsl_vector_set_zero(y_hat_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+		xx = &subvecChi;
+		gsl_vector subvecChia(gsl_matrix_column(Chi_a_, i).vector);
+		xa = &subvecChia;
+		gsl_vector subvecXa(gsl_vector_subvector(xa, stateDim + processNoiseDim, observationNoiseDim).vector);
+		vv = &subvecXa;
+#else
 		xx = &gsl_matrix_column(Chi_, i).vector;
 		xa = &gsl_matrix_column(Chi_a_, i).vector;
 		vv = &gsl_vector_subvector(xa, stateDim + processNoiseDim, observationNoiseDim).vector;
+#endif
 
 		h_eval = system_.evaluateMeasurementEquation(step, xx, input, vv);  // h = h(k, x(k), u(k), v(k))
+#if defined(__GNUC__)
+        {
+            gsl_vector subvec(gsl_matrix_column(Upsilon_, i).vector);
+            gsl_vector_memcpy(&subvec, h_eval);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Upsilon_, i).vector, h_eval);
+#endif
 
 		// y = a x + y
 		gsl_blas_daxpy((0 == i ? Wm0_ : Wi_), h_eval, y_hat_);
@@ -280,8 +376,15 @@ bool UnscentedKalmanFilter::updateMeasurement(const size_t step, const gsl_vecto
 	gsl_matrix_set_zero(Pxy_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecUpsilon(gsl_matrix_column(Upsilon_, i).vector);
+		yy = &subvecUpsilon;
+		gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+		xx = &subvecChi;
+#else
 		yy = &gsl_matrix_column(Upsilon_, i).vector;
 		xx = &gsl_matrix_column(Chi_, i).vector;
+#endif
 
 		gsl_vector_memcpy(y_tmp_, yy);
 		gsl_vector_sub(y_tmp_, y_hat_);
@@ -289,8 +392,15 @@ bool UnscentedKalmanFilter::updateMeasurement(const size_t step, const gsl_vecto
 		gsl_vector_sub(x_tmp_, x_hat_);
 
 		// C = a op(A) op(B) + b C
+#if defined(__GNUC__)
+        gsl_matrix submatYtmp(gsl_matrix_view_vector(y_tmp_, y_tmp_->size, 1).matrix);
+		YY = &submatYtmp;
+		gsl_matrix submatXtmp(gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix);
+		XX = &submatXtmp;
+#else
 		YY = &gsl_matrix_view_vector(y_tmp_, y_tmp_->size, 1).matrix;
 		XX = &gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix;
+#endif
 		if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), YY, YY, 1.0, Pyy_) ||
 			GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), XX, YY, 1.0, Pxy_))
 			return false;

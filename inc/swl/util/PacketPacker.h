@@ -60,7 +60,7 @@ public:
 	 *
 	 *	packet 생성을 위해 필요한 정보를 입력 받는다.
 	 */
-	PacketPacker(const size_t packetSize, const bool isLittleEndian);
+	PacketPacker(const std::size_t packetSize, const bool isLittleEndian);
 	/**
 	 *	@brief  [dtor] default destructor.
 	 *
@@ -101,7 +101,7 @@ public:
 	 *
 	 *	packet을 고정 길이던지 가변 길이던지와 무관하게 호출 시점에 저장되어 있는 packet data의 길이를 반환한다.
 	 */
-	size_t getPacketSize() const  {  return dataBuf_.size();  }
+	std::size_t getPacketSize() const  {  return dataBuf_.size();  }
 
 	/**
 	 *	@brief  packer packer를 초기화.
@@ -149,7 +149,11 @@ public:
 	 *	@brief  packet packer에 64-bit int 형의 data를 pack함.
 	 *	@param[in]  data  packet packer에 저장될 data.
 	 */
+#if defined(__GNUC__)
+	void putInt64(long long data);
+#elif defined(_MSC_VER)
 	void putInt64(__int64 data);
+#endif
 	/**
 	 *	@brief  packet packer에 float 형의 data를 pack함.
 	 *	@param[in]  data  packet packer에 저장될 data.
@@ -170,14 +174,14 @@ public:
 	 *	@param[in]  data  packet packer에 저장될 data의 pointer.
 	 *	@param[in]  size  packet packer에 저장될 data의 길이.
 	 */
-	void putText(const char* data, const size_t size);
+	void putText(const char* data, const std::size_t size);
 
 	/**
 	 *	@brief  packet packer에 인자로 주어진 char 형의 data를 size 개수 만큼 pack함.
 	 *	@param[in]  data  packet packer에 반복 저장될 data.
 	 *	@param[in]  size  packet packer에 저장될 data의 개수.
 	 */
-	void fillChar(char data, const size_t size);
+	void fillChar(char data, const std::size_t size);
 
 	/**
 	 *	@brief  생성되는 packet이 고정 길이 protocol인지 가변 길이 protocol인지를 반환.
@@ -192,7 +196,7 @@ private:
 	const bool isLittleEndian_;
 
 	// size of protocol. if packetSize_ == 0, variable-size packet
-	const size_t packetSize_;
+	const std::size_t packetSize_;
 
 	// buffer
 	buffer_type dataBuf_;
@@ -411,4 +415,4 @@ public:
 #include "swl/EnableCompilerWarning.h"
 
 
-#endif  // __SWL_UTIL__PACKET_PACKER__H_ 
+#endif  // __SWL_UTIL__PACKET_PACKER__H_

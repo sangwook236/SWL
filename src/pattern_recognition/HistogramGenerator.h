@@ -24,10 +24,10 @@ protected:
 	virtual ~HistogramGeneratorBase();
 
 public:
-	virtual void createHistograms(const size_t binNum, const double histogramNormalizationFactor) = 0;
+	virtual void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor) = 0;
 
 	const std::vector<cv::MatND> & getHistograms() const  {  return histograms_;  }
-	const cv::MatND & getHistogram(const size_t idx) const  {  return histograms_[idx];  }
+	const cv::MatND & getHistogram(const std::size_t idx) const  {  return histograms_[idx];  }
 
 protected:
 	std::vector<cv::MatND> histograms_;
@@ -52,7 +52,7 @@ private:
 	ReferencePhaseHistogramGeneratorBase & operator=(const ReferencePhaseHistogramGeneratorBase &rhs);
 
 protected:
-	void createNormalHistogram(const size_t mu_idx, const double sigma, cv::MatND &hist) const;
+	void createNormalHistogram(const std::size_t mu_idx, const double sigma, cv::MatND &hist) const;
 	void createUniformHistogram(cv::MatND &hist) const;
 
 protected:
@@ -67,9 +67,9 @@ class ReferenceFullPhaseHistogramGenerator: public ReferencePhaseHistogramGenera
 {
 public:
 	// TODO [adjust] >> design parameter
-	static const size_t REF_UNIMODAL_HISTOGRAM_NUM = 36;
-	static const size_t REF_UNIFORM_HISTOGRAM_NUM = 1;
-	static const size_t REF_HISTOGRAM_NUM = REF_UNIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
+	static const std::size_t REF_UNIMODAL_HISTOGRAM_NUM = 36;
+	static const std::size_t REF_UNIFORM_HISTOGRAM_NUM = 1;
+	static const std::size_t REF_HISTOGRAM_NUM = REF_UNIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
 
 public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
@@ -84,7 +84,7 @@ private:
 	ReferenceFullPhaseHistogramGenerator & operator=(const ReferenceFullPhaseHistogramGenerator &rhs);
 
 public:
-	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
+	/*virtual*/ void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor);
 };
 
 
@@ -95,9 +95,9 @@ class ReferenceHistogramGeneratorForClass1Gesture: public ReferencePhaseHistogra
 {
 public:
 	// TODO [adjust] >> design parameter
-	static const size_t REF_BIMODAL_HISTOGRAM_NUM_FOR_TWO_HAND_GESTURE = 2;
-	static const size_t REF_UNIFORM_HISTOGRAM_NUM = 1;
-	static const size_t REF_HISTOGRAM_NUM = REF_BIMODAL_HISTOGRAM_NUM_FOR_TWO_HAND_GESTURE + REF_UNIFORM_HISTOGRAM_NUM;
+	static const std::size_t REF_BIMODAL_HISTOGRAM_NUM_FOR_TWO_HAND_GESTURE = 2;
+	static const std::size_t REF_UNIFORM_HISTOGRAM_NUM = 1;
+	static const std::size_t REF_HISTOGRAM_NUM = REF_BIMODAL_HISTOGRAM_NUM_FOR_TWO_HAND_GESTURE + REF_UNIFORM_HISTOGRAM_NUM;
 
 public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
@@ -112,7 +112,7 @@ private:
 	ReferenceHistogramGeneratorForClass1Gesture & operator=(const ReferenceHistogramGeneratorForClass1Gesture &rhs);
 
 public:
-	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
+	/*virtual*/ void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor);
 };
 
 
@@ -123,9 +123,9 @@ class ReferenceHistogramGeneratorForClass2Gesture: public ReferencePhaseHistogra
 {
 public:
 	// TODO [adjust] >> design parameter
-	static const size_t REF_BIMODAL_HISTOGRAM_NUM = 2;
-	static const size_t REF_UNIFORM_HISTOGRAM_NUM = 0; //1;
-	static const size_t REF_HISTOGRAM_NUM = REF_BIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
+	static const std::size_t REF_BIMODAL_HISTOGRAM_NUM = 2;
+	static const std::size_t REF_UNIFORM_HISTOGRAM_NUM = 0; //1;
+	static const std::size_t REF_HISTOGRAM_NUM = REF_BIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
 
 public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
@@ -140,7 +140,7 @@ private:
 	ReferenceHistogramGeneratorForClass2Gesture & operator=(const ReferenceHistogramGeneratorForClass2Gesture &rhs);
 
 public:
-	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
+	/*virtual*/ void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor);
 };
 
 
@@ -151,10 +151,10 @@ class ReferenceHistogramGeneratorForClass3Gesture: public ReferencePhaseHistogra
 {
 public:
 	// TODO [adjust] >> design parameter
-	static const size_t REF_UNIMODAL_HISTOGRAM_NUM = 0;
-	static const size_t REF_TRIMODAL_HISTOGRAM_NUM = 2;
-	static const size_t REF_UNIFORM_HISTOGRAM_NUM = 0; //1;
-	static const size_t REF_HISTOGRAM_NUM = REF_UNIMODAL_HISTOGRAM_NUM + REF_TRIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
+	static const std::size_t REF_UNIMODAL_HISTOGRAM_NUM = 0;
+	static const std::size_t REF_TRIMODAL_HISTOGRAM_NUM = 2;
+	static const std::size_t REF_UNIFORM_HISTOGRAM_NUM = 0; //1;
+	static const std::size_t REF_HISTOGRAM_NUM = REF_UNIMODAL_HISTOGRAM_NUM + REF_TRIMODAL_HISTOGRAM_NUM + REF_UNIFORM_HISTOGRAM_NUM;
 
 public:
 	typedef ReferencePhaseHistogramGeneratorBase base_type;
@@ -169,7 +169,7 @@ private:
 	ReferenceHistogramGeneratorForClass3Gesture & operator=(const ReferenceHistogramGeneratorForClass3Gesture &rhs);
 
 public:
-	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
+	/*virtual*/ void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor);
 };
 
 
@@ -191,7 +191,7 @@ private:
 	GestureIdPatternHistogramGeneratorBase & operator=(const GestureIdPatternHistogramGeneratorBase &rhs);
 
 protected:
-	void createNormalHistogram(const size_t mu_idx, const double sigma, cv::MatND &hist) const;
+	void createNormalHistogram(const std::size_t mu_idx, const double sigma, cv::MatND &hist) const;
 	void createUniformHistogram(cv::MatND &hist) const;
 
 protected:
@@ -217,7 +217,7 @@ private:
 	GestureIdPatternHistogramGeneratorForClass1Gesture & operator=(const GestureIdPatternHistogramGeneratorForClass1Gesture &rhs);
 
 public:
-	/*virtual*/ void createHistograms(const size_t binNum, const double histogramNormalizationFactor);
+	/*virtual*/ void createHistograms(const std::size_t binNum, const double histogramNormalizationFactor);
 };
 
 }  // namespace swl

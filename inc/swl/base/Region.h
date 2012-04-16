@@ -3,6 +3,7 @@
 
 
 #include "swl/base/Point.h"
+#include <cmath>
 
 
 namespace swl {
@@ -30,8 +31,9 @@ public:
     explicit Region2(const T rhs[4])
     : left(rhs[0] <= rhs[2] ? rhs[0] : rhs[2]), bottom(rhs[1] <= rhs[3] ? rhs[1] : rhs[3]),
       right(rhs[0] > rhs[2] ? rhs[0] : rhs[2]), top(rhs[1] > rhs[3] ? rhs[1] : rhs[3])
+    {}
     ~Region2()  {}
-    
+
     Region2<T> & operator=(const Region2<T> &rhs)
     {
         if (this == &rhs) return *this;
@@ -41,7 +43,7 @@ public:
     }
 
 public:
-    /// union rectangles               
+    /// union rectangles
     Region2<T> operator|(const Region2<T> &rhs) const
     {
         return Region2<T>(
@@ -59,7 +61,7 @@ public:
         top = top >= rhs.top ? top : rhs.top;
         return *this;
     }
-    /// intersect rectangles               
+    /// intersect rectangles
     Region2<T> operator&(const Region2<T> &rhs) const
     {
 		if (isOverlapped(rhs))
@@ -104,7 +106,7 @@ public:
 	Region2<T> & operator*=(const T &t)
     {  left*=t;  bottom*=t;  right*=t;  top*=t;  return *this;  }
     Region2<T> operator/(const T &t) const
-    {  
+    {
 		T Tol = T(1.0e-15);
 		if (t >= -Tol && t <= Tol)  return *this;
 		return Region2<T>(left/t, bottom/t, right/t, top/t);
@@ -152,11 +154,11 @@ public:
 			top = bottom + tHeight;
 		}
 	}
-    
+
     /// inflate rectangle if dDelta is positive, deflate the one otherwise
     void inflate(const T &tDelta)
     {  left -= tDelta;  bottom -= tDelta;  right += tDelta;  top += tDelta;  }
-    
+
     bool isIncluded(const T &tX, const T &tY, const T &Tol = T(1.0e-15)) const
     {
 		return tX >= left-Tol && tX <= right+Tol &&
@@ -167,7 +169,7 @@ public:
 		return rPt.x >= left-Tol && rPt.x <= right+Tol &&
 			   rPt.y >= bottom-Tol && rPt.y <= top+Tol;
 	}
-    
+
     bool isIncluded(const Region2<T> &rRgn, const T &Tol = T(1.0e-15)) const
     {
 		return isIncluded(rRgn.left, rRgn.bottom, Tol) &&
@@ -191,7 +193,7 @@ public:
 			   rRgn.isIncluded(*this, Tol);
 */
 	}
-    
+
     bool isValid() const  {  return (left < right) && (bottom < top);  }
 
 protected:
@@ -206,7 +208,7 @@ public:
 	{
         struct  {  T left, bottom, right, top;  };
         T region[4];
-    }; 
+    };
 };
 
 
@@ -234,9 +236,9 @@ public:
     explicit Region3( const T rhs[6])
     : left(rhs[0] <= rhs[3] ? rhs[0] : rhs[3]), bottom(rhs[1] <= rhs[4] ? rhs[1] : rhs[4]), front(rhs[2] <= rhs[5] ? rhs[2] : rhs[5]),
       right(rhs[0] > rhs[3] ? rhs[0] : rhs[3]), top(rhs[1] > rhs[4] ? rhs[1] : rhs[4]), rear(rhs[2] > rhs[5] ? rhs[2] : rhs[5])
-
+    {}
     ~Region3()  {}
-    
+
     Region3<T> & operator=(const Region3<T> &rhs)
     {
         if (this == &rhs) return *this;
@@ -246,7 +248,7 @@ public:
     }
 
 public:
-    /// union boxes               
+    /// union boxes
     Region3<T> operator|(const Region3<T> &rhs) const
     {
         return Region3<T>(
@@ -268,8 +270,8 @@ public:
         rear = rear >= rhs.rear ? rear : rhs.rear;
         return *this;
     }
-    
-    /// intersect boxes               
+
+    /// intersect boxes
     Region3<T> operator&(const Region3<T> &rhs) const
     {
 		if (isOverlapped(rhs))
@@ -318,7 +320,7 @@ public:
 	Region3<T> & operator*=(const T &t)
     {  left*=t;  bottom*=t;  front*=t;  right*=t;  top*=t;  rear*=t;  return *this;  }
     Region3<T> operator/(const T &t) const
-    {  
+    {
 		const T Tol = T(1.0e-15);
 		if (t >= -Tol && t <= Tol) return *this;
 		return Region3<T>(left/t, bottom/t, front/t, right/t, top/t, rear/t);
@@ -362,7 +364,7 @@ public:
 			const T tDeltaX = (tWidth - getWidth()) / T(2);
 			const T tDeltaY = (tHeight - getHeight()) / T(2);
 			const T tDeltaZ = (tDepth - Depth()) / T(2);
-			const left -= tDeltaX;  bottom -= tDeltaY;  front -= tDeltaZ;
+			left -= tDeltaX;  bottom -= tDeltaY;  front -= tDeltaZ;
 			right += tDeltaX;  top += tDeltaY;  rear += tDeltaZ;
 		}
 		else
@@ -372,11 +374,11 @@ public:
 			rear = front + tDepth;
 		}
 	}
-    
+
     /// inflate box if dDelta is positive, deflate the one otherwise
     void inflate(const T &tDelta)
     {  left -= tDelta;  bottom -= tDelta;  front -= tDelta;  right += tDelta;  top += tDelta;  rear += tDelta;  }
-    
+
     bool isIncluded(const T &tX, const T &tY, const T &tZ, const T &Tol = T(1.0e-15)) const
     {
 		return tX >= left-Tol && tX <= right+Tol &&
@@ -389,7 +391,7 @@ public:
 			   rPt.y >= bottom-Tol && rPt.y <= top+Tol &&
 			   rPt.z >= front-Tol && rPt.z <= rear+Tol;
 	}
-    
+
     bool isIncluded(const Region3<T> &rRgn, const T &Tol = T(1.0e-15)) const
     {
 		return isIncluded(rRgn.left, rRgn.bottom, rRgn.front, Tol) &&
@@ -417,7 +419,7 @@ public:
 			   rRgn.isIncluded(*this);
 */
 	}
-    
+
     bool isValid() const  {  return (left < right) && (bottom < top) && (front < rear);  }
 
 protected:

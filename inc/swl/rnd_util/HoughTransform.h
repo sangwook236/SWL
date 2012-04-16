@@ -16,11 +16,11 @@ class SWL_RND_UTIL_API GeneralizedHoughTransform
 {
 public:
 	//typedef GeneralizedHoughTransform base_type;
-	typedef std::set<size_t> rtable_entry_type;
-	typedef std::map<size_t, rtable_entry_type> rtable_type;
+	typedef std::set<std::size_t> rtable_entry_type;
+	typedef std::map<std::size_t, rtable_entry_type> rtable_type;
 
 protected:
-	GeneralizedHoughTransform(const size_t tangentAngleCount);
+	GeneralizedHoughTransform(const std::size_t tangentAngleCount);
 public:
 	virtual ~GeneralizedHoughTransform();
 
@@ -28,7 +28,7 @@ public:
 	virtual bool run();
 
 protected:
-	const size_t tangentAngleCount_;  // determine a resolution of tangent angles
+	const std::size_t tangentAngleCount_;  // determine a resolution of tangent angles
 
 	// { an index of a tangent angle at a reference point (x,y), a set of indices which indicate a pair (distance,angle) or (dx,dy) }
 	// 0 <= a tangent angle < 2 * pi

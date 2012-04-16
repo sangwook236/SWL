@@ -18,7 +18,7 @@ namespace swl {
 /* Usage:
 	const size_t PACKET_SIZE = 20;
 	PacketPacker packer(PACKET_SIZE, false);
-	
+
 	bool bStatus = packer.initialize();
 
 	// header: prompt (1 byte)
@@ -86,7 +86,7 @@ bool PacketPacker::finalize()
 	{
 		if (dataBuf_.size() != packetSize_) return false;
 	}
-	
+
 	itCurr_ = dataBuf_.begin();
 	return true;
 }
@@ -149,14 +149,27 @@ void PacketPacker::putLong(long data)
 	}
 }
 
+#if defined(__GNUC__)
+void PacketPacker::putInt64(long long data)
+#elif defined(_MSC_VER)
 void PacketPacker::putInt64(__int64 data)
+#endif
 {
 	if (isLittleEndian_)
+#if defined(__GNUC__)
+		std::reverse_copy((value_type *)&data, (value_type *)&data + sizeof(long long), std::inserter(dataBuf_, itCurr_));
+#elif defined(_MSC_VER)
 		std::reverse_copy((value_type *)&data, (value_type *)&data + sizeof(__int64), std::inserter(dataBuf_, itCurr_));
+#endif
 	else
 	{
+#if defined(__GNUC__)
+		std::copy((value_type *)&data, (value_type *)&data + sizeof(long long), std::inserter(dataBuf_, itCurr_));
+		//std::advance(itCurr_, sizeof(long long));  // don't need because of a mechanism of inserter
+#elif defined(_MSC_VER)
 		std::copy((value_type *)&data, (value_type *)&data + sizeof(__int64), std::inserter(dataBuf_, itCurr_));
 		//std::advance(itCurr_, sizeof(__int64));  // don't need because of a mechanism of inserter
+#endif
 	}
 }
 
@@ -238,13 +251,13 @@ void PacketPacker::fillChar(char data, const size_t size)
 //
 //bool PacketPacker::initialize(bool doesClearData /*= true*/)
 //{
-///*	
+///*
 //	// DELETEME: don't need
 //	size_t size = m_bufData.size();
 //	if (size > m_nFooter)
 //	{
 //		//--S [] 2004/06/30 : Sang-Wook Lee
-//		// data body    getFooter() getText()  m_itCurr == m_itEnd  error 
+//		// data body    getFooter() getText()  m_itCurr == m_itEnd  error
 //		m_itEnd = m_bufData.end();
 //		//m_itEnd = m_bufData.begin();
 //		//std::advance(m_itEnd, size - m_nFooter);
@@ -267,7 +280,7 @@ void PacketPacker::fillChar(char data, const size_t size)
 //	{
 //		if (m_bufData.size() != m_nData) return false;
 //	}
-//	
+//
 //	m_itCurr = m_bufData.begin();
 //	if (m_nHeader) std::advance(m_itCurr, m_nHeader);
 //	return true;
@@ -488,7 +501,7 @@ void PacketPacker::fillChar(char data, const size_t size)
 //	if (size <= m_nHeader + m_nFooter) return false;
 //
 //	//--S [] 2004/06/30 : Sang-Wook Lee
-//	// data body    getFooter() getText()  m_itCurr == m_itEnd  error 
+//	// data body    getFooter() getText()  m_itCurr == m_itEnd  error
 //	m_itEnd = m_bufData.end();
 ///*
 //	m_itEnd = m_bufData.begin();

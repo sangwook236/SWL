@@ -17,9 +17,10 @@ template<typename SceneVisitor>
 class GeometrySceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
-	typedef LeafSceneNode						base_type;
-	typedef GeometryPoolMgr::geometry_id_type	geometry_id_type;
-	typedef GeometryPoolMgr::geometry_type		geometry_type;
+	typedef LeafSceneNode<SceneVisitor> base_type;
+	typedef GeometryPoolMgr::geometry_id_type geometry_id_type;
+	typedef GeometryPoolMgr::geometry_type geometry_type;
+	typedef typename base_type::visitor_type visitor_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)
@@ -44,7 +45,7 @@ public:
 		geometryId_ = rhs.geometryId_;
 		return *this;
 	}
- 
+
 public:
 	/*final*/ /*virtual*/ void accept(const visitor_type &visitor) const
 	{

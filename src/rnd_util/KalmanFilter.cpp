@@ -3,6 +3,7 @@
 #include "swl/rnd_util/DiscreteLinearStochasticSystem.h"
 #include "swl/rnd_util/ContinuousLinearStochasticSystem.h"
 #include <gsl/gsl_linalg.h>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

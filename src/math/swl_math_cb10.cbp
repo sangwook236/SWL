@@ -7,62 +7,68 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\swl_math" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Debug" />
-				<Option object_output=".\Debug\" />
+				<Option output="../../bin/Debug/swl_math" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Debug" />
+				<Option object_output="./Debug/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-DBUILD_DLL" />
 					<Add option="-g" />
+					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
-					<Add library="user32" />
+					<Add directory="../../bin/Debug/" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\swl_math" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release" />
-				<Option object_output=".\Release\" />
+				<Option output="../../bin/Release/swl_math" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Release" />
+				<Option object_output="./Release/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
+					<Add option="-O2" />
 					<Add option="-Wall" />
 					<Add option="-DBUILD_DLL" />
-					<Add option="-O2" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="user32" />
+					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
-		<Unit filename="..\..\inc\swl\math\Complex.h" />
-		<Unit filename="..\..\inc\swl\math\Coordinates.h" />
-		<Unit filename="..\..\inc\swl\math\Duplex.h" />
-		<Unit filename="..\..\inc\swl\math\ExportMath.h" />
-		<Unit filename="..\..\inc\swl\math\GeometryUtil.h" />
-		<Unit filename="..\..\inc\swl\math\Line.h" />
-		<Unit filename="..\..\inc\swl\math\LineSegment.h" />
-		<Unit filename="..\..\inc\swl\math\MathConstant.h" />
-		<Unit filename="..\..\inc\swl\math\MathExt.h" />
-		<Unit filename="..\..\inc\swl\math\MathUtil.h" />
-		<Unit filename="..\..\inc\swl\math\Matrix.h" />
-		<Unit filename="..\..\inc\swl\math\Plane.h" />
-		<Unit filename="..\..\inc\swl\math\QMatrix.h" />
-		<Unit filename="..\..\inc\swl\math\Quaternion.h" />
-		<Unit filename="..\..\inc\swl\math\RMatrix.h" />
-		<Unit filename="..\..\inc\swl\math\Rational.h" />
-		<Unit filename="..\..\inc\swl\math\RootFinder.h" />
-		<Unit filename="..\..\inc\swl\math\Rotation.h" />
-		<Unit filename="..\..\inc\swl\math\TMatrix.h" />
-		<Unit filename="..\..\inc\swl\math\Triangle.h" />
-		<Unit filename="..\..\inc\swl\math\Vector.h" />
+		<Compiler>
+			<Add directory="../../inc/" />
+		</Compiler>
+		<Linker>
+			<Add directory="../../bin/" />
+		</Linker>
+		<Unit filename="../../inc/swl/math/Complex.h" />
+		<Unit filename="../../inc/swl/math/Coordinates.h" />
+		<Unit filename="../../inc/swl/math/Duplex.h" />
+		<Unit filename="../../inc/swl/math/ExportMath.h" />
+		<Unit filename="../../inc/swl/math/GeometryUtil.h" />
+		<Unit filename="../../inc/swl/math/Line.h" />
+		<Unit filename="../../inc/swl/math/LineSegment.h" />
+		<Unit filename="../../inc/swl/math/MathConstant.h" />
+		<Unit filename="../../inc/swl/math/MathExt.h" />
+		<Unit filename="../../inc/swl/math/MathUtil.h" />
+		<Unit filename="../../inc/swl/math/Matrix.h" />
+		<Unit filename="../../inc/swl/math/Plane.h" />
+		<Unit filename="../../inc/swl/math/QMatrix.h" />
+		<Unit filename="../../inc/swl/math/Quaternion.h" />
+		<Unit filename="../../inc/swl/math/RMatrix.h" />
+		<Unit filename="../../inc/swl/math/Rational.h" />
+		<Unit filename="../../inc/swl/math/RootFinder.h" />
+		<Unit filename="../../inc/swl/math/Rotation.h" />
+		<Unit filename="../../inc/swl/math/TMatrix.h" />
+		<Unit filename="../../inc/swl/math/Triangle.h" />
+		<Unit filename="../../inc/swl/math/Vector.h" />
 		<Unit filename="ConvexHull.cpp" />
 		<Unit filename="ConvexHull.h" />
 		<Unit filename="Coordinates.cpp" />

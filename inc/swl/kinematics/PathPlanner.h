@@ -49,7 +49,7 @@ public:
 
 	/// in joint coordinates
 	const coords_type & getCurrPose() const;
-	virtual bool getNextPose(coords_type &aPose, const coords_type *refPose = NULL) = 0;
+	virtual bool getNextPose(coords_type &aPose, const coords_type *refPose = 0L) = 0;
 
 	/// in joint coordinates
 	void setInitPose(const coords_type &aInitPose);
@@ -75,7 +75,7 @@ public:
 protected:
 	///
 	KinematicsBase &kinematics_;
-	size_t dof_;
+	std::size_t dof_;
 
 	/// in joint coordinates
 	coords_type initPose_, finalPose_, currPose_;

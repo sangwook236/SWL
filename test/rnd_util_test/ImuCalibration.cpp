@@ -13,6 +13,7 @@
 #include <numeric>
 #include <cmath>
 #include <cassert>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -283,7 +284,14 @@ void accelerometer_calibration(const size_t Nv, const size_t Nm, const double g_
 
 		evaluate_Fg(x, lg, g_true, Fg, dFgdx, dFgdl);
 
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecA(gsl_matrix_row(A, i).vector);
+            gsl_vector_memcpy(&subvecA, dFgdx);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_row(A, i).vector, dFgdx);
+#endif
 		{
 			const double &dFgdLgx = gsl_vector_get(dFgdl, 0);
 			const double &dFgdLgy = gsl_vector_get(dFgdl, 1);
@@ -373,7 +381,14 @@ void gyroscope_calibration(const size_t Nv, const size_t Nm, const double w_true
 
 		evaluate_Fw(x, lw, w_true, Fw, dFwdx, dFwdl);
 
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecA(gsl_matrix_row(A, i).vector);
+            gsl_vector_memcpy(&subvecA, dFwdx);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_row(A, i).vector, dFwdx);
+#endif
 		{
 			const double &dFwdLwx = gsl_vector_get(dFwdl, 0);
 			const double &dFwdLwy = gsl_vector_get(dFwdl, 1);

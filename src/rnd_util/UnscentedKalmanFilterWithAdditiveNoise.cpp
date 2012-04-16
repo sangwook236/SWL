@@ -143,7 +143,14 @@ bool UnscentedKalmanFilterWithAdditiveNoise::performUnscentedTransformation()
 	gsl_linalg_cholesky_decomp(P_);
 	// make lower triangular matrix
 	for (size_t k = 1; k < L_; ++k)
+#if defined(__GNUC__)
+    {
+        gsl_vector subvecP(gsl_matrix_superdiagonal(P_, k).vector);
+		gsl_vector_set_zero(&subvecP);
+    }
+#else
 		gsl_vector_set_zero(&gsl_matrix_superdiagonal(P_, k).vector);
+#endif
 #else
 	// use singular value decomposition: A = U * S * V^T
 	// A^1/2 = V * D^1/2 * V^-1  <==  f(A) = V * f(J) * V^-1
@@ -152,7 +159,12 @@ bool UnscentedKalmanFilterWithAdditiveNoise::performUnscentedTransformation()
 	gsl_eigen_symmv(P_, eigenVal_, eigenVec_, eigenWS_);
 
 	gsl_matrix_set_zero(P_);
+#if defined(__GNUC__)
+    gsl_vector diagvecP(gsl_matrix_diagonal(P_).vector);
+	pp = &diagvecP;
+#else
 	pp = &gsl_matrix_diagonal(P_).vector;
+#endif
 	for (size_t i = 0; i < eigenVal_->size; ++i)
 		gsl_vector_set(pp, i, std::sqrt(gsl_vector_get(eigenVal_, i)));
 
@@ -164,18 +176,44 @@ bool UnscentedKalmanFilterWithAdditiveNoise::performUnscentedTransformation()
 	gsl_matrix_scale(P_, gamma_);  // gamma * sqrt(P(k-1))
 
 	// Chi(k-1)
+#if defined(__GNUC__)
+    {
+        gsl_vector subvecChi(gsl_matrix_column(Chi_, 0).vector);
+        gsl_vector_memcpy(&subvecChi, x_hat_);
+    }
+#else
 	gsl_vector_memcpy(&gsl_matrix_column(Chi_, 0).vector, x_hat_);
+#endif
 	for (size_t i = 1; i <= L_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecP(gsl_matrix_column(P_, i - 1).vector);
+		pp = &subvecP;
+#else
 		pp = &gsl_matrix_column(P_, i - 1).vector;
+#endif
 
 		gsl_vector_memcpy(x_tmp_, x_hat_);
 		gsl_vector_add(x_tmp_, pp);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+            gsl_vector_memcpy(&subvecChi, x_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_, i).vector, x_tmp_);
+#endif
 
 		gsl_vector_memcpy(x_tmp_, x_hat_);
 		gsl_vector_sub(x_tmp_, pp);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, L_ + i).vector);
+            gsl_vector_memcpy(&subvecChi, x_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_, L_ + i).vector, x_tmp_);
+#endif
 	}
 
 	return true;
@@ -194,10 +232,22 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 	gsl_vector_set_zero(x_hat_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+		xx = &subvecChi;
+#else
 		xx = &gsl_matrix_column(Chi_, i).vector;
+#endif
 
 		f_eval = system_.evaluatePlantEquation(step, xx, input, NULL);  // f = f(k, x(k), u(k), 0)
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChistar(gsl_matrix_column(Chi_star_, i).vector);
+            gsl_vector_memcpy(&subvecChistar, f_eval);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_star_, i).vector, f_eval);
+#endif
 
 		// FIXME [delete] >>
 		const double &f0 = gsl_vector_get(f_eval, 0);
@@ -236,13 +286,23 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 	gsl_matrix_set_zero(P_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecChistar(gsl_matrix_column(Chi_star_, i).vector);
+		xx = &subvecChistar;
+#else
 		xx = &gsl_matrix_column(Chi_star_, i).vector;
+#endif
 
 		gsl_vector_memcpy(x_tmp_, xx);
 		gsl_vector_sub(x_tmp_, x_hat_);
 
 		// C = a op(A) op(B) + C
+#if defined(__GNUC__)
+        gsl_matrix submatXtmp(gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix);
+		XX = &submatXtmp;
+#else
 		XX = &gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix;
+#endif
 		if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), XX, XX, 1.0, P_))
 			return false;
 	}
@@ -257,7 +317,14 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 	gsl_linalg_cholesky_decomp(sqrtQ_);
 	// make lower triangular matrix
 	for (size_t k = 1; k < L_; ++k)
+#if defined(__GNUC__)
+    {
+        gsl_vector sdiagSqrtQ(gsl_matrix_superdiagonal(sqrtQ_, k).vector);
+        gsl_vector_set_zero(&sdiagSqrtQ);
+    }
+#else
 		gsl_vector_set_zero(&gsl_matrix_superdiagonal(sqrtQ_, k).vector);
+#endif
 #else
 	// use singular value decomposition: A = U * S * V^T
 	// A^1/2 = V * D^1/2 * V^-1  <==  f(A) = V * f(J) * V^-1
@@ -266,7 +333,12 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 	gsl_eigen_symmv(sqrtQ_, eigenVal_, eigenVec_, eigenWS_);
 
 	gsl_matrix_set_zero(sqrtQ_);
+#if defined(__GNUC__)
+    gsl_vector diagvecSqrtQ(gsl_matrix_diagonal(sqrtQ_).vector);
+	pp = &diagvecSqrtQ;
+#else
 	pp = &gsl_matrix_diagonal(sqrtQ_).vector;
+#endif
 	for (size_t i = 0; i < eigenVal_->size; ++i)
 		gsl_vector_set(pp, i, std::sqrt(gsl_vector_get(eigenVal_, i)));
 
@@ -278,21 +350,52 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 	gsl_matrix_scale(sqrtQ_, gamma_);  // gamma * sqrt(Q)
 
 	// Chi(k | k-1)
+#if defined(__GNUC__)
+    gsl_vector subvecChistar(gsl_matrix_column(Chi_star_, 0).vector);
+	const gsl_vector *xs0 = &subvecChistar;
+#else
 	const gsl_vector *xs0 = &gsl_matrix_column(Chi_star_, 0).vector;
+#endif
 
 	// FIXME [check] >>
+#if defined(__GNUC__)
+    {
+        gsl_vector subvec(gsl_matrix_column(Chi_, 0).vector);
+        gsl_vector_memcpy(&subvec, xs0);
+    }
+#else
 	gsl_vector_memcpy(&gsl_matrix_column(Chi_, 0).vector, xs0);
+#endif
 	for (size_t i = 1; i <= L_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecSqrtQ(gsl_matrix_column(sqrtQ_, i - 1).vector);
+		pp = &subvecSqrtQ;
+#else
 		pp = &gsl_matrix_column(sqrtQ_, i - 1).vector;
+#endif
 
 		gsl_vector_memcpy(x_tmp_, xs0);
 		gsl_vector_add(x_tmp_, pp);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+            gsl_vector_memcpy(&subvecChi, x_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_, i).vector, x_tmp_);
+#endif
 
 		gsl_vector_memcpy(x_tmp_, xs0);
 		gsl_vector_sub(x_tmp_, pp);
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecChi(gsl_matrix_column(Chi_, L_ + i).vector);
+            gsl_vector_memcpy(&subvecChi, x_tmp_);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_, L_ + i).vector, x_tmp_);
+#endif
 	}
 
 	// preserve symmetry of P
@@ -315,10 +418,22 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateMeasurement(const size_t step
 	gsl_vector_set_zero(y_hat_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+		xx = &subvecChi;
+#else
 		xx = &gsl_matrix_column(Chi_, i).vector;
+#endif
 
 		h_eval = system_.evaluateMeasurementEquation(step, xx, input, NULL);  // h = h(k, x(k), u(k), 0)
+#if defined(__GNUC__)
+        {
+            gsl_vector subvecUpsilon(gsl_matrix_column(Upsilon_, i).vector);
+            gsl_vector_memcpy(&subvecUpsilon, h_eval);
+        }
+#else
 		gsl_vector_memcpy(&gsl_matrix_column(Upsilon_, i).vector, h_eval);
+#endif
 
 		// y = a x + y
 		gsl_blas_daxpy((0 == i ? Wm0_ : Wi_), h_eval, y_hat_);
@@ -329,8 +444,15 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateMeasurement(const size_t step
 	gsl_matrix_set_zero(Pxy_);
 	for (size_t i = 0; i < sigmaDim_; ++i)
 	{
+#if defined(__GNUC__)
+        gsl_vector subvecUpsilon(gsl_matrix_column(Upsilon_, i).vector);
+		yy = &subvecUpsilon;
+		gsl_vector subvecChi(gsl_matrix_column(Chi_, i).vector);
+		xx = &subvecChi;
+#else
 		yy = &gsl_matrix_column(Upsilon_, i).vector;
 		xx = &gsl_matrix_column(Chi_, i).vector;
+#endif
 
 		gsl_vector_memcpy(y_tmp_, yy);
 		gsl_vector_sub(y_tmp_, y_hat_);
@@ -338,8 +460,15 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateMeasurement(const size_t step
 		gsl_vector_sub(x_tmp_, x_hat_);
 
 		// C = a op(A) op(B) + b C
+#if defined(__GNUC__)
+        gsl_matrix submatYtmp(gsl_matrix_view_vector(y_tmp_, y_tmp_->size, 1).matrix);
+		YY = &submatYtmp;
+		gsl_matrix submatXtmp(gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix);
+		XX = &submatXtmp;
+#else
 		YY = &gsl_matrix_view_vector(y_tmp_, y_tmp_->size, 1).matrix;
 		XX = &gsl_matrix_view_vector(x_tmp_, x_tmp_->size, 1).matrix;
+#endif
 		if (GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), YY, YY, 1.0, Pyy_) ||
 			GSL_SUCCESS != gsl_blas_dgemm(CblasNoTrans, CblasTrans, (0 == i ? Wc0_ : Wi_), XX, YY, 1.0, Pxy_))
 			return false;

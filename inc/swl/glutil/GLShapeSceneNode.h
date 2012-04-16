@@ -15,10 +15,11 @@ template<typename SceneVisitor>
 class GLShapeSceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
-	typedef LeafSceneNode				base_type;
-	typedef boost::shared_ptr<GLShape>	shape_type;
-	typedef GLShape::geometry_type		geometry_type;
-	typedef GLShape::appearance_type	appearance_type;
+	typedef LeafSceneNode<SceneVisitor> base_type;
+	typedef boost::shared_ptr<GLShape> shape_type;
+	typedef GLShape::geometry_type geometry_type;
+	typedef GLShape::appearance_type appearance_type;
+	typedef typename base_type::visitor_type visitor_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)

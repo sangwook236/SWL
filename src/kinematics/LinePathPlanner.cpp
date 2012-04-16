@@ -3,6 +3,7 @@
 #include "swl/kinematics/Kinematics.h"
 #include "swl/math/Rotation.h"
 #include <algorithm>
+#include <memory.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

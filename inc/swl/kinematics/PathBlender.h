@@ -28,7 +28,7 @@ public:
 	/*virtual*/ bool plan();
 
 	/// in joint coordinates
-	/*virtual*/ bool getNextPose(coords_type &aPose, const coords_type *refPose = NULL);
+	/*virtual*/ bool getNextPose(coords_type &aPose, const coords_type *refPose = 0L);
 
 	/// in joint coordinates
 	/*virtual*/ void addViaPose(const coords_type & /*aViaPose*/)  {}

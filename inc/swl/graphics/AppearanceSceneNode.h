@@ -15,8 +15,9 @@ template<typename SceneVisitor>
 class AppearanceSceneNode: public LeafSceneNode<SceneVisitor>
 {
 public:
-	typedef LeafSceneNode	base_type;
-	typedef Appearance		appearance_type;
+	typedef LeafSceneNode<SceneVisitor> base_type;
+	typedef Appearance appearance_type;
+	typedef typename base_type::visitor_type visitor_type;
 
 public:
 #if defined(UNICODE) || defined(_UNICODE)

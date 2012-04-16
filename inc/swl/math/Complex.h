@@ -3,6 +3,7 @@
 
 
 #include "swl/math/MathExt.h"
+#include "swl/math/MathUtil.h"
 #include "swl/base/LogException.h"
 #include <iostream>
 #include <cmath>
@@ -12,13 +13,13 @@ namespace swl {
 
 //-----------------------------------------------------------------------------------------
 // class Complex
-		
+
 template<typename T>
 class Complex
 {
 public:
     typedef T value_type;
-    
+
 public:
 	Complex(const T tReal = T(0), const T tImag = T(0))
 	: real_(tReal), imag_(tImag)
@@ -27,7 +28,7 @@ public:
 	: real_(rhs.real_), imag_(rhs.imag_)
 	{}
 	~Complex() {}
-	
+
 	Complex & operator=(const Complex &rhs)
 	{
 		if (this == &rhs) return *this;
@@ -42,7 +43,7 @@ public:
 	const T & real() const  {  return real_;  }
 	T & imag()  {  return imag_;  }
 	const T & imag() const  {  return imag_;  }
-	
+
 	///
 	bool isZero(const T &tTol = (T)MathConstant::EPS) const
 	{  return MathUtil::isZero(real_, tTol) && MathUtil::isZero(imag_, tTol);  }
@@ -51,13 +52,13 @@ public:
 		return MathUtil::isZero(real_ - rhs.real_, tTol) &&
 			   MathUtil::isZero(imag_ - rhs.imag_, tTol);
 	}
-	
+
 	/// comparison operator
 	bool operator==(const Complex &rhs) const
 	{  return isEqual(rhs);  }
 	bool operator!=(const Complex &rhs) const
 	{  return !isEqual(rhs);  }
-	
+
 	/// arithmetic operation
 	Complex & operator+()  {  return *this;  }
 	Complex operator+(const Complex &rhs) const
@@ -89,7 +90,7 @@ public:
 			throw LogException(LogException::L_ERROR, "divide by zero", __FILE__, __LINE__, __FUNCTION__);
 			//return *this;
 		}
-		
+
 		const T tDenom = rhs.real_*rhs.real_ + rhs.imag_*rhs.imag_;
 		return Complex<T>((real_*rhs.real_ + imag_*rhs.imag_) / tDenom, (imag_*rhs.real_ - real_*rhs.imag_) / tDenom);
 	}
@@ -104,7 +105,7 @@ public:
 	T abs() const  {  return norm();  }
 	T amplitude() const  {  return norm();  }
 	T angle() const  {  return arg();  }
-	
+
 	///
 	Complex conjugate() const
 	{  return Complex(real_, -imag_);  }
@@ -129,7 +130,7 @@ private:
 
 //-----------------------------------------------------------------------------------------
 // Complex Number API
-		
+
 template<typename T>
 std::istream & operator>>(std::istream &stream, Complex<T> &z)
 {

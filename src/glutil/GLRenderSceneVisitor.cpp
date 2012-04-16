@@ -25,9 +25,9 @@ void GLRenderSceneVisitor::visit(const appearance_node_type &node) const
 {
 	const appearance_node_type::appearance_type &appearance = node.getAppearance();
 
-	const attrib::PolygonMode &polygonMode = appearance.getPolygonMode();
-	const bool &isVisible = appearance.isVisible();
-	const bool &isTransparent = appearance.isTransparent();
+	//const attrib::PolygonMode &polygonMode = appearance.getPolygonMode();
+	//const bool &isVisible = appearance.isVisible();
+	//const bool &isTransparent = appearance.isTransparent();
 
 	glColor4f(appearance.red(), appearance.green(), appearance.blue(), appearance.alpha());
 }

@@ -7,62 +7,68 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\swl_kinematics" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Debug\" />
-				<Option object_output=".\Debug\" />
+				<Option output="../../bin/Debug/swl_kinematics" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Debug/" />
+				<Option object_output="./Debug/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
 					<Add option="-Wall" />
-					<Add option="-DBUILD_DLL" />
 					<Add option="-g" />
+					<Add option="-DBUILD_DLL" />
 				</Compiler>
 				<Linker>
-					<Add library="user32" />
+					<Add directory="../../bin/Debug/" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\swl_kinematics" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release\" />
-				<Option object_output=".\Release\" />
+				<Option output="../../bin/Release/swl_kinematics" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Release/" />
+				<Option object_output="./Release/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
 				<Option createStaticLib="1" />
 				<Compiler>
+					<Add option="-O2" />
 					<Add option="-Wall" />
 					<Add option="-DBUILD_DLL" />
-					<Add option="-O2" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="user32" />
+					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
-		<Unit filename="..\..\inc\swl\kinematics\ArcPathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\ArticulatedKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\CartesianKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\CartesianPathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\CurvePathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\DHParam.h" />
-		<Unit filename="..\..\inc\swl\kinematics\ExportKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\Joint.h" />
-		<Unit filename="..\..\inc\swl\kinematics\JointParam.h" />
-		<Unit filename="..\..\inc\swl\kinematics\JointPathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\Kinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\LinePathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\Link.h" />
-		<Unit filename="..\..\inc\swl\kinematics\ParallelogramLinkKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\PathBlender.h" />
-		<Unit filename="..\..\inc\swl\kinematics\PathPlanner.h" />
-		<Unit filename="..\..\inc\swl\kinematics\PumaKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\RobotKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\ScaraKinematics.h" />
-		<Unit filename="..\..\inc\swl\kinematics\ScrewAxis.h" />
-		<Unit filename="..\..\inc\swl\kinematics\StanfordArmKinematics.h" />
+		<Compiler>
+			<Add directory="../../inc/" />
+		</Compiler>
+		<Linker>
+			<Add directory="../../bin/" />
+		</Linker>
+		<Unit filename="../../inc/swl/kinematics/ArcPathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/ArticulatedKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/CartesianKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/CartesianPathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/CurvePathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/DHParam.h" />
+		<Unit filename="../../inc/swl/kinematics/ExportKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/Joint.h" />
+		<Unit filename="../../inc/swl/kinematics/JointParam.h" />
+		<Unit filename="../../inc/swl/kinematics/JointPathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/Kinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/LinePathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/Link.h" />
+		<Unit filename="../../inc/swl/kinematics/ParallelogramLinkKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/PathBlender.h" />
+		<Unit filename="../../inc/swl/kinematics/PathPlanner.h" />
+		<Unit filename="../../inc/swl/kinematics/PumaKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/RobotKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/ScaraKinematics.h" />
+		<Unit filename="../../inc/swl/kinematics/ScrewAxis.h" />
+		<Unit filename="../../inc/swl/kinematics/StanfordArmKinematics.h" />
 		<Unit filename="ArcPathPlanner.cpp" />
 		<Unit filename="ArticulatedKinematics.cpp" />
 		<Unit filename="CartesianKinematics.cpp" />

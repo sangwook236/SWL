@@ -136,8 +136,8 @@ public:
 		else
 		{
 			boost::mutex::scoped_lock lock(mutex_);
-			buffer_type::iterator itBegin = buf_.begin();
-			buffer_type::iterator it = itBegin;
+			typename buffer_type::iterator itBegin = buf_.begin();
+			typename buffer_type::iterator it = itBegin;
 			std::advance(it, len);
 			buf_.erase(itBegin, it);
 			return true;
@@ -178,8 +178,8 @@ public:
 		else
 		{
 			boost::mutex::scoped_lock lock(mutex_);
-			buffer_type::const_iterator itBegin = buf_.begin();
-			buffer_type::const_iterator it = itBegin;
+			typename buffer_type::const_iterator itBegin = buf_.begin();
+			typename buffer_type::const_iterator it = itBegin;
 			std::advance(it, len);
 			std::copy(itBegin, it, data);
 			return true;

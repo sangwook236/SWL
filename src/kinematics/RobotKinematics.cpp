@@ -3,6 +3,7 @@
 #include "swl/base/LogException.h"
 #include "swl/math/MathConstant.h"
 #include <iterator>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -12,7 +13,7 @@
 
 
 namespace swl {
-	
+
 //--------------------------------------------------------------------------------
 // class RobotKinematics
 

@@ -99,9 +99,10 @@ private:
 		if (session_.isReadyToReceive() && !isReceiving_)
 		{
 			isReceiving_ = true;
+			boost::shared_ptr<TcpSocketConnectionUsingSession<Session> > pp = shared_from_this<TcpSocketConnectionUsingSession<Session> >();
 			socket_.async_read_some(
 				boost::asio::null_buffers(),
-				boost::bind(&TcpSocketConnectionUsingSession::completeReceiving, shared_from_this(), boost::asio::placeholders::error)
+				boost::bind(&TcpSocketConnectionUsingSession::completeReceiving, pp, boost::asio::placeholders::error)
 			);
 		}
 

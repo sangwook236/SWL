@@ -4,7 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "iniparser.h"
+#include "iniparser_impl.h"
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"

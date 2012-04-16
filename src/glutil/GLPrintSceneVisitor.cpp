@@ -8,6 +8,7 @@
 #include <windows.h>
 #endif
 #include <GL/gl.h>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

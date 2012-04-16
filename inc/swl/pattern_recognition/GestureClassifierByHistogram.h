@@ -4,20 +4,13 @@
 
 #include "swl/pattern_recognition/ExportPatternRecognition.h"
 #include "swl/pattern_recognition/IGestureClassifier.h"
+#include "swl/rnd_util/HistogramAccumulator.h"
 #include <boost/circular_buffer.hpp>
 #include <boost/smart_ptr.hpp>
 #include <vector>
 
-namespace cv {
-
-class Mat;
-typedef Mat MatND;
-
-}
 
 namespace swl {
-
-class HistogramAccumulator;
 
 //-----------------------------------------------------------------------------
 //
@@ -62,6 +55,7 @@ public:
 
 public:
 	typedef IGestureClassifier base_type;
+	typedef HistogramAccumulator::histogram_type histogram_type;
 
 public:
 	GestureClassifierByHistogram(const Params &params);
@@ -99,12 +93,12 @@ private:
 	void createReferenceHistogramsForClass3Gesture();
 	void createGestureIdPatternHistogramsForClass1Gesture();
 
-	size_t matchHistogramByGestureIdPattern(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::vector<const cv::MatND> &gestureIdPatternHistograms, const double histDistThreshold) const;
+	size_t matchHistogramByGestureIdPattern(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::vector<histogram_type> &gestureIdPatternHistograms, const double histDistThreshold) const;
 	size_t matchHistogramByFrequency(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const size_t countThreshold) const;
 
 	void drawAccumulatedPhaseHistogram(const cv::MatND &accumulatedHist, const std::string &windowName) const;
 	void drawMatchedIdPatternHistogram(const boost::circular_buffer<size_t> &matchedHistogramIndexes, const std::string &windowName) const;
-	void drawMatchedReferenceHistogram(const std::vector<const cv::MatND> &refHistograms, const size_t matchedIdx, const std::string &windowName) const;
+	void drawMatchedReferenceHistogram(const std::vector<histogram_type> &refHistograms, const size_t matchedIdx, const std::string &windowName) const;
 
 	void drawTemporalOrientationHistogram(const cv::MatND &temporalHist, const std::string &windowName) const;
 
@@ -115,15 +109,15 @@ private:
 private:
 	Params params_;
 
-	std::vector<const cv::MatND> refFullPhaseHistograms_;
+	std::vector<histogram_type> refFullPhaseHistograms_;
 
-	std::vector<const cv::MatND> refHistogramsForClass1Gesture_;
-	std::vector<const cv::MatND> refHistogramsForClass2Gesture_;
-	std::vector<const cv::MatND> refHistogramsForClass3Gesture_;
+	std::vector<histogram_type> refHistogramsForClass1Gesture_;
+	std::vector<histogram_type> refHistogramsForClass2Gesture_;
+	std::vector<histogram_type> refHistogramsForClass3Gesture_;
 
-	std::vector<const cv::MatND> gestureIdPatternHistogramsForClass1Gesture_;
-	//std::vector<const cv::MatND> gestureIdPatternHistogramsForClass2Gesture_;
-	//std::vector<const cv::MatND> gestureIdPatternHistogramsForClass3Gesture_;
+	std::vector<histogram_type> gestureIdPatternHistogramsForClass1Gesture_;
+	//std::vector<histogram_type> gestureIdPatternHistogramsForClass2Gesture_;
+	//std::vector<histogram_type> gestureIdPatternHistogramsForClass3Gesture_;
 
 	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForClass1Gesture_;
 	boost::shared_ptr<HistogramAccumulator> histogramAccumulatorForClass2Gesture_;

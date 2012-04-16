@@ -7,19 +7,22 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\swl_unit_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Debug\" />
-				<Option object_output=".\Debug\" />
+				<Option output="../../bin/Debug/swl_unit_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Debug/" />
+				<Option object_output="./Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add directory="../../bin/Debug/" />
+				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\swl_unit_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release" />
-				<Option object_output=".\Release\" />
+				<Option output="../../bin/Release/swl_unit_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Release" />
+				<Option object_output="./Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -27,32 +30,37 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add directory="../../inc/" />
 		</Compiler>
-		<Unit filename="..\testcase\base\LoggerTest.cpp" />
-		<Unit filename="..\testcase\math\BaseFieldConversionTest.cpp" />
-		<Unit filename="..\testcase\math\LineSegmentTest.cpp" />
-		<Unit filename="..\testcase\math\LineTest.cpp" />
-		<Unit filename="..\testcase\math\PlaneTest.cpp" />
-		<Unit filename="..\testcase\math\TriangleTest.cpp" />
-		<Unit filename="..\testcase\util\EchoTcpSocketConnection.cpp" />
-		<Unit filename="..\testcase\util\EchoTcpSocketConnection.h" />
-		<Unit filename="..\testcase\util\EchoTcpSocketServerTest.cpp" />
-		<Unit filename="..\testcase\util\EchoTcpSocketSession.cpp" />
-		<Unit filename="..\testcase\util\EchoTcpSocketSession.h" />
-		<Unit filename="..\testcase\util\EchoTcpSocketTest.cpp" />
-		<Unit filename="..\testcase\util\LineROITest.cpp" />
-		<Unit filename="..\testcase\util\PolygonROITest.cpp" />
-		<Unit filename="..\testcase\util\PolylineROITest.cpp" />
-		<Unit filename="..\testcase\util\ROIWithVariablePointsTest.cpp" />
-		<Unit filename="..\testcase\util\RectangleROITest.cpp" />
-		<Unit filename="..\testcase\util\RegionOfInterestMgrTest.cpp" />
-		<Unit filename="..\testcase\util\RegionOfInterestTest.cpp" />
+		<Linker>
+			<Add directory="../../bin/" />
+		</Linker>
+		<Unit filename="../testcase/base/LoggerTest.cpp" />
+		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
+		<Unit filename="../testcase/math/LineSegmentTest.cpp" />
+		<Unit filename="../testcase/math/LineTest.cpp" />
+		<Unit filename="../testcase/math/PlaneTest.cpp" />
+		<Unit filename="../testcase/math/TriangleTest.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketConnection.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketConnection.h" />
+		<Unit filename="../testcase/util/EchoTcpSocketServerTest.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketSession.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketSession.h" />
+		<Unit filename="../testcase/util/EchoTcpSocketTest.cpp" />
+		<Unit filename="../testcase/util/LineROITest.cpp" />
+		<Unit filename="../testcase/util/PolygonROITest.cpp" />
+		<Unit filename="../testcase/util/PolylineROITest.cpp" />
+		<Unit filename="../testcase/util/ROIWithVariablePointsTest.cpp" />
+		<Unit filename="../testcase/util/RectangleROITest.cpp" />
+		<Unit filename="../testcase/util/RegionOfInterestMgrTest.cpp" />
+		<Unit filename="../testcase/util/RegionOfInterestTest.cpp" />
 		<Unit filename="TextUiUnitTestMain.cpp" />
 		<Extensions>
 			<code_completion />

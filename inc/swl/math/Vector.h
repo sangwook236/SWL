@@ -5,11 +5,12 @@
 #include "swl/math/MathUtil.h"
 #include "swl/base/LogException.h"
 #include "swl/base/Point.h"
+#include <iostream>
 #include <cmath>
 
 
 namespace swl {
-	
+
 //----------------------------------------------------------------------------------------------
 // class Vector2: 2D vector (2x1 vector)
 
@@ -165,7 +166,7 @@ public:
 		}
 		*this /= tNorm;
 	}
-/*	
+/*
 	///
 	Vector2 & translate(const T &tX, const T &tY);
 	Vector2 & rotate(const T &tAngle);
@@ -438,7 +439,7 @@ public:
 		}
 		*this /= tNorm;
 	}
-/*	
+/*
 	///
 	Vector2<T> & translate(const T &tX, const T &tY);
 	Vector2<T> & rotate(const T &tAngle);

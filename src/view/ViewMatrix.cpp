@@ -1,7 +1,7 @@
 #include "swl/Config.h"
 #include "swl/view/ViewMatrix.h"
-#include <memory>
 #include <cmath>
+#include <memory.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

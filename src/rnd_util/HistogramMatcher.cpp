@@ -9,11 +9,11 @@ namespace swl {
 //-----------------------------------------------------------------------------
 //
 
-/*static*/ size_t HistogramMatcher::match(const std::vector<const cv::MatND> &refHistograms, const cv::MatND &hist, double &minDist)
+/*static*/ size_t HistogramMatcher::match(const std::vector<histogram_type> &refHistograms, const cv::MatND &hist, double &minDist)
 {
 	std::vector<double> dists;
 	dists.reserve(refHistograms.size());
-	for (std::vector<const cv::MatND>::const_iterator it = refHistograms.begin(); it != refHistograms.end(); ++it)
+	for (std::vector<histogram_type>::const_iterator it = refHistograms.begin(); it != refHistograms.end(); ++it)
 		// correlation: CV_COMP_CORREL
 		// chi-square statistic: CV_COMP_CHISQR
 		// intersection: CV_COMP_INTERSECT

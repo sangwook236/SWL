@@ -16,6 +16,13 @@ class QLambda: public TDLambda<StateActionPair>
 {
 public:
 	typedef TDLambda<StateActionPair> base_type;
+	typedef typename base_type::state_type state_type;
+	typedef typename base_type::action_type action_type;
+	typedef typename base_type::policy_type policy_type;
+	typedef typename base_type::reward_type reward_type;
+	typedef typename base_type::epsilon_function_type epsilon_function_type;
+	typedef typename base_type::step_size_function_type step_size_function_type;
+	typedef typename base_type::state_action_pair_type state_action_pair_type;
 
 public:
 	explicit QLambda(const double gamma, const double lambda, const bool isReplacingTrace)

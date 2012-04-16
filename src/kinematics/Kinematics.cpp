@@ -2,6 +2,7 @@
 #include "swl/kinematics/Kinematics.h"
 #include "swl/base/LogException.h"
 #include <iterator>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

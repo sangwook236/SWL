@@ -20,11 +20,11 @@ public:
 	struct State
 	{
 	public:
-		static const size_t GRID_ROW_SIZE = 7;
-		static const size_t GRID_COL_SIZE = 10;
-		static const size_t STATE_SIZE = GRID_ROW_SIZE * GRID_COL_SIZE;
+		static const std::size_t GRID_ROW_SIZE = 7;
+		static const std::size_t GRID_COL_SIZE = 10;
+		static const std::size_t STATE_SIZE = GRID_ROW_SIZE * GRID_COL_SIZE;
 
-		typedef size_t value_type;
+		typedef std::size_t value_type;
 		typedef Action action_type;
 		typedef int reward_type;
 
@@ -32,7 +32,7 @@ public:
 		explicit State()
 		: row_(4), col_(1)  // the start state
 		{}
-		explicit State(const size_t row, const size_t col)
+		explicit State(const std::size_t row, const std::size_t col)
 		: row_(row), col_(col)
 		{}
 
@@ -56,15 +56,15 @@ public:
 		value_type getValue() const  {  return (row_ - 1) * GRID_COL_SIZE + (col_ - 1);  }
 
 	private:
-		size_t row_;  // [1, 7]
-		size_t col_;  // [1, 10]
+		std::size_t row_;  // [1, 7]
+		std::size_t col_;  // [1, 10]
 	};
 
 	struct Action
 	{
 	public:
 		enum ACTION { UP = 0, DOWN, RIGHT, LEFT };
-		static const size_t ACTION_SIZE = 4;
+		static const std::size_t ACTION_SIZE = 4;
 
 		typedef ACTION value_type;
 
@@ -133,8 +133,8 @@ public:
 	static action_type getRandomAction();
 	static action_type getActionFromPolicy(const state_type &state, const std::map<const WindyGridWorldStateActionPair, double> &Q, const policy_type &policy, const double epsilon);
 
-	static double epsilonFunction(const size_t episodeTrial);
-	static double stepSizeFunction(const size_t iterationStep);
+	static double epsilonFunction(const std::size_t episodeTrial);
+	static double stepSizeFunction(const std::size_t iterationStep);
 
 private:
 	state_type state_;

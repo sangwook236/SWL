@@ -139,7 +139,7 @@ const size_t gesturePatternHistogramBinNum = swl::ReferenceFullPhaseHistogramGen
 const double gesturePatternHistogramNormalizationFactor = 10.0; //(double)maxMatchedHistogramNum;
 
 //
-std::vector<const cv::MatND> refFullPhaseHistograms;
+std::vector<swl::HistogramAccumulator::histogram_type> refFullPhaseHistograms;
 boost::shared_ptr<swl::HistogramAccumulator> orientationHistogramAccumulator(doesApplyTimeWeighting ? new swl::HistogramAccumulator(getHistogramTimeWeight(accumulatedOrientationHistogramNum)) : new swl::HistogramAccumulator(accumulatedOrientationHistogramNum));
 
 void accumulateOrientationHistogram(const cv::Mat &orientation)
@@ -209,7 +209,7 @@ bool computeTemporalOrientationHistogram(cv::MatND &temporalOrientationHist)
 	if (orientationHistogramAccumulator->isFull())
 	{
 		// create accumulated phase histograms
-		cv::MatND &accumulatedHist = orientationHistogramAccumulator->createAccumulatedHistogram();
+		cv::MatND accumulatedHist(orientationHistogramAccumulator->createAccumulatedHistogram());
 		// normalize histogram
 		swl::HistogramUtil::normalizeHistogram(accumulatedHist, refHistogramNormalizationFactor);
 

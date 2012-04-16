@@ -10,6 +10,7 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
+#include <memory.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -96,7 +97,7 @@ private:
 private:
 	// the parameter space: { xc, yc, theta, sx, sy }
 	// (xc, yc) : x & y coordinates of the center
-	// theta : rotational angle about z axis 
+	// theta : rotational angle about z axis
 	// (sx, sy) : scale factors along x & y axes
 #if defined(__USE_BOOST_MULTI_ARRAY_DIRECTLY)
 	boost::multi_array<size_t, 5> parameterSpace_;
@@ -169,10 +170,10 @@ bool RectangleHoughTransform::constructRTable(const std::vector<ShapeInfo> &refe
 		if (rTable_.end() == itRTableEntry)
 		{
 			entries_.push_back(RTableEntry(r, alpha));
-			
+
 			rtable_entry_type entryIndexSet;
 			entryIndexSet.insert(entries_.size() - 1);
-			
+
 			rTable_.insert(std::make_pair(tangentAngleIdx, entryIndexSet));
 		}
 		else
@@ -231,7 +232,7 @@ void RectangleHoughTransform::vote(const std::vector<ShapeInfo> &input)
 				const double r = entries_[*itEntryIndex].distance;
 				const double alpha = entries_[*itEntryIndex].angle;
 
-				// theta : rotational angle about z axis 
+				// theta : rotational angle about z axis
 				double theta = 0 == parameterSpaceInfos_[2].resolution ? 0.0 : tangentAngle - phi_k;
 				while (theta < 0.0) theta += swl::MathConstant::_2_PI;
 				theta = std::fmod(theta, swl::MathConstant::_2_PI) - swl::MathConstant::PI;
@@ -511,7 +512,7 @@ void generalized_hough_transform_1()
 	paramSpace.reserve(5);
 	paramSpace.push_back(ParameterSpaceInfo(-100.0, 100.0, 200));  // x coordinate of the center
 	paramSpace.push_back(ParameterSpaceInfo(-100.0, 100.0, 200));  // y coordinate of the center
-	paramSpace.push_back(ParameterSpaceInfo(-swl::MathConstant::PI, swl::MathConstant::PI, 360));  // rotational angle about z axis 
+	paramSpace.push_back(ParameterSpaceInfo(-swl::MathConstant::PI, swl::MathConstant::PI, 360));  // rotational angle about z axis
 	paramSpace.push_back(ParameterSpaceInfo(-10.0, 10.0, 0));  // scale factor along x axis: 2^n
 	paramSpace.push_back(ParameterSpaceInfo(-10.0, 10.0, 0));  // scale factor along y axis: 2^n
 	if (!houghTransform.constructParameterSpace(paramSpace))
@@ -575,7 +576,7 @@ void generalized_hough_transform_2()
 	paramSpace.reserve(5);
 	paramSpace.push_back(ParameterSpaceInfo(-100.0, 100.0, 25));  // x coordinate of the center
 	paramSpace.push_back(ParameterSpaceInfo(-100.0, 100.0, 25));  // y coordinate of the center
-	paramSpace.push_back(ParameterSpaceInfo(-swl::MathConstant::PI, swl::MathConstant::PI, 360));  // rotational angle about z axis 
+	paramSpace.push_back(ParameterSpaceInfo(-swl::MathConstant::PI, swl::MathConstant::PI, 360));  // rotational angle about z axis
 	paramSpace.push_back(ParameterSpaceInfo(-5.0, 5.0, 10));  // scale factor along x axis: 2^n
 	paramSpace.push_back(ParameterSpaceInfo(-5.0, 5.0, 10));  // scale factor along y axis: 2^n
 	if (!houghTransform.constructParameterSpace(paramSpace))

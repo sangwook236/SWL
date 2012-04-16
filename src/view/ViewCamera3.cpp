@@ -3,6 +3,7 @@
 #include "swl/math/MathConstant.h"
 #include <stdexcept>
 #include <cmath>
+#include <memory.h>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -82,7 +83,7 @@ void ViewCamera3::write(std::ostream &stream)
 			refObjX_ << ' ' << refObjY_ << ' ' << refObjZ_ << ' ' <<
 			eyePosX_ << ' ' << eyePosY_ << ' ' << eyePosZ_ << ' ' <<
 			eyeDirX_ << ' ' << eyeDirY_ << ' ' << eyeDirZ_ << ' ' <<
-			upDirX_ << ' ' << upDirY_ << ' ' << upDirZ_ << '\n'; 
+			upDirX_ << ' ' << upDirY_ << ' ' << upDirZ_ << '\n';
 	endWriteEndl(stream);
 }
 
@@ -106,9 +107,9 @@ void ViewCamera3::read(std::istream &stream)
 		default:
 			//UtBsErrorHandler::throwFileReadError(ClassName(), iVersion);
 			// version error
-			static char err_msg[256];			
+			static char err_msg[256];
 			sprintf(err_msg, "Cannot open file !\nVersion mismatch error!\n1) class name : %s\n2) class version : %d", ClassName().c_str() , iVersion);
-			throw err_msg;	
+			throw err_msg;
 		}
 		setReadVersion(iOldVersion);
 	endAssert(stream);
@@ -121,7 +122,7 @@ void ViewCamera3::Read20021008(std::istream &stream)
 		refObjX_ >> refObjY_ >> refObjZ_ >>
 		eyePosX_ >> eyePosY_ >> eyePosZ_ >>
 		eyeDirX_ >> eyeDirY_ >> eyeDirZ_ >>
-		upDirX_ >> upDirY_ >> upDirZ_; 
+		upDirX_ >> upDirY_ >> upDirZ_;
 }
 */
 
@@ -519,7 +520,7 @@ bool ViewCamera3::doMapEyeToClip(const double ptEye[3], double ptClip[3]) const
 		ptClip[1] = (2.0*ptEye[1] - (rctViewRegion.top+rctViewRegion.bottom)) / (rctViewRegion.top - rctViewRegion.bottom);
 		ptClip[2] = (-2.0*ptEye[2] - (farPlane_+nearPlane_)) / (farPlane_ - nearPlane_);
 	}
-	
+
 	return true;
 }
 

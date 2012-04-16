@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HoughTransform.h"
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -9,7 +10,7 @@
 
 namespace swl {
 
-GeneralizedHoughTransform::GeneralizedHoughTransform(const size_t tangentAngleCount)
+GeneralizedHoughTransform::GeneralizedHoughTransform(const std::size_t tangentAngleCount)
 : tangentAngleCount_(tangentAngleCount)
 {
 }
