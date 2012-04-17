@@ -25,7 +25,7 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 {
 }
 
-bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const std::vector<int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	std::vector<double> scale(N, 0.0);
 
@@ -48,10 +48,10 @@ bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const st
 	{
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=1
-			pi_[k] = .001 + .999 * gamma[1][k];
+			// reestimate frequency of state k in time n=0
+			pi_[k] = .001 + .999 * gamma[0][k];
 
-			// reestimate transition matrix and symbol prob in each state
+			// reestimate transition matrix in each state
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma[n][k];
@@ -64,13 +64,15 @@ bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const st
 				A_[k][i] = .001 + .999 * numeratorA / denominatorA;
 			}
 
+			// reestimate symbol prob in each state
 			denominatorB = denominatorA + gamma[N-1][k];
+
 			for (i = 0; i < D_; ++i)
 			{
 				numeratorB = 0.0;
 				for (n = 0; n < N; ++n)
 				{
-					if (observations[n] == i)
+					if (observations[n] == (unsigned int)i)
 						numeratorB += gamma[n][k];
 				}
 
@@ -96,19 +98,22 @@ bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const st
 	return true;
 }
 
-int HmmWithMultinomialObservations::generateObservationsSymbol(const int state) const
+unsigned int HmmWithMultinomialObservations::generateObservationsSymbol(const unsigned int state) const
 {
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
 	const double prob = (double)std::rand() / RAND_MAX;
 
 	double accum = 0.0;
-	int observation = (int)D_;
+	unsigned int observation = (unsigned int)D_;
 	for (size_t i = 0; i < D_; ++i)
 	{
 		accum += B_[state][i];
 		//accum += evaluateEmissionProbability(state, i);
 		if (prob < accum)
 		{
-			observation = (int)i;
+			observation = (unsigned int)i;
 			break;
 		}
 	}
@@ -157,6 +162,9 @@ bool HmmWithMultinomialObservations::writeObservationDensity(std::ostream &strea
 
 void HmmWithMultinomialObservations::initializeObservationDensity()
 {
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
 	size_t i;
 	double sum;
 	for (size_t k = 0; k < K_; ++k)
@@ -167,6 +175,21 @@ void HmmWithMultinomialObservations::initializeObservationDensity()
 			B_[k][i] = (double)std::rand() / RAND_MAX;
 			sum += B_[k][i];
 		}
+		for (i = 0; i < D_; ++i)
+			B_[k][i] /= sum;
+	}
+}
+
+void HmmWithMultinomialObservations::normalizeObservationDensityParameters()
+{
+	size_t i;
+	double sum;
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		sum = 0.0;
+		for (i = 0; i < D_; ++i)
+			sum += B_[k][i];
 		for (i = 0; i < D_; ++i)
 			B_[k][i] /= sum;
 	}

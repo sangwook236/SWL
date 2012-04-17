@@ -44,18 +44,18 @@ void HMM::computeGamma(const size_t N, const boost::multi_array<double, 2> &alph
 	}
 }
 
-int HMM::generateInitialState() const
+unsigned int HMM::generateInitialState() const
 {
 	const double prob = (double)std::rand() / RAND_MAX;
 
 	double accum = 0.0;
-	int state = (int)K_;
+	unsigned int state = (unsigned int)K_;
 	for (size_t k = 0; k < K_; ++k)
 	{
 		accum += pi_[k];
 		if (prob < accum)
 		{
-			state = (int)k;
+			state = (unsigned int)k;
 			break;
 		}
 	}
@@ -66,18 +66,18 @@ int HMM::generateInitialState() const
 	//	-. if state = K_, an error occurs.
 }
 
-int HMM::generateNextState(const int currState) const
+unsigned int HMM::generateNextState(const unsigned int currState) const
 {
 	const double prob = (double)std::rand() / RAND_MAX;
 
 	double accum = 0.0;
-	int nextState = (int)K_;
+	unsigned int nextState = (unsigned int)K_;
 	for (size_t k = 0; k < K_; ++k)
 	{
 		accum += A_[currState][k];
 		if (prob < accum)
 		{
-			nextState = (int)k;
+			nextState = (unsigned int)k;
 			break;
 		}
 	}
@@ -194,6 +194,29 @@ void HMM::initializeModel()
 	}
 
 	initializeObservationDensity();
+}
+
+void HMM::normalizeModelParameters()
+{
+	size_t i, k;
+	double sum;
+
+	sum = 0.0;
+	for (k = 0; k < K_; ++k)
+		sum += pi_[k];
+	for (k = 0; k < K_; ++k)
+		pi_[k] /= sum;
+
+	for (k = 0; k < K_; ++k)
+	{
+		sum = 0.0;
+		for (i = 0; i < K_; ++i)
+			sum += A_[k][i];
+		for (i = 0; i < K_; ++i)
+			A_[k][i] /= sum;
+	}
+
+	normalizeObservationDensityParameters();
 }
 
 }  // namespace swl

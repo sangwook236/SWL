@@ -17,6 +17,7 @@
 
 //#define __TEST_HMM_MODEL 1
 #define __TEST_HMM_MODEL 2
+#define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
 namespace {
@@ -59,6 +60,9 @@ void model_reading_and_writing()
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
+
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
 		cdhmm->writeModel(std::cout);
 	}
@@ -223,18 +227,27 @@ void sample_generation()
 			return;
 		}
 
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
+
 		//cdhmm->writeModel(std::cout);
 	}
 
 	// generate a sample sequence
 	{
-		std::srand((unsigned int)std::time(NULL));
+#if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
+		const unsigned int seed = 34586u;
+#else
+		const unsigned int seed = (unsigned int)std::time(NULL);
+#endif
+		std::srand(seed);
+		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t N = 100;
 
 		boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
-		std::vector<int> states(N, -1);
-		cdhmm->generateSample(N, observations, states);
+		std::vector<unsigned int> states(N, (unsigned int)-1);
+		cdhmm->generateSample(N, observations, states, seed);
 
 		// write a sample sequence
 		swl::CDHMM::writeSequence(std::cout, observations);
@@ -279,6 +292,9 @@ void forward_algorithm()
 			return;
 		}
 
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
+
 		//cdhmm->writeModel(std::cout);
 	}
 
@@ -288,11 +304,11 @@ void forward_algorithm()
 	{
 #if __TEST_HMM_MODEL == 1
 
-#if 0
+#if 1
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_50.seq");
 #elif 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_100.seq");
-#elif 1
+#elif 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
@@ -401,6 +417,9 @@ void viterbi_algorithm()
 			return;
 		}
 
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
+
 		//cdhmm->writeModel(std::cout);
 	}
 
@@ -457,8 +476,8 @@ void viterbi_algorithm()
 	// Viterbi algorithm using direct probabilities
 	{
 		boost::multi_array<double, 2> delta(boost::extents[N][K]);
-		boost::multi_array<int, 2> psi(boost::extents[N][K]);
-		std::vector<int> states(N, -1);
+		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
+		std::vector<unsigned int> states(N, (unsigned int)-1);
 		double probability = 0.0;
 		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, probability, false);
 
@@ -475,8 +494,8 @@ void viterbi_algorithm()
 	// Viterbi algorithm using log probabilities
 	{
 		boost::multi_array<double, 2> delta(boost::extents[N][K]);
-		boost::multi_array<int, 2> psi(boost::extents[N][K]);
-		std::vector<int> states(N, -1);
+		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
+		std::vector<unsigned int> states(N, (unsigned int)-1);
 		double logProbability = 0.0;
 		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
 
@@ -538,11 +557,20 @@ void mle_em_learning()
 			return;
 		}
 
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
+
 		//cdhmm->writeModel(std::cout);
 	}
 	else if (2 == initialization_mode)
 	{
-		std::srand((unsigned int)std::time(NULL));
+#if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
+		const unsigned int seed = 34586u;
+#else
+		const unsigned int seed = (unsigned int)std::time(NULL);
+#endif
+		std::srand(seed);
+		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
@@ -560,11 +588,11 @@ void mle_em_learning()
 	{
 #if __TEST_HMM_MODEL == 1
 
-#if 1
+#if 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_50.seq");
 #elif 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_100.seq");
-#elif 0
+#elif 1
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
@@ -572,11 +600,11 @@ void mle_em_learning()
 
 #elif __TEST_HMM_MODEL == 2
 
-#if 1
+#if 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test2_50.seq");
 #elif 0
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test2_100.seq");
-#elif 0
+#elif 1
 		std::ifstream stream("..\\data\\hmm\\uni_normal_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
@@ -623,6 +651,9 @@ void mle_em_learning()
 			cdhmm->computeXi(N, observations, alpha, beta, xi);
 		}
 
+		// normalize pi & A
+		//cdhmm->normalizeModelParameters();
+
 		// 
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "Baum-Welch algorithm" << std::endl;
@@ -630,7 +661,6 @@ void mle_em_learning()
 		std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;	
 		std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;	
 		std::cout << "\testiamted model:" << std::endl;
-
 		cdhmm->writeModel(std::cout);
 	}
 }

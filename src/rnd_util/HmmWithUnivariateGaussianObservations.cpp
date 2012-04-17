@@ -53,8 +53,8 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const size_t N, c
 	{
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=1
-			pi_[k] = .001 + .999 * gamma[1][k];
+			// reestimate frequency of state k in time n=0
+			pi_[k] = .001 + .999 * gamma[0][k];
 
 			// reestimate transition matrix 
 			denominatorA = 0.0;
@@ -70,18 +70,18 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const size_t N, c
 			}
 
 			// reestimate symbol prob in each state
-			denominatorP = denominatorA + gamma[N][k];
+			denominatorP = denominatorA + gamma[N-1][k];
 
 			// for univariate normal distributions
 			numeratorP = 0.0;
 			for (n = 0; n < N; ++n)
-				numeratorP += gamma[n][k] * observations[n][1];
+				numeratorP += gamma[n][k] * observations[n][0];
 			mus_[k] = .001 + .999 * numeratorP / denominatorP;
 
 			// for univariate normal distributions
 			numeratorP = 0.0;
 			for (n = 0; n < N; ++n)
-				numeratorP += gamma[n][k] * (observations[n][1] - mus_[k]) * (observations[n][1] - mus_[k]);
+				numeratorP += gamma[n][k] * (observations[n][0] - mus_[k]) * (observations[n][0] - mus_[k]);
 			sigmas_[k] = .001 + .999 * numeratorP / denominatorP;
 		}
 
@@ -103,7 +103,7 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const size_t N, c
 	return true;
 }
 
-double HmmWithUnivariateGaussianObservations::evaluateEmissionProbability(const int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithUnivariateGaussianObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity)
 	boost::math::normal pdf(mus_[state], sigmas_[state]);
@@ -111,13 +111,13 @@ double HmmWithUnivariateGaussianObservations::evaluateEmissionProbability(const 
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void HmmWithUnivariateGaussianObservations::generateObservationsSymbol(const int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const bool setSeed /*= false*/) const
+void HmmWithUnivariateGaussianObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
-	if (setSeed)
-		baseGenerator_.seed((int)std::time(NULL));
+	if ((unsigned int)-1 != seed)
+		baseGenerator_.seed(seed);
 
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
 	for (size_t i = 0; i < D_; ++i)
@@ -162,6 +162,9 @@ bool HmmWithUnivariateGaussianObservations::writeObservationDensity(std::ostream
 
 void HmmWithUnivariateGaussianObservations::initializeObservationDensity()
 {
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
 	const double lb = -10000.0, ub = 10000.0;
 	for (size_t k = 0; k < K_; ++k)
 	{

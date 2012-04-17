@@ -42,13 +42,13 @@ public:
 	void runBackwardAlgorithm(const size_t N, const boost::multi_array<double, 2> &observations, const std::vector<double> &scale, boost::multi_array<double, 2> &beta, double &probability) const;
 
 	// if useLog = true, probability is the LOG probability
-	void runViterbiAlgorithm(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<int, 2> &psi, std::vector<int> &states, double &probability, const bool useLog = true) const;
+	void runViterbiAlgorithm(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability, const bool useLog = true) const;
 
 	//
 	virtual bool estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability) = 0;
 
-	//
-	void generateSample(const size_t N, boost::multi_array<double, 2> &observations, std::vector<int> &states) const;
+	// if seed != -1, the seed value is set
+	void generateSample(const size_t N, boost::multi_array<double, 2> &observations, std::vector<unsigned int> &states, const unsigned int seed = (unsigned int)-1) const;
 
 	//
 	void computeXi(const size_t N, const boost::multi_array<double, 2> &observations, const boost::multi_array<double, 2> &alpha, const boost::multi_array<double, 2> &beta, boost::multi_array<double, 3> &xi) const;
@@ -58,12 +58,19 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ]
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
-	virtual double evaluateEmissionProbability(const int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const = 0;
-	virtual void generateObservationsSymbol(const int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const bool setSeed = false) const = 0;
+	virtual double evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const = 0;
+	// if seed != -1, the seed value is set
+	virtual void generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const = 0;
+
+	//
+	/*virtual*/ void normalizeObservationDensityParameters()
+	{
+		// do nothing
+	}
 
 private:
-	void runViterbiAlgorithmNotUsigLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<int, 2> &psi, std::vector<int> &states, double &probability) const;
-	void runViterbiAlgorithmUsingLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<int, 2> &psi, std::vector<int> &states, double &probability) const;
+	void runViterbiAlgorithmNotUsigLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const;
+	void runViterbiAlgorithmUsingLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const;
 
 protected:
 };

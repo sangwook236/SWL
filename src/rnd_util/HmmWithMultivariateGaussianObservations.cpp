@@ -49,8 +49,8 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	{
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=1
-			pi_[k] = .001 + .999 * gamma[1][k];
+			// reestimate frequency of state k in time n=0
+			pi_[k] = .001 + .999 * gamma[0][k];
 
 			// reestimate transition matrix 
 			denominatorA = 0.0;
@@ -66,7 +66,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 			}
 
 			// reestimate symbol prob in each state
-			denominatorP = denominatorA + gamma[N][k];
+			denominatorP = denominatorA + gamma[N-1][k];
 
 			// for multivariate normal distributions
 			// TODO [check] >> this code may be changed into a vector form.
@@ -111,12 +111,12 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	return true;
 }
 
-double HmmWithMultivariateGaussianObservations::evaluateEmissionProbability(const int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithMultivariateGaussianObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithMultivariateGaussianObservations::generateObservationsSymbol(const int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const bool setSeed /*= false*/) const
+void HmmWithMultivariateGaussianObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }

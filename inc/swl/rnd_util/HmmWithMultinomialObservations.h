@@ -25,7 +25,7 @@ private:
 	HmmWithMultinomialObservations & operator=(const HmmWithMultinomialObservations &rhs);
 
 public:
-	/*virtual*/ bool estimateParameters(const size_t N, const std::vector<int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	/*virtual*/ bool estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 
 	//
 	boost::multi_array<double, 2> & getObservationProbabilityMatrix()  {  return B_;  }
@@ -36,14 +36,15 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ]
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
-	/*virtual*/ double evaluateEmissionProbability(const int state, const int observation) const
+	/*virtual*/ double evaluateEmissionProbability(const unsigned int state, const unsigned int observation) const
 	{  return B_[state][observation];  }
-	/*virtual*/ int generateObservationsSymbol(const int state) const;
+	/*virtual*/ unsigned int generateObservationsSymbol(const unsigned int state) const;
 
 	//
 	/*virtual*/ bool readObservationDensity(std::istream &stream);
 	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
 	/*virtual*/ void initializeObservationDensity();
+	/*virtual*/ void normalizeObservationDensityParameters();
 
 private:
 	boost::multi_array<double, 2> B_;  // the observation(emission) probability distribution

@@ -31,12 +31,12 @@ bool HmmWithVonMisesFisherObservations::estimateParameters(const size_t N, const
 	throw std::runtime_error("not yet implemented");
 }
 
-double HmmWithVonMisesFisherObservations::evaluateEmissionProbability(const int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithVonMisesFisherObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::generateObservationsSymbol(const int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const bool setSeed /*= false*/) const
+void HmmWithVonMisesFisherObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }

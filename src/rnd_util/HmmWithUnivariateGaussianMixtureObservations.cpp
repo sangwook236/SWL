@@ -31,12 +31,12 @@ bool HmmWithUnivariateGaussianMixtureObservations::estimateParameters(const size
 	throw std::runtime_error("not yet implemented");
 }
 
-double HmmWithUnivariateGaussianMixtureObservations::evaluateEmissionProbability(const int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithUnivariateGaussianMixtureObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithUnivariateGaussianMixtureObservations::generateObservationsSymbol(const int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const bool setSeed /*= false*/) const
+void HmmWithUnivariateGaussianMixtureObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }

@@ -30,9 +30,11 @@ public:
 	bool writeModel(std::ostream &stream) const;
 
 	void initializeModel();
+	void normalizeModelParameters();
 
 	void computeGamma(const size_t N, const boost::multi_array<double, 2> &alpha, const boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma) const;
 
+	//
 	size_t getStateSize() const  {  return K_;  }
 	size_t getObservationSize() const  {  return D_;  }
 
@@ -45,9 +47,10 @@ protected:
 	virtual bool readObservationDensity(std::istream &stream) = 0;
 	virtual bool writeObservationDensity(std::ostream &stream) const = 0;
 	virtual void initializeObservationDensity() = 0;
+	virtual void normalizeObservationDensityParameters() = 0;
 
-	int generateInitialState() const;
-	int generateNextState(const int currState) const;
+	unsigned int generateInitialState() const;
+	unsigned int generateNextState(const unsigned int currState) const;
 
 protected:
 	const size_t K_;  // the dimension of hidden states
