@@ -282,7 +282,7 @@ public:
 		//generator.seed(static_cast<unsigned int>(std::time(0)));
 		generator_type normal_gen(generator, distribution_type(0.0, std::sqrt(Rp)));
 
-		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0) + normal_gen());  // measurement (gaussian noise)
+		gsl_vector_set(y_tilde_, 0, gsl_vector_get(state, 0) + normal_gen());  // measurement (normal noise)
 #endif
 
 		return y_tilde_;

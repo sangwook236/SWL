@@ -1,6 +1,6 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithUnivariateGaussianMixtureObservations.h"
+#include "swl/rnd_util/HmmWithUnivariateNormalMixtureObservations.h"
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -52,7 +52,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -148,7 +148,7 @@ void model_reading_and_writing()
 		boost::const_multi_array_ref<double, 2> alphas(arrAlpha, boost::extents[K][C]);
 		boost::const_multi_array_ref<double, 2> mus(arrMu, boost::extents[K][C]);
 		boost::const_multi_array_ref<double, 2> sigmas(arrSigma, boost::extents[K][C]);
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C, std::vector<double>(arrPi, arrPi + K), A, alphas, mus, sigmas));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C, std::vector<double>(arrPi, arrPi + K), A, alphas, mus, sigmas));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -190,7 +190,7 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -371,7 +371,7 @@ void forward_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -498,7 +498,7 @@ void viterbi_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -640,7 +640,7 @@ void mle_em_learning()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -670,7 +670,7 @@ void mle_em_learning()
 		//const size_t D = 1;  // the number of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
 		cdhmm->initializeModel();
 	}
@@ -839,7 +839,7 @@ void mle_em_learning()
 		}
 	}
 }
-	
+
 }  // namespace local
 }  // unnamed namespace
 
@@ -852,6 +852,6 @@ void hmm_with_univariate_gaussian_mixture_observation_densities()
 
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
-	//local::viterbi_algorithm();
-	local::mle_em_learning();
+	local::viterbi_algorithm();
+	//local::mle_em_learning();
 }

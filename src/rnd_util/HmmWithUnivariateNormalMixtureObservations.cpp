@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithUnivariateGaussianMixtureObservations.h"
+#include "swl/rnd_util/HmmWithUnivariateNormalMixtureObservations.h"
 #include <boost/math/distributions/normal.hpp>  // for normal distribution
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
@@ -14,32 +14,32 @@
 
 namespace swl {
 
-HmmWithUnivariateGaussianMixtureObservations::HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C)
+HmmWithUnivariateNormalMixtureObservations::HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C)
 : base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C]), sigmas_(boost::extents[K][C])  // 0-based index
 //: base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)]), sigmas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)])  // 1-based index
 {
 }
 
-HmmWithUnivariateGaussianMixtureObservations::HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas)
+HmmWithUnivariateNormalMixtureObservations::HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas)
 : base_type(K, 1, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), sigmas_(sigmas)
 {
 }
 
-HmmWithUnivariateGaussianMixtureObservations::~HmmWithUnivariateGaussianMixtureObservations()
+HmmWithUnivariateNormalMixtureObservations::~HmmWithUnivariateNormalMixtureObservations()
 {
 }
 
-bool HmmWithUnivariateGaussianMixtureObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
-{
-	throw std::runtime_error("not yet implemented");
-}
-
-bool HmmWithUnivariateGaussianMixtureObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool HmmWithUnivariateNormalMixtureObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-double HmmWithUnivariateGaussianMixtureObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+bool HmmWithUnivariateNormalMixtureObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+double HmmWithUnivariateNormalMixtureObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	double sum = 0.0;
 	for (size_t c = 0; c < C_; ++c)
@@ -53,7 +53,7 @@ double HmmWithUnivariateGaussianMixtureObservations::evaluateEmissionProbability
 	return sum;
 }
 
-void HmmWithUnivariateGaussianMixtureObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalMixtureObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	if ((unsigned int)-1 != seed)
 		baseGenerator_.seed(seed);
@@ -85,7 +85,7 @@ void HmmWithUnivariateGaussianMixtureObservations::generateObservationsSymbol(co
 		observation[i] = normal_gen();
 }
 
-bool HmmWithUnivariateGaussianMixtureObservations::readObservationDensity(std::istream &stream)
+bool HmmWithUnivariateNormalMixtureObservations::readObservationDensity(std::istream &stream)
 {
 	if (1 != D_) return false;
 
@@ -163,7 +163,7 @@ bool HmmWithUnivariateGaussianMixtureObservations::readObservationDensity(std::i
 	return true;
 }
 
-bool HmmWithUnivariateGaussianMixtureObservations::writeObservationDensity(std::ostream &stream) const
+bool HmmWithUnivariateNormalMixtureObservations::writeObservationDensity(std::ostream &stream) const
 {
 	stream << "univariate normal mixture:" << std::endl;
 
@@ -196,7 +196,7 @@ bool HmmWithUnivariateGaussianMixtureObservations::writeObservationDensity(std::
 	return true;
 }
 
-void HmmWithUnivariateGaussianMixtureObservations::initializeObservationDensity()
+void HmmWithUnivariateNormalMixtureObservations::initializeObservationDensity()
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.

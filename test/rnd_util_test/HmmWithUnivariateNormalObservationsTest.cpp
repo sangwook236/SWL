@@ -1,6 +1,6 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithUnivariateGaussianObservations.h"
+#include "swl/rnd_util/HmmWithUnivariateNormalObservations.h"
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -50,7 +50,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -123,7 +123,7 @@ void model_reading_and_writing()
 		}
 
 		boost::const_multi_array_ref<double, 2> A(arrA, boost::extents[K][K]);
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K, std::vector<double>(arrPi, arrPi + K), A, std::vector<double>(arrMu, arrMu + K), std::vector<double>(arrSigma, arrSigma + K)));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K, std::vector<double>(arrPi, arrPi + K), A, std::vector<double>(arrMu, arrMu + K), std::vector<double>(arrSigma, arrSigma + K)));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -163,7 +163,7 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -342,7 +342,7 @@ void forward_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -467,7 +467,7 @@ void viterbi_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -607,7 +607,7 @@ void mle_em_learning()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -636,7 +636,7 @@ void mle_em_learning()
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
 
-		cdhmm.reset(new swl::HmmWithUnivariateGaussianObservations(K));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
 		cdhmm->initializeModel();
 	}

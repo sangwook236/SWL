@@ -1,29 +1,28 @@
-#if !defined(__SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_OBSERVATIONS__H_)
-#define __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_OBSERVATIONS__H_ 1
+#if !defined(__SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_)
+#define __SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_ 1
 
 
 #include "swl/rnd_util/CDHMM.h"
-#include <boost/random/linear_congruential.hpp>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density HMM with univariate Gaussian observation densities
+// continuous density HMM with multivariate normal observation densities
 
-class SWL_RND_UTIL_API HmmWithUnivariateGaussianObservations: public CDHMM
+class SWL_RND_UTIL_API HmmWithMultivariateNormalObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
 
 public:
-	HmmWithUnivariateGaussianObservations(const size_t K);
-	HmmWithUnivariateGaussianObservations(const size_t K, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &mus, const std::vector<double> &sigmas);
-	virtual ~HmmWithUnivariateGaussianObservations();
+	HmmWithMultivariateNormalObservations(const size_t K, const size_t D);
+	HmmWithMultivariateNormalObservations(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 3> &sigmas);
+	virtual ~HmmWithMultivariateNormalObservations();
 
 private:
-	HmmWithUnivariateGaussianObservations(const HmmWithUnivariateGaussianObservations &rhs);
-	HmmWithUnivariateGaussianObservations & operator=(const HmmWithUnivariateGaussianObservations &rhs);
+	HmmWithMultivariateNormalObservations(const HmmWithMultivariateNormalObservations &rhs);
+	HmmWithMultivariateNormalObservations & operator=(const HmmWithMultivariateNormalObservations &rhs);
 
 public:
 	// for a single independent observation sequence
@@ -32,10 +31,10 @@ public:
 	/*virtual*/ bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	//
-	std::vector<double> & getMean()  {  return mus_;  }
-	const std::vector<double> & getMean() const  {  return mus_;  }
-	std::vector<double> & getStandardDeviation()  {  return  sigmas_;  }
-	const std::vector<double> & getStandardDeviation() const  {  return  sigmas_;  }
+	boost::multi_array<double, 2> & getMean()  {  return mus_;  }
+	const boost::multi_array<double, 2> & getMean() const  {  return mus_;  }
+	boost::multi_array<double, 3>& getCovarianceMatrix()  {  return  sigmas_;  }
+	const boost::multi_array<double, 3> & getCovarianceMatrix() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ]
@@ -56,14 +55,11 @@ protected:
 	}
 
 private:
-	std::vector<double> mus_;  // the means of the univariate Gaussian distribution
-	std::vector<double> sigmas_;  // the standard deviations of the univariate Gaussian distribution
-
-	typedef boost::minstd_rand base_generator_type;
-	mutable base_generator_type baseGenerator_;
+	boost::multi_array<double, 2> mus_;  // the mean vectors of each components in the multivariate normal mixture distribution
+	boost::multi_array<double, 3> sigmas_;  // the covariance matrices of each components in the multivariate normal mixture distribution
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_OBSERVATIONS__H_
+#endif  // __SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_

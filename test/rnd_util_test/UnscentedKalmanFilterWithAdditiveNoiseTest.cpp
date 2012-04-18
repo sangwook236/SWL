@@ -604,7 +604,7 @@ void simple_system_unscented_kalman_filter_with_additive_noise()
 	const size_t L = stateDim;
 #endif
 	const double alpha = 1.0e-3;
-	const double beta = 2.0;  // for Gaussian distribution
+	const double beta = 2.0;  // for normal distribution
 	const double kappa = 0.0;  // 3.0 - L;
 
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
@@ -714,7 +714,7 @@ void linear_mass_spring_damper_system_unscented_kalman_filter_with_additive_nois
 	const size_t L = stateDim;
 #endif
 	const double alpha = 1.0e-3;
-	const double beta = 2.0;  // for Gaussian distribution
+	const double beta = 2.0;  // for normal distribution
 	const double kappa = 0.0;  // 3.0 - L;
 
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
@@ -853,7 +853,7 @@ void simple_nonlinear_system_unscented_kalman_filter_with_additive_noise()
 	const size_t L = stateDim;
 #endif
 	const double alpha = 1.0e-3;
-	const double beta = 2.0;  // for Gaussian distribution
+	const double beta = 2.0;  // for normal distribution
 	const double kappa = 0.0;  // 3.0 - L;
 	const double sigma_init = 1.0;
 
@@ -1025,7 +1025,7 @@ void nonstationary_growth_system_unscented_kalman_filter_with_additive_noise()
 	const size_t L = stateDim;
 #endif
 	const double alpha = 1.0e-3;
-	const double beta = 2.0;  // for Gaussian distribution
+	const double beta = 2.0;  // for normal distribution
 	const double kappa = 0.0;  // 3.0 - L;
 	const double x_init = 0.1;
 	const double sigma_init = std::sqrt(2.0);

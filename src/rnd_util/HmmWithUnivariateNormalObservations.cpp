@@ -1,6 +1,9 @@
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithMultivariateGaussianObservations.h"
-#include <stdexcept>
+#include "swl/rnd_util/HmmWithUnivariateNormalObservations.h"
+#include <boost/math/distributions/normal.hpp>  // for normal distribution
+#include <boost/random/normal_distribution.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <ctime>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -11,26 +14,28 @@
 
 namespace swl {
 
-HmmWithMultivariateGaussianObservations::HmmWithMultivariateGaussianObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(boost::extents[K][D]), sigmas_(boost::extents[K][D][D])  // 0-based index
-//: base_type(K, D), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, D+1)]), sigmas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, D+1)][boost::multi_array_types::extent_range(1, D+1)])  // 1-based index
+HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K)
+: base_type(K, 1), mus_(K, 0.0), sigmas_(K, 0.0),  // 0-based index
+  baseGenerator_()
 {
 }
 
-HmmWithMultivariateGaussianObservations::HmmWithMultivariateGaussianObservations(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 3> &sigmas)
-: base_type(K, D, pi, A), mus_(mus), sigmas_(sigmas)
+HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &mus, const std::vector<double> &sigmas)
+: base_type(K, 1, pi, A), mus_(mus), sigmas_(sigmas),
+  baseGenerator_()
 {
 }
 
-HmmWithMultivariateGaussianObservations::~HmmWithMultivariateGaussianObservations()
+HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 {
 }
 
-bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool HmmWithUnivariateNormalObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	std::vector<double> scale(N, 0.0);
-
 	double logprobf, logprobb;
+
+	// E-step
 	runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 	runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -38,7 +43,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	boost::multi_array<double, 3> xi(boost::extents[N][K_][K_]);
 	computeXi(N, observations, alpha, beta, xi);
 
-	initLogProbability = logprobf;  // log P(O | initial model)
+	initLogProbability = logprobf;  // log P(observations | initial model)
 	finalLogProbability = logprobf;
 
 	double numeratorA, denominatorA;
@@ -48,6 +53,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	numIteration = 0;
 	do
 	{
+		// M-step
 		for (k = 0; k < K_; ++k)
 		{
 			// reestimate frequency of state k in time n=0
@@ -69,31 +75,20 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 			// reestimate symbol prob in each state
 			denominatorPr = denominatorA + gamma[N-1][k];
 
-			// for multivariate normal distributions
-			// TODO [check] >> this code may be changed into a vector form.
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorPr = 0.0;
-				for (n = 0; n < N; ++n)
-					numeratorPr += gamma[n][k] * observations[n][i];
-				mus_[k][i] = 0.001 + 0.999 * numeratorPr / denominatorPr;
-			}
+			// for univariate normal distributions
+			numeratorPr = 0.0;
+			for (n = 0; n < N; ++n)
+				numeratorPr += gamma[n][k] * observations[n][0];
+			mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
-			// for multivariate normal distributions
-			// FIXME [modify] >> this code may be changed into a matrix form.
-			throw std::runtime_error("this code may be changed into a matrix form.");
-/*
-			boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorPr = 0.0;
-				for (n = 0; n < N; ++n)
-					numeratorPr += gamma[n][k] * (observations[n][i] - mus_[k][i]) * (observations[n][i] - mus_[k][i]).tranpose();
-				sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
-			}
-*/
+			// for univariate normal distributions
+			numeratorPr = 0.0;
+			for (n = 0; n < N; ++n)
+				numeratorPr += gamma[n][k] * (observations[n][0] - mus_[k]) * (observations[n][0] - mus_[k]);
+			sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 		}
 
+		// E-step
 		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -104,7 +99,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 #if 1
 		delta = logprobf - finalLogProbability;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);
+		delta = std::fabs(logprobf - finalLogProbability);  // log P(observations | estimated model)
 #endif
 
 		finalLogProbability = logprobf;  // log P(observations | estimated model)
@@ -114,7 +109,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	return true;
 }
 
-bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool HmmWithUnivariateNormalObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
 	const size_t R = Ns.size();  // number of observations sequences
 	size_t Nr, r;
@@ -158,6 +153,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vect
 		computeXi(Nr, observations, alphar, betar, xir);
 
 		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+		finalLogProbabilities[r] = logprobf;
 	}
 
 	double numeratorPi;
@@ -198,31 +194,19 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vect
 			for (r = 0; r < R; ++r)
 				denominatorPr += gammas[r][Ns[r]-1][k];
 
-			// for multivariate normal distributions
-			// TODO [check] >> this code may be changed into a vector form.
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorPr = 0.0;
-				for (r = 0; r < R; ++r)
-					for (n = 0; n < Ns[r]; ++n)
-						numeratorPr += gammas[r][n][k] * observationSequences[r][n][i];
-				mus_[k][i] = 0.001 + 0.999 * numeratorPr / denominatorPr;
-			}
+			// for univariate normal distributions
+			numeratorPr = 0.0;
+			for (r = 0; r < R; ++r)
+				for (n = 0; n < Ns[r]; ++n)
+					numeratorPr += gammas[r][n][k] * observationSequences[r][n][0];
+			mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
-			// for multivariate normal distributions
-			// FIXME [modify] >> this code may be changed into a matrix form.
-			throw std::runtime_error("this code may be changed into a matrix form.");
-/*
-			boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorPr = 0.0;
-				for (r = 0; r < R; ++r)
-					for (n = 0; n < N; ++n)
-						numeratorPr += gammas[r][n][k] * (observationSequences[r][n][i] - mus_[k][i]) * (observationSequences[r][n][i] - mus_[k][i]).tranpose();
-				sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
-			}
-*/
+			// for univariate normal distributions
+			numeratorPr = 0.0;
+			for (r = 0; r < R; ++r)
+				for (n = 0; n < Ns[r]; ++n)
+					numeratorPr += gammas[r][n][k] * (observationSequences[r][n][0] - mus_[k]) * (observationSequences[r][n][0] - mus_[k]);
+			sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 		}
 
 		// E-step
@@ -275,31 +259,101 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vect
 	return true;
 }
 
-double HmmWithMultivariateGaussianObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithUnivariateNormalObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
-	throw std::runtime_error("not yet implemented");
+	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity)
+	boost::math::normal pdf(mus_[state], sigmas_[state]);
+
+	return boost::math::pdf(pdf, observation[0]);
 }
 
-void HmmWithMultivariateGaussianObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
-	throw std::runtime_error("not yet implemented");
+	typedef boost::normal_distribution<> distribution_type;
+	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
+
+	if ((unsigned int)-1 != seed)
+		baseGenerator_.seed(seed);
+
+	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
+	for (size_t i = 0; i < D_; ++i)
+		observation[i] = normal_gen();
 }
 
-bool HmmWithMultivariateGaussianObservations::readObservationDensity(std::istream &stream)
+bool HmmWithUnivariateNormalObservations::readObservationDensity(std::istream &stream)
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	if (1 != D_) return false;
+
+	std::string dummy;
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "univariate") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "univariate") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "normal:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "normal:") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "mu:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "mu:") != 0)
+#endif
+		return false;
+
+	for (size_t k = 0; k < K_; ++k)
+		stream >> mus_[k];
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "sigma:") != 0)
+#endif
+		return false;
+
+	for (size_t k = 0; k < K_; ++k)
+		stream >> sigmas_[k];
+
+	return true;
 }
 
-bool HmmWithMultivariateGaussianObservations::writeObservationDensity(std::ostream &stream) const
+bool HmmWithUnivariateNormalObservations::writeObservationDensity(std::ostream &stream) const
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	stream << "univariate normal:" << std::endl;
+
+	stream << "mu:" << std::endl;
+	for (size_t k = 0; k < K_; ++k)
+		stream << mus_[k] << ' ';
+	stream << std::endl;
+	
+	stream << "sigma:" << std::endl;
+	for (size_t k = 0; k < K_; ++k)
+		stream << sigmas_[k] << ' ';
+	stream << std::endl;
+
+	return true;
 }
 
-void HmmWithMultivariateGaussianObservations::initializeObservationDensity()
+void HmmWithUnivariateNormalObservations::initializeObservationDensity()
 {
-	std::runtime_error("not yet implemented");
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
+	const double lb = -10000.0, ub = 10000.0;
+	for (size_t k = 0; k < K_; ++k)
+	{
+		mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		sigmas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+	}
 }
 
 }  // namespace swl

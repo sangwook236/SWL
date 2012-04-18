@@ -1,28 +1,31 @@
-#if !defined(__SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_GAUSSIAN_OBSERVATIONS__H_)
-#define __SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_GAUSSIAN_OBSERVATIONS__H_ 1
+#if !defined(__SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_)
+#define __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_ 1
 
 
 #include "swl/rnd_util/CDHMM.h"
+#include "swl/rnd_util/HmmWithMixtureObservations.h"
+#include <boost/random/linear_congruential.hpp>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density HMM with multivariate Gaussian observation densities
+// continuous density HMM with univariate normal mixture observation densities
 
-class SWL_RND_UTIL_API HmmWithMultivariateGaussianObservations: public CDHMM
+class SWL_RND_UTIL_API HmmWithUnivariateNormalMixtureObservations: public CDHMM, HmmWithMixtureObservations
 {
 public:
 	typedef CDHMM base_type;
+	//typedef HmmWithMixtureObservations base_type;
 
 public:
-	HmmWithMultivariateGaussianObservations(const size_t K, const size_t D);
-	HmmWithMultivariateGaussianObservations(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 3> &sigmas);
-	virtual ~HmmWithMultivariateGaussianObservations();
+	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C);
+	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas);
+	virtual ~HmmWithUnivariateNormalMixtureObservations();
 
 private:
-	HmmWithMultivariateGaussianObservations(const HmmWithMultivariateGaussianObservations &rhs);
-	HmmWithMultivariateGaussianObservations & operator=(const HmmWithMultivariateGaussianObservations &rhs);
+	HmmWithUnivariateNormalMixtureObservations(const HmmWithUnivariateNormalMixtureObservations &rhs);
+	HmmWithUnivariateNormalMixtureObservations & operator=(const HmmWithUnivariateNormalMixtureObservations &rhs);
 
 public:
 	// for a single independent observation sequence
@@ -33,8 +36,8 @@ public:
 	//
 	boost::multi_array<double, 2> & getMean()  {  return mus_;  }
 	const boost::multi_array<double, 2> & getMean() const  {  return mus_;  }
-	boost::multi_array<double, 3>& getCovarianceMatrix()  {  return  sigmas_;  }
-	const boost::multi_array<double, 3> & getCovarianceMatrix() const  {  return  sigmas_;  }
+	boost::multi_array<double, 2> & getStandardDeviation()  {  return  sigmas_;  }
+	const boost::multi_array<double, 2> & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ]
@@ -51,15 +54,18 @@ protected:
 	/*virtual*/ void initializeObservationDensity();
 	/*virtual*/ void normalizeObservationDensityParameters()
 	{
-		// do nothing
+		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
 private:
-	boost::multi_array<double, 2> mus_;  // the mean vectors of each components in the multivariate Gaussian mixture distribution
-	boost::multi_array<double, 3> sigmas_;  // the covariance matrices of each components in the multivariate Gaussian mixture distribution
+	boost::multi_array<double, 2> mus_;  // the sets of means of each components in the univariate normal mixture distribution
+	boost::multi_array<double, 2> sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution
+
+	typedef boost::minstd_rand base_generator_type;
+	mutable base_generator_type baseGenerator_;
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__HMM_WITH_MULTIVARIATE_GAUSSIAN_OBSERVATIONS__H_
+#endif  // __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_

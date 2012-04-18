@@ -337,7 +337,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 	const size_t L = stateDim;
 #endif
 	const double alpha = 1.0e-3;
-	const double beta = 2.0;  // for Gaussian distribution
+	const double beta = 2.0;  // for normal distribution
 	const double kappa = 0.0;  // 3.0 - L;
 	const double x_init = 0.1;
 	const double sigma_init = std::sqrt(2.0);

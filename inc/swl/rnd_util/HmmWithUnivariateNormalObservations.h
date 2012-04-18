@@ -1,31 +1,29 @@
-#if !defined(__SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_MIXTURE_OBSERVATIONS__H_)
-#define __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_MIXTURE_OBSERVATIONS__H_ 1
+#if !defined(__SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_)
+#define __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_ 1
 
 
 #include "swl/rnd_util/CDHMM.h"
-#include "swl/rnd_util/HmmWithMixtureObservations.h"
 #include <boost/random/linear_congruential.hpp>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density HMM with univariate Gaussian mixture observation densities
+// continuous density HMM with univariate normal observation densities
 
-class SWL_RND_UTIL_API HmmWithUnivariateGaussianMixtureObservations: public CDHMM, HmmWithMixtureObservations
+class SWL_RND_UTIL_API HmmWithUnivariateNormalObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
-	//typedef HmmWithMixtureObservations base_type;
 
 public:
-	HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C);
-	HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas);
-	virtual ~HmmWithUnivariateGaussianMixtureObservations();
+	HmmWithUnivariateNormalObservations(const size_t K);
+	HmmWithUnivariateNormalObservations(const size_t K, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &mus, const std::vector<double> &sigmas);
+	virtual ~HmmWithUnivariateNormalObservations();
 
 private:
-	HmmWithUnivariateGaussianMixtureObservations(const HmmWithUnivariateGaussianMixtureObservations &rhs);
-	HmmWithUnivariateGaussianMixtureObservations & operator=(const HmmWithUnivariateGaussianMixtureObservations &rhs);
+	HmmWithUnivariateNormalObservations(const HmmWithUnivariateNormalObservations &rhs);
+	HmmWithUnivariateNormalObservations & operator=(const HmmWithUnivariateNormalObservations &rhs);
 
 public:
 	// for a single independent observation sequence
@@ -34,10 +32,10 @@ public:
 	/*virtual*/ bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	//
-	boost::multi_array<double, 2> & getMean()  {  return mus_;  }
-	const boost::multi_array<double, 2> & getMean() const  {  return mus_;  }
-	boost::multi_array<double, 2> & getStandardDeviation()  {  return  sigmas_;  }
-	const boost::multi_array<double, 2> & getStandardDeviation() const  {  return  sigmas_;  }
+	std::vector<double> & getMean()  {  return mus_;  }
+	const std::vector<double> & getMean() const  {  return mus_;  }
+	std::vector<double> & getStandardDeviation()  {  return  sigmas_;  }
+	const std::vector<double> & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ]
@@ -54,12 +52,12 @@ protected:
 	/*virtual*/ void initializeObservationDensity();
 	/*virtual*/ void normalizeObservationDensityParameters()
 	{
-		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
+		// do nothing
 	}
 
 private:
-	boost::multi_array<double, 2> mus_;  // the sets of means of each components in the univariate Gaussian mixture distribution
-	boost::multi_array<double, 2> sigmas_;  // the sets of standard deviations of each components in the univariate Gaussian mixture distribution
+	std::vector<double> mus_;  // the means of the univariate normal distribution
+	std::vector<double> sigmas_;  // the standard deviations of the univariate normal distribution
 
 	typedef boost::minstd_rand base_generator_type;
 	mutable base_generator_type baseGenerator_;
@@ -68,4 +66,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_GAUSSIAN_MIXTURE_OBSERVATIONS__H_
+#endif  // __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_
