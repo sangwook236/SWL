@@ -809,7 +809,7 @@ void mle_em_learning()
 }  // namespace local
 }  // unnamed namespace
 
-void hmm_with_univariate_gaussian_observation_densities()
+void hmm_with_univariate_normal_observation_densities()
 {
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;

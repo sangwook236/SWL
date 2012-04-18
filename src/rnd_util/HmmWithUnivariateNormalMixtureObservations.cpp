@@ -29,17 +29,57 @@ HmmWithUnivariateNormalMixtureObservations::~HmmWithUnivariateNormalMixtureObser
 {
 }
 
-bool HmmWithUnivariateNormalMixtureObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
 {
 	throw std::runtime_error("not yet implemented");
+/*
+	size_t c, n;
+
+	// reestimate symbol prob in each state
+	const double denominatorPr = denominatorA + gamma[N-1][k];
+
+	// for univariate normal distributions
+	double numeratorPr = 0.0;
+	for (n = 0; n < N; ++n)
+		numeratorPr += gamma[n][k] * observations[n][0];
+	mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+
+	// for univariate normal distributions
+	numeratorPr = 0.0;
+	for (n = 0; n < N; ++n)
+		numeratorPr += gamma[n][k] * (observations[n][0] - mus_[k]) * (observations[n][0] - mus_[k]);
+	sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+*/
 }
 
-bool HmmWithUnivariateNormalMixtureObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
 {
 	throw std::runtime_error("not yet implemented");
+/*
+	size_t c, n, r;
+
+	// reestimate symbol prob in each state
+	double denominatorPr = denominatorA;
+	for (r = 0; r < R; ++r)
+		denominatorPr += gammas[r][Ns[r]-1][k];
+
+	// for univariate normal distributions
+	double numeratorPr = 0.0;
+	for (r = 0; r < R; ++r)
+		for (n = 0; n < Ns[r]; ++n)
+			numeratorPr += gammas[r][n][k] * observationSequences[r][n][0];
+	mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+
+	// for univariate normal distributions
+	numeratorPr = 0.0;
+	for (r = 0; r < R; ++r)
+		for (n = 0; n < Ns[r]; ++n)
+			numeratorPr += gammas[r][n][k] * (observationSequences[r][n][0] - mus_[k]) * (observationSequences[r][n][0] - mus_[k]);
+	sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+*/
 }
 
-double HmmWithUnivariateNormalMixtureObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	double sum = 0.0;
 	for (size_t c = 0; c < C_; ++c)
@@ -53,7 +93,7 @@ double HmmWithUnivariateNormalMixtureObservations::evaluateEmissionProbability(c
 	return sum;
 }
 
-void HmmWithUnivariateNormalMixtureObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	if ((unsigned int)-1 != seed)
 		baseGenerator_.seed(seed);
@@ -81,11 +121,11 @@ void HmmWithUnivariateNormalMixtureObservations::generateObservationsSymbol(cons
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state][component], sigmas_[state][component]));
-	for (size_t i = 0; i < D_; ++i)
-		observation[i] = normal_gen();
+	for (size_t d = 0; d < D_; ++d)
+		observation[d] = normal_gen();
 }
 
-bool HmmWithUnivariateNormalMixtureObservations::readObservationDensity(std::istream &stream)
+bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::istream &stream)
 {
 	if (1 != D_) return false;
 
@@ -163,7 +203,7 @@ bool HmmWithUnivariateNormalMixtureObservations::readObservationDensity(std::ist
 	return true;
 }
 
-bool HmmWithUnivariateNormalMixtureObservations::writeObservationDensity(std::ostream &stream) const
+bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::ostream &stream) const
 {
 	stream << "univariate normal mixture:" << std::endl;
 
@@ -196,7 +236,7 @@ bool HmmWithUnivariateNormalMixtureObservations::writeObservationDensity(std::os
 	return true;
 }
 
-void HmmWithUnivariateNormalMixtureObservations::initializeObservationDensity()
+void HmmWithUnivariateNormalMixtureObservations::doInitializeObservationDensity()
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.

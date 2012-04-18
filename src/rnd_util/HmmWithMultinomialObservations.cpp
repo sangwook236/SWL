@@ -25,234 +25,51 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 {
 }
 
-bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
 {
-	std::vector<double> scale(N, 0.0);
-	double logprobf, logprobb;
+	size_t n;
 
-	// E-step
-	runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-	runBackwardAlgorithm(N, observations, scale, beta, logprobb);
-
-	computeGamma(N, alpha, beta, gamma);
-	boost::multi_array<double, 3> xi(boost::extents[N][K_][K_]);
-	computeXi(N, observations, alpha, beta, xi);
-
-	initLogProbability = logprobf;  // log P(observations | initial model)
-	finalLogProbability = logprobf;
-
-	double numeratorA, denominatorA;
-	double numeratorB, denominatorB;
-	double delta;
-	size_t i, k, n;
-	numIteration = 0;
-	do
+	// reestimate symbol prob in each state
+	const double denominatorB = denominatorA + gamma[N-1][k];
+	double numeratorB;
+	for (size_t i = 0; i < D_; ++i)
 	{
-		// M-step
-		for (k = 0; k < K_; ++k)
+		numeratorB = 0.0;
+		for (n = 0; n < N; ++n)
 		{
-			// reestimate frequency of state k in time n=0
-			pi_[k] = 0.001 + 0.999 * gamma[0][k];
-
-			// reestimate transition matrix in each state
-			denominatorA = 0.0;
-			for (n = 0; n < N - 1; ++n)
-				denominatorA += gamma[n][k];
-
-			for (i = 0; i < K_; ++i)
-			{
-				numeratorA = 0.0;
-				for (n = 0; n < N - 1; ++n)
-					numeratorA += xi[n][k][i];
-				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
-			}
-
-			// reestimate symbol prob in each state
-			denominatorB = denominatorA + gamma[N-1][k];
-
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorB = 0.0;
-				for (n = 0; n < N; ++n)
-				{
-					if (observations[n] == (unsigned int)i)
-						numeratorB += gamma[n][k];
-				}
-
-				B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
-			}
+			if (observations[n] == (unsigned int)i)
+				numeratorB += gamma[n][k];
 		}
 
-		// E-step
-		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
-
-		computeGamma(N, alpha, beta, gamma);
-		computeXi(N, observations, alpha, beta, xi);
-
-		// compute difference between log probability of two iterations
-#if 1
-		delta = logprobf - finalLogProbability;
-#else
-		delta = std::fabs(logprobf - finalLogProbability);
-#endif
-
-		finalLogProbability = logprobf;  // log P(observations | estimated model)
-		++numIteration;
-	} while (delta > terminationTolerance);  // if log probability does not change much, exit
-
-	return true;
+		B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
+	}
 }
 
-bool HmmWithMultinomialObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
 {
-	const size_t R = Ns.size();  // number of observations sequences
-	size_t Nr, r;
+	size_t n, r;
 
-	std::vector<boost::multi_array<double, 2> > alphas, betas, gammas;
-	std::vector<boost::multi_array<double, 3> > xis;
-	std::vector<std::vector<double> > scales;
-	alphas.reserve(R);
-	betas.reserve(R);
-	gammas.reserve(R);
-	xis.reserve(R);
-	scales.reserve(R);
+	// reestimate symbol prob in each state
+	double denominatorB = denominatorA;
 	for (r = 0; r < R; ++r)
+		denominatorB += gammas[r][Ns[r]-1][k];
+
+	double numeratorB;
+	for (size_t i = 0; i < D_; ++i)
 	{
-		Nr = Ns[r];
-		alphas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		betas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		gammas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		xis.push_back(boost::multi_array<double, 3>(boost::extents[Nr][K_][K_]));
-		scales.push_back(std::vector<double>(Nr, 0.0));
-	}
-
-	double logprobf, logprobb;
-
-	// E-step
-	for (r = 0; r < R; ++r)
-	{
-		Nr = Ns[r];
-		const std::vector<unsigned int> &observations = observationSequences[r];
-
-		boost::multi_array<double, 2> &alphar = alphas[r];
-		boost::multi_array<double, 2> &betar = betas[r];
-		boost::multi_array<double, 2> &gammar = gammas[r];
-		boost::multi_array<double, 3> &xir = xis[r];
-		std::vector<double> &scaler = scales[r];
-
-		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
-
-		computeGamma(Nr, alphar, betar, gammar);
-		computeXi(Nr, observations, alphar, betar, xir);
-
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
-	}
-
-	double numeratorPi;
-	double numeratorA, denominatorA;
-	double numeratorB, denominatorB;
-	double delta;
-	bool continueToLoop;
-	size_t i, k, n;
-	numIteration = 0;
-	do
-	{
-		// M-step
-		for (k = 0; k < K_; ++k)
-		{
-			// reestimate frequency of state k in time n=0
-			numeratorPi = 0.0;
-			for (r = 0; r < R; ++r)
-				numeratorPi += gammas[r][0][k];
-			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
-
-			// reestimate transition matrix in each state
-			denominatorA = 0.0;
-			for (r = 0; r < R; ++r)
-				for (n = 0; n < Ns[r] - 1; ++n)
-					denominatorA += gammas[r][n][k];
-
-			for (i = 0; i < K_; ++i)
-			{
-				numeratorA = 0.0;
-				for (r = 0; r < R; ++r)
-					for (n = 0; n < Ns[r] - 1; ++n)
-						numeratorA += xis[r][n][k][i];
-				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
-			}
-
-			// reestimate symbol prob in each state
-			denominatorB = denominatorA;
-			for (r = 0; r < R; ++r)
-				denominatorB += gammas[r][Ns[r]-1][k];
-
-			for (i = 0; i < D_; ++i)
-			{
-				numeratorB = 0.0;
-				for (r = 0; r < R; ++r)
-					for (n = 0; n < Ns[r]; ++n)
-					{
-						if (observationSequences[r][n] == (unsigned int)i)
-							numeratorB += gammas[r][n][k];
-					}
-
-				B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
-			}
-		}
-
-		// E-step
-		continueToLoop = false;
+		numeratorB = 0.0;
 		for (r = 0; r < R; ++r)
-		{
-			Nr = Ns[r];
-			const std::vector<unsigned int> &observations = observationSequences[r];
+			for (n = 0; n < Ns[r]; ++n)
+			{
+				if (observationSequences[r][n] == (unsigned int)i)
+					numeratorB += gammas[r][n][k];
+			}
 
-			boost::multi_array<double, 2> &alphar = alphas[r];
-			boost::multi_array<double, 2> &betar = betas[r];
-			boost::multi_array<double, 2> &gammar = gammas[r];
-			boost::multi_array<double, 3> &xir = xis[r];
-			std::vector<double> &scaler = scales[r];
-
-			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
-
-			computeGamma(Nr, alphar, betar, gammar);
-			computeXi(Nr, observations, alphar, betar, xir);
-
-			// compute difference between log probability of two iterations
-#if 1
-			delta = logprobf - finalLogProbabilities[r];
-#else
-			delta = std::fabs(logprobf - finalLogProbabilities[r]);
-#endif
-			if (delta > terminationTolerance)
-				continueToLoop = true;
-		
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
-		}
-
-		++numIteration;
-	} while (continueToLoop);  // if log probability does not change much, exit
-
-	// compute gamma & xi
-/*
-	{
-		// gamma can use the result from Baum-Welch algorithm
-		//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
-		//ddhmm->computeGamma(Nr, alphar, betar, gamma2);
-
-		//
-		boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
-		ddhmm->computeXi(Nr, observations, alphar, betar, xi2);
+		B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
 	}
-*/
-
-	return true;
 }
 
-unsigned int HmmWithMultinomialObservations::generateObservationsSymbol(const unsigned int state) const
+unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const unsigned int state) const
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -261,13 +78,13 @@ unsigned int HmmWithMultinomialObservations::generateObservationsSymbol(const un
 
 	double accum = 0.0;
 	unsigned int observation = (unsigned int)D_;
-	for (size_t i = 0; i < D_; ++i)
+	for (size_t d = 0; d < D_; ++d)
 	{
-		accum += B_[state][i];
-		//accum += evaluateEmissionProbability(state, i);
+		accum += B_[state][d];
+		//accum += doEvaluateEmissionProbability(state, d);
 		if (prob < accum)
 		{
-			observation = (unsigned int)i;
+			observation = (unsigned int)d;
 			break;
 		}
 	}
@@ -278,7 +95,7 @@ unsigned int HmmWithMultinomialObservations::generateObservationsSymbol(const un
 	//	-. if observation = D_, an error occurs.
 }
 
-bool HmmWithMultinomialObservations::readObservationDensity(std::istream &stream)
+bool HmmWithMultinomialObservations::doReadObservationDensity(std::istream &stream)
 {
 	size_t i, k;
 	std::string dummy;
@@ -299,7 +116,7 @@ bool HmmWithMultinomialObservations::readObservationDensity(std::istream &stream
 	return true;
 }
 
-bool HmmWithMultinomialObservations::writeObservationDensity(std::ostream &stream) const
+bool HmmWithMultinomialObservations::doWriteObservationDensity(std::ostream &stream) const
 {
 	size_t i, k;
 
@@ -314,7 +131,7 @@ bool HmmWithMultinomialObservations::writeObservationDensity(std::ostream &strea
 	return true;
 }
 
-void HmmWithMultinomialObservations::initializeObservationDensity()
+void HmmWithMultinomialObservations::doInitializeObservationDensity()
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -334,7 +151,7 @@ void HmmWithMultinomialObservations::initializeObservationDensity()
 	}
 }
 
-void HmmWithMultinomialObservations::normalizeObservationDensityParameters()
+void HmmWithMultinomialObservations::doNormalizeObservationDensityParameters()
 {
 	size_t i;
 	double sum;

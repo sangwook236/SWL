@@ -44,10 +44,10 @@ public:
 	const boost::multi_array<double, 2> & getTransitionProbabilityMatrix() const  {  return A_;  }
 
 protected:
-	virtual bool readObservationDensity(std::istream &stream) = 0;
-	virtual bool writeObservationDensity(std::ostream &stream) const = 0;
-	virtual void initializeObservationDensity() = 0;
-	virtual void normalizeObservationDensityParameters() = 0;
+	virtual bool doReadObservationDensity(std::istream &stream) = 0;
+	virtual bool doWriteObservationDensity(std::ostream &stream) const = 0;
+	virtual void doInitializeObservationDensity() = 0;
+	virtual void doNormalizeObservationDensityParameters() = 0;
 
 	unsigned int generateInitialState() const;
 	unsigned int generateNextState(const unsigned int currState) const;

@@ -25,11 +25,6 @@ private:
 	HmmWithMultivariateNormalObservations & operator=(const HmmWithMultivariateNormalObservations &rhs);
 
 public:
-	// for a single independent observation sequence
-	/*virtual*/ bool estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
-	// for multiple independent observation sequences
-	/*virtual*/ bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
-
 	//
 	boost::multi_array<double, 2> & getMean()  {  return mus_;  }
 	const boost::multi_array<double, 2> & getMean() const  {  return mus_;  }
@@ -41,15 +36,20 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ]
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
-	/*virtual*/ double evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const;
+	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const;
 	// if seed != -1, the seed value is set
-	/*virtual*/ void generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const;
+
+	// for a single independent observation sequence
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k);
+	// for multiple independent observation sequences
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k);
 
 	//
-	/*virtual*/ bool readObservationDensity(std::istream &stream);
-	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
-	/*virtual*/ void initializeObservationDensity();
-	/*virtual*/ void normalizeObservationDensityParameters()
+	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
+	/*virtual*/ bool doWriteObservationDensity(std::ostream &stream) const;
+	/*virtual*/ void doInitializeObservationDensity();
+	/*virtual*/ void doNormalizeObservationDensityParameters()
 	{
 		// do nothing
 	}

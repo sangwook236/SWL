@@ -144,7 +144,7 @@ bool HMM::readModel(std::istream &stream)
 			stream >> A_[k][i];
 	}
 
-	return readObservationDensity(stream);
+	return doReadObservationDensity(stream);
 }
 
 bool HMM::writeModel(std::ostream &stream) const
@@ -167,7 +167,7 @@ bool HMM::writeModel(std::ostream &stream) const
 		stream << std::endl;
 	}
 
-	return writeObservationDensity(stream);
+	return doWriteObservationDensity(stream);
 }
 
 void HMM::initializeModel()
@@ -197,7 +197,7 @@ void HMM::initializeModel()
 			A_[k][i] /= sum;
 	}
 
-	initializeObservationDensity();
+	doInitializeObservationDensity();
 }
 
 void HMM::normalizeModelParameters()
@@ -220,7 +220,7 @@ void HMM::normalizeModelParameters()
 			A_[k][i] /= sum;
 	}
 
-	normalizeObservationDensityParameters();
+	doNormalizeObservationDensityParameters();
 }
 
 }  // namespace swl

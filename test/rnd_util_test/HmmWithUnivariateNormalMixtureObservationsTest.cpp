@@ -843,7 +843,7 @@ void mle_em_learning()
 }  // namespace local
 }  // unnamed namespace
 
-void hmm_with_univariate_gaussian_mixture_observation_densities()
+void hmm_with_univariate_normal_mixture_observation_densities()
 {
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
@@ -852,6 +852,6 @@ void hmm_with_univariate_gaussian_mixture_observation_densities()
 
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
-	local::viterbi_algorithm();
-	//local::mle_em_learning();
+	//local::viterbi_algorithm();
+	local::mle_em_learning();
 }

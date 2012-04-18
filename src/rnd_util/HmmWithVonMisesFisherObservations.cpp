@@ -26,39 +26,39 @@ HmmWithVonMisesFisherObservations::~HmmWithVonMisesFisherObservations()
 {
 }
 
-bool HmmWithVonMisesFisherObservations::estimateParameters(const size_t N, const boost::multi_array<double, 2> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-bool HmmWithVonMisesFisherObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-double HmmWithVonMisesFisherObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-bool HmmWithVonMisesFisherObservations::readObservationDensity(std::istream &stream)
+bool HmmWithVonMisesFisherObservations::doReadObservationDensity(std::istream &stream)
 {
 	std::runtime_error("not yet implemented");
 	return false;
 }
 
-bool HmmWithVonMisesFisherObservations::writeObservationDensity(std::ostream &stream) const
+bool HmmWithVonMisesFisherObservations::doWriteObservationDensity(std::ostream &stream) const
 {
 	std::runtime_error("not yet implemented");
 	return false;
 }
 
-void HmmWithVonMisesFisherObservations::initializeObservationDensity()
+void HmmWithVonMisesFisherObservations::doInitializeObservationDensity()
 {
 	std::runtime_error("not yet implemented");
 }
