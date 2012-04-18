@@ -44,12 +44,13 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const size_t N, c
 	computeXi(N, observations, alpha, beta, xi);
 
 	initLogProbability = logprobf;  // log P(observations | initial model)
+	finalLogProbability = logprobf;
 
 	double numeratorA, denominatorA;
 	double numeratorPr, denominatorPr;
-	double delta, logprobprev = logprobf;
+	double delta;
 	size_t i, k, n;
-	size_t iter = 0;
+	numIteration = 0;
 	do
 	{
 		// M-step
@@ -96,16 +97,14 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const size_t N, c
 
 		// compute difference between log probability of two iterations
 #if 1
-		delta = logprobf - logprobprev;
+		delta = logprobf - finalLogProbability;
 #else
-		delta = std::fabs(logprobf - logprobprev);
+		delta = std::fabs(logprobf - finalLogProbability);  // log P(observations | estimated model)
 #endif
-		logprobprev = logprobf;
-		++iter;
-	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
-	numIteration = iter;
-	finalLogProbability = logprobf;  // log P(observations | estimated model)
+		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		++numIteration;
+	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
 	return true;
 }
@@ -154,6 +153,7 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const std::vector
 		computeXi(Nr, observations, alphar, betar, xir);
 
 		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+		finalLogProbabilities[r] = logprobf;
 	}
 
 	double numeratorPi;
@@ -242,6 +242,19 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const std::vector
 
 		++numIteration;
 	} while (continueToLoop);  // if log probability does not change much, exit
+
+	// compute gamma & xi
+/*
+	{
+		// gamma can use the result from Baum-Welch algorithm
+		//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
+		//cdhmm->computeGamma(Nr, alphar, betar, gamma2);
+
+		//
+		boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
+		cdhmm->computeXi(Nr, observations, alphar, betar, xi2);
+	}
+*/
 
 	return true;
 }

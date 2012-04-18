@@ -39,12 +39,13 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	computeXi(N, observations, alpha, beta, xi);
 
 	initLogProbability = logprobf;  // log P(O | initial model)
+	finalLogProbability = logprobf;
 
 	double numeratorA, denominatorA;
 	double numeratorPr, denominatorPr;
-	double delta, logprobprev = logprobf;
+	double delta;
 	size_t i, k, n;
-	size_t iter = 0;
+	numIteration = 0;
 	do
 	{
 		for (k = 0; k < K_; ++k)
@@ -100,13 +101,15 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 		computeXi(N, observations, alpha, beta, xi);
 
 		// compute difference between log probability of two iterations
-		delta = logprobf - logprobprev;
-		logprobprev = logprobf;
-		++iter;
-	} while (delta > terminationTolerance);  // if log probability does not change much, exit
+#if 1
+		delta = logprobf - finalLogProbability;
+#else
+		delta = std::fabs(logprobf - finalLogProbability);
+#endif
 
-	numIteration = iter;
-	finalLogProbability = logprobf;  // log P(observations | estimated model)
+		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		++numIteration;
+	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
 	return true;
 }
@@ -255,6 +258,19 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vect
 
 		++numIteration;
 	} while (continueToLoop);  // if log probability does not change much, exit
+
+	// compute gamma & xi
+/*
+	{
+		// gamma can use the result from Baum-Welch algorithm
+		//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
+		//cdhmm->computeGamma(Nr, alphar, betar, gamma2);
+
+		//
+		boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
+		cdhmm->computeXi(Nr, observations, alphar, betar, xi2);
+	}
+*/
 
 	return true;
 }

@@ -40,12 +40,13 @@ bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const st
 	computeXi(N, observations, alpha, beta, xi);
 
 	initLogProbability = logprobf;  // log P(observations | initial model)
+	finalLogProbability = logprobf;
 
 	double numeratorA, denominatorA;
 	double numeratorB, denominatorB;
-	double delta, logprobprev = logprobf;
+	double delta;
 	size_t i, k, n;
-	size_t iter = 0;
+	numIteration = 0;
 	do
 	{
 		// M-step
@@ -92,16 +93,14 @@ bool HmmWithMultinomialObservations::estimateParameters(const size_t N, const st
 
 		// compute difference between log probability of two iterations
 #if 1
-		delta = logprobf - logprobprev;
+		delta = logprobf - finalLogProbability;
 #else
-		delta = std::fabs(logprobf - logprobprev);
+		delta = std::fabs(logprobf - finalLogProbability);
 #endif
-		logprobprev = logprobf;
-		++iter;
-	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
-	numIteration = iter;
-	finalLogProbability = logprobf;  // log P(observations | estimated model)
+		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		++numIteration;
+	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
 	return true;
 }
@@ -148,19 +147,6 @@ bool HmmWithMultinomialObservations::estimateParameters(const std::vector<size_t
 
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
-
-		// compute gamma & xi
-/*
-		{
-			// gamma can use the result from Baum-Welch algorithm
-			//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
-			//ddhmm->computeGamma(Nr, alphar, betar, gamma2);
-
-			//
-			boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
-			computeXi(Nr, observations, alphar, betar, xi2);
-		}
-*/
 
 		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
 	}
@@ -250,6 +236,19 @@ bool HmmWithMultinomialObservations::estimateParameters(const std::vector<size_t
 
 		++numIteration;
 	} while (continueToLoop);  // if log probability does not change much, exit
+
+	// compute gamma & xi
+/*
+	{
+		// gamma can use the result from Baum-Welch algorithm
+		//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
+		//ddhmm->computeGamma(Nr, alphar, betar, gamma2);
+
+		//
+		boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
+		ddhmm->computeXi(Nr, observations, alphar, betar, xi2);
+	}
+*/
 
 	return true;
 }
