@@ -64,12 +64,6 @@ protected:
 	// if seed != -1, the seed value is set
 	virtual void generateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const = 0;
 
-	//
-	/*virtual*/ void normalizeObservationDensityParameters()
-	{
-		// do nothing
-	}
-
 private:
 	void runViterbiAlgorithmNotUsigLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const;
 	void runViterbiAlgorithmUsingLog(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const;

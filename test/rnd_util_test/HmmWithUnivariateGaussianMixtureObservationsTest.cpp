@@ -1,6 +1,6 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithMultinomialObservations.h"
+#include "swl/rnd_util/HmmWithUnivariateGaussianMixtureObservations.h"
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -27,20 +27,22 @@ void model_reading_and_writing()
 {
 	// reading a model
 	{
-		boost::scoped_ptr<swl::DDHMM> ddhmm;
+		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -50,30 +52,31 @@ void model_reading_and_writing()
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		const bool retval = ddhmm->readModel(stream);
+		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
-			stream << "model realing error at " << __LINE__ << " in " << __FILE__;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
 
-		// normalize pi, A, & B
-		ddhmm->normalizeModelParameters();
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
-		ddhmm->writeModel(std::cout);
+		cdhmm->writeModel(std::cout);
 	}
 
 	// writing a model
 	{
-		boost::scoped_ptr<swl::DDHMM> ddhmm;
+		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -83,17 +86,28 @@ void model_reading_and_writing()
 			0.45, 0.1,  0.45,
 			0.45, 0.45, 0.1
 		};
-		const double arrB[] = {
-			0.5,   0.5,
-			0.75,  0.25,
-			0.25,  0.75
+		const double arrAlpha[] = {
+			0.7, 0.3,
+			0.2, 0.8,
+			0.5, 0.5
+		};
+		const double arrMu[] = {
+			0.0, 5.0,
+			30.0, 40.0,
+			-20.0, -25.0
+		};
+		const double arrSigma[] = {
+			3.0, 1.0,
+			2.0, 2.0,
+			1.5, 2.5
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\multinomial_test1_writing.hmm");
+		std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test1_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -103,14 +117,24 @@ void model_reading_and_writing()
 			0.2, 0.4,  0.4,
 			0.1, 0.45, 0.45
 		};
-		const double arrB[] = {
-			0.5,   0.5,
-			0.75,  0.25,
-			0.25,  0.75
+		const double arrAlpha[] = {
+			0.2, 0.8,
+			0.6, 0.4,
+			0.75, 0.25
+		};
+		const double arrMu[] = {
+			0.0, -5.0,
+			-30.0, -35.0,
+			20.0, 15.0
+		};
+		const double arrSigma[] = {
+			1.0, 2.0,
+			2.0, 4.0,
+			0.5, 1.5
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\multinomial_test2_writing.hmm");
+		std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test2_writing.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -121,10 +145,12 @@ void model_reading_and_writing()
 		}
 
 		boost::const_multi_array_ref<double, 2> A(arrA, boost::extents[K][K]);
-		boost::const_multi_array_ref<double, 2> B(arrB, boost::extents[K][D]);
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D, std::vector<double>(arrPi, arrPi + K), A, B));
+		boost::const_multi_array_ref<double, 2> alphas(arrAlpha, boost::extents[K][C]);
+		boost::const_multi_array_ref<double, 2> mus(arrMu, boost::extents[K][C]);
+		boost::const_multi_array_ref<double, 2> sigmas(arrSigma, boost::extents[K][C]);
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C, std::vector<double>(arrPi, arrPi + K), A, alphas, mus, sigmas));
 
-		const bool retval = ddhmm->writeModel(stream);
+		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
@@ -137,22 +163,24 @@ void model_reading_and_writing()
 
 void observation_sequence_generation(const bool outputToFile)
 {
-	boost::scoped_ptr<swl::DDHMM> ddhmm;
+	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -162,21 +190,21 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		const bool retval = ddhmm->readModel(stream);
+		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
-			stream << "model writing error at " << __LINE__ << " in " << __FILE__;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
 
-		// normalize pi, A, & B
-		ddhmm->normalizeModelParameters();
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
-		//ddhmm->writeModel(std::cout);
+		//cdhmm->writeModel(std::cout);
 	}
 
 	// generate a sample sequence
@@ -189,20 +217,32 @@ void observation_sequence_generation(const bool outputToFile)
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-
 		if (outputToFile)
 		{
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("..\\data\\hmm\\multinomial_test1_50.seq");
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test1_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("..\\data\\hmm\\multinomial_test1_100.seq");
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test1_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("..\\data\\hmm\\multinomial_test1_1500.seq");
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test1_1500.seq");
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+			const size_t N = 50;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
+#elif 0
+			const size_t N = 100;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 0
+			const size_t N = 1500;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #endif
 
 #endif
@@ -214,52 +254,66 @@ void observation_sequence_generation(const bool outputToFile)
 				return;
 			}
 
-			std::vector<unsigned int> observations(N, (unsigned int)-1);
+			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
 			std::vector<unsigned int> states(N, (unsigned int)-1);
-			ddhmm->generateSample(N, observations, states);
+			cdhmm->generateSample(N, observations, states, seed);
 
-#if 0			// output states
+#if 0
+			// output states
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
 			// write a sample sequence
-			swl::DDHMM::writeSequence(stream, observations);
+			swl::CDHMM::writeSequence(stream, observations);
 		}
 		else
 		{
 			const size_t N = 100;
 
-			std::vector<unsigned int> observations(N, (unsigned int)-1);
+			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
 			std::vector<unsigned int> states(N, (unsigned int)-1);
-			ddhmm->generateSample(N, observations, states);
+			cdhmm->generateSample(N, observations, states, seed);
 
-#if 0			// output states
+#if 0
+			// output states
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
 			// write a sample sequence
-			swl::DDHMM::writeSequence(std::cout, observations);
+			swl::CDHMM::writeSequence(std::cout, observations);
 		}
 	}
 }
 
 void observation_sequence_reading_and_writing()
 {
-	std::vector<unsigned int> observations;
+	boost::multi_array<double, 2> observations;
 	size_t N = 0;  // length of observation sequence, N
 
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 
 #if 1
-	std::ifstream stream("..\\data\\hmm\\multinomial_test1_50.seq");
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_50.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\multinomial_test1_100.seq");
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_100.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\multinomial_test1_1500.seq");
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_1500.seq");
+#else
+	std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -274,7 +328,8 @@ void observation_sequence_reading_and_writing()
 	}
 
 	// read a observation sequence
-	const bool retval = swl::DDHMM::readSequence(stream, N, observations);
+	size_t D = 0;
+	const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
 	if (!retval)
 	{
 		std::ostringstream stream;
@@ -284,27 +339,29 @@ void observation_sequence_reading_and_writing()
 	}
 
 	// write a observation sequence
-	swl::DDHMM::writeSequence(std::cout, observations);
+	swl::CDHMM::writeSequence(std::cout, observations);
 }
 
 void forward_algorithm()
 {
-	boost::scoped_ptr<swl::DDHMM> ddhmm;
+	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -314,35 +371,47 @@ void forward_algorithm()
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		const bool retval = ddhmm->readModel(stream);
+		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
-			stream << "model writing error at " << __LINE__ << " in " << __FILE__;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
 
-		// normalize pi, A, & B
-		ddhmm->normalizeModelParameters();
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
-		//ddhmm->writeModel(std::cout);
+		//cdhmm->writeModel(std::cout);
 	}
 
 	// read a observation sequence
-	std::vector<unsigned int> observations;
+	boost::multi_array<double, 2> observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_50.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_100.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_1500.seq");
+#else
+		std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -356,8 +425,9 @@ void forward_algorithm()
 			return;
 		}
 
-		const bool retval = swl::DDHMM::readSequence(stream, N, observations);
-		if (!retval)
+		size_t D = 0;
+		const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
+		if (!retval || cdhmm->getObservationSize() != D)
 		{
 			std::ostringstream stream;
 			stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -366,13 +436,13 @@ void forward_algorithm()
 		}
 	}
 
-	const size_t K = ddhmm->getStateSize();
+	const size_t K = cdhmm->getStateSize();
 
 	// forward algorithm without scaling
 	{
 		boost::multi_array<double, 2> alpha(boost::extents[N][K]);
 		double probability = 0.0;
-		ddhmm->runForwardAlgorithm(N, observations, alpha, probability);
+		cdhmm->runForwardAlgorithm(N, observations, alpha, probability);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
@@ -385,7 +455,7 @@ void forward_algorithm()
 		std::vector<double> scale(N, 0.0);
 		boost::multi_array<double, 2> alpha(boost::extents[N][K]);
 		double logProbability = 0.0;
-		ddhmm->runForwardAlgorithm(N, observations, scale, alpha, logProbability);
+		cdhmm->runForwardAlgorithm(N, observations, scale, alpha, logProbability);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
@@ -401,22 +471,24 @@ void backward_algorithm()
 
 void viterbi_algorithm()
 {
-	boost::scoped_ptr<swl::DDHMM> ddhmm;
+	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -426,35 +498,47 @@ void viterbi_algorithm()
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		const bool retval = ddhmm->readModel(stream);
+		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
-			stream << "model writing error at " << __LINE__ << " in " << __FILE__;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
 
-		// normalize pi, A, & B
-		ddhmm->normalizeModelParameters();
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
-		//ddhmm->writeModel(std::cout);
+		//cdhmm->writeModel(std::cout);
 	}
 
 	// read a observation sequence
-	std::vector<unsigned int> observations;
+	boost::multi_array<double, 2> observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_50.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_100.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_1500.seq");
+#else
+		std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -468,8 +552,9 @@ void viterbi_algorithm()
 			return;
 		}
 
-		const bool retval = swl::DDHMM::readSequence(stream, N, observations);
-		if (!retval)
+		size_t D = 0;
+		const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
+		if (!retval || cdhmm->getObservationSize() != D)
 		{
 			std::ostringstream stream;
 			stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -478,7 +563,7 @@ void viterbi_algorithm()
 		}
 	}
 
-	const size_t K = ddhmm->getStateSize();
+	const size_t K = cdhmm->getStateSize();
 
 	// Viterbi algorithm using direct probabilities
 	{
@@ -486,12 +571,12 @@ void viterbi_algorithm()
 		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
 		std::vector<unsigned int> states(N, (unsigned int)-1);
 		double probability = 0.0;
-		ddhmm->runViterbiAlgorithm(N, observations, delta, psi, states, probability, false);
+		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, probability, false);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "Viterbi algorithm using direct probabilities" << std::endl;
-		std::cout << "\tlog prob(observations | model) = " << std::scientific << std::log(probability) << std::endl;
+		std::cout << "\tViterbi MLE log prob = " << std::scientific << std::log(probability) << std::endl;
 		std::cout << "\toptimal state sequence:" << std::endl;
 		for (size_t n = 0; n < N; ++n)
 			std::cout << states[n] << ' ';
@@ -504,12 +589,12 @@ void viterbi_algorithm()
 		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
 		std::vector<unsigned int> states(N, (unsigned int)-1);
 		double logProbability = 0.0;
-		ddhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
+		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "Viterbi algorithm using log probabilities" << std::endl;
-		std::cout << "\tlog prob(observations | model) = " << std::scientific << logProbability << std::endl;
+		std::cout << "\tViterbi MLE log prob = " << std::scientific << logProbability << std::endl;
 		std::cout << "\toptimal state sequence:" << std::endl;
 		for (size_t n = 0; n < N; ++n)
 			std::cout << states[n] << ' ';
@@ -519,7 +604,7 @@ void viterbi_algorithm()
 
 void mle_em_learning()
 {
-	boost::scoped_ptr<swl::DDHMM> ddhmm;
+	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 /*
 	you can initialize the hmm model three ways:
@@ -534,16 +619,18 @@ void mle_em_learning()
 	{
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
+		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -553,21 +640,21 @@ void mle_em_learning()
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		const bool retval = ddhmm->readModel(stream);
+		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
 		{
 			std::ostringstream stream;
-			stream << "model writing error at " << __LINE__ << " in " << __FILE__;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
 
-		// normalize pi, A, & B
-		ddhmm->normalizeModelParameters();
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
 
-		//ddhmm->writeModel(std::cout);
+		//cdhmm->writeModel(std::cout);
 	}
 	else if (2 == initialization_mode)
 	{
@@ -580,31 +667,42 @@ void mle_em_learning()
 		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		cdhmm.reset(new swl::HmmWithUnivariateGaussianMixtureObservations(K, C));
 
-		ddhmm->initializeModel();
+		cdhmm->initializeModel();
 	}
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	const size_t K = ddhmm->getStateSize();
-
 	// for a single independent observation sequence
 	{
 		// read a observation sequence
-		std::vector<unsigned int> observations;
+		boost::multi_array<double, 2> observations;
 		size_t N = 0;  // length of observation sequence, N
 		{
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 
 #if 0
-			std::ifstream stream("..\\data\\hmm\\multinomial_test1_50.seq");
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("..\\data\\hmm\\multinomial_test1_100.seq");
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("..\\data\\hmm\\multinomial_test1_1500.seq");
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1_1500.seq");
+#else
+			std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 0
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
+#elif 0
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 1
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -618,8 +716,9 @@ void mle_em_learning()
 				return;
 			}
 
-			const bool retval = swl::DDHMM::readSequence(stream, N, observations);
-			if (!retval)
+			size_t D = 0;
+			const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
+			if (!retval || cdhmm->getObservationSize() != D)
 			{
 				std::ostringstream stream;
 				stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -628,51 +727,60 @@ void mle_em_learning()
 			}
 		}
 
+		const size_t K = cdhmm->getStateSize();
+
 		// Baum-Welch algorithm
 		{
 			const double terminationTolerance = 0.001;
 			boost::multi_array<double, 2> alpha(boost::extents[N][K]), beta(boost::extents[N][K]), gamma(boost::extents[N][K]);
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			ddhmm->estimateParameters(N, observations, terminationTolerance, alpha, beta, gamma, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->estimateParameters(N, observations, terminationTolerance, alpha, beta, gamma, numIteration, initLogProbability, finalLogProbability);
 
 			// compute gamma & xi
 			{
 				// gamma can use the result from Baum-Welch algorithm
 				//boost::multi_array<double, 2> gamma2(boost::extents[N][K]);
-				//ddhmm->computeGamma(N, alpha, beta, gamma2);
+				//cdhmm->computeGamma(N, alpha, beta, gamma2);
 
 				//
 				boost::multi_array<double, 3> xi2(boost::extents[N][K][K]);
-				ddhmm->computeXi(N, observations, alpha, beta, xi2);
+				cdhmm->computeXi(N, observations, alpha, beta, xi2);
 			}
 
-			// normalize pi, A, & B
-			//ddhmm->normalizeModelParameters();
+			// normalize pi & A
+			//cdhmm->normalizeModelParameters();
 
-			//
+			// 
 			std::cout << "------------------------------------" << std::endl;
 			std::cout << "Baum-Welch algorithm for a single independent observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
 			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;	
 			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;	
 			std::cout << "\testiamted model:" << std::endl;
-			ddhmm->writeModel(std::cout);
+			cdhmm->writeModel(std::cout);
 		}
 	}
 
 	// for multiple independent observation sequences
 	{
 		// read a observation sequence
-		std::vector<std::vector<unsigned int> > observationSequences;
+		std::vector<boost::multi_array<double, 2> > observationSequences;
 		std::vector<size_t> Ns;  // lengths of observation sequences
 		{
-#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+#if __TEST_HMM_MODEL == 1
 			const size_t R = 3;  // number of observations sequences
 			const std::string observationSequenceFiles[] = {
-				"..\\data\\hmm\\multinomial_test1_50.seq",
-				"..\\data\\hmm\\multinomial_test1_100.seq",
-				"..\\data\\hmm\\multinomial_test1_1500.seq"
+				"..\\data\\hmm\\uni_normal_mixture_test1_50.seq",
+				"..\\data\\hmm\\uni_normal_mixture_test1_100.seq",
+				"..\\data\\hmm\\uni_normal_mixture_test1_1500.seq"
+			};
+#elif __TEST_HMM_MODEL == 2
+			const size_t R = 3;  // number of observations sequences
+			const std::string observationSequenceFiles[] = {
+				"..\\data\\hmm\\uni_normal_mixture_test2_50.seq",
+				"..\\data\\hmm\\uni_normal_mixture_test2_100.seq",
+				"..\\data\\hmm\\uni_normal_mixture_test2_1500.seq"
 			};
 #endif
 			observationSequences.resize(R);
@@ -688,8 +796,9 @@ void mle_em_learning()
 					return;
 				}
 
-				const bool retval = swl::DDHMM::readSequence(stream, Ns[r], observationSequences[r]);
-				if (!retval)
+				size_t D = 0;
+				const bool retval = swl::CDHMM::readSequence(stream, Ns[r], D, observationSequences[r]);
+				if (!retval || cdhmm->getObservationSize() != D)
 				{
 					std::ostringstream stream;
 					stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -706,10 +815,10 @@ void mle_em_learning()
 			const double terminationTolerance = 0.001;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			ddhmm->estimateParameters(Ns, observationSequences, terminationTolerance, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->estimateParameters(Ns, observationSequences, terminationTolerance, numIteration, initLogProbabilities, finalLogProbabilities);
 
 			// normalize pi, A, & B
-			//ddhmm->normalizeModelParameters();
+			//cdhmm->normalizeModelParameters();
 
 			//
 			std::cout << "------------------------------------" << std::endl;
@@ -726,15 +835,15 @@ void mle_em_learning()
 				std::cout << std::scientific << finalLogProbabilities[r] << ' ';
 			std::cout << std::endl;	
 			std::cout << "\testiamted model:" << std::endl;
-			ddhmm->writeModel(std::cout);
+			cdhmm->writeModel(std::cout);
 		}
 	}
 }
-
+	
 }  // namespace local
 }  // unnamed namespace
 
-void hmm_with_multinomial_observation_densities()
+void hmm_with_univariate_gaussian_mixture_observation_densities()
 {
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;

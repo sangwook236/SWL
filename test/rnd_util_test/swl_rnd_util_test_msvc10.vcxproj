@@ -95,6 +95,7 @@
   <ItemGroup>
     <ClCompile Include="ExtendedKalmanFilterTest.cpp" />
     <ClCompile Include="HmmWithMultinomialObservationsTest.cpp" />
+    <ClCompile Include="HmmWithUnivariateGaussianMixtureObservationsTest.cpp" />
     <ClCompile Include="HmmWithUnivariateGaussianObservationsTest.cpp" />
     <ClCompile Include="HoughTransformTest.cpp" />
     <ClCompile Include="ImuCalibration.cpp" />

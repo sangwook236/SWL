@@ -12,13 +12,13 @@
 namespace swl {
 
 HmmWithMultivariateGaussianMixtureObservations::HmmWithMultivariateGaussianMixtureObservations(const size_t K, const size_t D, const size_t C)
-: base_type(K, D), HmmWithMixtureObservations(C), mus_(boost::extents[K][C][D]), sigmas_(boost::extents[K][C][D][D])  // 0-based index
-//: base_type(K, D), HmmWithMixtureObservations(C), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)][boost::multi_array_types::extent_range(1, D+1)]), sigmas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)][boost::multi_array_types::extent_range(1, D+1)][boost::multi_array_types::extent_range(1, D+1)])  // 1-based index
+: base_type(K, D), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C][D]), sigmas_(boost::extents[K][C][D][D])  // 0-based index
+//: base_type(K, D), HmmWithMixtureObservations(C, K), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)][boost::multi_array_types::extent_range(1, D+1)]), sigmas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)][boost::multi_array_types::extent_range(1, D+1)][boost::multi_array_types::extent_range(1, D+1)])  // 1-based index
 {
 }
 
-HmmWithMultivariateGaussianMixtureObservations::HmmWithMultivariateGaussianMixtureObservations(const size_t K, const size_t D, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &alpha, const boost::multi_array<double, 3> &mus, const boost::multi_array<double, 4> &sigmas)
-: base_type(K, D, pi, A), HmmWithMixtureObservations(C, alpha), mus_(mus), sigmas_(sigmas)
+HmmWithMultivariateGaussianMixtureObservations::HmmWithMultivariateGaussianMixtureObservations(const size_t K, const size_t D, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 3> &mus, const boost::multi_array<double, 4> &sigmas)
+: base_type(K, D, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), sigmas_(sigmas)
 {
 }
 

@@ -49,6 +49,10 @@ protected:
 	/*virtual*/ bool readObservationDensity(std::istream &stream);
 	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
 	/*virtual*/ void initializeObservationDensity();
+	/*virtual*/ void normalizeObservationDensityParameters()
+	{
+		// do nothing
+	}
 
 private:
 	boost::multi_array<double, 2> mus_;  // the mean vectors of the von Mises-Fisher distribution

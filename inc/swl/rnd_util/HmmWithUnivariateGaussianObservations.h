@@ -50,6 +50,10 @@ protected:
 	/*virtual*/ bool readObservationDensity(std::istream &stream);
 	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
 	/*virtual*/ void initializeObservationDensity();
+	/*virtual*/ void normalizeObservationDensityParameters()
+	{
+		// do nothing
+	}
 
 private:
 	std::vector<double> mus_;  // the means of the univariate Gaussian distribution

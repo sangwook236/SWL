@@ -136,60 +136,7 @@ void model_reading_and_writing()
 	}
 }
 
-void sequence_reading_and_writing()
-{
-	boost::multi_array<double, 2> observations;
-	size_t N = 0;  // length of observation sequence, N
-
-#if __TEST_HMM_MODEL == 1
-
-#if 1
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_50.seq");
-#elif 0
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_100.seq");
-#elif 0
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_1500.seq");
-#else
-	std::istream stream = std::cin;
-#endif
-
-#elif __TEST_HMM_MODEL == 2
-
-#if 1
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_50.seq");
-#elif 0
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_100.seq");
-#elif 0
-	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_1500.seq");
-#else
-	std::istream stream = std::cin;
-#endif
-
-#endif
-	if (!stream)
-	{
-		std::ostringstream stream;
-		stream << "file not found at " << __LINE__ << " in " << __FILE__;
-		throw std::runtime_error(stream.str().c_str());
-		return;
-	}
-
-	// read a observation sequence
-	size_t D = 0;
-	const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
-	if (!retval)
-	{
-		std::ostringstream stream;
-		stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
-		throw std::runtime_error(stream.str().c_str());
-		return;
-	}
-
-	// write a observation sequence
-	swl::CDHMM::writeSequence(std::cout, observations);
-}
-
-void sample_generation()
+void observation_sequence_generation(const bool outputToFile)
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -243,15 +190,129 @@ void sample_generation()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t N = 100;
+		if (outputToFile)
+		{
+#if __TEST_HMM_MODEL == 1
 
-		boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
-		std::vector<unsigned int> states(N, (unsigned int)-1);
-		cdhmm->generateSample(N, observations, states, seed);
+#if 1
+			const size_t N = 50;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test1_50.seq");
+#elif 0
+			const size_t N = 100;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test1_100.seq");
+#elif 0
+			const size_t N = 1500;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test1_1500.seq");
+#endif
 
-		// write a sample sequence
-		swl::CDHMM::writeSequence(std::cout, observations);
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+			const size_t N = 50;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test2_50.seq");
+#elif 0
+			const size_t N = 100;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test2_100.seq");
+#elif 0
+			const size_t N = 1500;
+			std::ofstream stream("..\\data\\hmm\\uni_normal_test2_1500.seq");
+#endif
+
+#endif
+			if (!stream)
+			{
+				std::ostringstream stream;
+				stream << "file not found at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
+				return;
+			}
+
+			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
+			std::vector<unsigned int> states(N, (unsigned int)-1);
+			cdhmm->generateSample(N, observations, states, seed);
+
+#if 0
+			// output states
+			for (size_t n = 0; n < N; ++n)
+				std::cout << states[n] << ' ';
+			std::cout << std::endl;
+#endif
+
+			// write a sample sequence
+			swl::CDHMM::writeSequence(stream, observations);
+		}
+		else
+		{
+			const size_t N = 100;
+
+			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
+			std::vector<unsigned int> states(N, (unsigned int)-1);
+			cdhmm->generateSample(N, observations, states, seed);
+
+#if 0
+			// output states
+			for (size_t n = 0; n < N; ++n)
+				std::cout << states[n] << ' ';
+			std::cout << std::endl;
+#endif
+
+			// write a sample sequence
+			swl::CDHMM::writeSequence(std::cout, observations);
+		}
 	}
+}
+
+void observation_sequence_reading_and_writing()
+{
+	boost::multi_array<double, 2> observations;
+	size_t N = 0;  // length of observation sequence, N
+
+#if __TEST_HMM_MODEL == 1
+
+#if 1
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_50.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_100.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test1_1500.seq");
+#else
+	std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 1
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_50.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_100.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\uni_normal_test2_1500.seq");
+#else
+	std::istream stream = std::cin;
+#endif
+
+#endif
+	if (!stream)
+	{
+		std::ostringstream stream;
+		stream << "file not found at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
+		return;
+	}
+
+	// read a observation sequence
+	size_t D = 0;
+	const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
+	if (!retval)
+	{
+		std::ostringstream stream;
+		stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
+		throw std::runtime_error(stream.str().c_str());
+		return;
+	}
+
+	// write a observation sequence
+	swl::CDHMM::writeSequence(std::cout, observations);
 }
 
 void forward_algorithm()
@@ -751,8 +812,9 @@ void mle_em_learning()
 void hmm_with_univariate_gaussian_observation_densities()
 {
 	//local::model_reading_and_writing();
-	//local::sequence_reading_and_writing();
-	//local::sample_generation();
+	//const bool outputToFile = false;
+	//local::observation_sequence_generation(outputToFile);
+	//local::observation_sequence_reading_and_writing();
 
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented

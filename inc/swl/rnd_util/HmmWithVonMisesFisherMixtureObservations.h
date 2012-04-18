@@ -19,7 +19,7 @@ public:
 
 public:
 	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C);
-	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &alpha, const boost::multi_array<double, 3> &mus, const boost::multi_array<double, 2> &kappas);
+	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 3> &mus, const boost::multi_array<double, 2> &kappas);
 	virtual ~HmmWithVonMisesFisherMixtureObservations();
 
 private:
@@ -51,6 +51,10 @@ protected:
 	/*virtual*/ bool readObservationDensity(std::istream &stream);
 	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
 	/*virtual*/ void initializeObservationDensity();
+	/*virtual*/ void normalizeObservationDensityParameters()
+	{
+		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
+	}
 
 private:
 	boost::multi_array<double, 3> mus_;  // the sets of mean vectors of each components in the von Mises-Fisher mixture distribution

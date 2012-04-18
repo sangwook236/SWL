@@ -229,7 +229,7 @@ bool HmmWithUnivariateGaussianObservations::estimateParameters(const std::vector
 			computeXi(Nr, observations, alphar, betar, xir);
 
 			// compute difference between log probability of two iterations
-#if 0
+#if 1
 			delta = logprobf - finalLogProbabilities[r];
 #else
 			delta = std::fabs(logprobf - finalLogProbabilities[r]);
@@ -301,8 +301,27 @@ bool HmmWithUnivariateGaussianObservations::readObservationDensity(std::istream 
 #endif
 		return false;
 
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "mu:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "mu:") != 0)
+#endif
+		return false;
+
 	for (size_t k = 0; k < K_; ++k)
-		stream >> mus_[k] >> sigmas_[k];
+		stream >> mus_[k];
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "sigma:") != 0)
+#endif
+		return false;
+
+	for (size_t k = 0; k < K_; ++k)
+		stream >> sigmas_[k];
 
 	return true;
 }
@@ -310,8 +329,16 @@ bool HmmWithUnivariateGaussianObservations::readObservationDensity(std::istream 
 bool HmmWithUnivariateGaussianObservations::writeObservationDensity(std::ostream &stream) const
 {
 	stream << "univariate normal:" << std::endl;
+
+	stream << "mu:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
-		stream << mus_[k] << ' ' << sigmas_[k] << std::endl;
+		stream << mus_[k] << ' ';
+	stream << std::endl;
+	
+	stream << "sigma:" << std::endl;
+	for (size_t k = 0; k < K_; ++k)
+		stream << sigmas_[k] << ' ';
+	stream << std::endl;
 
 	return true;
 }

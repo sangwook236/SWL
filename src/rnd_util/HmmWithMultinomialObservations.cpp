@@ -1,6 +1,5 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultinomialObservations.h"
-#include <iostream>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -223,7 +222,7 @@ bool HmmWithMultinomialObservations::estimateParameters(const std::vector<size_t
 			computeXi(Nr, observations, alphar, betar, xir);
 
 			// compute difference between log probability of two iterations
-#if 0
+#if 1
 			delta = logprobf - finalLogProbabilities[r];
 #else
 			delta = std::fabs(logprobf - finalLogProbabilities[r]);

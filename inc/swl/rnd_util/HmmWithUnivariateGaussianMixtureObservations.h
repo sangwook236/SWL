@@ -4,6 +4,7 @@
 
 #include "swl/rnd_util/CDHMM.h"
 #include "swl/rnd_util/HmmWithMixtureObservations.h"
+#include <boost/random/linear_congruential.hpp>
 
 
 namespace swl {
@@ -19,7 +20,7 @@ public:
 
 public:
 	HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C);
-	HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &alpha, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas);
+	HmmWithUnivariateGaussianMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas);
 	virtual ~HmmWithUnivariateGaussianMixtureObservations();
 
 private:
@@ -51,10 +52,17 @@ protected:
 	/*virtual*/ bool readObservationDensity(std::istream &stream);
 	/*virtual*/ bool writeObservationDensity(std::ostream &stream) const;
 	/*virtual*/ void initializeObservationDensity();
+	/*virtual*/ void normalizeObservationDensityParameters()
+	{
+		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
+	}
 
 private:
 	boost::multi_array<double, 2> mus_;  // the sets of means of each components in the univariate Gaussian mixture distribution
 	boost::multi_array<double, 2> sigmas_;  // the sets of standard deviations of each components in the univariate Gaussian mixture distribution
+
+	typedef boost::minstd_rand base_generator_type;
+	mutable base_generator_type baseGenerator_;
 };
 
 }  // namespace swl

@@ -24,6 +24,7 @@ int main(int argc, char *argv[])
 
 	void hmm_with_multinomial_observation_densities();
 	void hmm_with_univariate_gaussian_observation_densities();
+	void hmm_with_univariate_gaussian_mixture_observation_densities();
 
 	try
 	{
@@ -43,8 +44,9 @@ int main(int argc, char *argv[])
 		//imu_extended_Kalman_filter_with_calibration();
 		//imu_unscented_Kalman_filter_with_calibration();
 
-		hmm_with_multinomial_observation_densities();
-		hmm_with_univariate_gaussian_observation_densities();
+		//hmm_with_multinomial_observation_densities();
+		//hmm_with_univariate_gaussian_observation_densities();
+		hmm_with_univariate_gaussian_mixture_observation_densities();
 	}
 	catch (const std::exception &e)
 	{

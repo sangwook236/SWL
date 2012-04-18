@@ -60,6 +60,10 @@ unsigned int HMM::generateInitialState() const
 		}
 	}
 
+	// TODO [check] >>
+	if ((unsigned int)K_ == state)
+		state = (unsigned int)(K_ - 1);
+
 	return state;
 
 	// POSTCONDITIONS [] >>

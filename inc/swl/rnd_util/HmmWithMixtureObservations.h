@@ -17,8 +17,8 @@ public:
 	//typedef HmmWithMixtureObservations base_type;
 
 protected:
-	HmmWithMixtureObservations(const size_t C);
-	HmmWithMixtureObservations(const size_t C, const std::vector<double> &alpha);
+	HmmWithMixtureObservations(const size_t C, const size_t K);
+	HmmWithMixtureObservations(const size_t C, const size_t K, const boost::multi_array<double, 2> &alphas);
 public:
 	virtual ~HmmWithMixtureObservations();
 
@@ -30,13 +30,16 @@ public:
 	//
 	size_t getMixtureSize() const  {  return C_;  }
 
-	std::vector<double> & getMixtureCoefficient()  {  return alpha_;  }
-	const std::vector<double> & getMixtureCoefficient() const  {  return alpha_;  }
+	boost::multi_array<double, 2> & getMixtureCoefficient()  {  return alphas_;  }
+	const boost::multi_array<double, 2> & getMixtureCoefficient() const  {  return alphas_;  }
+
+protected:
+	void normalizeObservationDensityParameters(const size_t K);
 
 protected:
 	const size_t C_;  // the number of mixture components
 
-	std::vector<double> alpha_;  // mixture coefficients(weights)
+	boost::multi_array<double, 2> alphas_;  // mixture coefficients(weights)
 };
 
 }  // namespace swl

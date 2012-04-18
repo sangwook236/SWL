@@ -12,13 +12,13 @@
 namespace swl {
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C)
-: base_type(K, 1), HmmWithMixtureObservations(C), mus_(boost::extents[K][C]), kappas_(boost::extents[K][C])  // 0-based index
-//: base_type(K, 1), HmmWithMixtureObservations(C), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)]), kappas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)])  // 1-based index
+: base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C]), kappas_(boost::extents[K][C])  // 0-based index
+//: base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)]), kappas_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, C+1)])  // 1-based index
 {
 }
 
-HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &alpha, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &kappas)
-: base_type(K, 1, pi, A), HmmWithMixtureObservations(C, alpha), mus_(mus), kappas_(kappas)
+HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &kappas)
+: base_type(K, 1, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas)
 {
 }
 
