@@ -41,7 +41,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 	initLogProbability = logprobf;  // log P(O | initial model)
 
 	double numeratorA, denominatorA;
-	double numeratorP, denominatorP;
+	double numeratorPr, denominatorPr;
 	double delta, logprobprev = logprobf;
 	size_t i, k, n;
 	size_t iter = 0;
@@ -50,7 +50,7 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 		for (k = 0; k < K_; ++k)
 		{
 			// reestimate frequency of state k in time n=0
-			pi_[k] = .001 + .999 * gamma[0][k];
+			pi_[k] = 0.001 + 0.999 * gamma[0][k];
 
 			// reestimate transition matrix 
 			denominatorA = 0.0;
@@ -62,20 +62,20 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 				numeratorA = 0.0;
 				for (n = 0; n < N - 1; ++n)
 					numeratorA += xi[n][k][i];
-				A_[k][i] = .001 + .999 * numeratorA / denominatorA;
+				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
 			// reestimate symbol prob in each state
-			denominatorP = denominatorA + gamma[N-1][k];
+			denominatorPr = denominatorA + gamma[N-1][k];
 
 			// for multivariate normal distributions
 			// TODO [check] >> this code may be changed into a vector form.
 			for (i = 0; i < D_; ++i)
 			{
-				numeratorP = 0.0;
+				numeratorPr = 0.0;
 				for (n = 0; n < N; ++n)
-					numeratorP += gamma[n][k] * observations[n][i];
-				mus_[k][i] = .001 + .999 * numeratorP / denominatorP;
+					numeratorPr += gamma[n][k] * observations[n][i];
+				mus_[k][i] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 			}
 
 			// for multivariate normal distributions
@@ -85,10 +85,10 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 			boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
 			for (i = 0; i < D_; ++i)
 			{
-				numeratorP = 0.0;
+				numeratorPr = 0.0;
 				for (n = 0; n < N; ++n)
-					numeratorP += gamma[n][k] * (observations[n][i] - mus_[k][i]) * (observations[n][i] - mus_[k][i]).tranpose();
-				sigma = .001 + .999 * numeratorP / denominatorP;
+					numeratorPr += gamma[n][k] * (observations[n][i] - mus_[k][i]) * (observations[n][i] - mus_[k][i]).tranpose();
+				sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
 			}
 */
 		}
@@ -107,6 +107,154 @@ bool HmmWithMultivariateGaussianObservations::estimateParameters(const size_t N,
 
 	numIteration = iter;
 	finalLogProbability = logprobf;  // log P(observations | estimated model)
+
+	return true;
+}
+
+bool HmmWithMultivariateGaussianObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+{
+	const size_t R = Ns.size();  // number of observations sequences
+	size_t Nr, r;
+
+	std::vector<boost::multi_array<double, 2> > alphas, betas, gammas;
+	std::vector<boost::multi_array<double, 3> > xis;
+	std::vector<std::vector<double> > scales;
+	alphas.reserve(R);
+	betas.reserve(R);
+	gammas.reserve(R);
+	xis.reserve(R);
+	scales.reserve(R);
+	for (r = 0; r < R; ++r)
+	{
+		Nr = Ns[r];
+		alphas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
+		betas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
+		gammas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
+		xis.push_back(boost::multi_array<double, 3>(boost::extents[Nr][K_][K_]));
+		scales.push_back(std::vector<double>(Nr, 0.0));
+	}
+
+	double logprobf, logprobb;
+
+	// E-step
+	for (r = 0; r < R; ++r)
+	{
+		Nr = Ns[r];
+		const boost::multi_array<double, 2> &observations = observationSequences[r];
+
+		boost::multi_array<double, 2> &alphar = alphas[r];
+		boost::multi_array<double, 2> &betar = betas[r];
+		boost::multi_array<double, 2> &gammar = gammas[r];
+		boost::multi_array<double, 3> &xir = xis[r];
+		std::vector<double> &scaler = scales[r];
+
+		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
+		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+
+		computeGamma(Nr, alphar, betar, gammar);
+		computeXi(Nr, observations, alphar, betar, xir);
+
+		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+	}
+
+	double numeratorPi;
+	double numeratorA, denominatorA;
+	double numeratorPr, denominatorPr;
+	double delta;;
+	bool continueToLoop;
+	size_t i, k, n;
+	numIteration = 0;
+	do
+	{
+		// M-step
+		for (k = 0; k < K_; ++k)
+		{
+			// reestimate frequency of state k in time n=0
+			numeratorPi = 0.0;
+			for (r = 0; r < R; ++r)
+				numeratorPi += gammas[r][0][k];
+			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
+
+			// reestimate transition matrix 
+			denominatorA = 0.0;
+			for (r = 0; r < R; ++r)
+				for (n = 0; n < Ns[r] - 1; ++n)
+					denominatorA += gammas[r][n][k];
+
+			for (i = 0; i < K_; ++i)
+			{
+				numeratorA = 0.0;
+				for (r = 0; r < R; ++r)
+					for (n = 0; n < Ns[r] - 1; ++n)
+						numeratorA += xis[r][n][k][i];
+				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
+			}
+
+			// reestimate symbol prob in each state
+			denominatorPr = denominatorA;
+			for (r = 0; r < R; ++r)
+				denominatorPr += gammas[r][Ns[r]-1][k];
+
+			// for multivariate normal distributions
+			// TODO [check] >> this code may be changed into a vector form.
+			for (i = 0; i < D_; ++i)
+			{
+				numeratorPr = 0.0;
+				for (r = 0; r < R; ++r)
+					for (n = 0; n < Ns[r]; ++n)
+						numeratorPr += gammas[r][n][k] * observationSequences[r][n][i];
+				mus_[k][i] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+			}
+
+			// for multivariate normal distributions
+			// FIXME [modify] >> this code may be changed into a matrix form.
+			throw std::runtime_error("this code may be changed into a matrix form.");
+/*
+			boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
+			for (i = 0; i < D_; ++i)
+			{
+				numeratorPr = 0.0;
+				for (r = 0; r < R; ++r)
+					for (n = 0; n < N; ++n)
+						numeratorPr += gammas[r][n][k] * (observationSequences[r][n][i] - mus_[k][i]) * (observationSequences[r][n][i] - mus_[k][i]).tranpose();
+				sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
+			}
+*/
+		}
+
+		// E-step
+		continueToLoop = false;
+		for (r = 0; r < R; ++r)
+		{
+			Nr = Ns[r];
+			const boost::multi_array<double, 2> &observations = observationSequences[r];
+
+			boost::multi_array<double, 2> &alphar = alphas[r];
+			boost::multi_array<double, 2> &betar = betas[r];
+			boost::multi_array<double, 2> &gammar = gammas[r];
+			boost::multi_array<double, 3> &xir = xis[r];
+			std::vector<double> &scaler = scales[r];
+
+			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
+			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+
+			computeGamma(Nr, alphar, betar, gammar);
+			computeXi(Nr, observations, alphar, betar, xir);
+
+			// compute difference between log probability of two iterations
+#if 1
+			delta = logprobf - finalLogProbabilities[r];
+#else
+			delta = std::fabs(logprobf - finalLogProbabilities[r]);
+#endif
+			if (delta > terminationTolerance)
+				continueToLoop = true;
+
+			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
+		}
+
+		++numIteration;
+	} while (continueToLoop);  // if log probability does not change much, exit
 
 	return true;
 }

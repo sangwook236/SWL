@@ -25,7 +25,10 @@ private:
 	HmmWithMultinomialObservations & operator=(const HmmWithMultinomialObservations &rhs);
 
 public:
+	// for a single independent observation sequence
 	/*virtual*/ bool estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	// for multiple independent observation sequences
+	/*virtual*/ bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	//
 	boost::multi_array<double, 2> & getObservationProbabilityMatrix()  {  return B_;  }

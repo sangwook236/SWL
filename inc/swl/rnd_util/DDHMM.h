@@ -44,8 +44,10 @@ public:
 	// if useLog = true, probability is the LOG probability
 	void runViterbiAlgorithm(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability, const bool useLog = true) const;
 
-	//
+	// for a single independent observation sequence
 	virtual bool estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability) = 0;
+	// for multiple independent observation sequences
+	virtual bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities) = 0;
 
 	//
 	void generateSample(const size_t N, std::vector<unsigned int> &observations, std::vector<unsigned int> &states) const;

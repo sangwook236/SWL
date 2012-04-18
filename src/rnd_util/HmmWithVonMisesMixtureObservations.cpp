@@ -31,6 +31,11 @@ bool HmmWithVonMisesMixtureObservations::estimateParameters(const size_t N, cons
 	throw std::runtime_error("not yet implemented");
 }
 
+bool HmmWithVonMisesMixtureObservations::estimateParameters(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const double terminationTolerance, size_t &numIteration,std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 double HmmWithVonMisesMixtureObservations::evaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
