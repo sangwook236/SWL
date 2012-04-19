@@ -38,11 +38,16 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="../../inc/" />
+			<Add directory="/home/sangwook/work_center/sw_dev/cpp/hw_interface/inc/" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../bin/" />
 		</Linker>
 		<Unit filename="ExtendedKalmanFilterTest.cpp" />
+		<Unit filename="HmmWithMultinomialObservationsTest.cpp" />
+		<Unit filename="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />
+		<Unit filename="HmmWithUnivariateNormalObservationsTest.cpp" />
+		<Unit filename="HmmWithVonMisesObservationsTest.cpp" />
 		<Unit filename="HoughTransformTest.cpp" />
 		<Unit filename="ImuCalibration.cpp" />
 		<Unit filename="ImuExtendedKalmanFilterRunner.cpp" />

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/CDHMM.h"
+#include <cstring>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -324,7 +325,7 @@ bool CDHMM::estimateParameters(const size_t N, const boost::multi_array<double, 
 			// reestimate frequency of state k in time n=0
 			pi_[k] = 0.001 + 0.999 * gamma[0][k];
 
-			// reestimate transition matrix 
+			// reestimate transition matrix
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma[n][k];
@@ -443,7 +444,7 @@ bool CDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 				numeratorPi += gammas[r][0][k];
 			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
 
-			// reestimate transition matrix 
+			// reestimate transition matrix
 			denominatorA = 0.0;
 			for (r = 0; r < R; ++r)
 				for (n = 0; n < Ns[r] - 1; ++n)
@@ -543,12 +544,24 @@ void CDHMM::generateSample(const size_t N, boost::multi_array<double, 2> &observ
 	//	-. std::srand() had to be called before this function is called.
 
 	states[0] = generateInitialState();
+#if defined(__GNUC__)
+    {
+        boost::multi_array_ref<double, 2>::array_view<1>::type obs(observations[boost::indices[0][boost::multi_array<double, 2>::index_range()]]);
+        doGenerateObservationsSymbol(states[0], obs, seed);
+    }
+#else
 	doGenerateObservationsSymbol(states[0], observations[boost::indices[0][boost::multi_array<double, 2>::index_range()]], seed);
+#endif
 
 	for (size_t n = 1; n < N; ++n)
 	{
 		states[n] = generateNextState(states[n-1]);
+#if defined(__GNUC__)
+        boost::multi_array_ref<double, 2>::array_view<1>::type obs(observations[boost::indices[n][boost::multi_array<double, 2>::index_range()]]);
+		doGenerateObservationsSymbol(states[n], obs, (unsigned int)-1);
+#else
 		doGenerateObservationsSymbol(states[n], observations[boost::indices[n][boost::multi_array<double, 2>::index_range()]], (unsigned int)-1);
+#endif
 	}
 }
 

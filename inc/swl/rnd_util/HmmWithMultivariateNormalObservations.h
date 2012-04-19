@@ -38,7 +38,7 @@ protected:
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
 	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const;
 	// if seed != -1, the seed value is set
-	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const;
 
 	// for a single independent observation sequence
 	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA);

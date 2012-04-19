@@ -579,7 +579,7 @@ void mle_em_learning()
 	you can initialize the hmm model three ways:
 		1) with a model, which also sets the number of states N and number of symbols M.
 		2) with a random model by just specifyin N and M.
-		3) with a specific random model by specifying N, M and seed. 
+		3) with a specific random model by specifying N, M and seed.
 */
 
 	// initialize a model
@@ -693,8 +693,6 @@ void mle_em_learning()
 			}
 		}
 
-		const size_t K = cdhmm->getStateSize();
-
 		// Baum-Welch algorithm
 		{
 			const double terminationTolerance = 0.001;
@@ -705,12 +703,12 @@ void mle_em_learning()
 			// normalize pi & A
 			//cdhmm->normalizeModelParameters();
 
-			// 
+			//
 			std::cout << "------------------------------------" << std::endl;
 			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
-			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;	
-			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;	
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
 			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
@@ -741,7 +739,7 @@ void mle_em_learning()
 			Ns.resize(R);
 			for (size_t r = 0; r < R; ++r)
 			{
-				std::ifstream stream(observationSequenceFiles[r]);
+				std::ifstream stream(observationSequenceFiles[r].c_str());
 				if (!stream)
 				{
 					std::ostringstream stream;
@@ -782,18 +780,18 @@ void mle_em_learning()
 			std::cout << "\t\t";
 			for (size_t r = 0; r < R; ++r)
 				std::cout << std::scientific << initLogProbabilities[r] << ' ';
-			std::cout << std::endl;	
+			std::cout << std::endl;
 			std::cout << "\tlog prob(observation sequences | estimated model):" << std::endl;
 			std::cout << "\t\t";
 			for (size_t r = 0; r < R; ++r)
 				std::cout << std::scientific << finalLogProbabilities[r] << ' ';
-			std::cout << std::endl;	
+			std::cout << std::endl;
 			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
 	}
 }
-	
+
 }  // namespace local
 }  // unnamed namespace
 

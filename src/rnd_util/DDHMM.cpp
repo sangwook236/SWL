@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/DDHMM.h"
+#include <cstring>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -488,7 +489,7 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 #endif
 			if (delta > terminationTolerance)
 				continueToLoop = true;
-		
+
 			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
 		}
 

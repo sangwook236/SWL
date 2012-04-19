@@ -82,7 +82,7 @@ double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const 
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
@@ -149,7 +149,7 @@ bool HmmWithUnivariateNormalObservations::doWriteObservationDensity(std::ostream
 	for (size_t k = 0; k < K_; ++k)
 		stream << mus_[k] << ' ';
 	stream << std::endl;
-	
+
 	stream << "sigma:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << sigmas_[k] << ' ';

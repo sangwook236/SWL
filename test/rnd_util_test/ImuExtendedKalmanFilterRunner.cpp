@@ -3,7 +3,9 @@
 #include "ImuExtendedKalmanFilterRunner.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
+#if defined(WIN32)
 #include "adisusbz/AdisUsbz.h"
+#endif
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_statistics.h>
@@ -571,7 +573,7 @@ bool ImuExtendedKalmanFilterRunner::runImuFilter(swl::DiscreteExtendedKalmanFilt
 		const double &E1 = gsl_vector_get(x_hat, 10);
 		const double &E2 = gsl_vector_get(x_hat, 11);
 		const double &E3 = gsl_vector_get(x_hat, 12);
-	
+
 		const double &g_ix = gsl_vector_get(initialGravity, 0);
 		const double &g_iy = gsl_vector_get(initialGravity, 1);
 		const double &g_iz = gsl_vector_get(initialGravity, 2);

@@ -97,7 +97,7 @@ double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(cons
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }

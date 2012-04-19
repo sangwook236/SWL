@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultinomialObservations.h"
+#include <cstring>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

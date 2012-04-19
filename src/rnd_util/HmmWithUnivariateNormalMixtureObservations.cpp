@@ -160,7 +160,7 @@ double HmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability
 	return sum;
 }
 
-void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	if ((unsigned int)-1 != seed)
 		baseGenerator_.seed(seed);
@@ -291,7 +291,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::
 			stream << mus_[k][c] << ' ';
 		stream << std::endl;
 	}
-	
+
 	stream << "sigma:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 	{

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HMM.h"
+#include <cstring>
 #include <cstdlib>
 
 
