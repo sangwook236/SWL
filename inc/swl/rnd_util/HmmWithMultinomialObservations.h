@@ -39,9 +39,9 @@ protected:
 	/*virtual*/ unsigned int doGenerateObservationsSymbol(const unsigned int state) const;
 
 	// for a single independent observation sequence
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k);
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA);
 	// for multiple independent observation sequences
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k);
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<std::vector<unsigned int> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);

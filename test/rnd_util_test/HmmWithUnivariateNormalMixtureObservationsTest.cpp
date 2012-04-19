@@ -677,7 +677,7 @@ void mle_em_learning()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	// for a single independent observation sequence
+	// for a single observation sequence
 	{
 		// read a observation sequence
 		boost::multi_array<double, 2> observations;
@@ -732,32 +732,20 @@ void mle_em_learning()
 		// Baum-Welch algorithm
 		{
 			const double terminationTolerance = 0.001;
-			boost::multi_array<double, 2> alpha(boost::extents[N][K]), beta(boost::extents[N][K]), gamma(boost::extents[N][K]);
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->estimateParameters(N, observations, terminationTolerance, alpha, beta, gamma, numIteration, initLogProbability, finalLogProbability);
-
-			// compute gamma & xi
-			{
-				// gamma can use the result from Baum-Welch algorithm
-				//boost::multi_array<double, 2> gamma2(boost::extents[N][K]);
-				//cdhmm->computeGamma(N, alpha, beta, gamma2);
-
-				//
-				boost::multi_array<double, 3> xi2(boost::extents[N][K][K]);
-				cdhmm->computeXi(N, observations, alpha, beta, xi2);
-			}
+			cdhmm->estimateParameters(N, observations, terminationTolerance, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi & A
 			//cdhmm->normalizeModelParameters();
 
 			// 
 			std::cout << "------------------------------------" << std::endl;
-			std::cout << "Baum-Welch algorithm for a single independent observation sequence" << std::endl;
+			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
 			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;	
 			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;	
-			std::cout << "\testiamted model:" << std::endl;
+			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
 	}
@@ -829,12 +817,12 @@ void mle_em_learning()
 			for (size_t r = 0; r < R; ++r)
 				std::cout << std::scientific << initLogProbabilities[r] << ' ';
 			std::cout << std::endl;	
-			std::cout << "\t\t";
 			std::cout << "\tlog prob(observation sequences | estimated model):" << std::endl;
+			std::cout << "\t\t";
 			for (size_t r = 0; r < R; ++r)
 				std::cout << std::scientific << finalLogProbabilities[r] << ' ';
 			std::cout << std::endl;	
-			std::cout << "\testiamted model:" << std::endl;
+			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
 	}

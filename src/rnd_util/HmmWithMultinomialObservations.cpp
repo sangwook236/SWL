@@ -25,47 +25,47 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 {
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
 	size_t n;
 
 	// reestimate symbol prob in each state
-	const double denominatorB = denominatorA + gamma[N-1][k];
+	const double denominatorB = denominatorA + gamma[N-1][state];
 	double numeratorB;
-	for (size_t i = 0; i < D_; ++i)
+	for (size_t d = 0; d < D_; ++d)
 	{
 		numeratorB = 0.0;
 		for (n = 0; n < N; ++n)
 		{
-			if (observations[n] == (unsigned int)i)
-				numeratorB += gamma[n][k];
+			if (observations[n] == (unsigned int)d)
+				numeratorB += gamma[n][state];
 		}
 
-		B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
+		B_[state][d] = 0.001 + 0.999 * numeratorB / denominatorB;
 	}
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<std::vector<unsigned int> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
 {
 	size_t n, r;
 
 	// reestimate symbol prob in each state
 	double denominatorB = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorB += gammas[r][Ns[r]-1][k];
+		denominatorB += gammas[r][Ns[r]-1][state];
 
 	double numeratorB;
-	for (size_t i = 0; i < D_; ++i)
+	for (size_t d = 0; d < D_; ++d)
 	{
 		numeratorB = 0.0;
 		for (r = 0; r < R; ++r)
 			for (n = 0; n < Ns[r]; ++n)
 			{
-				if (observationSequences[r][n] == (unsigned int)i)
-					numeratorB += gammas[r][n][k];
+				if (observationSequences[r][n] == (unsigned int)d)
+					numeratorB += gammas[r][n][state];
 			}
 
-		B_[k][i] = 0.001 + 0.999 * numeratorB / denominatorB;
+		B_[state][d] = 0.001 + 0.999 * numeratorB / denominatorB;
 	}
 }
 

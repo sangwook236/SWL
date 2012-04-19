@@ -26,12 +26,12 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 {
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
 	size_t d, n;
 
 	// reestimate symbol prob in each state
-	const double denominatorPr = denominatorA + gamma[N-1][k];
+	const double denominatorPr = denominatorA + gamma[N-1][state];
 
 	// for multivariate normal distributions
 	// TODO [check] >> this code may be changed into a vector form.
@@ -40,33 +40,33 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	{
 		numeratorPr = 0.0;
 		for (n = 0; n < N; ++n)
-			numeratorPr += gamma[n][k] * observations[n][d];
-		mus_[k][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+			numeratorPr += gamma[n][state] * observations[n][d];
+		mus_[state][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 
 	// for multivariate normal distributions
 	// FIXME [modify] >> this code may be changed into a matrix form.
 	throw std::runtime_error("this code may be changed into a matrix form.");
 /*
-	boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
+	boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[state][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
 	for (d = 0; d < D_; ++d)
 	{
 		numeratorPr = 0.0;
 		for (n = 0; n < N; ++n)
-			numeratorPr += gamma[n][k] * (observations[n][d] - mus_[k][d]) * (observations[n][d] - mus_[k][d]).tranpose();
+			numeratorPr += gamma[n][state] * (observations[n][d] - mus_[state][d]) * (observations[n][d] - mus_[state][d]).tranpose();
 		sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 */
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
 {
 	size_t d, n, r;
 
 	// reestimate symbol prob in each state
 	double denominatorPr = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorPr += gammas[r][Ns[r]-1][k];
+		denominatorPr += gammas[r][Ns[r]-1][state];
 
 	// for multivariate normal distributions
 	// TODO [check] >> this code may be changed into a vector form.
@@ -76,21 +76,21 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 		numeratorPr = 0.0;
 		for (r = 0; r < R; ++r)
 			for (n = 0; n < Ns[r]; ++n)
-				numeratorPr += gammas[r][n][k] * observationSequences[r][n][d];
-		mus_[k][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+				numeratorPr += gammas[r][n][state] * observationSequences[r][n][d];
+		mus_[state][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 
 	// for multivariate normal distributions
 	// FIXME [modify] >> this code may be changed into a matrix form.
 	throw std::runtime_error("this code may be changed into a matrix form.");
 /*
-	boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[k][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
+	boost::multi_array<double, 3>::array_view<2>::type sigma = sigmas_[boost::indices[state][boost::multi_array<double, 3>::index_range()][boost::multi_array<double, 3>::index_range()]];
 	for (d = 0; d < D_; ++d)
 	{
 		numeratorPr = 0.0;
 		for (r = 0; r < R; ++r)
 			for (n = 0; n < N; ++n)
-				numeratorPr += gammas[r][n][k] * (observationSequences[r][n][d] - mus_[k][d]) * (observationSequences[r][n][d] - mus_[k][d]).tranpose();
+				numeratorPr += gammas[r][n][state] * (observationSequences[r][n][d] - mus_[state][d]) * (observationSequences[r][n][d] - mus_[state][d]).tranpose();
 		sigma = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 */

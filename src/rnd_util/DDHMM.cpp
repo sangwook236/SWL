@@ -291,18 +291,22 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const std::vector<unsign
 		states[n-1] = psi[n][states[n]];
 }
 
-bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, boost::multi_array<double, 2> &alpha, boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	std::vector<double> scale(N, 0.0);
 	double logprobf, logprobb;
 
-	// E-step
-	runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-	runBackwardAlgorithm(N, observations, scale, beta, logprobb);
-
-	computeGamma(N, alpha, beta, gamma);
+	boost::multi_array<double, 2> alpha(boost::extents[N][K_]), beta(boost::extents[N][K_]), gamma(boost::extents[N][K_]);
 	boost::multi_array<double, 3> xi(boost::extents[N][K_][K_]);
-	computeXi(N, observations, alpha, beta, xi);
+
+	// E-step
+	{
+		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
+		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+
+		computeGamma(N, alpha, beta, gamma);
+		computeXi(N, observations, alpha, beta, xi);
+	}
 
 	initLogProbability = logprobf;  // log P(observations | initial model)
 	finalLogProbability = logprobf;
@@ -333,15 +337,17 @@ bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &
 			}
 
 			// reestimate symbol prob in each state
-			doEstimateObservationDensityParametersInMStep(N, observations, gamma ,denominatorA, k);
+			doEstimateObservationDensityParametersInMStep(N, (unsigned int)k, observations, gamma ,denominatorA);
 		}
 
 		// E-step
-		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+		{
+			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
+			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
-		computeGamma(N, alpha, beta, gamma);
-		computeXi(N, observations, alpha, beta, xi);
+			computeGamma(N, alpha, beta, gamma);
+			computeXi(N, observations, alpha, beta, xi);
+		}
 
 		// compute difference between log probability of two iterations
 #if 1
@@ -354,6 +360,18 @@ bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &
 		++numIteration;
 	} while (delta > terminationTolerance);  // if log probability does not change much, exit
 
+/*
+	// compute gamma & xi
+	{
+		// gamma can use the result from Baum-Welch algorithm
+		//boost::multi_array<double, 2> gamma2(boost::extents[N][K_]);
+		//computeGamma(N, alpha, beta, gamma2);
+
+		//
+		boost::multi_array<double, 3> xi2(boost::extents[N][K_][K_]);
+		computeXi(N, observations, alpha, beta, xi2);
+	}
+*/
 	return true;
 }
 
@@ -436,7 +454,7 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 			}
 
 			// reestimate symbol prob in each state
-			doEstimateObservationDensityParametersInMStep(Ns, observationSequences, gammas, R, denominatorA, k);
+			doEstimateObservationDensityParametersInMStep(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
 		// E-step
@@ -473,16 +491,19 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 		++numIteration;
 	} while (continueToLoop);  // if log probability does not change much, exit
 
-	// compute gamma & xi
 /*
+	// compute gamma & xi
 	{
-		// gamma can use the result from Baum-Welch algorithm
-		//boost::multi_array<double, 2> gamma2(boost::extents[Nr][K_]);
-		//ddhmm->computeGamma(Nr, alphar, betar, gamma2);
+		for (r = 0; r < R; ++r)
+		{
+			// gamma can use the result from Baum-Welch algorithm
+			//boost::multi_array<double, 2> gamma2(boost::extents[Ns[r]][K_]);
+			//computeGamma(Ns[r], alphas[r], betas[r], gamma2);
 
-		//
-		boost::multi_array<double, 3> xi2(boost::extents[Nr][K_][K_]);
-		ddhmm->computeXi(Nr, observations, alphar, betar, xi2);
+			//
+			boost::multi_array<double, 3> xi2(boost::extents[Ns[r]][K_][K_]);
+			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xi2);
+		}
 	}
 */
 

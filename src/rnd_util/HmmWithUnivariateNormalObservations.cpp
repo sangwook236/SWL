@@ -30,48 +30,48 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 {
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
 	size_t n;
 
 	// reestimate symbol prob in each state
-	const double denominatorPr = denominatorA + gamma[N-1][k];
+	const double denominatorPr = denominatorA + gamma[N-1][state];
 
 	// for univariate normal distributions
 	double numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma[n][k] * observations[n][0];
-	mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+		numeratorPr += gamma[n][state] * observations[n][0];
+	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
 	// for univariate normal distributions
 	numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma[n][k] * (observations[n][0] - mus_[k]) * (observations[n][0] - mus_[k]);
-	sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+		numeratorPr += gamma[n][state] * (observations[n][0] - mus_[state]) * (observations[n][0] - mus_[state]);
+	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
 {
 	size_t n, r;
 
 	// reestimate symbol prob in each state
 	double denominatorPr = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorPr += gammas[r][Ns[r]-1][k];
+		denominatorPr += gammas[r][Ns[r]-1][state];
 
 	// for univariate normal distributions
 	double numeratorPr = 0.0;
 	for (r = 0; r < R; ++r)
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammas[r][n][k] * observationSequences[r][n][0];
-	mus_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+			numeratorPr += gammas[r][n][state] * observationSequences[r][n][0];
+	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
 	// for univariate normal distributions
 	numeratorPr = 0.0;
 	for (r = 0; r < R; ++r)
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammas[r][n][k] * (observationSequences[r][n][0] - mus_[k]) * (observationSequences[r][n][0] - mus_[k]);
-	sigmas_[k] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+			numeratorPr += gammas[r][n][state] * (observationSequences[r][n][0] - mus_[state]) * (observationSequences[r][n][0] - mus_[state]);
+	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 }
 
 double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const

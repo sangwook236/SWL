@@ -26,12 +26,12 @@ HmmWithVonMisesFisherMixtureObservations::~HmmWithVonMisesFisherMixtureObservati
 {
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA, const size_t k)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA, const size_t k)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
