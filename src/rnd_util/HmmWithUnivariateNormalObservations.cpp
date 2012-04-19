@@ -32,18 +32,18 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
-	size_t n;
-
 	// reestimate symbol prob in each state
+
+	size_t n;
 	const double denominatorPr = denominatorA + gamma[N-1][state];
 
-	// for univariate normal distributions
+	//
 	double numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
 		numeratorPr += gamma[n][state] * observations[n][0];
 	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
-	// for univariate normal distributions
+	//
 	numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
 		numeratorPr += gamma[n][state] * (observations[n][0] - mus_[state]) * (observations[n][0] - mus_[state]);

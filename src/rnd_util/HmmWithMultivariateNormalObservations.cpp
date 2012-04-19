@@ -28,12 +28,11 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
-	size_t d, n;
-
 	// reestimate symbol prob in each state
+
+	size_t d, n;
 	const double denominatorPr = denominatorA + gamma[N-1][state];
 
-	// for multivariate normal distributions
 	// TODO [check] >> this code may be changed into a vector form.
 	double numeratorPr;
 	for (d = 0; d < D_; ++d)
@@ -44,7 +43,6 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 		mus_[state][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 
-	// for multivariate normal distributions
 	// FIXME [modify] >> this code may be changed into a matrix form.
 	throw std::runtime_error("this code may be changed into a matrix form.");
 /*
@@ -68,7 +66,6 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	for (r = 0; r < R; ++r)
 		denominatorPr += gammas[r][Ns[r]-1][state];
 
-	// for multivariate normal distributions
 	// TODO [check] >> this code may be changed into a vector form.
 	double numeratorPr;
 	for (d = 0; d < D_; ++d)
@@ -80,7 +77,6 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 		mus_[state][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 	}
 
-	// for multivariate normal distributions
 	// FIXME [modify] >> this code may be changed into a matrix form.
 	throw std::runtime_error("this code may be changed into a matrix form.");
 /*

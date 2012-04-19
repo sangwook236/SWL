@@ -27,9 +27,9 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &gamma, const double denominatorA)
 {
-	size_t n;
-
 	// reestimate symbol prob in each state
+
+	size_t n;
 	const double denominatorB = denominatorA + gamma[N-1][state];
 	double numeratorB;
 	for (size_t d = 0; d < D_; ++d)

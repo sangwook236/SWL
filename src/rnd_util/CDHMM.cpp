@@ -301,6 +301,7 @@ bool CDHMM::estimateParameters(const size_t N, const boost::multi_array<double, 
 
 	// E-step
 	{
+		// forward-backward algorithm
 		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -342,6 +343,7 @@ bool CDHMM::estimateParameters(const size_t N, const boost::multi_array<double, 
 
 		// E-step
 		{
+			// forward-backward algorithm
 			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -413,6 +415,7 @@ bool CDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 		boost::multi_array<double, 3> &xir = xis[r];
 		std::vector<double> &scaler = scales[r];
 
+		// forward-backward algorithm
 		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
 		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
 
@@ -472,6 +475,7 @@ bool CDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 			boost::multi_array<double, 3> &xir = xis[r];
 			std::vector<double> &scaler = scales[r];
 
+			// forward-backward algorithm
 			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
 			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
 
