@@ -104,19 +104,94 @@ void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const u
 
 bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istream &stream)
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	std::string dummy;
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "multivariate") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "multivariate") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "normal:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "normal:") != 0)
+#endif
+		return false;
+
+	size_t d, i;
+	for (size_t k = 0; k < K_; ++k)
+	{
+		stream >> dummy;
+#if defined(__GNUC__)
+		if (strcasecmp(dummy.c_str(), "mu:") != 0)
+#elif defined(_MSC_VER)
+		if (_stricmp(dummy.c_str(), "mu:") != 0)
+#endif
+			return false;
+
+		for (d = 0; d < D_; ++d)
+			stream >> mus_[k][d];
+
+		stream >> dummy;
+#if defined(__GNUC__)
+		if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+#elif defined(_MSC_VER)
+		if (_stricmp(dummy.c_str(), "sigma:") != 0)
+#endif
+			return false;
+
+		for (d = 0; d < D_; ++d)
+			for (i = 0; i < D_; ++i)
+				stream >> sigmas_[k][d][i];
+	}
+
+	return true;
 }
 
 bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostream &stream) const
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	stream << "multivariate normal:" << std::endl;
+
+	size_t d, i;
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		stream << "mu:" << std::endl;
+		for (d = 0; d < D_; ++d)
+			stream << mus_[k][d] << ' ';
+		stream << std::endl;
+
+		stream << "sigma:" << std::endl;
+		for (d = 0; d < D_; ++d)
+		{
+			for (i = 0; i < D_; ++i)
+				stream << sigmas_[k][d][i] << ' ';
+			stream << std::endl;
+		}
+	}
+
+	return true;
 }
 
 void HmmWithMultivariateNormalObservations::doInitializeObservationDensity()
 {
-	std::runtime_error("not yet implemented");
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
+	const double lb = -10000.0, ub = 10000.0;
+	size_t d, i;
+	for (size_t k = 0; k < K_; ++k)
+	{
+		for (d = 0; d < D_; ++d)
+		{
+			mus_[k][i] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+			for (i = 0; i < D_; ++i)
+				sigmas_[k][d][i] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		}
+	}
 }
 
 }  // namespace swl

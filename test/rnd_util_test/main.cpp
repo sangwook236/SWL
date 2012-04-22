@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 	void hmm_with_multinomial_observation_densities();
 	void hmm_with_univariate_normal_observation_densities();
 	void hmm_with_univariate_normal_mixture_observation_densities();
-	void hmm_with_von_mises_mixture_observation_densities();
+	void hmm_with_von_mises_observation_densities();
 
 	try
 	{
@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
 		hmm_with_univariate_normal_mixture_observation_densities();
-		hmm_with_von_mises_mixture_observation_densities();
+		hmm_with_von_mises_observation_densities();
 	}
 	catch (const std::exception &e)
 	{

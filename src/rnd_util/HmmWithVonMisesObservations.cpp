@@ -47,19 +47,78 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 
 bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	if (1 != D_) return false;
+
+	std::string dummy;
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "von") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "von") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "Mises:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "Mises:") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "mu:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "mu:") != 0)
+#endif
+		return false;
+
+	for (size_t k = 0; k < K_; ++k)
+		stream >> mus_[k];
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "kappa:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "kappa:") != 0)
+#endif
+		return false;
+
+	for (size_t k = 0; k < K_; ++k)
+		stream >> kappas_[k];
+
+	return true;
 }
 
 bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream) const
 {
-	std::runtime_error("not yet implemented");
-	return false;
+	stream << "von Mises:" << std::endl;
+
+	stream << "mu:" << std::endl;
+	for (size_t k = 0; k < K_; ++k)
+		stream << mus_[k] << ' ';
+	stream << std::endl;
+
+	stream << "kappa:" << std::endl;
+	for (size_t k = 0; k < K_; ++k)
+		stream << kappas_[k] << ' ';
+	stream << std::endl;
+
+	return true;
 }
 
 void HmmWithVonMisesObservations::doInitializeObservationDensity()
 {
-	std::runtime_error("not yet implemented");
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
+	const double lb = -10000.0, ub = 10000.0;
+	for (size_t k = 0; k < K_; ++k)
+	{
+		mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		kappas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+	}
 }
 
 }  // namespace swl
