@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesFisherObservations.h"
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <stdexcept>
 
 
@@ -12,12 +13,11 @@
 namespace swl {
 
 HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(boost::extents[K][D]), kappas_(K, 0.0)  // 0-based index
-//: base_type(K, D), mus_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, D+1)]), kappas_(K, 0.0)  // 1-based index (???)
+: base_type(K, D), mus_(K, D), kappas_(K, 0.0)  // 0-based index
 {
 }
 
-HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &mus, const std::vector<double> &kappas)
+HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &mus, const dvector_type &kappas)
 : base_type(K, D, pi, A), mus_(mus), kappas_(kappas)
 {
 }
@@ -26,22 +26,22 @@ HmmWithVonMisesFisherObservations::~HmmWithVonMisesFisherObservations()
 {
 }
 
-void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	throw std::runtime_error("not yet implemented");
 }

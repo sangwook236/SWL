@@ -48,16 +48,18 @@ int main(int argc, char *argv[])
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
 		hmm_with_univariate_normal_mixture_observation_densities();
-		hmm_with_von_mises_observation_densities();
+		//hmm_with_von_mises_observation_densities();
 	}
 	catch (const std::exception &e)
 	{
 		std::cout << "std::exception caught: " << e.what() << std::endl;
+		std::cin.get();
 		return -1;
 	}
 	catch (...)
 	{
 		std::cout << "unknown exception caught" << std::endl;
+		std::cin.get();
 		return -1;
 	}
 

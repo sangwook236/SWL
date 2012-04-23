@@ -3,7 +3,7 @@
 
 
 #include "swl/rnd_util/ExportRndUtil.h"
-#include <boost/multi_array.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
 
 
 namespace swl {
@@ -15,10 +15,11 @@ class SWL_RND_UTIL_API HmmWithMixtureObservations
 {
 public:
 	//typedef HmmWithMixtureObservations base_type;
+	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
 
 protected:
 	HmmWithMixtureObservations(const size_t C, const size_t K);
-	HmmWithMixtureObservations(const size_t C, const size_t K, const boost::multi_array<double, 2> &alphas);
+	HmmWithMixtureObservations(const size_t C, const size_t K, const dmatrix_type &alphas);
 public:
 	virtual ~HmmWithMixtureObservations();
 
@@ -30,8 +31,8 @@ public:
 	//
 	size_t getMixtureSize() const  {  return C_;  }
 
-	boost::multi_array<double, 2> & getMixtureCoefficient()  {  return alphas_;  }
-	const boost::multi_array<double, 2> & getMixtureCoefficient() const  {  return alphas_;  }
+	dmatrix_type & getMixtureCoefficient()  {  return alphas_;  }
+	const dmatrix_type & getMixtureCoefficient() const  {  return alphas_;  }
 
 protected:
 	void normalizeObservationDensityParameters(const size_t K);
@@ -39,7 +40,7 @@ protected:
 protected:
 	const size_t C_;  // the number of mixture components
 
-	boost::multi_array<double, 2> alphas_;  // mixture coefficients(weights)
+	dmatrix_type alphas_;  // mixture coefficients(weights)
 };
 
 }  // namespace swl

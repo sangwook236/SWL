@@ -16,7 +16,7 @@ DDHMM::DDHMM(const size_t K, const size_t D)
 {
 }
 
-DDHMM::DDHMM(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A)
+DDHMM::DDHMM(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A)
 : base_type(K, D, pi, A)
 {
 }
@@ -25,14 +25,14 @@ DDHMM::~DDHMM()
 {
 }
 
-void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &alpha, double &probability) const
+void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &alpha, double &probability) const
 {
 	size_t i, k;  // state indices
 
 	// 1. Initialization
 	for (k = 0; k < K_; ++k)
-		//alpha[0][k] = pi_[k] * B_[k][observations[0]];
-		alpha[0][k] = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
+		//alpha(0, k) = pi_[k] * B_(k, observations[0]);
+		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
 
 	// 2. Induction
 	double sum;  // partial sum
@@ -44,10 +44,10 @@ void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> 
 		{
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
-				sum += alpha[n_1][i] * A_[i][k];
+				sum += alpha(n_1, i) * A_(i, k);
 
-			//alpha[n][k] = sum * B_[k][observations[n]];
-			alpha[n][k] = sum * doEvaluateEmissionProbability(k, observations[n]);
+			//alpha(n, k) = sum * B_(k, observations[n]);
+			alpha(n, k) = sum * doEvaluateEmissionProbability(k, observations[n]);
 		}
 	}
 
@@ -55,10 +55,10 @@ void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> 
 	probability = 0.0;
 	n_1 = N - 1;
 	for (k = 0; k < K_; ++k)
-		probability += alpha[n_1][k];
+		probability += alpha(n_1, k);
 }
 
-void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> &observations, std::vector<double> &scale, boost::multi_array<double, 2> &alpha, double &probability) const
+void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dvector_type &scale, dmatrix_type &alpha, double &probability) const
 {
 	size_t i, k;  // state indices
 
@@ -66,12 +66,12 @@ void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> 
 	scale[0] = 0.0;
 	for (k = 0; k < K_; ++k)
 	{
-		//alpha[0][k] = pi_[k] * B_[k][observations[0]];
-		alpha[0][k] = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
-		scale[0] += alpha[0][k];
+		//alpha(0, k) = pi_[k] * B_(k, observations[0]);
+		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
+		scale[0] += alpha(0, k);
 	}
 	for (k = 0; k < K_; ++k)
-		alpha[0][k] /= scale[0];
+		alpha(0, k) /= scale[0];
 
 	// 2. Induction
 	double sum;  // partial sum
@@ -84,14 +84,14 @@ void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> 
 		{
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
-				sum += alpha[n_1][i] * A_[i][k];
+				sum += alpha(n_1, i) * A_(i, k);
 
-			//alpha[n][k] = sum * B_[k][observations[n]];
-			alpha[n][k] = sum * doEvaluateEmissionProbability(k, observations[n]);
-			scale[n] += alpha[n][k];
+			//alpha(n, k) = sum * B_(k, observations[n]);
+			alpha(n, k) = sum * doEvaluateEmissionProbability(k, observations[n]);
+			scale[n] += alpha(n, k);
 		}
 		for (k = 0; k < K_; ++k)
-			alpha[n][k] /= scale[n];
+			alpha(n, k) /= scale[n];
 	}
 
 	// 3. Termination
@@ -100,7 +100,7 @@ void DDHMM::runForwardAlgorithm(const size_t N, const std::vector<unsigned int> 
 		probability += std::log(scale[n]);
 }
 
-void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &beta, double &probability) const
+void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &beta, double &probability) const
 {
 	size_t i, k;  // state indices
 	size_t n_1;
@@ -108,7 +108,7 @@ void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int>
 	// 1. Initialization
 	n_1 = N - 1;
 	for (k = 0; k < K_; ++k)
-		beta[n_1][k] = 1.0;
+		beta(n_1, k) = 1.0;
 
 	// 2. Induction
 	double sum;
@@ -119,19 +119,19 @@ void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int>
 		{
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
-				//sum += A_[k][i] * B_[i][observations[n]] * beta[n][i];
-				sum += A_[k][i] * doEvaluateEmissionProbability(i, observations[n]) * beta[n][i];
-			beta[n_1][k] = sum;
+				//sum += A_(k, i) * B_(i, observations[n]) * beta(n, i);
+				sum += A_(k, i) * doEvaluateEmissionProbability(i, observations[n]) * beta(n, i);
+			beta(n_1, k) = sum;
 		}
 	}
 
 	// 3. Termination
 	probability = 0.0;
 	for (k = 0; k < K_; ++k)
-		probability += beta[0][k];
+		probability += beta(0, k);
 }
 
-void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int> &observations, const std::vector<double> &scale, boost::multi_array<double, 2> &beta, double &probability) const
+void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, const dvector_type &scale, dmatrix_type &beta, double &probability) const
 {
 	size_t i, k;  // state indices
 	size_t n_1;
@@ -139,7 +139,7 @@ void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int>
 	// 1. Initialization
 	n_1 = N - 1;
 	for (k = 0; k < K_; ++k)
-		beta[n_1][k] = 1.0 / scale[n_1];
+		beta(n_1, k) = 1.0 / scale[n_1];
 
 	// 2. Induction
 	double sum;
@@ -150,29 +150,29 @@ void DDHMM::runBackwardAlgorithm(const size_t N, const std::vector<unsigned int>
 		{
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
-				//sum += A_[k][i] * B_[i][observations[n]] * beta[n][i];
-				sum += A_[k][i] * doEvaluateEmissionProbability(i, observations[n]) * beta[n][i];
-			beta[n_1][k] = sum / scale[n_1];
+				//sum += A_(k, i) * B_(i, observations[n]) * beta(n, i);
+				sum += A_(k, i) * doEvaluateEmissionProbability(i, observations[n]) * beta(n, i);
+			beta(n_1, k) = sum / scale[n_1];
 		}
 	}
 }
 
-void DDHMM::runViterbiAlgorithm(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability, const bool useLog /*= true*/) const
+void DDHMM::runViterbiAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability, const bool useLog /*= true*/) const
 {
 	if (useLog) runViterbiAlgorithmUsingLog(N, observations, delta, psi, states, probability);
 	else runViterbiAlgorithmNotUsigLog(N, observations, delta, psi, states, probability);
 }
 
-void DDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const
+void DDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const uivector_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability) const
 {
 	size_t i, k;  // state indices
 
 	// 1. Initialization
 	for (k = 0; k < K_; ++k)
 	{
-		//delta[0][k] = pi_[k] * B_[k][observations[0]];
-		delta[0][k] = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
-		psi[0][k] = 0u;
+		//delta(0, k) = pi_[k] * B_[k][observations[0]];
+		delta(0, k) = pi_[k] * doEvaluateEmissionProbability(k, observations[0]);
+		psi(0, k) = 0u;
 	}
 
 	// 2. Recursion
@@ -188,7 +188,7 @@ void DDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const std::vector<unsi
 			maxvalind = 0;
 			for (i = 0; i < K_; ++i)
 			{
-				val = delta[n_1][i] * A_[i][k];
+				val = delta(n_1, i) * A_(i, k);
 				if (val > maxval)
 				{
 					maxval = val;
@@ -196,9 +196,9 @@ void DDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const std::vector<unsi
 				}
 			}
 
-			//delta[n][k] = maxval * B_[k][observations[n]];
-			delta[n][k] = maxval * doEvaluateEmissionProbability(k, observations[n]);
-			psi[n][k] = (unsigned int)maxvalind;
+			//delta(n, k) = maxval * B_(k, observations[n]);
+			delta(n, k) = maxval * doEvaluateEmissionProbability(k, observations[n]);
+			psi(n, k) = (unsigned int)maxvalind;
 		}
 	}
 
@@ -208,44 +208,44 @@ void DDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const std::vector<unsi
 	states[n_1] = 0u;
 	for (k = 0; k < K_; ++k)
 	{
-		if (delta[n_1][k] > probability)
+		if (delta(n_1, k) > probability)
 		{
-			probability = delta[n_1][k];
+			probability = delta(n_1, k);
 			states[n_1] = (unsigned int)k;
 		}
 	}
 
 	// 4. Path (state sequence) backtracking
 	for (n = N - 1; n > 0; --n)
-		states[n-1] = psi[n][states[n]];
+		states[n-1] = psi(n, states[n]);
 }
 
-void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const std::vector<unsigned int> &observations, boost::multi_array<double, 2> &delta, boost::multi_array<unsigned int, 2> &psi, std::vector<unsigned int> &states, double &probability) const
+void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const uivector_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability) const
 {
 	size_t i, k;  // state indices
 	size_t n;
 
 	// 0. Preprocessing
-	std::vector<double> logPi(pi_);
-	boost::multi_array<double, 2> logA(A_);
-	boost::multi_array<double, 2> logO(boost::extents[K_][N]);
+	dvector_type logPi(pi_);
+	dmatrix_type logA(A_);
+	dmatrix_type logO(K_, N);
 	for (k = 0; k < K_; ++k)
 	{
 		logPi[k] = std::log(pi_[k]);
 
 		for (i = 0; i < K_; ++i)
-			logA[k][i] = std::log(A_[k][i]);
+			logA(k, i) = std::log(A_(k, i));
 
 		for (n = 0; n < N; ++n)
-			//logO[k][n] = std::log(B_[k][observations[n]]);
-			logO[k][n] = std::log(doEvaluateEmissionProbability(k, observations[n]));
+			//logO(k, n) = std::log(B_(k, observations[n]));
+			logO(k, n) = std::log(doEvaluateEmissionProbability(k, observations[n]));
 	}
 
 	// 1. Initialization
 	for (k = 0; k < K_; ++k)
 	{
-		delta[0][k] = logPi[k] + logO[k][0];
-		psi[0][k] = 0u;
+		delta(0, k) = logPi[k] + logO(k, 0);
+		psi(0, k) = 0u;
 	}
 
 	// 2. Recursion
@@ -261,7 +261,7 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const std::vector<unsign
 			maxvalind = 0;
 			for (i = 0; i < K_; ++i)
 			{
-				val = delta[n_1][i] + logA[i][k];
+				val = delta(n_1, i) + logA(i, k);
 				if (val > maxval)
 				{
 					maxval = val;
@@ -269,8 +269,8 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const std::vector<unsign
 				}
 			}
 
-			delta[n][k] = maxval + logO[k][n];
-			psi[n][k] = (unsigned int)maxvalind;
+			delta(n, k) = maxval + logO(k, n);
+			psi(n, k) = (unsigned int)maxvalind;
 		}
 	}
 
@@ -280,25 +280,29 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const std::vector<unsign
 	states[n_1] = 0u;
 	for (k = 0; k < K_; ++k)
 	{
-		if (delta[n_1][k] > probability)
+		if (delta(n_1, k) > probability)
 		{
-			probability = delta[n_1][k];
+			probability = delta(n_1, k);
 			states[n_1] = (unsigned int)k;
 		}
 	}
 
 	// 4. Path (state sequence) backtracking
 	for (n = N - 1; n > 0; --n)
-		states[n-1] = psi[n][states[n]];
+		states[n-1] = psi(n, states[n]);
 }
 
-bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &observations, const double terminationTolerance, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::estimateParameters(const size_t N, const uivector_type &observations, const double terminationTolerance, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
-	std::vector<double> scale(N, 0.0);
+	dvector_type scale(N, 0.0);
 	double logprobf, logprobb;
+	size_t n;
 
-	boost::multi_array<double, 2> alpha(boost::extents[N][K_]), beta(boost::extents[N][K_]), gamma(boost::extents[N][K_]);
-	boost::multi_array<double, 3> xi(boost::extents[N][K_][K_]);
+	dmatrix_type alpha(N, K_, 0.0), beta(N, K_, 0.0), gamma(N, K_, 0.0);
+	std::vector<dmatrix_type> xi;
+	xi.reserve(N);
+	for (n = 0; n < N; ++n)
+		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
 	// E-step
 	{
@@ -315,7 +319,7 @@ bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &
 
 	double numeratorA, denominatorA;
 	double delta;
-	size_t i, k, n;
+	size_t i, k;
 	numIteration = 0;
 	do
 	{
@@ -323,19 +327,19 @@ bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &
 		for (k = 0; k < K_; ++k)
 		{
 			// reestimate frequency of state k in time n=0
-			pi_[k] = 0.001 + 0.999 * gamma[0][k];
+			pi_[k] = 0.001 + 0.999 * gamma(0, k);
 
 			// reestimate transition matrix in each state
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
-				denominatorA += gamma[n][k];
+				denominatorA += gamma(n, k);
 
 			for (i = 0; i < K_; ++i)
 			{
 				numeratorA = 0.0;
 				for (n = 0; n < N - 1; ++n)
-					numeratorA += xi[n][k][i];
-				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
+					numeratorA += xi[n](k, i);
+				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
 			// reestimate symbol prob in each state
@@ -367,25 +371,28 @@ bool DDHMM::estimateParameters(const size_t N, const std::vector<unsigned int> &
 	// compute gamma & xi
 	{
 		// gamma can use the result from Baum-Welch algorithm
-		//boost::multi_array<double, 2> gamma2(boost::extents[N][K_]);
+		//dmatrix_type gamma2(N, K_, 0.0);
 		//computeGamma(N, alpha, beta, gamma2);
 
 		//
-		boost::multi_array<double, 3> xi2(boost::extents[N][K_][K_]);
+		std::vector<dmatrix_type> xi2;
+		xi.reserve(N);
+		for (n = 0; n < N; ++n)
+			xi.push_back(dmatrix_type(K_, K_, 0.0));
 		computeXi(N, observations, alpha, beta, xi2);
 	}
 */
 	return true;
 }
 
-bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<std::vector<unsigned int> > &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
 	const size_t R = Ns.size();  // number of observations sequences
-	size_t Nr, r;
+	size_t Nr, r, n;
 
-	std::vector<boost::multi_array<double, 2> > alphas, betas, gammas;
-	std::vector<boost::multi_array<double, 3> > xis;
-	std::vector<std::vector<double> > scales;
+	std::vector<dmatrix_type> alphas, betas, gammas;
+	std::vector<std::vector<dmatrix_type> > xis;
+	std::vector<dvector_type > scales;
 	alphas.reserve(R);
 	betas.reserve(R);
 	gammas.reserve(R);
@@ -394,11 +401,14 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 	for (r = 0; r < R; ++r)
 	{
 		Nr = Ns[r];
-		alphas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		betas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		gammas.push_back(boost::multi_array<double, 2>(boost::extents[Nr][K_]));
-		xis.push_back(boost::multi_array<double, 3>(boost::extents[Nr][K_][K_]));
-		scales.push_back(std::vector<double>(Nr, 0.0));
+		alphas.push_back(dmatrix_type(Nr, K_, 0.0));
+		betas.push_back(dmatrix_type(Nr, K_, 0.0));
+		gammas.push_back(dmatrix_type(Nr, K_, 0.0));
+		xis.push_back(std::vector<dmatrix_type>());
+		xis[r].reserve(Nr);
+		for (n = 0; n < Nr; ++n)
+			xis[r].push_back(dmatrix_type(K_, K_, 0.0));
+		scales.push_back(dvector_type(Nr, 0.0));
 	}
 
 	double logprobf, logprobb;
@@ -407,13 +417,13 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 	for (r = 0; r < R; ++r)
 	{
 		Nr = Ns[r];
-		const std::vector<unsigned int> &observations = observationSequences[r];
+		const uivector_type &observations = observationSequences[r];
 
-		boost::multi_array<double, 2> &alphar = alphas[r];
-		boost::multi_array<double, 2> &betar = betas[r];
-		boost::multi_array<double, 2> &gammar = gammas[r];
-		boost::multi_array<double, 3> &xir = xis[r];
-		std::vector<double> &scaler = scales[r];
+		dmatrix_type &alphar = alphas[r];
+		dmatrix_type &betar = betas[r];
+		dmatrix_type &gammar = gammas[r];
+		std::vector<dmatrix_type> &xir = xis[r];
+		dvector_type &scaler = scales[r];
 
 		// forward-backward algorithm
 		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
@@ -429,7 +439,7 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 	double numeratorA, denominatorA;
 	double delta;
 	bool continueToLoop;
-	size_t i, k, n;
+	size_t i, k;
 	numIteration = 0;
 	do
 	{
@@ -439,22 +449,22 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 			// reestimate frequency of state k in time n=0
 			numeratorPi = 0.0;
 			for (r = 0; r < R; ++r)
-				numeratorPi += gammas[r][0][k];
+				numeratorPi += gammas[r](0, k);
 			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
 
 			// reestimate transition matrix in each state
 			denominatorA = 0.0;
 			for (r = 0; r < R; ++r)
 				for (n = 0; n < Ns[r] - 1; ++n)
-					denominatorA += gammas[r][n][k];
+					denominatorA += gammas[r](n, k);
 
 			for (i = 0; i < K_; ++i)
 			{
 				numeratorA = 0.0;
 				for (r = 0; r < R; ++r)
 					for (n = 0; n < Ns[r] - 1; ++n)
-						numeratorA += xis[r][n][k][i];
-				A_[k][i] = 0.001 + 0.999 * numeratorA / denominatorA;
+						numeratorA += xis[r][n](k, i);
+				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
 			// reestimate symbol prob in each state
@@ -466,13 +476,13 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 		for (r = 0; r < R; ++r)
 		{
 			Nr = Ns[r];
-			const std::vector<unsigned int> &observations = observationSequences[r];
+			const uivector_type &observations = observationSequences[r];
 
-			boost::multi_array<double, 2> &alphar = alphas[r];
-			boost::multi_array<double, 2> &betar = betas[r];
-			boost::multi_array<double, 2> &gammar = gammas[r];
-			boost::multi_array<double, 3> &xir = xis[r];
-			std::vector<double> &scaler = scales[r];
+			dmatrix_type &alphar = alphas[r];
+			dmatrix_type &betar = betas[r];
+			dmatrix_type &gammar = gammas[r];
+			std::vector<dmatrix_type> &xir = xis[r];
+			dvector_type &scaler = scales[r];
 
 			// forward-backward algorithm
 			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
@@ -502,12 +512,21 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 		for (r = 0; r < R; ++r)
 		{
 			// gamma can use the result from Baum-Welch algorithm
-			//boost::multi_array<double, 2> gamma2(boost::extents[Ns[r]][K_]);
+			//dmatrix_type gamma2(Ns[r], K_, 0.0);
 			//computeGamma(Ns[r], alphas[r], betas[r], gamma2);
 
 			//
-			boost::multi_array<double, 3> xi2(boost::extents[Ns[r]][K_][K_]);
-			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xi2);
+			std::vector<std::vector<dmatrix_type> > xis2;
+			xis2.reserve(R);
+			for (r = 0; r < R; ++r)
+			{
+				Nr = Ns[r];
+				xis2.push_back(std::vector<dmatrix_type>());
+				xis2[r].reserve(Nr);
+				for (n = 0; n < Nr; ++n)
+					xis2[r].push_back(dmatrix_type(K_, K_, 0.0));
+			}
+			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xis2[r]);
 		}
 	}
 */
@@ -515,7 +534,7 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 	return true;
 }
 
-void DDHMM::computeXi(const size_t N, const std::vector<unsigned int> &observations, const boost::multi_array<double, 2> &alpha, const boost::multi_array<double, 2> &beta, boost::multi_array<double, 3> &xi) const
+void DDHMM::computeXi(const size_t N, const uivector_type &observations, const dmatrix_type &alpha, const dmatrix_type &beta, std::vector<dmatrix_type> &xi) const
 {
 	size_t i, k;
 	double sum;
@@ -525,18 +544,18 @@ void DDHMM::computeXi(const size_t N, const std::vector<unsigned int> &observati
 		for (k = 0; k < K_; ++k)
 			for (i = 0; i < K_; ++i)
 			{
-				//xi[n][k][i] = alpha[n][k] * beta[n+1][i] * A_[k][i] * B_[i][observations[n+1]];
-				xi[n][k][i] = alpha[n][k] * beta[n+1][i] * A_[k][i] * doEvaluateEmissionProbability(i, observations[n+1]);
-				sum += xi[n][k][i];
+				//xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * B_(i, observations[n+1]);
+				xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * doEvaluateEmissionProbability(i, observations[n+1]);
+				sum += xi[n](k, i);
 			}
 
 		for (k = 0; k < K_; ++k)
 			for (i = 0; i < K_; ++i)
-				xi[n][k][i] /= sum;
+				xi[n](k, i) /= sum;
 	}
 }
 
-void DDHMM::generateSample(const size_t N, std::vector<unsigned int> &observations, std::vector<unsigned int> &states) const
+void DDHMM::generateSample(const size_t N, uivector_type &observations, uivector_type &states) const
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -551,7 +570,7 @@ void DDHMM::generateSample(const size_t N, std::vector<unsigned int> &observatio
 	}
 }
 
-/*static*/ bool DDHMM::readSequence(std::istream &stream, size_t &N, std::vector<unsigned int> &observations)
+/*static*/ bool DDHMM::readSequence(std::istream &stream, size_t &N, uivector_type &observations)
 {
 	std::string dummy;
 
@@ -570,7 +589,7 @@ void DDHMM::generateSample(const size_t N, std::vector<unsigned int> &observatio
 	return true;
 }
 
-/*static*/ bool DDHMM::writeSequence(std::ostream &stream, const std::vector<unsigned int> &observations)
+/*static*/ bool DDHMM::writeSequence(std::ostream &stream, const uivector_type &observations)
 {
 	const size_t N = observations.size();
 	stream << "N= " << N << std::endl;

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithUnivariateNormalObservations.h"
+#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/distributions/normal.hpp>  // for normal distribution
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
@@ -20,7 +21,7 @@ HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const s
 {
 }
 
-HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const std::vector<double> &mus, const std::vector<double> &sigmas)
+HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &sigmas)
 : base_type(K, 1, pi, A), mus_(mus), sigmas_(sigmas),
   baseGenerator_()
 {
@@ -30,51 +31,61 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 {
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate symbol prob in each state
 
 	size_t n;
-	const double denominatorPr = denominatorA + gamma[N-1][state];
+	const double denominatorPr = denominatorA + gamma(N-1, state);
 
 	//
 	double numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma[n][state] * observations[n][0];
+		numeratorPr += gamma(n, state) * observations(n, 0);
 	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
 	//
 	numeratorPr = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma[n][state] * (observations[n][0] - mus_[state]) * (observations[n][0] - mus_[state]);
+		numeratorPr += gamma(n, state) * (observations(n, 0) - mus_[state]) * (observations(n, 0) - mus_[state]);
 	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	size_t n, r;
-
 	// reestimate symbol prob in each state
+
+	size_t n, r;
 	double denominatorPr = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorPr += gammas[r][Ns[r]-1][state];
+		denominatorPr += gammas[r](Ns[r]-1, state);
 
-	// for univariate normal distributions
+	//
 	double numeratorPr = 0.0;
 	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammas[r][n][state] * observationSequences[r][n][0];
+			numeratorPr += gammar(n, state) * observationr(n, 0);
+	}
 	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 
-	// for univariate normal distributions
+	//
 	numeratorPr = 0.0;
 	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammas[r][n][state] * (observationSequences[r][n][0] - mus_[state]) * (observationSequences[r][n][0] - mus_[state]);
+			numeratorPr += gammar(n, state) * (observationr(n, 0) - mus_[state]) * (observationr(n, 0) - mus_[state]);
+	}
 	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
 }
 
-double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const
+double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
 	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity)
 	boost::math::normal pdf(mus_[state], sigmas_[state]);
@@ -82,7 +93,7 @@ double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const 
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
@@ -163,6 +174,7 @@ void HmmWithUnivariateNormalObservations::doInitializeObservationDensity()
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
 
+	// FIXME [modify] >> lower & upper bounds have to be adjusted
 	const double lb = -10000.0, ub = 10000.0;
 	for (size_t k = 0; k < K_; ++k)
 	{

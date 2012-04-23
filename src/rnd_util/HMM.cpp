@@ -13,12 +13,11 @@
 namespace swl {
 
 HMM::HMM(const size_t K, const size_t D)
-: K_(K), D_(D), pi_(K, 0.0), A_(boost::extents[K][K])  // 0-based index
-//: K_(K), D_(D), pi_(boost::extents[boost::multi_array_types::extent_range(1, K+1)]), A_(boost::extents[boost::multi_array_types::extent_range(1, K+1)][boost::multi_array_types::extent_range(1, K+1)])  // 1-based index
+: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0)  // 0-based index
 {
 }
 
-HMM::HMM(const size_t K, const size_t D, const std::vector<double> &pi, const boost::multi_array<double, 2> &A)
+HMM::HMM(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A)
 : K_(K), D_(D), pi_(pi), A_(A)
 {
 }
@@ -27,7 +26,7 @@ HMM::~HMM()
 {
 }
 
-void HMM::computeGamma(const size_t N, const boost::multi_array<double, 2> &alpha, const boost::multi_array<double, 2> &beta, boost::multi_array<double, 2> &gamma) const
+void HMM::computeGamma(const size_t N, const dmatrix_type &alpha, const dmatrix_type &beta, dmatrix_type &gamma) const
 {
 	size_t k;
 	double denominator;
@@ -36,12 +35,12 @@ void HMM::computeGamma(const size_t N, const boost::multi_array<double, 2> &alph
 		denominator = 0.0;
 		for (k = 0; k < K_; ++k)
 		{
-			gamma[n][k] = alpha[n][k] * beta[n][k];
-			denominator += gamma[n][k];
+			gamma(n, k) = alpha(n, k) * beta(n, k);
+			denominator += gamma(n, k);
 		}
 
 		for (k = 0; k < K_; ++k)
-			gamma[n][k] = gamma[n][k] / denominator;
+			gamma(n, k) = gamma(n, k) / denominator;
 	}
 }
 
@@ -79,7 +78,7 @@ unsigned int HMM::generateNextState(const unsigned int currState) const
 	unsigned int nextState = (unsigned int)K_;
 	for (size_t k = 0; k < K_; ++k)
 	{
-		accum += A_[currState][k];
+		accum += A_(currState, k);
 		if (prob < accum)
 		{
 			nextState = (unsigned int)k;
@@ -137,12 +136,11 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	// FIXME [correct] >> compile-time error in debug mode
-	A_.resize(boost::extents[K_][K_]);
+	A_.resize(K_, K_);
 	for (k = 0; k < K_; ++k)
 	{
 		for (i = 0; i < K_; ++i)
-			stream >> A_[k][i];
+			stream >> A_(k, i);
 	}
 
 	return doReadObservationDensity(stream);
@@ -164,7 +162,7 @@ bool HMM::writeModel(std::ostream &stream) const
 	for (k = 0; k < K_; ++k)
 	{
 		for (i = 0; i < K_; ++i)
-			stream << A_[k][i] << ' ';
+			stream << A_(k, i) << ' ';
 		stream << std::endl;
 	}
 
@@ -191,11 +189,11 @@ void HMM::initializeModel()
 		sum = 0.0;
 		for (i = 0; i < K_; ++i)
 		{
-			A_[k][i] = (double)std::rand() / RAND_MAX;
-			sum += A_[k][i];
+			A_(k, i) = (double)std::rand() / RAND_MAX;
+			sum += A_(k, i);
 		}
 		for (i = 0; i < K_; ++i)
-			A_[k][i] /= sum;
+			A_(k, i) /= sum;
 	}
 
 	doInitializeObservationDensity();
@@ -216,9 +214,9 @@ void HMM::normalizeModelParameters()
 	{
 		sum = 0.0;
 		for (i = 0; i < K_; ++i)
-			sum += A_[k][i];
+			sum += A_(k, i);
 		for (i = 0; i < K_; ++i)
-			A_[k][i] /= sum;
+			A_(k, i) /= sum;
 	}
 
 	doNormalizeObservationDensityParameters();

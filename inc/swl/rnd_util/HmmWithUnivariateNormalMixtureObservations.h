@@ -17,10 +17,14 @@ class SWL_RND_UTIL_API HmmWithUnivariateNormalMixtureObservations: public CDHMM,
 public:
 	typedef CDHMM base_type;
 	//typedef HmmWithMixtureObservations base_type;
+	typedef boost::numeric::ublas::vector<double> dvector_type;
+	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
+	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
+	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 public:
 	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C);
-	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const std::vector<double> &pi, const boost::multi_array<double, 2> &A, const boost::multi_array<double, 2> &alphas, const boost::multi_array<double, 2> &mus, const boost::multi_array<double, 2> &sigmas);
+	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &sigmas);
 	virtual ~HmmWithUnivariateNormalMixtureObservations();
 
 private:
@@ -29,24 +33,24 @@ private:
 
 public:
 	//
-	boost::multi_array<double, 2> & getMean()  {  return mus_;  }
-	const boost::multi_array<double, 2> & getMean() const  {  return mus_;  }
-	boost::multi_array<double, 2> & getStandardDeviation()  {  return  sigmas_;  }
-	const boost::multi_array<double, 2> & getStandardDeviation() const  {  return  sigmas_;  }
+	dmatrix_type & getMean()  {  return mus_;  }
+	const dmatrix_type & getMean() const  {  return mus_;  }
+	dmatrix_type & getStandardDeviation()  {  return  sigmas_;  }
+	const dmatrix_type & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ]
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ]
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
-	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::multi_array<double, 2>::const_array_view<1>::type &observation) const;
+	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const;
 	// if seed != -1, the seed value is set
-	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::multi_array_ref<double, 2>::array_view<1>::type &observation, const unsigned int seed = (unsigned int)-1) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed = (unsigned int)-1) const;
 
 	// for a single independent observation sequence
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const boost::multi_array<double, 2> &observations, boost::multi_array<double, 2> &gamma, const double denominatorA);
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA);
 	// for multiple independent observation sequences
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<boost::multi_array<double, 2> > &observationSequences, const std::vector<boost::multi_array<double, 2> > &gammas, const size_t R, const double denominatorA);
+	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
@@ -58,8 +62,8 @@ protected:
 	}
 
 private:
-	boost::multi_array<double, 2> mus_;  // the sets of means of each components in the univariate normal mixture distribution
-	boost::multi_array<double, 2> sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution
+	dmatrix_type mus_;  // the sets of means of each components in the univariate normal mixture distribution
+	dmatrix_type sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution
 
 	typedef boost::minstd_rand base_generator_type;
 	mutable base_generator_type baseGenerator_;

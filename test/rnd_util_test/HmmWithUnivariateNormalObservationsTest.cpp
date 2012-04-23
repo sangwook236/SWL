@@ -122,8 +122,11 @@ void model_reading_and_writing()
 			return;
 		}
 
-		boost::const_multi_array_ref<double, 2> A(arrA, boost::extents[K][K]);
-		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K, std::vector<double>(arrPi, arrPi + K), A, std::vector<double>(arrMu, arrMu + K), std::vector<double>(arrSigma, arrSigma + K)));
+		swl::HmmWithUnivariateNormalObservations::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
+		swl::HmmWithUnivariateNormalObservations::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
+		swl::HmmWithUnivariateNormalObservations::dvector_type mus(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrMu, arrMu + K)));
+		swl::HmmWithUnivariateNormalObservations::dvector_type sigmas(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrSigma, arrSigma + K)));
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K, pi, A, mus, sigmas));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -227,8 +230,8 @@ void observation_sequence_generation(const bool outputToFile)
 				return;
 			}
 
-			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
-			std::vector<unsigned int> states(N, (unsigned int)-1);
+			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationSize(), 0.0);
+			swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 			cdhmm->generateSample(N, observations, states, seed);
 
 #if 0
@@ -245,8 +248,8 @@ void observation_sequence_generation(const bool outputToFile)
 		{
 			const size_t N = 100;
 
-			boost::multi_array<double, 2> observations(boost::extents[N][cdhmm->getObservationSize()]);
-			std::vector<unsigned int> states(N, (unsigned int)-1);
+			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationSize(), 0.0);
+			swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 			cdhmm->generateSample(N, observations, states, seed);
 
 #if 0
@@ -264,7 +267,7 @@ void observation_sequence_generation(const bool outputToFile)
 
 void observation_sequence_reading_and_writing()
 {
-	boost::multi_array<double, 2> observations;
+	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 
 #if __TEST_HMM_MODEL == 1
@@ -360,7 +363,7 @@ void forward_algorithm()
 	}
 
 	// read a observation sequence
-	boost::multi_array<double, 2> observations;
+	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
 #if __TEST_HMM_MODEL == 1
@@ -411,7 +414,7 @@ void forward_algorithm()
 
 	// forward algorithm without scaling
 	{
-		boost::multi_array<double, 2> alpha(boost::extents[N][K]);
+		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
 		double probability = 0.0;
 		cdhmm->runForwardAlgorithm(N, observations, alpha, probability);
 
@@ -423,8 +426,8 @@ void forward_algorithm()
 
 	// forward algorithm with scaling
 	{
-		std::vector<double> scale(N, 0.0);
-		boost::multi_array<double, 2> alpha(boost::extents[N][K]);
+		swl::CDHMM::dvector_type scale(N, 0.0);
+		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
 		double logProbability = 0.0;
 		cdhmm->runForwardAlgorithm(N, observations, scale, alpha, logProbability);
 
@@ -485,7 +488,7 @@ void viterbi_algorithm()
 	}
 
 	// read a observation sequence
-	boost::multi_array<double, 2> observations;
+	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
 #if __TEST_HMM_MODEL == 1
@@ -536,9 +539,9 @@ void viterbi_algorithm()
 
 	// Viterbi algorithm using direct probabilities
 	{
-		boost::multi_array<double, 2> delta(boost::extents[N][K]);
-		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
-		std::vector<unsigned int> states(N, (unsigned int)-1);
+		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
+		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
+		swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 		double probability = 0.0;
 		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, probability, false);
 
@@ -554,9 +557,9 @@ void viterbi_algorithm()
 
 	// Viterbi algorithm using log probabilities
 	{
-		boost::multi_array<double, 2> delta(boost::extents[N][K]);
-		boost::multi_array<unsigned int, 2> psi(boost::extents[N][K]);
-		std::vector<unsigned int> states(N, (unsigned int)-1);
+		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
+		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
+		swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 		double logProbability = 0.0;
 		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
 
@@ -646,7 +649,7 @@ void mle_em_learning()
 	// for a single observation sequence
 	{
 		// read a observation sequence
-		boost::multi_array<double, 2> observations;
+		swl::CDHMM::dmatrix_type observations;
 		size_t N = 0;  // length of observation sequence, N
 		{
 #if __TEST_HMM_MODEL == 1
@@ -717,7 +720,7 @@ void mle_em_learning()
 	// for multiple independent observation sequences
 	{
 		// read a observation sequence
-		std::vector<boost::multi_array<double, 2> > observationSequences;
+		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
 		std::vector<size_t> Ns;  // lengths of observation sequences
 		{
 #if __TEST_HMM_MODEL == 1
@@ -797,6 +800,8 @@ void mle_em_learning()
 
 void hmm_with_univariate_normal_observation_densities()
 {
+	std::cout << "===== CDHMM w/ univariate normal observation densities =====" << std::endl;
+
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
 	//local::observation_sequence_generation(outputToFile);
