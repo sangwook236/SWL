@@ -124,6 +124,7 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
+	// 1 x K
 	pi_.resize(K_);
 	for (k = 0; k < K_; ++k)
 		stream >> pi_[k];
@@ -136,12 +137,11 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
+	// K x K
 	A_.resize(K_, K_);
 	for (k = 0; k < K_; ++k)
-	{
 		for (i = 0; i < K_; ++i)
 			stream >> A_(k, i);
-	}
 
 	return doReadObservationDensity(stream);
 }
@@ -153,11 +153,13 @@ bool HMM::writeModel(std::ostream &stream) const
 	stream << "K= " << K_ << std::endl;  // the number of hidden states
 	stream << "D= " << D_ << std::endl;  // the number of observation symbols
 
+	// 1 x K
 	stream << "pi:" << std::endl;
 	for (k = 0; k < K_; ++k)
 		stream << pi_[k] << ' ';
 	stream << std::endl;
 
+	// K x K
 	stream << "A:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{

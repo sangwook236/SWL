@@ -1,5 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultivariateNormalObservations.h"
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>
 #include <boost/numeric/ublas/blas.hpp>
@@ -15,8 +17,6 @@
 
 
 namespace swl {
-
-namespace {
 
 // FIXME [move] >> this positition is temporary
 double determinant_by_lu(const boost::numeric::ublas::matrix<double> &m)
@@ -59,7 +59,33 @@ bool inverse_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeri
 	}
 }
 
-}  // unnamed namespace
+// FIXME [move] >> this positition is temporary
+double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv)
+{
+	// create a working copy of the m
+	boost::numeric::ublas::matrix<double> A(m);
+	// create a permutation matrix for the LU factorization
+	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
+
+	// perform LU factorization
+	if (boost::numeric::ublas::lu_factorize(A, pm))
+		return 0.0;
+	else
+	{
+		// create identity matrix of inv
+		inv.assign(boost::numeric::ublas::identity_matrix<double>(A.size1()));
+
+		// back-substitute to get the inverse
+		boost::numeric::ublas::lu_substitute(A, pm, inv);
+
+		//
+	    double det = 1.0;
+		for (std::size_t i = 0; i < pm.size(); ++i)
+			det *= (pm(i) == i) ? A(i, i) : -A(i, i);
+
+		return det;
+	}
+}
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D)
 : base_type(K, D), mus_(K), sigmas_(K)  // 0-based index
@@ -85,24 +111,27 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	// reestimate symbol prob in each state
 
 	size_t d, n;
-	const double denominatorPr = denominatorA + gamma(N-1, state);
+	const double denominator = denominatorA + gamma(N-1, state);
+	const double factor = 0.999 / denominator;
 
-	// TODO [check] >> this code may be changed into a vector form.
-	double numeratorPr;
-	for (d = 0; d < D_; ++d)
-	{
-		numeratorPr = 0.0;
-		for (n = 0; n < N; ++n)
-			numeratorPr += gamma(n, state) * observations(n, d);
-		mus_[state][d] = 0.001 + 0.999 * numeratorPr / denominatorPr;
-	}
+	//
+	dvector_type &mu = mus_[state];
+	mu.clear();
+	for (n = 0; n < N; ++n)
+		mu += gamma(n, state) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
+	//mu = mu * factor + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+	mu = mu * factor + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
 
 	//
 	dmatrix_type &sigma = sigmas_[state];
 	sigma.clear();
 	for (n = 0; n < N; ++n)
-		boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mus_[state]);
-	sigma = sigma * (0.999 / denominatorPr) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+		boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
+	//sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+	sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+
+	// POSTCONDITIONS [] >>
+	//	-. all covariance matrices have to be positive definite.
 }
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
@@ -110,49 +139,48 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	// reestimate symbol prob in each state
 
 	size_t d, n, r;
-	double denominatorPr = denominatorA;
+	double denominator = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorPr += gammas[r](Ns[r]-1, state);
-
-	// TODO [check] >> this code may be changed into a vector form.
-	double numeratorPr;
-	const double factor = 0.999 / denominatorPr;
-	for (d = 0; d < D_; ++d)
-	{
-		numeratorPr = 0.0;
-		for (r = 0; r < R; ++r)
-		{
-			const dmatrix_type &gammar = gammas[r];
-			const dmatrix_type &observationr = observationSequences[r];
-
-			for (n = 0; n < Ns[r]; ++n)
-				numeratorPr += gammar(n, state) * observationr(n, d);
-		}
-		mus_[state][d] = 0.001 + factor * numeratorPr;
-	}
+		denominator += gammas[r](Ns[r]-1, state);
+	const double factor = 0.999 / denominator;
 
 	//
-	dmatrix_type &sigma = sigmas_[state];
-	sigma.clear();
-	const boost::numeric::ublas::scalar_matrix<double> sm(sigma.size1(), sigma.size2(), 0.001);
+	dvector_type &mu = mus_[state];
+	mu.clear();
 	for (r = 0; r < R; ++r)
 	{
 		const dmatrix_type &gammar = gammas[r];
 		const dmatrix_type &observationr = observationSequences[r];
 
-		numeratorPr = 0.0;
 		for (n = 0; n < Ns[r]; ++n)
-			boost::numeric::ublas::blas_2::sr(sigma, gammar(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mus_[state]);
-		sigma = sigma * factor + sm;
+			mu += gammar(n, state) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n);
 	}
+	//mu = factor * mu + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+	mu = factor * mu + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
+
+	//
+	dmatrix_type &sigma = sigmas_[state];
+	sigma.clear();
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &gammar = gammas[r];
+		const dmatrix_type &observationr = observationSequences[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			boost::numeric::ublas::blas_2::sr(sigma, gammar(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
+	}
+	//sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+	sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+
+	// POSTCONDITIONS [] >>
+	//	-. all covariance matrices have to be positive definite.
 }
 
 double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
 	const dmatrix_type &sigma = sigmas_[state];
-	const double det = determinant_by_lu(sigma);
 	dmatrix_type inv(sigma.size1(), sigma.size2());
-	inverse_by_lu(sigma, inv);
+	const double det = det_and_inv_by_lu(sigma, inv);
 
 	const dvector_type x_mu(observation - mus_[state]);
 	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(2.0 * boost::math::constants::pi<double>(), (double)D_) * det);
@@ -160,7 +188,40 @@ double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(cons
 
 void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
-	throw std::runtime_error("not yet implemented");
+	// bivariate normal distribution
+	if (2 == D_)
+	{
+		if ((unsigned int)-1 != seed)
+		{
+			// random number generator algorithms
+			gsl_rng_default = gsl_rng_mt19937;
+			//gsl_rng_default = gsl_rng_taus;
+			gsl_rng_default_seed = (unsigned long)std::time(NULL);
+		}
+
+		const gsl_rng_type *T = gsl_rng_default;
+		gsl_rng *r = gsl_rng_alloc(T);
+
+		//
+		const dvector_type &mu = mus_[state];
+		const dmatrix_type &sigma = sigmas_[state];
+
+		const double sigma_x = sigma(0, 0);
+		const double sigma_y = sigma(1, 1);
+		const double rho = sigma(0, 1) / std::sqrt(sigma_x * sigma_y);  // correlation coefficient
+
+		double x = 0.0, y = 0.0;
+		gsl_ran_bivariate_gaussian(r, sigma_x, sigma_y, rho, &x, &y);
+
+		gsl_rng_free(r);
+
+		observation[0] = mu[0] + x;
+		observation[1] = mu[1] + y;
+	}
+	else
+	{
+		throw std::runtime_error("not yet implemented");
+	}
 }
 
 bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istream &stream)
@@ -182,31 +243,41 @@ bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istrea
 #endif
 		return false;
 
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "mu:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "mu:") != 0)
+#endif
+		return false;
+
 	size_t d, i;
+
+	// K x D
 	for (size_t k = 0; k < K_; ++k)
 	{
-		stream >> dummy;
-#if defined(__GNUC__)
-		if (strcasecmp(dummy.c_str(), "mu:") != 0)
-#elif defined(_MSC_VER)
-		if (_stricmp(dummy.c_str(), "mu:") != 0)
-#endif
-			return false;
+		dvector_type &mu = mus_[k];
 
 		for (d = 0; d < D_; ++d)
-			stream >> mus_[k][d];
+			stream >> mu[d];
+	}
 
-		stream >> dummy;
+	stream >> dummy;
 #if defined(__GNUC__)
-		if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+	if (strcasecmp(dummy.c_str(), "sigma:") != 0)
 #elif defined(_MSC_VER)
-		if (_stricmp(dummy.c_str(), "sigma:") != 0)
+	if (_stricmp(dummy.c_str(), "sigma:") != 0)
 #endif
-			return false;
+		return false;
 
+	// K x (D * D)
+	for (size_t k = 0; k < K_; ++k)
+	{
+		dmatrix_type &sigma = sigmas_[k];
+	
 		for (d = 0; d < D_; ++d)
 			for (i = 0; i < D_; ++i)
-				stream >> sigmas_[k](d, i);
+				stream >> sigma(d, i);
 	}
 
 	return true;
@@ -216,21 +287,32 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 {
 	stream << "multivariate normal:" << std::endl;
 
-	size_t d, i;
-	for (size_t k = 0; k < K_; ++k)
-	{
-		stream << "mu:" << std::endl;
-		for (d = 0; d < D_; ++d)
-			stream << mus_[k][d] << ' ';
-		stream << std::endl;
+	size_t i, k, d;
 
-		stream << "sigma:" << std::endl;
+	// K x D
+	stream << "mu:" << std::endl;
+	for (k = 0; k < K_; ++k)
+	{
+		const dvector_type &mu = mus_[k];
+
+		for (d = 0; d < D_; ++d)
+			stream << mu[d] << ' ';
+		stream << std::endl;
+	}
+
+	// K x (D * D)
+	stream << "sigma:" << std::endl;
+	for (k = 0; k < K_; ++k)
+	{
+		const dmatrix_type &sigma = sigmas_[k];
+
 		for (d = 0; d < D_; ++d)
 		{
 			for (i = 0; i < D_; ++i)
-				stream << sigmas_[k](d, i) << ' ';
-			stream << std::endl;
+				stream << sigma(d, i) << ' ';
+			std::cout << "  ";
 		}
+		stream << std::endl;
 	}
 
 	return true;

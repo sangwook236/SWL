@@ -36,19 +36,25 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	// reestimate symbol prob in each state
 
 	size_t n;
-	const double denominatorPr = denominatorA + gamma(N-1, state);
+	const double denominator = denominatorA + gamma(N-1, state);
 
 	//
-	double numeratorPr = 0.0;
+	double &mu = mus_[state];
+	mu = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma(n, state) * observations(n, 0);
-	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+		mu += gamma(n, state) * observations(n, 0);
+	mu = 0.001 + 0.999 * mu / denominator;
 
 	//
-	numeratorPr = 0.0;
+	double &sigma = sigmas_[state];
+	sigma = 0.0;
 	for (n = 0; n < N; ++n)
-		numeratorPr += gamma(n, state) * (observations(n, 0) - mus_[state]) * (observations(n, 0) - mus_[state]);
-	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+		sigma += gamma(n, state) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
+	sigma = 0.001 + 0.999 * sigma / denominator;
+	assert(sigma > 0.0);
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
@@ -56,33 +62,39 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	// reestimate symbol prob in each state
 
 	size_t n, r;
-	double denominatorPr = denominatorA;
+	double denominator = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominatorPr += gammas[r](Ns[r]-1, state);
+		denominator += gammas[r](Ns[r]-1, state);
 
 	//
-	double numeratorPr = 0.0;
+	double &mu = mus_[state];
+	mu = 0.0;
 	for (r = 0; r < R; ++r)
 	{
 		const dmatrix_type &observationr = observationSequences[r];
 		const dmatrix_type &gammar = gammas[r];
 
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammar(n, state) * observationr(n, 0);
+			mu += gammar(n, state) * observationr(n, 0);
 	}
-	mus_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+	mu = 0.001 + 0.999 * mu / denominator;
 
 	//
-	numeratorPr = 0.0;
+	double &sigma = sigmas_[state];
+	sigma = 0.0;
 	for (r = 0; r < R; ++r)
 	{
 		const dmatrix_type &observationr = observationSequences[r];
 		const dmatrix_type &gammar = gammas[r];
 
 		for (n = 0; n < Ns[r]; ++n)
-			numeratorPr += gammar(n, state) * (observationr(n, 0) - mus_[state]) * (observationr(n, 0) - mus_[state]);
+			sigma += gammar(n, state) * (observationr(n, 0) - mu) * (observationr(n, 0) - mu);
 	}
-	sigmas_[state] = 0.001 + 0.999 * numeratorPr / denominatorPr;
+	sigma = 0.001 + 0.999 * sigma / denominator;
+	assert(sigma > 0.0);
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
@@ -135,6 +147,7 @@ bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream 
 #endif
 		return false;
 
+	// 1 x K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> mus_[k];
 
@@ -146,6 +159,7 @@ bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream 
 #endif
 		return false;
 
+	// 1 x K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> sigmas_[k];
 
@@ -156,11 +170,13 @@ bool HmmWithUnivariateNormalObservations::doWriteObservationDensity(std::ostream
 {
 	stream << "univariate normal:" << std::endl;
 
+	// 1 x K
 	stream << "mu:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << mus_[k] << ' ';
 	stream << std::endl;
 
+	// 1 x K
 	stream << "sigma:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << sigmas_[k] << ' ';

@@ -108,6 +108,7 @@ bool HmmWithMultinomialObservations::doReadObservationDensity(std::istream &stre
 #endif
 		return false;
 
+	// K x D
 	B_.resize(K_, D_);
 	for (k = 0; k < K_; ++k)
 		for (i = 0; i < D_; ++i)
@@ -120,6 +121,7 @@ bool HmmWithMultinomialObservations::doWriteObservationDensity(std::ostream &str
 {
 	size_t i, k;
 
+	// K x D
 	stream << "B:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{

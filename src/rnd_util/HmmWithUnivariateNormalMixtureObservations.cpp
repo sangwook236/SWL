@@ -34,7 +34,7 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	// reestimate symbol prob in each state
 
 	size_t c, n;
-	double numerator, denominator;
+	double denominator;
 
 	// E-step
 	// TODO [check] >> frequent memory reallocation may make trouble
@@ -78,18 +78,23 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 		alphas_(state, c) = 0.001 + 0.999 * sumZeta / denominator;
 
 		//
-		numerator = 0.0;
+		double &mu = mus_(state, c);
+		mu = 0.0;
 		for (n = 0; n < N; ++n)
-			numerator += zeta(n, c) * observations(n, 0);
-		mus_(state, c) = 0.001 + 0.999 * numerator / sumZeta;
+			mu += zeta(n, c) * observations(n, 0);
+		mu = 0.001 + 0.999 * mu / sumZeta;
 
 		//
-		numerator = 0.0;
+		double &sigma = sigmas_(state, c);
+		sigma = 0.0;
 		for (n = 0; n < N; ++n)
-			numerator += zeta(n, c) * (observations(n, 0) - mus_(state, c)) * (observations(n, 0) - mus_(state, c));
-		sigmas_(state, c) = 0.001 + 0.999 * numerator / sumZeta;
-		assert(sigmas_(state, c) > 0.0);
+			sigma += zeta(n, c) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
+		sigma = 0.001 + 0.999 * sigma / sumZeta;
+		assert(sigma > 0.0);
 	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
@@ -97,7 +102,7 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	// reestimate symbol prob in each state
 
 	size_t c, n, r;
-	double numerator, denominator;
+	double denominator;
 
 	// E-step
 	// TODO [check] >> frequent memory reallocation may make trouble
@@ -114,6 +119,10 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 
 		double val;
 		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &gammar = gammas[r];
+			dmatrix_type &zetar = zetas[r];
+
 			for (n = 0; n < Ns[r]; ++n)
 			{
 				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observationSequences[r], n);
@@ -125,14 +134,15 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 					//val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
 					val = alphas_(state, c) * boost::math::pdf(pdfs[c], obs[0]);
 
-					zetas[r](n, c) = val;
+					zetar(n, c) = val;
 					denominator += val;
 				}
 
-				val = 0.999 * gammas[r](n, state) / denominator;
+				val = 0.999 * gammar(n, state) / denominator;
 				for (c = 0; c < C_; ++c)
-					zetas[r](n, c) = 0.001 + val * zetas[r](n, c);
+					zetar(n, c) = 0.001 + val * zetar(n, c);
 			}
+		}
 	}
 
 	// M-step
@@ -146,24 +156,44 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	{
 		sumZeta = 0.0;
 		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &zetar = zetas[r];
+
 			for (n = 0; n < Ns[r]; ++n)
-				sumZeta += zetas[r](n, c);
+				sumZeta += zetar(n, c);
+		}
 		alphas_(state, c) = 0.001 + factor * sumZeta;
 
 		//
-		numerator = 0.0;
+		double &mu = mus_(state, c);
+		mu = 0.0;
 		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &observationr = observationSequences[r];
+			const dmatrix_type &zetar = zetas[r];
+
 			for (n = 0; n < Ns[r]; ++n)
-				numerator += zetas[r](n, c) * observationSequences[r](n, 0);
-		mus_(state, c) = 0.001 + 0.999 * numerator / sumZeta;
+				mu += zetar(n, c) * observationr(n, 0);
+		}
+		mu = 0.001 + 0.999 * mu / sumZeta;
 
 		//
-		numerator = 0.0;
+		double &sigma = sigmas_(state, c);
+		sigma = 0.0;
 		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &observationr = observationSequences[r];
+			const dmatrix_type &zetar = zetas[r];
+
 			for (n = 0; n < Ns[r]; ++n)
-				numerator += zetas[r](n, c) * (observationSequences[r](n, 0) - mus_(state, c)) * (observationSequences[r](n, 0) - mus_(state, c));
-		sigmas_(state, c) = 0.001 + 0.999 * numerator / sumZeta;
+				sigma += zetar(n, c) * (observationr(n, 0) - mu) * (observationr(n, 0) - mu);
+		}
+		sigma = 0.001 + 0.999 * sigma / sumZeta;
+		assert(sigma > 0.0);
 	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 double HmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
@@ -182,8 +212,8 @@ double HmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability
 
 void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
-	if ((unsigned int)-1 != seed)
-		baseGenerator_.seed(seed);
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
 
 	const double prob = (double)std::rand() / RAND_MAX;
 
@@ -207,9 +237,11 @@ void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(co
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
+	if ((unsigned int)-1 != seed)
+		baseGenerator_.seed(seed);
+
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_(state, component), sigmas_(state, component)));
-	for (size_t d = 0; d < D_; ++d)
-		observation[d] = normal_gen();
+	observation[0] = normal_gen();
 }
 
 bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::istream &stream)
@@ -259,8 +291,11 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 #endif
 		return false;
 
-	for (size_t k = 0; k < K_; ++k)
-		for (size_t c = 0; c < C_; ++c)
+	size_t k, c;
+
+	// K x C
+	for (k = 0; k < K_; ++k)
+		for (c = 0; c < C_; ++c)
 			stream >> alphas_(k, c);
 
 	stream >> dummy;
@@ -271,8 +306,9 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 #endif
 		return false;
 
-	for (size_t k = 0; k < K_; ++k)
-		for (size_t c = 0; c < C_; ++c)
+	// K x C
+	for (k = 0; k < K_; ++k)
+		for (c = 0; c < C_; ++c)
 			stream >> mus_(k, c);
 
 	stream >> dummy;
@@ -283,8 +319,9 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 #endif
 		return false;
 
-	for (size_t k = 0; k < K_; ++k)
-		for (size_t c = 0; c < C_; ++c)
+	// K x C
+	for (k = 0; k < K_; ++k)
+		for (c = 0; c < C_; ++c)
 			stream >> sigmas_(k, c);
 
 	return true;
@@ -296,26 +333,31 @@ bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::
 
 	stream << "C= " << C_ << std::endl;  // the number of mixture components
 
+	size_t k, c;
+
+	// K x C
 	stream << "alpha:" << std::endl;
-	for (size_t k = 0; k < K_; ++k)
+	for (k = 0; k < K_; ++k)
 	{
-		for (size_t c = 0; c < C_; ++c)
+		for (c = 0; c < C_; ++c)
 			stream << alphas_(k, c) << ' ';
 		stream << std::endl;
 	}
 
+	// K x C
 	stream << "mu:" << std::endl;
-	for (size_t k = 0; k < K_; ++k)
+	for (k = 0; k < K_; ++k)
 	{
-		for (size_t c = 0; c < C_; ++c)
+		for (c = 0; c < C_; ++c)
 			stream << mus_(k, c) << ' ';
 		stream << std::endl;
 	}
 
+	// K x C
 	stream << "sigma:" << std::endl;
-	for (size_t k = 0; k < K_; ++k)
+	for (k = 0; k < K_; ++k)
 	{
-		for (size_t c = 0; c < C_; ++c)
+		for (c = 0; c < C_; ++c)
 			stream << sigmas_(k, c) << ' ';
 		stream << std::endl;
 	}
