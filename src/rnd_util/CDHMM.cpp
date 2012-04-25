@@ -343,7 +343,7 @@ bool CDHMM::estimateParameters(const size_t N, const dmatrix_type &observations,
 				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
-			// reestimate symbol prob in each state
+			// reestimate observation(emission) distribution in each state
 			doEstimateObservationDensityParametersInMStep(N, (unsigned int)k, observations, gamma, denominatorA);
 		}
 
@@ -470,7 +470,7 @@ bool CDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
-			// reestimate symbol prob in each state
+			// reestimate observation(emission) distribution in each state
 			doEstimateObservationDensityParametersInMStep(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 

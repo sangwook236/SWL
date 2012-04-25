@@ -89,7 +89,7 @@ HmmWithVonMisesObservations::~HmmWithVonMisesObservations()
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t n;
 	double numerator = 0.0, denominator = 0.0;
@@ -105,6 +105,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(
 	//mu = std::atan2(numerator, denominator);
 	mu = std::atan2(numerator, denominator) + boost::math::constants::pi<double>();
 	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + boost::math::constants::pi<double>();
+	assert(0.0 <= mu && mu < 2.0 * boost::math::constants::pi<double>());
 
 	//
 	denominator = denominatorA + gamma(N-1, state);
@@ -116,7 +117,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(
 	// FIXME [modify] >> upper bound has to be adjusted
 	const double ub = 10000.0;  // kappa >= 0.0
 	const bool retval = one_dim_root_finding_using_f(A, ub, kappas_[state]);
-	assert(retval);
+	assert(retval && kappas_[state] >= 0.0);
 
 	// POSTCONDITIONS [] >>
 	//	-. all concentration parameters have to be greater than or equal to 0.
@@ -124,7 +125,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
 	double numerator = 0.0, denominator = 0.0;
@@ -146,6 +147,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(
 	//mu = std::atan2(numerator, denominator);
 	mu = std::atan2(numerator, denominator) + boost::math::constants::pi<double>();
 	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + boost::math::constants::pi<double>();
+	assert(0.0 <= mu && mu < 2.0 * boost::math::constants::pi<double>());
 
 	//
 	denominator = denominatorA;
@@ -166,7 +168,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersInMStep(
 	// FIXME [modify] >> upper bound has to be adjusted
 	const double ub = 10000.0;  // kappa >= 0.0
 	const bool retval = one_dim_root_finding_using_f(A, ub, kappas_[state]);
-	assert(retval);
+	assert(retval && kappas_[state] >= 0.0);
 
 	// POSTCONDITIONS [] >>
 	//	-. all concentration parameters have to be greater than or equal to 0.
@@ -238,7 +240,7 @@ bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
 #endif
 		return false;
 
-	// 1 x K
+	// K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> mus_[k];
 
@@ -250,7 +252,7 @@ bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
 #endif
 		return false;
 
-	// 1 x K
+	// K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> kappas_[k];
 
@@ -261,13 +263,13 @@ bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream
 {
 	stream << "von Mises:" << std::endl;
 
-	// 1 x K
+	// K
 	stream << "mu:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << mus_[k] << ' ';
 	stream << std::endl;
 
-	// 1 x K
+	// K
 	stream << "kappa:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << kappas_[k] << ' ';
@@ -276,18 +278,49 @@ bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream
 	return true;
 }
 
-void HmmWithVonMisesObservations::doInitializeObservationDensity()
+void HmmWithVonMisesObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
 
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
-	const double lb = -10000.0, ub = 10000.0;
+	// initialize the parameters of observation density
+	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
+	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
+
+	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density
+
+	assert(numLowerBound == numUpperBound);
+	assert(1 == numLowerBound || numParameters == numLowerBound);
+
+	if (1 == numLowerBound)
+	{
+		const double lb = lowerBoundsOfObservationDensity[0], ub = upperBoundsOfObservationDensity[0];
+		for (size_t k = 0; k < K_; ++k)
+		{
+			mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+			kappas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		}
+	}
+	else if (numParameters == numLowerBound)
+	{
+		size_t k, idx = 0;
+		for (k = 0; k < K_; ++k, ++idx)
+			mus_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+		for (k = 0; k < K_; ++k, ++idx)
+			kappas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+	}
+
+#if defined(DEBUG) || defined(_DEBUG)
+	const double _2_pi = 2.0 * boost::math::constants::pi<double>();
 	for (size_t k = 0; k < K_; ++k)
 	{
-		mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
-		kappas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		assert(0.0 <= mus_[k] && mus_[k] < _2_pi);
+		assert(kappas_[k] >= 0.0);
 	}
+#endif
+
+	// POSTCONDITIONS [] >>
+	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
 }  // namespace swl

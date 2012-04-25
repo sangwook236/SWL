@@ -108,7 +108,7 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t d, n;
 	const double denominator = denominatorA + gamma(N-1, state);
@@ -127,16 +127,18 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	sigma.clear();
 	for (n = 0; n < N; ++n)
 		boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
+	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
 	//sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
 	sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 
 	// POSTCONDITIONS [] >>
-	//	-. all covariance matrices have to be positive definite.
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t d, n, r;
 	double denominator = denominatorA;
@@ -169,11 +171,13 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 		for (n = 0; n < Ns[r]; ++n)
 			boost::numeric::ublas::blas_2::sr(sigma, gammar(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
 	}
+	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+	
 	//sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
 	sigma = sigma * factor + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 
 	// POSTCONDITIONS [] >>
-	//	-. all covariance matrices have to be positive definite.
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
@@ -318,24 +322,63 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 	return true;
 }
 
-void HmmWithMultivariateNormalObservations::doInitializeObservationDensity()
+void HmmWithMultivariateNormalObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
 
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
-	const double lb = -10000.0, ub = 10000.0;
-	size_t d, i;
-	for (size_t k = 0; k < K_; ++k)
+	// initialize the parameters of observation density
+	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
+	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
+
+	const std::size_t numParameters = K_ * (D_ + D_ * D_);  // the total number of parameters of observation density
+
+	assert(numLowerBound == numUpperBound);
+	assert(1 == numLowerBound || numParameters == numLowerBound);
+
+	if (1 == numLowerBound)
 	{
-		for (d = 0; d < D_; ++d)
+		const double lb = lowerBoundsOfObservationDensity[0], ub = upperBoundsOfObservationDensity[0];
+		size_t d, i;
+		for (size_t k = 0; k < K_; ++k)
 		{
-			mus_[k][d] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
-			// FIXME [correct] >> covariance matrices must be positive definite
-			for (i = 0; i < D_; ++i)
-				sigmas_[k](d, i) = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+			dvector_type &mu = mus_[k];
+			dmatrix_type &sigma = sigmas_[k];
+			for (d = 0; d < D_; ++d)
+			{
+				mu[d] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+				for (i = 0; i < D_; ++i)
+					sigma(d, i) = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+			}
 		}
 	}
+	else if (numParameters == numLowerBound)
+	{
+		size_t k, d, i, idx = 0;
+		for (size_t k = 0; k < K_; ++k)
+		{
+			dvector_type &mu = mus_[k];
+			for (d = 0; d < D_; ++d, ++idx)
+				mu[d] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+		}
+		for (size_t k = 0; k < K_; ++k)
+		{
+			dmatrix_type &sigma = sigmas_[k];
+			for (d = 0; d < D_; ++d)
+				for (i = 0; i < D_; ++i, ++idx)
+					sigma(d, i) = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+		}
+	}
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		dmatrix_type &sigma = sigmas_[k];
+		// TODO [check] >> all covariance matrices have to be symmetric positive definite.
+		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 }  // namespace swl

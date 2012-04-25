@@ -27,7 +27,7 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t n;
 	const double denominatorB = denominatorA + gamma(N-1, state);
@@ -47,9 +47,9 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMSt
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	size_t n, r;
+	// reestimate observation(emission) distribution in each state
 
-	// reestimate symbol prob in each state
+	size_t n, r;
 	double denominatorB = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominatorB += gammas[r](Ns[r]-1, state);
@@ -133,7 +133,7 @@ bool HmmWithMultinomialObservations::doWriteObservationDensity(std::ostream &str
 	return true;
 }
 
-void HmmWithMultinomialObservations::doInitializeObservationDensity()
+void HmmWithMultinomialObservations::doInitializeObservationDensity(const std::vector<double> & /*lowerBoundsOfObservationDensity*/, const std::vector<double> & /*upperBoundsOfObservationDensity*/)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -157,7 +157,6 @@ void HmmWithMultinomialObservations::doNormalizeObservationDensityParameters()
 {
 	size_t i;
 	double sum;
-
 	for (size_t k = 0; k < K_; ++k)
 	{
 		sum = 0.0;

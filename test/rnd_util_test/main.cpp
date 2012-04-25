@@ -7,6 +7,10 @@
 #include <iostream>
 
 
+#if defined(min)
+#undef min
+#endif
+
 int main(int argc, char *argv[])
 {
 	void hough_transform();
@@ -44,6 +48,9 @@ int main(int argc, char *argv[])
 		//imu_calibration();
 		//imu_extended_Kalman_filter_with_calibration();
 		//imu_unscented_Kalman_filter_with_calibration();
+
+		//const double a = 1.0 / std::numeric_limits<double>::min(), b = 1.0 / 1e-500;
+		//std::cout << a << ", " << b << std::endl;
 
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();

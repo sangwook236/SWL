@@ -585,7 +585,7 @@ void mle_em_learning()
 
 		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
 
-		ddhmm->initializeModel();
+		ddhmm->initializeModel(std::vector<double>(), std::vector<double>());
 	}
 	else
 		throw std::runtime_error("incorrect initialization mode");

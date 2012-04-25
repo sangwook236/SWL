@@ -1,6 +1,7 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesObservations.h"
+#include <boost/math/constants/constants.hpp>
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -641,7 +642,25 @@ void mle_em_learning()
 
 		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
 
-		cdhmm->initializeModel();
+		// the total number of parameters of observation density = K * D * 2.
+		std::vector<double> lowerBounds, upperBounds;
+		const size_t numParameters = K * 1 * 2;
+		lowerBounds.reserve(numParameters);
+		upperBounds.reserve(numParameters);
+		const double small = 1.0e-10;
+		// mean directions: 0 <= mu < 2 * pi.
+		for (size_t i = 0; i < K; ++i)
+		{
+			lowerBounds.push_back(0.0);
+			upperBounds.push_back(2.0 * boost::math::constants::pi<double>() - small);
+		}
+		// concentration parameters: kappa >= 0.
+		for (size_t i = K; i < numParameters; ++i)
+		{
+			lowerBounds.push_back(small);
+			upperBounds.push_back(10000.0);
+		}
+		cdhmm->initializeModel(lowerBounds, upperBounds);
 	}
 	else
 		throw std::runtime_error("incorrect initialization mode");

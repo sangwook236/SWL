@@ -61,7 +61,7 @@ bool HmmWithVonMisesFisherMixtureObservations::doWriteObservationDensity(std::os
 	return false;
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doInitializeObservationDensity()
+void HmmWithVonMisesFisherMixtureObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	std::runtime_error("not yet implemented");
 }

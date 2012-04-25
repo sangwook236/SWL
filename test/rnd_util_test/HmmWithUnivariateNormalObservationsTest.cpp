@@ -641,7 +641,25 @@ void mle_em_learning()
 
 		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
 
-		cdhmm->initializeModel();
+		// the total number of parameters of observation density: K * D * 2
+		const size_t numParameters = K * 1 * 2;
+		std::vector<double> lowerBounds, upperBounds;
+		lowerBounds.reserve(numParameters);
+		upperBounds.reserve(numParameters);
+		// means
+		for (size_t i = 0; i < K; ++i)
+		{
+			lowerBounds.push_back(-10000.0);
+			upperBounds.push_back(10000.0);
+		}
+		// standard deviations: sigma > 0
+		const double small = 1.0e-10;
+		for (size_t i = K; i < numParameters; ++i)
+		{
+			lowerBounds.push_back(small);
+			upperBounds.push_back(10000.0);
+		}
+		cdhmm->initializeModel(lowerBounds, upperBounds);
 	}
 	else
 		throw std::runtime_error("incorrect initialization mode");

@@ -58,7 +58,7 @@ bool HmmWithVonMisesFisherObservations::doWriteObservationDensity(std::ostream &
 	return false;
 }
 
-void HmmWithVonMisesFisherObservations::doInitializeObservationDensity()
+void HmmWithVonMisesFisherObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	std::runtime_error("not yet implemented");
 }

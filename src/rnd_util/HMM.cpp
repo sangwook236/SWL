@@ -86,6 +86,10 @@ unsigned int HMM::generateNextState(const unsigned int currState) const
 		}
 	}
 
+	// TODO [check] >>
+	if ((unsigned int)K_ == nextState)
+		nextState = (unsigned int)(K_ - 1);
+
 	return nextState;
 
 	// POSTCONDITIONS [] >>
@@ -124,7 +128,7 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	// 1 x K
+	// K
 	pi_.resize(K_);
 	for (k = 0; k < K_; ++k)
 		stream >> pi_[k];
@@ -153,7 +157,7 @@ bool HMM::writeModel(std::ostream &stream) const
 	stream << "K= " << K_ << std::endl;  // the number of hidden states
 	stream << "D= " << D_ << std::endl;  // the number of observation symbols
 
-	// 1 x K
+	// K
 	stream << "pi:" << std::endl;
 	for (k = 0; k < K_; ++k)
 		stream << pi_[k] << ' ';
@@ -171,7 +175,7 @@ bool HMM::writeModel(std::ostream &stream) const
 	return doWriteObservationDensity(stream);
 }
 
-void HMM::initializeModel()
+void HMM::initializeModel(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -198,7 +202,7 @@ void HMM::initializeModel()
 			A_(k, i) /= sum;
 	}
 
-	doInitializeObservationDensity();
+	doInitializeObservationDensity(lowerBoundsOfObservationDensity, upperBoundsOfObservationDensity);
 }
 
 void HMM::normalizeModelParameters()

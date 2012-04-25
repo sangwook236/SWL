@@ -33,7 +33,7 @@ public:
 	bool readModel(std::istream &stream);
 	bool writeModel(std::ostream &stream) const;
 
-	void initializeModel();
+	void initializeModel(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity);
 	void normalizeModelParameters();
 
 	void computeGamma(const size_t N, const dmatrix_type &alpha, const dmatrix_type &beta, dmatrix_type &gamma) const;
@@ -50,7 +50,7 @@ public:
 protected:
 	virtual bool doReadObservationDensity(std::istream &stream) = 0;
 	virtual bool doWriteObservationDensity(std::ostream &stream) const = 0;
-	virtual void doInitializeObservationDensity() = 0;
+	virtual void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity) = 0;
 	virtual void doNormalizeObservationDensityParameters() = 0;
 
 	unsigned int generateInitialState() const;

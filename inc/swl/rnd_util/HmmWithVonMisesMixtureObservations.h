@@ -54,7 +54,7 @@ protected:
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
 	/*virtual*/ bool doWriteObservationDensity(std::ostream &stream) const;
-	/*virtual*/ void doInitializeObservationDensity();
+	/*virtual*/ void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity);
 	/*virtual*/ void doNormalizeObservationDensityParameters()
 	{
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);

@@ -33,7 +33,7 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t n;
 	const double denominator = denominatorA + gamma(N-1, state);
@@ -59,7 +59,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate symbol prob in each state
+	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
 	double denominator = denominatorA;
@@ -147,7 +147,7 @@ bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream 
 #endif
 		return false;
 
-	// 1 x K
+	// K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> mus_[k];
 
@@ -159,7 +159,7 @@ bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream 
 #endif
 		return false;
 
-	// 1 x K
+	// K
 	for (size_t k = 0; k < K_; ++k)
 		stream >> sigmas_[k];
 
@@ -170,13 +170,13 @@ bool HmmWithUnivariateNormalObservations::doWriteObservationDensity(std::ostream
 {
 	stream << "univariate normal:" << std::endl;
 
-	// 1 x K
+	// K
 	stream << "mu:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << mus_[k] << ' ';
 	stream << std::endl;
 
-	// 1 x K
+	// K
 	stream << "sigma:" << std::endl;
 	for (size_t k = 0; k < K_; ++k)
 		stream << sigmas_[k] << ' ';
@@ -185,18 +185,42 @@ bool HmmWithUnivariateNormalObservations::doWriteObservationDensity(std::ostream
 	return true;
 }
 
-void HmmWithUnivariateNormalObservations::doInitializeObservationDensity()
+void HmmWithUnivariateNormalObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
 
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
-	const double lb = -10000.0, ub = 10000.0;
-	for (size_t k = 0; k < K_; ++k)
+	// initialize the parameters of observation density
+	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
+	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
+
+	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density
+
+	assert(numLowerBound == numUpperBound);
+	assert(1 == numLowerBound || numParameters == numLowerBound);
+
+	if (1 == numLowerBound)
 	{
-		mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
-		sigmas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		const double lb = lowerBoundsOfObservationDensity[0], ub = upperBoundsOfObservationDensity[0];
+		for (size_t k = 0; k < K_; ++k)
+		{
+			mus_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+			// TODO [check] >> all standard deviations have to be positive.
+			sigmas_[k] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+		}
 	}
+	else if (numParameters == numLowerBound)
+	{
+		size_t k, idx = 0;
+		for (k = 0; k < K_; ++k, ++idx)
+			mus_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+		for (k = 0; k < K_; ++k, ++idx)
+			// TODO [check] >> all standard deviations have to be positive.
+			sigmas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 }  // namespace swl
