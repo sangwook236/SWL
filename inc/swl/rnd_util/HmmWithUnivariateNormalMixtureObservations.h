@@ -28,8 +28,8 @@ public:
 	virtual ~HmmWithUnivariateNormalMixtureObservations();
 
 private:
-	HmmWithUnivariateNormalMixtureObservations(const HmmWithUnivariateNormalMixtureObservations &rhs);
-	HmmWithUnivariateNormalMixtureObservations & operator=(const HmmWithUnivariateNormalMixtureObservations &rhs);
+	HmmWithUnivariateNormalMixtureObservations(const HmmWithUnivariateNormalMixtureObservations &rhs);  // not implemented
+	HmmWithUnivariateNormalMixtureObservations & operator=(const HmmWithUnivariateNormalMixtureObservations &rhs);  // not implemented
 
 public:
 	//

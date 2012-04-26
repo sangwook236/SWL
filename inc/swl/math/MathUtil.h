@@ -43,6 +43,9 @@ public:
 	static bool isBounded_co(const double x, const double lower, const double upper, const double tol = MathConstant::EPS)
 	{  return lower - tol <= x && x < upper + tol;  }
 
+	/// this function wraps a value, x in the interval [lower, upper)
+	static double wrap(const double x, const double lower, const double upper, const double tol = MathConstant::EPS);
+
 	///
 	static bool isInteger(const double x, const double tol = MathConstant::EPS);
 	static bool isReal(const double x, const double tol = MathConstant::EPS);

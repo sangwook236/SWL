@@ -5,8 +5,8 @@
 #include <gsl/gsl_roots.h>
 #include <gsl/gsl_errno.h>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/math/constants/constants.hpp>
 #include <boost/math/special_functions/bessel.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <stdexcept>
 
 

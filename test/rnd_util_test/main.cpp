@@ -7,14 +7,11 @@
 #include <iostream>
 
 
-#if defined(min)
-#undef min
-#endif
-
 int main(int argc, char *argv[])
 {
 	void hough_transform();
 	void estimate_3d_plane_using_ransac();
+	void rejection_sampling();
 	void sampling_importance_resampling();
 	void metropolis_hastings_algorithm();
 	void kalman_filter();
@@ -36,6 +33,7 @@ int main(int argc, char *argv[])
 		//hough_transform();
 		//estimate_3d_plane_using_ransac();
 
+		//rejection_sampling();
 		//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter
 		//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC)
 
@@ -54,7 +52,7 @@ int main(int argc, char *argv[])
 
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
-		hmm_with_univariate_normal_mixture_observation_densities();
+		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
 	}
 	catch (const std::exception &e)

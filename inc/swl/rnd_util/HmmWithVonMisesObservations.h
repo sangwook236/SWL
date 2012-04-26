@@ -25,8 +25,8 @@ public:
 	virtual ~HmmWithVonMisesObservations();
 
 private:
-	HmmWithVonMisesObservations(const HmmWithVonMisesObservations &rhs);
-	HmmWithVonMisesObservations & operator=(const HmmWithVonMisesObservations &rhs);
+	HmmWithVonMisesObservations(const HmmWithVonMisesObservations &rhs);  // not implemented
+	HmmWithVonMisesObservations & operator=(const HmmWithVonMisesObservations &rhs);  // not implemented
 
 public:
 	//

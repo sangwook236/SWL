@@ -25,8 +25,8 @@ public:
 	virtual ~HmmWithMultivariateNormalObservations();
 
 private:
-	HmmWithMultivariateNormalObservations(const HmmWithMultivariateNormalObservations &rhs);
-	HmmWithMultivariateNormalObservations & operator=(const HmmWithMultivariateNormalObservations &rhs);
+	HmmWithMultivariateNormalObservations(const HmmWithMultivariateNormalObservations &rhs);  // not implemented
+	HmmWithMultivariateNormalObservations & operator=(const HmmWithMultivariateNormalObservations &rhs);  // not implemented
 
 public:
 	//

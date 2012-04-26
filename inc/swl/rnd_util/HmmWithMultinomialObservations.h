@@ -25,8 +25,8 @@ public:
 	virtual ~HmmWithMultinomialObservations();
 
 private:
-	HmmWithMultinomialObservations(const HmmWithMultinomialObservations &rhs);
-	HmmWithMultinomialObservations & operator=(const HmmWithMultinomialObservations &rhs);
+	HmmWithMultinomialObservations(const HmmWithMultinomialObservations &rhs);  // not implemented
+	HmmWithMultinomialObservations & operator=(const HmmWithMultinomialObservations &rhs);  // not implemented
 
 public:
 	//

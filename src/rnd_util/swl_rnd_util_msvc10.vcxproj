@@ -116,6 +116,7 @@
     <ClCompile Include="KalmanFilter.cpp" />
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
     <ClCompile Include="Ransac.cpp" />
+    <ClCompile Include="RejectionSampling.cpp" />
     <ClCompile Include="SamplingImportanceResampling.cpp" />
     <ClCompile Include="UnscentedKalmanFilter.cpp" />
     <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />

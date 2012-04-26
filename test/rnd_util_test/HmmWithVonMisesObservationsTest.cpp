@@ -718,9 +718,10 @@ void mle_em_learning()
 		// Baum-Welch algorithm
 		{
 			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->estimateParameters(N, observations, terminationTolerance, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->estimateParameters(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi & A
 			//cdhmm->normalizeModelParameters();
@@ -787,9 +788,10 @@ void mle_em_learning()
 		// Baum-Welch algorithm
 		{
 			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			cdhmm->estimateParameters(Ns, observationSequences, terminationTolerance, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->estimateParameters(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
 			// normalize pi, A, & B
 			//cdhmm->normalizeModelParameters();

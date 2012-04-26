@@ -26,8 +26,8 @@ public:
 	virtual ~CDHMM();
 
 private:
-	CDHMM(const CDHMM &rhs);
-	CDHMM & operator=(const CDHMM &rhs);
+	CDHMM(const CDHMM &rhs);  // not implemented
+	CDHMM & operator=(const CDHMM &rhs);  // not implemented
 
 public:
 	//
@@ -49,9 +49,9 @@ public:
 	void runViterbiAlgorithm(const size_t N, const dmatrix_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability, const bool useLog = true) const;
 
 	// for a single independent observation sequence
-	bool estimateParameters(const size_t N, const dmatrix_type &observations, const double terminationTolerance, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool estimateParameters(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 	// for multiple independent observation sequences
-	bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
+	bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	// if seed != -1, the seed value is set
 	void generateSample(const size_t N, dmatrix_type &observations, uivector_type &states, const unsigned int seed = (unsigned int)-1) const;

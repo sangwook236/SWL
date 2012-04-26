@@ -24,8 +24,8 @@ public:
 	virtual ~HmmWithMixtureObservations();
 
 private:
-	HmmWithMixtureObservations(const HmmWithMixtureObservations &rhs);
-	HmmWithMixtureObservations & operator=(const HmmWithMixtureObservations &rhs);
+	HmmWithMixtureObservations(const HmmWithMixtureObservations &rhs);  // not implemented
+	HmmWithMixtureObservations & operator=(const HmmWithMixtureObservations &rhs);  // not implemented
 
 public:
 	//

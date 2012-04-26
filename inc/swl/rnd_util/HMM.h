@@ -26,8 +26,8 @@ protected:
 	virtual ~HMM();
 
 private:
-	HMM(const HMM &rhs);
-	HMM & operator=(const HMM &rhs);
+	HMM(const HMM &rhs);  // not implemented
+	HMM & operator=(const HMM &rhs);  // not implemented
 
 public:
 	bool readModel(std::istream &stream);

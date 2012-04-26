@@ -26,8 +26,8 @@ public:
 	virtual ~DDHMM();
 
 private:
-	DDHMM(const DDHMM &rhs);
-	DDHMM & operator=(const DDHMM &rhs);
+	DDHMM(const DDHMM &rhs);  // not implemented
+	DDHMM & operator=(const DDHMM &rhs);  // not implemented
 
 public:
 	//
@@ -49,9 +49,9 @@ public:
 	void runViterbiAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability, const bool useLog = true) const;
 
 	// for a single independent observation sequence
-	bool estimateParameters(const size_t N, const uivector_type &observations, const double terminationTolerance, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool estimateParameters(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 	// for multiple independent observation sequences
-	bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
+	bool estimateParameters(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	//
 	void generateSample(const size_t N, uivector_type &observations, uivector_type &states) const;
