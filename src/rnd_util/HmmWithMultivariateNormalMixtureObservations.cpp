@@ -18,7 +18,7 @@
 
 namespace swl {
 
-// [ref] swl/rnd_util/HmmWithMultivariateNormalObservations.cpp
+// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp
 double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv);
 
 HmmWithMultivariateNormalMixtureObservations::HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C)

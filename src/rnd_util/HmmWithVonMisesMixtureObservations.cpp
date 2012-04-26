@@ -1,13 +1,10 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesMixtureObservations.h"
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_roots.h>
-#include <gsl/gsl_errno.h>
+#include "RndUtilLocalApi.h"
+#include "swl/rnd_util/RejectionSampling.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -18,8 +15,7 @@
 
 namespace swl {
 	
-// [ref] swl/rnd_util/HmmWithVonMisesObservations.cpp
-double kappa_objective_function(double x, void *params);
+// [ref] swl/src/rnd_util/HmmWithVonMisesObservations.cpp
 bool one_dim_root_finding_using_f(const double A, const double upper, double &kappa);
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C)
@@ -281,33 +277,43 @@ void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsi
 	if ((unsigned int)C_ == component)
 		component = (unsigned int)(C_ - 1);
 
-	//
-	double dx = 0.0, dy = 0.0;
+	// FIXME [modify] >> these parameters are incorrect.
+	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
+	targetDist_->setParameters(mus_(state, component), kappas_(state, component));
+
+#if 0
+	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
+
 	{
-		if ((unsigned int)-1 != seed)
-		{
-			// random number generator algorithms
-			gsl_rng_default = gsl_rng_mt19937;
-			//gsl_rng_default = gsl_rng_taus;
-			gsl_rng_default_seed = (unsigned long)std::time(NULL);
-		}
-
-		const gsl_rng_type *T = gsl_rng_default;
-		gsl_rng *r = gsl_rng_alloc(T);
-
-		// FIXME [fix] >> mus_(state, component) & kappas_(state, component) have to be reflected
-		throw std::runtime_error("not correctly working");
-
-		// dx^2 + dy^2 = 1
-		gsl_ran_dir_2d(r, &dx, &dy);
-
-		gsl_rng_free(r);
+		// FIXME [modify] >> these parameters are incorrect.
+		const double sigma = 1.55;
+		const double k = 1.472;
+		proposalDist_->setParameters(mus_(state, component), sigma, k);
 	}
+#else
+	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
 
-	// TODO [check] >> check the range of each observation, [0, 2 * pi)
-	//observation[0] = std::atan2(dy, dx);
-	observation[0] = std::atan2(dy, dx) + boost::math::constants::pi<double>();
-	//observation[0] = 0.001 + 0.999 * std::atan2(dy, dx) + boost::math::constants::pi<double>();
+	{
+		const double lower = 0.0;
+		const double upper = 2.0 * boost::math::constants::pi<double>();
+		const UnivariateUniformProposalDistribution::vector_type mean_dir(1, mus_(state, component));
+		const double k = targetDist_->evaluate(mean_dir) * (upper - lower) * 1.05;
+		proposalDist_->setParameters(lower, upper, k);
+	}
+#endif
+
+	if ((unsigned int)-1 != seed)
+		proposalDist_->setSeed(seed);
+
+	swl::RejectionSampling sampler(*targetDist_, *proposalDist_);
+
+	swl::RejectionSampling::vector_type x(D_, 0.0);
+	const std::size_t maxIteration = 1000;
+
+	// the range of each observation, [0, 2 * pi)
+	const bool retval = sampler.sample(x, maxIteration);
+	assert(retval);
+	observation[0] = x[0];
 }
 
 bool HmmWithVonMisesMixtureObservations::doReadObservationDensity(std::istream &stream)

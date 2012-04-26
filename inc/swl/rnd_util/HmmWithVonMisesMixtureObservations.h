@@ -4,9 +4,14 @@
 
 #include "swl/rnd_util/CDHMM.h"
 #include "swl/rnd_util/HmmWithMixtureObservations.h"
+#include <boost/smart_ptr.hpp>
 
 
 namespace swl {
+
+struct VonMisesTargetDistribution;
+struct UnivariateNormalProposalDistribution;
+struct UnivariateUniformProposalDistribution;
 
 //--------------------------------------------------------------------------
 // continuous density HMM with von Mises mixture observation densities
@@ -63,6 +68,13 @@ protected:
 private:
 	dmatrix_type mus_;  // the sets of means of each components in the von Mises mixture distribution
 	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises mixture distribution
+
+	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
+#if 0
+	mutable boost::scoped_ptr<UnivariateNormalProposalDistribution> proposalDist_;
+#else
+	mutable boost::scoped_ptr<UnivariateUniformProposalDistribution> proposalDist_;
+#endif
 };
 
 }  // namespace swl

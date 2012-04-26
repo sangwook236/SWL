@@ -3,9 +3,14 @@
 
 
 #include "swl/rnd_util/CDHMM.h"
+#include <boost/smart_ptr.hpp>
 
 
 namespace swl {
+
+struct VonMisesTargetDistribution;
+struct UnivariateNormalProposalDistribution;
+struct UnivariateUniformProposalDistribution;
 
 //--------------------------------------------------------------------------
 // continuous density HMM with von Mises observation densities
@@ -61,6 +66,13 @@ protected:
 private:
 	dvector_type mus_;  // the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
 	dvector_type kappas_;  // the concentration parameters of the von Mises distribution. kappa >= 0.
+
+	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
+#if 0
+	mutable boost::scoped_ptr<UnivariateNormalProposalDistribution> proposalDist_;
+#else
+	mutable boost::scoped_ptr<UnivariateUniformProposalDistribution> proposalDist_;
+#endif
 };
 
 }  // namespace swl

@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/math/MathUtil.h"
 #include "swl/rnd_util/RejectionSampling.h"
+#include "swl/math/MathUtil.h"
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/normal_distribution.hpp>
@@ -24,12 +24,12 @@ namespace local {
 
 // [ref] "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2
 
-struct VonMisesDistribution: public swl::RejectionSampling::TargetDistribution
+struct VonMisesTargetDistribution: public swl::RejectionSampling::TargetDistribution
 {
 	typedef swl::RejectionSampling::TargetDistribution base_type;
 	typedef base_type::vector_type vector_type;
 
-	VonMisesDistribution(const double mean_direction, const double kappa)
+	VonMisesTargetDistribution(const double mean_direction, const double kappa)
 	: base_type(), mean_direction_(mean_direction), kappa_(kappa)
 	{
 	}
@@ -77,6 +77,30 @@ private:
 	mutable generator_type generator_;
 };
 
+struct UnivariateUniformProposalDistribution: public swl::RejectionSampling::ProposalDistribution
+{
+	typedef swl::RejectionSampling::ProposalDistribution base_type;
+	typedef base_type::vector_type vector_type;
+
+	UnivariateUniformProposalDistribution(const double lower, const double upper, const double k = 1.0)
+	: base_type(k), lower_(lower), upper_(upper)
+	{}
+
+	// evaluate k * proposal_distribution(x)
+	/*virtual*/ double evaluate(const vector_type & /*x*/) const
+	{
+		return k_ / (upper_ - lower_);
+	}
+	/*virtual*/ void sample(vector_type &sample) const
+	{
+		// 0 <= x < 2 * pi
+		sample[0] = swl::MathUtil::wrap(((double)std::rand() / RAND_MAX) * (upper_ - lower_) + lower_, 0.0, 2.0 * boost::math::constants::pi<double>());
+	}
+
+private:
+	double lower_, upper_;  // the lower & upper bound of the univariate uniform distribution
+};
+
 }  // namespace local
 }  // unnamed namespace
 
@@ -85,12 +109,21 @@ void rejection_sampling()
 	const std::size_t STATE_DIM = 1;
 	const double mean_direction = 0.0;
 	const double kappa = 1.0;
+	local::VonMisesTargetDistribution targetDist(mean_direction, kappa);
+
+#if 0
 	const double mean = mean_direction;
 	const double sigma = 1.55;
 	const double k = 1.472;
-
-	local::VonMisesDistribution targetDist(mean_direction, kappa);
 	local::UnivariateNormalProposalDistribution proposalDist(mean, sigma, k);
+#else
+	const double lower = 0.0;
+	const double upper = 2.0 * boost::math::constants::pi<double>();
+	const local::UnivariateUniformProposalDistribution::vector_type mean_dir(1, mean_direction);
+	const double k = targetDist.evaluate(mean_dir) * (upper - lower) * 1.05;
+	local::UnivariateUniformProposalDistribution proposalDist(lower, upper, k);
+#endif
+
 	swl::RejectionSampling sampler(targetDist, proposalDist);
 
 	//

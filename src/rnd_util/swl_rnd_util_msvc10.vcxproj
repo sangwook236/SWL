@@ -58,7 +58,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;swl_math.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -80,7 +80,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_base.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_base.lib;swl_math.lib;cblas.lib;gsl.lib;opencv_core231.lib;opencv_highgui231.lib;opencv_ml231.lib;opencv_imgproc231.lib;opencv_features2d231.lib;opencv_video231.lib;opencv_calib3d231.lib;opencv_legacy231.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -117,6 +117,7 @@
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
     <ClCompile Include="Ransac.cpp" />
     <ClCompile Include="RejectionSampling.cpp" />
+    <ClCompile Include="RndUtilLocalApi.cpp" />
     <ClCompile Include="SamplingImportanceResampling.cpp" />
     <ClCompile Include="UnscentedKalmanFilter.cpp" />
     <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
@@ -152,6 +153,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
+    <ClInclude Include="RndUtilLocalApi.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_msvc10.vcxproj">

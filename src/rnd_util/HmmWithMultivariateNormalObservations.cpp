@@ -2,10 +2,9 @@
 #include "swl/rnd_util/HmmWithMultivariateNormalObservations.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <boost/numeric/ublas/blas.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/matrix_expression.hpp>
-#include <boost/numeric/ublas/blas.hpp>
-#include <boost/numeric/ublas/lu.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <stdexcept>
 
@@ -18,74 +17,8 @@
 
 namespace swl {
 
-// FIXME [move] >> this positition is temporary
-double determinant_by_lu(const boost::numeric::ublas::matrix<double> &m)
-{
-	// create a working copy of the m
-	boost::numeric::ublas::matrix<double> A(m);
-    boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
-    if (boost::numeric::ublas::lu_factorize(A, pm))
-        return 0.0;
-	else
-	{
-	    double det = 1.0;
-		for (std::size_t i = 0; i < pm.size(); ++i)
-			det *= (pm(i) == i) ? A(i, i) : -A(i, i);
-
-		return det;
-    }
-}
-
-// FIXME [move] >> this positition is temporary
-bool inverse_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv)
-{
-	// create a working copy of the m
-	boost::numeric::ublas::matrix<double> A(m);
-	// create a permutation matrix for the LU factorization
-	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
-
-	// perform LU factorization
-	if (boost::numeric::ublas::lu_factorize(A, pm))
-		return false;
-	else
-	{
-		// create identity matrix of inv
-		inv.assign(boost::numeric::ublas::identity_matrix<double>(A.size1()));
-
-		// back-substitute to get the inverse
-		boost::numeric::ublas::lu_substitute(A, pm, inv);
-
-		return true;
-	}
-}
-
-// FIXME [move] >> this positition is temporary
-double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv)
-{
-	// create a working copy of the m
-	boost::numeric::ublas::matrix<double> A(m);
-	// create a permutation matrix for the LU factorization
-	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
-
-	// perform LU factorization
-	if (boost::numeric::ublas::lu_factorize(A, pm))
-		return 0.0;
-	else
-	{
-		// create identity matrix of inv
-		inv.assign(boost::numeric::ublas::identity_matrix<double>(A.size1()));
-
-		// back-substitute to get the inverse
-		boost::numeric::ublas::lu_substitute(A, pm, inv);
-
-		//
-	    double det = 1.0;
-		for (std::size_t i = 0; i < pm.size(); ++i)
-			det *= (pm(i) == i) ? A(i, i) : -A(i, i);
-
-		return det;
-	}
-}
+// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp
+double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv);
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D)
 : base_type(K, D), mus_(K), sigmas_(K)  // 0-based index
@@ -110,7 +43,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 {
 	// reestimate observation(emission) distribution in each state
 
-	size_t d, n;
+	size_t n;
 	const double denominator = denominatorA + gamma(N-1, state);
 	const double factor = 0.999 / denominator;
 
@@ -140,7 +73,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 {
 	// reestimate observation(emission) distribution in each state
 
-	size_t d, n, r;
+	size_t n, r;
 	double denominator = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominator += gammas[r](Ns[r]-1, state);
@@ -355,13 +288,13 @@ void HmmWithMultivariateNormalObservations::doInitializeObservationDensity(const
 	else if (numParameters == numLowerBound)
 	{
 		size_t k, d, i, idx = 0;
-		for (size_t k = 0; k < K_; ++k)
+		for (k = 0; k < K_; ++k)
 		{
 			dvector_type &mu = mus_[k];
 			for (d = 0; d < D_; ++d, ++idx)
 				mu[d] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
 		}
-		for (size_t k = 0; k < K_; ++k)
+		for (k = 0; k < K_; ++k)
 		{
 			dmatrix_type &sigma = sigmas_[k];
 			for (d = 0; d < D_; ++d)

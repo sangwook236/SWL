@@ -114,8 +114,7 @@ void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const uns
 		baseGenerator_.seed(seed);
 
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
-	for (size_t d = 0; d < D_; ++d)
-		observation[d] = normal_gen();
+	observation[0] = normal_gen();
 }
 
 bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream &stream)

@@ -1,7 +1,6 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithVonMisesObservations.h"
-#include <boost/math/constants/constants.hpp>
+#include "swl/rnd_util/HmmWithVonMisesMixtureObservations.h"
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -16,7 +15,8 @@
 #endif
 
 
-#define __TEST_HMM_MODEL 1
+#define __TEST_HMM_MODEL 0
+//#define __TEST_HMM_MODEL 1
 //#define __TEST_HMM_MODEL 2
 #define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
@@ -30,18 +30,27 @@ void model_reading_and_writing()
 	{
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		//
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -51,7 +60,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -72,9 +81,41 @@ void model_reading_and_writing()
 	{
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		const double arrPi[] = {
+			1.0/3.0, 1.0/3.0, 1.0/3.0
+		};
+		const double arrA[] = {
+			0.2, 0.5, 0.3,
+			0.45, 0.3, 0.25,
+			0.5, 0.15, 0.35
+		};
+		const double arrAlpha[] = {
+			0.4, 0.6,
+			0.35, 0.65,
+			0.7, 0.3
+		};
+		const double arrMu[] = {
+			0.0, -200.0,
+			1500.0, 2000.0,
+			-2000.0, -4000.0
+		};
+		const double arrKappa[] = {
+			5.0, 3.0,
+			2.0, 10.0,
+			6.0, 8.5
+		};
+
+		//
+		std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test0_writing.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -84,18 +125,28 @@ void model_reading_and_writing()
 			0.45, 0.1,  0.45,
 			0.45, 0.45, 0.1
 		};
+		const double arrAlpha[] = {
+			0.7, 0.3,
+			0.2, 0.8,
+			0.5, 0.5
+		};
 		const double arrMu[] = {
-			0.0, 30.0, -20.0
+			0.0, 5.0,
+			30.0, 40.0,
+			-20.0, -25.0
 		};
 		const double arrKappa[] = {
-			1.0, 2.0, 1.5
+			3.0, 1.0,
+			2.0, 2.0,
+			1.5, 2.5
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\von_mises_test1_writing.cdhmm");
+		std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test1_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -105,15 +156,24 @@ void model_reading_and_writing()
 			0.2, 0.4, 0.4,
 			0.1, 0.6, 0.3
 		};
+		const double arrAlpha[] = {
+			0.2, 0.8,
+			0.6, 0.4,
+			0.75, 0.25
+		};
 		const double arrMu[] = {
-			0.0, -30.0, 20.0
+			0.0, -5.0,
+			-30.0, -35.0,
+			20.0, 15.0
 		};
 		const double arrKappa[] = {
-			1.0, 2.0, 1.5
+			1.0, 2.0,
+			2.0, 4.0,
+			0.5, 1.5
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\von_mises_test2_writing.cdhmm");
+		std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test2_writing.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -123,11 +183,12 @@ void model_reading_and_writing()
 			return;
 		}
 
-		swl::HmmWithVonMisesObservations::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
-		swl::HmmWithVonMisesObservations::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
-		swl::HmmWithVonMisesObservations::dvector_type mus(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrMu, arrMu + K)));
-		swl::HmmWithVonMisesObservations::dvector_type kappas(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrKappa, arrKappa + K)));
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K, pi, A, mus, kappas));
+		swl::HmmWithVonMisesMixtureObservations::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
+		swl::HmmWithVonMisesMixtureObservations::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
+		swl::HmmWithVonMisesMixtureObservations::dmatrix_type alphas(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrAlpha, arrAlpha + K * C)));
+		swl::HmmWithVonMisesMixtureObservations::dmatrix_type mus(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrMu, arrMu + K * C)));
+		swl::HmmWithVonMisesMixtureObservations::dmatrix_type sigmas(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrKappa, arrKappa + K * C)));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C, pi, A, alphas, mus, sigmas));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -146,18 +207,27 @@ void observation_sequence_generation(const bool outputToFile)
 
 	// read a model
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		//
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -167,7 +237,7 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -196,30 +266,43 @@ void observation_sequence_generation(const bool outputToFile)
 
 		if (outputToFile)
 		{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test0_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test0_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test0_1500.seq");
+#endif
+
+#elif __TEST_HMM_MODEL == 1
+
+#if 1
+			const size_t N = 50;
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test1_50.seq");
+#elif 0
+			const size_t N = 100;
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test1_100.seq");
+#elif 0
+			const size_t N = 1500;
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test1_1500.seq");
 #endif
 
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test2_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test2_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+			std::ofstream stream("..\\data\\hmm\\von_mises_mixture_test2_1500.seq");
 #endif
 
 #endif
@@ -271,14 +354,26 @@ void observation_sequence_reading_and_writing()
 	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 
 #if 1
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_50.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_100.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_1500.seq");
+#else
+	std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 1
+
+#if 1
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_50.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_100.seq");
+#elif 0
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -286,11 +381,11 @@ void observation_sequence_reading_and_writing()
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_50.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_100.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+	std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -325,18 +420,27 @@ void forward_algorithm()
 
 	// read a model
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		//
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -346,7 +450,7 @@ void forward_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -367,14 +471,26 @@ void forward_algorithm()
 	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_1500.seq");
+#else
+		std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 1
+
+#if 1
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_50.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_100.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -382,11 +498,11 @@ void forward_algorithm()
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -450,18 +566,27 @@ void viterbi_algorithm()
 
 	// read a model
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		//
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -471,7 +596,7 @@ void viterbi_algorithm()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -492,14 +617,26 @@ void viterbi_algorithm()
 	swl::CDHMM::dmatrix_type observations;
 	size_t N = 0;  // length of observation sequence, N
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_1500.seq");
+#else
+		std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 1
+
+#if 1
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_50.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_100.seq");
+#elif 0
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -507,11 +644,11 @@ void viterbi_algorithm()
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -590,18 +727,27 @@ void mle_em_learning()
 	const int initialization_mode = 1;
 	if (1 == initialization_mode)
 	{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0.cdhmm");
+#elif __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the number of hidden states
+		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
+
+		//
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -611,7 +757,7 @@ void mle_em_learning()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -622,7 +768,7 @@ void mle_em_learning()
 			return;
 		}
 
-		// normalize pi & A
+		// normalize pi, A, & alpha
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -639,23 +785,24 @@ void mle_em_learning()
 
 		const size_t K = 3;  // the number of hidden states
 		//const size_t D = 1;  // the number of observation symbols
+		const size_t C = 2;  // the number of mixture components
 
-		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * C * D * 2
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		const double small = 1.0e-10;
-		// mean directions: 0 <= mu < 2 * pi.
-		for (size_t i = 0; i < K; ++i)
+		// means
+		for (size_t i = 0; i < K * C; ++i)
 		{
-			lowerBounds.push_back(0.0);
-			upperBounds.push_back(2.0 * boost::math::constants::pi<double>() - small);
+			lowerBounds.push_back(-10000.0);
+			upperBounds.push_back(10000.0);
 		}
-		// concentration parameters: kappa >= 0.
-		for (size_t i = K; i < numParameters; ++i)
+		// standard deviations: sigma > 0
+		const double small = 1.0e-10;
+		for (size_t i = K * C; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(small);
 			upperBounds.push_back(10000.0);
@@ -671,14 +818,26 @@ void mle_em_learning()
 		swl::CDHMM::dmatrix_type observations;
 		size_t N = 0;  // length of observation sequence, N
 		{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
+
+#if 1
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_50.seq");
+#elif 0
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_100.seq");
+#elif 0
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test0_1500.seq");
+#else
+			std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 1
 
 #if 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -686,11 +845,11 @@ void mle_em_learning()
 #elif __TEST_HMM_MODEL == 2
 
 #if 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
-#elif 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_50.seq");
 #elif 1
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_100.seq");
+#elif 0
+			std::ifstream stream("..\\data\\hmm\\von_mises_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -743,19 +902,26 @@ void mle_em_learning()
 		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
 		std::vector<size_t> Ns;  // lengths of observation sequences
 		{
-#if __TEST_HMM_MODEL == 1
+#if __TEST_HMM_MODEL == 0
 			const size_t R = 3;  // number of observations sequences
 			const std::string observationSequenceFiles[] = {
-				"..\\data\\hmm\\von_mises_test1_50.seq",
-				"..\\data\\hmm\\von_mises_test1_100.seq",
-				"..\\data\\hmm\\von_mises_test1_1500.seq"
+				"..\\data\\hmm\\von_mises_mixture_test0_50.seq",
+				"..\\data\\hmm\\von_mises_mixture_test0_100.seq",
+				"..\\data\\hmm\\von_mises_mixture_test0_1500.seq"
+			};
+#elif __TEST_HMM_MODEL == 1
+			const size_t R = 3;  // number of observations sequences
+			const std::string observationSequenceFiles[] = {
+				"..\\data\\hmm\\von_mises_mixture_test1_50.seq",
+				"..\\data\\hmm\\von_mises_mixture_test1_100.seq",
+				"..\\data\\hmm\\von_mises_mixture_test1_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 2
 			const size_t R = 3;  // number of observations sequences
 			const std::string observationSequenceFiles[] = {
-				"..\\data\\hmm\\von_mises_test2_50.seq",
-				"..\\data\\hmm\\von_mises_test2_100.seq",
-				"..\\data\\hmm\\von_mises_test2_1500.seq"
+				"..\\data\\hmm\\von_mises_mixture_test2_50.seq",
+				"..\\data\\hmm\\von_mises_mixture_test2_100.seq",
+				"..\\data\\hmm\\von_mises_mixture_test2_1500.seq"
 			};
 #endif
 			observationSequences.resize(R);
@@ -819,9 +985,9 @@ void mle_em_learning()
 }  // namespace local
 }  // unnamed namespace
 
-void hmm_with_von_mises_observation_densities()
+void hmm_with_von_mises_mixture_observation_densities()
 {
-	std::cout << "===== CDHMM w/ von Mises observation densities =====" << std::endl;
+	std::cout << "===== CDHMM w/ von Mises mixture observation densities =====" << std::endl;
 
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
@@ -830,6 +996,6 @@ void hmm_with_von_mises_observation_densities()
 
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
-	local::viterbi_algorithm();
-	//local::mle_em_learning();
+	//local::viterbi_algorithm();
+	local::mle_em_learning();
 }

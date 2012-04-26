@@ -40,7 +40,7 @@ public:
 		virtual void sample(vector_type &sample) const = 0;
 
 	protected:
-		const double k_;  // a constant. k * proposal_distribution(x) >= target_distribution(x).
+		double k_;  // a constant. k * proposal_distribution(x) >= target_distribution(x).
 	};
 
 public:

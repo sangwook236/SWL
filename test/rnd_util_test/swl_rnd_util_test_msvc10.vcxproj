@@ -97,6 +97,7 @@
     <ClCompile Include="HmmWithMultinomialObservationsTest.cpp" />
     <ClCompile Include="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />
     <ClCompile Include="HmmWithUnivariateNormalObservationsTest.cpp" />
+    <ClCompile Include="HmmWithVonMisesMixtureObservationsTest.cpp" />
     <ClCompile Include="HmmWithVonMisesObservationsTest.cpp" />
     <ClCompile Include="HoughTransformTest.cpp" />
     <ClCompile Include="ImuCalibration.cpp" />

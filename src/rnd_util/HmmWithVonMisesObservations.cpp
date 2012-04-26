@@ -1,9 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesObservations.h"
-#include <gsl/gsl_rng.h>
-#include <gsl/gsl_randist.h>
-#include <gsl/gsl_roots.h>
-#include <gsl/gsl_errno.h>
+#include "RndUtilLocalApi.h"
+#include "swl/rnd_util/RejectionSampling.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -17,69 +15,18 @@
 
 namespace swl {
 
-double kappa_objective_function(double x, void *params)
-{
-	double *A = (double *)params;
-
-	return boost::math::cyl_bessel_i(1.0, x) / boost::math::cyl_bessel_i(0.0, x) - *A;
-}
-
-bool one_dim_root_finding_using_f(const double A, const double upper, double &kappa)
-{
-	gsl_function func;
-	func.function = &kappa_objective_function;
-	func.params = (void *)&A;
-
-	//const gsl_root_fsolver_type *T = gsl_root_fsolver_bisection;
-	//const gsl_root_fsolver_type *T = gsl_root_fsolver_falsepos;
-	const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
-	gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
-
-	double x_lo = 0.0, x_hi = upper;
-	gsl_root_fsolver_set(s, &func, x_lo, x_hi);
-
-	//std::cout << "===== using " << gsl_root_fsolver_name(s) << " method =====" << std::endl;
-	//std::cout << std::setw(5) << "iter" << " [" << std::setw(9) << "lower" << ", " << std::setw(9) << "upper" << "] " << std::setw(9) << "root" << std::setw(10) << "err(est)" << std::endl;
-
-	int status;
-	int iter = 0, max_iter = 100;
-	kappa = 0.0;
-	do
-	{
-		++iter;
-
-		status = gsl_root_fsolver_iterate(s);
-		kappa = gsl_root_fsolver_root(s);
-		x_lo = gsl_root_fsolver_x_lower(s);
-		x_hi = gsl_root_fsolver_x_upper(s);
-		status = gsl_root_test_interval(x_lo, x_hi, 0, 0.001);
-
-		if (GSL_SUCCESS == status)
-		{
-			//std::cout << "converged" << std::endl;
-			return true;
-		}
-
-		//std::cout << std::setw(5) << iter << " [" << std::setw(9) << x_lo << ", " << std::setw(9) << x_hi << "] " << std::setw(9) << kappa << std::setw(10) << (x_hi - x_lo) << std::endl;
-	} while (GSL_CONTINUE == status && iter < max_iter);
-
-	if (GSL_SUCCESS != status)
-	{
-		//std::cout << "not converged" << std::endl;
-		kappa = 0.0;
-		return false;
-	}
-
-	return true;
-}
+// [ref] swl/src/rnd_util/HmmWithVonMisesObservations.cpp
+bool one_dim_root_finding_using_f(const double A, const double upper, double &kappa);
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K)
-: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0)  // 0-based index
+: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index
+  targetDist_(), proposalDist_()
 {
 }
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas)
-: base_type(K, 1, pi, A), mus_(mus), kappas_(kappas)
+: base_type(K, 1, pi, A), mus_(mus), kappas_(kappas),
+  targetDist_(), proposalDist_()
 {
 }
 
@@ -182,33 +129,45 @@ double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned
 
 void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
-	double dx = 0.0, dy = 0.0;
+	// PRECONDITIONS [] >>
+	//	-. std::srand() had to be called before this function is called.
+
+	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
+	targetDist_->setParameters(mus_[state], kappas_[state]);
+
+#if 0
+	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
+
 	{
-		if ((unsigned int)-1 != seed)
-		{
-			// random number generator algorithms
-			gsl_rng_default = gsl_rng_mt19937;
-			//gsl_rng_default = gsl_rng_taus;
-			gsl_rng_default_seed = (unsigned long)std::time(NULL);
-		}
-
-		const gsl_rng_type *T = gsl_rng_default;
-		gsl_rng *r = gsl_rng_alloc(T);
-
-		// FIXME [fix] >> mus_[state] & kappas_[state] have to be reflected
-		throw std::runtime_error("not correctly working");
-		// the obvious way to do this is to take a uniform random number between 0 and 2 * pi and let x and y be the sine and cosine respectively.
-
-		// dx^2 + dy^2 = 1
-		gsl_ran_dir_2d(r, &dx, &dy);
-
-		gsl_rng_free(r);
+		// FIXME [modify] >> these parameters are incorrect.
+		const double sigma = 1.55;
+		const double k = 1.472;
+		proposalDist_->setParameters(mus_[state], sigma, k);
 	}
+#else
+	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
 
-	// TODO [check] >> check the range of each observation, [0, 2 * pi)
-	//observation[0] = std::atan2(dy, dx);
-	observation[0] = std::atan2(dy, dx) + boost::math::constants::pi<double>();
-	//observation[0] = 0.001 + 0.999 * std::atan2(dy, dx) + boost::math::constants::pi<double>();
+	{
+		const double lower = 0.0;
+		const double upper = 2.0 * boost::math::constants::pi<double>();
+		const UnivariateUniformProposalDistribution::vector_type mean_dir(1, mus_[state]);
+		const double k = targetDist_->evaluate(mean_dir) * (upper - lower) * 1.05;
+		proposalDist_->setParameters(lower, upper, k);
+	}
+#endif
+
+	if ((unsigned int)-1 != seed)
+		proposalDist_->setSeed(seed);
+
+	swl::RejectionSampling sampler(*targetDist_, *proposalDist_);
+
+	swl::RejectionSampling::vector_type x(D_, 0.0);
+	const std::size_t maxIteration = 1000;
+
+	// the range of each observation, [0, 2 * pi)
+	const bool retval = sampler.sample(x, maxIteration);
+	assert(retval);
+	observation[0] = x[0];
 }
 
 bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
