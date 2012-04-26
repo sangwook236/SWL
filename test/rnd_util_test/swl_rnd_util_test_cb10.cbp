@@ -47,6 +47,7 @@
 		<Unit filename="HmmWithMultinomialObservationsTest.cpp" />
 		<Unit filename="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />
 		<Unit filename="HmmWithUnivariateNormalObservationsTest.cpp" />
+		<Unit filename="HmmWithVonMisesMixtureObservationsTest.cpp" />
 		<Unit filename="HmmWithVonMisesObservationsTest.cpp" />
 		<Unit filename="HoughTransformTest.cpp" />
 		<Unit filename="ImuCalibration.cpp" />
@@ -63,6 +64,7 @@
 		<Unit filename="MetropolisHastingsAlgorithmTest.cpp" />
 		<Unit filename="ParticleFilterTest.cpp" />
 		<Unit filename="RansacTest.cpp" />
+		<Unit filename="RejectionSamplingTest.cpp" />
 		<Unit filename="SamplingImportanceResamplingTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterWithAdditiveNoiseTest.cpp" />

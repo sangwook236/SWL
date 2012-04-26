@@ -75,6 +75,7 @@
 		<Unit filename="../../inc/swl/rnd_util/KalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/MetropolisHastingsAlgorithm.h" />
 		<Unit filename="../../inc/swl/rnd_util/Ransac.h" />
+		<Unit filename="../../inc/swl/rnd_util/RejectionSampling.h" />
 		<Unit filename="../../inc/swl/rnd_util/SamplingImportanceResampling.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h" />
@@ -99,6 +100,9 @@
 		<Unit filename="KalmanFilter.cpp" />
 		<Unit filename="MetropolisHastingsAlgorithm.cpp" />
 		<Unit filename="Ransac.cpp" />
+		<Unit filename="RejectionSampling.cpp" />
+		<Unit filename="RndUtilLocalApi.cpp" />
+		<Unit filename="RndUtilLocalApi.h" />
 		<Unit filename="SamplingImportanceResampling.cpp" />
 		<Unit filename="UnscentedKalmanFilter.cpp" />
 		<Unit filename="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
