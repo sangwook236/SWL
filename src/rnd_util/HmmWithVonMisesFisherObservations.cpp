@@ -26,12 +26,12 @@ HmmWithVonMisesFisherObservations::~HmmWithVonMisesFisherObservations()
 {
 }
 
-void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }

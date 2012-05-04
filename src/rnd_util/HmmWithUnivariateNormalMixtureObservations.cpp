@@ -29,8 +29,10 @@ HmmWithUnivariateNormalMixtureObservations::~HmmWithUnivariateNormalMixtureObser
 {
 }
 
-void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
+	// reestimate observation(emission) distribution in each state
+
 	size_t c, n;
 	double denominator;
 
@@ -62,6 +64,7 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 			if (denominator < eps)
 			{
 				// FIXME [check] >>
+				//	because responsibilities, gamma(y_nc) means membership, the values may become zero if the corresponding mixture model doesn't generate a sample.
 				for (c = 0; c < C_; ++c)
 					zeta(n, c) = 0.0;
 			}
@@ -111,8 +114,10 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	//	-. all standard deviations have to be positive.
 }
 
-void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// reestimate observation(emission) distribution in each state
+
 	size_t c, n, r;
 	double denominator;
 
@@ -176,9 +181,9 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	denominator = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominator += gammas[r](Ns[r]-1, state);
+	const double factor = 0.999 / denominator;
 
 	double sumZeta;
-	const double factor = 0.999 / denominator;
 	for (c = 0; c < C_; ++c)
 	{
 		// reestimate mixture coefficients(weights)

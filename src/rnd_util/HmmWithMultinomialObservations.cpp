@@ -25,7 +25,7 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 {
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -45,7 +45,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMSt
 	}
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 

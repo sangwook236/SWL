@@ -635,7 +635,7 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			ddhmm->estimateParameters(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			ddhmm->estimateParametersByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi, A, & B
 			//ddhmm->normalizeModelParameters();
@@ -697,7 +697,7 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			ddhmm->estimateParameters(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			ddhmm->estimateParametersByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
 			// normalize pi, A, & B
 			//ddhmm->normalizeModelParameters();

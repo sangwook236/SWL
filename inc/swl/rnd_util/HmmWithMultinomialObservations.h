@@ -43,9 +43,9 @@ protected:
 	/*virtual*/ unsigned int doGenerateObservationsSymbol(const unsigned int state) const;
 
 	// for a single independent observation sequence
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA);
+	/*virtual*/ void doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA);
 	// for multiple independent observation sequences
-	/*virtual*/ void doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
+	/*virtual*/ void doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);

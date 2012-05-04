@@ -16,8 +16,8 @@
 #endif
 
 
-#define __TEST_HMM_MODEL 1
-//#define __TEST_HMM_MODEL 2
+//#define __TEST_HMM_MODEL 1
+#define __TEST_HMM_MODEL 2
 #define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
@@ -80,15 +80,15 @@ void model_reading_and_writing()
 			1.0/3.0, 1.0/3.0, 1.0/3.0
 		};
 		const double arrA[] = {
-			0.9,  0.05, 0.05,
-			0.45, 0.1,  0.45,
-			0.45, 0.45, 0.1
+			0.6,  0.15, 0.25,
+			0.35, 0.25, 0.40,
+			0.15, 0.55, 0.3
 		};
 		const double arrMu[] = {
-			0.0, 30.0, -20.0
+			0.0, 2.0944, 4.1888
 		};
 		const double arrKappa[] = {
-			1.0, 2.0, 1.5
+			50.0, 90.0, 70.0
 		};
 
 		//
@@ -106,10 +106,10 @@ void model_reading_and_writing()
 			0.1, 0.6, 0.3
 		};
 		const double arrMu[] = {
-			0.0, -30.0, 20.0
+			0.0, 1.5708, 4.7124
 		};
 		const double arrKappa[] = {
-			1.0, 2.0, 1.5
+			50.0, 100.0, 75.0
 		};
 
 		//
@@ -494,11 +494,11 @@ void viterbi_algorithm()
 	{
 #if __TEST_HMM_MODEL == 1
 
-#if 1
+#if 0
 		std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
 #elif 0
 		std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
-#elif 0
+#elif 1
 		std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
@@ -506,11 +506,11 @@ void viterbi_algorithm()
 
 #elif __TEST_HMM_MODEL == 2
 
-#if 1
+#if 0
 		std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
 #elif 0
 		std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
-#elif 0
+#elif 1
 		std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
@@ -721,7 +721,7 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->estimateParameters(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->estimateParametersByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi & A
 			//cdhmm->normalizeModelParameters();
@@ -791,9 +791,9 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			cdhmm->estimateParameters(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->estimateParametersByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & B
+			// normalize pi & A
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -830,6 +830,6 @@ void hmm_with_von_mises_observation_densities()
 
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
-	local::viterbi_algorithm();
-	//local::mle_em_learning();
+	//local::viterbi_algorithm();
+	local::mle_em_learning();
 }

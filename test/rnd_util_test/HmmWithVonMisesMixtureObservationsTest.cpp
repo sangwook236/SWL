@@ -1,6 +1,7 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesMixtureObservations.h"
+#include <boost/math/constants/constants.hpp>
 #include <boost/smart_ptr.hpp>
 #include <sstream>
 #include <fstream>
@@ -15,9 +16,9 @@
 #endif
 
 
-#define __TEST_HMM_MODEL 0
+//#define __TEST_HMM_MODEL 0
 //#define __TEST_HMM_MODEL 1
-//#define __TEST_HMM_MODEL 2
+#define __TEST_HMM_MODEL 2
 #define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
@@ -71,7 +72,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		// normalize pi & A
+		// normalize pi, A, & alpha
 		cdhmm->normalizeModelParameters();
 
 		cdhmm->writeModel(std::cout);
@@ -90,24 +91,24 @@ void model_reading_and_writing()
 			1.0/3.0, 1.0/3.0, 1.0/3.0
 		};
 		const double arrA[] = {
-			0.2, 0.5, 0.3,
-			0.45, 0.3, 0.25,
-			0.5, 0.15, 0.35
+			0.2,  0.5,  0.3,
+			0.45, 0.3,  0.25,
+			0.5,  0.15, 0.35
 		};
 		const double arrAlpha[] = {
-			0.4, 0.6,
+			0.4,  0.6,
 			0.35, 0.65,
-			0.7, 0.3
+			0.7,  0.3
 		};
 		const double arrMu[] = {
-			0.0, -200.0,
-			1500.0, 2000.0,
-			-2000.0, -4000.0
+			0.0, 1.0,
+			2.5, 3.0,
+			4.0, 5.0
 		};
 		const double arrKappa[] = {
-			5.0, 3.0,
-			2.0, 10.0,
-			6.0, 8.5
+			50.0, 30.0,
+			20.0, 100.0,
+			60.0, 85.0
 		};
 
 		//
@@ -121,9 +122,9 @@ void model_reading_and_writing()
 			1.0/3.0, 1.0/3.0, 1.0/3.0
 		};
 		const double arrA[] = {
-			0.9,  0.05, 0.05,
-			0.45, 0.1,  0.45,
-			0.45, 0.45, 0.1
+			0.6,  0.15, 0.25,
+			0.35, 0.25, 0.40,
+			0.15, 0.55, 0.3
 		};
 		const double arrAlpha[] = {
 			0.7, 0.3,
@@ -131,14 +132,14 @@ void model_reading_and_writing()
 			0.5, 0.5
 		};
 		const double arrMu[] = {
-			0.0, 5.0,
-			30.0, 40.0,
-			-20.0, -25.0
+			1.2, 1.8,
+			3.2, 3.8,
+			5.2, 5.8
 		};
 		const double arrKappa[] = {
-			3.0, 1.0,
-			2.0, 2.0,
-			1.5, 2.5
+			40.0, 70.0,
+			55.0, 95.0,
+			80.0, 60.0
 		};
 
 		//
@@ -162,14 +163,14 @@ void model_reading_and_writing()
 			0.75, 0.25
 		};
 		const double arrMu[] = {
-			0.0, -5.0,
-			-30.0, -35.0,
-			20.0, 15.0
+			6.1, 0.5,
+			2.5, 3.14,
+			4.0, 4.71
 		};
 		const double arrKappa[] = {
-			1.0, 2.0,
-			2.0, 4.0,
-			0.5, 1.5
+			80.0, 60.0,
+			50.0, 65.0,
+			75.0, 75.0
 		};
 
 		//
@@ -248,7 +249,7 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		// normalize pi & A
+		// normalize pi, A, & alpha
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -461,7 +462,7 @@ void forward_algorithm()
 			return;
 		}
 
-		// normalize pi & A
+		// normalize pi, A, & alpha
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -607,7 +608,7 @@ void viterbi_algorithm()
 			return;
 		}
 
-		// normalize pi & A
+		// normalize pi, A, & alpha
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -794,14 +795,14 @@ void mle_em_learning()
 		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means
+		const double small = 1.0e-10;
+		// mean directions: 0 <= mu < 2 * pi.
 		for (size_t i = 0; i < K * C; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(0.0);
+			upperBounds.push_back(2.0 * boost::math::constants::pi<double>() - small);
 		}
-		// standard deviations: sigma > 0
-		const double small = 1.0e-10;
+		// concentration parameters: kappa >= 0.
 		for (size_t i = K * C; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(small);
@@ -880,9 +881,9 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->estimateParameters(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->estimateParametersByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi & A
+			// normalize pi, A, & alpha
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -957,9 +958,9 @@ void mle_em_learning()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			cdhmm->estimateParameters(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->estimateParametersByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & alpha
 			//cdhmm->normalizeModelParameters();
 
 			//

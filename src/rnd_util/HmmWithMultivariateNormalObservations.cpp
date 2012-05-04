@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultivariateNormalObservations.h"
+#include "swl/math/MathConstant.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <boost/numeric/ublas/blas.hpp>
@@ -39,7 +40,7 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 {
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -69,7 +70,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersInMStep(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -120,7 +121,7 @@ double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(cons
 	const double det = det_and_inv_by_lu(sigma, inv);
 
 	const dvector_type x_mu(observation - mus_[state]);
-	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(2.0 * boost::math::constants::pi<double>(), (double)D_) * det);
+	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 }
 
 void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const

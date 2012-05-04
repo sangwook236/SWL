@@ -292,7 +292,7 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const uivector_type &obs
 		states[n-1] = psi(n, states[n]);
 }
 
-bool DDHMM::estimateParameters(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::estimateParametersByML(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	dvector_type scale(N, 0.0);
 	double logprobf, logprobb;
@@ -343,7 +343,7 @@ bool DDHMM::estimateParameters(const size_t N, const uivector_type &observations
 			}
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersInMStep(N, (unsigned int)k, observations, gamma ,denominatorA);
+			doEstimateObservationDensityParametersByML(N, (unsigned int)k, observations, gamma ,denominatorA);
 		}
 
 		// E-step
@@ -385,7 +385,7 @@ bool DDHMM::estimateParameters(const size_t N, const uivector_type &observations
 	return true;
 }
 
-bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool DDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
 	const size_t R = Ns.size();  // number of observations sequences
 	size_t Nr, r, n;
@@ -468,7 +468,7 @@ bool DDHMM::estimateParameters(const std::vector<size_t> &Ns, const std::vector<
 			}
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersInMStep(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
+			doEstimateObservationDensityParametersByML(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
 		// E-step

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/math/MathConstant.h"
+#include <boost/math/constants/constants.hpp>
 #include <cmath>
 #include <limits>
 
@@ -24,9 +25,11 @@ namespace swl {
 /*static*/ const double MathConstant::NaN = std::numeric_limits<double>::quiet_NaN();  // -1.#IND
 ///*static*/ const double MathConstant::NaN = std::numeric_limits<double>::signaling_NaN();  // -1.#INF
 
-/*static*/ const double MathConstant::E = std::exp(1.0);
+///*static*/ const double MathConstant::E = std::exp(1.0);
+/*static*/ const double MathConstant::E = boost::math::constants::e<double>();
 
-/*static*/ const double MathConstant::PI = std::atan(1.0) * 4.0;
+///*static*/ const double MathConstant::PI = std::atan(1.0) * 4.0;
+/*static*/ const double MathConstant::PI = boost::math::constants::pi<double>();
 /*static*/ const double MathConstant::_2_PI = MathConstant::PI * 2.0;
 /*static*/ const double MathConstant::_4_PI = MathConstant::PI * 4.0;
 /*static*/ const double MathConstant::PI_2 = MathConstant::PI / 2.0;
