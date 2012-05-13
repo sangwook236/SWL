@@ -30,14 +30,14 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::DDHMM> ddhmm;
 
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
@@ -72,8 +72,8 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::DDHMM> ddhmm;
 
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -92,8 +92,8 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("..\\data\\hmm\\multinomial_test1_writing.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -143,14 +143,14 @@ void observation_sequence_generation(const bool outputToFile)
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
@@ -295,14 +295,14 @@ void forward_algorithm()
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
@@ -367,7 +367,7 @@ void forward_algorithm()
 		}
 	}
 
-	const size_t K = ddhmm->getStateSize();
+	const size_t K = ddhmm->getStateDim();
 
 	// forward algorithm without scaling
 	{
@@ -407,14 +407,14 @@ void viterbi_algorithm()
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
@@ -479,7 +479,7 @@ void viterbi_algorithm()
 		}
 	}
 
-	const size_t K = ddhmm->getStateSize();
+	const size_t K = ddhmm->getStateDim();
 
 	// Viterbi algorithm using direct probabilities
 	{
@@ -518,7 +518,7 @@ void viterbi_algorithm()
 	}
 }
 
-void mle_em_learning()
+void em_learning_by_mle()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
@@ -534,14 +534,14 @@ void mle_em_learning()
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		//
 		std::ifstream stream("..\\data\\hmm\\multinomial_test2.hmm");
@@ -580,8 +580,8 @@ void mle_em_learning()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the number of hidden states
-		const size_t D = 2;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
 
 		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
 
@@ -590,7 +590,7 @@ void mle_em_learning()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	const size_t K = ddhmm->getStateSize();
+	const size_t K = ddhmm->getStateDim();
 
 	// for a single observation sequence
 	{
@@ -737,5 +737,5 @@ void hmm_with_multinomial_observation_densities()
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
 	//local::viterbi_algorithm();
-	local::mle_em_learning();
+	local::em_learning_by_mle();
 }

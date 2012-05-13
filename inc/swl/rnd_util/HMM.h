@@ -39,8 +39,8 @@ public:
 	void computeGamma(const size_t N, const dmatrix_type &alpha, const dmatrix_type &beta, dmatrix_type &gamma) const;
 
 	//
-	size_t getStateSize() const  {  return K_;  }
-	size_t getObservationSize() const  {  return D_;  }
+	size_t getStateDim() const  {  return K_;  }
+	size_t getObservationDim() const  {  return D_;  }
 
 	dvector_type & getInitialStateDistribution()  {  return pi_;  }
 	const dvector_type & getInitialStateDistribution() const  {  return pi_;  }

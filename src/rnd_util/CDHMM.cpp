@@ -2,6 +2,7 @@
 #include "swl/rnd_util/CDHMM.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <cstring>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -361,7 +362,7 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 #if 1
 		delta = logprobf - finalLogProbability;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);  // log P(observations | estimated model)
+		delta = std::fabs(logprobf - finalLogProbability);
 #endif
 
 		finalLogProbability = logprobf;  // log P(observations | estimated model)
@@ -539,6 +540,9 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 
 bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+
 	dvector_type scale(N, 0.0);
 	double logprobf, logprobb;
 	size_t n;
@@ -588,7 +592,7 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 			}
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersByML(N, (unsigned int)k, observations, gamma, denominatorA);
+			doEstimateObservationDensityParametersByMAP(N, (unsigned int)k, observations, gamma, denominatorA);
 		}
 
 		// E-step
@@ -633,6 +637,9 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 
 bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+
 	const size_t R = Ns.size();  // number of observations sequences
 	size_t Nr, r, n;
 
@@ -715,7 +722,7 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 			}
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersByML(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
+			doEstimateObservationDensityParametersByMAP(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
 		// E-step

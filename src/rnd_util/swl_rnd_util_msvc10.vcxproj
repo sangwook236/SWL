@@ -96,12 +96,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CDHMM.cpp" />
+    <ClCompile Include="ContinuousDensityMixtureModel.cpp" />
     <ClCompile Include="DDHMM.cpp" />
     <ClCompile Include="ExtendedKalmanFilter.cpp" />
     <ClCompile Include="HistogramAccumulator.cpp" />
     <ClCompile Include="HistogramMatcher.cpp" />
     <ClCompile Include="HistogramUitl.cpp" />
     <ClCompile Include="HMM.cpp" />
+    <ClCompile Include="HmmSegmenter.cpp" />
     <ClCompile Include="HmmWithMixtureObservations.cpp" />
     <ClCompile Include="HmmWithMultinomialObservations.cpp" />
     <ClCompile Include="HmmWithMultivariateNormalMixtureObservations.cpp" />
@@ -115,15 +117,19 @@
     <ClCompile Include="HoughTransform.cpp" />
     <ClCompile Include="KalmanFilter.cpp" />
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
+    <ClCompile Include="MixtureModel.cpp" />
+    <ClCompile Include="UnivariateNormalMixtureModel.cpp" />
     <ClCompile Include="Ransac.cpp" />
     <ClCompile Include="RejectionSampling.cpp" />
     <ClCompile Include="RndUtilLocalApi.cpp" />
     <ClCompile Include="SamplingImportanceResampling.cpp" />
     <ClCompile Include="UnscentedKalmanFilter.cpp" />
     <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
+    <ClCompile Include="VonMisesMixtureModel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousDensityMixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h" />
@@ -135,6 +141,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmSegmenter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMixtureObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h" />
@@ -148,11 +155,14 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\VonMisesMixtureModel.h" />
     <ClInclude Include="RndUtilLocalApi.h" />
   </ItemGroup>
   <ItemGroup>

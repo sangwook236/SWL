@@ -5,6 +5,7 @@
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <iostream>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -106,7 +107,7 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 		sigma = 0.0;
 		for (n = 0; n < N; ++n)
 			sigma += zeta(n, c) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
-		sigma = 0.001 + 0.999 * sigma / sumZeta;
+		sigma = 0.001 + 0.999 * std::sqrt(sigma / sumZeta);
 		assert(sigma > 0.0);
 	}
 
@@ -221,7 +222,7 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 			for (n = 0; n < Ns[r]; ++n)
 				sigma += zetar(n, c) * (observationr(n, 0) - mu) * (observationr(n, 0) - mu);
 		}
-		sigma = 0.001 + 0.999 * sigma / sumZeta;
+		sigma = 0.001 + 0.999 * std::sqrt(sigma / sumZeta);
 		assert(sigma > 0.0);
 	}
 
@@ -229,18 +230,28 @@ void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityPar
 	//	-. all standard deviations have to be positive.
 }
 
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 double HmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
-	double sum = 0.0;
+	double prob = 0.0;
 	for (size_t c = 0; c < C_; ++c)
 	{
 		//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity)
 		boost::math::normal pdf(mus_(state, c), sigmas_(state, c));
 
-		sum += alphas_(state, c) * boost::math::pdf(pdf, observation[0]);
+		prob += alphas_(state, c) * boost::math::pdf(pdf, observation[0]);
 	}
 
-	return sum;
+	return prob;
 }
 
 void HmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const

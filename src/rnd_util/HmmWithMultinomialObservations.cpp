@@ -1,6 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultinomialObservations.h"
 #include <cstring>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -67,6 +68,58 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 
 		B_(state, d) = 0.001 + 0.999 * numeratorB / denominatorB;
 	}
+}
+
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
+{
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+/*
+	// reestimate observation(emission) distribution in each state
+
+	size_t n;
+	const double denominatorB = denominatorA + gamma(N-1, state);
+	double numeratorB;
+	for (size_t d = 0; d < D_; ++d)
+	{
+		numeratorB = 0.0;
+		for (n = 0; n < N; ++n)
+		{
+			if (observations[n] == (unsigned int)d)
+				numeratorB += gamma(n, state);
+		}
+
+		B_(state, d) = 0.001 + 0.999 * numeratorB / denominatorB;
+	}
+*/
+}
+
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+/*
+	// reestimate observation(emission) distribution in each state
+
+	size_t n, r;
+	double denominatorB = denominatorA;
+	for (r = 0; r < R; ++r)
+		denominatorB += gammas[r](Ns[r]-1, state);
+
+	double numeratorB;
+	for (size_t d = 0; d < D_; ++d)
+	{
+		numeratorB = 0.0;
+		for (r = 0; r < R; ++r)
+			for (n = 0; n < Ns[r]; ++n)
+			{
+				if (observationSequences[r][n] == (unsigned int)d)
+					numeratorB += gammas[r](n, state);
+			}
+
+		B_(state, d) = 0.001 + 0.999 * numeratorB / denominatorB;
+	}
+*/
 }
 
 unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const unsigned int state) const

@@ -256,9 +256,19 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
+void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 double HmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
-	double sum = 0.0;
+	double prob = 0.0;
 	dmatrix_type inv(D_, D_, 0.0);
 	for (size_t c = 0; c < C_; ++c)
 	{
@@ -268,11 +278,10 @@ double HmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbabili
 		const double det = det_and_inv_by_lu(sigma, inv);
 
 		const dvector_type x_mu(observation - mus_[state][c]);
-		sum += alphas_(state, c) * std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
+		prob += alphas_(state, c) * std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 	}
 
-	return sum;
-
+	return prob;
 }
 
 void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const

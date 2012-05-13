@@ -31,22 +31,22 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
@@ -82,8 +82,8 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
@@ -113,8 +113,8 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test0_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
@@ -144,8 +144,8 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("..\\data\\hmm\\uni_normal_mixture_test1_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		const double arrPi[] = {
@@ -208,22 +208,22 @@ void observation_sequence_generation(const bool outputToFile)
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
@@ -314,7 +314,7 @@ void observation_sequence_generation(const bool outputToFile)
 				return;
 			}
 
-			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationSize(), 0.0);
+			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationDim(), 0.0);
 			swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 			cdhmm->generateSample(N, observations, states, seed);
 
@@ -332,7 +332,7 @@ void observation_sequence_generation(const bool outputToFile)
 		{
 			const size_t N = 100;
 
-			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationSize(), 0.0);
+			swl::CDHMM::dmatrix_type observations(N, cdhmm->getObservationDim(), 0.0);
 			swl::CDHMM::uivector_type states(N, (unsigned int)-1);
 			cdhmm->generateSample(N, observations, states, seed);
 
@@ -421,22 +421,22 @@ void forward_algorithm()
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
@@ -518,7 +518,7 @@ void forward_algorithm()
 
 		size_t D = 0;
 		const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
-		if (!retval || cdhmm->getObservationSize() != D)
+		if (!retval || cdhmm->getObservationDim() != D)
 		{
 			std::ostringstream stream;
 			stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -527,7 +527,7 @@ void forward_algorithm()
 		}
 	}
 
-	const size_t K = cdhmm->getStateSize();
+	const size_t K = cdhmm->getStateDim();
 
 	// forward algorithm without scaling
 	{
@@ -567,22 +567,22 @@ void viterbi_algorithm()
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
@@ -664,7 +664,7 @@ void viterbi_algorithm()
 
 		size_t D = 0;
 		const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
-		if (!retval || cdhmm->getObservationSize() != D)
+		if (!retval || cdhmm->getObservationDim() != D)
 		{
 			std::ostringstream stream;
 			stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -673,7 +673,7 @@ void viterbi_algorithm()
 		}
 	}
 
-	const size_t K = cdhmm->getStateSize();
+	const size_t K = cdhmm->getStateDim();
 
 	// Viterbi algorithm using direct probabilities
 	{
@@ -712,7 +712,7 @@ void viterbi_algorithm()
 	}
 }
 
-void mle_em_learning()
+void em_learning_by_mle()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -728,22 +728,22 @@ void mle_em_learning()
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
 		std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		//
@@ -783,8 +783,8 @@ void mle_em_learning()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the number of hidden states
-		//const size_t D = 1;  // the number of observation symbols
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
 		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
@@ -820,11 +820,11 @@ void mle_em_learning()
 		{
 #if __TEST_HMM_MODEL == 0
 
-#if 1
+#if 0
 			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0_50.seq");
 #elif 0
 			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0_100.seq");
-#elif 0
+#elif 1
 			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test0_1500.seq");
 #else
 			std::istream stream = std::cin;
@@ -846,9 +846,9 @@ void mle_em_learning()
 
 #if 0
 			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_50.seq");
-#elif 1
-			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
 #elif 0
+			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_100.seq");
+#elif 1
 			std::ifstream stream("..\\data\\hmm\\uni_normal_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
@@ -865,7 +865,7 @@ void mle_em_learning()
 
 			size_t D = 0;
 			const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
-			if (!retval || cdhmm->getObservationSize() != D)
+			if (!retval || cdhmm->getObservationDim() != D)
 			{
 				std::ostringstream stream;
 				stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -939,7 +939,7 @@ void mle_em_learning()
 
 				size_t D = 0;
 				const bool retval = swl::CDHMM::readSequence(stream, Ns[r], D, observationSequences[r]);
-				if (!retval || cdhmm->getObservationSize() != D)
+				if (!retval || cdhmm->getObservationDim() != D)
 				{
 					std::ostringstream stream;
 					stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
@@ -997,5 +997,5 @@ void hmm_with_univariate_normal_mixture_observation_densities()
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
 	//local::viterbi_algorithm();
-	local::mle_em_learning();
+	local::em_learning_by_mle();
 }

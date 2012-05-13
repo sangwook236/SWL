@@ -56,6 +56,11 @@ protected:
 	// for multiple independent observation sequences
 	/*virtual*/ void doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
 
+	// for a single independent observation sequence
+	/*virtual*/ void doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA);
+	// for multiple independent observation sequences
+	/*virtual*/ void doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
+
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
 	/*virtual*/ bool doWriteObservationDensity(std::ostream &stream) const;

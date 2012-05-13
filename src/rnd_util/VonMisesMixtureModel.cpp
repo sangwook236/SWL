@@ -1,11 +1,11 @@
 #include "swl/Config.h"
-#include "swl/rnd_util/HmmWithVonMisesObservations.h"
+#include "swl/rnd_util/VonMisesMixtureModel.h"
 #include "swl/math/MathConstant.h"
 #include "RndUtilLocalApi.h"
 #include "swl/rnd_util/RejectionSampling.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <stdexcept>
+#include <iostream>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -20,23 +20,23 @@ namespace swl {
 bool one_dim_root_finding_using_f(const double A, const double lower, const double upper, const std::size_t maxIteration, double &kappa);
 double evaluateVonMisesDistribution(const double x, const double mu, const double kappa);
 
-HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K)
-: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index
+VonMisesMixtureModel::VonMisesMixtureModel(const size_t K)
+: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),
   targetDist_(), proposalDist_()
 {
 }
 
-HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas)
-: base_type(K, 1, pi, A), mus_(mus), kappas_(kappas),
+VonMisesMixtureModel::VonMisesMixtureModel(const size_t K, const std::vector<double> &pi, const dvector_type &mus, const dvector_type &kappas)
+: base_type(K, 1, pi), mus_(mus), kappas_(kappas),
   targetDist_(), proposalDist_()
 {
 }
 
-HmmWithVonMisesObservations::~HmmWithVonMisesObservations()
+VonMisesMixtureModel::~VonMisesMixtureModel()
 {
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -61,15 +61,14 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 	//
-	denominator = denominatorA + gamma(N-1, state);
 	numerator = 0.0;
 	for (n = 0; n < N; ++n)
 		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?)
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?)
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?)
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?)
 #endif
 	// FIXME [modify] >> lower & upper bounds have to be adjusted
 	const double lb = -10000.0, ub = 10000.0;
@@ -90,93 +89,19 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
-{
-	// reestimate observation(emission) distribution in each state
-
-	size_t n, r;
-	double numerator = 0.0, denominator = 0.0;
-	for (r = 0; r < R; ++r)
-	{
-		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &gammar = gammas[r];
-
-		for (n = 0; n < Ns[r]; ++n)
-		{
-			numerator += gammar(n, state) * std::sin(observationr(n, 0));
-			denominator += gammar(n, state) * std::cos(observationr(n, 0));
-		}
-	}
-
-	double &mu = mus_[state];
-
-	// TODO [check] >> check the range of each mu, [0, 2 * pi)
-#if 0
-	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
-	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
-#else
-	//mu = std::atan2(numerator, denominator);
-	mu = std::atan2(numerator, denominator) + MathConstant::PI;
-#endif
-	assert(0.0 <= mu && mu < MathConstant::_2_PI);
-
-	//
-	denominator = denominatorA;
-	for (r = 0; r < R; ++r)
-		denominator += gammas[r](Ns[r]-1, state);
-
-	numerator = 0.0;
-	for (r = 0; r < R; ++r)
-	{
-		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &gammar = gammas[r];
-
-		for (n = 0; n < Ns[r]; ++n)
-			numerator += gammar(n, state) * std::cos(observationr(n, 0) - mu);
-	}
-
-#if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?)
-#else
-	const double A = numerator / denominator;  // -1 < A < 1 (?)
-#endif
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
-	const double lb = -10000.0, ub = 10000.0;
-	const std::size_t maxIteration = 100;
-	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
-	assert(retval);
-
-	// TODO [check] >>
-	if (kappas_[state] < 0.0)  // kappa >= 0.0
-	{
-		kappas_[state] = -kappas_[state];
-		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
-		assert(0.0 <= mu && mu < MathConstant::_2_PI);
-	}
-
-	// POSTCONDITIONS [] >>
-	//	-. all mean directions have to be in [0, 2 * pi).
-	//	-. all concentration parameters have to be greater than or equal to 0.
-}
-
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
-{
-	throw std::runtime_error("not yet implemented");
-}
-
-double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
 	// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
-	//return 0.5 * std::exp(kappas_[state] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
+	//return 0.5 * std::exp(kappas_[k] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
 	return evaluateVonMisesDistribution(observation[0], mus_[state], kappas_[state]);
 }
 
-void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
@@ -219,7 +144,7 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 	observation[0] = x[0];
 }
 
-bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
+bool VonMisesMixtureModel::doReadObservationDensity(std::istream &stream)
 {
 	if (1 != D_) return false;
 
@@ -234,9 +159,17 @@ bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
 
 	stream >> dummy;
 #if defined(__GNUC__)
-	if (strcasecmp(dummy.c_str(), "Mises:") != 0)
+	if (strcasecmp(dummy.c_str(), "Mises") != 0)
 #elif defined(_MSC_VER)
-	if (_stricmp(dummy.c_str(), "Mises:") != 0)
+	if (_stricmp(dummy.c_str(), "Mises") != 0)
+#endif
+		return false;
+
+	stream >> dummy;
+#if defined(__GNUC__)
+	if (strcasecmp(dummy.c_str(), "mixture:") != 0)
+#elif defined(_MSC_VER)
+	if (_stricmp(dummy.c_str(), "mixture:") != 0)
 #endif
 		return false;
 
@@ -267,9 +200,9 @@ bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
 	return true;
 }
 
-bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream) const
+bool VonMisesMixtureModel::doWriteObservationDensity(std::ostream &stream) const
 {
-	stream << "von Mises:" << std::endl;
+	stream << "von Mises mixture:" << std::endl;
 
 	// K
 	stream << "mu:" << std::endl;
@@ -286,7 +219,7 @@ bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream
 	return true;
 }
 
-void HmmWithVonMisesObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
+void VonMisesMixtureModel::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.

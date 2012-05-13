@@ -12,12 +12,12 @@
 
 namespace swl {
 
-HMM::HMM(const size_t K, const size_t D)
+HMM::HMM(const std::size_t K, const std::size_t D)
 : K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0)  // 0-based index
 {
 }
 
-HMM::HMM(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A)
+HMM::HMM(const std::size_t K, const std::size_t D, const dvector_type &pi, const dmatrix_type &A)
 : K_(K), D_(D), pi_(pi), A_(A)
 {
 }
@@ -26,11 +26,11 @@ HMM::~HMM()
 {
 }
 
-void HMM::computeGamma(const size_t N, const dmatrix_type &alpha, const dmatrix_type &beta, dmatrix_type &gamma) const
+void HMM::computeGamma(const std::size_t N, const dmatrix_type &alpha, const dmatrix_type &beta, dmatrix_type &gamma) const
 {
-	size_t k;
+	std::size_t k;
 	double denominator;
-	for (size_t n = 0; n < N; ++n)
+	for (std::size_t n = 0; n < N; ++n)
 	{
 		denominator = 0.0;
 		for (k = 0; k < K_; ++k)
@@ -50,7 +50,7 @@ unsigned int HMM::generateInitialState() const
 
 	double accum = 0.0;
 	unsigned int state = (unsigned int)K_;
-	for (size_t k = 0; k < K_; ++k)
+	for (std::size_t k = 0; k < K_; ++k)
 	{
 		accum += pi_[k];
 		if (prob < accum)
@@ -76,7 +76,7 @@ unsigned int HMM::generateNextState(const unsigned int currState) const
 
 	double accum = 0.0;
 	unsigned int nextState = (unsigned int)K_;
-	for (size_t k = 0; k < K_; ++k)
+	for (std::size_t k = 0; k < K_; ++k)
 	{
 		accum += A_(currState, k);
 		if (prob < accum)
@@ -101,8 +101,8 @@ bool HMM::readModel(std::istream &stream)
 	std::string dummy;
 
 	// TODO [check] >>
-	size_t K;
-	stream >> dummy >> K;  // the number of hidden states
+	std::size_t K;
+	stream >> dummy >> K;  // the dimension of hidden states
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "K=") != 0 || K_ != K)
 #elif defined(_MSC_VER)
@@ -110,8 +110,8 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	size_t D;
-	stream >> dummy >> D;  // the number of observation symbols
+	std::size_t D;
+	stream >> dummy >> D;  // the dimension of observation symbols
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "D=") != 0 || D_ != D)
 #elif defined(_MSC_VER)
@@ -119,7 +119,7 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	size_t i, k;
+	std::size_t i, k;
 	stream >> dummy;
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "pi:") != 0)
@@ -152,10 +152,10 @@ bool HMM::readModel(std::istream &stream)
 
 bool HMM::writeModel(std::ostream &stream) const
 {
-	size_t i, k;
+	std::size_t i, k;
 
-	stream << "K= " << K_ << std::endl;  // the number of hidden states
-	stream << "D= " << D_ << std::endl;  // the number of observation symbols
+	stream << "K= " << K_ << std::endl;  // the dimension of hidden states
+	stream << "D= " << D_ << std::endl;  // the dimension of observation symbols
 
 	// K
 	stream << "pi:" << std::endl;
@@ -180,7 +180,7 @@ void HMM::initializeModel(const std::vector<double> &lowerBoundsOfObservationDen
 	// PRECONDITIONS [] >>
 	//	-. std::srand() had to be called before this function is called.
 
-	size_t i, k;
+	std::size_t i, k;
 	double sum = 0.0;
 	for (k = 0; k < K_; ++k)
 	{
@@ -207,7 +207,7 @@ void HMM::initializeModel(const std::vector<double> &lowerBoundsOfObservationDen
 
 void HMM::normalizeModelParameters()
 {
-	size_t i, k;
+	std::size_t i, k;
 	double sum;
 
 	sum = 0.0;

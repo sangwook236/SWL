@@ -1,6 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/DDHMM.h"
 #include <cstring>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -469,6 +470,254 @@ bool DDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 
 			// reestimate observation(emission) distribution in each state
 			doEstimateObservationDensityParametersByML(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
+		}
+
+		// E-step
+		continueToLoop = false;
+		for (r = 0; r < R; ++r)
+		{
+			Nr = Ns[r];
+			const uivector_type &observations = observationSequences[r];
+
+			dmatrix_type &alphar = alphas[r];
+			dmatrix_type &betar = betas[r];
+			dmatrix_type &gammar = gammas[r];
+			std::vector<dmatrix_type> &xir = xis[r];
+			dvector_type &scaler = scales[r];
+
+			// forward-backward algorithm
+			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
+			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+
+			computeGamma(Nr, alphar, betar, gammar);
+			computeXi(Nr, observations, alphar, betar, xir);
+
+			// compute difference between log probability of two iterations
+#if 1
+			delta = logprobf - finalLogProbabilities[r];
+#else
+			delta = std::fabs(logprobf - finalLogProbabilities[r]);
+#endif
+			if (delta > terminationTolerance && numIteration <= maxIteration)
+				continueToLoop = true;
+
+			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
+		}
+
+		++numIteration;
+	} while (continueToLoop);  // if log probability does not change much, exit
+
+/*
+	// compute gamma & xi
+	{
+		for (r = 0; r < R; ++r)
+		{
+			// gamma can use the result from Baum-Welch algorithm
+			//dmatrix_type gamma2(Ns[r], K_, 0.0);
+			//computeGamma(Ns[r], alphas[r], betas[r], gamma2);
+
+			//
+			std::vector<std::vector<dmatrix_type> > xis2;
+			xis2.reserve(R);
+			for (r = 0; r < R; ++r)
+			{
+				Nr = Ns[r];
+				xis2.push_back(std::vector<dmatrix_type>());
+				xis2[r].reserve(Nr);
+				for (n = 0; n < Nr; ++n)
+					xis2[r].push_back(dmatrix_type(K_, K_, 0.0));
+			}
+			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xis2[r]);
+		}
+	}
+*/
+
+	return true;
+}
+
+bool DDHMM::estimateParametersByMAP(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+{
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+
+	dvector_type scale(N, 0.0);
+	double logprobf, logprobb;
+	size_t n;
+
+	dmatrix_type alpha(N, K_, 0.0), beta(N, K_, 0.0), gamma(N, K_, 0.0);
+	std::vector<dmatrix_type> xi;
+	xi.reserve(N);
+	for (n = 0; n < N; ++n)
+		xi.push_back(dmatrix_type(K_, K_, 0.0));
+
+	// E-step
+	{
+		// forward-backward algorithm
+		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
+		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+
+		computeGamma(N, alpha, beta, gamma);
+		computeXi(N, observations, alpha, beta, xi);
+	}
+
+	initLogProbability = logprobf;  // log P(observations | initial model)
+	finalLogProbability = logprobf;
+
+	double numeratorA, denominatorA;
+	double delta;
+	size_t i, k;
+	numIteration = 0;
+	do
+	{
+		// M-step
+		for (k = 0; k < K_; ++k)
+		{
+			// reestimate frequency of state k in time n=0
+			pi_[k] = 0.001 + 0.999 * gamma(0, k);
+
+			// reestimate transition matrix in each state
+			denominatorA = 0.0;
+			for (n = 0; n < N - 1; ++n)
+				denominatorA += gamma(n, k);
+
+			for (i = 0; i < K_; ++i)
+			{
+				numeratorA = 0.0;
+				for (n = 0; n < N - 1; ++n)
+					numeratorA += xi[n](k, i);
+				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
+			}
+
+			// reestimate observation(emission) distribution in each state
+			doEstimateObservationDensityParametersByMAP(N, (unsigned int)k, observations, gamma ,denominatorA);
+		}
+
+		// E-step
+		{
+			// forward-backward algorithm
+			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
+			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+
+			computeGamma(N, alpha, beta, gamma);
+			computeXi(N, observations, alpha, beta, xi);
+		}
+
+		// compute difference between log probability of two iterations
+#if 1
+		delta = logprobf - finalLogProbability;
+#else
+		delta = std::fabs(logprobf - finalLogProbability);
+#endif
+
+		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		++numIteration;
+	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit
+
+/*
+	// compute gamma & xi
+	{
+		// gamma can use the result from Baum-Welch algorithm
+		//dmatrix_type gamma2(N, K_, 0.0);
+		//computeGamma(N, alpha, beta, gamma2);
+
+		//
+		std::vector<dmatrix_type> xi2;
+		xi.reserve(N);
+		for (n = 0; n < N; ++n)
+			xi.push_back(dmatrix_type(K_, K_, 0.0));
+		computeXi(N, observations, alpha, beta, xi2);
+	}
+*/
+	return true;
+}
+
+bool DDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+{
+	// FIXME [modify] >>
+	throw std::runtime_error("not yet implemented");
+
+	const size_t R = Ns.size();  // number of observations sequences
+	size_t Nr, r, n;
+
+	std::vector<dmatrix_type> alphas, betas, gammas;
+	std::vector<std::vector<dmatrix_type> > xis;
+	std::vector<dvector_type > scales;
+	alphas.reserve(R);
+	betas.reserve(R);
+	gammas.reserve(R);
+	xis.reserve(R);
+	scales.reserve(R);
+	for (r = 0; r < R; ++r)
+	{
+		Nr = Ns[r];
+		alphas.push_back(dmatrix_type(Nr, K_, 0.0));
+		betas.push_back(dmatrix_type(Nr, K_, 0.0));
+		gammas.push_back(dmatrix_type(Nr, K_, 0.0));
+		xis.push_back(std::vector<dmatrix_type>());
+		xis[r].reserve(Nr);
+		for (n = 0; n < Nr; ++n)
+			xis[r].push_back(dmatrix_type(K_, K_, 0.0));
+		scales.push_back(dvector_type(Nr, 0.0));
+	}
+
+	double logprobf, logprobb;
+
+	// E-step
+	for (r = 0; r < R; ++r)
+	{
+		Nr = Ns[r];
+		const uivector_type &observations = observationSequences[r];
+
+		dmatrix_type &alphar = alphas[r];
+		dmatrix_type &betar = betas[r];
+		dmatrix_type &gammar = gammas[r];
+		std::vector<dmatrix_type> &xir = xis[r];
+		dvector_type &scaler = scales[r];
+
+		// forward-backward algorithm
+		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
+		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+
+		computeGamma(Nr, alphar, betar, gammar);
+		computeXi(Nr, observations, alphar, betar, xir);
+
+		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+	}
+
+	double numeratorPi;
+	double numeratorA, denominatorA;
+	double delta;
+	bool continueToLoop;
+	size_t i, k;
+	numIteration = 0;
+	do
+	{
+		// M-step
+		for (k = 0; k < K_; ++k)
+		{
+			// reestimate frequency of state k in time n=0
+			numeratorPi = 0.0;
+			for (r = 0; r < R; ++r)
+				numeratorPi += gammas[r](0, k);
+			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
+
+			// reestimate transition matrix in each state
+			denominatorA = 0.0;
+			for (r = 0; r < R; ++r)
+				for (n = 0; n < Ns[r] - 1; ++n)
+					denominatorA += gammas[r](n, k);
+
+			for (i = 0; i < K_; ++i)
+			{
+				numeratorA = 0.0;
+				for (r = 0; r < R; ++r)
+					for (n = 0; n < Ns[r] - 1; ++n)
+						numeratorA += xis[r][n](k, i);
+				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
+			}
+
+			// reestimate observation(emission) distribution in each state
+			doEstimateObservationDensityParametersByMAP(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
 		// E-step

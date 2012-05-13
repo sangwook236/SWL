@@ -39,6 +39,16 @@ void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParam
 	throw std::runtime_error("not yet implemented");
 }
 
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 double HmmWithVonMisesFisherMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
 	throw std::runtime_error("not yet implemented");

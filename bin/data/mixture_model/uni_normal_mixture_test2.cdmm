@@ -1,0 +1,9 @@
+K= 3
+D= 1
+pi:
+0.40 0.30 0.30
+univariate normal mixture:
+mu:
+0.0 40.0 -25.0
+sigma:
+3.0 2.0 1.5

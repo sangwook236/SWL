@@ -5,6 +5,7 @@
 #include "swl/rnd_util/RejectionSampling.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -286,17 +287,27 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 double HmmWithVonMisesMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
 {
-	double sum = 0.0;
+	double prob = 0.0;
 	for (size_t c = 0; c < C_; ++c)
 	{
 		// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
-		//sum += alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(observation[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
-		sum += alphas_(state, c) * evaluateVonMisesDistribution(observation[0], mus_(state, c), kappas_(state, c));
+		//prob += alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(observation[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
+		prob += alphas_(state, c) * evaluateVonMisesDistribution(observation[0], mus_(state, c), kappas_(state, c));
 	}
 
-	return sum;
+	return prob;
 }
 
 void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const

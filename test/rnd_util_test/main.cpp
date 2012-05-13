@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
 	void imu_extended_Kalman_filter_with_calibration();
 	void imu_unscented_Kalman_filter_with_calibration();
 
+	void univariate_normal_mixture_model();
+	void von_mises_mixture_model();
+
 	void hmm_with_multinomial_observation_densities();
 	void hmm_with_univariate_normal_observation_densities();
 	void hmm_with_univariate_normal_mixture_observation_densities();
@@ -48,14 +51,14 @@ int main(int argc, char *argv[])
 		//imu_extended_Kalman_filter_with_calibration();
 		//imu_unscented_Kalman_filter_with_calibration();
 
-		//const double a = 1.0 / std::numeric_limits<double>::min(), b = 1.0 / 1e-500;
-		//std::cout << a << ", " << b << std::endl;
+		//univariate_normal_mixture_model();
+		von_mises_mixture_model();
 
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
 		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
-		hmm_with_von_mises_mixture_observation_densities();
+		//hmm_with_von_mises_mixture_observation_densities();
 	}
 	catch (const std::exception &e)
 	{
