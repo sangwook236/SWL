@@ -37,10 +37,12 @@ int main(int argc, char *argv[])
 		//hough_transform();
 		//estimate_3d_plane_using_ransac();
 
+		// sampling
 		//rejection_sampling();
 		//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter
 		//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC)
 
+		// Bayesian filtering
 		//kalman_filter();
 		//extended_kalman_filter();
 		//unscented_kalman_filter();
@@ -51,9 +53,11 @@ int main(int argc, char *argv[])
 		//imu_extended_Kalman_filter_with_calibration();
 		//imu_unscented_Kalman_filter_with_calibration();
 
+		// mixture model
 		//univariate_normal_mixture_model();
 		von_mises_mixture_model();
 
+		// hidden Markov model (HMM)
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
 		//hmm_with_univariate_normal_mixture_observation_densities();
