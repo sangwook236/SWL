@@ -44,6 +44,7 @@
 			<Add directory="../../bin/" />
 		</Linker>
 		<Unit filename="ExtendedKalmanFilterTest.cpp" />
+		<Unit filename="HmmSegmentationTest.cpp" />
 		<Unit filename="HmmWithMultinomialObservationsTest.cpp" />
 		<Unit filename="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />
 		<Unit filename="HmmWithUnivariateNormalObservationsTest.cpp" />
@@ -66,8 +67,10 @@
 		<Unit filename="RansacTest.cpp" />
 		<Unit filename="RejectionSamplingTest.cpp" />
 		<Unit filename="SamplingImportanceResamplingTest.cpp" />
+		<Unit filename="UnivariateNormalMixtureModelTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterWithAdditiveNoiseTest.cpp" />
+		<Unit filename="VonMisesMixtureModelTest.cpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

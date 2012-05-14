@@ -50,6 +50,7 @@
 			<Add directory="/usr/local/lib/" />
 		</Linker>
 		<Unit filename="../../inc/swl/rnd_util/CDHMM.h" />
+		<Unit filename="../../inc/swl/rnd_util/ContinuousDensityMixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/ContinuousLinearStochasticSystem.h" />
 		<Unit filename="../../inc/swl/rnd_util/ContinuousNonlinearStochasticSystem.h" />
 		<Unit filename="../../inc/swl/rnd_util/DDHMM.h" />
@@ -61,6 +62,7 @@
 		<Unit filename="../../inc/swl/rnd_util/HistogramAccumulator.h" />
 		<Unit filename="../../inc/swl/rnd_util/HistogramMatcher.h" />
 		<Unit filename="../../inc/swl/rnd_util/HistogramUtil.h" />
+		<Unit filename="../../inc/swl/rnd_util/HmmSegmenter.h" />
 		<Unit filename="../../inc/swl/rnd_util/HmmWithMixtureObservations.h" />
 		<Unit filename="../../inc/swl/rnd_util/HmmWithMultinomialObservations.h" />
 		<Unit filename="../../inc/swl/rnd_util/HmmWithMultivariateNormalMixtureObservations.h" />
@@ -74,18 +76,23 @@
 		<Unit filename="../../inc/swl/rnd_util/HoughTransform.h" />
 		<Unit filename="../../inc/swl/rnd_util/KalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/MetropolisHastingsAlgorithm.h" />
+		<Unit filename="../../inc/swl/rnd_util/MixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/Ransac.h" />
 		<Unit filename="../../inc/swl/rnd_util/RejectionSampling.h" />
 		<Unit filename="../../inc/swl/rnd_util/SamplingImportanceResampling.h" />
+		<Unit filename="../../inc/swl/rnd_util/UnivariateNormalMixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h" />
+		<Unit filename="../../inc/swl/rnd_util/VonMisesMixtureModel.h" />
 		<Unit filename="CDHMM.cpp" />
+		<Unit filename="ContinuousDensityMixtureModel.cpp" />
 		<Unit filename="DDHMM.cpp" />
 		<Unit filename="ExtendedKalmanFilter.cpp" />
 		<Unit filename="HMM.cpp" />
 		<Unit filename="HistogramAccumulator.cpp" />
 		<Unit filename="HistogramMatcher.cpp" />
 		<Unit filename="HistogramUitl.cpp" />
+		<Unit filename="HmmSegmenter.cpp" />
 		<Unit filename="HmmWithMixtureObservations.cpp" />
 		<Unit filename="HmmWithMultinomialObservations.cpp" />
 		<Unit filename="HmmWithMultivariateNormalMixtureObservations.cpp" />
@@ -99,13 +106,16 @@
 		<Unit filename="HoughTransform.cpp" />
 		<Unit filename="KalmanFilter.cpp" />
 		<Unit filename="MetropolisHastingsAlgorithm.cpp" />
+		<Unit filename="MixtureModel.cpp" />
 		<Unit filename="Ransac.cpp" />
 		<Unit filename="RejectionSampling.cpp" />
 		<Unit filename="RndUtilLocalApi.cpp" />
 		<Unit filename="RndUtilLocalApi.h" />
 		<Unit filename="SamplingImportanceResampling.cpp" />
+		<Unit filename="UnivariateNormalMixtureModel.cpp" />
 		<Unit filename="UnscentedKalmanFilter.cpp" />
 		<Unit filename="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
+		<Unit filename="VonMisesMixtureModel.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
