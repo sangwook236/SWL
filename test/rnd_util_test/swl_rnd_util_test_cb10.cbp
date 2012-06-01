@@ -7,22 +7,22 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/Debug/swl_rnd_util_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Debug/" />
-				<Option object_output="./Debug/" />
+				<Option output="..\..\bin\Debug\swl_rnd_util_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Debug\" />
+				<Option object_output=".\Debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
-					<Add directory="../../bin/Debug/" />
+					<Add directory="..\..\bin\Debug\" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/Release/swl_rnd_util_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Release/" />
-				<Option object_output="./Release/" />
+				<Option output="..\..\bin\Release\swl_rnd_util_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="..\..\bin\Release\" />
+				<Option object_output=".\Release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -30,18 +30,17 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release/" />
+					<Add directory="..\..\bin\Release\" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add directory="../../inc/" />
-			<Add directory="/home/sangwook/work_center/sw_dev/cpp/hw_interface/inc/" />
+			<Add directory="..\..\inc\" />
 		</Compiler>
 		<Linker>
-			<Add directory="../../bin/" />
+			<Add directory="..\..\bin\" />
 		</Linker>
 		<Unit filename="ExtendedKalmanFilterTest.cpp" />
 		<Unit filename="HmmSegmentationTest.cpp" />
@@ -51,16 +50,6 @@
 		<Unit filename="HmmWithVonMisesMixtureObservationsTest.cpp" />
 		<Unit filename="HmmWithVonMisesObservationsTest.cpp" />
 		<Unit filename="HoughTransformTest.cpp" />
-		<Unit filename="ImuCalibration.cpp" />
-		<Unit filename="ImuExtendedKalmanFilterRunner.cpp" />
-		<Unit filename="ImuExtendedKalmanFilterRunner.h" />
-		<Unit filename="ImuExtendedKalmanFilterWithCalibration.cpp" />
-		<Unit filename="ImuKalmanFilterTest.cpp" />
-		<Unit filename="ImuSystem.cpp" />
-		<Unit filename="ImuSystem.h" />
-		<Unit filename="ImuUnscentedKalmanFilterRunner.cpp" />
-		<Unit filename="ImuUnscentedKalmanFilterRunner.h" />
-		<Unit filename="ImuUnscentedKalmanFilterWithCalibration.cpp" />
 		<Unit filename="KalmanFilterTest.cpp" />
 		<Unit filename="MetropolisHastingsAlgorithmTest.cpp" />
 		<Unit filename="ParticleFilterTest.cpp" />

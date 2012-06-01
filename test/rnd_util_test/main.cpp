@@ -18,10 +18,6 @@ int main(int argc, char *argv[])
 	void extended_kalman_filter();
 	void unscented_kalman_filter();
 	void unscented_kalman_filter_with_additive_noise();
-	void imu_kalman_filter();
-	void imu_calibration();
-	void imu_extended_Kalman_filter_with_calibration();
-	void imu_unscented_Kalman_filter_with_calibration();
 
 	void univariate_normal_mixture_model();
 	void von_mises_mixture_model();
@@ -31,6 +27,8 @@ int main(int argc, char *argv[])
 	void hmm_with_univariate_normal_mixture_observation_densities();
 	void hmm_with_von_mises_observation_densities();
 	void hmm_with_von_mises_mixture_observation_densities();
+
+	void hmm_segmentation();
 
 	try
 	{
@@ -48,14 +46,9 @@ int main(int argc, char *argv[])
 		//unscented_kalman_filter();
 		//unscented_kalman_filter_with_additive_noise();
 
-		//imu_kalman_filter();
-		//imu_calibration();
-		//imu_extended_Kalman_filter_with_calibration();
-		//imu_unscented_Kalman_filter_with_calibration();
-
 		// mixture model
 		//univariate_normal_mixture_model();
-		von_mises_mixture_model();
+		//von_mises_mixture_model();
 
 		// hidden Markov model (HMM)
 		//hmm_with_multinomial_observation_densities();
@@ -63,6 +56,8 @@ int main(int argc, char *argv[])
 		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
 		//hmm_with_von_mises_mixture_observation_densities();
+
+		hmm_segmentation();
 	}
 	catch (const std::exception &e)
 	{
