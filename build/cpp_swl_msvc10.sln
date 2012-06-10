@@ -65,13 +65,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt", "..\unit\qt_ui\swl_unit_test_qt_msvc10.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app", "..\app\swl_imu_filter_app\swl_imu_filter_app_msvc10.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app", "..\app\imu_filter_app\swl_imu_filter_app_msvc10.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

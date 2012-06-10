@@ -10,6 +10,21 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ImuCalibration.cpp" />
+    <ClCompile Include="ImuExtendedKalmanFilterRunner.cpp" />
+    <ClCompile Include="ImuExtendedKalmanFilterWithCalibration.cpp" />
+    <ClCompile Include="ImuKalmanFilter.cpp" />
+    <ClCompile Include="ImuSystem.cpp" />
+    <ClCompile Include="ImuUnscentedKalmanFilterRunner.cpp" />
+    <ClCompile Include="ImuUnscentedKalmanFilterWithCalibration.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ImuExtendedKalmanFilterRunner.h" />
+    <ClInclude Include="ImuSystem.h" />
+    <ClInclude Include="ImuUnscentedKalmanFilterRunner.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{901C25BD-0202-45AB-9C8A-8B522420EA3D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -82,21 +97,6 @@
       <AdditionalDependencies>adisusbz.lib;swl_math.lib;swl_rnd_util.lib;cblas.lib;gsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="ImuCalibration.cpp" />
-    <ClCompile Include="ImuExtendedKalmanFilterRunner.cpp" />
-    <ClCompile Include="ImuExtendedKalmanFilterWithCalibration.cpp" />
-    <ClCompile Include="ImuKalmanFilter.cpp" />
-    <ClCompile Include="ImuSystem.cpp" />
-    <ClCompile Include="ImuUnscentedKalmanFilterRunner.cpp" />
-    <ClCompile Include="ImuUnscentedKalmanFilterWithCalibration.cpp" />
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ImuExtendedKalmanFilterRunner.h" />
-    <ClInclude Include="ImuSystem.h" />
-    <ClInclude Include="ImuUnscentedKalmanFilterRunner.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
