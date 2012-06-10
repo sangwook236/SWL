@@ -59,10 +59,10 @@ bool SerialPort::connect(const std::string &portName, const unsigned int baudRat
 		return true;
 	}
 	else
-	{ 
+	{
 		std::cerr << "failed to open serial port" << std::endl;
 		return false;
-	} 
+	}
 }
 
 void SerialPort::disconnect()
@@ -122,7 +122,11 @@ std::size_t SerialPort::getReceiveBufferSize() const
 
 void SerialPort::doStartSending()
 {
+#if defined(__GNUC__)
+	sentMsgLength_ = std::min(sendBuffer_.getSize(), (std::size_t)MAX_SEND_LENGTH_);
+#else
 	sentMsgLength_ = std::min(sendBuffer_.getSize(), MAX_SEND_LENGTH_);
+#endif
 	sendBuffer_.top(sendMsg_.c_array(), sentMsgLength_);
 	boost::asio::async_write(
 		port_,
@@ -149,8 +153,8 @@ void SerialPort::doStartReceiving()
 	port_.async_read_some(
 		boost::asio::buffer(receiveMsg_),
 		boost::bind(&SerialPort::doCompleteReceiving, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
-	); 
-} 
+	);
+}
 
 void SerialPort::doCompleteReceiving(const boost::system::error_code &ec, std::size_t bytesTransferred)
 {

@@ -40,8 +40,8 @@ public:
 	virtual ~DiscreteNonlinearStochasticSystem()  {}
 
 private:
-	DiscreteNonlinearStochasticSystem(const DiscreteNonlinearStochasticSystem &rhs);
-	DiscreteNonlinearStochasticSystem & operator=(const DiscreteNonlinearStochasticSystem &rhs);
+	DiscreteNonlinearStochasticSystem(const DiscreteNonlinearStochasticSystem &rhs);  // not implemented
+	DiscreteNonlinearStochasticSystem & operator=(const DiscreteNonlinearStochasticSystem &rhs);  // not implemented
 
 public:
 	// the stochastic differential equation: f = f(k, x(k), u(k), w(k))

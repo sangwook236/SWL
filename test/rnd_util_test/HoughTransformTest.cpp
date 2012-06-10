@@ -298,35 +298,35 @@ bool RectangleHoughTransform::isLocalMaximum(const size_t xcIdx0, const size_t y
 	for (size_t xc = 0; xc <= 2; ++xc)
 	{
 		const size_t xcIdx = xcIdx0 + xc - 1;
-		if (xcIdx == -1) continue;
+		if (xcIdx == (size_t)-1) continue;
 		else if (xcIdx >= size0) break;
 
 		// yc : y coordinate of the center
 		for (size_t yc = 0; yc <= 2; ++yc)
 		{
 			const size_t ycIdx = ycIdx0 + yc - 1;
-			if (ycIdx == -1) continue;
+			if (ycIdx == (size_t)-1) continue;
 			else if (ycIdx >= size1) break;
 
 			// theta : rotational angle about z axis
 			for (size_t theta = 0; theta <= 2; ++theta)
 			{
 				const size_t thetaIdx = thetaIdx0 + theta - 1;
-				if (thetaIdx == -1) continue;
+				if (thetaIdx == (size_t)-1) continue;
 				else if (thetaIdx >= size2) break;
 
 				// sx : scale factor along x axis
 				for (size_t sx = 0; sx <= 2; ++sx)
 				{
 					const size_t sxIdx = sxIdx0 + sx - 1;
-					if (sxIdx == -1) continue;
+					if (sxIdx == (size_t)-1) continue;
 					else if (sxIdx >= size3) break;
 
 					// sy : scale factor along y axis
 					for (size_t sy = 0; sy <= 2; ++sy)
 					{
 						const size_t syIdx = syIdx0 + sy - 1;
-						if (syIdx == -1) continue;
+						if (syIdx == (size_t)-1) continue;
 						else if (syIdx >= size4) break;
 
 						if (xcIdx0 == xcIdx && ycIdx0 == ycIdx && thetaIdx0 == thetaIdx && sxIdx0 == sxIdx && syIdx0 == syIdx) continue;

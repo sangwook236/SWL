@@ -18,6 +18,8 @@
 #endif
 
 
+void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+
 namespace {
 namespace local {
 
@@ -729,7 +731,6 @@ void simple_system_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -880,7 +881,6 @@ void aided_INS_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -1035,7 +1035,6 @@ void linear_mass_spring_damper_system_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -1245,7 +1244,6 @@ void radar_tracking_system_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{

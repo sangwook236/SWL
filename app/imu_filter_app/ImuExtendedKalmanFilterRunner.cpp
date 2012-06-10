@@ -19,6 +19,7 @@
 #include <numeric>
 #include <cmath>
 #include <cassert>
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

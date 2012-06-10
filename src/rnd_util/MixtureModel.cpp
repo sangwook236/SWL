@@ -2,6 +2,7 @@
 #include "swl/rnd_util/MixtureModel.h"
 #include <iostream>
 #include <string>
+#include <cstring>
 #include <cstdlib>
 
 

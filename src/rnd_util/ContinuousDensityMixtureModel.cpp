@@ -157,7 +157,7 @@ void ContinuousDensityMixtureModel::generateSample(const std::size_t N, dmatrix_
 	{
 		states[n] = generateState();
 #if defined(__GNUC__)
-		boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
+		boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, n);
 		doGenerateObservationsSymbol(states[n], obs, (unsigned int)-1);
 #else
 		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n), (unsigned int)-1);

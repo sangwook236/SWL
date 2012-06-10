@@ -49,14 +49,18 @@ void TcpSocketConnection::doStartOperation()
 			boost::asio::buffer(receiveMsg_),
 			// caution: shared_from_this() must be used here
 			boost::bind(&TcpSocketConnection::doCompleteReceiving, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
-		); 
+		);
 	}
 
 	// start a write operation if the third party library wants one.
 	if (!isSending_ && !sendBuffer_.isEmpty())
 	{
 		isSending_ = true;
+#if defined(__GNUC__)
+		sentMsgLength_ = std::min(sendBuffer_.getSize(), (std::size_t)MAX_SEND_LENGTH_);
+#else
 		sentMsgLength_ = std::min(sendBuffer_.getSize(), MAX_SEND_LENGTH_);
+#endif
 		sendBuffer_.top(sendMsg_.c_array(), sentMsgLength_);
 		boost::asio::async_write(
 			socket_,

@@ -85,13 +85,13 @@ private:
 			// TODO [check] >> the current state or the next state
 			const reward_type &r(nextState.getReward());
 			// choose a' from s' using policy derived from Q
-			const action_type &nextAction(state_action_pair_type::getActionFromPolicy(nextState, Q, policy, (*epsilonFunction_)(episodeTrial)));
+			const action_type &nextAction(state_action_pair_type::getActionFromPolicy(nextState, Q, policy, (*base_type::epsilonFunction_)(episodeTrial)));
 
 			const action_type &nextGreedyAction(state_action_pair_type::getGreedyAction(nextState, Q));
 
 			const state_action_pair_type currSA(currState, currAction);
 			const state_action_pair_type nextSA(nextState, nextGreedyAction);
-			const double delta = r + gamma_ * Q[nextSA] - Q[currSA];
+			const double delta = r + base_type::gamma_ * Q[nextSA] - Q[currSA];
 			eligibility[currSA] += 1.0;
 
 			const bool isNextActionGreedy = (nextGreedyAction == nextAction);

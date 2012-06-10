@@ -127,11 +127,19 @@ protected:
 	/**
 	 *	@brief  한 번의 송신 과정에서 보낼 수 있는 message의 최대 길이.
 	 */
+#if defined(__GNUC__)
+	static const unsigned long MAX_SEND_LENGTH_ = 512;
+#else
 	static const std::size_t MAX_SEND_LENGTH_ = 512;
+#endif
 	/**
 	 *	@brief  한 번의 수신 과정에서 받을 수 있는 message의 최대 길이.
 	 */
+#if defined(__GNUC__)
+	static const unsigned long MAX_RECEIVE_LENGTH_ = 512;
+#else
 	static const std::size_t MAX_RECEIVE_LENGTH_ = 512;
+#endif
 
 	/**
 	 *	@brief  TCP socket 통신을 실제적으로 수행하는 Boost.ASIO의 socket 객체.

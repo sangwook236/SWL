@@ -76,7 +76,7 @@ private:
 		while (true)
 		{
 			// choose a from s using policy derived from Q
-			const action_type &action(state_action_pair_type::getActionFromPolicy(currState, Q, policy, (*epsilonFunction_)(episodeTrial)));
+			const action_type &action(state_action_pair_type::getActionFromPolicy(currState, Q, policy, (*base_type::epsilonFunction_)(episodeTrial)));
 
 			// take action & get a next state s'
 			const state_type &nextState(currState.takeAction(action));
@@ -90,7 +90,7 @@ private:
 
 			const state_action_pair_type currSA(currState, action);
 			const state_action_pair_type nextSA(nextState, nextGreedyAction);
-			Q[currSA] += (*stepSizeFunction_)(step) * (r + gamma_ * Q[nextSA] - Q[currSA]);
+			Q[currSA] += (*base_type::stepSizeFunction_)(step) * (r + base_type::gamma_ * Q[nextSA] - Q[currSA]);
 
 			// update the current state
 			currState = nextState;

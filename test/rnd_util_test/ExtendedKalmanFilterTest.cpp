@@ -18,6 +18,8 @@
 #endif
 
 
+void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+
 namespace {
 namespace local {
 
@@ -221,7 +223,7 @@ public:
 		//V_ = gsl_matrix_alloc(outputDim_, outputDim_);
 		//gsl_matrix_set_identity(V_);
 
-		// Qd = W * Q * W^T 
+		// Qd = W * Q * W^T
 		//	the EKF approximation of Qd will be W * [ Q * Ts ] * W^T
 		Qd_hat_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set_zero(Qd_hat_);
@@ -348,7 +350,7 @@ public:
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
 	// the observation equation: h = h(k, x(k), u(k), v(k))
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const 
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		gsl_vector_set(h_eval_, 0, gsl_vector_get(state, 0));
 		return h_eval_;
@@ -508,7 +510,6 @@ void simple_system_extended_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\extened_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -656,7 +657,6 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 #endif
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{

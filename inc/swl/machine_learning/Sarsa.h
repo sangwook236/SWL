@@ -74,7 +74,7 @@ private:
 		if (!currState.isValidState())
 			throw std::runtime_error("invalid state");
 		// choose a from s using policy derived from Q
-		action_type &currAction(state_action_pair_type::getActionFromPolicy(currState, Q, policy, (*epsilonFunction_)(episodeTrial)));
+		action_type currAction(state_action_pair_type::getActionFromPolicy(currState, Q, policy, (*base_type::epsilonFunction_)(episodeTrial)));
 
 		while (true)
 		{
@@ -86,11 +86,11 @@ private:
 			// TODO [check] >> the current state or the next state
 			const reward_type &r(nextState.getReward());
 			// choose a' from s' using policy derived from Q
-			const action_type &nextAction(state_action_pair_type::getActionFromPolicy(nextState, Q, policy, (*epsilonFunction_)(episodeTrial)));
+			const action_type &nextAction(state_action_pair_type::getActionFromPolicy(nextState, Q, policy, (*base_type::epsilonFunction_)(episodeTrial)));
 
 			const state_action_pair_type currSA(currState, currAction);
 			const state_action_pair_type nextSA(nextState, nextAction);
-			Q[currSA] += (*stepSizeFunction_)(step) * (r + gamma_ * Q[nextSA] - Q[currSA]);
+			Q[currSA] += (*base_type::stepSizeFunction_)(step) * (r + base_type::gamma_ * Q[nextSA] - Q[currSA]);
 
 			// update the current state & action
 			currState = nextState;

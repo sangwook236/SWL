@@ -128,13 +128,13 @@ UnscentedKalmanFilterWithAdditiveNoise::~UnscentedKalmanFilterWithAdditiveNoise(
 bool UnscentedKalmanFilterWithAdditiveNoise::performUnscentedTransformation()
 {
 	if (!x_hat_ || !P_ || !Chi_) return false;
-
+/*
 	// FIXME [delete] >>
 	const double &E0 = gsl_vector_get(x_hat_, 6);
 	const double &E1 = gsl_vector_get(x_hat_, 7);
 	const double &E2 = gsl_vector_get(x_hat_, 8);
 	const double &E3 = gsl_vector_get(x_hat_, 9);
-
+*/
 	gsl_vector *pp = NULL;
 
 	// sqrt(P(k-1))
@@ -248,7 +248,7 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 #else
 		gsl_vector_memcpy(&gsl_matrix_column(Chi_star_, i).vector, f_eval);
 #endif
-
+/*
 		// FIXME [delete] >>
 		const double &f0 = gsl_vector_get(f_eval, 0);
 		const double &f1 = gsl_vector_get(f_eval, 1);
@@ -266,22 +266,22 @@ bool UnscentedKalmanFilterWithAdditiveNoise::updateTime(const size_t step, const
 		const double &f13 = gsl_vector_get(f_eval, 13);
 		const double &f14 = gsl_vector_get(f_eval, 14);
 		const double &f15 = gsl_vector_get(f_eval, 15);
-
+*/
 		// y = a x + y
 		gsl_blas_daxpy((0 == i ? Wm0_ : Wi_), f_eval, x_hat_);
 	}
-
+/*
 	// FIXME [delete] >>
 	const double &E0 = gsl_vector_get(x_hat_, 6);
 	const double &E1 = gsl_vector_get(x_hat_, 7);
 	const double &E2 = gsl_vector_get(x_hat_, 8);
 	const double &E3 = gsl_vector_get(x_hat_, 9);
-	const double norm = std::sqrt(E0*E0 + E1*E1 + E2*E2 + E3*E3);
+	//const double norm = std::sqrt(E0*E0 + E1*E1 + E2*E2 + E3*E3);
 	//gsl_vector_set(x_hat_, 6, E0 / norm);
 	//gsl_vector_set(x_hat_, 7, E1 / norm);
 	//gsl_vector_set(x_hat_, 8, E2 / norm);
 	//gsl_vector_set(x_hat_, 9, E3 / norm);
-
+*/
 	// P-(k)
 	gsl_matrix_set_zero(P_);
 	for (size_t i = 0; i < sigmaDim_; ++i)

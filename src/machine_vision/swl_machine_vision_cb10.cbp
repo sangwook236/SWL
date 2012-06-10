@@ -19,9 +19,6 @@
 					<Add option="-g" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
-				<Linker>
-					<Add directory="../../bin/Debug/" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="../../bin/Release/swl_machine_vision" prefix_auto="1" extension_auto="1" />
@@ -38,16 +35,13 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add directory="../../inc/" />
+			<Add directory="/usr/local/include/" />
 		</Compiler>
-		<Linker>
-			<Add directory="../../bin/" />
-		</Linker>
 		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
 		<Unit filename="../../inc/swl/machine_vision/SIFT.h" />
 		<Unit filename="../../inc/swl/machine_vision/SURF.h" />

@@ -187,7 +187,14 @@ void sampling_importance_resampling()
 	}
 
 	//
+#if defined(__GNUC__)
+    local::TransitionDistribution transitionDistribution(Ts, sigma_v);
+	local::ObservationDistribution observationDistribution(Ts, sigma_w);
+	local::ProposalDistribution proposalDistribution(Ts, sigma_v, sigma_w);
+	swl::SamplingImportanceResampling sir(EFFECTIVE_SAMPLE_SIZE, transitionDistribution, observationDistribution, proposalDistribution);
+#else
 	swl::SamplingImportanceResampling sir(EFFECTIVE_SAMPLE_SIZE, local::TransitionDistribution(Ts, sigma_v), local::ObservationDistribution(Ts, sigma_w), local::ProposalDistribution(Ts, sigma_v, sigma_w));
+#endif
 
 	std::vector<swl::SamplingImportanceResampling::vector_type> xs(PARTICLE_NUM, swl::SamplingImportanceResampling::vector_type(STATE_DIM, x_init));
 	std::vector<swl::SamplingImportanceResampling::vector_type> newXs(PARTICLE_NUM, swl::SamplingImportanceResampling::vector_type(STATE_DIM, x_init));

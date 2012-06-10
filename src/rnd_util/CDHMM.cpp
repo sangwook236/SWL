@@ -817,7 +817,7 @@ void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_
 	states[0] = generateInitialState();
 #if defined(__GNUC__)
     {
-        boost::multi_array_ref<double, 2>::array_view<1>::type obs(observations[boost::indices[0][dmatrix_type::index_range()]]);
+        boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, 0);
         doGenerateObservationsSymbol(states[0], obs, seed);
     }
 #else
@@ -828,7 +828,7 @@ void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_
 	{
 		states[n] = generateNextState(states[n-1]);
 #if defined(__GNUC__)
-		boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
+		boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, n);
 		doGenerateObservationsSymbol(states[n], obs, (unsigned int)-1);
 #else
 		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n), (unsigned int)-1);

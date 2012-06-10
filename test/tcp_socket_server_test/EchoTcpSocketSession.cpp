@@ -31,7 +31,11 @@ void EchoTcpSocketSession::send(boost::system::error_code &ec)
 		state_ = RECEIVING;
 	else
 	{
+#if defined(__GNUC__)
+		const std::size_t len = std::min(sendBuffer_.getSize(), (std::size_t)MAX_SEND_LENGTH_);
+#else
 		const std::size_t len = std::min(sendBuffer_.getSize(), MAX_SEND_LENGTH_);
+#endif
 		sendBuffer_.top(sendMsg_.c_array(), len);
 		if (const std::size_t sentLen = socket_.write_some(boost::asio::buffer(sendMsg_, len), ec))
 		{

@@ -100,12 +100,12 @@ public:
 	}
 
 private:
-	SimpleLinearSystem(const SimpleLinearSystem &rhs);
-	SimpleLinearSystem & operator=(const SimpleLinearSystem &rhs);
+	SimpleLinearSystem(const SimpleLinearSystem &rhs);  // not implemented
+	SimpleLinearSystem & operator=(const SimpleLinearSystem &rhs);  // not implemented
 
 public:
 	// the stochastic differential equation: f = f(k, x(k), u(k), w(k))
-	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Phi = getStateTransitionMatrix(step, state);
 		gsl_vector_memcpy(f_eval_, Bu_);
@@ -118,7 +118,7 @@ public:
 	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
 	// the observation equation: h = h(k, x(k), u(k), v(k))
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Cd = getOutputMatrix(step, state);
 		gsl_vector_memcpy(h_eval_, Du_);
@@ -221,7 +221,7 @@ public:
 		//V_ = gsl_matrix_alloc(outputDim_, outputDim_);
 		//gsl_matrix_set_identity(V_);
 
-		// Qd = W * Q * W^T 
+		// Qd = W * Q * W^T
 		//	the EKF approximation of Qd will be W * [ Q * Ts ] * W^T
 		Qd_hat_ = gsl_matrix_alloc(stateDim_, stateDim_);
 		gsl_matrix_set_zero(Qd_hat_);

@@ -16,7 +16,9 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
-					<Add directory="../../bin/Debug/" />
+					<Add library="../../bin/Debug/swl_util.so" />
+					<Add library="../../bin/Debug/swl_math.so" />
+					<Add library="../../bin/Debug/swl_base.so" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -30,7 +32,9 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release/" />
+					<Add library="../../bin/Release/swl_util.so" />
+					<Add library="../../bin/Release/swl_math.so" />
+					<Add library="../../bin/Release/swl_base.so" />
 				</Linker>
 			</Target>
 		</Build>
@@ -38,9 +42,12 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="../../inc/" />
+			<Add directory="/usr/local/include/" />
 		</Compiler>
 		<Linker>
-			<Add directory="../../bin/" />
+			<Add library="boost_thread" />
+			<Add library="boost_system" />
+			<Add directory="/usr/local/lib/" />
 		</Linker>
 		<Unit filename="TcpSocketClientTest.cpp" />
 		<Extensions>

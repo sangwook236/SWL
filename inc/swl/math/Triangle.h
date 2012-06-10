@@ -4,6 +4,7 @@
 
 #include "swl/math/Vector.h"
 #include "swl/math/Plane.h"
+#include <algorithm>
 
 namespace swl {
 
@@ -158,19 +159,19 @@ public:
 		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
-		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(dir.y() * (pt.x - point1_.x) - dir.x() * (pt.y - point1_.y)) / norm;
+		return (norm <= eps) ? vector_type(pt - point1_).norm() : (T)std::fabs(normal.y() * (pt.x - point1_.x) - normal.x() * (pt.y - point1_.y)) / norm;
 	}
 	point_type getPerpendicularPoint(const point_type &pt) const
 	{
 		const vector_type &normal = getNormalVector();
-		const T norm = dir.norm();
+		const T norm = normal.norm();
 
 		const T eps = T(1.0e-15);
 		if (norm <= eps) return point1_;
 		else
 		{
-			const T s = (dir.x() * (pt.x - point1_.x) + dir.y() * (pt.y - point1_.y) + dir.z() * (pt.z - point1_.z)) / norm;
-			return point_type(dir.x() * s + point1_.x, dir.y() * s + point1_.y, dir.z() * s + point1_.z);
+			const T s = (normal.x() * (pt.x - point1_.x) + normal.y() * (pt.y - point1_.y) + normal.z() * (pt.z - point1_.z)) / norm;
+			return point_type(normal.x() * s + point1_.x, normal.y() * s + point1_.y, normal.z() * s + point1_.z);
 		}
 	}
 

@@ -2,11 +2,11 @@
 #define __SWL_BASE__LOGGER__H_ 1
 
 
-#include <log4cxx/Logger.h>
-#include <log4cxx/Level.h>
-#include <log4cxx/BasicConfigurator.h>
-#include <log4cxx/PropertyConfigurator.h>
-#include <log4cxx/xml/DOMConfigurator.h>
+#include <log4cxx/logger.h>
+#include <log4cxx/level.h>
+#include <log4cxx/basicconfigurator.h>
+#include <log4cxx/propertyconfigurator.h>
+#include <log4cxx/xml/domconfigurator.h>
 
 //
 //#define __SWL__DISABLE_LOGGER_ 1

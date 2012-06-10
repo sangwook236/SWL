@@ -3,6 +3,7 @@
 #include "swl/math/MathConstant.h"
 #include "swl/rnd_util/Ransac.h"
 #include <iostream>
+#include <cstdlib>
 #include <ctime>
 #include <cmath>
 

@@ -19,9 +19,6 @@
 					<Add option="-g" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
-				<Linker>
-					<Add directory="../../bin/Debug/" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="../../bin/Release/swl_graphics" prefix_auto="1" extension_auto="1" />
@@ -38,16 +35,12 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add directory="../../inc/" />
 		</Compiler>
-		<Linker>
-			<Add directory="../../bin/" />
-		</Linker>
 		<Unit filename="../../inc/swl/graphics/Appearance.h" />
 		<Unit filename="../../inc/swl/graphics/AppearanceSceneNode.h" />
 		<Unit filename="../../inc/swl/graphics/BoundingBox.h" />

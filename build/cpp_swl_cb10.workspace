@@ -2,27 +2,27 @@
 <CodeBlocks_workspace_file>
 	<Workspace title="Workspace">
 		<Project filename="../src/base/swl_base_cb10.cbp" />
+		<Project filename="../test/gesture_recognition_test/swl_gesture_recognition_test_cb10.cbp" />
 		<Project filename="../src/glutil/swl_glutil_cb10.cbp" />
 		<Project filename="../src/graphics/swl_graphics_cb10.cbp" />
+		<Project filename="../app/imu_filter_app/swl_imu_filter_app_cb10.cbp" />
 		<Project filename="../src/kinematics/swl_kinematics_cb10.cbp" />
+		<Project filename="../test/kinematics_test/swl_kinematics_test_cb10.cbp" />
 		<Project filename="../src/machine_learning/swl_machine_learning_cb10.cbp" />
+		<Project filename="../test/machine_learning_test/swl_machine_learning_test_cb10.cbp" />
 		<Project filename="../src/machine_vision/swl_machine_vision_cb10.cbp" />
+		<Project filename="../test/machine_vision_test/swl_machine_vision_test_cb10.cbp" />
 		<Project filename="../src/math/swl_math_cb10.cbp" />
 		<Project filename="../src/pattern_recognition/swl_pattern_recognition_cb10.cbp" />
 		<Project filename="../src/posixutil/swl_posixutil_cb10.cbp" />
 		<Project filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
-		<Project filename="../src/util/swl_util_cb10.cbp" />
-		<Project filename="../src/view/swl_view_cb10.cbp" />
-		<Project filename="../app/imu_filter_app/swl_imu_filter_app_cb10.cbp" active="1" />
-		<Project filename="../test/gesture_recognition_test/swl_gesture_recognition_test_cb10.cbp" />
-		<Project filename="../test/kinematics_test/swl_kinematics_test_cb10.cbp" />
-		<Project filename="../test/machine_learning_test/swl_machine_learning_test_cb10.cbp" />
-		<Project filename="../test/machine_vision_test/swl_machine_vision_test_cb10.cbp" />
 		<Project filename="../test/rnd_util_test/swl_rnd_util_test_cb10.cbp" />
 		<Project filename="../test/serial_port_test/swl_serial_port_test_cb10.cbp" />
 		<Project filename="../test/tcp_socket_client_test/swl_tcp_socket_client_test_cb10.cbp" />
 		<Project filename="../test/tcp_socket_server_test/swl_tcp_socket_server_test_cb10.cbp" />
+		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp" active="1" />
 		<Project filename="../unit/qt_ui/swl_unit_test_qt_cb10.cbp" />
-		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp" />
+		<Project filename="../src/util/swl_util_cb10.cbp" />
+		<Project filename="../src/view/swl_view_cb10.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>

@@ -19,9 +19,6 @@
 					<Add option="-g" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
-				<Linker>
-					<Add directory="../../bin/Debug/" />
-				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="../../bin/Release/swl_pattern_recognition" prefix_auto="1" extension_auto="1" />
@@ -38,7 +35,6 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release/" />
 				</Linker>
 			</Target>
 		</Build>
@@ -46,10 +42,6 @@
 			<Add directory="../../inc/" />
 			<Add directory="/usr/local/include/" />
 		</Compiler>
-		<Linker>
-			<Add directory="../../bin/" />
-			<Add directory="/usr/local/lib/" />
-		</Linker>
 		<Unit filename="../../inc/swl/pattern_recognition/ExportPatternRecognition.h" />
 		<Unit filename="../../inc/swl/pattern_recognition/GestureClassifierByHistogram.h" />
 		<Unit filename="../../inc/swl/pattern_recognition/GestureType.h" />

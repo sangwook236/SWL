@@ -11,6 +11,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/video/tracking.hpp>
+#include <opencv2/core/core.hpp>
 #include <boost/smart_ptr.hpp>
 #include <iostream>
 #include <ctime>
@@ -103,18 +104,18 @@ void gestureRecognitionByHistogram()
 
 #if defined(__USE_IR_SENSOR)
 	videoInput VI;
-	
+
 	// prints out a list of available devices and returns num of devices found
-	const int numDevices = VI.listDevices();	
+	const int numDevices = VI.listDevices();
 	const int device1 = 0;  // this could be any deviceID that shows up in listDevices
-		
-	// if you want to capture at a different frame rate (default is 30) 
+
+	// if you want to capture at a different frame rate (default is 30)
 	// specify it here, you are not guaranteed to get this fps though.
-	VI.setIdealFramerate(device1, 30);	
-	
+	VI.setIdealFramerate(device1, 30);
+
 	// setup the first device - there are a number of options:
 	VI.setupDevice(device1, 720, 480, VI_COMPOSITE);  // or setup device with video size and connection type
-		
+
 	// as requested width and height can not always be accomodated make sure to check the size once the device is setup
 	const int width = VI.getWidth(device1);
 	const int height = VI.getHeight(device1);
@@ -270,7 +271,7 @@ void gestureRecognitionByHistogram()
 				const double scale = (255.0 - 1.0) / (maxVal - minVal);
 				const double offset = 1.0 - scale * minVal;
 				processed_mhi.convertTo(tmp_img, CV_8UC1, scale, offset);
-			
+
 				// TODO [decide] >> want to use it ?
 				tmp_img.setTo(cv::Scalar(0), component_label_map == 0);
 
@@ -305,8 +306,7 @@ void gestureRecognitionByHistogram()
 					const double x = it->x + it->width * 0.5, y = it->y + it->height * 0.5;
 					const double dist = (x - center_x)*(x - center_x) + (y - center_y)*(y - center_y);
 					if (dist < min_dist)
-					{
-						min_dist = dist;
+					{						min_dist = dist;
 						selected_rect = *it;
 					}
 				}
@@ -499,7 +499,7 @@ void gestureRecognitionByHistogram()
 			default:
 				break;
 			}
-			
+
 			cv::putText(img, swl::GestureType::getGestureName(gestureId), cv::Point(10, 25), cv::FONT_HERSHEY_COMPLEX, 1.0, CV_RGB(255, 0, 0), 1, 8, false);
 			cv::imshow(windowName1, img);
 		}

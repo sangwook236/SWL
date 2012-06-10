@@ -18,6 +18,8 @@
 #endif
 
 
+void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
+
 namespace {
 namespace local {
 
@@ -690,7 +692,6 @@ void simple_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -819,7 +820,6 @@ void linear_mass_spring_damper_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -998,7 +998,6 @@ void simple_nonlinear_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
@@ -1116,7 +1115,6 @@ void nonstationary_growth_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
 	std::ofstream stream("..\\data\\unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{

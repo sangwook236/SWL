@@ -112,8 +112,8 @@ void AsyncTcpSocketClient::doStartConnecting(boost::asio::ip::tcp::resolver::ite
 
 void AsyncTcpSocketClient::doCompleteConnecting(const boost::system::error_code &ec, boost::asio::ip::tcp::resolver::iterator endpoint_iterator)
 {
-	// the connection to the server has now completed or failed and returned an error 
-	if (!ec)  // success, so start waiting for read data 
+	// the connection to the server has now completed or failed and returned an error
+	if (!ec)  // success, so start waiting for read data
 	{
 		//boost::asio::ip::tcp::socket::non_blocking_io non_blocking_io(true);
 		//socket_.io_control(non_blocking_io);
@@ -134,7 +134,11 @@ void AsyncTcpSocketClient::doCompleteConnecting(const boost::system::error_code 
 
 void AsyncTcpSocketClient::doStartSending()
 {
+#if defined(__GNUC__)
+	sentMsgLength_ = std::min(sendBuffer_.getSize(), (std::size_t)MAX_SEND_LENGTH_);
+#else
 	sentMsgLength_ = std::min(sendBuffer_.getSize(), MAX_SEND_LENGTH_);
+#endif
 	sendBuffer_.top(sendMsg_.c_array(), sentMsgLength_);
 	boost::asio::async_write(
 		socket_,
@@ -165,7 +169,7 @@ void AsyncTcpSocketClient::doStartReceiving()
 		boost::asio::buffer(receiveMsg_),
 		boost::bind(&AsyncTcpSocketClient::doCompleteReceiving, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred)
 	);
-} 
+}
 
 void AsyncTcpSocketClient::doCompleteReceiving(const boost::system::error_code &ec, std::size_t bytesTransferred)
 {

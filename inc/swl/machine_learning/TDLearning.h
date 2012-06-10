@@ -16,6 +16,8 @@ class TDLearning: public TDLearningBase
 {
 public:
 	typedef TDLearningBase base_type;
+	typedef typename base_type::epsilon_function_type epsilon_function_type;
+	typedef typename base_type::step_size_function_type step_size_function_type;
 	typedef StateActionPair state_action_pair_type;
 	typedef typename state_action_pair_type::state_type state_type;
 	typedef typename state_action_pair_type::action_type action_type;
