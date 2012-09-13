@@ -19,13 +19,15 @@ namespace swl {
 
 /*static*/ std::string String::wcs2mbs(const std::wstring &wcstr)
 {
-	const size_t len = wcstr.length() * 2 + 1;
-	boost::scoped_array<char> mbstr(new char [len]);
-
 #if defined(WIN32)
+	const int len = WideCharToMultiByte(CP_ACP, 0, wcstr.c_str(), -1, NULL, 0, NULL, NULL);
+	boost::scoped_array<char> mbstr(new char [len]);
 	const int len2 = WideCharToMultiByte(CP_ACP, 0, wcstr.c_str(), -1, mbstr.get(), (int)len, NULL, NULL);
 	//assert(wcstr.length() == len2);
 #else
+	const size_t len = wcstr.length() * 2 + 1;
+	boost::scoped_array<char> mbstr(new char [len]);
+
 	// method 1
 	setlocale(LC_ALL, "korea");
 	wcstombs(mbstr.get(), wcstr.c_str(), len);
@@ -40,13 +42,15 @@ namespace swl {
 
 /*static*/ std::wstring String::mbs2wcs(const std::string &mbstr)
 {
-	const size_t len = mbstr.length() * 2 + 1;
-	boost::scoped_array<wchar_t> wcstr(new wchar_t [len]);
-
 #if defined(WIN32)
+	const int len = MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), -1, NULL, 0);
+	boost::scoped_array<wchar_t> wcstr(new wchar_t [len]);
 	const int len2 = MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), -1, wcstr.get(), (int)len);
 	//mbstr(wcstr.length() == len2);
 #else
+	const size_t len = mbstr.length() * 2 + 1;
+	boost::scoped_array<wchar_t> wcstr(new wchar_t [len]);
+
 	// method 1
 	setlocale(LC_ALL, "korea");
 	mbstowcs(wcstr.get(), mbstr.c_str(), len);

@@ -8,7 +8,7 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
 
-//
+
 //#define __SWL__DISABLE_LOGGER_ 1
 
 #if defined(__SWL__DISABLE_LOGGER_)
@@ -16,8 +16,8 @@
 #undef LOG4CXX_LOG
 #undef LOG4CXX_LOGLS
 
-#undef LOG4CXX_DEBUG
 #undef LOG4CXX_TRACE
+#undef LOG4CXX_DEBUG
 #undef LOG4CXX_INFO
 #undef LOG4CXX_WARN
 #undef LOG4CXX_ERROR
@@ -37,7 +37,7 @@
 #define LOG4CXX_INFO(logger, message)
 #define LOG4CXX_WARN(logger, message)
 #define LOG4CXX_ERROR(logger, message)
-#define LOG4CXX_ASSERT(logger, message)
+#define LOG4CXX_ASSERT(logger, condition, message)
 #define LOG4CXX_FATAL(logger, message)
 
 #define LOG4CXX_L7DLOG(logger, level, key)
