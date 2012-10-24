@@ -25,26 +25,26 @@ public:
 	{
 	}
 
-	__int64 getElapsedTimeInMilliSecond() const  // milli-second
+	double getElapsedTimeInMilliSecond() const  // milli-second
 	{
-		if (0 == freq_.HighPart && 0 == freq_.LowPart) return 0;
+		if (0 == freq_.HighPart && 0 == freq_.LowPart) return 0.0;
 
 		LARGE_INTEGER endTime;
 		endTime.LowPart = 0;
 		endTime.HighPart = 0;
 		QueryPerformanceCounter(&endTime);
-		return (0 == endTime.HighPart && 0 == endTime.LowPart) ? 0 : ((endTime.QuadPart - startTime_.QuadPart) * 1000 / freq_.QuadPart);
+		return (0 == endTime.HighPart && 0 == endTime.LowPart) ? 0.0 : ((endTime.QuadPart - startTime_.QuadPart) * 1000.0 / freq_.QuadPart);
 	}
 
-	__int64 getElapsedTimeInMicroSecond() const  // micro-second
+	double getElapsedTimeInMicroSecond() const  // micro-second
 	{
-		if (0 == freq_.HighPart && 0 == freq_.LowPart) return 0;
+		if (0 == freq_.HighPart && 0 == freq_.LowPart) return 0.0;
 
 		LARGE_INTEGER endTime;
 		endTime.LowPart = 0;
 		endTime.HighPart = 0;
 		QueryPerformanceCounter(&endTime);
-		return (0 == endTime.HighPart && 0 == endTime.LowPart) ? 0 : ((endTime.QuadPart - startTime_.QuadPart) * 1000000 / freq_.QuadPart);
+		return (0 == endTime.HighPart && 0 == endTime.LowPart) ? 0.0 : ((endTime.QuadPart - startTime_.QuadPart) * 1000000.0 / freq_.QuadPart);
 	}
 
 private:
