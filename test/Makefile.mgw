@@ -1,0 +1,19 @@
+all :
+	make -C base_test -f Makefile.mgw all install
+#	make -C math_test -f Makefile.mgw all install
+#	make -C util_test -f Makefile.mgw all install
+
+uninstall :
+	make -C base_test -f Makefile.mgw uninstall
+#	make -C math_test -f Makefile.mgw uninstall
+#	make -C util_test -f Makefile.mgw uninstall
+
+clean :
+	make -C base_test -f Makefile.mgw clean
+#	make -C math_test -f Makefile.mgw clean
+#	make -C util_test -f Makefile.mgw clean
+
+dep :
+	make -C base_test -f Makefile.mgw dep
+#	make -C math_test -f Makefile.mgw dep
+#	make -C util_test -f Makefile.mgw dep

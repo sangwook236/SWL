@@ -1,0 +1,46 @@
+$(OUT_DIR)/main.o: main.cpp ../../Include/KnBase/swErrorState.h \
+ ../../Include/KnBase/swManager.h ../../Include/KnBase/swObject.h \
+ ../../Include/KnBase/swExportBase.h ../../Include/KnBase/swPlatform.h \
+ ../../Include/KnBase/swName.h
+$(OUT_DIR)/TestFsm.o: TestFsm.cpp tsITurnStyleFsm.h \
+ ../../Include/KnState/swIFsm.h ../../Include/KnState/swExportState.h \
+ ../../Include/KnBase/swPlatform.h ../../Include/KnBase/swIObserver.h \
+ ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnBase/swExportBase.h
+$(OUT_DIR)/TestNotifierAndObserver.o: TestNotifierAndObserver.cpp \
+ ../../Include/KnBase/swVariant.h ../../Include/KnBase/swPlatform.h \
+ ../../Include/KnBase/swPort.h ../../Include/KnBase/swManager.h \
+ ../../Include/KnBase/swObject.h ../../Include/KnBase/swExportBase.h \
+ ../../Include/KnBase/swName.h ../../Include/KnBase/swSupervisor.h \
+ tsINotifier.h ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnBase/swMessage.h tsIObserver.h \
+ ../../Include/KnBase/swIObserver.h
+$(OUT_DIR)/tsINotifier.o: tsINotifier.cpp tsINotifier.h \
+ ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnBase/swExportBase.h ../../Include/KnBase/swPlatform.h \
+ ../../Include/KnBase/swMessage.h ../../Include/KnBase/swObject.h \
+ ../../Include/KnBase/swVariant.h ../../Include/KnBase/swPort.h \
+ ../../Include/KnBase/swManager.h ../../Include/KnBase/swName.h
+$(OUT_DIR)/tsIObserver.o: tsIObserver.cpp tsIObserver.h \
+ ../../Include/KnBase/swIObserver.h ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnBase/swExportBase.h ../../Include/KnBase/swPlatform.h \
+ ../../Include/KnBase/swMessage.h ../../Include/KnBase/swObject.h \
+ ../../Include/KnBase/swVariant.h ../../Include/KnBase/swPort.h \
+ ../../Include/KnBase/swManager.h ../../Include/KnBase/swName.h
+$(OUT_DIR)/tsITurnStyleFsm.o: tsITurnStyleFsm.cpp tsITurnStyleFsm.h \
+ ../../Include/KnState/swIFsm.h ../../Include/KnState/swExportState.h \
+ ../../Include/KnBase/swPlatform.h ../../Include/KnBase/swIObserver.h \
+ ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnBase/swExportBase.h tsTurnStyleFsmState.h \
+ ../../Include/KnState/swFsmState.h ../../Include/KnBase/swState.h \
+ ../../Include/KnBase/swObject.h
+$(OUT_DIR)/tsTurnStyleFsmState.o: tsTurnStyleFsmState.cpp tsTurnStyleFsmState.h \
+ ../../Include/KnState/swFsmState.h \
+ ../../Include/KnState/swExportState.h \
+ ../../Include/KnBase/swPlatform.h ../../Include/KnBase/swState.h \
+ ../../Include/KnBase/swObject.h ../../Include/KnBase/swExportBase.h \
+ tsITurnStyleFsm.h ../../Include/KnState/swIFsm.h \
+ ../../Include/KnBase/swIObserver.h ../../Include/KnBase/swINotifier.h \
+ ../../Include/KnState/swStateRegister.h \
+ ../../Include/KnBase/swSupervisor.h ../../Include/KnBase/swManager.h \
+ ../../Include/KnBase/swName.h

@@ -1,0 +1,19 @@
+all :
+	make -C base_test -f Makefile.linux all install
+#	make -C math_test -f Makefile.linux all install
+#	make -C util_test -f Makefile.linux all install
+
+uninstall :
+	make -C base_test -f Makefile.linux uninstall
+#	make -C math_test -f Makefile.linux uninstall
+#	make -C util_test -f Makefile.linux uninstall
+
+clean :
+	make -C base_test -f Makefile.linux clean
+#	make -C math_test -f Makefile.linux clean
+#	make -C util_test -f Makefile.linux clean
+
+dep :
+	make -C base_test -f Makefile.linux dep
+#	make -C math_test -f Makefile.linux dep
+#	make -C util_test -f Makefile.linux dep

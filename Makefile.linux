@@ -1,0 +1,43 @@
+#----------------------------------------------------------------------------
+
+all_shared :
+	make -C src -f Makefile.linux all_shared
+	make -C test -f Makefile.linux all
+#	make -C unit -f Makefile.linux all
+#	make -C app -f Makefile.linux all
+
+all_static :
+	make -C src -f Makefile.linux all_static
+	make -C test -f Makefile.linux all
+#	make -C unit -f Makefile.linux all
+#	make -C app -f Makefile.linux all
+
+uninstall_shared :
+	make -C src -f Makefile.linux uninstall_shared
+	make -C test -f Makefile.linux uninstall
+#	make -C unit -f Makefile.linux uninstall
+#	make -C app -f Makefile.linux uninstall
+
+uninstall_static :
+	make -C src -f Makefile.linux uninstall_static
+	make -C test -f Makefile.linux uninstall
+#	make -C unit -f Makefile.linux uninstall
+#	make -C app -f Makefile.linux uninstall
+
+clean_shared :
+	make -C src -f Makefile.linux clean_shared
+	make -C test -f Makefile.linux clean
+#	make -C unit -f Makefile.linux clean
+#	make -C app -f Makefile.linux clean
+
+clean_static :
+	make -C src -f Makefile.linux clean_static
+	make -C test -f Makefile.linux clean
+#	make -C unit -f Makefile.linux clean
+#	make -C app -f Makefile.linux clean
+
+dep :
+	make -C src -f Makefile.linux dep
+	make -C test -f Makefile.linux dep
+#	make -C unit -f Makefile.linux dep
+#	make -C app -f Makefile.linux dep

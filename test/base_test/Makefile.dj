@@ -1,0 +1,86 @@
+#  Makefile for C++
+
+include ../../Makefile_common.dj
+
+
+#----------------------------------------------------------------------------
+
+ifeq ($(BUILD_MODE),_DEBUG)
+  OUT_DIR=./Debug_DJGPP
+  INSTALL_DIR=../../Lib/Debug_DJGPP
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  OUT_DIR=./Profile_DJGPP
+  INSTALL_DIR=../../Lib/Profile_DJGPP
+else
+  OUT_DIR=./Release_DJGPP
+  INSTALL_DIR=../../Lib/Release_DJGPP
+endif
+endif
+
+SRCS=main.cpp TestFsm.cpp TestNotifierAndObserver.cpp tsINotifier.cpp \
+  tsIObserver.cpp tsITurnStyleFsm.cpp tsTurnStyleFsmState.cpp
+OBJS_BASE=$(SRCS:.cpp=.o)
+OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
+
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  TARGET=TestKernel.exe
+else
+  TARGET=TestKernel-static.exe
+endif
+
+
+#----------------------------------------------------------------------------
+
+INCS=-Ie:/DJGPP/lang/cxx-v3 -I../../Include
+LIB_SEARCH_PATH=-L./ -Le:/DJGPP/lib/gcc-lib/djgpp/3.04/ -L../../Lib/Release_DJGPP/
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  LIBS=$(LIB_SEARCH_PATH) -lKnState_dll -lKnEvent_dll -lKnBase_dll -lstdcxx
+else
+  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdcxx
+endif
+
+BASIC_DEF=
+AUXILIARY_DEF=
+
+#DEP_INCS=-Ie:/DJGPP/lang/cxx-v3 -I../../Include
+#DEP_FLAGS=-M -MG -nostdinc -nostdinc++
+DEP_INCS=$(INCS)
+DEP_FLAGS=$(DEP_INCS) -MM -MG
+
+
+#----------------------------------------------------------------------------
+
+all : $(OUT_DIR)/$(TARGET) install
+
+$(OUT_DIR)/$(TARGET) : $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+install :
+	$(CP) $(OUT_DIR)/$(TARGET) $(INSTALL_DIR)/
+
+uninstall :
+	$(RM) $(INSTALL_DIR)/$(TARGET)
+
+clean :
+#	$(RM) $(OBJS) core
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET)
+
+new :
+#	touch $(SRCS); %(MAKE)
+	$(MAKE) clean
+	$(MAKE)
+
+dep :
+#	gccmakedep $(DEP_INCS) $(SRCS)
+	$(CXX) $(DEP_FLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(SRCS) > Makefile.depend
+
+#.cpp.o :
+$(OUT_DIR)/%.o : %.cpp
+	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
+
+
+#----------------------------------------------------------------------------
+#  dependency
+
+include Makefile.depend

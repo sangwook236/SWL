@@ -1,0 +1,43 @@
+#----------------------------------------------------------------------------
+
+all_shared :
+	make -C src -f Makefile.cyg all_shared
+	make -C test -f Makefile.cyg all
+#	make -C unit -f Makefile.cyg all
+#	make -C app -f Makefile.cyg all
+
+all_static :
+	make -C src -f Makefile.cyg all_static
+	make -C test -f Makefile.cyg all
+#	make -C unit -f Makefile.cyg all
+#	make -C app -f Makefile.cyg all
+
+uninstall_shared :
+	make -C src -f Makefile.cyg uninstall_shared
+	make -C test -f Makefile.cyg uninstall
+#	make -C unit -f Makefile.cyg uninstall
+#	make -C app -f Makefile.cyg uninstall
+
+uninstall_static :
+	make -C src -f Makefile.cyg uninstall_static
+	make -C test -f Makefile.cyg uninstall
+#	make -C unit -f Makefile.cyg uninstall
+#	make -C app -f Makefile.cyg uninstall
+
+clean_shared :
+	make -C src -f Makefile.cyg clean_shared
+	make -C test -f Makefile.cyg clean
+#	make -C unit -f Makefile.cyg clean
+#	make -C app -f Makefile.cyg clean
+
+clean_static :
+	make -C src -f Makefile.cyg clean_static
+	make -C test -f Makefile.cyg clean
+#	make -C unit -f Makefile.cyg clean
+#	make -C app -f Makefile.cyg clean
+
+dep :
+	make -C src -f Makefile.cyg dep
+	make -C test -f Makefile.cyg dep
+#	make -C unit -f Makefile.cyg dep
+#	make -C app -f Makefile.cyg dep

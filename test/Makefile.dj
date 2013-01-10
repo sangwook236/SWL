@@ -1,0 +1,19 @@
+all :
+	make -C base_test -f Makefile.dj all install
+#	make -C math_test -f Makefile.dj all install
+#	make -C util_test -f Makefile.dj all install
+
+uninstall :
+	make -C base_test -f Makefile.dj uninstall
+#	make -C math_test -f Makefile.dj uninstall
+#	make -C util_test -f Makefile.dj uninstall
+
+clean :
+	make -C base_test -f Makefile.dj clean
+#	make -C math_test -f Makefile.dj clean
+#	make -C util_test -f Makefile.dj clean
+
+dep :
+	make -C base_test -f Makefile.dj dep
+#	make -C math_test -f Makefile.dj dep
+#	make -C util_test -f Makefile.dj dep

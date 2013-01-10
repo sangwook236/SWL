@@ -1,0 +1,49 @@
+$(OUT_DIR)/swAutoEraseable.o: swAutoEraseable.cpp \
+  ../../../swlib/KnBase/swAutoEraseable.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h
+$(OUT_DIR)/swConstant.o: swConstant.cpp ../../../swlib/KnBase/swConstant.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h
+$(OUT_DIR)/swController.o: swController.cpp ../../../swlib/KnBase/swController.h \
+  ../../../swlib/KnBase/swObject.h ../../../swlib/KnBase/swExportBase.h \
+  ../../../swlib/KnBase/swPlatform.h
+$(OUT_DIR)/swErrorState.o: swErrorState.cpp ../../../swlib/KnBase/swErrorState.h \
+  ../../../swlib/KnBase/swManager.h ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swName.h ../../../swlib/KnBase/swSupervisor.h \
+  ../../../swlib/KnBase/swReporter.h
+$(OUT_DIR)/swEvent.o: swEvent.cpp ../../../swlib/KnBase/swEvent.h \
+  ../../../swlib/KnBase/swMessage.h ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swVariant.h
+$(OUT_DIR)/swEventFlag.o: swEventFlag.cpp ../../../swlib/KnBase/swEventFlag.h \
+  ../../../swlib/KnBase/swManager.h ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swName.h ../../../swlib/KnBase/swSupervisor.h
+$(OUT_DIR)/swFactoryMethod.o: swFactoryMethod.cpp \
+  ../../../swlib/KnBase/swFactoryMethod.h \
+  ../../../swlib/KnBase/swManager.h ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swName.h ../../../swlib/KnBase/swSupervisor.h
+$(OUT_DIR)/swINotifier.o: swINotifier.cpp ../../../swlib/KnBase/swINotifier.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swIObserver.h ../../../swlib/KnBase/swPort.h \
+  ../../../swlib/KnBase/swManager.h ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swName.h
+$(OUT_DIR)/swIObserver.o: swIObserver.cpp ../../../swlib/KnBase/swIObserver.h \
+  ../../../swlib/KnBase/swINotifier.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h \
+  ../../../swlib/KnBase/swPort.h ../../../swlib/KnBase/swManager.h \
+  ../../../swlib/KnBase/swObject.h ../../../swlib/KnBase/swName.h
+$(OUT_DIR)/swManager.o: swManager.cpp ../../../swlib/KnBase/swManager.h \
+  ../../../swlib/KnBase/swObject.h ../../../swlib/KnBase/swExportBase.h \
+  ../../../swlib/KnBase/swPlatform.h ../../../swlib/KnBase/swName.h
+$(OUT_DIR)/swMessage.o: swMessage.cpp ../../../swlib/KnBase/swMessage.h \
+  ../../../swlib/KnBase/swObject.h ../../../swlib/KnBase/swExportBase.h \
+  ../../../swlib/KnBase/swPlatform.h ../../../swlib/KnBase/swVariant.h
+$(OUT_DIR)/swModel.o: swModel.cpp ../../../swlib/KnBase/swModel.h \
+  ../../../swlib/KnBase/swObject.h ../../../swlib/KnBase/swExportBase.h \
+  ../../../swlib/KnBase/swPlatform.h
+$(OUT_DIR)/swName.o: swName.cpp ../../../swlib/KnBase/swName.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h
+$(OUT_DIR)/swObject.o: swObject.cpp ../../../swlib/KnBase/swObject.h \
+  ../../../swlib/KnBase/swExportBase.h ../../../swlib/KnBase/swPlatform.h

@@ -1,0 +1,109 @@
+#  Makefile for Linux
+
+
+#----------------------------------------------------------------------------
+
+SYSTEM_DIR=
+WORKING_DIR=/home/sangwug/working_copy/swl
+
+
+#----------------------------------------------------------------------------
+
+#  platform  :  architecture
+PLATFORM_ARCH=-D_X86
+
+#  platform  :  os
+PLATFORM_OS=-Dlinux
+
+#  platform  :  compiler
+PLATFORM_COMPILER=
+
+#  platform definition
+PLATFORM_DEF=$(PLATFORM_ARCH) $(PLATFORM_OS) $(PLATFORM_COMPILER)
+
+
+#----------------------------------------------------------------------------
+
+#  output channel
+#OUTPUT_CHANNEL=__CONSOLE_OUTPUT
+OUTPUT_CHANNEL=__FILE_OUTPUT
+
+#  build mode
+BUILD_MODE=NDEBUG
+#BUILD_MODE=_DEBUG
+#BUILD_MODE=_DEBUG_PROFILE
+
+#  library build type
+ifeq ($(BUILD_MODE),_DEBUG)
+  LIB_BUILD_TYPE=__BUILD_STATIC_LIB
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  LIB_BUILD_TYPE=__BUILD_STATIC_LIB
+else
+  LIB_BUILD_TYPE=__BUILD_SHARED_LIB
+# LIB_BUILD_TYPE=__BUILD_STATIC_LIB
+endif
+endif
+
+
+#----------------------------------------------------------------------------
+
+#  c compiler
+CC=gcc
+ifeq ($(BUILD_MODE),_DEBUG)
+  CFLAGS=-Wall -g $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  CFLAGS=-Wall -g -p $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+else
+  CFLAGS=-Wall -O2 $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+endif
+endif
+
+#  c++ compiler
+CXX=g++
+ifeq ($(BUILD_MODE),_DEBUG)
+  CXXFLAGS=-Wall -g $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  CXXFLAGS=-Wall -g -p $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+else
+  CXXFLAGS=-Wall -Wuninitialized -O2 $(INCS) $(PLATFORM_DEF) -D$(OUTPUT_CHANNEL) -D$(BUILD_MODE) -D$(LIB_BUILD_TYPE)
+endif
+endif
+
+#  c pre-processor
+CPP=$(CXX) -E
+CPPFLAGS=
+
+#  output option
+OUTPUT_OPTION=-o $@
+
+#  linker
+LD=ld
+ifeq ($(BUILD_MODE),_DEBUG)
+  LDFLAGS=-static
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  LDFLAGS=-static
+else
+  LDFLAGS=
+endif
+endif
+
+#  archive
+AR=ar
+RANLIB=ranlib
+
+#  copy
+#CP=cp -f -u -s
+CP=cp -f -u
+
+#  move
+MV=mv -f -u
+
+#  remove
+RM=rm -f
+
+#  link
+LN=ln -f -s

@@ -1,0 +1,43 @@
+#----------------------------------------------------------------------------
+
+all_shared :
+	make -C src -f Makefile.dj all_shared
+	make -C test -f Makefile.dj all
+#	make -C unit -f Makefile.dj all
+#	make -C app -f Makefile.dj all
+
+all_static :
+	make -C src -f Makefile.dj all_static
+	make -C test -f Makefile.dj all
+#	make -C unit -f Makefile.dj all
+#	make -C app -f Makefile.dj all
+
+uninstall_shared :
+	make -C src -f Makefile.dj uninstall_shared
+	make -C test -f Makefile.dj uninstall
+#	make -C unit -f Makefile.dj uninstall
+#	make -C app -f Makefile.dj uninstall
+
+uninstall_static :
+	make -C src -f Makefile.dj uninstall_static
+	make -C test -f Makefile.dj uninstall
+#	make -C unit -f Makefile.dj uninstall
+#	make -C app -f Makefile.dj uninstall
+
+clean_shared :
+	make -C src -f Makefile.dj clean_shared
+	make -C test -f Makefile.dj clean
+#	make -C unit -f Makefile.dj clean
+#	make -C app -f Makefile.dj clean
+
+clean_static :
+	make -C src -f Makefile.dj clean_static
+	make -C test -f Makefile.dj clean
+#	make -C unit -f Makefile.dj clean
+#	make -C app -f Makefile.dj clean
+
+dep :
+	make -C src -f Makefile.dj dep
+	make -C test -f Makefile.dj dep
+#	make -C unit -f Makefile.dj dep
+#	make -C app -f Makefile.dj dep

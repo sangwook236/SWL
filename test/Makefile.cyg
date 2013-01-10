@@ -1,0 +1,19 @@
+all :
+	make -C base_test -f Makefile.cyg all install
+#	make -C math_test -f Makefile.cyg all install
+#	make -C util_test -f Makefile.cyg all install
+
+uninstall :
+	make -C base_test -f Makefile.cyg uninstall
+#	make -C math_test -f Makefile.cyg uninstall
+#	make -C util_test -f Makefile.cyg uninstall
+
+clean :
+	make -C base_test -f Makefile.cyg clean
+#	make -C math_test -f Makefile.cyg clean
+#	make -C util_test -f Makefile.cyg clean
+
+dep :
+	make -C base_test -f Makefile.cyg dep
+#	make -C math_test -f Makefile.cyg dep
+#	make -C util_test -f Makefile.cyg dep

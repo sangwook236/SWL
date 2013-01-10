@@ -1,0 +1,111 @@
+all_shared :
+	make -C base -f Makefile_lib.mgw all_shared
+#	make -C math -f Makefile_lib.mgw all_shared
+#	make -C util -f Makefile_lib.mgw all_shared
+#	make -C graphics -f Makefile_lib.mgw all_shared
+#	make -C glutil -f Makefile_lib.mgw all_shared
+#	make -C view -f Makefile_lib.mgw all_shared
+#	make -C winutil -f Makefile_lib.mgw all_shared
+#	make -C posixutil -f Makefile_lib.mgw all_shared
+#	make -C winview -f Makefile_lib.mgw all_shared
+#	make -C rnd_util -f Makefile_lib.mgw all_shared
+#	make -C kinematics -f Makefile_lib.mgw all_shared
+#	make -C machine_learning -f Makefile_lib.mgw all_shared
+#	make -C pattern_recognition -f Makefile_lib.mgw all_shared
+#	make -C machine_vision -f Makefile_lib.mgw all_shared
+
+all_static :
+	make -C base -f Makefile_lib.mgw all_static
+#	make -C math -f Makefile_lib.mgw all_static
+#	make -C util -f Makefile_lib.mgw all_static
+#	make -C graphics -f Makefile_lib.mgw all_static
+#	make -C glutil -f Makefile_lib.mgw all_static
+#	make -C view -f Makefile_lib.mgw all_static
+#	make -C winutil -f Makefile_lib.mgw all_static
+#	make -C posixutil -f Makefile_lib.mgw all_static
+#	make -C winview -f Makefile_lib.mgw all_static
+#	make -C rnd_util -f Makefile_lib.mgw all_static
+#	make -C kinematics -f Makefile_lib.mgw all_static
+#	make -C machine_learning -f Makefile_lib.mgw all_static
+#	make -C pattern_recognition -f Makefile_lib.mgw all_static
+#	make -C machine_vision -f Makefile_lib.mgw all_static
+
+uninstall_shared :
+	make -C base -f Makefile_lib.mgw uninstall_shared
+#	make -C math -f Makefile_lib.mgw uninstall_shared
+#	make -C util -f Makefile_lib.mgw uninstall_shared
+#	make -C graphics -f Makefile_lib.mgw uninstall_shared
+#	make -C glutil -f Makefile_lib.mgw uninstall_shared
+#	make -C view -f Makefile_lib.mgw uninstall_shared
+#	make -C winutil -f Makefile_lib.mgw uninstall_shared
+#	make -C posixutil -f Makefile_lib.mgw uninstall_shared
+#	make -C winview -f Makefile_lib.mgw uninstall_shared
+#	make -C rnd_util -f Makefile_lib.mgw uninstall_shared
+#	make -C kinematics -f Makefile_lib.mgw uninstall_shared
+#	make -C machine_learning -f Makefile_lib.mgw uninstall_shared
+#	make -C pattern_recognition -f Makefile_lib.mgw uninstall_shared
+#	make -C machine_vision -f Makefile_lib.mgw uninstall_shared
+
+uninstall_static :
+	make -C base -f Makefile_lib.mgw uninstall_static
+#	make -C math -f Makefile_lib.mgw uninstall_static
+#	make -C util -f Makefile_lib.mgw uninstall_static
+#	make -C graphics -f Makefile_lib.mgw uninstall_static
+#	make -C glutil -f Makefile_lib.mgw uninstall_static
+#	make -C view -f Makefile_lib.mgw uninstall_static
+#	make -C winutil -f Makefile_lib.mgw uninstall_static
+#	make -C posixutil -f Makefile_lib.mgw uninstall_static
+#	make -C winview -f Makefile_lib.mgw uninstall_static
+#	make -C rnd_util -f Makefile_lib.mgw uninstall_static
+#	make -C kinematics -f Makefile_lib.mgw uninstall_static
+#	make -C machine_learning -f Makefile_lib.mgw uninstall_static
+#	make -C pattern_recognition -f Makefile_lib.mgw uninstall_static
+#	make -C machine_vision -f Makefile_lib.mgw uninstall_static
+
+clean_shared :
+	make -C base -f Makefile_lib.mgw clean_shared
+#	make -C math -f Makefile_lib.mgw clean_shared
+#	make -C util -f Makefile_lib.mgw clean_shared
+#	make -C graphics -f Makefile_lib.mgw clean_shared
+#	make -C glutil -f Makefile_lib.mgw clean_shared
+#	make -C view -f Makefile_lib.mgw clean_shared
+#	make -C winutil -f Makefile_lib.mgw clean_shared
+#	make -C posixutil -f Makefile_lib.mgw clean_shared
+#	make -C winview -f Makefile_lib.mgw clean_shared
+#	make -C rnd_util -f Makefile_lib.mgw clean_shared
+#	make -C kinematics -f Makefile_lib.mgw clean_shared
+#	make -C machine_learning -f Makefile_lib.mgw clean_shared
+#	make -C pattern_recognition -f Makefile_lib.mgw clean_shared
+#	make -C machine_vision -f Makefile_lib.mgw clean_shared
+
+clean_static :
+	make -C base -f Makefile_lib.mgw clean_static
+#	make -C math -f Makefile_lib.mgw clean_static
+#	make -C util -f Makefile_lib.mgw clean_static
+#	make -C graphics -f Makefile_lib.mgw clean_static
+#	make -C glutil -f Makefile_lib.mgw clean_static
+#	make -C view -f Makefile_lib.mgw clean_static
+#	make -C winutil -f Makefile_lib.mgw clean_static
+#	make -C posixutil -f Makefile_lib.mgw clean_static
+#	make -C winview -f Makefile_lib.mgw clean_static
+#	make -C rnd_util -f Makefile_lib.mgw clean_static
+#	make -C kinematics -f Makefile_lib.mgw clean_static
+#	make -C machine_learning -f Makefile_lib.mgw clean_static
+#	make -C pattern_recognition -f Makefile_lib.mgw clean_static
+#	make -C machine_vision -f Makefile_lib.mgw clean_static
+
+dep :
+	make -C base -f Makefile_lib.mgw dep
+#	make -C math -f Makefile_lib.mgw dep
+#	make -C util -f Makefile_lib.mgw dep
+#	make -C graphics -f Makefile_lib.mgw dep
+#	make -C glutil -f Makefile_lib.mgw dep
+#	make -C view -f Makefile_lib.mgw dep
+#	make -C winutil -f Makefile_lib.mgw dep
+#	make -C posixutil -f Makefile_lib.mgw dep
+#	make -C winview -f Makefile_lib.mgw dep
+#	make -C rnd_util -f Makefile_lib.mgw dep
+#	make -C kinematics -f Makefile_lib.mgw dep
+#	make -C machine_learning -f Makefile_lib.mgw dep
+#	make -C pattern_recognition -f Makefile_lib.mgw dep
+#	make -C machine_vision -f Makefile_lib.mgw dep

@@ -1,0 +1,119 @@
+#  Makefile for Static & Shared Library
+
+include ../../Makefile_common.linux
+
+
+#----------------------------------------------------------------------------
+
+ifeq ($(BUILD_MODE),_DEBUG)
+  OUT_DIR=./Debug_Linux
+  INSTALL_DIR=/usr/local/lib
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  OUT_DIR=./Profile_Linux
+  INSTALL_DIR=/usr/local/lib
+else
+  OUT_DIR=./Release_Linux
+  INSTALL_DIR=/usr/local/lib
+endif
+endif
+
+SRCS=swAutoEraseable.cpp swConstant.cpp swController.cpp swErrorState.cpp swEvent.cpp swEventFlag.cpp \
+  swFactoryMethod.cpp swINotifier.cpp swIObserver.cpp swManager.cpp swMessage.cpp swModel.cpp swName.cpp \
+  swObject.cpp swPort.cpp swPresentationModel.cpp swReporter.cpp swScheduler.cpp swState.cpp swSupervisor.cpp \
+  swSymbol.cpp swUtil.cpp swView.cpp
+OBJS_BASE=$(SRCS:.cpp=.o)
+OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
+LIB_OBJS=$(OBJS)
+
+LIB_BASE=KnBase
+LIB_VER=1
+STATIC_LIB=lib$(LIB_BASE).a
+SHARED_LIB=lib$(LIB_BASE).so.$(LIB_VER)
+SHARED_LIB_WITHOUT_VER=lib$(LIB_BASE).so
+
+
+#----------------------------------------------------------------------------
+
+INCS=-I$(WORKING_DIR)/inc/stl/stlport -I/usr/include/g++-3 -I/usr/include -I../../inc
+LIB_SEARCH_PATH=-L./ -L/usr/lib/ -L/lib/ -L$(INSTALL_DIR)
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  LIBS=$(LIB_SEARCH_PATH) -lstdc++
+else
+  LIBS=$(LIB_SEARCH_PATH) -lstdc++
+endif
+ 
+BASIC_DEF=-DEXPORT_KERNEL_BASE
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  AUXILIARY_DEF=-fpic
+else
+  AUXILIARY_DEF=
+endif
+
+DEP_INCS=$(INCS)
+#DEP_FLAGS=-M -MG -nostdinc -nostdinc++
+DEP_FLAGS=$(DEP_INCS) -MM -MG
+
+
+#----------------------------------------------------------------------------
+
+all_shared : shared install_shared
+
+all_static : static install_static
+
+install_shared :
+	$(CP) $(OUT_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/
+	$(LN) $(INSTALL_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/$(SHARED_LIB_WITHOUT_VER)
+
+install_static :
+	$(CP) $(OUT_DIR)/$(STATIC_LIB) $(INSTALL_DIR)/
+
+uninstall_shared :
+	$(RM) $(INSTALL_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/$(SHARED_LIB_WITHOUT_VER)
+
+uninstall_static :
+	$(RM) $(INSTALL_DIR)/$(STATIC_LIB)
+
+shared : $(OUT_DIR)/$(SHARED_LIB)
+
+static : $(OUT_DIR)/$(STATIC_LIB)
+
+$(OUT_DIR)/$(SHARED_LIB) : $(LIB_OBJS)
+	$(CXX) -shared -Wl,-soname,$(SHARED_LIB) -o $@ $^
+
+$(OUT_DIR)/$(STATIC_LIB) : $(LIB_OBJS)
+#	$(AR) rc $@ $^
+#	$(RANLIB) $@
+	$(AR) rs $@ $^
+
+clean_shared :
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(SHARED_LIB) core
+
+clean_static :
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(STATIC_LIB) core
+
+new_shared :
+#	touch $(SRCS); %(MAKE)
+	$(MAKE) clean_shared
+	$(MAKE) all_shared
+
+new_static :
+	$(MAKE) clean_static
+	$(MAKE) all_static
+
+dep :
+#	gccmakedep $(DEP_INCS) $(SRCS)
+	$(CXX) $(DEP_FLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(SRCS) > Makefile.depend
+
+#	touch .depend
+#	makedepend -f .depend $(INCS) *.cpp
+
+#.cpp.o :
+$(OUT_DIR)/%.o : %.cpp
+	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
+
+
+#----------------------------------------------------------------------------
+#  dependency
+
+include Makefile.depend

@@ -1,0 +1,96 @@
+#  Makefile for C++
+
+include ../../Makefile_common.linux
+
+
+#----------------------------------------------------------------------------
+
+ifeq ($(BUILD_MODE),_DEBUG)
+  OUT_DIR=./Debug_Linux
+  INSTALL_DIR=
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  OUT_DIR=./Profile_Linux
+  INSTALL_DIR=
+else
+  OUT_DIR=./Release_Linux
+  INSTALL_DIR=
+endif
+endif
+
+SRCS=main.cpp TestFsm.cpp TestNotifierAndObserver.cpp tsINotifier.cpp \
+  tsIObserver.cpp tsITurnStyleFsm.cpp tsTurnStyleFsmState.cpp
+OBJS_BASE=$(SRCS:.cpp=.o)
+OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
+
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  TARGET=TestKernel.exe
+else
+  TARGET=TestKernel-static.exe
+endif
+
+
+#----------------------------------------------------------------------------
+
+INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
+LIB_SEARCH_PATH_BASE=-L./ -L/usr/lib/ -L/lib/ -L/usr/local/lib/
+ifeq ($(BUILD_MODE),_DEBUG)
+  LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
+else
+ifeq ($(BUILD_MODE),_DEBUG_PROFILE)
+  LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
+else
+  LIB_SEARCH_PATH=$(LIB_SEARCH_PATH_BASE)
+endif
+endif
+ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
+  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdc++
+else
+  LIBS=$(LIB_SEARCH_PATH) -lKnState -lKnEvent -lKnBase -lstdc++
+endif
+
+BASIC_DEF=
+AUXILIARY_DEF=
+
+#DEP_INCS=-I$(SYSTEM_DIR)/usr/include/g++-3 -I../../Include
+#DEP_FLAGS=-M -MG -nostdinc -nostdinc++
+DEP_INCS=$(INCS)
+DEP_FLAGS=$(DEP_INCS) -MM -MG
+
+STRIP=strip
+
+
+#----------------------------------------------------------------------------
+
+all : $(OUT_DIR)/$(TARGET) install
+
+$(OUT_DIR)/$(TARGET) : $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(STRIP) $@
+
+install :
+
+uninstall :
+
+clean :
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(TARGET) core
+
+new :
+#	touch $(SRCS); %(MAKE)
+	$(MAKE) clean
+	$(MAKE)
+
+dep :
+#	gccmakedep $(DEP_INCS) $(SRCS)
+	$(CXX) $(DEP_FLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(SRCS) > Makefile.depend
+
+#.cpp.o :
+$(OUT_DIR)/%.o : %.cpp
+	$(CXX) $(CXXFLAGS) $(BASIC_DEF) $(AUXILIARY_DEF) $(OUTPUT_OPTION) -c $<
+
+
+#----------------------------------------------------------------------------
+#  dependency
+
+include Makefile.depend
+

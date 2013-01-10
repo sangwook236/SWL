@@ -1,0 +1,43 @@
+#----------------------------------------------------------------------------
+
+all_shared :
+	make -C src -f Makefile.mgw all_shared
+	make -C test -f Makefile.mgw all
+#	make -C unit -f Makefile.mgw all
+#	make -C app -f Makefile.mgw all
+
+all_static :
+	make -C src -f Makefile.mgw all_static
+	make -C test -f Makefile.mgw all
+#	make -C unit -f Makefile.mgw all
+#	make -C app -f Makefile.mgw all
+
+uninstall_shared :
+	make -C src -f Makefile.mgw uninstall_shared
+	make -C test -f Makefile.mgw uninstall
+#	make -C unit -f Makefile.mgw uninstall
+#	make -C app -f Makefile.mgw uninstall
+
+uninstall_static :
+	make -C src -f Makefile.mgw uninstall_static
+	make -C test -f Makefile.mgw uninstall
+#	make -C unit -f Makefile.mgw uninstall
+#	make -C app -f Makefile.mgw uninstall
+
+clean_shared :
+	make -C src -f Makefile.mgw clean_shared
+	make -C test -f Makefile.mgw clean
+#	make -C unit -f Makefile.mgw clean
+#	make -C app -f Makefile.mgw clean
+
+clean_static :
+	make -C src -f Makefile.mgw clean_static
+	make -C test -f Makefile.mgw clean
+#	make -C unit -f Makefile.mgw clean
+#	make -C app -f Makefile.mgw clean
+
+dep :
+	make -C src -f Makefile.mgw dep
+	make -C test -f Makefile.mgw dep
+#	make -C unit -f Makefile.mgw dep
+#	make -C app -f Makefile.mgw dep
