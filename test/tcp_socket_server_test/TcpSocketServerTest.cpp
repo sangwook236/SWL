@@ -6,6 +6,7 @@
 #include <boost/thread.hpp>
 #include <boost/smart_ptr.hpp>
 #include <iostream>
+#include <cstdlib>
 
 #if defined(WIN32)
 #include <vld/vld.h>
@@ -43,6 +44,7 @@ struct echo_tcp_socket_server_worker_thread_functor
 
 int main(int argc, char *argv[])
 {
+	int retval = EXIT_SUCCESS;
 	try
 	{
 		std::cout << "start thread for TCP socket servers" << std::endl;
@@ -52,19 +54,24 @@ int main(int argc, char *argv[])
 			thrd->join();
 		std::cout << "finish thread for TCP socket servers" << std::endl;
 	}
+    catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
 	catch (const std::exception &e)
 	{
 		std::cout << "std::exception caught: " << e.what() << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 	catch (...)
 	{
 		std::cout << "unknown exception caught" << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 
 	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
 
-	return 0;
+	return retval;
 }

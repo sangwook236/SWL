@@ -97,7 +97,7 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 }  // namespace local
 }  // unnamed namespace
 
-void gestureRecognitionByHistogram()
+void gestureRecognitionByHistogram(cv::VideoCapture &capture)
 {
 	const int imageWidth = 640, imageHeight = 480;
 	//const int imageWidth = 320, imageHeight = 240;
@@ -120,20 +120,6 @@ void gestureRecognitionByHistogram()
 	const int width = VI.getWidth(device1);
 	const int height = VI.getHeight(device1);
 	const int size = VI.getSize(device1);
-#else
-	const int camId = -1;
-	cv::VideoCapture capture(camId);
-	if (!capture.isOpened())
-	{
-		std::cout << "fail to open vision sensor" << std::endl;
-		return;
-	}
-
-	//capture.set(CV_CAP_PROP_FRAME_WIDTH, imageWidth);
-	//capture.set(CV_CAP_PROP_FRAME_HEIGHT, imageHeight);
-
-	//const double &propFrameWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
-	//const double &propFrameHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
 #endif
 
 	bool isPowered = false;

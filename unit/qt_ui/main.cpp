@@ -1,11 +1,16 @@
+#if defined(WIN32)
+#include <vld/vld.h>
+#endif
 #include <Qt/qapplication.h>
 #include <cppunit/ui/qt/TestRunner.h>
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <iostream>
+#include <cstdlib>
 
 
 int main(int argc, char **argv)
 {
+	int retval = EXIT_SUCCESS;
 	try
 	{
 		QApplication app(argc, argv);
@@ -18,19 +23,25 @@ int main(int argc, char **argv)
 		//runner.setOutputter();
 		runner.run(true);
 	}
+    catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
 	catch (const std::exception &e)
 	{
-		std::cout << "std::exception occurred !!!: " << e.what() << std::endl;
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
 	}
 	catch (...)
 	{
-		std::wcout << L"unknown exception occurred !!!" << std::endl;
+		std::cout << "unknown exception caught" << std::endl;
+		retval = EXIT_FAILURE;
 	}
 
-	std::wcout << L"press any key to exit ..." << std::endl;
-	std::wcout.flush();
-	std::wcin.get();
+	std::cout << "press any key to exit ..." << std::endl;
+	std::cin.get();
 
-    return 0;
+    return retval;
 }
 

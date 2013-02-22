@@ -9,6 +9,7 @@
 #include <opencv2/video/tracking.hpp>
 #include <boost/smart_ptr.hpp>
 #include <iostream>
+#include <stdexcept>
 #include <ctime>
 
 
@@ -125,7 +126,7 @@ const float *phaseHistRanges[] = { phaseHistRange1 };
 const int phaseHistChannels[] = { 0 };
 const int phaseHistBinWidth = 1, phaseHistMaxHeight = 100;
 
-const int phaseHorzScale = 1, phaseVertScale = 1;
+const int phaseHorzScale = 10, phaseVertScale = 1;
 
 //
 const double refFullPhaseHistogramSigma = 8.0;
@@ -142,7 +143,7 @@ const double gesturePatternHistogramNormalizationFactor = 10.0; //(double)maxMat
 std::vector<swl::HistogramAccumulator::histogram_type> refFullPhaseHistograms;
 boost::shared_ptr<swl::HistogramAccumulator> orientationHistogramAccumulator(doesApplyTimeWeighting ? new swl::HistogramAccumulator(getHistogramTimeWeight(accumulatedOrientationHistogramNum)) : new swl::HistogramAccumulator(accumulatedOrientationHistogramNum));
 
-void accumulateOrientationHistogram(const cv::Mat &orientation)
+void accumulateOrientationHistogram(const cv::Mat &orientation, std::ostream *stream)
 {
 	// calculate phase histogram
 	cv::MatND hist;
@@ -150,6 +151,15 @@ void accumulateOrientationHistogram(const cv::Mat &orientation)
 
 	//
 	orientationHistogramAccumulator->addHistogram(hist);
+
+	// save HoG
+	if (NULL != stream)
+	{
+		swl::HistogramUtil::normalizeHistogram(hist, std::floor(refHistogramNormalizationFactor / accumulatedOrientationHistogramNum + 0.5));
+		for (int row = 0; row < hist.rows; ++row)
+			*stream << hist.at<float>(row, 0) << " ";
+		*stream << std::endl;
+	}
 }
 
 void clearOrientationHistogramHistory()
@@ -231,6 +241,7 @@ bool computeTemporalOrientationHistogram(cv::MatND &temporalOrientationHist)
 bool classifyGesture(const cv::MatND &temporalOrientationHist)
 {
 	// FIXME [implement] >>
+	throw std::runtime_error("not yet implemented");
 
 	return false;
 }
@@ -238,35 +249,22 @@ bool classifyGesture(const cv::MatND &temporalOrientationHist)
 }  // namespace local
 }  // unnamed namespace
 
-void gestureRecognitionBasedTemporalOrientationHistogram()
+// temporal HoG (THoG) or temporal orientation histogram (TOH)
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, std::ostream *streamTHoG, std::ostream *streamHoG)
 {
 	const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
 	const bool IMAGE_DOWNSIZING = true;
 
 	const double MHI_TIME_DURATION = 0.5;
-	const size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
-
-	//
-	const int camId = -1;
-	cv::VideoCapture capture(camId);
-	if (!capture.isOpened())
-	{
-		std::cout << "fail to open vision sensor" << std::endl;
-		return;
-	}
-
-	//capture.set(CV_CAP_PROP_FRAME_WIDTH, imageWidth);
-	//capture.set(CV_CAP_PROP_FRAME_HEIGHT, imageHeight);
-
-	//const double &propFrameWidth = capture.get(CV_CAP_PROP_FRAME_WIDTH);
-	//const double &propFrameHeight = capture.get(CV_CAP_PROP_FRAME_HEIGHT);
+	//const size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
+	const size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 	//
 	local::createReferenceFullPhaseHistograms();
 
 	//
-	const std::string windowName1("gesture recognition by TOH - Motion");
-	const std::string windowName2("gesture recognition by TOH - TOH");
+	const std::string windowName1("gesture recognition by THoG - Motion");
+	const std::string windowName2("gesture recognition by THoG - THoG");
 	cv::namedWindow(windowName1, cv::WINDOW_AUTOSIZE);
 	cv::namedWindow(windowName2, cv::WINDOW_AUTOSIZE);
 
@@ -280,16 +278,29 @@ void gestureRecognitionBasedTemporalOrientationHistogram()
 	{
 		const double timestamp = (double)std::clock() / CLOCKS_PER_SEC;  // get current time in seconds
 
-
 		if (IMAGE_DOWNSIZING)
 		{
 			capture >> frame2;
+			if (frame2.empty())
+			{
+				std::cout << "a frame not found ..." << std::endl;
+				break;
+				//continue;
+			}
 
 			//cv::resize(frame2, frame, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0.0, 0.0, cv::INTER_LINEAR);
 			cv::pyrDown(frame2, frame);
 		}
 		else
+		{
 			capture >> frame;
+			if (frame.empty())
+			{
+				std::cout << "a frame not found ..." << std::endl;
+				break;
+				//continue;
+			}
+		}
 
 		cv::cvtColor(frame, gray, CV_BGR2GRAY);
 
@@ -355,7 +366,7 @@ void gestureRecognitionBasedTemporalOrientationHistogram()
 				//local::calcOrientationUsingOpticalFlow(flow, local::doesApplyMagnitudeFiltering, local::magnitudeFilteringMinThresholdRatio, local::magnitudeFilteringMaxThresholdRatio, flow_phase);
 				local::calcOrientationAndMagnitudeUsingOpticalFlow(flow, local::doesApplyMagnitudeFiltering, local::magnitudeFilteringMinThresholdRatio, local::magnitudeFilteringMaxThresholdRatio, flow_phase, flow_mag);
 
-				local::accumulateOrientationHistogram(flow_phase);
+				local::accumulateOrientationHistogram(flow_phase, streamHoG);
 			}
 			else
 			{
@@ -365,12 +376,21 @@ void gestureRecognitionBasedTemporalOrientationHistogram()
 
 			if (local::computeTemporalOrientationHistogram(temporalOrientationHist))
 			{
-				// draw temporal orientation histogram
+				// draw THoG
 				local::drawTemporalOrientationHistogram(temporalOrientationHist, windowName2);
 
-				if (local::classifyGesture(temporalOrientationHist))
+				//if (local::classifyGesture(temporalOrientationHist))  // not yet implemented
 				{
 					// FIXME [implement] >>
+				}
+
+				// save THoG
+				if (NULL != streamTHoG)
+				{
+					for (int col = 0; col < temporalOrientationHist.cols; ++col)
+						for (int row = 0; row < temporalOrientationHist.rows; ++row)
+							*streamTHoG << temporalOrientationHist.at<float>(row, col) << " ";
+					*streamTHoG << std::endl;
 				}
 			}
 

@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <cstdlib>
 
 
 int main(int argc, char *argv[])
@@ -30,6 +31,7 @@ int main(int argc, char *argv[])
 
 	void hmm_segmentation();
 
+	int retval = EXIT_SUCCESS;
 	try
 	{
 		//hough_transform();
@@ -59,23 +61,26 @@ int main(int argc, char *argv[])
 
 		hmm_segmentation();
 	}
+    catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
 	catch (const std::exception &e)
 	{
 		std::cout << "std::exception caught: " << e.what() << std::endl;
-		std::cin.get();
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 	catch (...)
 	{
 		std::cout << "unknown exception caught" << std::endl;
-		std::cin.get();
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 
 	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
 
-	return 0;
+	return retval;
 }
 
 void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data)

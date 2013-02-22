@@ -10,10 +10,10 @@
     <ClCompile Include="GestureClassifierByHistogramTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GestureClassifierBasedOnTemporalOrientationHistogramTest.cpp">
+    <ClCompile Include="HistogramGenerator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HistogramGenerator.cpp">
+    <ClCompile Include="GestureClassifierBasedOnTHoGTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

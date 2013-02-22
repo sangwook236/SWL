@@ -92,7 +92,7 @@ struct tcp_socket_client_worker_thread_functor
 
 					const std::size_t waitingTime = std::rand() % 5 + 1;  // [sec]
 					boost::xtime xt;
-					boost::xtime_get(&xt, boost::TIME_UTC);
+					boost::xtime_get(&xt, boost::TIME_UTC_);
 					xt.sec += waitingTime;
 					//xt.nsec += waitingTime;
 					boost::thread::sleep(xt);
@@ -115,7 +115,7 @@ struct tcp_socket_client_worker_thread_functor
 		}
 		catch (...)
 		{
-			report("unknown exception occurred");
+			report("unknown exception caught");
 		}
 	}
 
@@ -558,6 +558,7 @@ void testTcpSocketServer_withSession()
 
 int main(int argc, char *argv[])
 {
+	int retval = EXIT_SUCCESS;
 	try
 	{
 		//
@@ -568,19 +569,24 @@ int main(int argc, char *argv[])
 		local::testTcpSocketServer_withoutSession();
 		//local::testTcpSocketServer_withSession();
 	}
+    catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
 	catch (const std::exception &e)
 	{
 		std::cout << "std::exception caught: " << e.what() << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 	catch (...)
 	{
 		std::cout << "unknown exception caught" << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 
 	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
 
-	return 0;
+	return retval;
 }

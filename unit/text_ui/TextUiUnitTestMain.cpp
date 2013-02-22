@@ -69,6 +69,7 @@ boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
 
 int main(int argc, char *argv[])
 {
+	int retval = EXIT_SUCCESS;
 	try
 	{
 		CppUnit::TextUi::TestRunner runner;
@@ -77,21 +78,26 @@ int main(int argc, char *argv[])
 		//runner.setOutputter();
 		runner.run();
 	}
+    catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
 	catch (const std::exception &e)
 	{
 		std::cout << "std::exception caught: " << e.what() << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 	catch (...)
 	{
 		std::cout << "unknown exception caught" << std::endl;
-		return -1;
+		retval = EXIT_FAILURE;
 	}
 
 	std::cout << "press any key to exit ..." << std::endl;
 	std::cin.get();
 
-	return 0;
+	return retval;
 }
 
 #endif
