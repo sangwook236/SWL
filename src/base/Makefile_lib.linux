@@ -1,5 +1,4 @@
 #  Makefile for Static & Shared Library
-
 include ../../Makefile_common.linux
 
 
@@ -26,11 +25,12 @@ OBJS_BASE=$(SRCS:.cpp=.o)
 OBJS=$(addprefix $(OUT_DIR)/, $(OBJS_BASE))
 LIB_OBJS=$(OBJS)
 
-LIB_BASE=KnBase
+LIB_BASE_NAME=swl_base
 LIB_VER=1
-STATIC_LIB=lib$(LIB_BASE).a
-SHARED_LIB=lib$(LIB_BASE).so.$(LIB_VER)
-SHARED_LIB_WITHOUT_VER=lib$(LIB_BASE).so
+
+STATIC_LIB_NAME=lib$(LIB_BASE_NAME).a
+SHARED_LIB_NAME=lib$(LIB_BASE_NAME).so.$(LIB_VER)
+SHARED_LIB_NAME_WITHOUT_VER=lib$(LIB_BASE_NAME).so
 
 
 #----------------------------------------------------------------------------
@@ -43,9 +43,9 @@ else
   LIBS=$(LIB_SEARCH_PATH) -lstdc++
 endif
  
-BASIC_DEF=-DEXPORT_KERNEL_BASE
+BASIC_DEF=-DSWL_BASE_EXPORT
 ifeq ($(LIB_BUILD_TYPE),__BUILD_SHARED_LIB)
-  AUXILIARY_DEF=-fpic
+  AUXILIARY_DEF=-fPIC
 else
   AUXILIARY_DEF=
 endif
@@ -62,35 +62,35 @@ all_shared : shared install_shared
 all_static : static install_static
 
 install_shared :
-	$(CP) $(OUT_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/
-	$(LN) $(INSTALL_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/$(SHARED_LIB_WITHOUT_VER)
+	$(CP) $(OUT_DIR)/$(SHARED_LIB_NAME) $(INSTALL_DIR)/
+	$(LN) $(INSTALL_DIR)/$(SHARED_LIB_NAME) $(INSTALL_DIR)/$(SHARED_LIB_NAME_WITHOUT_VER)
 
 install_static :
-	$(CP) $(OUT_DIR)/$(STATIC_LIB) $(INSTALL_DIR)/
+	$(CP) $(OUT_DIR)/$(STATIC_LIB_NAME) $(INSTALL_DIR)/
 
 uninstall_shared :
-	$(RM) $(INSTALL_DIR)/$(SHARED_LIB) $(INSTALL_DIR)/$(SHARED_LIB_WITHOUT_VER)
+	$(RM) $(INSTALL_DIR)/$(SHARED_LIB_NAME) $(INSTALL_DIR)/$(SHARED_LIB_NAME_WITHOUT_VER)
 
 uninstall_static :
-	$(RM) $(INSTALL_DIR)/$(STATIC_LIB)
+	$(RM) $(INSTALL_DIR)/$(STATIC_LIB_NAME)
 
-shared : $(OUT_DIR)/$(SHARED_LIB)
+shared : $(OUT_DIR)/$(SHARED_LIB_NAME)
 
-static : $(OUT_DIR)/$(STATIC_LIB)
+static : $(OUT_DIR)/$(STATIC_LIB_NAME)
 
-$(OUT_DIR)/$(SHARED_LIB) : $(LIB_OBJS)
-	$(CXX) -shared -Wl,-soname,$(SHARED_LIB) -o $@ $^
+$(OUT_DIR)/$(SHARED_LIB_NAME) : $(LIB_OBJS)
+	$(CXX) -shared -Wl,-soname,$(SHARED_LIB_NAME) -o $@ $^
 
-$(OUT_DIR)/$(STATIC_LIB) : $(LIB_OBJS)
+$(OUT_DIR)/$(STATIC_LIB_NAME) : $(LIB_OBJS)
 #	$(AR) rc $@ $^
 #	$(RANLIB) $@
 	$(AR) rs $@ $^
 
 clean_shared :
-	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(SHARED_LIB) core
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(SHARED_LIB_NAME) core
 
 clean_static :
-	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(STATIC_LIB) core
+	$(RM) $(OUT_DIR)/*.o $(OUT_DIR)/$(STATIC_LIB_NAME) core
 
 new_shared :
 #	touch $(SRCS); %(MAKE)
