@@ -7,9 +7,9 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/Debug/swl_view" prefix_auto="1" extension_auto="1" />
+				<Option output="../../bin/Debug/libswl_view_d" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/Debug/" />
-				<Option object_output="./Debug/" />
+				<Option object_output="obj/Debug/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
@@ -19,11 +19,15 @@
 					<Add option="-g" />
 					<Add option="-DBUILD_DLL" />
 				</Compiler>
+				<Linker>
+					<Add library="swl_base_d" />
+					<Add directory="../../bin/Debug" />
+				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/Release/swl_view" prefix_auto="1" extension_auto="1" />
+				<Option output="../../bin/Release/libswl_view" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/Release/" />
-				<Option object_output="./Release/" />
+				<Option object_output="obj/Release/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
 				<Option createDefFile="1" />
@@ -35,11 +39,14 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="swl_base" />
+					<Add directory="../../bin/Release" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
-			<Add directory="../../inc/" />
+			<Add option="-fPIC" />
+			<Add directory="../../inc" />
 		</Compiler>
 		<Unit filename="../../inc/swl/view/ExportView.h" />
 		<Unit filename="../../inc/swl/view/KeyEvent.h" />

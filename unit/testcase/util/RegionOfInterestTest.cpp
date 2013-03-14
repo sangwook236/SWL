@@ -3,6 +3,7 @@
 #include "swl/base/String.h"
 #include "swl/util/RegionOfInterest.h"
 #include <boost/smart_ptr.hpp>
+#include <cstring>
 #include <cmath>
 
 

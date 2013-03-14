@@ -2,6 +2,7 @@
 <CodeBlocks_workspace_file>
 	<Workspace title="Workspace">
 		<Project filename="../src/base/swl_base_cb10.cbp" />
+		<Project filename="../test/base_test/swl_base_test_cb10.cbp" />
 		<Project filename="../test/gesture_recognition_test/swl_gesture_recognition_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
@@ -15,10 +16,12 @@
 			<Depends filename="../src/util/swl_util_cb10.cbp" />
 			<Depends filename="../src/view/swl_view_cb10.cbp" />
 		</Project>
+		<Project filename="../test/glutil_test/swl_glutil_test_cb10.cbp" />
 		<Project filename="../src/graphics/swl_graphics_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
 		</Project>
+		<Project filename="../test/graphics_test/swl_graphics_test_cb10.cbp" />
 		<Project filename="../app/imu_filter_app/swl_imu_filter_app_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
@@ -55,14 +58,17 @@
 		<Project filename="../src/math/swl_math_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 		</Project>
+		<Project filename="../test/math_test/swl_math_test_cb10.cbp" />
 		<Project filename="../src/pattern_recognition/swl_pattern_recognition_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
 			<Depends filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
 		</Project>
+		<Project filename="../test/pattern_recognition_test/swl_pattern_recognition_test_cb10.cbp" />
 		<Project filename="../src/posixutil/swl_posixutil_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 		</Project>
+		<Project filename="../test/posixutil_test/swl_posixutil_test_cb10.cbp" />
 		<Project filename="../src/rnd_util/swl_rnd_util_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
@@ -84,7 +90,7 @@
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/util/swl_util_cb10.cbp" />
 		</Project>
-		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp" active="1">
+		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/glutil/swl_glutil_cb10.cbp" />
 			<Depends filename="../src/graphics/swl_graphics_cb10.cbp" />
@@ -116,9 +122,11 @@
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
 		</Project>
+		<Project filename="../test/util_test/swl_util_test_cb10.cbp" active="1" />
 		<Project filename="../src/view/swl_view_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
 		</Project>
+		<Project filename="../test/view_test/swl_view_test_cb10.cbp" />
 	</Workspace>
 </CodeBlocks_workspace_file>

@@ -7,19 +7,22 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/Debug/swl_imu_filter_app" prefix_auto="1" extension_auto="1" />
+				<Option output="../../bin/Debug/swl_imu_filter_app_d" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/Debug/" />
-				<Option object_output="./Debug/" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
+				<Linker>
+					<Add directory="../../bin/Debug" />
+				</Linker>
 			</Target>
 			<Target title="Release">
 				<Option output="../../bin/Release/swl_imu_filter_app" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/Release/" />
-				<Option object_output="./Release/" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -27,18 +30,19 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add directory="../../bin/Release" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add directory="../../inc/" />
-			<Add directory="/home/sangwook/work_center/sw_dev/cpp/hw_interface/inc/" />
-			<Add directory="/usr/local/include/" />
+			<Add directory="../../inc" />
+			<Add directory="/home/sangwook/work_center/sw_dev/cpp/hw_interface/inc" />
+			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
-			<Add directory="/usr/local/lib/" />
+			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="ImuCalibration.cpp" />
 		<Unit filename="ImuExtendedKalmanFilterRunner.cpp" />

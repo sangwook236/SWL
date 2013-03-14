@@ -176,7 +176,7 @@ bool one_dim_root_finding_using_f(const double A, const double lower, const doub
 //--------------------------------------------------------------------------
 // von Mises distribution
 
-inline double evaluateVonMisesDistribution(const double x, const double mu, const double kappa)
+double evaluateVonMisesDistribution(const double x, const double mu, const double kappa)
 {
 	try
 	{

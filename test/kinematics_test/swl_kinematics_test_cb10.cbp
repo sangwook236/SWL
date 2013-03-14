@@ -7,24 +7,25 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="..\..\bin\Debug\swl_kinematics_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Debug\" />
-				<Option object_output=".\Debug\" />
+				<Option output="../../bin/Debug/swl_kinematics_test_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Debug/" />
+				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
-					<Add library="..\..\bin\Debug\swl_kinematics.so" />
-					<Add library="..\..\bin\Debug\swl_math.so" />
-					<Add library="..\..\bin\Debug\swl_base.so" />
+					<Add library="swl_kinematics_d" />
+					<Add library="swl_math_d" />
+					<Add library="swl_base_d" />
+					<Add directory="../../bin/Debug" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="..\..\bin\Release\swl_kinematics_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="..\..\bin\Release\" />
-				<Option object_output=".\Release\" />
+				<Option output="../../bin/Release/swl_kinematics_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Release/" />
+				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -32,20 +33,21 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add library="..\..\bin\Release\swl_kinematics.so" />
-					<Add library="..\..\bin\Release\swl_math.so" />
-					<Add library="..\..\bin\Release\swl_base.so" />
+					<Add library="swl_kinematics" />
+					<Add library="swl_math" />
+					<Add library="swl_base" />
+					<Add directory="../../bin/Release" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add directory="..\..\inc\" />
-			<Add directory="\usr\local\include\" />
+			<Add directory="../../inc" />
+			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
-			<Add directory="\usr\local\lib\" />
+			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions>

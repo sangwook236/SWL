@@ -16,8 +16,8 @@ int main(int argc, char **argv)
 		QApplication app(argc, argv);
 
 		//CppUnit::QtUi::TestRunner runner;
-		CppUnit::QtTestRunner runner; 
-		
+		CppUnit::QtTestRunner runner;
+
 		runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
 
 		//runner.setOutputter();

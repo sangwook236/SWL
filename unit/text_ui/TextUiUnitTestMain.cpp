@@ -12,6 +12,7 @@
 #include <cppunit/ui/text/TestRunner.h>
 #endif
 #include <iostream>
+#include <cstdlib>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
