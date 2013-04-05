@@ -16,7 +16,7 @@
 namespace {
 namespace local {
 
-void filterMotionRegionByCCL(cv::Mat &detected_motion, const size_t minMotionAreaThreshold, const size_t maxMotionAreaThreshold, std::vector<std::vector<cv::Point> > &selectedContours)
+void filterMotionRegionByCCL(cv::Mat &detected_motion, const std::size_t minMotionAreaThreshold, const std::size_t maxMotionAreaThreshold, std::vector<std::vector<cv::Point> > &selectedContours)
 {
 	std::vector<std::vector<cv::Point> > contours;
 	cv::findContours(detected_motion, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
@@ -75,28 +75,28 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 	}
 }
 
-std::vector<float> getHistogramTimeWeight(const size_t histogramNum)
+std::vector<float> getHistogramTimeWeight(const std::size_t histogramNum)
 {
 	std::vector<float> histogramTimeWeight(histogramNum, 0.0f);
 
 	float sum = 0.0f;
-	for (size_t i = 0; i < histogramNum; ++i)
+	for (std::size_t i = 0; i < histogramNum; ++i)
 	{
 		const float weight = std::exp(-(float)i / (float)histogramNum);
 		histogramTimeWeight[i] = weight * weight;
 		sum += weight;
 	}
-	for (size_t i = 0; i < histogramNum; ++i)
+	for (std::size_t i = 0; i < histogramNum; ++i)
 		histogramTimeWeight[i] /= sum;
 
 	return histogramTimeWeight;
 }
 
 //
-const size_t accumulatedOrientationHistogramNum = 10;
-const size_t accumulatedHistogramNumForClass2Gesture = 15;
-const size_t accumulatedHistogramNumForClass3Gesture = 30;
-const size_t maxMatchedHistogramNum = 10;
+const std::size_t accumulatedOrientationHistogramNum = 10;
+const std::size_t accumulatedHistogramNumForClass2Gesture = 15;
+const std::size_t accumulatedHistogramNumForClass3Gesture = 30;
+const std::size_t maxMatchedHistogramNum = 10;
 
 const double histDistThresholdForTemporalOrientationHistogram = 0.5;
 const double histDistThresholdForClass2Gesture = 0.5;
@@ -104,9 +104,9 @@ const double histDistThresholdForClass3Gesture = 0.5;
 
 const double histDistThresholdForGestureIdPattern = 0.8;
 
-const size_t matchedIndexCountThresholdForClass1Gesture = maxMatchedHistogramNum / 2;  // currently not used
-const size_t matchedIndexCountThresholdForClass2Gesture = maxMatchedHistogramNum / 2;  // currently not used
-const size_t matchedIndexCountThresholdForClass3Gesture = maxMatchedHistogramNum / 2;  // currently not used
+const std::size_t matchedIndexCountThresholdForClass1Gesture = maxMatchedHistogramNum / 2;  // currently not used
+const std::size_t matchedIndexCountThresholdForClass2Gesture = maxMatchedHistogramNum / 2;  // currently not used
+const std::size_t matchedIndexCountThresholdForClass3Gesture = maxMatchedHistogramNum / 2;  // currently not used
 
 const bool doesApplyMagnitudeFiltering = true;
 const double magnitudeFilteringMinThresholdRatio = 0.3;
@@ -133,10 +133,10 @@ const double refFullPhaseHistogramSigma = 8.0;
 const double class1GestureRefHistogramSigma = 8.0;
 const double class2GestureRefHistogramSigma = 16.0;
 const double class3GestureRefHistogramSigma = 20.0;
-const size_t refHistogramBinNum = phaseHistBins;
+const std::size_t refHistogramBinNum = phaseHistBins;
 const double refHistogramNormalizationFactor = 5000.0;
 const double gesturePatternHistogramSigma = 1.0;
-const size_t gesturePatternHistogramBinNum = swl::ReferenceFullPhaseHistogramGenerator::REF_HISTOGRAM_NUM;
+const std::size_t gesturePatternHistogramBinNum = swl::ReferenceFullPhaseHistogramGenerator::REF_HISTOGRAM_NUM;
 const double gesturePatternHistogramNormalizationFactor = 10.0; //(double)maxMatchedHistogramNum;
 
 //
@@ -250,16 +250,8 @@ bool classifyGesture(const cv::MatND &temporalOrientationHist)
 }  // unnamed namespace
 
 // temporal HoG (THoG) or temporal orientation histogram (TOH)
-void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, std::ostream *streamTHoG, std::ostream *streamHoG)
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
 {
-	const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
-	const bool IMAGE_DOWNSIZING = true;
-
-	const double MHI_TIME_DURATION = 0.5;
-	//const size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
-	const size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
-
-	//
 	local::createReferenceFullPhaseHistograms();
 
 	//
@@ -288,7 +280,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, std::ostream *stream
 				//continue;
 			}
 
-			//cv::resize(frame2, frame, cv::Size(IMAGE_WIDTH, IMAGE_HEIGHT), 0.0, 0.0, cv::INTER_LINEAR);
+			cv::resize(frame2, frame, cv::Size(frame2.cols/2, frame2.rows/2), 0.0, 0.0, cv::INTER_LINEAR);
 			cv::pyrDown(frame2, frame);
 		}
 		else
@@ -343,7 +335,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, std::ostream *stream
 			contour_mask.setTo(cv::Scalar::all(0));
 			if (!selectedContours.empty())
 			{
-				size_t idx = 0;
+				std::size_t idx = 0;
 				for (std::vector<std::vector<cv::Point> >::iterator it = selectedContours.begin(); it != selectedContours.end(); ++it, ++idx)
 				{
 					cv::drawContours(contour_mask, selectedContours, idx, cv::Scalar::all(255), CV_FILLED, 8);
