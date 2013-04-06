@@ -250,7 +250,7 @@ bool classifyGesture(const cv::MatND &temporalOrientationHist)
 }  // unnamed namespace
 
 // temporal HoG (THoG) or temporal orientation histogram (TOH)
-void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
 {
 	local::createReferenceFullPhaseHistograms();
 
@@ -362,8 +362,11 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IMAGE_DOW
 			}
 			else
 			{
-				std::cout << "motion not detected !!!" << std::endl;
-				local::clearOrientationHistogramHistory();
+				if (IGNORE_NO_MOION)
+				{
+					std::cout << "motion not detected !!!" << std::endl;
+					local::clearOrientationHistogramHistory();
+				}
 			}
 
 			if (local::computeTemporalOrientationHistogram(temporalOrientationHist))

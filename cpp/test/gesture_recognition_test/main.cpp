@@ -16,10 +16,10 @@
 namespace {
 namespace local {
 
-bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, const std::string &output_directory_path, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD)
+bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, const std::string &output_directory_path, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD)
 {
 	void gestureRecognitionByHistogram(cv::VideoCapture &capture);
-	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
+	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
 
 	const std::string::size_type pos = avi_filename.find_last_of('.');
 	const std::string thog_filename(avi_filename.substr(0, pos) + ".THoG");
@@ -43,7 +43,7 @@ bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, co
 		//gestureRecognitionByHistogram(capture);
 
 		// temporal HoG (THoG) or temporal orientation histogram (TOH)
-		recognizeGestureBasedOnTHoG(capture, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, (streamTHoG.is_open() ? &streamTHoG : NULL), (streamHoG.is_open() ? &streamHoG : NULL));
+		recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, (streamTHoG.is_open() ? &streamTHoG : NULL), (streamHoG.is_open() ? &streamHoG : NULL));
 	}
 	catch (const cv::Exception &)
 	{
@@ -59,7 +59,7 @@ bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, co
 int main(int argc, char *argv[])
 {
 	void gestureRecognitionByHistogram(cv::VideoCapture &capture);
-	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
+	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
 
 	int retval = EXIT_SUCCESS;
 	try
@@ -105,7 +105,8 @@ int main(int argc, char *argv[])
 			//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 			const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
-			recognizeGestureBasedOnTHoG(capture, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
+			const bool IGNORE_NO_MOION = true;
+			recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
 		}
 #elif 0
 		// for AIM's gesture dataset
@@ -146,7 +147,8 @@ int main(int argc, char *argv[])
 				//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 				const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
-				local::extract_THoG(capture, *it, output_directory_path, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+				const bool IGNORE_NO_MOION = false;
+				local::extract_THoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
 			}
 			else
 			{
@@ -158,16 +160,21 @@ int main(int argc, char *argv[])
 		// for ChaLearn Gesture Challenge dataset
 		//	[ref] http://gesture.chalearn.org/data
 
-		for (int idx = 1; idx <= 10; ++idx)
+		const int DATASET_START_INDEX = 1, DATASET_END_INDEX = 10;
+		for (int idx = DATASET_START_INDEX; idx <= DATASET_END_INDEX; ++idx)
 		{
 			std::ostringstream sstream;
 			sstream << std::setw(2) << std::setfill('0') << idx;
 			const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/quasi_lossless_format/train_data/devel" + sstream.str());
 			//const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/lossy_format/devel-1-20_valid-1-20/devel" + sstream.str());
+			//const std::string avi_file_prefix = "M_";  // RGB image
+			const std::string avi_file_prefix = "K_";  // depth image
 			const std::string output_directory_path(input_directory_path + "_thog");
-			const std::string avi_filename_list("devel" + sstream.str() + "_train.csv");
 
 			std::vector<std::string> avi_filenames;
+#if 0
+			const std::string avi_filename_list("devel" + sstream.str() + "_train.csv");
+
 			std::ifstream stream(input_directory_path + '/' + avi_filename_list, std::ios::in);
 			if (stream.is_open())
 			{
@@ -179,8 +186,7 @@ int main(int argc, char *argv[])
 					if (!line.empty())
 					{
 						std::ostringstream sstream;
-						sstream << "M_" << line_no << ".avi";  // RGB image
-						//sstream << "K_" << line_no << ".avi";  // depth image
+						sstream << avi_file_prefix << line_no << ".avi";
 						avi_filenames.push_back(sstream.str());
 						++line_no;
 					}
@@ -192,6 +198,15 @@ int main(int argc, char *argv[])
 				std::cout << "a list file, '" << (input_directory_path + '/' + avi_filename_list) << "' not found" << std::endl;
 				retval = EXIT_FAILURE;
 			}
+#else
+			const int AVI_FILE_START_INDEX = 1, AVI_FILE_END_INDEX = 47;
+			for (int file_no = AVI_FILE_START_INDEX; file_no <= AVI_FILE_END_INDEX; ++file_no)
+			{
+				std::ostringstream sstream;
+				sstream << avi_file_prefix << file_no << ".avi";
+				avi_filenames.push_back(sstream.str());
+			}
+#endif
 
 			//
 			for (std::vector<std::string>::iterator it = avi_filenames.begin(); it != avi_filenames.end(); ++it)
@@ -206,7 +221,8 @@ int main(int argc, char *argv[])
 					//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 					const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
-					local::extract_THoG(capture, *it, output_directory_path, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+					const bool IGNORE_NO_MOION = false;
+					local::extract_THoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
 				}
 				else
 				{
