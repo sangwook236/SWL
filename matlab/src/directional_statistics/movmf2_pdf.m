@@ -1,13 +1,15 @@
-function prob = movmf_pdf(x, mu, kappa, alpha)
+function prob = movmf2_pdf(theta, phi, mu, kappa, alpha)
 
-% a mixture of von Mises-Fisher distributions (n-dimensional)
+% a mixture of von Mises-Fisher distributions (2-dimensional)
 %
-% x: a unit direction vector on n-dimensional sphere, norm(x) = 1, column-major vector.
+% theta: an inclination(polar) angle, [0 pi], [rad].
+% phi: an azimuthal angle, [0 2*pi), [rad].
+%   [ref] http://en.wikipedia.org/wiki/Spherical_coordinate_system
 % mu: mean direction vectors, norm(mu(:,i)) = 1, column-major vector.
 % kappa: concentration parameters, kappa(i) >= 0.
 % alpha: mixing coefficents, sum(alpha) = 1.
 
-%dim = length(x);
+%dim = 2;
 [ dim1 num1 ] = size(mu);
 %num2 = length(kappa);
 %num3 = length(alpha);
@@ -21,5 +23,5 @@ function prob = movmf_pdf(x, mu, kappa, alpha)
 
 prob = 0;
 for ii = 1:num1
-	prob = prob + alpha(ii) * vmf_pdf(x, mu(:,ii), kappa(ii));
+	prob = prob + alpha(ii) * vmf2_pdf(theta, phi, mu(:,ii), kappa(ii));
 end;

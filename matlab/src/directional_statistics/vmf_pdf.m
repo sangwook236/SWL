@@ -6,7 +6,7 @@ function prob = vmf_pdf(x, mu, kappa)
 % mu: a mean direction vector, norm(mu) = 1, column-major vector.
 % kappa: a concentration parameter, kappa >= 0.
 
-%dim = length(x);
+dim = length(x);
 %dim1 = length(mu);
 
 %if dim ~= dim1

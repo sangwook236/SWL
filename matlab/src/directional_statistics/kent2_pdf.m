@@ -1,8 +1,10 @@
-function prob = kent2_pdf(x, kappa, beta, gamma1, gamma2, gamma3)
+function prob = kent2_pdf(theta, phi, kappa, beta, gamma1, gamma2, gamma3)
 
 % Kent distribution (2-dimensional)
 %
-% x: a unit direction vector on 2-dimensional sphere, norm(x) = 1, column-major vector.
+% theta: an inclination(polar) angle, [0 pi], [rad].
+% phi: an azimuthal angle, [0 2*pi), [rad].
+%   [ref] http://en.wikipedia.org/wiki/Spherical_coordinate_system
 % kappa: a concentration parameter, kappa >= 0.
 %	The concentration of the density increases with kappa.
 % beta: ellipticity of the equal probability contours of the distribution.
@@ -29,5 +31,8 @@ function prob = kent2_pdf(x, kappa, beta, gamma1, gamma2, gamma3)
 %if dim ~= rank([gamma1 gamma2 gamma3])
 %	error('orthogonality of gamma1, gamma2, & gamma3 is un-satisfied ...');
 %end;
+
+% x: a unit direction vector on 2-dimensional sphere, norm(x) = 1, column-major vector.
+x = [ sin(theta)*cos(phi) ; sin(theta)*sin(phi) ; cos(theta) ];
 
 prob = exp(kappa * dot(x, gamma1) + beta * (dot(x, gamma2)^2 - dot(x, gamma3)^2)) * sqrt((kappa - 2 * beta) * (kappa + 2 * beta)) / ( 2 * pi * exp(kappa));

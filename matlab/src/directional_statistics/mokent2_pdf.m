@@ -1,9 +1,10 @@
-function prob = mokent2_pdf(x, kappa, beta, gamma1, gamma2, gamma3)
+function prob = mokent2_pdf(theta, phi, kappa, beta, gamma1, gamma2, gamma3, alpha)
 
 % a mixture of Kent distributions (2-dimensional)
 %
-% x: a unit direction vector on 2-dimensional sphere, norm(x) = 1, column-major vector.
-% mu: mean direction vectors, norm(mu(:,i)) = 1, column-major vector.
+% theta: an inclination(polar) angle, [0 pi], [rad].
+% phi: an azimuthal angle, [0 2*pi), [rad].
+%   [ref] http://en.wikipedia.org/wiki/Spherical_coordinate_system
 % kappa: concentration parameters, kappa(i) >= 0.
 %	The concentration of the density increases with kappa.
 % beta: ellipticities of the equal probability contours of the distribution.
@@ -13,6 +14,7 @@ function prob = mokent2_pdf(x, kappa, beta, gamma1, gamma2, gamma3)
 % gamma2: the main axes of the elliptical equal probability contours.
 % gamma3: the secondary axes of the elliptical equal probability contours.
 %	The 3x3 matrix, [ gamma1(:,i) gamma2(:,i) gamma3(:,i) ] must be orthogonal.
+% alpha: mixing coefficents, sum(alpha) = 1.
 %
 % In the 2-dimensional case:
 % The Kent distribution, also known as the 5-parameter Fisher-Bingham distribution, is a distribution on the 2D sphere (the surface of the 3D ball).
@@ -32,5 +34,5 @@ function prob = mokent2_pdf(x, kappa, beta, gamma1, gamma2, gamma3)
 
 prob = 0;
 for ii = 1:num1
-	prob = prob + alpha(ii) * kent2_pdf(x, kappa(ii), beta(ii), gamma1(:,ii), gamma2(:,ii), gamma3(:,ii))
+	prob = prob + alpha(ii) * kent2_pdf(x, kappa(ii), beta(ii), gamma1(:,ii), gamma2(:,ii), gamma3(:,ii));
 end;
