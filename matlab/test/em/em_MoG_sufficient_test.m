@@ -1,10 +1,15 @@
-%% --------------------------------------------------------------
+% expectation-maximization (EM) algorithm for mixtures of Gaussians (MoG)
+
+%---------------------------------------------------------------
 mu0_true = 0;
 mu1_true = -0.2;
 sigma0_true = 1;
 sigma1_true = 0.1;
 alpha_true = 0.3;
 [ mu0_true mu1_true sigma0_true sigma1_true alpha_true ]
+
+%---------------------------------------------------------------
+% generate sample
 
 N = 1000;
 
@@ -26,8 +31,9 @@ sigma0_init = 1;
 mu1_init = -1;
 sigma1_init = 1;
 
-%% --------------------------------------------------------------
-% standard(batch) EM using sufficient statistics
+%---------------------------------------------------------------
+disp('standard(batch) EM using sufficient statistics ...');
+
 alpha_est = alpha_init;
 mu0_est = mu0_init;
 sigma0_est = sigma0_init;
@@ -47,7 +53,7 @@ while looping && step <= max_step
     %IDX = randperm(N);
     for kk = 1:N
         ii = IDX(kk);
-        
+
         p0 = normpdf(X(ii), mu0_est, sigma0_est);
         p1 = normpdf(X(ii), mu1_est, sigma1_est);
         gamma(ii) = alpha_est * p1 / ((1 - alpha_est) * p0 + alpha_est * p1);
@@ -72,13 +78,13 @@ while looping && step <= max_step
     sigma0_est = sqrt((Q0 - 2*mu0_est*M0 + mu0_est^2*N0) / N0);
     sigma1_est = sqrt((Q1 - 2*mu1_est*M1 + mu1_est^2*N1) / N1);
     alpha_est = N1 / (N0 + N1);
-    
-    if abs(mu0_est - mu0_est_old) <= tol && abs(mu1_est - mu1_est_old) <= tol ...
-            && abs(sigma0_est - sigma0_est_old) <= tol && abs(sigma1_est - sigma1_est_old) <= tol ...
-            && abs(alpha_est - alpha_est_old) <= tol
+
+    if abs(mu0_est - mu0_est_old) <= tol && abs(mu1_est - mu1_est_old) <= tol && ...
+    	abs(sigma0_est - sigma0_est_old) <= tol && abs(sigma1_est - sigma1_est_old) <= tol && ...
+        abs(alpha_est - alpha_est_old) <= tol
         looping = false;
     end;
-    
+
     step = step + 1;
 end;
 
@@ -90,8 +96,9 @@ alpha_est_bat = alpha_est;
 [ mu0_est_bat mu1_est_bat sigma0_est_bat sigma1_est_bat alpha_est_bat ]
 step
 
-%% --------------------------------------------------------------
-% incremental EM using sufficient statistics
+%---------------------------------------------------------------
+disp('incremental EM using sufficient statistics ...');
+
 alpha_est = alpha_init;
 mu0_est = mu0_init;
 sigma0_est = sigma0_init;
@@ -106,7 +113,7 @@ IDX = 1:N;
 %IDX = randperm(N);
 for kk = 1:N
     ii = IDX(kk);
-    
+
     p0 = normpdf(X(ii), mu0_est, sigma0_est);
     p1 = normpdf(X(ii), mu1_est, sigma1_est);
     gamma(ii) = alpha_est * p1 / ((1 - alpha_est) * p0 + alpha_est * p1);
@@ -137,7 +144,7 @@ while looping && step <= max_step
     sigma0_est_old = sigma0_est;
     sigma1_est_old = sigma1_est;
     alpha_est_old = alpha_est;
-    
+
     IDX = 1:N;
     %IDX = randperm(N);
     for kk = 1:N
@@ -172,12 +179,12 @@ while looping && step <= max_step
         alpha_est = N1 / (N0 + N1);
     end;
 
-    if abs(mu0_est - mu0_est_old) <= tol && abs(mu1_est - mu1_est_old) <= tol ...
-            && abs(sigma0_est - sigma0_est_old) <= tol && abs(sigma1_est - sigma1_est_old) <= tol ...
-            && abs(alpha_est - alpha_est_old) <= tol
+    if abs(mu0_est - mu0_est_old) <= tol && abs(mu1_est - mu1_est_old) <= tol && ...
+    	abs(sigma0_est - sigma0_est_old) <= tol && abs(sigma1_est - sigma1_est_old) <= tol && ...
+        abs(alpha_est - alpha_est_old) <= tol
         looping = false;
     end;
-    
+
     step = step + 1;
 end;
 
@@ -189,9 +196,9 @@ alpha_est_inc = alpha_est;
 [ mu0_est_inc mu1_est_inc sigma0_est_inc sigma1_est_inc alpha_est_inc ]
 step
 
-%% --------------------------------------------------------------
-% incremental EM using sufficient statistics
-% for sequential data (???)
+%---------------------------------------------------------------
+disp('incremental EM using sufficient statistics for sequential data (???) ...');
+
 alpha_est = alpha_init;
 mu0_est = mu0_init;
 sigma0_est = sigma0_init;
@@ -206,7 +213,7 @@ IDX = 1:N;
 %IDX = randperm(N);
 for kk = 1:N
     ii = IDX(kk);
-    
+
     p0 = normpdf(X(ii), mu0_est, sigma0_est);
     p1 = normpdf(X(ii), mu1_est, sigma1_est);
     gamma(ii) = alpha_est * p1 / ((1 - alpha_est) * p0 + alpha_est * p1);
@@ -231,7 +238,7 @@ IDX = 1:N;
 %IDX = randperm(N);
 for kk = 1:N
     ii = IDX(kk);
-    
+
     p0 = normpdf(X(ii), mu0_est, sigma0_est);
     p1 = normpdf(X(ii), mu1_est, sigma1_est);
     gamma(ii) = alpha_est * p1 / ((1 - alpha_est) * p0 + alpha_est * p1);
