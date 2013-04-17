@@ -24,6 +24,11 @@ gamma = zeros(num_sample, num_mix_comp);
 prob_comp = zeros(1, num_mix_comp);
 looping = true;
 step = 0;
+fzero_options = optimset('fzero');
+%fzero_options.Display = 'off';
+%fzero_options.FunValCheck = 'off';
+%fzero_options.TolX = tol;
+fzero_options = optimset(fzero_options, 'Display', 'off', 'FunValCheck', 'off', 'TolX', tol);
 while looping && step <= max_step
 	% E-step
     for nn = 1:num_sample
@@ -44,7 +49,24 @@ while looping && step <= max_step
         est_mean_dir(kk) = pi + atan2(dot(gamma(:,kk), sinX), dot(gamma(:,kk), cosX));
 
         A = dot(gamma(:,kk), cos(X - est_mean_dir(kk))) / sum_gamma(kk);
-        est_kappa(kk) = fzero(@(kappa) A - besseli(1, kappa) / besseli(0, kappa), est_kappa(kk));
+    	if A < -0.999
+    		est_kappa(kk) = -700;
+    	elseif A > 0.999
+    		est_kappa(kk) = 700;
+    	else
+    		while true
+		        [ est_kappa(kk) fval exitflag ] = fzero(@(kappa) A - besseli(1, kappa) / besseli(0, kappa), est_kappa(kk), fzero_options);
+		        if 1 ~= exitflag || isnan(est_kappa(kk))
+		        	sprintf('fzero''s exitflag: %d, A: %f, est-kappa: %f', exitflag, A, est_kappa(kk))
+
+					if est_kappa(kk) < -715 || est_kappa(kk) > 715
+						est_kappa(kk) = -715 + (715 - -715) .* rand(1);
+					end;
+		        else
+		        	break;
+		        end;
+		    end;
+    	end;
     end;
 
 	looping = sum(abs(est_mean_dir - est_mean_dir_old) > tol) > 0 || ...
