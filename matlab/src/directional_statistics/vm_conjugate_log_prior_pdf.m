@@ -1,9 +1,14 @@
-function logprob = log_vm_conjugate_prior_pdf(dir, mean_dir, kappa)
+function logprob = vm_conjugate_log_prior_pdf(mu, kappa, mu_0, R_0, c)
 
-% log probability of the conjugate prior of von Mises distribution (1-dimensional)
+% the conjugate prior of von Mises distribution (1-dimensional)
 %
-% dir: a direction angle, [0 2*pi), [rad].
-% mean_dir: a mean direction angle, [rad].
-% kappa: a concentration parameter, kappa >= 0.
+% mu: a mean direction angle, [0 2*pi), [rad].
+% kappa: .
+% mu_0: a mean direction angle, [0 2*pi), [rad].
+% R_0: a resultant length, R_0 > 0.
+% c: .
 
-logprob = log(vm_conjugate_prior_pdf(dir, mean_dir, kappa));
+% [ref] "Finding the Location of a Signal: A Bayesian Analysis", P. Guttorp and R. A .Lockhart, JASA, 1988.
+% [ref] "A Bayesian Analysis of Directional Data Using the von Mises-Fisher Distribution", G. Nunez-Antonio and E. Gutierrez-Pena, CSSC, 2005.
+
+logprob = log(vm_conjugate_prior_pdf(mu, kappa, mu_0, R_0, c));

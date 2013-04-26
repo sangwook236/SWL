@@ -1,13 +1,13 @@
-function prob = movm_pdf(dir, mean_dir, kappa, alpha)
+function prob = movm_pdf(dir_ang, mu, kappa, alpha)
 
 % a mixture of von Mises distributions (1-dimensional)
 %
-% dir: a direction angle, [rad].
-% mean_dir: mean direction angles, [rad].
+% dir_ang: a direction angle, [rad].
+% mu: mean direction angles, [rad].
 % kappa: concentration parameters, kappa(i) >= 0.
 % alpha: mixing coefficents, sum(alpha) = 1.
 
-num1 = length(mean_dir);
+num1 = length(mu);
 %num2 = length(kappa);
 %num3 = length(alpha);
 
@@ -17,5 +17,5 @@ num1 = length(mean_dir);
 
 prob = 0;
 for ii = 1:num1
-	prob = prob + alpha(ii) * vm_pdf(dir, mean_dir(ii), kappa(ii));
+	prob = prob + alpha(ii) * vm_pdf(dir_ang, mu(ii), kappa(ii));
 end;

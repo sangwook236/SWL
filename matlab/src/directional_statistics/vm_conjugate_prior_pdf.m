@@ -1,23 +1,18 @@
-function prob = vm_conjugate_prior_pdf(dir, mean_dir, kappa)
+function prob = vm_conjugate_prior_pdf(mu, kappa, mu_0, R_0, c)
 
 % the conjugate prior of von Mises distribution (1-dimensional)
 %
-% dir: a direction angle, [0 2*pi), [rad].
-% mean_dir: a mean direction angle, [rad].
-% kappa: a concentration parameter, kappa >= 0.
+% mu: a mean direction angle, [0 2*pi), [rad].
+% kappa: .
+% mu_0: a mean direction angle, [0 2*pi), [rad].
+% R_0: a resultant length, R_0 > 0.
+% c: .
 
-% target distribution
-R_n = 20;
-theta_n = pi;
-c = 5;
-n = 100;
-kappa0 = 1;
-f = @(theta) exp(kappa0 * R_n * cos(theta - theta_n)) / besseli(0, kappa0)^(c + n);
+% [ref] "Finding the Location of a Signal: A Bayesian Analysis", P. Guttorp and R. A .Lockhart, JASA, 1988.
+% [ref] "A Bayesian Analysis of Directional Data Using the von Mises-Fisher Distribution", G. Nunez-Antonio and E. Gutierrez-Pena, CSSC, 2005.
 
-num_samples = 10000;
-burn_in_period = 1000;
-thinning_period = 5;
-smpl5 = slicesample(1, num_samples, 'pdf', f, 'thin', thinning_period, 'burnin', burn_in_period);
-smpl5 = mod(smpl5, 2*pi);
+f = @(m, k) exp(k * R_0 * cos(m - mu_0)) / besseli(0, k)^c;
 
-prob = exp(kappa * cos(dir - mean_dir)) / (2 * pi * besseli(0, kappa));
+area = quad2d(f, 0, 2*pi, 0, 700);
+
+prob = f(mu, kappa) / area;

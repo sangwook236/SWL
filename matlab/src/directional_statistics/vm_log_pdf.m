@@ -1,4 +1,4 @@
-function logprob = log_vm_pdf(dir, mean_dir, kappa)
+function logprob = vm_log_pdf(dir, mean_dir, kappa)
 
 % log probability of von Mises distribution (1-dimensional)
 %
