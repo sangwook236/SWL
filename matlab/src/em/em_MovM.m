@@ -1,15 +1,19 @@
 function [ est_mu, est_kappa, est_alpha, step ] = em_MovM(X, num_clusters, init_mu, init_kappa, init_alpha, max_step, tol)
 
 % expectation-maximization (EM) algorithm for mixtures of von Mises distributions (MovM)
+%
+% X: random angles, [0, 2*pi), [rad].
+%
+% if init_mu == [] or init_kappa == [] or init_alpha == [], use random initialization respectively.
+% if any error occurs, est_kappa, est_kappa, and est_alpha are all zeros.
 
-init_mu_rng = [ 0 2*pi ];
-init_kappa_rng = [ 0.5 5 ];
-est_kappa_rng = [ -700 700 ];
 % random initialization
 if isempty(init_mu)
+    init_mu_rng = [ 0 2*pi ];
     init_mu = init_mu_rng(1) + (init_mu_rng(2) - init_mu_rng(1)) * rand(1, num_clusters);
 end;
 if isempty(init_kappa)
+    init_kappa_rng = [ 0.5 5 ];
     init_kappa = init_kappa_rng(1) + (init_kappa_rng(2) - init_kappa_rng(1)) * rand(1, num_clusters);
 end;
 if isempty(init_alpha)
@@ -37,6 +41,9 @@ num_sample = length(X);
 
 sinX = sin(X);
 cosX = cos(X);
+
+est_kappa_rng = [ -700 700 ];
+max_recalc_count = 100;
 
 gamma = zeros(num_sample, num_clusters);
 prob_comp = zeros(1, num_clusters);
@@ -72,12 +79,12 @@ while looping && step <= max_step
     	elseif A > 0.995
     		est_kappa(kk) = est_kappa_rng(2);
     	else
+    	    recalc_count = 1;
     		while true
 		        [ est_kappa(kk), fval, exitflag ] = fzero(@(kappa) A - besseli(1, kappa) / besseli(0, kappa), est_kappa(kk), fzero_options);
-		        %sprintf('kk: %d, kappa: %f, A: %f, fval: %f, exitflag: %d', kk, est_kappa(kk), A, fval, exitflag)
 
 		        if 1 ~= exitflag || isnan(est_kappa(kk))
-		        	sprintf('fzero''s exitflag: %d, A: %f, est-kappa: %f', exitflag, A, est_kappa(kk))
+		        	sprintf('fzero''s exitflag: %d, fval: %f, est-kappa: %f, A: %f, cluster: %d', exitflag, fval, est_kappa(kk), A, kk)
 
 					if est_kappa(kk) < est_kappa_rng(1) || est_kappa(kk) > est_kappa_rng(2)
 						est_kappa(kk) = est_kappa_rng(1) + (est_kappa_rng(2) - est_kappa_rng(1)) .* rand;
@@ -85,6 +92,14 @@ while looping && step <= max_step
 		        else
 		        	break;
 		        end;
+
+    		    if recalc_count >= max_recalc_count
+    		        est_mu = zeros(size(est_mu));
+    		        est_kappa = zeros(size(est_kappa));
+    		        est_alpha = zeros(size(est_alpha));
+    		        return;
+    		    end;
+                recalc_count = recalc_count + 1;
 		    end;
     	end;
     end;

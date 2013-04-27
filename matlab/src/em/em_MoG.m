@@ -1,14 +1,31 @@
-function [ est_mu, est_sigma, est_alpha, step ] = em_MoG(X, init_mu, init_sigma, init_alpha, max_step, tol)
+function [ est_mu, est_sigma, est_alpha, step ] = em_MoG(X, num_clusters, init_mu, init_sigma, init_alpha, max_step, tol)
 
 % expectation-maximization (EM) algorithm for mixtures of Gaussian distributions (MoG)
 % 1-dimensional
 
+% random initialization
+if isempty(init_mu)
+    init_mu_rng = [ -100 100 ];
+    init_mu = init_mu_rng(1) + (init_mu_rng(2) - init_mu_rng(1)) * rand(1, num_clusters);
+end;
+if isempty(init_sigma)
+    init_sigma_rng = [ 0.1 100 ];
+    init_sigma = init_sigma_rng(1) + (init_sigma_rng(2) - init_sigma_rng(1)) * rand(1, num_clusters);
+end;
+if isempty(init_alpha)
+    while true
+        init_alpha = rand(1, num_clusters);
+        if sum(init_alpha) > 1e-3
+            init_alpha = init_alpha / sum(init_alpha);
+            break;
+        end;
+    end;
+end;
+
 num1 = length(init_mu);
 num2 = length(init_sigma);
 num3 = length(init_alpha);
-if num1 == num2 && num1 == num3
-	num_mix_comp = num1;
-else
+if num1 ~= num_clusters || num2 ~= num_clusters || num3 ~= num_clusters
 	error('dimensions of inputs are not matched ...');
 end;
 
