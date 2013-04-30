@@ -59,6 +59,7 @@ while looping && step <= max_step
     for nn = 1:num_sample
 		for kk = 1:num_clusters
 	        prob_comp(kk) = circ_vmpdf(X(nn), est_mu(kk), est_kappa(kk));
+	        %prob_comp(kk) = vm_pdf(X(nn), est_mu(kk), est_kappa(kk));
 		end;
        	gamma(nn,:) = (est_alpha .* prob_comp) / dot(est_alpha, prob_comp);
     end;
@@ -83,13 +84,12 @@ while looping && step <= max_step
     		while true
 		        [ est_kappa(kk), fval, exitflag ] = fzero(@(kappa) A - besseli(1, kappa) / besseli(0, kappa), est_kappa(kk), fzero_options);
 
-		        if 1 ~= exitflag || isnan(est_kappa(kk))
+				if isnan(est_kappa(kk)) || est_kappa(kk) < est_kappa_rng(1) || est_kappa(kk) > est_kappa_rng(2)
+					est_kappa(kk) = est_kappa_rng(1) + (est_kappa_rng(2) - est_kappa_rng(1)) .* rand;
+				end;
+		        if 1 ~= exitflag
 		        	sprintf('fzero''s exitflag: %d, fval: %f, est-kappa: %f, A: %f, cluster: %d', exitflag, fval, est_kappa(kk), A, kk)
-
-					if est_kappa(kk) < est_kappa_rng(1) || est_kappa(kk) > est_kappa_rng(2)
-						est_kappa(kk) = est_kappa_rng(1) + (est_kappa_rng(2) - est_kappa_rng(1)) .* rand;
-					end;
-		        else
+                else
 		        	break;
 		        end;
 
