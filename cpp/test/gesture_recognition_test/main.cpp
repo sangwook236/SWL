@@ -167,8 +167,8 @@ int main(int argc, char *argv[])
 			sstream << std::setw(2) << std::setfill('0') << idx;
 			const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/quasi_lossless_format/train_data/devel" + sstream.str());
 			//const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/lossy_format/devel-1-20_valid-1-20/devel" + sstream.str());
-			//const std::string avi_file_prefix = "M_";  // RGB image
-			const std::string avi_file_prefix = "K_";  // depth image
+			const std::string avi_file_prefix = "M_";  // RGB image
+			//const std::string avi_file_prefix = "K_";  // depth image
 			const std::string output_directory_path(input_directory_path + "_thog");
 
 			std::vector<std::string> avi_filenames;
@@ -209,8 +209,11 @@ int main(int argc, char *argv[])
 #endif
 
 			//
-			for (std::vector<std::string>::iterator it = avi_filenames.begin(); it != avi_filenames.end(); ++it)
+			std::size_t seq_idx = 1;
+			for (std::vector<std::string>::iterator it = avi_filenames.begin(); it != avi_filenames.end(); ++it, ++seq_idx)
 			{
+				std::cout << "seq: " << seq_idx << ", file: " << *it << std::endl;
+
 				cv::VideoCapture capture(input_directory_path + '/' + *it);
 				if (capture.isOpened())
 				{
@@ -219,7 +222,7 @@ int main(int argc, char *argv[])
 
 					const double MHI_TIME_DURATION = 0.5;  // [sec]
 					//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
-					const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
+					const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 200 : 400, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 					const bool IGNORE_NO_MOION = false;
 					local::extract_THoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);

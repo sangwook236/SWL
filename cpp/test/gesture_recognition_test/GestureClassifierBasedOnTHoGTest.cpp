@@ -367,6 +367,11 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 					std::cout << "motion not detected !!!" << std::endl;
 					local::clearOrientationHistogramHistory();
 				}
+
+				// for display
+				const int fontFace = cv::FONT_HERSHEY_COMPLEX;
+				const double fontScale = 0.5;
+				cv::putText(img, "No motion", cv::Point(5, 20), fontFace, fontScale, CV_RGB(255, 0, 255), 1, 8, false);
 			}
 
 			if (local::computeTemporalOrientationHistogram(temporalOrientationHist))
