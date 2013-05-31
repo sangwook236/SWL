@@ -4,8 +4,8 @@ function CPD = condVonMisesCpdCreate_sangwook(mu, kappa, varargin)
 % mu is a matrix of size d-by-nstates
 % kappa is a matrix of size d-by-nstates
 %
-% 'prior' is a Gauss-inverseWishart distribution, namely, a struct with
-% fields  mu, kappa, dof, k
+% 'prior' is a conjugate prior distribution, namely, a struct with
+% fields  mu, R, c
 % Set 'prior' to 'none' to do mle. 
 %%
 
@@ -20,12 +20,19 @@ if size(kappa, 1) ~= 1
     kappa = kappa';
 end
 d = size(kappa, 1);
-if isempty(prior) 
-      prior.mu    = zeros(1, d);
+if isempty(prior)
+      %prior.mu    = zeros(1, d);
       %prior.Sigma = 0.1*eye(d);
-      prior.kappa = ones(1, d);
-      prior.k     = 0.01;
-      prior.dof   = d + 1; 
+      %prior.k     = 0.01;
+      %prior.dof   = d + 1; 
+
+	  % FIXME [delete] >>
+      disp('****** 1');
+
+	  % TODO [check] >>
+      prior.mu = zeros(1, d);
+      prior.R = 1;
+      prior.c = 1;
 end
 %if isvector(Sigma)
 %   Sigma = permute(rowvec(Sigma), [1 3 2]);  
@@ -58,6 +65,7 @@ cpd.mu = randn(d, nstates);
 %    Sigma(:, :, i) = randpd(d) + 2*eye(d);
 %end
 %cpd.Sigma = Sigma;
+
 % TODO [check] >>
 cpd.kappa = randn(d, nstates);
 end
@@ -65,7 +73,7 @@ end
 function logp = logPriorFn_sangwook(cpd)
 %% calculate the logprior
 logp = 0;
-prior = cpd.prior; 
+prior = cpd.prior
 if ~isempty(prior) && isstruct(prior)
 	nstates = cpd.nstates; 
 	mu = cpd.mu;
@@ -74,7 +82,7 @@ if ~isempty(prior) && isstruct(prior)
 	for k = 1:nstates
 	    %logp = logp + gaussInvWishartLogprob(prior, mu(:, k), Sigma(:, :, k));
 	    % TODO [check] >> sampling
-	    logp = logp + vm_conjugate_log_prior_pdf(prior, mu(:, k), kappa(:, k));
+	    logp = logp + vm_conjugate_log_prior_pdf(mu(:, k), kappa(:, k), prior.mu, prior.R, prior.c);
 	end
 end
 end
@@ -114,15 +122,21 @@ prior   = cpd.prior;
 if ~isstruct(prior) || isempty(prior) % do mle
     cpd.mu    = reshape(xbar, d, nstates);
     %cpd.Sigma = bsxfun(@rdivide, XX, reshape(wsum, [1 1 nstates]));
-    cpd.kappa = bsxfun(@rdivide, XX, reshape(wsum, [1 1 nstates]));
+	% TODO [check] >>
+    cpd.kappa = bsxfun(@rdivide, XX, reshape(wsum, [1 nstates]));
 else % do map
-    kappa0 = prior.k;
-    m0     = prior.mu(:);
-    nu0    = prior.dof;
+    %kappa0 = prior.k;
+    %m0     = prior.mu(:);
+    %nu0    = prior.dof;
     %S0     = prior.Sigma;
-    k0     = prior.kappa;
-    mu     = zeros(d, nstates);
+    %mu     = zeros(d, nstates);
     %Sigma  = zeros(d, d, nstates);
+
+	% TODO [check] >>
+    mu0     = prior.mu;
+    R0     = prior.R;
+    c0     = prior.c;
+    mu     = zeros(d, nstates);
     kappa  = zeros(d, nstates);
     for k = 1:nstates
         xbark          = xbar(:, k);
@@ -132,7 +146,10 @@ else % do map
         a              = (kappa0*wk)./(kappa0 + wk);
         b              = nu0 + wk + d + 2;
         Sprior         = (xbark-m0)*(xbark-m0)';
-        %Sigma(:, :, k) = (S0 + XXk + a*Sprior)./b;
+        Sigma(:, :, k) = (S0 + XXk + a*Sprior)./b;
+        mu(:, k)       = mn;
+
+		% TODO [check] >>
         kappa(:, k) = (k0 + XXk + a*Sprior)./b;
         mu(:, k)       = mn;
     end
