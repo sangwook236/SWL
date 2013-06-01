@@ -1,6 +1,5 @@
 %----------------------------------------------------------
 %addpath('D:\work_center\sw_dev\matlab\rnd\src\machine_vision\camera_calibration_toolbox_for_matlab\toolbox_calib');
-%addpath('D:\working_copy\swl_https\matlab\src\machine_vision');
 
 %----------------------------------------------------------
 
