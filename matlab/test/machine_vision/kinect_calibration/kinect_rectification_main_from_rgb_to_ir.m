@@ -3,19 +3,19 @@
 
 %----------------------------------------------------------
 
-rgb_images = [
+rgb_image_file_list = [
 	struct('filename', 'kinect_rgba_20130530T103805.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023152.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023346.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023359.png', 'rgb', true)
 ];
-ir_images = [
+ir_image_file_list = [
 	struct('filename', 'kinect_depth_20130530T103805.png', 'rgb', false),
 	struct('filename', 'kinect_depth_20130531T023152.png', 'rgb', false), 
 	struct('filename', 'kinect_depth_20130531T023346.png', 'rgb', false), 
 	struct('filename', 'kinect_depth_20130531T023359.png', 'rgb', false) 
 ];
-num_image_pairs = length(rgb_images);
+num_image_pairs = length(rgb_image_file_list);
 
 applied_method = 1;  % slow
 applied_method = 2;  % fast
@@ -174,15 +174,15 @@ ir_input_images = cell(1, num_image_pairs);
 for kk = 1:num_image_pairs
 	% load images
 	% we must use double() instead of im2double().
-	if rgb_images(kk).rgb
-		rgb_input_images{kk} = double(rgb2gray(imread(rgb_images(kk).filename)));
+	if rgb_image_file_list(kk).rgb
+		rgb_input_images{kk} = double(rgb2gray(imread(rgb_image_file_list(kk).filename)));
 	else
-		rgb_input_images{kk} = double(imread(rgb_images(kk).filename));
+		rgb_input_images{kk} = double(imread(rgb_image_file_list(kk).filename));
 	end;
-	if ir_images(kk).rgb
-		ir_input_images{kk} = double(rgb2gray(imread(ir_images(kk).filename)));
+	if ir_image_file_list(kk).rgb
+		ir_input_images{kk} = double(rgb2gray(imread(ir_image_file_list(kk).filename)));
 	else
-		ir_input_images{kk} = double(imread(ir_images(kk).filename));
+		ir_input_images{kk} = double(imread(ir_image_file_list(kk).filename));
 	end;
 end;
 
@@ -194,7 +194,7 @@ end;
 %	During rectification process, image undistortion is applied. (?)
 if false
 	for kk = 1:num_image_pairs
-		msg = sprintf('undistorting %s & %s ...', rgb_images(kk).filename, ir_images(kk).filename);
+		msg = sprintf('undistorting %s & %s ...', rgb_image_file_list(kk).filename, ir_image_file_list(kk).filename);
 		disp(msg);
 		tic;
 

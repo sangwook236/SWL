@@ -3,20 +3,20 @@
 
 %----------------------------------------------------------
 
-ir_images = [
+ir_image_file_list = [
 	struct('filename', 'kinect_depth_20130530T103805.png', 'rgb', false),
 	struct('filename', 'kinect_depth_20130531T023152.png', 'rgb', false), 
 	struct('filename', 'kinect_depth_20130531T023346.png', 'rgb', false), 
 	struct('filename', 'kinect_depth_20130531T023359.png', 'rgb', false) 
 ];
-rgb_images = [
+rgb_image_file_list = [
 	struct('filename', 'kinect_rgba_20130530T103805.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023152.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023346.png', 'rgb', true),
 	struct('filename', 'kinect_rgba_20130531T023359.png', 'rgb', true)
 ];
-num_ir_images = length(ir_images);
-num_rgb_images = length(rgb_images);
+num_ir_images = length(ir_image_file_list);
+num_rgb_images = length(rgb_image_file_list);
 
 %----------------------------------------------------------
 
@@ -116,17 +116,17 @@ ir_input_images = cell(1, num_ir_images);
 rgb_input_images = cell(1, num_rgb_images);
 for kk = 1:num_ir_images
 	% we must use double() instead of im2double().
-	if ir_images(kk).rgb
-		ir_input_images{kk} = double(rgb2gray(imread(ir_images(kk).filename)));
+	if ir_image_file_list(kk).rgb
+		ir_input_images{kk} = double(rgb2gray(imread(ir_image_file_list(kk).filename)));
 	else
-		ir_input_images{kk} = double(imread(ir_images(kk).filename));
+		ir_input_images{kk} = double(imread(ir_image_file_list(kk).filename));
 	end;
 end;
 for kk = 1:num_rgb_images
-	if rgb_images(kk).rgb
-		rgb_input_images{kk} = double(rgb2gray(imread(rgb_images(kk).filename)));
+	if rgb_image_file_list(kk).rgb
+		rgb_input_images{kk} = double(rgb2gray(imread(rgb_image_file_list(kk).filename)));
 	else
-		rgb_input_images{kk} = double(imread(rgb_images(kk).filename));
+		rgb_input_images{kk} = double(imread(rgb_image_file_list(kk).filename));
 	end;
 end;
 
@@ -135,7 +135,7 @@ end;
 
 ir_output_images = cell(1,num_ir_images);
 for kk = 1:num_ir_images
-	msg = sprintf('undistorting %s ...', ir_images(kk).filename);
+	msg = sprintf('undistorting %s ...', ir_image_file_list(kk).filename);
 	disp(msg);
 	tic;
 
@@ -146,7 +146,7 @@ end;
 
 rgb_output_images = cell(1,num_rgb_images);
 for kk = 1:num_rgb_images
-	msg = sprintf('undistorting %s ...', rgb_images(kk).filename);
+	msg = sprintf('undistorting %s ...', rgb_image_file_list(kk).filename);
 	disp(msg);
 	tic;
 
