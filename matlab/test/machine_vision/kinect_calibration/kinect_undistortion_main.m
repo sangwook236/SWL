@@ -2,6 +2,7 @@
 %addpath('D:\work_center\sw_dev\matlab\rnd\src\machine_vision\camera_calibration_toolbox_for_matlab\toolbox_calib');
 
 %----------------------------------------------------------
+% load images
 
 ir_image_file_list = [
 	struct('filename', 'kinect_depth_20130530T103805.png', 'rgb', false),
@@ -17,6 +18,24 @@ rgb_image_file_list = [
 ];
 num_ir_images = length(ir_image_file_list);
 num_rgb_images = length(rgb_image_file_list);
+
+ir_input_images = cell(1, num_ir_images);
+rgb_input_images = cell(1, num_rgb_images);
+for kk = 1:num_ir_images
+	% we must use double() instead of im2double().
+	if ir_image_file_list(kk).rgb
+		ir_input_images{kk} = double(rgb2gray(imread(ir_image_file_list(kk).filename)));
+	else
+		ir_input_images{kk} = double(imread(ir_image_file_list(kk).filename));
+	end;
+end;
+for kk = 1:num_rgb_images
+	if rgb_image_file_list(kk).rgb
+		rgb_input_images{kk} = double(rgb2gray(imread(rgb_image_file_list(kk).filename)));
+	else
+		rgb_input_images{kk} = double(imread(rgb_image_file_list(kk).filename));
+	end;
+end;
 
 %----------------------------------------------------------
 
@@ -108,27 +127,6 @@ end;
 %	${CAMEARA_CALIBRATION_TOOLBOX_FOR_MATLAB_HOME}/undistort_image.m
 %	${CAMEARA_CALIBRATION_TOOLBOX_FOR_MATLAB_HOME}/rect.m
 %	${CAMEARA_CALIBRATION_TOOLBOX_FOR_MATLAB_HOME}/apply_distortion.m
-
-%----------------------------------------------------------
-% load images
-
-ir_input_images = cell(1, num_ir_images);
-rgb_input_images = cell(1, num_rgb_images);
-for kk = 1:num_ir_images
-	% we must use double() instead of im2double().
-	if ir_image_file_list(kk).rgb
-		ir_input_images{kk} = double(rgb2gray(imread(ir_image_file_list(kk).filename)));
-	else
-		ir_input_images{kk} = double(imread(ir_image_file_list(kk).filename));
-	end;
-end;
-for kk = 1:num_rgb_images
-	if rgb_image_file_list(kk).rgb
-		rgb_input_images{kk} = double(rgb2gray(imread(rgb_image_file_list(kk).filename)));
-	else
-		rgb_input_images{kk} = double(imread(rgb_image_file_list(kk).filename));
-	end;
-end;
 
 %----------------------------------------------------------
 % undistort images
