@@ -21,7 +21,6 @@ num_image_pairs = length(rgb_image_file_list);
 rgb_input_images = cell(1, num_image_pairs);
 ir_input_images = cell(1, num_image_pairs);
 for kk = 1:num_image_pairs
-	% load images
 	% we must use double() instead of im2double().
 	if rgb_image_file_list(kk).rgb
 		rgb_input_images{kk} = double(rgb2gray(imread(rgb_image_file_list(kk).filename)));
