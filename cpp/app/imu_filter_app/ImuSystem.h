@@ -1,5 +1,5 @@
-#if !defined(__SWL_RND_UTIL_TEST__IMU_SYSTEM__H_)
-#define __SWL_RND_UTIL_TEST__IMU_SYSTEM__H_ 1
+#if !defined(__SWL_IMU_FILTER_APP__IMU_SYSTEM__H_)
+#define __SWL_IMU_FILTER_APP__IMU_SYSTEM__H_ 1
 
 
 #include "swl/rnd_util/DiscreteLinearStochasticSystem.h"
@@ -152,4 +152,4 @@ private:
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL_TEST__IMU_SYSTEM__H_
+#endif  // __SWL_IMU_FILTER_APP__IMU_SYSTEM__H_

@@ -97,7 +97,9 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 }  // namespace local
 }  // unnamed namespace
 
-void gestureRecognitionByHistogram(cv::VideoCapture &capture)
+namespace swl {
+
+	void gestureRecognitionByHistogram(cv::VideoCapture &capture)
 {
 	const int imageWidth = 640, imageHeight = 480;
 	//const int imageWidth = 320, imageHeight = 240;
@@ -501,3 +503,5 @@ void gestureRecognitionByHistogram(cv::VideoCapture &capture)
 	cv::destroyWindow(windowName1);
 	cv::destroyWindow(windowName2);
 }
+
+}  // namespace swl

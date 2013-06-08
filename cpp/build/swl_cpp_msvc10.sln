@@ -73,15 +73,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math_test", "..\test\ma
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util_test", "..\test\util_test\swl_util_test_msvc10.vcxproj", "{C0E09E3B-7BC9-4193-B1CE-1DD2569B629D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil_test_msvc10", "..\test\glutil_test\swl_glutil_test_msvc10.vcxproj", "{F7113640-0290-4F03-ABA4-27604093F81A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil_test", "..\test\glutil_test\swl_glutil_test_msvc10.vcxproj", "{F7113640-0290-4F03-ABA4-27604093F81A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics_test_msvc10", "..\test\graphics_test\swl_graphics_test_msvc10.vcxproj", "{2699083A-616C-488F-8422-E9FE449A4C8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics_test", "..\test\graphics_test\swl_graphics_test_msvc10.vcxproj", "{2699083A-616C-488F-8422-E9FE449A4C8B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view_test_msvc10", "..\test\view_test\swl_view_test_msvc10.vcxproj", "{CD7D63E4-7F44-4629-A7C0-A789156FCEC0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view_test", "..\test\view_test\swl_view_test_msvc10.vcxproj", "{CD7D63E4-7F44-4629-A7C0-A789156FCEC0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_test_msvc10", "..\test\winutil_test\swl_winutil_test_msvc10.vcxproj", "{F0E11330-18C5-43B1-9C8D-5DB7B4293C4A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_test", "..\test\winutil_test\swl_winutil_test_msvc10.vcxproj", "{F0E11330-18C5-43B1-9C8D-5DB7B4293C4A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_test_msvc10", "..\test\pattern_recognition_test\swl_pattern_recognition_test_msvc10.vcxproj", "{38E116CD-0D2C-4459-98BF-EDAAF8637547}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_test", "..\test\pattern_recognition_test\swl_pattern_recognition_test_msvc10.vcxproj", "{38E116CD-0D2C-4459-98BF-EDAAF8637547}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinect_segmentation_app", "..\app\swl_kinect_segmentation_app\swl_kinect_segmentation_app_msvc10.vcxproj", "{5E3E3B86-FD45-450D-8BDA-7447AB51F371}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -211,6 +213,10 @@ Global
 		{38E116CD-0D2C-4459-98BF-EDAAF8637547}.Debug|Win32.Build.0 = Debug|Win32
 		{38E116CD-0D2C-4459-98BF-EDAAF8637547}.Release|Win32.ActiveCfg = Release|Win32
 		{38E116CD-0D2C-4459-98BF-EDAAF8637547}.Release|Win32.Build.0 = Release|Win32
+		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Debug|Win32.Build.0 = Debug|Win32
+		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Release|Win32.ActiveCfg = Release|Win32
+		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

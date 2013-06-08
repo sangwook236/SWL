@@ -15,11 +15,17 @@
 
 namespace {
 namespace local {
+	
+}  // namespace local
+}  // unnamed namespace
 
-bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, const std::string &output_directory_path, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD)
+namespace swl {
+
+void gestureRecognitionByHistogram(cv::VideoCapture &capture);
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
+
+bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, const std::string &output_directory_path, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD)
 {
-	void gestureRecognitionByHistogram(cv::VideoCapture &capture);
-	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
 
 	const std::string::size_type pos = avi_filename.find_last_of('.');
 	const std::string thog_filename(avi_filename.substr(0, pos) + ".THoG");
@@ -53,14 +59,10 @@ bool extract_THoG(cv::VideoCapture &capture, const std::string &avi_filename, co
 	return true;
 }
 
-}  // namespace local
-}  // unnamed namespace
+}  // namespace swl
 
 int main(int argc, char *argv[])
 {
-	void gestureRecognitionByHistogram(cv::VideoCapture &capture);
-	void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
-
 	int retval = EXIT_SUCCESS;
 	try
 	{
@@ -95,7 +97,7 @@ int main(int argc, char *argv[])
 
 		if (EXIT_SUCCESS == retval)
 		{
-			//gestureRecognitionByHistogram(capture);
+			//swl::gestureRecognitionByHistogram(capture);
 
 			// temporal HoG (THoG) or temporal orientation histogram (TOH)
 			const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
@@ -106,7 +108,7 @@ int main(int argc, char *argv[])
 			const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 			const bool IGNORE_NO_MOION = true;
-			recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
+			swl::recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
 		}
 #elif 0
 		// for AIM's gesture dataset
@@ -148,7 +150,7 @@ int main(int argc, char *argv[])
 				const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 				const bool IGNORE_NO_MOION = false;
-				local::extract_THoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+				local::extractTHoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
 			}
 			else
 			{
@@ -225,7 +227,7 @@ int main(int argc, char *argv[])
 					const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 200 : 400, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 					const bool IGNORE_NO_MOION = false;
-					local::extract_THoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+					swl::extractTHoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
 				}
 				else
 				{
