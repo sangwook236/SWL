@@ -45,9 +45,6 @@
     <ClInclude Include="gslic_lib\FastImgSeg.h">
       <Filter>Source Files\gslic_lib</Filter>
     </ClInclude>
-    <ClInclude Include="KinectSensor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -59,13 +56,10 @@
     <ClCompile Include="gslic_lib\FastImgSeg.cpp">
       <Filter>Source Files\gslic_lib</Filter>
     </ClCompile>
-    <ClCompile Include="library_autolinking.cpp">
+    <ClCompile Include="LibraryAutolinking.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="gslic.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="KinectSensor.cpp">
+    <ClCompile Include="gSLIC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

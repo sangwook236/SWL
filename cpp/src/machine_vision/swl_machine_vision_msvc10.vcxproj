@@ -48,7 +48,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -71,7 +71,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;D:\work_center\sw_dev\cpp\rnd\inc\opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -93,13 +93,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="SIFT.cpp" />
-    <ClCompile Include="SURF.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\SIFT.h" />
-    <ClInclude Include="..\..\inc\swl\machine_vision\SURF.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_msvc10.vcxproj">
@@ -114,6 +111,12 @@
       <Project>{2d51e376-f18c-4095-9b5b-29f4d2a58498}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ImageRectificationUsingOpenCV.cpp" />
+    <ClCompile Include="ImageUndistortionUsingOpenCV.cpp" />
+    <ClCompile Include="KinectSensor.cpp" />
+    <ClCompile Include="LibraryAutolinking.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
