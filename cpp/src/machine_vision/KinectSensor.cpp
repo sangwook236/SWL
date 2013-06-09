@@ -28,7 +28,7 @@ KinectSensor::KinectSensor(
 	const cv::Size &imageSize_rgb, const cv::Mat &K_rgb, const cv::Mat &distCoeffs_rgb,
 	const cv::Mat &R, const cv::Mat &T
 )
-: useIRtoRGB_(useIRtoRGB), useOpenCV_(true),
+: useIRtoRGB_(useIRtoRGB), useOpenCV_(false),
   imageSize_ir_(imageSize_ir), K_ir_(K_ir), distCoeffs_ir_(distCoeffs_ir),
   imageSize_rgb_(imageSize_rgb), K_rgb_(K_rgb), distCoeffs_rgb_(distCoeffs_rgb),
   R_(R), T_(T)

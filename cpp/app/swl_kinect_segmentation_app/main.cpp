@@ -7,14 +7,35 @@
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
 #include <boost/smart_ptr.hpp>
+#include <algorithm>
 #include <vector>
 #include <iostream>
 #include <iomanip>
 #include <cstdlib>
 
 
+#define __USE_RECTIFIED_IMAGE 1
+
 namespace {
 namespace local {
+
+// [ref] canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
+void canny(const cv::Mat &gray, cv::Mat &edge)
+{
+#if 0
+	// down-scale and up-scale the image to filter out the noise
+	cv::Mat blurred;
+	cv::pyrDown(gray, blurred);
+	cv::pyrUp(blurred, edge);
+#else
+	cv::blur(gray, edge, cv::Size(3, 3));
+#endif
+
+	// run the edge detector on grayscale
+	const int lowerEdgeThreshold = 30, upperEdgeThreshold = 50;
+	const bool useL2 = true;
+	cv::Canny(edge, edge, lowerEdgeThreshold, upperEdgeThreshold, 3, useL2);
+}
 
 // [ref] load_kinect_sensor_parameters_from_IR_to_RGB() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
 void load_kinect_sensor_parameters_from_IR_to_RGB(
@@ -164,6 +185,18 @@ void load_kinect_sensor_parameters_from_RGB_to_IR(
 	cv::Mat(3, 1, CV_64FC1, (void *)transVec).copyTo(T_rgb_to_ir);
 }
 
+cv::Rect get_bounding_rect(const cv::Mat &img)
+{
+	std::vector<cv::Point> pts;
+	pts.reserve(img.rows * img.cols);
+	for (int i = 0; i < img.rows; ++i)
+		for (int j = 0; j < img.cols; ++j)
+			if (!img.at<unsigned char>(i, j))
+				pts.push_back(cv::Point(j, i));
+
+	return cv::boundingRect(pts);
+}
+
 }  // namespace local
 }  // unnamed namespace
 
@@ -179,6 +212,15 @@ int main(int argc, char *argv[])
 	int retval = EXIT_SUCCESS;
 	try
 	{
+		const int num_segments = 1200;
+		const SEGMETHOD seg_method = XYZ_SLIC;  // SLIC, RGB_SLIC, XYZ_SLIC
+		const double seg_weight = 0.3;
+
+		const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
+		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
+		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
+
+		//
 		const std::size_t num_images = 4;
 		const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480);
 
@@ -193,6 +235,19 @@ int main(int argc, char *argv[])
 		depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023152.png");
 		depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023346.png");
 		depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023359.png");
+
+		std::vector<cv::Range> depth_range_list;
+		depth_range_list.reserve(num_images);
+/*
+		depth_range_list.push_back(cv::Range(500, 3420));
+		depth_range_list.push_back(cv::Range(500, 3120));
+		depth_range_list.push_back(cv::Range(500, 1700));
+		depth_range_list.push_back(cv::Range(500, 1000));
+*/
+		depth_range_list.push_back(cv::Range(500, 3000));
+		depth_range_list.push_back(cv::Range(500, 3000));
+		depth_range_list.push_back(cv::Range(500, 3000));
+		depth_range_list.push_back(cv::Range(500, 3000));
 
 		//
 		boost::scoped_ptr<swl::KinectSensor> kinect;
@@ -213,12 +268,14 @@ int main(int argc, char *argv[])
 		}
 
 		//
-		const int num_segments = 1200;
-		const SEGMETHOD seg_method = XYZ_SLIC;  // SLIC, RGB_SLIC, XYZ_SLIC
-		const double seg_weight = 0.3;
-
-		cv::Mat rgb_superpixel_mask;
-		cv::Mat depth_output_image, rgb_output_image;
+		cv::Mat rgb_superpixel_mask; 
+		cv::Mat rectified_depth_image, rectified_rgb_image;
+		cv::Mat filtered_depth_image, depth_boundary_mask;
+		cv::Mat filtered_superpixel_mask(imageSize_rgb, CV_8UC1), filtered_superpixel_indexes(imageSize_rgb, CV_32SC1); 
+		cv::Mat foreground_mask, background_mask;
+		cv::Mat grabCut_mask(imageSize_rgb, CV_8UC1), grabCut_bgModel, grabCut_fgModel;
+		double minVal = 0.0, maxVal = 0.0;
+		cv::Mat tmp_image;
 		for (std::size_t i = 0; i < num_images; ++i)
 		{
 			// load images.
@@ -237,17 +294,42 @@ int main(int argc, char *argv[])
 
 			const int64 start = cv::getTickCount();
 
+			// rectify Kinect images.
+			kinect->rectifyImagePair(depth_input_image, rgb_input_image, rectified_depth_image, rectified_rgb_image);
+
+#if 1
+			// show rectified images
+			cv::minMaxLoc(rectified_depth_image, &minVal, &maxVal);
+			rectified_depth_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+
+			cv::imshow("rectified depth image", tmp_image);
+			cv::imshow("rectified RGB image", rectified_rgb_image);
+#endif
+
+#if 0
+			std::ostringstream strm1, strm2;
+			strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
+			cv::imwrite(strm1.str(), rectified_depth_image);
+			strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
+			cv::imwrite(strm2.str(), rectified_rgb_image);
+#endif
+
+			// PPP [] >>
+			//	1. run superpixel.
+
 			// superpixel mask consists of segment indexes.
+#if __USE_RECTIFIED_IMAGE
+			swl::create_superpixel_by_gSLIC(rectified_rgb_image, rgb_superpixel_mask, seg_method, seg_weight, num_segments);
+#else
 			swl::create_superpixel_by_gSLIC(rgb_input_image, rgb_superpixel_mask, seg_method, seg_weight, num_segments);
+#endif
 
 #if 0
 			// show superpixel mask.
-			cv::Mat mask;
-			double minVal = 0.0, maxVal = 0.0;
 			cv::minMaxLoc(rgb_superpixel_mask, &minVal, &maxVal);
-			rgb_superpixel_mask.convertTo(mask, CV_32FC1, 1.0 / maxVal, 0.0);
+			rgb_superpixel_mask.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
 
-			cv::imshow("superpixels by gSLIC - mask", mask);
+			cv::imshow("superpixels by gSLIC - mask", tmp_image);
 #endif
 
 #if 0
@@ -255,32 +337,112 @@ int main(int argc, char *argv[])
 			cv::Mat rgb_superpixel_boundary;
 			swl::create_superpixel_boundary(rgb_superpixel_mask, rgb_superpixel_boundary);
 
-			cv::Mat img(rgb_input_image.clone());
-			img.setTo(cv::Scalar(0, 0, 255), rgb_superpixel_boundary);
+			rgb_input_image.copyTo(tmp_image);
+			tmp_image.setTo(cv::Scalar(0, 0, 255), rgb_superpixel_boundary);
 
-			cv::imshow("superpixels by gSLIC - boundary", img);
+			cv::imshow("superpixels by gSLIC - boundary", tmp_image);
 #endif
 
-			// rectify Kinect images.
-			kinect->rectifyImagePair(depth_input_image, rgb_input_image, depth_output_image, rgb_output_image);
+			// PPP [] >>
+			//	2. 선택된 depth range로부터 얻은 영역의 boundary를 얻음.
+			//		Depth histogram을 이용하는 것은 용이하지 않음.
+			//		Depth image의 edge 정보로부터 boundary 추출.
 
-#if 1
-			// show rectified images
-			cv::Mat depth_output_image2;
-			double minVal = 0.0, maxVal = 0.0;
-			cv::minMaxLoc(depth_output_image, &minVal, &maxVal);
-			depth_output_image.convertTo(depth_output_image2, CV_32FC1, 1.0 / maxVal, 0.0);
+			// extract boundary from depth info.
+#if __USE_RECTIFIED_IMAGE
+			cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), filtered_depth_image);
 
-			cv::imshow("rectified depth image", depth_output_image2);
-			cv::imshow("rectified RGB image", rgb_output_image);
+			cv::erode(filtered_depth_image, filtered_depth_image, selement, cv::Point(-1, -1), 3);
+			cv::dilate(filtered_depth_image, filtered_depth_image, selement, cv::Point(-1, -1), 3);
+#else
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), filtered_depth_image);
 #endif
+
+			cv::minMaxLoc(filtered_depth_image, &minVal, &maxVal);
+			filtered_depth_image.convertTo(tmp_image, CV_8UC1, 255.0 / maxVal, 0.0);
+			local::canny(tmp_image, depth_boundary_mask);
+
+			cv::dilate(depth_boundary_mask, depth_boundary_mask, selement, cv::Point(-1, -1), 3);
 
 #if 0
-			std::ostringstream strm1, strm2;
-			strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
-			cv::imwrite(strm1.str(), depth_output_image);
-			strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
-			cv::imwrite(strm2.str(), rgb_output_image);
+			// show filtered depth image.
+			cv::imshow("filtered depth image", filtered_depth_image);
+			// show depth boundary mask.
+			//cv::imshow("depth boundary mask", depth_boundary_mask);
+#endif
+
+			// FIXME [enhance] >> too slow. speed up.
+			{
+				// PPP [] >>
+				//	3. Depth boundary와 겹치는 superpixel의 index를 얻어옴.
+				//		Depth boundary를 mask로 사용하면 쉽게 index를 추출할 수 있음.
+
+				filtered_superpixel_indexes.setTo(cv::Scalar::all(0));
+				rgb_superpixel_mask.copyTo(filtered_superpixel_indexes, depth_boundary_mask);
+				cv::MatIterator_<int> itBegin = filtered_superpixel_indexes.begin<int>(), itEnd = filtered_superpixel_indexes.end<int>();
+				std::sort(itBegin, itEnd);
+				cv::MatIterator_<int> itEndNew = std::unique(itBegin, itEnd);
+				//std::size_t count = 0;
+				//for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it, ++count)
+				//	std::cout << *it << std::endl;
+
+				// PPP [] >>
+				//	4. 추출된 superpixel index들에 해당하는 superpixel 영역을 0, 그외 영역을 1로 지정.
+
+				filtered_superpixel_mask.setTo(cv::Scalar::all(255));
+				for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it)
+					// FIXME [check] >> why is 0 contained in index list?
+					if (*it)
+						filtered_superpixel_mask.setTo(cv::Scalar::all(0), rgb_superpixel_mask == *it);
+
+#if 1
+				// show filtered superpixel index mask.
+				cv::imshow("filtered superpixel index mask", filtered_superpixel_mask);
+#endif
+			}
+
+			// run GrabCut
+			// FIXME [enhance] >> too slow. speed up.
+			const cv::Rect grabCut_rect(local::get_bounding_rect(filtered_superpixel_mask));
+#if __USE_RECTIFIED_IMAGE
+			cv::grabCut(rectified_rgb_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_RECT);
+#else
+			cv::grabCut(rgb_input_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_RECT);
+#endif
+
+			// PPP [] >>
+			//	5. 추출된 superpixel index들로부터 foreground & background 영역을 추출.
+			//		선택된 depth range로부터 얻은 영역을 1로, 그외 영역을 0으로 지정한 후, 추출된 superpixel index와 bit-and operation.
+			//		1을 가지는 영역의 boundary를 GrabCut의 foreground seed로 사용.
+			//		선택된 depth range로부터 얻은 영역을 0로, 그외 영역을 1으로 지정한 후, 추출된 superpixel index와 bit-and operation.
+			//		1을 가지는 영역의 boundary를 GrabCut의 background seed로 사용.
+
+			// GC_BGD, GC_FGD, GC_PR_BGD, GC_PR_FGD
+			grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_BGD));
+			//grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_FGD));
+			grabCut_mask.setTo(cv::Scalar::all(cv::GC_FGD), filtered_depth_image & filtered_superpixel_mask);
+			grabCut_mask.setTo(cv::Scalar::all(cv::GC_BGD), ~filtered_depth_image & filtered_superpixel_mask);
+
+#if 0
+			// show foreground & background masks.
+			//cv::imshow("foreground mask", filtered_depth_image & filtered_superpixel_mask);
+			//cv::imshow("background mask", ~filtered_depth_image & filtered_superpixel_mask);
+
+			// show GrabCut mask.
+			grabCut_mask.convertTo(tmp_image, CV_8UC1, 255.0 / cv::GC_PR_FGD, 0.0);
+			//cv::rectangle(tmp_image, grabCut_rect, cv::Scalar::all(255), 2);
+			cv::imshow("GrabCut mask", tmp_image);
+#endif
+
+#if __USE_RECTIFIED_IMAGE
+			cv::grabCut(rectified_rgb_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_EVAL);
+#else
+			cv::grabCut(rgb_input_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_EVAL);
+#endif
+
+#if 1
+			rectified_rgb_image.copyTo(tmp_image, cv::Mat(grabCut_mask & 1));
+			cv::imshow("GrabCut result", tmp_image);
 #endif
 
 			const int64 elapsed = cv::getTickCount() - start;
