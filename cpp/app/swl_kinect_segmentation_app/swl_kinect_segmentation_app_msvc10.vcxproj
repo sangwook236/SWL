@@ -86,6 +86,16 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\convolve.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\disjoint-set.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\filter.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\image.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\imconv.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\imutil.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\misc.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\pnmfile.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\segment-graph.h" />
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\segment-image.h" />
     <ClInclude Include="gslic_lib\cudaDefines.h" />
     <ClInclude Include="gslic_lib\cudaImgTrans.h" />
     <ClInclude Include="gslic_lib\cudaSegEngine.h" />
@@ -96,6 +106,10 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="efficient_graph_based_image_segmentation_lib\segment.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="gSLIC.cpp" />
     <ClCompile Include="gslic_lib\FastImgSeg.cpp" />
     <ClCompile Include="LibraryAutolinking.cpp" />

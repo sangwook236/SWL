@@ -16,6 +16,9 @@
     <Filter Include="Source Files\gslic_lib">
       <UniqueIdentifier>{27f4f70d-f69b-43c6-8f97-c1f0ce39f5ac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\efficient_graph_based_image_segmentation_lib">
+      <UniqueIdentifier>{2e6f2d62-6207-461f-84ec-4312414a0315}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
@@ -45,6 +48,36 @@
     <ClInclude Include="gslic_lib\FastImgSeg.h">
       <Filter>Source Files\gslic_lib</Filter>
     </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\convolve.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\disjoint-set.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\filter.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\image.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\imconv.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\imutil.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\misc.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\pnmfile.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\segment-graph.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
+    <ClInclude Include="efficient_graph_based_image_segmentation_lib\segment-image.h">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -61,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="gSLIC.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="efficient_graph_based_image_segmentation_lib\segment.cpp">
+      <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -32,7 +32,7 @@ void canny(const cv::Mat &gray, cv::Mat &edge)
 #endif
 
 	// run the edge detector on grayscale
-	const int lowerEdgeThreshold = 30, upperEdgeThreshold = 50;
+	const int lowerEdgeThreshold = 5, upperEdgeThreshold = 50;
 	const bool useL2 = true;
 	cv::Canny(edge, edge, lowerEdgeThreshold, upperEdgeThreshold, 3, useL2);
 }
@@ -205,6 +205,153 @@ namespace swl {
 void create_superpixel_by_gSLIC(const cv::Mat &input_image, cv::Mat &superpixel_mask, const SEGMETHOD seg_method, const double seg_weight, const int num_segments);
 void create_superpixel_boundary(const cv::Mat &superpixel_mask, cv::Mat &superpixel_boundary);
 
+void construct_depth_guided_mask_using_superpixel(
+	const cv::Size &imageSize_rgb, const cv::Mat &rgb_input_image, const cv::Mat &depth_boundary_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_mask,
+	const int num_segments, const SEGMETHOD seg_method, const double seg_weight
+)
+{
+	cv::Mat rgb_superpixel_mask;
+	cv::Mat filtered_superpixel_mask(imageSize_rgb, CV_8UC1, cv::Scalar::all(255)), filtered_superpixel_indexes(imageSize_rgb, CV_32SC1, cv::Scalar::all(0)); 
+	double minVal = 0.0, maxVal = 0.0;
+	cv::Mat tmp_image;
+
+	// PPP [] >>
+	//	1. run superpixel.
+
+	// superpixel mask consists of segment indexes.
+	create_superpixel_by_gSLIC(rgb_input_image, rgb_superpixel_mask, seg_method, seg_weight, num_segments);
+
+#if 0
+	// show superpixel mask.
+	cv::minMaxLoc(rgb_superpixel_mask, &minVal, &maxVal);
+	rgb_superpixel_mask.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+
+	cv::imshow("superpixels by gSLIC - mask", tmp_image);
+#endif
+
+#if 0
+	// show superpixel boundary.
+	cv::Mat rgb_superpixel_boundary;
+	swl::create_superpixel_boundary(rgb_superpixel_mask, rgb_superpixel_boundary);
+
+	rgb_input_image.copyTo(tmp_image);
+	tmp_image.setTo(cv::Scalar(0, 0, 255), rgb_superpixel_boundary);
+
+	cv::imshow("superpixels by gSLIC - boundary", tmp_image);
+#endif
+
+	// PPP [] >>
+	//	2. depth info로부터 관심 영역의 boundary를 얻음.
+	//		Depth histogram을 이용해 depth region을 분할 => 물체의 경계에 의해서가 아니라 depth range에 의해서 영역이 결정. 전체적으로 연결된 몇 개의 큰 blob이 생성됨.
+	//		Depth image의 edge 정보로부터 boundary 추출 => 다른 두 물체가 맞닿아 있는 경우, depth image의 boundary info로부터 접촉면을 식별하기 어려움.
+
+	// FIXME [enhance] >> too slow. speed up.
+	{
+		// PPP [] >>
+		//	3. Depth boundary와 겹치는 superpixel의 index를 얻어옴.
+		//		Depth boundary를 mask로 사용하면 쉽게 index를 추출할 수 있음.
+
+		//filtered_superpixel_indexes.setTo(cv::Scalar::all(0));
+		rgb_superpixel_mask.copyTo(filtered_superpixel_indexes, depth_boundary_image);
+		cv::MatIterator_<int> itBegin = filtered_superpixel_indexes.begin<int>(), itEnd = filtered_superpixel_indexes.end<int>();
+		std::sort(itBegin, itEnd);
+		cv::MatIterator_<int> itEndNew = std::unique(itBegin, itEnd);
+		//std::size_t count = 0;
+		//for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it, ++count)
+		//	std::cout << *it << std::endl;
+
+		// PPP [] >>
+		//	4. 추출된 superpixel index들에 해당하는 superpixel 영역을 0, 그외 영역을 1로 지정.
+
+		//filtered_superpixel_mask.setTo(cv::Scalar::all(255));
+		for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it)
+			// FIXME [check] >> why is 0 contained in index list?
+			if (*it)
+				filtered_superpixel_mask.setTo(cv::Scalar::all(0), rgb_superpixel_mask == *it);
+
+#if 1
+		// show filtered superpixel index mask.
+		cv::imshow("mask of superpixels on depth boundary", filtered_superpixel_mask);
+#endif
+	}
+
+	// construct depth guided mask.
+	depth_guided_mask.setTo(cv::Scalar::all(127));  // depth boundary region.
+	depth_guided_mask.setTo(cv::Scalar::all(255), depth_validity_mask & filtered_superpixel_mask);  // valid depth region (foreground).
+	depth_guided_mask.setTo(cv::Scalar::all(0), ~depth_validity_mask & filtered_superpixel_mask);  // invalid depth region (background).
+}
+
+void construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(const cv::Size &imageSize_rgb, const cv::Mat &rgb_input_image, const cv::Mat &depth_boundary_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_mask)
+{
+	const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
+	//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
+	//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
+
+	cv::Mat dilated_depth_boundary_image;
+	cv::dilate(depth_boundary_image, dilated_depth_boundary_image, selement, cv::Point(-1, -1), 3);
+
+#if 1
+		// show dilated depth boundary mask.
+		cv::imshow("dilated depth boundary mask", dilated_depth_boundary_image);
+#endif
+
+	// construct depth guided mask.
+	depth_guided_mask.setTo(cv::Scalar::all(127));  // depth boundary region.
+	depth_guided_mask.setTo(cv::Scalar::all(255), depth_validity_mask & ~dilated_depth_boundary_image);  // valid depth region (foreground).
+	depth_guided_mask.setTo(cv::Scalar::all(0), ~depth_validity_mask & ~dilated_depth_boundary_image);  // invalid depth region (background).
+}
+
+void run_grabcut(const cv::Size &imageSize_rgb, const cv::Mat &rgb_input_image, const cv::Mat &depth_guided_mask)
+{
+	// PPP [] >>
+	//	5. 추출된 superpixel index들로부터 foreground & background 영역을 추출.
+	//		선택된 depth range로부터 얻은 영역을 1로, 그외 영역을 0으로 지정한 후, 추출된 superpixel index와 bit-and operation.
+	//		1을 가지는 영역의 boundary를 GrabCut의 foreground seed로 사용.
+	//		선택된 depth range로부터 얻은 영역을 0로, 그외 영역을 1으로 지정한 후, 추출된 superpixel index와 bit-and operation.
+	//		1을 가지는 영역의 boundary를 GrabCut의 background seed로 사용.
+
+	cv::Mat grabCut_mask(imageSize_rgb, CV_8UC1);
+	cv::Mat grabCut_bgModel, grabCut_fgModel;
+
+#if 1
+	// GC_BGD, GC_FGD, GC_PR_BGD, GC_PR_FGD
+	//grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_BGD));
+	grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_FGD));
+	grabCut_mask.setTo(cv::Scalar::all(cv::GC_FGD), 255 == depth_guided_mask);  // foreground.
+	grabCut_mask.setTo(cv::Scalar::all(cv::GC_BGD), 0 == depth_guided_mask);  // background.
+
+	cv::grabCut(rgb_input_image, grabCut_mask, cv::Rect(), grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_MASK);
+#else
+	// FIXME [enhance] >> too slow. speed up.
+	const cv::Rect grabCut_rect(local::get_bounding_rect(depth_guided_mask > 0));
+
+	cv::grabCut(rgb_input_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_RECT);
+#endif
+
+	cv::Mat tmp_image;
+#if 0
+	// show foreground & background masks.
+	//cv::imshow("foreground mask", 255 == depth_guided_mask);  // foreground.
+	//cv::imshow("background mask", 0 == depth_guided_mask);  // background.
+
+	// show GrabCut mask.
+	grabCut_mask.convertTo(tmp_image, CV_8UC1, 255.0 / cv::GC_PR_FGD, 0.0);
+	//cv::rectangle(tmp_image, grabCut_rect, cv::Scalar::all(255), 2);
+	cv::imshow("GrabCut mask", tmp_image);
+#endif
+
+	cv::grabCut(rgb_input_image, grabCut_mask, cv::Rect(), grabCut_bgModel, grabCut_fgModel, 1, cv::GC_EVAL);
+
+#if 1
+	rgb_input_image.copyTo(tmp_image, cv::Mat(grabCut_mask & 1));
+	cv::imshow("GrabCut result", tmp_image);
+#endif
+}
+
+void run_efficient_graph_based_image_segmentation(const cv::Size &imageSize_rgb, const cv::Mat &rgb_input_image, const cv::Mat &depth_guided_mask)
+{
+}
+
 }  // namespace swl
 
 int main(int argc, char *argv[])
@@ -212,14 +359,6 @@ int main(int argc, char *argv[])
 	int retval = EXIT_SUCCESS;
 	try
 	{
-		const int num_segments = 1200;
-		const SEGMETHOD seg_method = XYZ_SLIC;  // SLIC, RGB_SLIC, XYZ_SLIC
-		const double seg_weight = 0.3;
-
-		const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
-		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
-		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
-
 		//
 		const std::size_t num_images = 4;
 		const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480);
@@ -236,18 +375,23 @@ int main(int argc, char *argv[])
 		depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023346.png");
 		depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023359.png");
 
+		const bool use_depth_range_filtering = false;
 		std::vector<cv::Range> depth_range_list;
-		depth_range_list.reserve(num_images);
-/*
-		depth_range_list.push_back(cv::Range(500, 3420));
-		depth_range_list.push_back(cv::Range(500, 3120));
-		depth_range_list.push_back(cv::Range(500, 1700));
-		depth_range_list.push_back(cv::Range(500, 1000));
-*/
-		depth_range_list.push_back(cv::Range(500, 3000));
-		depth_range_list.push_back(cv::Range(500, 3000));
-		depth_range_list.push_back(cv::Range(500, 3000));
-		depth_range_list.push_back(cv::Range(500, 3000));
+		{
+			depth_range_list.reserve(num_images);
+#if 0
+			depth_range_list.push_back(cv::Range(500, 3420));
+			depth_range_list.push_back(cv::Range(500, 3120));
+			depth_range_list.push_back(cv::Range(500, 1700));
+			depth_range_list.push_back(cv::Range(500, 1000));
+#else
+			const int min_depth = 100, max_depth = 3000;
+			depth_range_list.push_back(cv::Range(min_depth, max_depth));
+			depth_range_list.push_back(cv::Range(min_depth, max_depth));
+			depth_range_list.push_back(cv::Range(min_depth, max_depth));
+			depth_range_list.push_back(cv::Range(min_depth, max_depth));
+#endif
+		}
 
 		//
 		boost::scoped_ptr<swl::KinectSensor> kinect;
@@ -267,13 +411,13 @@ int main(int argc, char *argv[])
 			kinect->initialize();
 		}
 
+		const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
+		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
+		//const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
+
 		//
-		cv::Mat rgb_superpixel_mask; 
 		cv::Mat rectified_depth_image, rectified_rgb_image;
-		cv::Mat filtered_depth_image, depth_boundary_mask;
-		cv::Mat filtered_superpixel_mask(imageSize_rgb, CV_8UC1), filtered_superpixel_indexes(imageSize_rgb, CV_32SC1); 
-		cv::Mat foreground_mask, background_mask;
-		cv::Mat grabCut_mask(imageSize_rgb, CV_8UC1), grabCut_bgModel, grabCut_fgModel;
+		cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), depth_boundary_image, depth_guided_mask(imageSize_rgb, CV_8UC1);
 		double minVal = 0.0, maxVal = 0.0;
 		cv::Mat tmp_image;
 		for (std::size_t i = 0; i < num_images; ++i)
@@ -295,154 +439,123 @@ int main(int argc, char *argv[])
 			const int64 start = cv::getTickCount();
 
 			// rectify Kinect images.
-			kinect->rectifyImagePair(depth_input_image, rgb_input_image, rectified_depth_image, rectified_rgb_image);
-
-#if 1
-			// show rectified images
-			cv::minMaxLoc(rectified_depth_image, &minVal, &maxVal);
-			rectified_depth_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
-
-			cv::imshow("rectified depth image", tmp_image);
-			cv::imshow("rectified RGB image", rectified_rgb_image);
-#endif
-
-#if 0
-			std::ostringstream strm1, strm2;
-			strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
-			cv::imwrite(strm1.str(), rectified_depth_image);
-			strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
-			cv::imwrite(strm2.str(), rectified_rgb_image);
-#endif
-
-			// PPP [] >>
-			//	1. run superpixel.
-
-			// superpixel mask consists of segment indexes.
-#if __USE_RECTIFIED_IMAGE
-			swl::create_superpixel_by_gSLIC(rectified_rgb_image, rgb_superpixel_mask, seg_method, seg_weight, num_segments);
-#else
-			swl::create_superpixel_by_gSLIC(rgb_input_image, rgb_superpixel_mask, seg_method, seg_weight, num_segments);
-#endif
-
-#if 0
-			// show superpixel mask.
-			cv::minMaxLoc(rgb_superpixel_mask, &minVal, &maxVal);
-			rgb_superpixel_mask.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
-
-			cv::imshow("superpixels by gSLIC - mask", tmp_image);
-#endif
-
-#if 0
-			// show superpixel boundary.
-			cv::Mat rgb_superpixel_boundary;
-			swl::create_superpixel_boundary(rgb_superpixel_mask, rgb_superpixel_boundary);
-
-			rgb_input_image.copyTo(tmp_image);
-			tmp_image.setTo(cv::Scalar(0, 0, 255), rgb_superpixel_boundary);
-
-			cv::imshow("superpixels by gSLIC - boundary", tmp_image);
-#endif
-
-			// PPP [] >>
-			//	2. 선택된 depth range로부터 얻은 영역의 boundary를 얻음.
-			//		Depth histogram을 이용하는 것은 용이하지 않음.
-			//		Depth image의 edge 정보로부터 boundary 추출.
-
-			// extract boundary from depth info.
-#if __USE_RECTIFIED_IMAGE
-			cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), filtered_depth_image);
-
-			cv::erode(filtered_depth_image, filtered_depth_image, selement, cv::Point(-1, -1), 3);
-			cv::dilate(filtered_depth_image, filtered_depth_image, selement, cv::Point(-1, -1), 3);
-#else
-			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), filtered_depth_image);
-#endif
-
-			cv::minMaxLoc(filtered_depth_image, &minVal, &maxVal);
-			filtered_depth_image.convertTo(tmp_image, CV_8UC1, 255.0 / maxVal, 0.0);
-			local::canny(tmp_image, depth_boundary_mask);
-
-			cv::dilate(depth_boundary_mask, depth_boundary_mask, selement, cv::Point(-1, -1), 3);
-
-#if 0
-			// show filtered depth image.
-			cv::imshow("filtered depth image", filtered_depth_image);
-			// show depth boundary mask.
-			//cv::imshow("depth boundary mask", depth_boundary_mask);
-#endif
-
-			// FIXME [enhance] >> too slow. speed up.
 			{
-				// PPP [] >>
-				//	3. Depth boundary와 겹치는 superpixel의 index를 얻어옴.
-				//		Depth boundary를 mask로 사용하면 쉽게 index를 추출할 수 있음.
-
-				filtered_superpixel_indexes.setTo(cv::Scalar::all(0));
-				rgb_superpixel_mask.copyTo(filtered_superpixel_indexes, depth_boundary_mask);
-				cv::MatIterator_<int> itBegin = filtered_superpixel_indexes.begin<int>(), itEnd = filtered_superpixel_indexes.end<int>();
-				std::sort(itBegin, itEnd);
-				cv::MatIterator_<int> itEndNew = std::unique(itBegin, itEnd);
-				//std::size_t count = 0;
-				//for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it, ++count)
-				//	std::cout << *it << std::endl;
-
-				// PPP [] >>
-				//	4. 추출된 superpixel index들에 해당하는 superpixel 영역을 0, 그외 영역을 1로 지정.
-
-				filtered_superpixel_mask.setTo(cv::Scalar::all(255));
-				for (cv::MatIterator_<int> it = itBegin; it != itEndNew; ++it)
-					// FIXME [check] >> why is 0 contained in index list?
-					if (*it)
-						filtered_superpixel_mask.setTo(cv::Scalar::all(0), rgb_superpixel_mask == *it);
+				kinect->rectifyImagePair(depth_input_image, rgb_input_image, rectified_depth_image, rectified_rgb_image);
 
 #if 1
-				// show filtered superpixel index mask.
-				cv::imshow("filtered superpixel index mask", filtered_superpixel_mask);
+				// show rectified images
+				cv::imshow("rectified RGB image", rectified_rgb_image);
+
+				cv::minMaxLoc(rectified_depth_image, &minVal, &maxVal);
+				rectified_depth_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+				cv::imshow("rectified depth image", tmp_image);
+#endif
+
+#if 0
+				std::ostringstream strm1, strm2;
+				strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
+				cv::imwrite(strm1.str(), rectified_depth_image);
+				strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
+				cv::imwrite(strm2.str(), rectified_rgb_image);
 #endif
 			}
 
-			// run GrabCut
-			// FIXME [enhance] >> too slow. speed up.
-			const cv::Rect grabCut_rect(local::get_bounding_rect(filtered_superpixel_mask));
+			// make depth validity mask.
+			{
 #if __USE_RECTIFIED_IMAGE
-			cv::grabCut(rectified_rgb_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_RECT);
+				if (use_depth_range_filtering)
+					cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+				else
+					cv::Mat(rectified_depth_image > 0).copyTo(depth_validity_mask);
 #else
-			cv::grabCut(rgb_input_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_INIT_WITH_RECT);
+				if (use_depth_range_filtering)
+					cv::inRange(depth_input_image, cv::Scalar::all(valid_depth_range.start), cv::Scalar::all(valid_depth_range.end), depth_validity_mask);
+				else
+					cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
 #endif
 
-			// PPP [] >>
-			//	5. 추출된 superpixel index들로부터 foreground & background 영역을 추출.
-			//		선택된 depth range로부터 얻은 영역을 1로, 그외 영역을 0으로 지정한 후, 추출된 superpixel index와 bit-and operation.
-			//		1을 가지는 영역의 boundary를 GrabCut의 foreground seed로 사용.
-			//		선택된 depth range로부터 얻은 영역을 0로, 그외 영역을 1으로 지정한 후, 추출된 superpixel index와 bit-and operation.
-			//		1을 가지는 영역의 boundary를 GrabCut의 background seed로 사용.
+				cv::erode(depth_validity_mask, depth_validity_mask, selement, cv::Point(-1, -1), 3);
+				cv::dilate(depth_validity_mask, depth_validity_mask, selement, cv::Point(-1, -1), 3);
 
-			// GC_BGD, GC_FGD, GC_PR_BGD, GC_PR_FGD
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_BGD));
-			//grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_FGD));
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_FGD), filtered_depth_image & filtered_superpixel_mask);
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_BGD), ~filtered_depth_image & filtered_superpixel_mask);
+#if 1
+				// show depth validity mask.
+				cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+			}
+
+			// extract boundary from depth image by edge detector.
+			{
+#if __USE_RECTIFIED_IMAGE
+				rectified_depth_image.copyTo(tmp_image, depth_validity_mask);
+#else
+				depth_input_image.copyTo(tmp_image, depth_validity_mask);
+#endif
+
+				cv::minMaxLoc(tmp_image, &minVal, &maxVal);
+				tmp_image.convertTo(tmp_image, CV_8UC1, 255.0 / maxVal, 0.0);
+
+				//const double low = 1.0, high = 255.0;
+				//const double alpha = (high - low) / (depth_range_list[i].end - depth_range_list[i].start), beta = low - alpha * depth_range_list[i].start;
+				//tmp_image.convertTo(tmp_image, CV_8UC1, alpha, beta);
+				
+				local::canny(tmp_image, depth_boundary_image);
+
+
+#if 1
+				// show depth boundary image.
+				cv::imshow("depth boundary by Canny", depth_boundary_image);
+#endif
+			}
 
 #if 0
-			// show foreground & background masks.
-			//cv::imshow("foreground mask", filtered_depth_image & filtered_superpixel_mask);
-			//cv::imshow("background mask", ~filtered_depth_image & filtered_superpixel_mask);
+			// construct depth guided mask using superpixel.
+			{
+				const int num_segments = 2500;
+				const SEGMETHOD seg_method = XYZ_SLIC;  // SLIC, RGB_SLIC, XYZ_SLIC
+				const double seg_weight = 0.3;
 
-			// show GrabCut mask.
-			grabCut_mask.convertTo(tmp_image, CV_8UC1, 255.0 / cv::GC_PR_FGD, 0.0);
-			//cv::rectangle(tmp_image, grabCut_rect, cv::Scalar::all(255), 2);
-			cv::imshow("GrabCut mask", tmp_image);
-#endif
+				//cv::dilate(depth_boundary_image, depth_boundary_image, selement, cv::Point(-1, -1), 3);
 
 #if __USE_RECTIFIED_IMAGE
-			cv::grabCut(rectified_rgb_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_EVAL);
+				swl::construct_depth_guided_mask_using_superpixel(imageSize_rgb, rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
 #else
-			cv::grabCut(rgb_input_image, grabCut_mask, grabCut_rect, grabCut_bgModel, grabCut_fgModel, 1, cv::GC_EVAL);
+				swl::construct_depth_guided_mask_using_superpixel(imageSize_rgb, rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
+#endif
+			}
+#elif 1
+			// construct depth guided mask using morphological operation of depth boundary.
+			{
+#if __USE_RECTIFIED_IMAGE
+				swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(imageSize_rgb, rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
+#else
+				swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(imageSize_rgb, rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
+#endif
+			}
 #endif
 
 #if 1
-			rectified_rgb_image.copyTo(tmp_image, cv::Mat(grabCut_mask & 1));
-			cv::imshow("GrabCut result", tmp_image);
+			// show depth guided mask.
+			cv::imshow("depth guided mask", depth_guided_mask);
+#endif
+
+#if 0
+			// segment image by GrabCut algorithm.
+			{
+#if __USE_RECTIFIED_IMAGE
+				swl::run_grabcut(imageSize_rgb, rectified_rgb_image, depth_guided_mask);
+#else
+				swl::run_grabcut(imageSize_rgb, rgb_input_image, depth_guided_mask);
+#endif
+			}
+#else
+			// segment image by efficient graph-based image segmentation algorithm.
+			{
+#if __USE_RECTIFIED_IMAGE
+				swl::run_efficient_graph_based_image_segmentation(imageSize_rgb, rectified_rgb_image, depth_guided_mask);
+#else
+				swl::run_efficient_graph_based_image_segmentation(imageSize_rgb, rgb_input_image, depth_guided_mask);
+#endif
+			}
 #endif
 
 			const int64 elapsed = cv::getTickCount() - start;
