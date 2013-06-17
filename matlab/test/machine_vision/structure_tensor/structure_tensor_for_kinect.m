@@ -12,20 +12,20 @@
 % load images
 
 rgb_image_file_list = [
-	struct('filename', 'kinect_rgba_rectified_20130614T162309.png', 'rgb', true),
-	struct('filename', 'kinect_rgba_rectified_20130614T162314.png', 'rgb', true),
-	struct('filename', 'kinect_rgba_rectified_20130614T162348.png', 'rgb', true),
-	struct('filename', 'kinect_rgba_rectified_20130614T162459.png', 'rgb', true),
-	struct('filename', 'kinect_rgba_rectified_20130614T162525.png', 'rgb', true)
-	struct('filename', 'kinect_rgba_rectified_20130614T162552.png', 'rgb', true)
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162309.png', 'rgb', true),
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162314.png', 'rgb', true),
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162348.png', 'rgb', true),
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162459.png', 'rgb', true),
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162525.png', 'rgb', true)
+	struct('filename', './kinect/kinect_rgba_rectified_20130614T162552.png', 'rgb', true)
 ];
 depth_image_file_list = [
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162309.png', 'rgb', false),
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162314.png', 'rgb', false),
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162348.png', 'rgb', false),
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162459.png', 'rgb', false),
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162525.png', 'rgb', false)
-	struct('filename', 'kinect_depth_rectified_valid_20130614T162552.png', 'rgb', false)
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162309.png', 'rgb', false),
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162314.png', 'rgb', false),
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162348.png', 'rgb', false),
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162459.png', 'rgb', false),
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162525.png', 'rgb', false)
+	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162552.png', 'rgb', false)
 ];
 num_image_pairs = length(rgb_image_file_list);
 
@@ -71,6 +71,8 @@ for kk = 1:num_image_pairs
 	%--------------------------------------------------------------------
 	% post-processing
 
+	% [ref] http://en.wikipedia.org/wiki/Structure_tensor
+
 	[rows, cols] = size(depth_img);
 	coherence = zeros(rows, cols);
 	angle1 = zeros(rows, cols);
@@ -94,8 +96,24 @@ for kk = 1:num_image_pairs
 	%--------------------------------------------------------------------
 	% save results
 
-	filename = sprintf('structure_tensor_ev_ratio_%d.png', kk);
-	imwrite(ev_ratio, filename);
+	if true
+		filename = sprintf('structure_tensor_ev_ratio_%d.png', kk);
+		imwrite(ev_ratio, filename, 'bitdepth', 32);
+	else
+		filename = sprintf('./kinect/structure_tensor_ev_ratio_%d.tif', kk);
+		t = Tiff(filename, 'w');
+		tagstruct.ImageLength = size(ev_ratio, 1);
+		tagstruct.ImageWidth = size(ev_ratio, 2);
+		tagstruct.Compression = Tiff.Compression.None;
+		tagstruct.SampleFormat = Tiff.SampleFormat.IEEEFP;
+		tagstruct.Photometric = Tiff.Photometric.MinIsBlack;
+		tagstruct.BitsPerSample = 32;
+		tagstruct.SamplesPerPixel = 1;
+		tagstruct.PlanarConfiguration = Tiff.PlanarConfiguration.Chunky;
+		t.setTag(tagstruct); 
+		t.write(single(ev_ratio)); 
+		t.close();
+	end;
 
 	%--------------------------------------------------------------------
 	% show results
