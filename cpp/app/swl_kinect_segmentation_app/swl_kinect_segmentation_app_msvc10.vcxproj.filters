@@ -98,6 +98,12 @@
     <ClCompile Include="efficient_graph_based_image_segmentation_lib\segment.cpp">
       <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
     </ClCompile>
+    <ClCompile Include="EfficientGraphBasedImageSegmentation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="gslic_lib\cudaImgTrans.cu">
