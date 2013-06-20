@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="swl_kinect_segmentation_app" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="../../bin/Debug/swl_kinect_segmentation_app_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Debug/" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="../../bin/Release/swl_kinect_segmentation_app" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/Release/" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add option="-fexceptions" />
+			<Add directory="./efficient_graph_based_image_segmentation_lib" />
+			<Add directory="../../inc" />
+			<Add directory="/usr/local/cuda/include" />
+			<Add directory="/usr/local/include" />
+		</Compiler>
+		<Linker>
+			<Add library="opencv_imgproc" />
+			<Add library="opencv_highgui" />
+			<Add library="opencv_core" />
+			<Add directory="/usr/local/cuda/lib" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
+		<Unit filename="EfficientGraphBasedImageSegmentation.cpp" />
+		<Unit filename="Util.cpp" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/convolve.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/disjoint-set.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/filter.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/image.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/imconv.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/imutil.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/misc.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/pnmfile.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/segment-graph.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/segment-image.h" />
+		<Unit filename="efficient_graph_based_image_segmentation_lib/segment.cpp" />
+		<Unit filename="gSLIC.cpp" />
+		<Unit filename="gslic_lib/FastImgSeg.cpp" />
+		<Unit filename="gslic_lib/FastImgSeg.h" />
+		<Unit filename="gslic_lib/cudaDefines.h" />
+		<Unit filename="gslic_lib/cudaImgTrans.cu" />
+		<Unit filename="gslic_lib/cudaImgTrans.h" />
+		<Unit filename="gslic_lib/cudaSegEngine.cu" />
+		<Unit filename="gslic_lib/cudaSegEngine.h" />
+		<Unit filename="gslic_lib/cudaSegSLIC.cu" />
+		<Unit filename="gslic_lib/cudaSegSLIC.h" />
+		<Unit filename="gslic_lib/cudaUtil.cu" />
+		<Unit filename="gslic_lib/cudaUtil.h" />
+		<Unit filename="main.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
