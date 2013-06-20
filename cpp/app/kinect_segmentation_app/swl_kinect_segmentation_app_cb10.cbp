@@ -50,8 +50,9 @@
 			<Add library="opencv_imgproc" />
 			<Add library="opencv_highgui" />
 			<Add library="opencv_core" />
+			<Add library="cudart" />
 			<Add library="boost_timer" />
-			<Add directory="/usr/local/cuda/lib" />
+			<Add directory="/usr/local/cuda/lib64" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="EfficientGraphBasedImageSegmentation.cpp" />
