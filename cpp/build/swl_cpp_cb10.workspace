@@ -30,6 +30,7 @@
 		<Project filename="../src/kinematics/swl_kinematics_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 		</Project>
+		<Project filename="../app/kinect_segmentation_app/swl_kinect_segmentation_app_cb10.cbp" active="1" />
 		<Project filename="../test/kinematics_test/swl_kinematics_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/kinematics/swl_kinematics_cb10.cbp" />
@@ -122,7 +123,7 @@
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />
 		</Project>
-		<Project filename="../test/util_test/swl_util_test_cb10.cbp" active="1" />
+		<Project filename="../test/util_test/swl_util_test_cb10.cbp" />
 		<Project filename="../src/view/swl_view_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />

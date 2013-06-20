@@ -50,14 +50,20 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
+			<Add option="-fpermissive" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
+		<Linker>
+			<Add library="opencv_imgproc" />
+			<Add library="opencv_highgui" />
+			<Add library="opencv_core" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
 		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
-		<Unit filename="../../inc/swl/machine_vision/SIFT.h" />
-		<Unit filename="../../inc/swl/machine_vision/SURF.h" />
-		<Unit filename="SIFT.cpp" />
-		<Unit filename="SURF.cpp" />
+		<Unit filename="ImageRectificationUsingOpenCV.cpp" />
+		<Unit filename="ImageUndistortionUsingOpenCV.cpp" />
+		<Unit filename="KinectSensor.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

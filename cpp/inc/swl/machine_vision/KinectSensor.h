@@ -41,13 +41,13 @@ private:
 	void rectifyImagePairUsingDepth(const cv::Mat &ir_input_image, const cv::Mat &rgb_input_image, cv::Mat &ir_output_image, cv::Mat &rgb_output_image) const;
 	void computeHomogeneousImageCoordinates(const cv::Size &imageSize, const cv::Mat &K, const cv::Mat &distCoeffs, cv::Mat &IC_homo, cv::Mat &IC_homo_undist);
 
-	void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
+	void rectifyImagePairFromIRToRGBUsingDepth(
 		const cv::Mat &input_image_left, const cv::Mat &input_image_right, cv::Mat &output_image_left, cv::Mat &output_image_right,
 		const cv::Size &imageSize_left, const cv::Size &imageSize_right,
 		const cv::Mat &K_left, const cv::Mat &K_right, const cv::Mat &R, const cv::Mat &T,
 		const cv::Mat &IC_homo_left
 	) const;
-	void KinectSensor::rectifyImagePairFromRGBToIRUsingDepth(
+	void rectifyImagePairFromRGBToIRUsingDepth(
 		const cv::Mat &input_image_left, const cv::Mat &input_image_right, cv::Mat &output_image_left, cv::Mat &output_image_right,
 		const cv::Size &imageSize_left, const cv::Size &imageSize_right,
 		const cv::Mat &K_left, const cv::Mat &K_right, const cv::Mat &R, const cv::Mat &T,
