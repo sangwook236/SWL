@@ -83,7 +83,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_test", "..\test
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_test", "..\test\pattern_recognition_test\swl_pattern_recognition_test_msvc10.vcxproj", "{38E116CD-0D2C-4459-98BF-EDAAF8637547}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinect_segmentation_app", "..\app\swl_kinect_segmentation_app\swl_kinect_segmentation_app_msvc10.vcxproj", "{5E3E3B86-FD45-450D-8BDA-7447AB51F371}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinect_segmentation_app", "..\app\kinect_segmentation_app\swl_kinect_segmentation_app_msvc10.vcxproj", "{5E3E3B86-FD45-450D-8BDA-7447AB51F371}"
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
