@@ -15,9 +15,15 @@
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
+#include <stdexcept>
 
 
 #define __USE_RECTIFIED_IMAGE 1
+#if defined(_WIN32) || defined(WIN32)
+#define __USE_gSLIC 1
+#else
+#undef __USE_gSLIC
+#endif
 
 namespace {
 namespace local {
@@ -193,9 +199,20 @@ void load_kinect_sensor_parameters_from_RGB_to_IR(
 
 namespace swl {
 
+#if defined(__USE_gSLIC)
 // [ref] gSLIC.cpp
 void create_superpixel_by_gSLIC(const cv::Mat &input_image, cv::Mat &superpixel_mask, const SEGMETHOD seg_method, const double seg_weight, const int num_segments);
 void create_superpixel_boundary(const cv::Mat &superpixel_mask, cv::Mat &superpixel_boundary);
+#else
+void create_superpixel_by_gSLIC(const cv::Mat &input_image, cv::Mat &superpixel_mask, const SEGMETHOD seg_method, const double seg_weight, const int num_segments)
+{
+    throw std::runtime_error("gSLIC not supported");
+}
+void create_superpixel_boundary(const cv::Mat &superpixel_mask, cv::Mat &superpixel_boundary)
+{
+    throw std::runtime_error("gSLIC not supported");
+}
+#endif
 
 // [ref] EfficientGraphBasedImageSegmentation.cpp
 void segment_image_using_efficient_graph_based_image_segmentation_algorithm(
@@ -217,7 +234,7 @@ void construct_depth_guided_mask_using_superpixel(
 )
 {
 	cv::Mat rgb_superpixel_mask;
-	cv::Mat filtered_superpixel_mask(rgb_input_image.size(), CV_8UC1, cv::Scalar::all(255)), filtered_superpixel_indexes(rgb_input_image.size(), CV_32SC1, cv::Scalar::all(0)); 
+	cv::Mat filtered_superpixel_mask(rgb_input_image.size(), CV_8UC1, cv::Scalar::all(255)), filtered_superpixel_indexes(rgb_input_image.size(), CV_32SC1, cv::Scalar::all(0));
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 
@@ -511,7 +528,7 @@ void segment_image_based_on_depth_guided_map()
 			continue;
 		}
 
-		const int64 start = cv::getTickCount();
+		const int64 startTime = cv::getTickCount();
 
 		// rectify Kinect images.
 		{
@@ -537,7 +554,7 @@ void segment_image_based_on_depth_guided_map()
 
 		// make depth validity mask.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			if (use_depth_range_filtering)
 				cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
 			else
@@ -567,7 +584,7 @@ void segment_image_based_on_depth_guided_map()
 		// construct valid depth image.
 		{
 			valid_depth_image.setTo(cv::Scalar::all(0));
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			rectified_depth_image.copyTo(valid_depth_image, depth_validity_mask);
 #else
 			depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
@@ -588,7 +605,7 @@ void segment_image_based_on_depth_guided_map()
 			//const double low = 1.0, high = 255.0;
 			//const double alpha = (high - low) / (depth_range_list[i].end - depth_range_list[i].start), beta = low - alpha * depth_range_list[i].start;
 			//valid_depth_image.convertTo(tmp_image, CV_8UC1, alpha, beta);
-				
+
 			local::canny(tmp_image, depth_boundary_image);
 
 #if 1
@@ -606,7 +623,7 @@ void segment_image_based_on_depth_guided_map()
 
 			//cv::dilate(depth_boundary_image, depth_boundary_image, selement3, cv::Point(-1, -1), 3);
 
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::construct_depth_guided_mask_using_superpixel(rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
 #else
 			swl::construct_depth_guided_mask_using_superpixel(rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
@@ -615,7 +632,7 @@ void segment_image_based_on_depth_guided_map()
 #elif 1
 		// construct depth guided mask using morphological operation of depth boundary.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
 #else
 			swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
@@ -638,7 +655,7 @@ void segment_image_based_on_depth_guided_map()
 #if 0
 		// segment image by GrabCut algorithm.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::run_grabcut_using_depth_guided_mask(rectified_rgb_image, depth_guided_mask);
 #else
 			swl::run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_mask);
@@ -647,7 +664,7 @@ void segment_image_based_on_depth_guided_map()
 #elif 1
 		// segment image by efficient graph-based image segmentation algorithm.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::run_efficient_graph_based_image_segmentation(rectified_rgb_image, valid_depth_image, depth_guided_mask, fx_rgb, fy_rgb);
 #else
 			swl::run_efficient_graph_based_image_segmentation(rgb_input_image, valid_depth_image, depth_guided_mask, fx_rgb, fy_rgb);
@@ -655,7 +672,7 @@ void segment_image_based_on_depth_guided_map()
 		}
 #endif
 
-		const int64 elapsed = cv::getTickCount() - start;
+		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
 		const double etime = elapsed * 1000.0 / freq;
 		const double fps = freq / elapsed;
@@ -750,7 +767,7 @@ void segment_foreground_based_on_depth_guided_map()
 			continue;
 		}
 
-		const int64 start = cv::getTickCount();
+		const int64 startTime = cv::getTickCount();
 
 		// rectify Kinect images.
 		{
@@ -776,7 +793,7 @@ void segment_foreground_based_on_depth_guided_map()
 
 		// make depth validity mask.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			if (use_depth_range_filtering)
 				cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
 			else
@@ -806,7 +823,7 @@ void segment_foreground_based_on_depth_guided_map()
 		// construct valid depth image.
 		{
 			valid_depth_image.setTo(cv::Scalar::all(0));
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			rectified_depth_image.copyTo(valid_depth_image, depth_validity_mask);
 #else
 			depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
@@ -827,7 +844,7 @@ void segment_foreground_based_on_depth_guided_map()
 			//const double low = 1.0, high = 255.0;
 			//const double alpha = (high - low) / (depth_range_list[i].end - depth_range_list[i].start), beta = low - alpha * depth_range_list[i].start;
 			//valid_depth_image.convertTo(tmp_image, CV_8UC1, alpha, beta);
-				
+
 			local::canny(tmp_image, depth_boundary_image);
 
 #if 1
@@ -859,7 +876,7 @@ void segment_foreground_based_on_depth_guided_map()
 
 			//cv::dilate(depth_boundary_image, depth_boundary_image, selement3, cv::Point(-1, -1), 3);
 
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::construct_depth_guided_mask_using_superpixel(rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
 #else
 			swl::construct_depth_guided_mask_using_superpixel(rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask, num_segments, seg_method, seg_weight);
@@ -868,7 +885,7 @@ void segment_foreground_based_on_depth_guided_map()
 #elif 1
 		// construct depth guided mask using morphological operation of depth boundary.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(rectified_rgb_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
 #else
 			swl::construct_depth_guided_mask_using_morphological_operation_of_depth_boundary(rgb_input_image, depth_boundary_image, depth_validity_mask, depth_guided_mask);
@@ -891,7 +908,7 @@ void segment_foreground_based_on_depth_guided_map()
 #if 0
 		// segment image by GrabCut algorithm.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::run_grabcut_using_depth_guided_mask(rectified_rgb_image, depth_guided_mask);
 #else
 			swl::run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_mask);
@@ -900,7 +917,7 @@ void segment_foreground_based_on_depth_guided_map()
 #else
 		// segment image by efficient graph-based image segmentation algorithm.
 		{
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::run_efficient_graph_based_image_segmentation(rectified_rgb_image, valid_depth_image, depth_guided_mask, fx_rgb, fy_rgb);
 #else
 			swl::run_efficient_graph_based_image_segmentation(rgb_input_image, valid_depth_image, depth_guided_mask, fx_rgb, fy_rgb);
@@ -908,7 +925,7 @@ void segment_foreground_based_on_depth_guided_map()
 		}
 #endif
 
-		const int64 elapsed = cv::getTickCount() - start;
+		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
 		const double etime = elapsed * 1000.0 / freq;
 		const double fps = freq / elapsed;
@@ -1034,7 +1051,7 @@ void segment_foreground_based_on_structure_tensor()
 			continue;
 		}
 
-		const int64 start = cv::getTickCount();
+		const int64 startTime = cv::getTickCount();
 
 		// rectify Kinect images.
 		{
@@ -1204,7 +1221,7 @@ void segment_foreground_based_on_structure_tensor()
 			const std::size_t NUM_SNAKE_POINTS = 0;
 
 			cv::Mat gray_image;
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			cv::cvtColor(rectified_rgb_image, gray_image, CV_BGR2GRAY);
 #else
 			cv::cvtColor(rgb_input_image, gray_image, CV_BGR2GRAY);
@@ -1222,7 +1239,7 @@ void segment_foreground_based_on_structure_tensor()
 			}
 
 			// show results of fitting using Snake.
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			rectified_rgb_image.copyTo(tmp_image);
 #else
 			rgb_input_image.copyTo(tmp_image);
@@ -1264,7 +1281,7 @@ void segment_foreground_based_on_structure_tensor()
 			cv::imshow("eroded GrabCut mask", tmp_image);
 #endif
 
-#if __USE_RECTIFIED_IMAGE
+#if defined(__USE_RECTIFIED_IMAGE)
 			swl::run_grabcut_using_structure_tensor_mask(rectified_rgb_image, grabCut_mask);
 #else
 			swl::run_grabcut_using_structure_tensor_mask(rgb_input_image, grabCut_mask);
@@ -1272,7 +1289,335 @@ void segment_foreground_based_on_structure_tensor()
 		}
 #endif
 
-		const int64 elapsed = cv::getTickCount() - start;
+		const int64 elapsed = cv::getTickCount() - startTime;
+		const double freq = cv::getTickFrequency();
+		const double etime = elapsed * 1000.0 / freq;
+		const double fps = freq / elapsed;
+		std::cout << std::setprecision(4) << "elapsed time: " << etime <<  ", FPS: " << fps << std::endl;
+
+		const unsigned char key = cv::waitKey(0);
+		if (27 == key)
+			break;
+	}
+
+	cv::destroyAllWindows();
+}
+
+void segment_foreground_using_single_layered_graphical_model()
+{
+	const std::size_t num_images = 6;
+	const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480);
+
+	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
+	rgb_input_file_list.reserve(num_images);
+	depth_input_file_list.reserve(num_images);
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
+
+	const bool use_depth_range_filtering = false;
+	std::vector<cv::Range> depth_range_list;
+	{
+		depth_range_list.reserve(num_images);
+		const int min_depth = 100, max_depth = 4000;
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+	}
+
+	//
+	boost::scoped_ptr<swl::KinectSensor> kinect;
+	double fx_rgb = 0.0, fy_rgb = 0.0;
+	{
+		const bool useIRtoRGB = true;
+		cv::Mat K_ir, K_rgb;
+		cv::Mat distCoeffs_ir, distCoeffs_rgb;
+		cv::Mat R, T;
+
+		// load the camera parameters of a Kinect sensor.
+		if (useIRtoRGB)
+			local::load_kinect_sensor_parameters_from_IR_to_RGB(K_ir, distCoeffs_ir, K_rgb, distCoeffs_rgb, R, T);
+		else
+			local::load_kinect_sensor_parameters_from_RGB_to_IR(K_rgb, distCoeffs_rgb, K_ir, distCoeffs_ir, R, T);
+
+		fx_rgb = K_rgb.at<double>(0, 0);
+		fy_rgb = K_rgb.at<double>(1, 1);
+
+		kinect.reset(new swl::KinectSensor(useIRtoRGB, imageSize_ir, K_ir, distCoeffs_ir, imageSize_rgb, K_rgb, distCoeffs_rgb, R, T));
+		kinect->initialize();
+	}
+
+	const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
+	const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
+	const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
+
+	//
+	cv::Mat rectified_rgb_image, rectified_depth_image;
+	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_boundary_image, depth_guided_mask(imageSize_rgb, CV_8UC1), depth_changing_image(imageSize_rgb, CV_8UC1);
+	double minVal = 0.0, maxVal = 0.0;
+	cv::Mat tmp_image;
+	for (std::size_t i = 0; i < num_images; ++i)
+	{
+		// load images.
+		const cv::Mat rgb_input_image(cv::imread(rgb_input_file_list[i], CV_LOAD_IMAGE_COLOR));
+		if (rgb_input_image.empty())
+		{
+			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
+			continue;
+		}
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		if (depth_input_image.empty())
+		{
+			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
+			continue;
+		}
+
+		const int64 startTime = cv::getTickCount();
+
+		// rectify Kinect images.
+		{
+			kinect->rectifyImagePair(depth_input_image, rgb_input_image, rectified_depth_image, rectified_rgb_image);
+
+#if 1
+			// show rectified images
+			cv::imshow("rectified RGB image", rectified_rgb_image);
+
+			cv::minMaxLoc(rectified_depth_image, &minVal, &maxVal);
+			rectified_depth_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+			cv::imshow("rectified depth image", tmp_image);
+#endif
+
+#if 0
+			std::ostringstream strm1, strm2;
+			strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
+			cv::imwrite(strm1.str(), rectified_depth_image);
+			strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
+			cv::imwrite(strm2.str(), rectified_rgb_image);
+#endif
+		}
+
+		// make depth validity mask.
+		{
+#if defined(__USE_RECTIFIED_IMAGE)
+			if (use_depth_range_filtering)
+				cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+			else
+				cv::Mat(rectified_depth_image > 0).copyTo(depth_validity_mask);
+#else
+			if (use_depth_range_filtering)
+				cv::inRange(depth_input_image, cv::Scalar::all(valid_depth_range.start), cv::Scalar::all(valid_depth_range.end), depth_validity_mask);
+			else
+				cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
+#endif
+
+			cv::erode(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
+			cv::dilate(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
+
+#if 1
+			// show depth validity mask.
+			cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+#endif
+		}
+
+		// construct valid depth image.
+		{
+			valid_depth_image.setTo(cv::Scalar::all(0));
+#if defined(__USE_RECTIFIED_IMAGE)
+			rectified_depth_image.copyTo(valid_depth_image, depth_validity_mask);
+#else
+			depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
+#endif
+
+#if 0
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+#endif
+		}
+
+		const int64 elapsed = cv::getTickCount() - startTime;
+		const double freq = cv::getTickFrequency();
+		const double etime = elapsed * 1000.0 / freq;
+		const double fps = freq / elapsed;
+		std::cout << std::setprecision(4) << "elapsed time: " << etime <<  ", FPS: " << fps << std::endl;
+
+		const unsigned char key = cv::waitKey(0);
+		if (27 == key)
+			break;
+	}
+
+	cv::destroyAllWindows();
+}
+
+void segment_foreground_using_two_layered_graphical_model()
+{
+	const std::size_t num_images = 6;
+	const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480);
+
+	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
+	rgb_input_file_list.reserve(num_images);
+	depth_input_file_list.reserve(num_images);
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
+
+	const bool use_depth_range_filtering = false;
+	std::vector<cv::Range> depth_range_list;
+	{
+		depth_range_list.reserve(num_images);
+		const int min_depth = 100, max_depth = 4000;
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+	}
+
+	//
+	boost::scoped_ptr<swl::KinectSensor> kinect;
+	double fx_rgb = 0.0, fy_rgb = 0.0;
+	{
+		const bool useIRtoRGB = true;
+		cv::Mat K_ir, K_rgb;
+		cv::Mat distCoeffs_ir, distCoeffs_rgb;
+		cv::Mat R, T;
+
+		// load the camera parameters of a Kinect sensor.
+		if (useIRtoRGB)
+			local::load_kinect_sensor_parameters_from_IR_to_RGB(K_ir, distCoeffs_ir, K_rgb, distCoeffs_rgb, R, T);
+		else
+			local::load_kinect_sensor_parameters_from_RGB_to_IR(K_rgb, distCoeffs_rgb, K_ir, distCoeffs_ir, R, T);
+
+		fx_rgb = K_rgb.at<double>(0, 0);
+		fy_rgb = K_rgb.at<double>(1, 1);
+
+		kinect.reset(new swl::KinectSensor(useIRtoRGB, imageSize_ir, K_ir, distCoeffs_ir, imageSize_rgb, K_rgb, distCoeffs_rgb, R, T));
+		kinect->initialize();
+	}
+
+	const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
+	const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
+	const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
+
+	//
+	cv::Mat rectified_rgb_image, rectified_depth_image;
+	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_boundary_image, depth_guided_mask(imageSize_rgb, CV_8UC1), depth_changing_image(imageSize_rgb, CV_8UC1);
+	double minVal = 0.0, maxVal = 0.0;
+	cv::Mat tmp_image;
+	for (std::size_t i = 0; i < num_images; ++i)
+	{
+		// load images.
+		const cv::Mat rgb_input_image(cv::imread(rgb_input_file_list[i], CV_LOAD_IMAGE_COLOR));
+		if (rgb_input_image.empty())
+		{
+			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
+			continue;
+		}
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		if (depth_input_image.empty())
+		{
+			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
+			continue;
+		}
+
+		const int64 startTime = cv::getTickCount();
+
+		// rectify Kinect images.
+		{
+			kinect->rectifyImagePair(depth_input_image, rgb_input_image, rectified_depth_image, rectified_rgb_image);
+
+#if 1
+			// show rectified images
+			cv::imshow("rectified RGB image", rectified_rgb_image);
+
+			cv::minMaxLoc(rectified_depth_image, &minVal, &maxVal);
+			rectified_depth_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+			cv::imshow("rectified depth image", tmp_image);
+#endif
+
+#if 0
+			std::ostringstream strm1, strm2;
+			strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
+			cv::imwrite(strm1.str(), rectified_depth_image);
+			strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
+			cv::imwrite(strm2.str(), rectified_rgb_image);
+#endif
+		}
+
+		// make depth validity mask.
+		{
+#if defined(__USE_RECTIFIED_IMAGE)
+			if (use_depth_range_filtering)
+				cv::inRange(rectified_depth_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+			else
+				cv::Mat(rectified_depth_image > 0).copyTo(depth_validity_mask);
+#else
+			if (use_depth_range_filtering)
+				cv::inRange(depth_input_image, cv::Scalar::all(valid_depth_range.start), cv::Scalar::all(valid_depth_range.end), depth_validity_mask);
+			else
+				cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
+#endif
+
+			cv::erode(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
+			cv::dilate(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
+
+#if 1
+			// show depth validity mask.
+			cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+#endif
+		}
+
+		// construct valid depth image.
+		{
+			valid_depth_image.setTo(cv::Scalar::all(0));
+#if defined(__USE_RECTIFIED_IMAGE)
+			rectified_depth_image.copyTo(valid_depth_image, depth_validity_mask);
+#else
+			depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
+#endif
+
+#if 0
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+#endif
+		}
+
+		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
 		const double etime = elapsed * 1000.0 / freq;
 		const double fps = freq / elapsed;
@@ -1297,7 +1642,11 @@ int main(int argc, char *argv[])
 
 		//swl::segment_image_based_on_depth_guided_map();
 		//swl::segment_foreground_based_on_depth_guided_map();
-		swl::segment_foreground_based_on_structure_tensor();
+		//swl::segment_foreground_based_on_structure_tensor();
+
+        // FIXME [implement] >> not completed
+        swl::segment_foreground_using_single_layered_graphical_model();
+		//swl::segment_foreground_using_two_layered_graphical_model();
 
 #if 0
 		// for testing.
