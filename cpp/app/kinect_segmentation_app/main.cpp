@@ -4,14 +4,24 @@
 #endif
 #include "swl/machine_vision/KinectSensor.h"
 #include "gslic_lib/FastImgSeg.h"
+#include <opengm/opengm.hxx>
+#include <opengm/graphicalmodel/graphicalmodel.hxx>
+#include <opengm/graphicalmodel/space/simplediscretespace.hxx>
+#include <opengm/graphicalmodel/space/grid_space.hxx>
+#include <opengm/operations/adder.hxx>
+#include <opengm/inference/graphcut.hxx>
+#include <opengm/inference/auxiliary/minstcutkolmogorov.hxx>
+#include <opengm/inference/auxiliary/minstcutboost.hxx>
+#include <opengm/functions/function_registration.hxx>
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
 #include <boost/smart_ptr.hpp>
+#include <boost/timer/timer.hpp>
+#include <iostream>
+#include <iomanip>
 #include <algorithm>
 #include <vector>
 #include <iterator>
-#include <iostream>
-#include <iomanip>
 #include <cstdlib>
 #include <cmath>
 #include <ctime>
@@ -24,6 +34,8 @@
 #else
 #undef __USE_gSLIC
 #endif
+//#define __USE_GRID_SPACE 1
+#define __USE_8_NEIGHBORHOOD_SYSTEM 1
 
 namespace {
 namespace local {
@@ -213,6 +225,10 @@ void create_superpixel_boundary(const cv::Mat &superpixel_mask, cv::Mat &superpi
     throw std::runtime_error("gSLIC not supported");
 }
 #endif
+
+void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst);
+void guo_hall_thinning_algorithm(cv::Mat &im);
+bool simple_convex_hull(const cv::Mat &img, const cv::Rect &roi, const int pixVal, std::vector<cv::Point> &convexHull);
 
 // [ref] EfficientGraphBasedImageSegmentation.cpp
 void segment_image_using_efficient_graph_based_image_segmentation_algorithm(
@@ -521,7 +537,7 @@ void segment_image_based_on_depth_guided_map()
 			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
 			continue;
 		}
-		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));  // CV_16UC1
 		if (depth_input_image.empty())
 		{
 			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
@@ -760,7 +776,7 @@ void segment_foreground_based_on_depth_guided_map()
 			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
 			continue;
 		}
-		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));  // CV_16UC1
 		if (depth_input_image.empty())
 		{
 			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
@@ -1023,7 +1039,7 @@ void segment_foreground_based_on_structure_tensor()
 
 	//
 	cv::Mat rectified_rgb_image, rectified_depth_image;
-	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_imag, contour_image;
+	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), contour_image;
 	const bool use_color_processed_structure_tensor_mask = false;
 	cv::Mat processed_structure_tensor_mask(imageSize_mask, use_color_processed_structure_tensor_mask ? CV_8UC3 : CV_8UC1);
 	cv::Mat grabCut_mask(imageSize_mask, CV_8UC1);
@@ -1038,7 +1054,7 @@ void segment_foreground_based_on_structure_tensor()
 			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
 			continue;
 		}
-		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));  // CV_16UC1
 		if (depth_input_image.empty())
 		{
 			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
@@ -1303,14 +1319,270 @@ void segment_foreground_based_on_structure_tensor()
 	cv::destroyAllWindows();
 }
 
+double compute_constrast_parameter(const cv::Mat &rgb_img)
+{
+	const std::size_t Nx = rgb_img.cols;  // width of the grid
+	const std::size_t Ny = rgb_img.rows;  // height of the grid
+
+	double sum = 0.0;
+	std::size_t count = 0;
+	// An 4-neighborhood or 8-neighborhood system in 2D (4-connectivity or 8-connectivity).
+	for (std::size_t y = 0; y < Ny; ++y)
+	{
+		for (std::size_t x = 0; x < Nx; ++x)
+		{
+			const cv::Vec3b &pix1 = rgb_img.at<cv::Vec3b>(y, x);
+			if (x + 1 < Nx)  // (x, y) -- (x + 1, y)
+			{
+				const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y, x + 1);
+				const double norm = cv::norm(pix1 - pix2);
+				sum += norm * norm;
+				++count;
+			}
+			if (y + 1 < Ny)  // (x, y) -- (x, y + 1)
+			{
+				const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y + 1, x);
+				const double norm = cv::norm(pix1 - pix2);
+				sum += norm * norm;
+				++count;
+			}
+#if defined(__USE_8_NEIGHBORHOOD_SYSTEM)
+			if (x + 1 < Nx && y + 1 < Ny)  // (x, y) -- (x + 1, y + 1)
+			{
+				const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y + 1, x + 1);
+				const double norm = cv::norm(pix1 - pix2);
+				sum += norm * norm;
+				++count;
+			}
+			if (x + 1 < Nx && int(y - 1) >= 0)  // (x, y) -- (x + 1, y - 1)
+			{
+				const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y - 1, x + 1);
+				const double norm = cv::norm(pix1 - pix2);
+				sum += norm * norm;
+				++count;
+			}
+#endif  // __USE_8_NEIGHBORHOOD_SYSTEM
+		}
+	}
+
+	return 0.5 * count / sum;
+}
+
+#if defined(__USE_GRID_SPACE)
+typedef opengm::GridSpace<std::size_t, std::size_t> Space;
+#else
+typedef opengm::SimpleDiscreteSpace<std::size_t, std::size_t> Space;
+#endif
+typedef opengm::ExplicitFunction<double> ExplicitFunction;
+
+// construct a graphical model with
+// - addition as the operation (template parameter Adder)
+typedef opengm::GraphicalModel<double, opengm::Adder, ExplicitFunction, Space> GraphicalModel;
+
+// this function maps a node (x, y) in the grid to a unique variable index
+inline std::size_t getVariableIndex(const std::size_t Nx, const std::size_t x, const std::size_t y)
+{
+	return x + Nx * y;
+}
+
+// [ref]
+//	createGraphicalModelForPottsModel() in ${CPP_RND_HOME}/test/probabilistic_graphical_model/opengm/opengm_inference_algorithms.cpp
+//	${OPENGM_HOME}/src/examples/image-processing-examples/grid_potts.cxx
+//	"Interactive Graph Cuts for Optimal Boundary & Region Segmentation of Objects in N-D Images", Yuri Y. Boykov and Marie-Pierre Jolly, ICCV, 2001.
+bool create_single_layered_graphical_model(const cv::Mat &rgb_img, const cv::Mat &depth_img, const std::size_t numOfLabels, const double lambda, const double lambda_rgb, const double lambda_depth, const cv::Mat &histForeground_rgb, const cv::Mat &histBackground_rgb, const cv::Mat &histForeground_depth, const cv::Mat &histBackground_depth, GraphicalModel &gm)
+{
+	// model parameters (global variables are used only in example code)
+	const std::size_t Nx = rgb_img.cols;  // width of the grid
+	const std::size_t Ny = rgb_img.rows;  // height of the grid
+
+	// construct a label space with
+	//	- Nx * Ny variables
+	//	- each having numOfLabels many labels
+#if defined(__USE_GRID_SPACE)
+	Space space(Nx, Ny, numOfLabels);
+#else
+	Space space(Nx * Ny, numOfLabels);
+#endif
+
+	gm = GraphicalModel(space);
+
+	// constrast term.
+	const double inv_beta = compute_constrast_parameter(rgb_img);
+
+	const double tol = 1.0e-50;
+	//const double minVal = std::numeric_limits<double>::min();
+	const double minVal = tol;
+	const std::size_t shape1[] = { numOfLabels };
+	const std::size_t shape2[] = { numOfLabels, numOfLabels };
+	for (std::size_t y = 0; y < Ny; ++y)
+	{
+		for (std::size_t x = 0; x < Nx; ++x)
+		{
+			// Add 1st order functions and factors.
+			// For each node (x, y) in the grid, i.e. for each variable variableIndex(Nx, x, y) of the model,
+			// add one 1st order functions and one 1st order factor
+			{
+				const cv::Vec3b &rgb_pix = rgb_img.at<cv::Vec3b>(y, x);
+				const double probForeground_rgb = (double)histForeground_rgb.at<float>(rgb_pix[0], rgb_pix[1], rgb_pix[2]);
+				assert(0.0 <= probForeground_rgb && probForeground_rgb <= 1.0);
+				const double probBackground_rgb = (double)histBackground_rgb.at<float>(rgb_pix[0], rgb_pix[1], rgb_pix[2]);
+				assert(0.0 <= probBackground_rgb && probBackground_rgb <= 1.0);
+
+				const unsigned short &depth_pix = depth_img.at<unsigned short>(y, x);
+				const double probForeground_depth = (double)histForeground_depth.at<float>(depth_pix);
+				assert(0.0 <= probForeground_depth && probForeground_depth <= 1.0);
+				const double probBackground_depth = (double)histBackground_depth.at<float>(depth_pix);
+				assert(0.0 <= probBackground_depth && probBackground_depth <= 1.0);
+
+				// function
+				ExplicitFunction func1(shape1, shape1 + 1);
+				const double probBackground = lambda_rgb * probBackground_rgb + lambda_depth * probBackground_depth;
+				const double probForeground = lambda_rgb * probForeground_rgb + lambda_depth * probForeground_depth;
+				func1(0) = -std::log(std::fabs(probBackground) > tol ? probBackground : minVal);  // background (state = 1)
+				func1(1) = -std::log(std::fabs(probForeground) > tol ? probForeground : minVal);  // foreground (state = 0)
+
+				const GraphicalModel::FunctionIdentifier fid1 = gm.addFunction(func1);
+
+				// factor
+				const std::size_t variableIndices[] = { getVariableIndex(Nx, x, y) };
+				gm.addFactor(fid1, variableIndices, variableIndices + 1);
+			}
+
+			// Add 2nd order functions and factors.
+			// For each pair of nodes (x1, y1), (x2, y2) which are adjacent on the grid,
+			// add one factor that connects the corresponding variable indices.
+			// An 4-neighborhood or 8-neighborhood system in 2D (4-connectivity or 8-connectivity).
+			{
+				// factor
+				const cv::Vec3b &pix1 = rgb_img.at<cv::Vec3b>(y, x);
+				if (x + 1 < Nx)  // (x, y) -- (x + 1, y)
+				{
+					const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y, x + 1);
+					const double norm = cv::norm(pix2 - pix1);
+					const double B = lambda * std::exp(-norm * norm * inv_beta);
+
+					// function
+					ExplicitFunction func2(shape2, shape2 + 2);
+					func2(0, 0) = 0.0;
+					func2(0, 1) = B;
+					func2(1, 0) = B;
+					func2(1, 1) = 0.0;
+					const GraphicalModel::FunctionIdentifier fid2 = gm.addFunction(func2);
+
+					std::size_t variableIndices[] = { getVariableIndex(Nx, x, y), getVariableIndex(Nx, x + 1, y) };
+					std::sort(variableIndices, variableIndices + 2);
+					gm.addFactor(fid2, variableIndices, variableIndices + 2);
+				}
+				if (y + 1 < Ny)  // (x, y) -- (x, y + 1)
+				{
+					const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y + 1, x);
+					const double norm = cv::norm(pix2 - pix1);
+					const double B = lambda * std::exp(-norm * norm * inv_beta);
+
+					// function
+					ExplicitFunction func2(shape2, shape2 + 2);
+					func2(0, 0) = 0.0;
+					func2(0, 1) = B;
+					func2(1, 0) = B;
+					func2(1, 1) = 0.0;
+					const GraphicalModel::FunctionIdentifier fid2 = gm.addFunction(func2);
+
+					std::size_t variableIndices[] = { getVariableIndex(Nx, x, y), getVariableIndex(Nx, x, y + 1) };
+					std::sort(variableIndices, variableIndices + 2);
+					gm.addFactor(fid2, variableIndices, variableIndices + 2);
+				}
+#if defined(__USE_8_NEIGHBORHOOD_SYSTEM)
+				if (x + 1 < Nx && y + 1 < Ny)  // (x, y) -- (x + 1, y + 1)
+				{
+					const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y + 1, x + 1);
+					const double norm = cv::norm(pix2 - pix1);
+					const double B = lambda * std::exp(-norm * norm * inv_beta);
+
+					// function
+					ExplicitFunction func2(shape2, shape2 + 2);
+					func2(0, 0) = 0.0;
+					func2(0, 1) = B;
+					func2(1, 0) = B;
+					func2(1, 1) = 0.0;
+					const GraphicalModel::FunctionIdentifier fid2 = gm.addFunction(func2);
+
+					std::size_t variableIndices[] = { getVariableIndex(Nx, x, y), getVariableIndex(Nx, x + 1, y + 1) };
+					std::sort(variableIndices, variableIndices + 2);
+					gm.addFactor(fid2, variableIndices, variableIndices + 2);
+				}
+				if (x + 1 < Nx && int(y - 1) >= 0)  // (x, y) -- (x + 1, y - 1)
+				{
+					const cv::Vec3b &pix2 = rgb_img.at<cv::Vec3b>(y - 1, x + 1);
+					const double norm = cv::norm(pix2 - pix1);
+					const double B = lambda * std::exp(-norm * norm * inv_beta);
+
+					// function
+					ExplicitFunction func2(shape2, shape2 + 2);
+					func2(0, 0) = 0.0;
+					func2(0, 1) = B;
+					func2(1, 0) = B;
+					func2(1, 1) = 0.0;
+					const GraphicalModel::FunctionIdentifier fid2 = gm.addFunction(func2);
+
+					std::size_t variableIndices[] = { getVariableIndex(Nx, x, y), getVariableIndex(Nx, x + 1, y - 1) };
+					std::sort(variableIndices, variableIndices + 2);
+					gm.addFactor(fid2, variableIndices, variableIndices + 2);
+				}
+#endif  // __USE_8_NEIGHBORHOOD_SYSTEM
+			}
+		}
+	}
+
+	return true;
+}
+
+// [ref] run_inference_algorithm() in ${CPP_RND_HOME}/test/probabilistic_graphical_model/opengm/opengm_inference_algorithms.cpp
+template<typename GraphicalModel, typename InferenceAlgorithm>
+void run_inference_algorithm(InferenceAlgorithm &algorithm, std::vector<typename GraphicalModel::LabelType> &labelings)
+{
+	// optimize (approximately)
+	typename InferenceAlgorithm::VerboseVisitorType visitor;
+	//typename InferenceAlgorithm::TimingVisitorType visitor;
+	//typename InferenceAlgorithm::EmptyVisitorType visitor;
+	std::cout << "start inferring ..." << std::endl;
+	{
+		boost::timer::auto_cpu_timer timer;
+		algorithm.infer(visitor);
+	}
+	std::cout << "end inferring ..." << std::endl;
+	std::cout << "value: " << algorithm.value() << ", bound: " << algorithm.bound() << std::endl;
+
+	// obtain the (approximate) argmax.
+	algorithm.arg(labelings);
+}
+
+// [ref] normalize_histogram() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
+void normalize_histogram(cv::MatND &hist, const double factor)
+{
+#if 0
+	// FIXME [modify] >>
+	cvNormalizeHist(&(CvHistogram)hist, factor);
+#else
+	const cv::Scalar sums(cv::sum(hist));
+
+	const double eps = 1.0e-20;
+	if (std::fabs(sums[0]) < eps) return;
+
+	//cv::Mat tmp(hist);
+	//tmp.convertTo(hist, -1, factor / sums[0], 0.0);
+	hist *= factor / sums[0];
+#endif
+}
+
 void segment_foreground_using_single_layered_graphical_model()
 {
 	const std::size_t num_images = 6;
-	const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480);
+	const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480), imageSize_mask(640, 480);
 
-	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
+	std::vector<std::string> rgb_input_file_list, depth_input_file_list, structure_tesor_mask_file_list;
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
+	structure_tesor_mask_file_list.reserve(num_images);
 	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
 	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
 	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
@@ -1323,6 +1595,12 @@ void segment_foreground_using_single_layered_graphical_model()
 	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
 	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
 	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
+	structure_tesor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
 
 	const bool use_depth_range_filtering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -1366,6 +1644,9 @@ void segment_foreground_using_single_layered_graphical_model()
 	//
 	cv::Mat rectified_rgb_image, rectified_depth_image;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_boundary_image, depth_guided_mask(imageSize_rgb, CV_8UC1), depth_changing_image(imageSize_rgb, CV_8UC1);
+	const bool use_color_processed_structure_tensor_mask = false;
+	cv::Mat processed_structure_tensor_mask(imageSize_mask, use_color_processed_structure_tensor_mask ? CV_8UC3 : CV_8UC1);
+	cv::Mat contour_image, foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
@@ -1377,10 +1658,16 @@ void segment_foreground_using_single_layered_graphical_model()
 			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
 			continue;
 		}
-		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));  // CV_16UC1
 		if (depth_input_image.empty())
 		{
 			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;
+			continue;
+		}
+		cv::Mat structure_tensor_mask(cv::imread(structure_tesor_mask_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		if (structure_tensor_mask.empty())
+		{
+			std::cout << "fail to load mask file: " << structure_tesor_mask_file_list[i] << std::endl;
 			continue;
 		}
 
@@ -1425,7 +1712,7 @@ void segment_foreground_using_single_layered_graphical_model()
 			cv::erode(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
 			cv::dilate(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
 
-#if 1
+#if 0
 			// show depth validity mask.
 			cv::imshow("depth validity mask", depth_validity_mask);
 #endif
@@ -1446,10 +1733,353 @@ void segment_foreground_using_single_layered_graphical_model()
 			depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
 #endif
 
+#if 1
+			// show valid depth image.
+			cv::imshow("valid depth image", valid_depth_image);
+#endif
+
 #if 0
 			std::ostringstream strm;
 			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
+#endif
+		}
+
+		// pre-process structure tensor mask.
+		{
+			structure_tensor_mask = structure_tensor_mask > 0.05;  // CV_8UC1
+
+			cv::dilate(structure_tensor_mask, structure_tensor_mask, selement3, cv::Point(-1, -1), 3);
+			cv::erode(structure_tensor_mask, structure_tensor_mask, selement3, cv::Point(-1, -1), 3);
+
+			//cv::erode(structure_tensor_mask, structure_tensor_mask, selement3, cv::Point(-1, -1), 3);
+			//cv::dilate(structure_tensor_mask, structure_tensor_mask, selement3, cv::Point(-1, -1), 3);
+
+#if 1
+			cv::imshow("structure tensor mask", structure_tensor_mask);
+#endif
+
+#if 0
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/structure_tensor_mask_" << i << ".png";
+			cv::imwrite(strm.str(), structure_tensor_mask);
+#endif
+		}
+
+		// find contours.
+		const double MIN_CONTOUR_AREA = 200.0;
+		std::vector<std::vector<cv::Point> > contours;
+		std::vector<cv::Vec4i> hierarchy;
+		{
+			structure_tensor_mask.copyTo(contour_image);
+
+			std::vector<std::vector<cv::Point> > contours2;
+			cv::findContours(contour_image, contours2, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+
+#if 0
+			// comment this out if you do not want approximation
+			for (std::vector<std::vector<cv::Point> >::iterator it = contours2.begin(); it != contours2.end(); ++it)
+			{
+				//if (it->empty()) continue;
+
+				std::vector<cv::Point> approxCurve;
+				cv::approxPolyDP(cv::Mat(*it), approxCurve, 3.0, true);
+				contours.push_back(approxCurve);
+			}
+#else
+			std::copy(contours2.begin(), contours2.end(), std::back_inserter(contours));
+#endif
+
+#if 0
+			// find all contours.
+
+			processed_structure_tensor_mask.setTo(cv::Scalar::all(0));
+
+			// iterate through all the top-level contours,
+			// draw each connected component with its own random color
+			for (int idx = 0; idx >= 0; idx = hierarchy[idx][0])
+			{
+				if (cv::contourArea(cv::Mat(contours[idx])) < MIN_CONTOUR_AREA) continue;
+
+				if (use_color_processed_structure_tensor_mask)
+					//cv::drawContours(processed_structure_tensor_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), CV_FILLED, 8, hierarchy, 0, cv::Point());
+					cv::drawContours(processed_structure_tensor_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				else
+					//cv::drawContours(processed_structure_tensor_mask, contours, idx, cv::Scalar::all(255), CV_FILLED, 8, hierarchy, 0, cv::Point());
+					cv::drawContours(processed_structure_tensor_mask, contours, idx, cv::Scalar::all(255), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+			}
+#elif 1
+			// find a contour with max. area.
+
+			std::vector<std::vector<cv::Point> > pointSets;
+			std::vector<cv::Vec4i> hierarchy0;
+			if (!hierarchy.empty())
+				std::transform(hierarchy.begin(), hierarchy.end(), std::back_inserter(hierarchy0), IncreaseHierarchyOp(pointSets.size()));
+
+			for (std::vector<std::vector<cv::Point> >::iterator it = contours.begin(); it != contours.end(); ++it)
+				if (!it->empty()) pointSets.push_back(*it);
+
+			if (!pointSets.empty())
+			{
+#if 0
+				cv::drawContours(img, pointSets, -1, CV_RGB(255, 0, 0), 1, 8, hierarchy0, maxLevel, cv::Point());
+#elif 0
+				const size_t num = pointSets.size();
+				for (size_t k = 0; k < num; ++k)
+				{
+					if (cv::contourArea(cv::Mat(pointSets[k])) < MIN_AREA) continue;
+					const int r = rand() % 256, g = rand() % 256, b = rand() % 256;
+					cv::drawContours(img, pointSets, k, CV_RGB(r, g, b), 1, 8, hierarchy0, maxLevel, cv::Point());
+				}
+#else
+				double maxArea = 0.0;
+				size_t maxAreaIdx = -1, idx = 0;
+				for (std::vector<std::vector<cv::Point> >::iterator it = pointSets.begin(); it != pointSets.end(); ++it, ++idx)
+				{
+					const double area = cv::contourArea(cv::Mat(*it));
+					if (area > maxArea)
+					{
+						maxArea = area;
+						maxAreaIdx = idx;
+					}
+				}
+
+				processed_structure_tensor_mask.setTo(cv::Scalar::all(0));
+				if ((size_t)-1 != maxAreaIdx)
+					//cv::drawContours(processed_structure_tensor_mask, pointSets, maxAreaIdx, cv::Scalar::all(255), CV_FILLED, 8, hierarchy0, 0, cv::Point());
+					//cv::drawContours(processed_structure_tensor_mask, pointSets, maxAreaIdx, cv::Scalar::all(255), CV_FILLED, 8, hierarchy0, maxLevel, cv::Point());
+					cv::drawContours(processed_structure_tensor_mask, pointSets, maxAreaIdx, cv::Scalar::all(255), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+#endif
+			}
+#endif
+
+			// post-process structure tensor mask.
+			cv::morphologyEx(processed_structure_tensor_mask, processed_structure_tensor_mask, cv::MORPH_CLOSE, selement5, cv::Point(-1, -1), 3);
+			//cv::imshow("post-processed structure tensor mask 1", processed_structure_tensor_mask);
+
+			cv::morphologyEx(processed_structure_tensor_mask, processed_structure_tensor_mask, cv::MORPH_OPEN, selement5, cv::Point(-1, -1), 3);
+			//cv::imshow("post-processed structure tensor mask 2", processed_structure_tensor_mask);
+
+			// create foreground & background masks.
+#if 0
+			// using dilation & erosion.
+
+			tmp_image = cv::Mat::zeros(structure_tensor_mask.size(), structure_tensor_mask.type());
+			structure_tensor_mask.copyTo(tmp_image, processed_structure_tensor_mask);
+			cv::erode(tmp_image, foreground_mask, selement5, cv::Point(-1, -1), 3);
+			cv::dilate(tmp_image, background_mask, selement5, cv::Point(-1, -1), 3);
+			foreground_mask = foreground_mask > 0;
+			background_mask = 0 == background_mask;
+#elif 1
+			// using distance transform for foreground and convex hull for background.
+
+			tmp_image = cv::Mat::zeros(structure_tensor_mask.size(), structure_tensor_mask.type());
+			structure_tensor_mask.copyTo(tmp_image, processed_structure_tensor_mask);
+
+			cv::Mat dist32f;
+			const int distanceType = CV_DIST_C;  // C/Inf metric
+			//const int distanceType = CV_DIST_L1;  // L1 metric
+			//const int distanceType = CV_DIST_L2;  // L2 metric
+			//const int maskSize = CV_DIST_MASK_3;
+			//const int maskSize = CV_DIST_MASK_5;
+			const int maskSize = CV_DIST_MASK_PRECISE;
+			cv::distanceTransform(tmp_image, dist32f, distanceType, maskSize);
+			foreground_mask = dist32f >= 7.5f;
+
+			std::vector<cv::Point> convexHull;
+			simple_convex_hull(tmp_image, cv::Rect(), 255, convexHull);
+
+			background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
+			std::vector<std::vector<cv::Point> > contours;
+			contours.push_back(convexHull);
+			cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
+
+			cv::erode(background_mask, background_mask, selement5, cv::Point(-1, -1), 3);
+			cv::Mat bg_mask;
+			cv::erode(background_mask, bg_mask, selement5, cv::Point(-1, -1), 5);
+			background_mask.setTo(cv::Scalar::all(0), bg_mask);
+
+			cv::minMaxLoc(dist32f, &minVal, &maxVal);
+			dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+			cv::imshow("distance transform of foreground mask", tmp_image);
+#elif 0
+			// using thinning for foreground and convex hull for background.
+
+			tmp_image = cv::Mat::zeros(structure_tensor_mask.size(), structure_tensor_mask.type());
+			structure_tensor_mask.copyTo(tmp_image, processed_structure_tensor_mask);
+
+			cv::Mat bw;
+			cv::threshold(tmp_image, bw, 10, 255, CV_THRESH_BINARY);
+			zhang_suen_thinning_algorithm(bw, foreground_mask);
+			//guo_hall_thinning_algorithm(bw, foreground_mask);
+
+			std::vector<cv::Point> convexHull;
+			simple_convex_hull(tmp_image, cv::Rect(), 255, convexHull);
+
+			background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
+			std::vector<std::vector<cv::Point> > contours;
+			contours.push_back(convexHull);
+			cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
+
+			cv::imshow("thinning of foreground mask", foreground_mask);
+#endif
+
+			//cv::erode(processed_structure_tensor_mask, processed_structure_tensor_mask, selement3, cv::Point(-1, -1), 1);
+			cv::dilate(processed_structure_tensor_mask, processed_structure_tensor_mask, selement3, cv::Point(-1, -1), 1);
+		}
+
+#if 1
+		// show post-processed structure tensor mask.
+		{
+			cv::imshow("post-processed structure tensor mask", processed_structure_tensor_mask);
+
+			//cv::imshow("foreground mask", foreground_mask);
+			cv::imshow("background mask", background_mask);
+
+			//rectified_rgb_image.copyTo(tmp_image, foreground_mask);
+			tmp_image = rectified_rgb_image.clone();
+			tmp_image.setTo(cv::Scalar(0, 0, 255), foreground_mask);
+			//cv::imshow("RGB image extracted by foreground mask", tmp_image);
+
+			//rectified_rgb_image.copyTo(tmp_image, background_mask);
+			tmp_image.setTo(cv::Scalar(255, 0, 0), background_mask);
+			cv::imshow("RGB image extracted by background mask", tmp_image);
+
+#if 0
+			std::ostringstream strm1, strm2;
+			strm1 << "../data/kinect_segmentation/processed_structure_tensor_mask_" << i << ".png";
+			cv::imwrite(strm1.str(), processed_structure_tensor_mask);
+			strm2 << "../data/kinect_segmentation/masked_rgb_image_" << i << ".png";
+			cv::imwrite(strm2.str(), tmp_image);
+#endif
+		}
+#endif
+
+#if defined(__USE_RECTIFIED_IMAGE)
+		cv::Mat &used_rgb_image = rectified_rgb_image;
+		cv::Mat &used_depth_image = valid_depth_image;
+#else
+		cv::Mat &used_rgb_image = rgb_input_image;
+		cv::Mat &used_depth_image = valid_depth_image;
+#endif
+
+		// foreground & background probability distributions
+		cv::MatND histForeground_rgb, histBackground_rgb;  // CV_32FC1, 3-dim (rows = bins1, cols = bins2, 3-dim = bins3)
+		{
+			const int dims = 3;
+			const int bins1 = 256, bins2 = 256, bins3 = 256;
+			const int histSize[] = { bins1, bins2, bins3 };
+			const float range1[] = { 0, 256 };
+			const float range2[] = { 0, 256 };
+			const float range3[] = { 0, 256 };
+			const float *ranges[] = { range1, range2, range3 };
+			const int channels[] = { 0, 1, 2 };
+
+			// calculate histograms.
+			cv::calcHist(
+				&used_rgb_image, 1, channels, foreground_mask,
+				histForeground_rgb, dims, histSize, ranges,
+				true, // the histogram is uniform
+				false
+			);
+			cv::calcHist(
+				&used_rgb_image, 1, channels, background_mask,
+				histBackground_rgb, dims, histSize, ranges,
+				true, // the histogram is uniform
+				false
+			);
+
+			// normalize histograms.
+			normalize_histogram(histForeground_rgb, 1.0);
+			normalize_histogram(histBackground_rgb, 1.0);
+		}
+
+		// foreground & background probability distributions
+		cv::MatND histForeground_depth, histBackground_depth;  // CV_32FC1, 1-dim (rows = bins, cols = 1)
+		{
+			cv::minMaxLoc(used_depth_image, &minVal, &maxVal);
+
+			const int dims = 1;
+			const int bins = 256;
+			const int histSize[] = { bins };
+			const float range[] = { (int)std::floor(minVal), (int)std::ceil(maxVal) + 1 };
+			const float *ranges[] = { range };
+			const int channels[] = { 0 };
+
+			// calculate histograms.
+			cv::calcHist(
+				&used_depth_image, 1, channels, foreground_mask,
+				histForeground_depth, dims, histSize, ranges,
+				true, // the histogram is uniform
+				false
+			);
+			cv::calcHist(
+				&used_depth_image, 1, channels, background_mask,
+				histBackground_depth, dims, histSize, ranges,
+				true, // the histogram is uniform
+				false
+			);
+
+			// normalize histograms.
+			normalize_histogram(histForeground_depth, 1.0);
+			normalize_histogram(histBackground_depth, 1.0);
+		}
+
+		// create graphical model.
+		GraphicalModel gm;
+		const std::size_t numOfLabels = 2;
+		const double lambda = 0.2;
+		const double lambda_rgb = 1.0;  // [0, 1]
+		const double lambda_depth = 1.0 - lambda_rgb;  // [0, 1]
+		if (create_single_layered_graphical_model(used_rgb_image, used_depth_image, numOfLabels, lambda, lambda_rgb, lambda_depth, histForeground_rgb, histBackground_rgb, histForeground_depth, histBackground_depth, gm))
+			std::cout << "A single-layered graphical model for binary segmentation is created." << std::endl;
+		else
+		{
+			std::cout << "A single-layered graphical model for binary segmentation fails to be created." << std::endl;
+			return;
+		}
+
+		// run inference algorithm.
+		std::vector<GraphicalModel::LabelType> labelings(gm.numberOfVariables());
+		{
+#if 1
+			typedef opengm::external::MinSTCutKolmogorov<std::size_t, double> MinStCut;
+			typedef opengm::GraphCut<GraphicalModel, opengm::Minimizer, MinStCut> MinGraphCut;
+
+			MinGraphCut mincut(gm);
+#else
+			typedef opengm::MinSTCutBoost<std::size_t, long, opengm::PUSH_RELABEL> MinStCut;
+			typedef opengm::GraphCut<GraphicalModel, opengm::Minimizer, MinStCut> MinGraphCut;
+
+			const MinGraphCut::ValueType scale = 1000000;
+			const MinGraphCut::Parameter parameter(scale);
+			MinGraphCut mincut(gm, parameter);
+#endif
+
+			run_inference_algorithm<GraphicalModel>(mincut, labelings);
+		}
+
+		// output results.
+		{
+#if 1
+			cv::Mat label_img(used_rgb_image.size(), CV_8UC1, cv::Scalar::all(0));
+			for (GraphicalModel::IndexType row = 0; row < (std::size_t)label_img.rows; ++row)
+				for (GraphicalModel::IndexType col = 0; col < (std::size_t)label_img.cols; ++col)
+					label_img.at<unsigned char>(row, col) = (unsigned char)(255 * labelings[getVariableIndex(label_img.cols, col, row)] / (numOfLabels - 1));
+
+			cv::imshow("interactive graph cuts - labeling", label_img);
+#elif 0
+			cv::Mat label_img(used_rgb_image.size(), CV_16UC1, cv::Scalar::all(0));
+			for (GraphicalModel::IndexType row = 0; row < label_img.rows; ++row)
+				for (GraphicalModel::IndexType col = 0; col < label_img.cols; ++col)
+					label_img.at<unsigned short>(row, col) = (unsigned short)labelings[getVariableIndex(label_img.cols, col, row)];
+
+			cv::imshow("interactive graph cuts - labeling", label_img);
+#else
+			std::cout << algorithm.name() << " has found the labeling ";
+			for (typename GraphicalModel::LabelType i = 0; i < labeling.size(); ++i)
+				std::cout << labeling[i] << ' ';
+			std::cout << std::endl;
 #endif
 		}
 
@@ -1541,7 +2171,7 @@ void segment_foreground_using_two_layered_graphical_model()
 			std::cout << "fail to load image file: " << rgb_input_file_list[i] << std::endl;
 			continue;
 		}
-		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));
+		const cv::Mat depth_input_image(cv::imread(depth_input_file_list[i], CV_LOAD_IMAGE_UNCHANGED));  // CV_16UC1
 		if (depth_input_image.empty())
 		{
 			std::cout << "fail to load image file: " << depth_input_file_list[i] << std::endl;

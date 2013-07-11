@@ -4,6 +4,14 @@
 
 #		if defined(DEBUG) || defined(_DEBUG)
 
+//#pragma comment(lib, "opengm_min_sum.lib")
+//#pragma comment(lib, "opengm_min_sum_small.lib")
+#pragma comment(lib, "external-library-mrf_d.lib")
+#pragma comment(lib, "external-library-maxflow_d.lib")
+#pragma comment(lib, "external-library-maxflow-ibfs_d.lib")
+#pragma comment(lib, "external-library-qpbo_d.lib")
+#pragma comment(lib, "external-library-trws_d.lib")
+
 #pragma comment(lib, "swl_machine_vision.lib")
 #pragma comment(lib, "opencv_calib3d243d.lib")
 #pragma comment(lib, "opencv_contrib243d.lib")
@@ -24,6 +32,14 @@
 #pragma comment(lib, "opencv_videostab243d.lib")
 
 #		else
+
+//#pragma comment(lib, "opengm_min_sum.lib")
+//#pragma comment(lib, "opengm_min_sum_small.lib")
+#pragma comment(lib, "external-library-mrf.lib")
+#pragma comment(lib, "external-library-maxflow.lib")
+#pragma comment(lib, "external-library-maxflow-ibfs.lib")
+#pragma comment(lib, "external-library-qpbo.lib")
+#pragma comment(lib, "external-library-trws.lib")
 
 #pragma comment(lib, "swl_machine_vision.lib")
 #pragma comment(lib, "opencv_calib3d243.lib")
