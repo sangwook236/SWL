@@ -78,6 +78,9 @@
     <ClInclude Include="efficient_graph_based_image_segmentation_lib\segment-image.h">
       <Filter>Source Files\efficient_graph_based_image_segmentation_lib</Filter>
     </ClInclude>
+    <ClInclude Include="DepthGuidedMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -102,6 +105,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SegmentationUsingGrabCut.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SegmentationUsingGraphCut.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DepthGuidedMap.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
