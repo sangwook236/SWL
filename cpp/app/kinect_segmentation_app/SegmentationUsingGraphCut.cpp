@@ -1,4 +1,5 @@
 //#include "stdafx.h"
+#include "DepthGuidedMap.h"
 #include <opengm/opengm.hxx>
 #include <opengm/graphicalmodel/graphicalmodel.hxx>
 #include <opengm/graphicalmodel/space/simplediscretespace.hxx>
@@ -267,14 +268,14 @@ void normalize_histogram(cv::MatND &hist, const double factor);
 
 // [ref] EfficientGraphBasedImageSegmentation.cpp
 void segment_image_using_efficient_graph_based_image_segmentation_algorithm(
-	const cv::Mat &rgb_input_image, const cv::Mat &depth_input_image, const cv::Mat &depth_guided_mask,
+	const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_mask,
 	const float sigma, const float k, const int min_size,
 	const float lambda1, const float lambda2, const float lambda3, const float fx_rgb, const float fy_rgb,
 	int &num_ccs, cv::Mat &output_image
 );
-void segment_image_using_efficient_graph_based_image_segmentation_algorithm(const cv::Mat &rgb_input_image, const float sigma, const float k, const int min_size, int &num_ccs, cv::Mat &output_image);
+void segment_image_using_efficient_graph_based_image_segmentation_algorithm(const cv::Mat &rgb_image, const float sigma, const float k, const int min_size, int &num_ccs, cv::Mat &output_image);
 
-void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_input_image, const cv::Mat &depth_input_image, const cv::Mat &depth_guided_mask, const double fx_rgb, const double fy_rgb)
+void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_mask, const double fx_rgb, const double fy_rgb)
 {
 	const float sigma = 0.5f;
 	const float k = 500.0f;
@@ -289,14 +290,14 @@ void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_input_image
 	const float lambda1 = 0.01f, lambda2 = 0.0f, lambda3 = 0.0f;
 	//const float lambda1 = 0.0f, lambda2 = 0.0f, lambda3 = 0.0f;
 
-	segment_image_using_efficient_graph_based_image_segmentation_algorithm(rgb_input_image, depth_input_image, depth_guided_mask, sigma, k, min_size, lambda1, lambda2, lambda3, (float)fx_rgb, (float)fy_rgb, num_ccs, output_image);
+	segment_image_using_efficient_graph_based_image_segmentation_algorithm(rgb_image, depth_image, depth_guided_mask, sigma, k, min_size, lambda1, lambda2, lambda3, (float)fx_rgb, (float)fy_rgb, num_ccs, output_image);
 
 #if 1
 	std::cout << "got " << num_ccs << " components" << std::endl;
 	cv::imshow("result of depth-guided efficient graph based image segmentation algorithm", output_image);
 #endif
 #else
-	segment_image_using_efficient_graph_based_image_segmentation_algorithm(rgb_input_image, sigma, k, min_size, num_ccs, output_image);
+	segment_image_using_efficient_graph_based_image_segmentation_algorithm(rgb_image, sigma, k, min_size, num_ccs, output_image);
 
 #if 1
 	std::cout << "got " << num_ccs << " components" << std::endl;
@@ -309,7 +310,7 @@ void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_input_image
 #endif
 }
 
-void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const cv::Mat &depth_input_image, const cv::Mat &foreground_mask, const cv::Mat &background_mask, const cv::Mat &foreground_info_mask, const cv::Mat &background_info_mask)
+void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map)
 {
 	// foreground & background probability distributions
 	cv::MatND histForeground_rgb, histBackground_rgb;  // CV_32FC1, 3-dim (rows = bins1, cols = bins2, 3-dim = bins3)
@@ -325,13 +326,13 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const
 
 		// calculate histograms.
 		cv::calcHist(
-			&rgb_input_image, 1, channels, foreground_info_mask,
+			&rgb_image, 1, channels, SWL_FGD == depth_guided_map,
 			histForeground_rgb, dims, histSize, ranges,
 			true, // the histogram is uniform
 			false
 		);
 		cv::calcHist(
-			&rgb_input_image, 1, channels, background_info_mask,
+			&rgb_image, 1, channels, SWL_BGD == depth_guided_map,
 			histBackground_rgb, dims, histSize, ranges,
 			true, // the histogram is uniform
 			false
@@ -346,7 +347,7 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const
 	cv::MatND histForeground_depth, histBackground_depth;  // CV_32FC1, 1-dim (rows = bins, cols = 1)
 	{
 		double minVal, maxVal;
-		cv::minMaxLoc(depth_input_image, &minVal, &maxVal);
+		cv::minMaxLoc(depth_image, &minVal, &maxVal);
 
 		const int dims = 1;
 		const int bins = 256;
@@ -357,13 +358,13 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const
 
 		// calculate histograms.
 		cv::calcHist(
-			&depth_input_image, 1, channels, foreground_info_mask,
+			&depth_image, 1, channels, SWL_FGD == depth_guided_map,
 			histForeground_depth, dims, histSize, ranges,
 			true, // the histogram is uniform
 			false
 		);
 		cv::calcHist(
-			&depth_input_image, 1, channels, background_info_mask,
+			&depth_image, 1, channels, SWL_BGD == depth_guided_map,
 			histBackground_depth, dims, histSize, ranges,
 			true, // the histogram is uniform
 			false
@@ -380,7 +381,7 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const
 	const double lambda = 0.2;
 	const double lambda_rgb = 1.0;  // [0, 1]
 	const double lambda_depth = 1.0 - lambda_rgb;  // [0, 1]
-	if (local::create_single_layered_graphical_model(rgb_input_image, depth_input_image, numOfLabels, lambda, lambda_rgb, lambda_depth, histForeground_rgb, histBackground_rgb, histForeground_depth, histBackground_depth, gm))
+	if (local::create_single_layered_graphical_model(rgb_image, depth_image, numOfLabels, lambda, lambda_rgb, lambda_depth, histForeground_rgb, histBackground_rgb, histForeground_depth, histBackground_depth, gm))
 		std::cout << "A single-layered graphical model for binary segmentation is created." << std::endl;
 	else
 	{
@@ -411,14 +412,14 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const
 	// output results.
 	{
 #if 1
-		cv::Mat label_img(rgb_input_image.size(), CV_8UC1, cv::Scalar::all(0));
+		cv::Mat label_img(rgb_image.size(), CV_8UC1, cv::Scalar::all(0));
 		for (local::GraphicalModel::IndexType row = 0; row < (std::size_t)label_img.rows; ++row)
 			for (local::GraphicalModel::IndexType col = 0; col < (std::size_t)label_img.cols; ++col)
 				label_img.at<unsigned char>(row, col) = (unsigned char)(255 * labelings[local::getVariableIndex(label_img.cols, col, row)] / (numOfLabels - 1));
 
 		cv::imshow("interactive graph cuts - labeling", label_img);
 #elif 0
-		cv::Mat label_img(rgb_input_image.size(), CV_16UC1, cv::Scalar::all(0));
+		cv::Mat label_img(rgb_image.size(), CV_16UC1, cv::Scalar::all(0));
 		for (local::GraphicalModel::IndexType row = 0; row < label_img.rows; ++row)
 			for (local::GraphicalModel::IndexType col = 0; col < label_img.cols; ++col)
 				label_img.at<unsigned short>(row, col) = (unsigned short)labelings[local::getVariableIndex(label_img.cols, col, row)];

@@ -204,7 +204,7 @@ void construct_depth_guided_map_using_structure_tensor(const cv::Mat &structure_
 	const bool use_color_processed_structure_tensor_mask = false;
 	cv::Mat processed_structure_tensor_mask(structure_tensor_mask.size(), use_color_processed_structure_tensor_mask ? CV_8UC3 : CV_8UC1);
 	const double MIN_CONTOUR_AREA = 200.0;
-	cv::Mat contour_image, foreground_mask(structure_tensor_mask.size(), CV_8UC1), background_mask(structure_tensor_mask.size(), CV_8UC1);
+	cv::Mat contour_image, foreground_mask(structure_tensor_mask.size(), CV_8UC1), background_mask(structure_tensor_mask.size(), CV_8UC1), background_info_mask;
 	cv::Mat tmp_image;
 	double minVal, maxVal;
 
@@ -325,7 +325,7 @@ void construct_depth_guided_map_using_structure_tensor(const cv::Mat &structure_
 		// METHOD #2: using distance transform for foreground and convex hull for background.
 
 		tmp_image = cv::Mat::zeros(structure_tensor_mask2.size(), structure_tensor_mask2.type());
-		structure_tensor_mask.copyTo(tmp_image, processed_structure_tensor_mask);
+		structure_tensor_mask2.copyTo(tmp_image, processed_structure_tensor_mask);
 
 		cv::Mat dist32f;
 		const int distanceType = CV_DIST_C;  // C/Inf metric
@@ -346,9 +346,8 @@ void construct_depth_guided_map_using_structure_tensor(const cv::Mat &structure_
 		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
 
 		cv::erode(background_mask, background_mask, selement5, cv::Point(-1, -1), 3);
-		cv::Mat bg_mask;
-		cv::erode(background_mask, bg_mask, selement5, cv::Point(-1, -1), 5);
-		background_mask.setTo(cv::Scalar::all(0), bg_mask);
+		cv::erode(background_mask, background_info_mask, selement5, cv::Point(-1, -1), 5);
+		background_mask.setTo(cv::Scalar::all(0), background_info_mask);
 
 		cv::minMaxLoc(dist32f, &minVal, &maxVal);
 		dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
@@ -356,8 +355,8 @@ void construct_depth_guided_map_using_structure_tensor(const cv::Mat &structure_
 #elif 0
 		// METHOD #3: using thinning for foreground and convex hull for background.
 
-		tmp_image = cv::Mat::zeros(structure_tensor_mask.size(), structure_tensor_mask.type());
-		structure_tensor_mask.copyTo(tmp_image, processed_structure_tensor_mask);
+		tmp_image = cv::Mat::zeros(structure_tensor_mask2.size(), structure_tensor_mask2.type());
+		structure_tensor_mask2.copyTo(tmp_image, processed_structure_tensor_mask);
 
 		cv::Mat bw;
 		cv::threshold(tmp_image, bw, 10, 255, CV_THRESH_BINARY);
@@ -387,7 +386,8 @@ void construct_depth_guided_map_using_structure_tensor(const cv::Mat &structure_
 	// construct depth-guided map.
 	depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
 	depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
-	depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_mask);  // invalid depth region (background).
+	depth_guided_map.setTo(cv::Scalar::all(SWL_PR_BGD), background_mask);  // invalid depth region (background).
+	depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_info_mask);  // invalid depth region (background).
 }
 
 }  // namespace swl

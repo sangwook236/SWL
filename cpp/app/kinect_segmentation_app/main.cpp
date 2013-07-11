@@ -32,12 +32,11 @@ bool load_structure_tensor_mask(const std::string &filename, cv::Mat &structure_
 void construct_valid_depth_image(const bool useDepthRangeFiltering, const double minRange, const double maxRange, const cv::Mat &depth_input_image, cv::Mat &valid_depth_image, cv::Mat &depth_validity_mask);
 
 // [ref] SegmentationUsingGrabCut.cpp
-void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_input_image, const cv::Mat &depth_guided_map);
-void run_grabcut_using_structure_tensor_mask(const cv::Mat &rgb_input_image, const cv::Mat &structure_tensor_mask);
+void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_image, const cv::Mat &depth_guided_map);
 
 // [ref] SegmentationUsingGraphCut.cpp
-void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_input_image, const cv::Mat &depth_input_image, const cv::Mat &foreground_mask, const cv::Mat &background_mask, const cv::Mat &foreground_info_mask, const cv::Mat &background_info_mask);
-void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_input_image, const cv::Mat &depth_input_image, const cv::Mat &depth_guided_map, const double fx_rgb, const double fy_rgb);
+void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map);
+void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map, const double fx_rgb, const double fy_rgb);
 
 void segment_image_based_on_depth_guided_map()
 {
@@ -287,7 +286,7 @@ void segment_foreground_based_on_structure_tensor()
 	cv::Mat valid_depth_image, depth_validity_mask(imageSize_rgb, CV_8UC1), contour_image;
 	const bool use_color_processed_structure_tensor_mask = false;
 	cv::Mat processed_structure_tensor_mask(imageSize_mask, use_color_processed_structure_tensor_mask ? CV_8UC3 : CV_8UC1);
-	cv::Mat depth_guided_map, grabCut_mask(imageSize_mask, CV_8UC1);
+	cv::Mat depth_guided_map(imageSize_rgb, CV_8UC1), grabCut_mask(imageSize_mask, CV_8UC1);
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
@@ -402,29 +401,7 @@ void segment_foreground_based_on_structure_tensor()
 		}
 #elif 0
 		// segment image by GrabCut algorithm.
-		{
-			// GC_BGD, GC_FGD, GC_PR_BGD, GC_PR_FGD
-
-			cv::Mat eroded_mask, dilated_mask;
-			cv::erode(processed_structure_tensor_mask, eroded_mask, selement3, cv::Point(-1, -1), 1);
-			cv::dilate(processed_structure_tensor_mask, dilated_mask, selement5, cv::Point(-1, -1), 5);
-
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_BGD));
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_BGD), dilated_mask);
-			//grabCut_mask.setTo(cv::Scalar::all(cv::GC_PR_FGD), dilated_mask);
-			//grabCut_mask.setTo(cv::Scalar::all(cv::GC_FGD), eroded_mask);
-			grabCut_mask.setTo(cv::Scalar::all(cv::GC_FGD), processed_structure_tensor_mask);
-
-#if 1
-			// show GrabCut masks.
-			grabCut_mask.convertTo(tmp_image, CV_8UC1, 255.0 / cv::GC_PR_FGD, 0.0);
-			cv::imshow("GrabCut mask", tmp_image);
-			eroded_mask.convertTo(tmp_image, CV_8UC1, 255.0 / cv::GC_PR_FGD, 0.0);
-			cv::imshow("eroded GrabCut mask", tmp_image);
-#endif
-
-			swl::run_grabcut_using_structure_tensor_mask(rgb_input_image, grabCut_mask);
-		}
+		run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_map);
 #endif
 
 		const int64 elapsed = cv::getTickCount() - startTime;
@@ -538,18 +515,20 @@ void segment_foreground_using_single_layered_graphical_model()
 			depth_guided_map.convertTo(tmp_image, CV_8UC1, 255.0 / maxVal, 0.0);
 
 			cv::imshow("depth-guided map", tmp_image);
+		}
 #endif
 
 #if 0
+		{
 			std::ostringstream strm;
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
 			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
-#endif
 		}
+#endif
 
 		//
-		run_binary_segmentation_using_min_cut(rgb_input_image, valid_depth_image, foreground_mask, background_mask, foreground_mask, background_mask);
+		run_binary_segmentation_using_min_cut(rgb_input_image, valid_depth_image, depth_guided_map);
 
 		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
@@ -684,12 +663,12 @@ int main(int argc, char *argv[])
 	{
 		std::srand((unsigned int)std::time(NULL));
 
-		swl::segment_image_based_on_depth_guided_map();
+		//swl::segment_image_based_on_depth_guided_map();
 		//swl::segment_foreground_based_on_depth_guided_map();
 		//swl::segment_foreground_based_on_structure_tensor();
 
         // FIXME [implement] >> not completed
-        //swl::segment_foreground_using_single_layered_graphical_model();
+        swl::segment_foreground_using_single_layered_graphical_model();
 		//swl::segment_foreground_using_two_layered_graphical_model();
 
 #if 0
