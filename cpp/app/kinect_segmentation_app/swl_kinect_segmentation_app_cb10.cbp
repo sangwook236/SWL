@@ -43,8 +43,10 @@
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/cuda/include" />
 			<Add directory="/usr/local/include" />
+			<Add directory="/usr/local/include/opengm_external/MaxFlow" />
 		</Compiler>
 		<Linker>
+			<Add library="external-library-maxflow" />
 			<Add library="opencv_legacy" />
 			<Add library="opencv_calib3d" />
 			<Add library="opencv_imgproc" />
@@ -55,7 +57,11 @@
 			<Add directory="/usr/local/cuda/lib64" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
+		<Unit filename="DepthGuidedMap.cpp" />
+		<Unit filename="DepthGuidedMap.h" />
 		<Unit filename="EfficientGraphBasedImageSegmentation.cpp" />
+		<Unit filename="SegmentationUsingGrabCut.cpp" />
+		<Unit filename="SegmentationUsingGraphCut.cpp" />
 		<Unit filename="Util.cpp" />
 		<Unit filename="efficient_graph_based_image_segmentation_lib/convolve.h" />
 		<Unit filename="efficient_graph_based_image_segmentation_lib/disjoint-set.h" />
@@ -68,6 +74,10 @@
 		<Unit filename="efficient_graph_based_image_segmentation_lib/segment-graph.h" />
 		<Unit filename="efficient_graph_based_image_segmentation_lib/segment-image.h" />
 		<Unit filename="efficient_graph_based_image_segmentation_lib/segment.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="gSLIC.cpp">
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
