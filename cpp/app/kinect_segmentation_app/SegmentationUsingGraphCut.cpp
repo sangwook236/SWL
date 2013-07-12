@@ -310,7 +310,7 @@ void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_image, cons
 #endif
 }
 
-void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map)
+void run_interactive_graph_cuts_segmentation(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map)
 {
 	// foreground & background probability distributions
 	cv::MatND histForeground_rgb, histBackground_rgb;  // CV_32FC1, 3-dim (rows = bins1, cols = bins2, 3-dim = bins3)
@@ -425,7 +425,7 @@ void run_binary_segmentation_using_min_cut(const cv::Mat &rgb_image, const cv::M
 				label_img.at<unsigned short>(row, col) = (unsigned short)labelings[local::getVariableIndex(label_img.cols, col, row)];
 
 		cv::imshow("interactive graph cuts - labeling", label_img);
-#else
+#elif 0
 		std::cout << algorithm.name() << " has found the labeling ";
 		for (typename local::GraphicalModel::LabelType i = 0; i < labeling.size(); ++i)
 			std::cout << labeling[i] << ' ';

@@ -153,7 +153,7 @@ void construct_depth_guided_map_using_superpixel(const cv::Mat &rgb_image, const
 	depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), ~depth_validity_mask & filtered_superpixel_mask);  // invalid depth region (background).
 }
 
-void construct_depth_guided_map_using_morphological_operation_of_depth_boundary(const cv::Mat &depth_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_map)
+void construct_depth_guided_map_using_edge_detection_and_morphological_operation(const cv::Mat &depth_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_map)
 {
 	const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
 	const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
