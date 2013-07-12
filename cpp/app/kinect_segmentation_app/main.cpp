@@ -126,12 +126,50 @@ void extract_foreground_based_on_depth_guided_map()
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
 	{
-		// load images.
+		// [1] load images.
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, &fx_rgb, &fy_rgb))
 			continue;
 
-		// pre-process input image.
+		// [2] pre-process input image (optional).
+#if 0
+		// METHOD #1: down-scale and up-scale the image to filter out the noise.
 
+		cv::pyrDown(rgb_input_image, tmp_image);
+		cv::pyrUp(tmp_image, rgb_input_image);
+#elif 0
+		// METHOD #2: Gaussian filtering.
+
+		{
+			// FIXME [adjust] >> adjust parameters.
+			const int kernelSize = 3;
+			const double sigma = 0;
+			cv::GaussianBlur(rgb_input_image, rgb_input_image, cv::Size(kernelSize, kernelSize), sigma, sigma);
+		}
+#elif 0
+		// METHOD #3: box filtering.
+
+		{
+			tmp_image = rgb_input_image;
+			// FIXME [adjust] >> adjust parameters.
+			const int d = -1;
+			const int kernelSize = 3;
+			const bool normalize = true;
+			cv::boxFilter(tmp_image, rgb_input_image, d, cv::Size(kernelSize, kernelSize), cv::Point(-1,-1), normalize, cv::BORDER_DEFAULT);
+		}
+#elif 0
+		// METHOD #4: bilateral filtering.
+
+		{
+			tmp_image = rgb_input_image;
+			// FIXME [adjust] >> adjust parameters.
+			const int d = -1;
+			const double sigmaColor = 3.0;
+			const double sigmaSpace = 50.0;
+			cv::bilateralFilter(tmp_image, rgb_input_image, d, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
+		}
+#endif
+
+		// [3] constructure structure tensor mask (optional).
 #if 1
 		// METHOD #1: load structure tensor mask.
 
@@ -164,10 +202,10 @@ void extract_foreground_based_on_depth_guided_map()
 
 		const int64 startTime = cv::getTickCount();
 
-		// construct valid depth image.
+		// [4] construct valid depth image.
 		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
 
-		// construct depth-guided map.
+		// [5] construct depth-guided map.
 #if 0
 		// METHOD #1: construct depth-guided map using superpixel.
 		construct_depth_guided_map_using_superpixel(rgb_input_image, valid_depth_image, depth_validity_mask, depth_guided_map);
@@ -204,7 +242,7 @@ void extract_foreground_based_on_depth_guided_map()
 		}
 #endif
 
-		// extract foreground.
+		// [6] extract foreground.
 #if 0
 		// METHOD #1: segment foreground using Snake.
 		{
@@ -241,15 +279,19 @@ void extract_foreground_based_on_depth_guided_map()
 
 			cv::imshow("results of fitting using Snake", tmp_image);
 		}
-#elif 0
-		// METHOD #2: segment image by GrabCut algorithm.
-		run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_map);
 #elif 1
-		// METHOD #3: segment image by interactive graph-cuts segmentation algorithm.
+		// METHOD #2: segment image by interactive graph-cuts segmentation algorithm.
 		run_interactive_graph_cuts_segmentation(rgb_input_image, valid_depth_image, depth_guided_map);
 #elif 0
-		// METHOD #4: segment image by efficient graph-based image segmentation algorithm.
+		// METHOD #3: segment image by efficient graph-based image segmentation algorithm.
 		run_efficient_graph_based_image_segmentation(rgb_input_image, valid_depth_image, depth_guided_map, fx_rgb, fy_rgb);
+#elif 0
+		// METHOD #4: segment image by GrabCut algorithm.
+		run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_map);
+#elif 0
+		// METHOD #5: segment image by matting.
+
+		// FIXME [implement] >>
 #endif
 
 		const int64 elapsed = cv::getTickCount() - startTime;
