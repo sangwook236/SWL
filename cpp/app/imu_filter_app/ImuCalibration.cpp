@@ -782,51 +782,51 @@ void imu_calibration()
 
 	local::Acceleration meanAccel(0.0, 0.0, 0.0), varAccel(0.0, 0.0, 0.0);
 	local::Gyro meanGyro(0.0, 0.0, 0.0), varGyro(0.0, 0.0, 0.0);
-	load_imu_data("..\\data\\adis16350_data_20100801\\01_z_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/01_z_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\02_z_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/02_z_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\03_x_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/03_x_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\04_x_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/04_x_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\05_y_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/05_y_pos.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\06_y_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/06_y_neg.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\07_pos1_1.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/07_pos1_1.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\08_pos1_2.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/08_pos1_2.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\09_pos1_3.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/09_pos1_3.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\10_pos1_4.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/10_pos1_4.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\11_pos2_1.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/11_pos2_1.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\12_pos2_2.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/12_pos2_2.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\13_pos2_3.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/13_pos2_3.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
-	load_imu_data("..\\data\\adis16350_data_20100801\\14_pos2_4.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
+	load_imu_data("../data/adis16350_data_20100801/14_pos2_4.csv", g_true, meanAccel, varAccel, meanGyro, varGyro);
 	meanAccels.push_back(meanAccel);  varAccels.push_back(varAccel);
 	meanGyros.push_back(meanGyro);  varGyros.push_back(varGyro);
 
 	//
-	const std::string calibration_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
+	const std::string calibration_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
 	std::ofstream stream(calibration_filename.c_str());
 	if (!stream)
 	{

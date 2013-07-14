@@ -58,10 +58,10 @@ public:
 		switch (config)
 		{
 		case 1:
-			log4cxx::PropertyConfigurator::configure(L"..\\data\\test_data\\swl_logger_conf.properties");
+			log4cxx::PropertyConfigurator::configure(L"../data/test_data/swl_logger_conf.properties");
 			break;
 		case 2:
-			log4cxx::xml::DOMConfigurator::configure(L"..\\data\\test_data\\swl_logger_conf.xml");
+			log4cxx::xml::DOMConfigurator::configure(L"../data/test_data/swl_logger_conf.xml");
 			break;
 		case 0:
 		default:
@@ -131,10 +131,10 @@ public:
 		switch (config)
 		{
 		case 1:
-			log4cxx::PropertyConfigurator::configure(L"..\\data\\test_data\\swl_logger_conf.properties");
+			log4cxx::PropertyConfigurator::configure(L"../data/test_data/swl_logger_conf.properties");
 			break;
 		case 2:
-			log4cxx::xml::DOMConfigurator::configure(L"..\\data\\test_data\\swl_logger_conf.xml");
+			log4cxx::xml::DOMConfigurator::configure(L"../data/test_data/swl_logger_conf.xml");
 			break;
 		case 0:
 		default:

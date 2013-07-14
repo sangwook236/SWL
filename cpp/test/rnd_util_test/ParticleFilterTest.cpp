@@ -509,7 +509,7 @@ void simple_system_particle_filter()
 
 	//
 	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
-	std::ofstream stream("..\\data\\particle_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/particle_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "state", state);
@@ -657,7 +657,7 @@ void linear_mass_spring_damper_system_particle_filter()
 
 	//
 	void output_data_to_file(std::ostream &stream, const std::string &variable_name, const std::vector<double> &data);
-	std::ofstream stream("..\\data\\particle_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/particle_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "pos", pos);

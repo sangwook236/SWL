@@ -354,108 +354,108 @@ void imu_extended_Kalman_filter_with_calibration()
 #if defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100801
 	const size_t Nsample = 10000;
 	const double Ts = 29.46875 / Nsample;
-	ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec, 0 cm
+	ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/03_x_pos.csv", Nsample, accels, gyros);  // 10000 sample, 29.46875 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 30.03125 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\04_x_neg.csv", Nsample, accels, gyros);  // 10000 sample, 30.03125 sec, 0 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/04_x_neg.csv", Nsample, accels, gyros);  // 10000 sample, 30.03125 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 31.07813 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\05_y_pos.csv", Nsample, accels, gyros);  // 10000 sample, 31.07813 sec, 0 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/05_y_pos.csv", Nsample, accels, gyros);  // 10000 sample, 31.07813 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 29.28125 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\06_y_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.28125 sec, 0 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/06_y_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.28125 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 30.29688 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\01_z_pos.csv", Nsample, accels, gyros);  // 10000 sample, 30.29688 sec, 0 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/01_z_pos.csv", Nsample, accels, gyros);  // 10000 sample, 30.29688 sec, 0 cm
 	//const size_t Nsample = 10000;
 	//const double Ts = 29.04688 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100801\\02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec, 0 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100801/02_z_neg.csv", Nsample, accels, gyros);  // 10000 sample, 29.04688 sec, 0 cm
 #elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100813
 	const size_t Nsample = 300;
 	const double Ts = 12.89111 / Nsample;
-	ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
+	ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/x_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.89111 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.82764 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.82764 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/x_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.82764 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.70313 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.70313 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/x_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.70313 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.78076 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.78076 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/x_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.78076 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.875 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\x_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/x_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.875 sec, 50 cm
 	//const size_t Nsample = 250;
 	//const double Ts = 10.88989 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.88989 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/y_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.88989 sec, 50 cm
 	//const size_t Nsample = 250;
 	//const double Ts = 10.86011 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/y_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
 	//const size_t Nsample = 250;
 	//const double Ts = 10.86011 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/y_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 250 sample, 40 msec, 10.86011 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 13.04712 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.04712 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/y_neg_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.04712 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.96802 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\y_neg_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96802 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/y_neg_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96802 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.93701 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.93701 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/z_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.93701 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.96875 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/z_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 12.96875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 13.01611 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01611 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/z_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01611 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 13.01514 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01514 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/z_pos_50cm_40msec_4.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.01514 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 13.03076 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100813\\z_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.03076 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100813/z_pos_50cm_40msec_5.csv", Nsample, accels, gyros);  // 300 sample, 40 msec, 13.03076 sec, 50 cm
 #elif defined(__USE_IMU_DATASET_DATE) && __USE_IMU_DATASET_DATE == 20100903
 	//const size_t Nsample = 300;
 	//const double Ts = 12.53125 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/x_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	const size_t Nsample = 300;
 	const double Ts = 12.45313 / Nsample;
-	ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/x_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.5 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/x_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
 
 	//const size_t Nsample = 300;
 	//const double Ts = 12.5 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/y_pos_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.54688 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/y_pos_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.46875 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/y_pos_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
 
 	//const size_t Nsample = 300;
 	//const double Ts = 12.46875 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/z_neg_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.54688 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/z_neg_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.54688 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/z_neg_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
 
 	//const size_t Nsample = 300;
 	//const double Ts = 12.48438 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/tilt_50cm_40msec_1.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.45313 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/tilt_50cm_40msec_2.csv", Nsample, accels, gyros);  // 300 sample, 29.46875 sec, 50 cm
 	//const size_t Nsample = 300;
 	//const double Ts = 12.4375 / Nsample;
-	//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
+	//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/tilt_50cm_40msec_3.csv", Nsample, accels, gyros);  // 300 sample, 12.45313 sec, 50 cm
 #else
 #error incorrect IMU dataset
 #endif
@@ -483,7 +483,7 @@ void imu_extended_Kalman_filter_with_calibration()
 
 	// load calibration parameters
 	std::cout << "load calibration parameters ..." << std::endl;
-	const std::string calibration_param_filename("..\\data\\adis16350_data_20100801\\imu_calibration_result.txt");
+	const std::string calibration_param_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
 	runner.loadCalibrationParam(calibration_param_filename);
 
 	// set an initial gravity
@@ -504,10 +504,10 @@ void imu_extended_Kalman_filter_with_calibration()
 		std::vector<ImuExtendedKalmanFilterRunner::Acceleration> initial_accels;
 		std::vector<ImuExtendedKalmanFilterRunner::Gyro> initial_gyros;
 
-		ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\x_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
-		//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\y_pos_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
-		//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\z_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
-		//ImuExtendedKalmanFilterRunner::loadSavedImuData("..\\data\\adis16350_data_20100903\\tilt_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/x_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/y_pos_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/z_neg_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
+		//ImuExtendedKalmanFilterRunner::loadSavedImuData("../data/adis16350_data_20100903/tilt_initial_40msec.csv", Ninitial, initial_accels, initial_gyros);  // 1000 sample
 
 		runner.initializeGravity(Ninitial, initial_accels, initial_gyros);
 	}

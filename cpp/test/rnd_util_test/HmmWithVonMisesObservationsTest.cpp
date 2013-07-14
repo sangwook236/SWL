@@ -35,13 +35,13 @@ void model_reading_and_writing()
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -92,7 +92,7 @@ void model_reading_and_writing()
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\von_mises_test1_writing.cdhmm");
+		std::ofstream stream("../data/hmm/von_mises_test1_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
@@ -113,7 +113,7 @@ void model_reading_and_writing()
 		};
 
 		//
-		std::ofstream stream("..\\data\\hmm\\von_mises_test2_writing.cdhmm");
+		std::ofstream stream("../data/hmm/von_mises_test2_writing.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -151,13 +151,13 @@ void observation_sequence_generation(const bool outputToFile)
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -200,26 +200,26 @@ void observation_sequence_generation(const bool outputToFile)
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+			std::ofstream stream("../data/hmm/von_mises_test1_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+			std::ofstream stream("../data/hmm/von_mises_test1_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+			std::ofstream stream("../data/hmm/von_mises_test1_1500.seq");
 #endif
 
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+			std::ofstream stream("../data/hmm/von_mises_test2_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+			std::ofstream stream("../data/hmm/von_mises_test2_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+			std::ofstream stream("../data/hmm/von_mises_test2_1500.seq");
 #endif
 
 #endif
@@ -274,11 +274,11 @@ void observation_sequence_reading_and_writing()
 #if __TEST_HMM_MODEL == 1
 
 #if 1
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+	std::ifstream stream("../data/hmm/von_mises_test1_50.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+	std::ifstream stream("../data/hmm/von_mises_test1_100.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+	std::ifstream stream("../data/hmm/von_mises_test1_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -286,11 +286,11 @@ void observation_sequence_reading_and_writing()
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+	std::ifstream stream("../data/hmm/von_mises_test2_50.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+	std::ifstream stream("../data/hmm/von_mises_test2_100.seq");
 #elif 0
-	std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+	std::ifstream stream("../data/hmm/von_mises_test2_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -330,13 +330,13 @@ void forward_algorithm()
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -370,11 +370,11 @@ void forward_algorithm()
 #if __TEST_HMM_MODEL == 1
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -382,11 +382,11 @@ void forward_algorithm()
 #elif __TEST_HMM_MODEL == 2
 
 #if 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_100.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -455,13 +455,13 @@ void viterbi_algorithm()
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -495,11 +495,11 @@ void viterbi_algorithm()
 #if __TEST_HMM_MODEL == 1
 
 #if 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_100.seq");
 #elif 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+		std::ifstream stream("../data/hmm/von_mises_test1_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -507,11 +507,11 @@ void viterbi_algorithm()
 #elif __TEST_HMM_MODEL == 2
 
 #if 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_50.seq");
 #elif 0
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_100.seq");
 #elif 1
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+		std::ifstream stream("../data/hmm/von_mises_test2_1500.seq");
 #else
 		std::istream stream = std::cin;
 #endif
@@ -595,13 +595,13 @@ void em_learning_by_mle()
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test1.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
 		//
-		std::ifstream stream("..\\data\\hmm\\von_mises_test2.cdhmm");
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
 #endif
 		if (!stream)
 		{
@@ -674,11 +674,11 @@ void em_learning_by_mle()
 #if __TEST_HMM_MODEL == 1
 
 #if 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_50.seq");
+			std::ifstream stream("../data/hmm/von_mises_test1_50.seq");
 #elif 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_100.seq");
+			std::ifstream stream("../data/hmm/von_mises_test1_100.seq");
 #elif 1
-			std::ifstream stream("..\\data\\hmm\\von_mises_test1_1500.seq");
+			std::ifstream stream("../data/hmm/von_mises_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -686,11 +686,11 @@ void em_learning_by_mle()
 #elif __TEST_HMM_MODEL == 2
 
 #if 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_50.seq");
+			std::ifstream stream("../data/hmm/von_mises_test2_50.seq");
 #elif 0
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_100.seq");
+			std::ifstream stream("../data/hmm/von_mises_test2_100.seq");
 #elif 1
-			std::ifstream stream("..\\data\\hmm\\von_mises_test2_1500.seq");
+			std::ifstream stream("../data/hmm/von_mises_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -746,16 +746,16 @@ void em_learning_by_mle()
 #if __TEST_HMM_MODEL == 1
 			const size_t R = 3;  // number of observations sequences
 			const std::string observationSequenceFiles[] = {
-				"..\\data\\hmm\\von_mises_test1_50.seq",
-				"..\\data\\hmm\\von_mises_test1_100.seq",
-				"..\\data\\hmm\\von_mises_test1_1500.seq"
+				"../data/hmm/von_mises_test1_50.seq",
+				"../data/hmm/von_mises_test1_100.seq",
+				"../data/hmm/von_mises_test1_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 2
 			const size_t R = 3;  // number of observations sequences
 			const std::string observationSequenceFiles[] = {
-				"..\\data\\hmm\\von_mises_test2_50.seq",
-				"..\\data\\hmm\\von_mises_test2_100.seq",
-				"..\\data\\hmm\\von_mises_test2_1500.seq"
+				"../data/hmm/von_mises_test2_50.seq",
+				"../data/hmm/von_mises_test2_100.seq",
+				"../data/hmm/von_mises_test2_1500.seq"
 			};
 #endif
 			observationSequences.resize(R);
@@ -816,6 +816,11 @@ void em_learning_by_mle()
 	}
 }
 
+void em_learning_by_map()
+{
+	throw std::runtime_error("not yet implemented");
+}
+
 }  // namespace local
 }  // unnamed namespace
 
@@ -831,5 +836,7 @@ void hmm_with_von_mises_observation_densities()
 	//local::forward_algorithm();
 	//local::backward_algorithm();  // not yet implemented
 	//local::viterbi_algorithm();
+
 	local::em_learning_by_mle();
+	//local::em_learning_by_mle();  // not yet implemented
 }

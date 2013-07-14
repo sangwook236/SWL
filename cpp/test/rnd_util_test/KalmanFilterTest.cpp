@@ -731,7 +731,7 @@ void simple_system_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("..\\data\\kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "state", state);
@@ -881,7 +881,7 @@ void aided_INS_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "pos", pos);
@@ -1035,7 +1035,7 @@ void linear_mass_spring_damper_system_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "pos", pos);
@@ -1244,7 +1244,7 @@ void radar_tracking_system_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("..\\data\\extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("../data/extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "rangeGain", rangeGain);

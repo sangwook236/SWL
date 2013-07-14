@@ -326,9 +326,9 @@ void ColoredMeshShape::loadMesh()
 
 	{
 #if defined(DEBUG) || defined(_DEBUG)
-		std::wifstream stream(L"..\\data\\temp_value_320x240.txt");
+		std::wifstream stream(L"../data/temp_value_320x240.txt");
 #else
-		std::ifstream stream("..\\data\\temp_value_320x240.txt");
+		std::ifstream stream("../data/temp_value_320x240.txt");
 #endif
 		if (stream.is_open())
 		{
@@ -350,9 +350,9 @@ void ColoredMeshShape::loadMesh()
 
 	{
 #if defined(DEBUG) || defined(_DEBUG)
-		std::wifstream stream(L"..\\data\\color_index_320x240.txt");
+		std::wifstream stream(L"../data/color_index_320x240.txt");
 #else
-		std::ifstream stream("..\\data\\color_index_320x240.txt");
+		std::ifstream stream("../data/color_index_320x240.txt");
 #endif
 		if (stream.is_open())
 		{
@@ -375,9 +375,9 @@ void ColoredMeshShape::loadMesh()
 
 	{
 #if defined(DEBUG) || defined(_DEBUG)
-		std::wifstream stream(L"..\\data\\rgb_palette.txt");
+		std::wifstream stream(L"../data/rgb_palette.txt");
 #else
-		std::ifstream stream("..\\data\\rgb_palette.txt");
+		std::ifstream stream("../data/rgb_palette.txt");
 #endif
 		if (stream.is_open())
 		{
