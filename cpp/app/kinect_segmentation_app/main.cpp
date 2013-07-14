@@ -21,15 +21,18 @@ namespace swl {
 
 // [ref] Util.cpp
 cv::Rect get_bounding_rect(const cv::Mat &img);
-void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, const int radius, cv::Mat &depth_changing_mask);
+void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, const int radius, cv::Mat &depth_variation_mask);
 void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> &contour, const size_t numSnakePoints, std::vector<cv::Point> &snake_contour);
 
 void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst);
 void guo_hall_thinning_algorithm(cv::Mat &im);
 
 bool load_kinect_images(const std::string &rgb_input_filename, const std::string &depth_input_filename, const bool useRectifiedImages, cv::Mat &rgb_input_image, cv::Mat &depth_input_image, double *fx_rgb, double *fy_rgb);
-bool load_structure_tensor_mask(const std::string &filename, cv::Mat &structure_tensor_mask);
-void construct_valid_depth_image(const bool useDepthRangeFiltering, const double minRange, const double maxRange, const cv::Mat &depth_input_image, cv::Mat &valid_depth_image, cv::Mat &depth_validity_mask);
+bool load_structure_tensor_mask(const std::string &filename, cv::Mat &depth_variation_mask);
+void construct_valid_depth_image(const cv::Mat &depth_input_image, cv::Mat &depth_validity_mask, cv::Mat &valid_depth_image);
+
+void construct_depth_variation_mask_using_structure_tensor(const cv::Mat &depth_image, cv::Mat &depth_variation_mask);
+void construct_depth_variation_mask_using_depth_changing(const cv::Mat &depth_image, cv::Mat &depth_variation_mask);
 
 // [ref] SegmentationUsingGrabCut.cpp
 void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_image, const cv::Mat &depth_guided_map);
@@ -38,13 +41,55 @@ void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_image, const cv::Mat
 void run_interactive_graph_cuts_segmentation(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map);
 void run_efficient_graph_based_image_segmentation(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_guided_map, const double fx_rgb, const double fy_rgb);
 
+void preprocess_image(cv::Mat &image)
+{
+#if 0
+	// METHOD #1: down-scale and up-scale the image to filter out the noise.
+
+	cv::Mat tmp_image;
+	cv::pyrDown(image, tmp_image);
+	cv::pyrUp(tmp_image, image);
+#elif 0
+	// METHOD #2: Gaussian filtering.
+
+	{
+		// FIXME [adjust] >> adjust parameters.
+		const int kernelSize = 3;
+		const double sigma = 0;
+		cv::GaussianBlur(image, image, cv::Size(kernelSize, kernelSize), sigma, sigma);
+	}
+#elif 0
+	// METHOD #3: box filtering.
+
+	{
+		cv::Mat tmp_image = image;
+		// FIXME [adjust] >> adjust parameters.
+		const int d = -1;
+		const int kernelSize = 3;
+		const bool normalize = true;
+		cv::boxFilter(tmp_image, image, d, cv::Size(kernelSize, kernelSize), cv::Point(-1,-1), normalize, cv::BORDER_DEFAULT);
+	}
+#elif 0
+	// METHOD #4: bilateral filtering.
+
+	{
+		cv::Mat tmp_image = image;
+		// FIXME [adjust] >> adjust parameters.
+		const int d = -1;
+		const double sigmaColor = 3.0;
+		const double sigmaSpace = 50.0;
+		cv::bilateralFilter(tmp_image, image, d, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
+	}
+#endif
+}
+
 void extract_foreground_based_on_depth_guided_map()
 {
 	const cv::Size imageSize_ir(640, 480), imageSize_rgb(640, 480), imageSize_mask(640, 480);
 
 #if 0
 	const std::size_t num_images = 4;
-	const bool useStructureTensor = false;
+	const bool useDepthVariation = false;
 
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
@@ -77,7 +122,7 @@ void extract_foreground_based_on_depth_guided_map()
 	}
 #elif 1
 	const std::size_t num_images = 6;
-	const bool useStructureTensor = true;
+	const bool useDepthVariation = true;
 
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list, structure_tensor_mask_file_list;
 	rgb_input_file_list.reserve(num_images);
@@ -118,7 +163,7 @@ void extract_foreground_based_on_depth_guided_map()
 
 	//
 	const bool useRectifiedImages = true;
-	cv::Mat rgb_input_image, depth_input_image, structure_tensor_mask;
+	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
 	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
 	double fx_rgb, fy_rgb;
@@ -130,80 +175,68 @@ void extract_foreground_based_on_depth_guided_map()
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, &fx_rgb, &fy_rgb))
 			continue;
 
-		// [2] pre-process input image (optional).
+		// [2] pre-process input images (optional).
+		preprocess_image(rgb_input_image);
+
+		// [3] construct depth variation mask (optional).
+		if (useDepthVariation)
+		{
 #if 0
-		// METHOD #1: down-scale and up-scale the image to filter out the noise.
-
-		cv::pyrDown(rgb_input_image, tmp_image);
-		cv::pyrUp(tmp_image, rgb_input_image);
-#elif 0
-		// METHOD #2: Gaussian filtering.
-
-		{
-			// FIXME [adjust] >> adjust parameters.
-			const int kernelSize = 3;
-			const double sigma = 0;
-			cv::GaussianBlur(rgb_input_image, rgb_input_image, cv::Size(kernelSize, kernelSize), sigma, sigma);
-		}
-#elif 0
-		// METHOD #3: box filtering.
-
-		{
-			tmp_image = rgb_input_image;
-			// FIXME [adjust] >> adjust parameters.
-			const int d = -1;
-			const int kernelSize = 3;
-			const bool normalize = true;
-			cv::boxFilter(tmp_image, rgb_input_image, d, cv::Size(kernelSize, kernelSize), cv::Point(-1,-1), normalize, cv::BORDER_DEFAULT);
-		}
-#elif 0
-		// METHOD #4: bilateral filtering.
-
-		{
-			tmp_image = rgb_input_image;
-			// FIXME [adjust] >> adjust parameters.
-			const int d = -1;
-			const double sigmaColor = 3.0;
-			const double sigmaSpace = 50.0;
-			cv::bilateralFilter(tmp_image, rgb_input_image, d, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
-		}
-#endif
-
-		// [3] constructure structure tensor mask (optional).
-#if 1
-		// METHOD #1: load structure tensor mask.
-
-		if (useStructureTensor)
-		{
-			if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], structure_tensor_mask))
+			// METHOD #1: load structure tensor mask.
+			if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], depth_variation_mask))
 				continue;
-		}
+#elif 1
+			// METHOD #2: compute structure tensor mask.
+			construct_depth_variation_mask_using_structure_tensor(depth_input_image, depth_variation_mask);
 #elif 0
-		// METHOD #2: compute structure tensor mask.
-
-		// FIXME [implement] >>
-#elif 0
-		// METHOD #3: compute depth changing mask.
-
-		// compute phase distribution from neighborhood
-		{
-			const int radius = 2;
-			cv::Mat depth_changing_mask(imageSize_rgb, CV_8UC1, cv::Scalar::all(0))
-
-			// FIXME [implement] >>
-			compute_phase_distribution_from_neighborhood(depth_image, radius, depth_changing_mask);
+			// METHOD #3: compute depth changing mask.
+			construct_depth_variation_mask_using_depth_changing(depth_input_image, depth_variation_mask);
+#endif
 
 #if 1
-			// show depth changing mask.
-			cv::imshow("depth changing mask", depth_changing_mask);
+			// show depth variation mask.
+			cv::imshow("depth variation mask", depth_variation_mask);
+#endif
+
+#if 0
+			{
+				std::ostringstream strm;
+				strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+				cv::imwrite(strm.str(), depth_variation_mask);
+			}
 #endif
 		}
-#endif
 
 		const int64 startTime = cv::getTickCount();
 
 		// [4] construct valid depth image.
-		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
+		if (useDepthRangeFiltering)
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+		else
+			cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
+
+		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
+
+#if 1
+		// show depth validity mask.
+		cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+		}
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+		}
+#endif
 
 		// [5] construct depth-guided map.
 #if 0
@@ -213,14 +246,14 @@ void extract_foreground_based_on_depth_guided_map()
 		// METHOD #2: construct depth-guided map using edge detection & morphological operation.
 		construct_depth_guided_map_using_edge_detection_and_morphological_operation(valid_depth_image, depth_validity_mask, depth_guided_map);
 #elif 1
-		// METHOD #3: construct depth-guided map using structure tensor.
-		if (structure_tensor_mask.empty())
+		// METHOD #3: construct depth-guided map using depth variation.
+		if (depth_variation_mask.empty())
 		{
-			std::cerr << "structure tensor mask doesn't exist" << std::endl;
+			std::cerr << "depth variation mask doesn't exist" << std::endl;
 			continue;
 		}
 		else
-			construct_depth_guided_map_using_structure_tensor(structure_tensor_mask, depth_guided_map);
+			construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
 #endif
 
 #if 1
@@ -386,16 +419,48 @@ void segment_foreground_based_on_depth_guided_map()
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
 	{
-		// load images.
+		// [1] load images.
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, &fx_rgb, &fy_rgb))
 			continue;
 
+		// [2] pre-process input images (optional).
+		preprocess_image(rgb_input_image);
+
+		// [3] construct depth variation mask (optional).
+		// do nothing
+
 		const int64 startTime = cv::getTickCount();
 
-		// construct valid depth image.
-		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
+		// [4] construct valid depth image.
+		if (useDepthRangeFiltering)
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+		else
+			cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
 
-		// construct depth-guided map.
+		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
+
+#if 1
+		// show depth validity mask.
+		cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+		}
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+		}
+#endif
+
+		// [5] construct depth-guided map.
 #if 0
 		// construct depth-guided map using superpixel.
 		construct_depth_guided_map_using_superpixel(rgb_input_image, valid_depth_image, depth_validity_mask, depth_guided_map);
@@ -421,6 +486,7 @@ void segment_foreground_based_on_depth_guided_map()
 #endif
 		}
 
+		// [6] extract foreground.
 #if 1
 		// segment image by GrabCut algorithm.
 		run_grabcut_using_depth_guided_mask(rgb_input_image, depth_guided_map);
@@ -486,7 +552,7 @@ void segment_foreground_based_on_structure_tensor()
 
 	//
 	const bool useRectifiedImages = true;
-	cv::Mat rgb_input_image, depth_input_image, structure_tensor_mask;
+	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat valid_depth_image, depth_validity_mask(imageSize_rgb, CV_8UC1);
 	cv::Mat depth_guided_map(imageSize_rgb, CV_8UC1), grabCut_mask(imageSize_mask, CV_8UC1);
 	double minVal = 0.0, maxVal = 0.0;
@@ -496,55 +562,69 @@ void segment_foreground_based_on_structure_tensor()
 		// load images.
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, NULL, NULL))
 			continue;
-#if 1
+
+		// [2] pre-process input images (optional).
+		// do nothing
+
+		// [3] construct depth variation mask (optional).
+#if 0
 		// METHOD #1: load structure tensor mask.
-
-		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], structure_tensor_mask))
+		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], depth_variation_mask))
 			continue;
-#elif 0
+#elif 1
 		// METHOD #2: compute structure tensor mask.
-
-		// FIXME [implement] >>
+		construct_depth_variation_mask_using_structure_tensor(depth_input_image, depth_variation_mask);
 #elif 0
 		// METHOD #3: compute depth changing mask.
-
-		// compute phase distribution from neighborhood
-		{
-			const int radius = 2;
-			cv::Mat depth_changing_mask(imageSize_rgb, CV_8UC1, cv::Scalar::all(0))
-
-			// FIXME [implement] >>
-			compute_phase_distribution_from_neighborhood(depth_image, radius, depth_changing_mask);
+		construct_depth_variation_mask_using_depth_changing(depth_input_image, depth_variation_mask);
+#endif
 
 #if 1
-			// show depth changing mask.
-			cv::imshow("depth changing mask", depth_changing_mask);
+		// show depth variation mask.
+		cv::imshow("depth variation mask", depth_variation_mask);
 #endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
 
 		const int64 startTime = cv::getTickCount();
 
-		// construct valid depth image.
-		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
+		// [4] construct valid depth image.
+		if (useDepthRangeFiltering)
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+		else
+			cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
+
+		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
 
 #if 1
-		// show structure tensor mask.
+		// show depth validity mask.
+		cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
 		{
-			cv::imshow("structure tensor mask", structure_tensor_mask);
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
 
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/structure_tensor_mask_" << i << ".png";
-			cv::imwrite(strm.str(), structure_tensor_mask);
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
 
-		// construct depth-guided map.
-		construct_depth_guided_map_using_structure_tensor(structure_tensor_mask, depth_guided_map);
+		// [5] construct depth-guided map.
+		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
 
 #if 1
 		// show depth-guided map.
@@ -565,6 +645,7 @@ void segment_foreground_based_on_structure_tensor()
 		}
 #endif
 
+		// [6] extract foreground.
 #if 0
 		// segment foreground using Snake.
 		{
@@ -663,50 +744,79 @@ void segment_foreground_using_single_layered_graphical_model()
 
 	//
 	const bool useRectifiedImages = true;
-	cv::Mat rgb_input_image, depth_input_image, structure_tensor_mask;
+	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
 	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
 	{
-		// load images.
+		// [1] load images.
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, NULL, NULL))
 			continue;
-#if 1
+
+		// [2] pre-process input images (optional).
+		preprocess_image(rgb_input_image);
+
+		// [3] construct depth variation mask (optional).
+#if 0
 		// METHOD #1: load structure tensor mask.
-
-		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], structure_tensor_mask))
+		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], depth_variation_mask))
 			continue;
-#elif 0
+#elif 1
 		// METHOD #2: compute structure tensor mask.
-
-		// FIXME [implement] >>
+		construct_depth_variation_mask_using_structure_tensor(depth_input_image, depth_variation_mask);
 #elif 0
 		// METHOD #3: compute depth changing mask.
-
-		// compute phase distribution from neighborhood
-		{
-			const int radius = 2;
-			cv::Mat depth_changing_mask(imageSize_rgb, CV_8UC1, cv::Scalar::all(0))
-
-			// FIXME [implement] >>
-			compute_phase_distribution_from_neighborhood(depth_image, radius, depth_changing_mask);
+		construct_depth_variation_mask_using_depth_changing(depth_input_image, depth_variation_mask);
+#endif
 
 #if 1
-			// show depth changing mask.
-			cv::imshow("depth changing mask", depth_changing_mask);
+		// show depth variation mask.
+		cv::imshow("depth variation mask", depth_variation_mask);
 #endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
 
 		const int64 startTime = cv::getTickCount();
 
-		// construct valid depth image.
-		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
+		// [4] construct valid depth image.
+		if (useDepthRangeFiltering)
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+		else
+			cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
 
-		// construct depth-guided map.
-		construct_depth_guided_map_using_structure_tensor(structure_tensor_mask, depth_guided_map);
+		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
+
+#if 1
+		// show depth validity mask.
+		cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+		}
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+		}
+#endif
+
+		// [5] construct depth-guided map.
+		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
 
 #if 1
 		// show depth-guided map.
@@ -727,6 +837,7 @@ void segment_foreground_using_single_layered_graphical_model()
 		}
 #endif
 
+		// [6] extract foreground.
 		// segment image by interactive graph-cuts segmentation algorithm.
 		run_interactive_graph_cuts_segmentation(rgb_input_image, valid_depth_image, depth_guided_map);
 
@@ -780,48 +891,79 @@ void segment_foreground_using_two_layered_graphical_model()
 
 	//
 	const bool useRectifiedImages = true;
-	cv::Mat rgb_input_image, depth_input_image;
+	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
 	{
-		// load images.
+		// [1] load images.
 		if (!load_kinect_images(rgb_input_file_list[i], depth_input_file_list[i], useRectifiedImages, rgb_input_image, depth_input_image, NULL, NULL))
 			continue;
+
+		// [2] pre-process input images (optional).
+		preprocess_image(rgb_input_image);
+
+		// [3] construct depth variation mask (optional).
 #if 0
 		// METHOD #1: load structure tensor mask.
-
-		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], structure_tensor_mask))
+		if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], depth_variation_mask))
 			continue;
-#elif 0
+#elif 1
 		// METHOD #2: compute structure tensor mask.
-
-		// FIXME [implement] >>
+		construct_depth_variation_mask_using_structure_tensor(depth_input_image, depth_variation_mask);
 #elif 0
 		// METHOD #3: compute depth changing mask.
-
-		// compute phase distribution from neighborhood
-		{
-			const int radius = 2;
-			cv::Mat depth_changing_mask(imageSize_rgb, CV_8UC1, cv::Scalar::all(0))
-
-			// FIXME [implement] >>
-			compute_phase_distribution_from_neighborhood(depth_image, radius, depth_changing_mask);
+		construct_depth_variation_mask_using_depth_changing(depth_input_image, depth_variation_mask);
+#endif
 
 #if 1
-			// show depth changing mask.
-			cv::imshow("depth changing mask", depth_changing_mask);
+		// show depth variation mask.
+		cv::imshow("depth variation mask", depth_variation_mask);
 #endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
 
 		const int64 startTime = cv::getTickCount();
 
-		// construct valid depth image.
-		construct_valid_depth_image(useDepthRangeFiltering, depth_range_list[i].start, depth_range_list[i].end, depth_input_image, valid_depth_image, depth_validity_mask);
+		// [4] construct valid depth image.
+		if (useDepthRangeFiltering)
+			cv::inRange(depth_input_image, cv::Scalar::all(depth_range_list[i].start), cv::Scalar::all(depth_range_list[i].end), depth_validity_mask);
+		else
+			cv::Mat(depth_input_image > 0).copyTo(depth_validity_mask);
 
-		// construct depth-guided map.
+		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
+
+#if 1
+		// show depth validity mask.
+		cv::imshow("depth validity mask", depth_validity_mask);
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			cv::imwrite(strm.str(), depth_validity_mask);
+		}
+#endif
+
+#if 0
+		{
+			std::ostringstream strm;
+			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			cv::imwrite(strm.str(), valid_depth_image);
+		}
+#endif
+
+		// [5] construct depth-guided map.
+
+		// FIXME [implement] >>
 
 #if 1
 		// show depth-guided map.
@@ -839,6 +981,10 @@ void segment_foreground_using_two_layered_graphical_model()
 			cv::imwrite(strm.str(), tmp_image);
 #endif
 		}
+
+		// [6] extract foreground.
+
+		// FIXME [implement] >>
 
 		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
@@ -863,13 +1009,16 @@ int main(int argc, char *argv[])
 	{
 		std::srand((unsigned int)std::time(NULL));
 
+/*
 		//swl::segment_foreground_based_on_depth_guided_map();
 		//swl::segment_foreground_based_on_structure_tensor();
 
         // FIXME [implement] >> not completed
         //swl::segment_foreground_using_single_layered_graphical_model();
 		//swl::segment_foreground_using_two_layered_graphical_model();
+*/
 
+		// integrated version.
 		swl::extract_foreground_based_on_depth_guided_map();
 
 #if 0
@@ -886,7 +1035,7 @@ int main(int argc, char *argv[])
 			std::cout << "input mat = " << mat << std::endl;
 			cv::Mat mat2(mat.size(), CV_8UC1, cv::Scalar::all(0));  // CV_8UC1
 			const int radius = 2;
-			swl::compute_phase_distribution_from_neighborhood(mat, radius, depth_changing_mask);
+			swl::compute_phase_distribution_from_neighborhood(mat, radius, depth_variation_mask);
 		}
 #endif
 	}
