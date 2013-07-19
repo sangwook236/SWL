@@ -344,6 +344,7 @@ bool DDHMM::estimateParametersByML(const size_t N, const uivector_type &observat
 			}
 
 			// reestimate observation(emission) distribution in each state
+			// run M-step only.
 			doEstimateObservationDensityParametersByML(N, (unsigned int)k, observations, gamma ,denominatorA);
 		}
 
@@ -469,6 +470,7 @@ bool DDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 			}
 
 			// reestimate observation(emission) distribution in each state
+			// run M-step only.
 			doEstimateObservationDensityParametersByML(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 

@@ -22,7 +22,7 @@ namespace swl {
 // [ref] Util.cpp
 cv::Rect get_bounding_rect(const cv::Mat &img);
 void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, const int radius, cv::Mat &depth_variation_mask);
-void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> &contour, const size_t numSnakePoints, std::vector<cv::Point> &snake_contour);
+void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> &contour, const size_t numSnakePoints, const float alpha, const float beta, const float gamma, const bool use_gradient, const CvSize &win, std::vector<cv::Point> &snake_contour);
 
 void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst);
 void guo_hall_thinning_algorithm(cv::Mat &im);
@@ -276,28 +276,55 @@ void extract_foreground_based_on_depth_guided_map()
 #endif
 
 		// [6] extract foreground.
-#if 0
+#if 1
 		// METHOD #1: segment foreground using Snake.
 		{
+			std::vector<std::vector<cv::Point> > contours;
+			cv::findContours(cv::Mat(SWL_PR_FGD == depth_guided_map), contours, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE, cv::Point());
+			//std::vector<cv::Vec4i> hierarchy;
+			//cv::findContours(cv::Mat(SWL_PR_FGD == depth_guided_map), contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE, cv::Point());
+
 			//const std::size_t NUM_SNAKE_POINTS = 50;
 			const std::size_t NUM_SNAKE_POINTS = 0;
+			const float alpha = 5.0f;  // weight(s) of continuity energy, single float or array of length floats, one for each contour point.
+			const float beta = 5.0f;  // weight(s) of curvature energy, single float or array of length floats, one for each contour point.
+			const float gamma = 5.0f;  // weight(s) of image energy, single float or array of length floats, one for each contour point.
+			const bool use_gradient = true;  // gradient flag; if true, the function calculates the gradient magnitude for every image pixel and consideres it as the energy field, otherwise the input image itself is considered.
+			const CvSize win = cvSize(21, 21);  // size of neighborhood of every point used to search the minimum, both win.width and win.height must be odd.
+			const double MIN_CONTOUR_AREA = 100;
 
 			cv::Mat gray_image;
 			cv::cvtColor(rgb_input_image, gray_image, CV_BGR2GRAY);
 
-			std::vector<std::vector<cv::Point> > snake_contours;
-			snake_contours.reserve(contours.size());
-			for (int idx = 0; idx >= 0; idx = hierarchy[idx][0])
+			// FIXME [delete] >>
 			{
-				if (cv::contourArea(cv::Mat(contours[idx])) < MIN_CONTOUR_AREA) continue;
-
-				std::vector<cv::Point> snake_contour;
-				swl::fit_contour_by_snake(gray_image, contours[idx], NUM_SNAKE_POINTS, snake_contour);
-				snake_contours.push_back(snake_contour);
+				std::ostringstream strm;
+				//strm << "../data/kinect_segmentation/gray_image_" << i << ".png";
+				//cv::imwrite(strm.str(), gray_image);
+				strm << "../data/kinect_segmentation/rgb_image_" << i << ".png";
+				cv::imwrite(strm.str(), rgb_input_image);
 			}
 
+			std::vector<std::vector<cv::Point> > snake_contours;
+			snake_contours.reserve(contours.size());
+			std::cout << "start snake ..." << std::endl;
+			for (std::vector<std::vector<cv::Point> >::const_iterator cit = contours.begin(); cit != contours.end(); ++cit)
+			{
+				if (cit->empty() || cv::contourArea(cv::Mat(*cit)) < MIN_CONTOUR_AREA)
+					snake_contours.push_back(std::vector<cv::Point>());
+				else
+				{
+					std::vector<cv::Point> snake_contour;
+					{
+						swl::fit_contour_by_snake(gray_image, *cit, NUM_SNAKE_POINTS, alpha, beta, gamma, use_gradient, win, snake_contour);
+					}
+					snake_contours.push_back(snake_contour);
+				}
+			}
+			std::cout << "end snake ..." << std::endl;
+
 			// show results of fitting using Snake.
-			rgb_input_image.copyTo(tmp_image);
+			//rgb_input_image.copyTo(tmp_image);
 
 			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
 			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), 1, 8, cv::noArray(), 0, cv::Point());
@@ -306,11 +333,27 @@ void extract_foreground_based_on_depth_guided_map()
 			{
 				if (cit->empty() || cv::contourArea(cv::Mat(*cit)) < MIN_CONTOUR_AREA) continue;
 
-				const cv::Scalar color(std::rand() & 255, std::rand() & 255, std::rand() & 255);
-				cv::drawContours(tmp_image, snake_contours, idx, color, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				//rgb_input_image.copyTo(tmp_image);
+				cv::cvtColor(gray_image, tmp_image, CV_GRAY2BGR);
+
+				std::cout << "contour id: " << (idx + 1) << " / " << snake_contours.size() << std::endl;
+
+				//const cv::Scalar color1(std::rand() & 255, std::rand() & 255, std::rand() & 255);
+				const cv::Scalar color1(0, 255, 0);
+				//cv::drawContours(tmp_image, contours, idx, color1, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				cv::drawContours(tmp_image, contours, idx, color1, 2, 8, cv::noArray(), 0, cv::Point());
+
+				//const cv::Scalar color2(std::rand() & 255, std::rand() & 255, std::rand() & 255);
+				const cv::Scalar color2(0, 0, 255);
+				//cv::drawContours(tmp_image, snake_contours, idx, color2, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				cv::drawContours(tmp_image, snake_contours, idx, color2, 2, 8, cv::noArray(), 0, cv::Point());
+
+				cv::imshow("results of fitting using Snake", tmp_image);
+
+				cv::waitKey(0);
 			}
 
-			cv::imshow("results of fitting using Snake", tmp_image);
+			//cv::imshow("results of fitting using Snake", tmp_image);
 		}
 #elif 1
 		// METHOD #2: segment image by interactive graph-cuts segmentation algorithm.
@@ -651,6 +694,11 @@ void segment_foreground_based_on_structure_tensor()
 		{
 			//const std::size_t NUM_SNAKE_POINTS = 50;
 			const std::size_t NUM_SNAKE_POINTS = 0;
+			const float alpha = 3.0f;  // weight(s) of continuity energy, single float or array of length floats, one for each contour point.
+			const float beta = 5.0f;  // weight(s) of curvature energy, single float or array of length floats, one for each contour point.
+			const float gamma = 2.0f;  // weight(s) of image energy, single float or array of length floats, one for each contour point.
+			const bool use_gradient = true;  // gradient flag; if true, the function calculates the gradient magnitude for every image pixel and consideres it as the energy field, otherwise the input image itself is considered.
+			const CvSize win = cvSize(21, 21);  // size of neighborhood of every point used to search the minimum, both win.width and win.height must be odd.
 
 			cv::Mat gray_image;
 			cv::cvtColor(rgb_input_image, gray_image, CV_BGR2GRAY);
@@ -662,7 +710,7 @@ void segment_foreground_based_on_structure_tensor()
 				if (cv::contourArea(cv::Mat(contours[idx])) < MIN_CONTOUR_AREA) continue;
 
 				std::vector<cv::Point> snake_contour;
-				swl::fit_contour_by_snake(gray_image, contours[idx], NUM_SNAKE_POINTS, snake_contour);
+				swl::fit_contour_by_snake(gray_image, contours[idx], NUM_SNAKE_POINTS, alpha, beta, gamma, use_gradient, win, snake_contour);
 				snake_contours.push_back(snake_contour);
 			}
 

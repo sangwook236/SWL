@@ -724,7 +724,206 @@ void em_learning_by_mle()
 
 void em_learning_by_map()
 {
-	throw std::runtime_error("not yet implemented");
+	boost::scoped_ptr<swl::DDHMM> ddhmm;
+
+/*
+	you can initialize the hmm model three ways:
+		1) with a model, which also sets the number of states N and number of symbols M.
+		2) with a random model by just specifyin N and M.
+		3) with a specific random model by specifying N, M and seed.
+*/
+
+	// initialize a model
+	const int initialization_mode = 1;
+	if (1 == initialization_mode)
+	{
+#if __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
+
+		//
+		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
+#elif __TEST_HMM_MODEL == 2
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
+
+		//
+		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
+#endif
+		if (!stream)
+		{
+			std::ostringstream stream;
+			stream << "file not found at " << __LINE__ << " in " << __FILE__;
+			throw std::runtime_error(stream.str().c_str());
+			return;
+		}
+
+		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+
+		const bool retval = ddhmm->readModel(stream);
+		if (!retval)
+		{
+			std::ostringstream stream;
+			stream << "model writing error at " << __LINE__ << " in " << __FILE__;
+			throw std::runtime_error(stream.str().c_str());
+			return;
+		}
+
+		// normalize pi, A, & B
+		ddhmm->normalizeModelParameters();
+
+		//ddhmm->writeModel(std::cout);
+	}
+	else if (2 == initialization_mode)
+	{
+#if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
+		const unsigned int seed = 34586u;
+#else
+		const unsigned int seed = (unsigned int)std::time(NULL);
+#endif
+		std::srand(seed);
+		std::cout << "random seed: " << seed << std::endl;
+
+		const size_t K = 3;  // the dimension of hidden states
+		const size_t D = 2;  // the dimension of observation symbols
+
+		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+
+		ddhmm->initializeModel(std::vector<double>(), std::vector<double>());
+	}
+	else
+		throw std::runtime_error("incorrect initialization mode");
+
+	const size_t K = ddhmm->getStateDim();
+
+	// for a single observation sequence
+	{
+		// read a observation sequence
+		swl::DDHMM::uivector_type observations;
+		size_t N = 0;  // length of observation sequence, N
+		{
+#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+
+#if 0
+			std::ifstream stream("../data/hmm/multinomial_test1_50.seq");
+#elif 0
+			std::ifstream stream("../data/hmm/multinomial_test1_100.seq");
+#elif 1
+			std::ifstream stream("../data/hmm/multinomial_test1_1500.seq");
+#else
+			std::istream stream = std::cin;
+#endif
+
+#endif
+			if (!stream)
+			{
+				std::ostringstream stream;
+				stream << "file not found at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
+				return;
+			}
+
+			const bool retval = swl::DDHMM::readSequence(stream, N, observations);
+			if (!retval)
+			{
+				std::ostringstream stream;
+				stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
+				return;
+			}
+		}
+
+		// Baum-Welch algorithm
+		{
+			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
+			size_t numIteration = (size_t)-1;
+			double initLogProbability = 0.0, finalLogProbability = 0.0;
+			ddhmm->estimateParametersByMAP(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+
+			// normalize pi, A, & B
+			//ddhmm->normalizeModelParameters();
+
+			//
+			std::cout << "------------------------------------" << std::endl;
+			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
+			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
+			std::cout << "\testimated model:" << std::endl;
+			ddhmm->writeModel(std::cout);
+		}
+	}
+
+	// for multiple independent observation sequences
+	{
+		// read a observation sequence
+		std::vector<swl::DDHMM::uivector_type> observationSequences;
+		std::vector<size_t> Ns;  // lengths of observation sequences
+		{
+#if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
+			const size_t R = 3;  // number of observations sequences
+			const std::string observationSequenceFiles[] = {
+				"../data/hmm/multinomial_test1_50.seq",
+				"../data/hmm/multinomial_test1_100.seq",
+				"../data/hmm/multinomial_test1_1500.seq"
+			};
+#endif
+			observationSequences.resize(R);
+			Ns.resize(R);
+			for (size_t r = 0; r < R; ++r)
+			{
+				std::ifstream stream(observationSequenceFiles[r].c_str());
+				if (!stream)
+				{
+					std::ostringstream stream;
+					stream << "file not found at " << __LINE__ << " in " << __FILE__;
+					throw std::runtime_error(stream.str().c_str());
+					return;
+				}
+
+				const bool retval = swl::DDHMM::readSequence(stream, Ns[r], observationSequences[r]);
+				if (!retval)
+				{
+					std::ostringstream stream;
+					stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
+					throw std::runtime_error(stream.str().c_str());
+					return;
+				}
+			}
+		}
+
+		const size_t R = observationSequences.size();  // number of observations sequences
+
+		// Baum-Welch algorithm
+		{
+			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
+			size_t numIteration = (size_t)-1;
+			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
+			ddhmm->estimateParametersByMAP(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+
+			// normalize pi, A, & B
+			//ddhmm->normalizeModelParameters();
+
+			//
+			std::cout << "------------------------------------" << std::endl;
+			std::cout << "Baum-Welch algorithm for multiple independent observation sequences" << std::endl;
+			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
+			std::cout << "\tlog prob(observation sequences | initial model):" << std::endl;
+			std::cout << "\t\t";
+			for (size_t r = 0; r < R; ++r)
+				std::cout << std::scientific << initLogProbabilities[r] << ' ';
+			std::cout << std::endl;
+			std::cout << "\tlog prob(observation sequences | estimated model):" << std::endl;
+			std::cout << "\t\t";
+			for (size_t r = 0; r < R; ++r)
+				std::cout << std::scientific << finalLogProbabilities[r] << ' ';
+			std::cout << std::endl;
+			std::cout << "\testimated model:" << std::endl;
+			ddhmm->writeModel(std::cout);
+		}
+	}
 }
 
 }  // namespace local

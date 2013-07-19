@@ -1151,7 +1151,7 @@ void em_learning_by_map()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->estimateParametersByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->estimateParametersByMAP(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi, A, & alpha
 			//cdhmm->normalizeModelParameters();
@@ -1228,7 +1228,7 @@ void em_learning_by_map()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			cdhmm->estimateParametersByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->estimateParametersByMAP(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
 			// normalize pi, A, & alpha
 			//cdhmm->normalizeModelParameters();
@@ -1270,5 +1270,5 @@ void hmm_with_von_mises_mixture_observation_densities()
 	//local::viterbi_algorithm();
 
 	//local::em_learning_by_mle();
-	local::em_learning_by_map();
+	local::em_learning_by_map();  // not yet implemented
 }

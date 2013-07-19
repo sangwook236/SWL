@@ -40,7 +40,7 @@ void HMM::computeGamma(const std::size_t N, const dmatrix_type &alpha, const dma
 		}
 
 		for (k = 0; k < K_; ++k)
-			gamma(n, k) = gamma(n, k) / denominator;
+			gamma(n, k) /= denominator;
 	}
 }
 

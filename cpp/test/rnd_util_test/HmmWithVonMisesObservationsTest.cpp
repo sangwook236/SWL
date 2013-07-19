@@ -818,7 +818,243 @@ void em_learning_by_mle()
 
 void em_learning_by_map()
 {
-	throw std::runtime_error("not yet implemented");
+	boost::scoped_ptr<swl::CDHMM> cdhmm;
+
+/*
+	you can initialize the hmm model three ways:
+		1) with a model, which also sets the number of states N and number of symbols M.
+		2) with a random model by just specifyin N and M.
+		3) with a specific random model by specifying N, M and seed.
+*/
+
+	// initialize a model
+	const int initialization_mode = 1;
+	if (1 == initialization_mode)
+	{
+#if __TEST_HMM_MODEL == 1
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
+
+		//
+		std::ifstream stream("../data/hmm/von_mises_test1.cdhmm");
+#elif __TEST_HMM_MODEL == 2
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
+
+		//
+		std::ifstream stream("../data/hmm/von_mises_test2.cdhmm");
+#endif
+		if (!stream)
+		{
+			std::ostringstream stream;
+			stream << "file not found at " << __LINE__ << " in " << __FILE__;
+			throw std::runtime_error(stream.str().c_str());
+			return;
+		}
+
+		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+
+		const bool retval = cdhmm->readModel(stream);
+		if (!retval)
+		{
+			std::ostringstream stream;
+			stream << "model reading error at " << __LINE__ << " in " << __FILE__;
+			throw std::runtime_error(stream.str().c_str());
+			return;
+		}
+
+		// normalize pi & A
+		cdhmm->normalizeModelParameters();
+
+		//cdhmm->writeModel(std::cout);
+	}
+	else if (2 == initialization_mode)
+	{
+#if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
+		const unsigned int seed = 34586u;
+#else
+		const unsigned int seed = (unsigned int)std::time(NULL);
+#endif
+		std::srand(seed);
+		std::cout << "random seed: " << seed << std::endl;
+
+		const size_t K = 3;  // the dimension of hidden states
+		//const size_t D = 1;  // the dimension of observation symbols
+
+		cdhmm.reset(new swl::HmmWithVonMisesObservations(K));
+
+		// the total number of parameters of observation density = K * D * 2.
+		std::vector<double> lowerBounds, upperBounds;
+		const size_t numParameters = K * 1 * 2;
+		lowerBounds.reserve(numParameters);
+		upperBounds.reserve(numParameters);
+		const double small = 1.0e-10;
+		// mean directions: 0 <= mu < 2 * pi.
+		for (size_t i = 0; i < K; ++i)
+		{
+			lowerBounds.push_back(0.0);
+			upperBounds.push_back(2.0 * boost::math::constants::pi<double>() - small);
+		}
+		// concentration parameters: kappa >= 0.
+		for (size_t i = K; i < numParameters; ++i)
+		{
+			lowerBounds.push_back(small);
+			upperBounds.push_back(10000.0);
+		}
+		cdhmm->initializeModel(lowerBounds, upperBounds);
+	}
+	else
+		throw std::runtime_error("incorrect initialization mode");
+
+	// for a single observation sequence
+	{
+		// read a observation sequence
+		swl::CDHMM::dmatrix_type observations;
+		size_t N = 0;  // length of observation sequence, N
+		{
+#if __TEST_HMM_MODEL == 1
+
+#if 0
+			std::ifstream stream("../data/hmm/von_mises_test1_50.seq");
+#elif 0
+			std::ifstream stream("../data/hmm/von_mises_test1_100.seq");
+#elif 1
+			std::ifstream stream("../data/hmm/von_mises_test1_1500.seq");
+#else
+			std::istream stream = std::cin;
+#endif
+
+#elif __TEST_HMM_MODEL == 2
+
+#if 0
+			std::ifstream stream("../data/hmm/von_mises_test2_50.seq");
+#elif 0
+			std::ifstream stream("../data/hmm/von_mises_test2_100.seq");
+#elif 1
+			std::ifstream stream("../data/hmm/von_mises_test2_1500.seq");
+#else
+			std::istream stream = std::cin;
+#endif
+
+#endif
+			if (!stream)
+			{
+				std::ostringstream stream;
+				stream << "file not found at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
+				return;
+			}
+
+			size_t D = 0;
+			const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
+			if (!retval || cdhmm->getObservationDim() != D)
+			{
+				std::ostringstream stream;
+				stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
+				throw std::runtime_error(stream.str().c_str());
+				return;
+			}
+		}
+
+		// Baum-Welch algorithm
+		{
+			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
+			size_t numIteration = (size_t)-1;
+			double initLogProbability = 0.0, finalLogProbability = 0.0;
+			cdhmm->estimateParametersByMAP(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+
+			// normalize pi & A
+			//cdhmm->normalizeModelParameters();
+
+			//
+			std::cout << "------------------------------------" << std::endl;
+			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
+			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
+			std::cout << "\testimated model:" << std::endl;
+			cdhmm->writeModel(std::cout);
+		}
+	}
+
+	// for multiple independent observation sequences
+	{
+		// read a observation sequence
+		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
+		std::vector<size_t> Ns;  // lengths of observation sequences
+		{
+#if __TEST_HMM_MODEL == 1
+			const size_t R = 3;  // number of observations sequences
+			const std::string observationSequenceFiles[] = {
+				"../data/hmm/von_mises_test1_50.seq",
+				"../data/hmm/von_mises_test1_100.seq",
+				"../data/hmm/von_mises_test1_1500.seq"
+			};
+#elif __TEST_HMM_MODEL == 2
+			const size_t R = 3;  // number of observations sequences
+			const std::string observationSequenceFiles[] = {
+				"../data/hmm/von_mises_test2_50.seq",
+				"../data/hmm/von_mises_test2_100.seq",
+				"../data/hmm/von_mises_test2_1500.seq"
+			};
+#endif
+			observationSequences.resize(R);
+			Ns.resize(R);
+			for (size_t r = 0; r < R; ++r)
+			{
+				std::ifstream stream(observationSequenceFiles[r].c_str());
+				if (!stream)
+				{
+					std::ostringstream stream;
+					stream << "file not found at " << __LINE__ << " in " << __FILE__;
+					throw std::runtime_error(stream.str().c_str());
+					return;
+				}
+
+				size_t D = 0;
+				const bool retval = swl::CDHMM::readSequence(stream, Ns[r], D, observationSequences[r]);
+				if (!retval || cdhmm->getObservationDim() != D)
+				{
+					std::ostringstream stream;
+					stream << "sample sequence reading error at " << __LINE__ << " in " << __FILE__;
+					throw std::runtime_error(stream.str().c_str());
+					return;
+				}
+			}
+		}
+
+		const size_t R = observationSequences.size();  // number of observations sequences
+
+		// Baum-Welch algorithm
+		{
+			const double terminationTolerance = 0.001;
+			const size_t maxIteration = 1000;
+			size_t numIteration = (size_t)-1;
+			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
+			cdhmm->estimateParametersByMAP(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+
+			// normalize pi & A
+			//cdhmm->normalizeModelParameters();
+
+			//
+			std::cout << "------------------------------------" << std::endl;
+			std::cout << "Baum-Welch algorithm for multiple independent observation sequences" << std::endl;
+			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
+			std::cout << "\tlog prob(observation sequences | initial model):" << std::endl;
+			std::cout << "\t\t";
+			for (size_t r = 0; r < R; ++r)
+				std::cout << std::scientific << initLogProbabilities[r] << ' ';
+			std::cout << std::endl;
+			std::cout << "\tlog prob(observation sequences | estimated model):" << std::endl;
+			std::cout << "\t\t";
+			for (size_t r = 0; r < R; ++r)
+				std::cout << std::scientific << finalLogProbabilities[r] << ' ';
+			std::cout << std::endl;
+			std::cout << "\testimated model:" << std::endl;
+			cdhmm->writeModel(std::cout);
+		}
+	}
 }
 
 }  // namespace local
@@ -838,5 +1074,5 @@ void hmm_with_von_mises_observation_densities()
 	//local::viterbi_algorithm();
 
 	local::em_learning_by_mle();
-	//local::em_learning_by_mle();  // not yet implemented
+	//local::em_learning_by_map();  // not yet implemented
 }

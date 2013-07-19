@@ -46,7 +46,7 @@ void ContinuousDensityMixtureModel::computeGamma(const std::size_t N, const dmat
 		logProbability += std::log(denominator);
 
 		for (k = 0; k < K_; ++k)
-			gamma(n, k) = gamma(n, k) / denominator;
+			gamma(n, k) /= denominator;
 	}
 }
 
@@ -128,7 +128,7 @@ bool ContinuousDensityMixtureModel::estimateParametersByMAP(const std::size_t N,
 			pi_[k] = 0.001 + 0.999 * sumGamma / N;
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersByML(N, (unsigned int)k, observations, gamma, sumGamma);
+			doEstimateObservationDensityParametersByMAP(N, (unsigned int)k, observations, gamma, sumGamma);
 		}
 
 		// E-step
