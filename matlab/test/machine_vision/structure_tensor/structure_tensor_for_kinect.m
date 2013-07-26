@@ -11,22 +11,39 @@
 %----------------------------------------------------------
 % load images
 
-rgb_image_file_list = [
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162309.png', 'rgb', true),
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162314.png', 'rgb', true),
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162348.png', 'rgb', true),
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162459.png', 'rgb', true),
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162525.png', 'rgb', true)
-	struct('filename', './kinect/kinect_rgba_rectified_20130614T162552.png', 'rgb', true)
-];
-depth_image_file_list = [
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162309.png', 'rgb', false),
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162314.png', 'rgb', false),
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162348.png', 'rgb', false),
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162459.png', 'rgb', false),
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162525.png', 'rgb', false)
-	struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162552.png', 'rgb', false)
-];
+if false
+	rgb_image_file_list = [
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162309.png', 'rgb', true),
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162314.png', 'rgb', true),
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162348.png', 'rgb', true),
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162459.png', 'rgb', true),
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162525.png', 'rgb', true)
+		struct('filename', './kinect/kinect_rgba_rectified_20130614T162552.png', 'rgb', true)
+	];
+	depth_image_file_list = [
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162309.png', 'rgb', false),
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162314.png', 'rgb', false),
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162348.png', 'rgb', false),
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162459.png', 'rgb', false),
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162525.png', 'rgb', false)
+		struct('filename', './kinect/kinect_depth_rectified_valid_20130614T162552.png', 'rgb', false)
+	];
+elseif true
+	rgb_image_file_list = [
+		struct('filename', './kinect/kinect2_rgba_20130725T211659.png', 'rgb', true),
+		struct('filename', './kinect/kinect2_rgba_20130725T211705.png', 'rgb', true),
+		struct('filename', './kinect/kinect2_rgba_20130725T211713.png', 'rgb', true),
+		struct('filename', './kinect/kinect2_rgba_20130725T211839.png', 'rgb', true)
+		struct('filename', './kinect/kinect2_rgba_20130725T211842.png', 'rgb', true)
+	];
+	depth_image_file_list = [
+		struct('filename', './kinect/kinect2_depth_transformed_20130725T211659.png', 'rgb', false),
+		struct('filename', './kinect/kinect2_depth_transformed_20130725T211705.png', 'rgb', false),
+		struct('filename', './kinect/kinect2_depth_transformed_20130725T211713.png', 'rgb', false),
+		struct('filename', './kinect/kinect2_depth_transformed_20130725T211839.png', 'rgb', false)
+		struct('filename', './kinect/kinect2_depth_transformed_20130725T211842.png', 'rgb', false)
+	];
+end;
 num_image_pairs = length(rgb_image_file_list);
 
 rgb_input_images = cell(1, num_image_pairs);
@@ -96,7 +113,7 @@ for kk = 1:num_image_pairs
 	%--------------------------------------------------------------------
 	% save results
 
-	if true
+	if false
 		filename = sprintf('structure_tensor_ev_ratio_%d.png', kk);
 		imwrite(ev_ratio, filename, 'bitdepth', 32);
 	else

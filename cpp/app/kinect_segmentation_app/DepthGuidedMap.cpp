@@ -305,15 +305,6 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		}
 #endif
 
-		// FIXME [delete] >>
-		{
-			// construct depth-guided map.
-			depth_guided_map.setTo(cv::Scalar::all(0));
-			depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD), processed_depth_variation_mask);
-
-			return;
-		}
-
 		// post-process depth variation mask.
 		cv::morphologyEx(processed_depth_variation_mask, processed_depth_variation_mask, cv::MORPH_CLOSE, selement5, cv::Point(-1, -1), 3);
 		//cv::imshow("post-processed depth variation mask 1", processed_depth_variation_mask);
@@ -323,6 +314,15 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 
 		//cv::erode(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
 		//cv::dilate(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
+
+		// FIXME [delete] >>
+		{
+			// construct depth-guided map.
+			depth_guided_map.setTo(cv::Scalar::all(0));
+			depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD), processed_depth_variation_mask);
+
+			return;
+		}
 
 #if 0
 		// show post-processed depth variation mask.

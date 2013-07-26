@@ -90,6 +90,8 @@ void extract_foreground_based_on_depth_guided_map()
 #if 0
 	const std::size_t num_images = 4;
 	const bool useDepthVariation = false;
+	const bool useRectifiedImages = true;
+	const bool useDepthRangeFiltering = false;
 
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
@@ -103,10 +105,9 @@ void extract_foreground_based_on_depth_guided_map()
 	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023346.png");
 	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023359.png");
 
-	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
+	depth_range_list.reserve(num_images);
 	{
-		depth_range_list.reserve(num_images);
 #if 0
 		depth_range_list.push_back(cv::Range(500, 3420));
 		depth_range_list.push_back(cv::Range(500, 3120));
@@ -120,9 +121,11 @@ void extract_foreground_based_on_depth_guided_map()
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
 #endif
 	}
-#elif 1
+#elif 0
 	const std::size_t num_images = 6;
 	const bool useDepthVariation = true;
+	const bool useRectifiedImages = true;
+	const bool useDepthRangeFiltering = false;
 
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list, structure_tensor_mask_file_list;
 	rgb_input_file_list.reserve(num_images);
@@ -147,12 +150,47 @@ void extract_foreground_based_on_depth_guided_map()
 	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
 	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
 
-	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
+	depth_range_list.reserve(num_images);
 	{
-		depth_range_list.reserve(num_images);
 		const int min_depth = 100, max_depth = 4000;
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+		depth_range_list.push_back(cv::Range(min_depth, max_depth));
+	}
+#elif 1
+	const std::size_t num_images = 5;
+	const bool useDepthVariation = true;
+	const bool useRectifiedImages = false;
+	const bool useDepthRangeFiltering = false;
+
+	std::vector<std::string> rgb_input_file_list, depth_input_file_list, structure_tensor_mask_file_list;
+	rgb_input_file_list.reserve(num_images);
+	depth_input_file_list.reserve(num_images);
+	structure_tensor_mask_file_list.reserve(num_images);
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211659.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211705.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211713.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211839.png");
+	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211842.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211659.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211705.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211713.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211839.png");
+	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211842.png");
+	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211659.tif");
+	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211705.tif");
+	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211713.tif");
+	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211839.tif");
+	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211842.tif");
+
+	std::vector<cv::Range> depth_range_list;
+	depth_range_list.reserve(num_images);
+	{
+		const int min_depth = 100, max_depth = 4000;
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
@@ -162,7 +200,6 @@ void extract_foreground_based_on_depth_guided_map()
 #endif
 
 	//
-	const bool useRectifiedImages = true;
 	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
 	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
@@ -295,15 +332,6 @@ void extract_foreground_based_on_depth_guided_map()
 
 			cv::Mat gray_image;
 			cv::cvtColor(rgb_input_image, gray_image, CV_BGR2GRAY);
-
-			// FIXME [delete] >>
-			{
-				std::ostringstream strm;
-				//strm << "../data/kinect_segmentation/gray_image_" << i << ".png";
-				//cv::imwrite(strm.str(), gray_image);
-				strm << "../data/kinect_segmentation/rgb_image_" << i << ".png";
-				cv::imwrite(strm.str(), rgb_input_image);
-			}
 
 			std::vector<std::vector<cv::Point> > snake_contours;
 			snake_contours.reserve(contours.size());
