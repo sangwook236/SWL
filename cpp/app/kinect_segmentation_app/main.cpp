@@ -122,6 +122,8 @@ void extract_foreground_based_on_depth_guided_map()
 #endif
 	}
 #elif 0
+	// for Kinect ver1.
+
 	const std::size_t num_images = 6;
 	const bool useDepthVariation = true;
 	const bool useRectifiedImages = true;
@@ -162,6 +164,8 @@ void extract_foreground_based_on_depth_guided_map()
 		depth_range_list.push_back(cv::Range(min_depth, max_depth));
 	}
 #elif 1
+	// for Kinect ver2.
+
 	const std::size_t num_images = 5;
 	const bool useDepthVariation = true;
 	const bool useRectifiedImages = false;
@@ -202,7 +206,7 @@ void extract_foreground_based_on_depth_guided_map()
 	//
 	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
-	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
+	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1), filtered_depth_variation_mask;
 	double fx_rgb, fy_rgb;
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
@@ -218,11 +222,11 @@ void extract_foreground_based_on_depth_guided_map()
 		// [3] construct depth variation mask (optional).
 		if (useDepthVariation)
 		{
-#if 0
+#if 1
 			// METHOD #1: load structure tensor mask.
 			if (!load_structure_tensor_mask(structure_tensor_mask_file_list[i], depth_variation_mask))
 				continue;
-#elif 1
+#elif 0
 			// METHOD #2: compute structure tensor mask.
 			construct_depth_variation_mask_using_structure_tensor(depth_input_image, depth_variation_mask);
 #elif 0
@@ -290,7 +294,7 @@ void extract_foreground_based_on_depth_guided_map()
 			continue;
 		}
 		else
-			construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
+			construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_input_image, depth_guided_map, filtered_depth_variation_mask);
 #endif
 
 #if 1
@@ -303,6 +307,11 @@ void extract_foreground_based_on_depth_guided_map()
 		}
 #endif
 
+#if 1
+		// show filtered depth variation mask.
+		cv::imshow("filtered depth variation mask", filtered_depth_variation_mask);
+#endif
+
 #if 0
 		{
 			std::ostringstream strm;
@@ -311,9 +320,31 @@ void extract_foreground_based_on_depth_guided_map()
 			cv::imwrite(strm.str(), tmp_image);
 		}
 #endif
+#if 0
+		// wirte trimap.
+		{
+			std::ostringstream strm;
+			cv::Mat trimap(depth_guided_map.size(), CV_8UC1, cv::Scalar::all(128));
+			trimap.setTo(cv::Scalar::all(0), SWL_BGD == depth_guided_map | SWL_PR_BGD == depth_guided_map);
+			trimap.setTo(cv::Scalar::all(255), SWL_FGD == depth_guided_map);
+			strm << "../data/kinect_segmentation/trimap_" << i << ".png";
+			cv::imwrite(strm.str(), trimap);
+		}
+#endif
+#if 0
+		// wirte scribble.
+		{
+			std::ostringstream strm;
+			cv::Mat scribble = rgb_input_image.clone();
+			scribble.setTo(cv::Scalar::all(0), SWL_PR_BGD == depth_guided_map);
+			scribble.setTo(cv::Scalar::all(255), SWL_FGD == depth_guided_map);
+			strm << "../data/kinect_segmentation/scribble_" << i << ".png";
+			cv::imwrite(strm.str(), scribble);
+		}
+#endif
 
 		// [6] extract foreground.
-#if 1
+#if 0
 		// METHOD #1: segment foreground using Snake.
 		{
 			std::vector<std::vector<cv::Point> > contours;
@@ -383,7 +414,7 @@ void extract_foreground_based_on_depth_guided_map()
 
 			//cv::imshow("results of fitting using Snake", tmp_image);
 		}
-#elif 1
+#elif 0
 		// METHOD #2: segment image by interactive graph-cuts segmentation algorithm.
 		run_interactive_graph_cuts_segmentation(rgb_input_image, valid_depth_image, depth_guided_map);
 #elif 0
@@ -397,6 +428,63 @@ void extract_foreground_based_on_depth_guided_map()
 
 		// FIXME [implement] >>
 #endif
+
+		cv::Mat edge;
+		{
+			// edge detection on grayscale.
+			cv::Mat gray;
+			cv::cvtColor(rgb_input_image, gray, CV_BGR2GRAY);
+
+			const int lowerEdgeThreshold = 30, upperEdgeThreshold = 50;
+			const bool useL2 = true;  // if true, use L2 norm. otherwise, use L1 norm (faster).
+			const int apertureSize = 3;  // aperture size for the Sobel() operator.
+			cv::Canny(gray, edge, lowerEdgeThreshold, upperEdgeThreshold, apertureSize, useL2);
+		}
+		
+		{
+			//const int distanceType = CV_DIST_C;  // C/Inf metric
+			//const int distanceType = CV_DIST_L1;  // L1 metric
+			const int distanceType = CV_DIST_L2;  // L2 metric
+			//const int maskSize = CV_DIST_MASK_3;
+			//const int maskSize = CV_DIST_MASK_5;
+			const int maskSize = CV_DIST_MASK_PRECISE;
+			//const int labelType = cv::DIST_LABEL_CCOMP;
+			const int labelType = cv::DIST_LABEL_PIXEL;
+
+			cv::Mat dist32f, labels;
+			cv::distanceTransform(cv::Scalar::all(255) - edge, dist32f, labels, distanceType, maskSize, labelType);
+
+			{
+				cv::minMaxLoc(dist32f, &minVal, &maxVal);
+				dist32f.convertTo(dist32f, CV_32FC1, 1.0 / (maxVal - minVal), -minVal / (maxVal - minVal));
+
+				cv::imshow("distance transform - dt", dist32f);
+			}
+
+			cv::Mat edge_labels(labels.size(), labels.type(), cv::Scalar::all(0));
+			labels.copyTo(edge_labels, edge);
+
+			cv::Mat depth_labels(labels.size(), labels.type(), cv::Scalar::all(0));
+			labels.copyTo(depth_labels, filtered_depth_variation_mask > 0);
+
+			cv::minMaxLoc(depth_labels, &minVal, &maxVal);
+
+			cv::Mat out_img = rgb_input_image.clone();
+			//const int num_labels = cv::countNonZero(edge);
+			cv::Point minLoc, maxLoc;
+			for (int i = (int)minVal; i <= (int)maxVal; ++i)
+			{
+				if (cv::countNonZero(i == depth_labels) > 0)
+				{
+					cv::minMaxLoc(i == edge_labels, NULL, NULL, &minLoc, &maxLoc);
+					cv::circle(out_img, maxLoc, 1, CV_RGB(0, 255, 0), CV_FILLED, CV_AA, 0);
+				}
+			}
+
+			{
+				cv::imshow("distance transform - result", out_img);
+			}
+		}
 
 		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
@@ -625,7 +713,7 @@ void segment_foreground_based_on_structure_tensor()
 	const bool useRectifiedImages = true;
 	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat valid_depth_image, depth_validity_mask(imageSize_rgb, CV_8UC1);
-	cv::Mat depth_guided_map(imageSize_rgb, CV_8UC1), grabCut_mask(imageSize_mask, CV_8UC1);
+	cv::Mat depth_guided_map(imageSize_rgb, CV_8UC1), grabCut_mask(imageSize_mask, CV_8UC1), filtered_depth_variation_mask;
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
@@ -695,7 +783,7 @@ void segment_foreground_based_on_structure_tensor()
 #endif
 
 		// [5] construct depth-guided map.
-		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
+		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_input_image, depth_guided_map, filtered_depth_variation_mask);
 
 #if 1
 		// show depth-guided map.
@@ -714,6 +802,11 @@ void segment_foreground_based_on_structure_tensor()
 			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
+#endif
+
+#if 1
+		// show filtered depth variation mask.
+		cv::imshow("filtered depth variation mask", filtered_depth_variation_mask);
 #endif
 
 		// [6] extract foreground.
@@ -822,7 +915,7 @@ void segment_foreground_using_single_layered_graphical_model()
 	const bool useRectifiedImages = true;
 	cv::Mat rgb_input_image, depth_input_image, depth_variation_mask;
 	cv::Mat depth_validity_mask(imageSize_rgb, CV_8UC1), valid_depth_image, depth_guided_map(imageSize_rgb, CV_8UC1);
-	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1);
+	cv::Mat foreground_mask(imageSize_mask, CV_8UC1), background_mask(imageSize_mask, CV_8UC1), filtered_depth_variation_mask;
 	double minVal = 0.0, maxVal = 0.0;
 	cv::Mat tmp_image;
 	for (std::size_t i = 0; i < num_images; ++i)
@@ -892,7 +985,7 @@ void segment_foreground_using_single_layered_graphical_model()
 #endif
 
 		// [5] construct depth-guided map.
-		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_guided_map);
+		construct_depth_guided_map_using_depth_variation(depth_variation_mask, depth_input_image, depth_guided_map, filtered_depth_variation_mask);
 
 #if 1
 		// show depth-guided map.
@@ -911,6 +1004,11 @@ void segment_foreground_using_single_layered_graphical_model()
 			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
+#endif
+
+#if 1
+		// show filtered depth variation mask.
+		cv::imshow("filtered depth variation mask", filtered_depth_variation_mask);
 #endif
 
 		// [6] extract foreground.

@@ -15,7 +15,7 @@ const unsigned char SWL_PR_FGD = cv::GC_PR_FGD;  // most probably foreground
 
 void construct_depth_guided_map_using_superpixel(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_map);
 void construct_depth_guided_map_using_edge_detection_and_morphological_operation(const cv::Mat &depth_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_map);
-void construct_depth_guided_map_using_depth_variation(const cv::Mat &structure_tensor_mask, cv::Mat &depth_guided_map);
+void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_variation_mask, const cv::Mat &depth_input_image, cv::Mat &depth_guided_map, cv::Mat &filtered_depth_variation_mask);
 
 }  // namespace swl
 

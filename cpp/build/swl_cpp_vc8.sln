@@ -1,40 +1,68 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base", "..\src\base\swl_base_msvc9.vcproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base", "..\src\base\swl_base_vc8.vcproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util_msvc9.vcproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util_vc8.vcproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view", "..\src\view\swl_view_vc8.vcproj", "{756B7445-B468-4814-AB86-41D586225519}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math", "..\src\math\swl_math_vc8.vcproj", "{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics", "..\src\graphics\swl_graphics_vc8.vcproj", "{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view", "..\src\view\swl_view_msvc9.vcproj", "{756B7445-B468-4814-AB86-41D586225519}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview", "..\src\winview\swl_winview_vc8.vcproj", "{8F523111-C59A-4003-BA86-EB681DB19631}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math", "..\src\math\swl_math_msvc9.vcproj", "{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics", "..\src\graphics\swl_graphics_msvc9.vcproj", "{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview", "..\src\winview\swl_winview_msvc9.vcproj", "{8F523111-C59A-4003-BA86-EB681DB19631}"
 	ProjectSection(ProjectDependencies) = postProject
 		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
 		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
+		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil", "..\src\glutil\swl_glutil_msvc9.vcproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil", "..\src\glutil\swl_glutil_vc8.vcproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
@@ -42,145 +70,196 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil", "..\src\glutil
 		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winutil\swl_winutil_msvc9.vcproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winutil\swl_winutil_vc8.vcproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\text_ui\swl_unit_test_msvc9.vcproj", "{F871854A-3223-4895-A970-180448FC68DA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_vc8.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
+		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
+		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289} = {2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}
+		{6305D0E0-1595-4EBE-9332-102782B20D0C} = {6305D0E0-1595-4EBE-9332-102782B20D0C}
+		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA} = {1BE8A45A-EBDC-4127-B166-5138FE4633DA}
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
+		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wglview_test", "..\test\wglview_test\swl_wglview_test_vc8.vcproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
+		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_test", "..\test\winview_test\swl_winview_test_vc8.vcproj", "{40F4C552-5A56-412A-9E00-776A69183EAB}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA} = {1BE8A45A-EBDC-4127-B166-5138FE4633DA}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util", "..\src\rnd_util\swl_rnd_util_vc8.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision", "..\src\machine_vision\swl_machine_vision_vc8.vcproj", "{1BE8A45A-EBDC-4127-B166-5138FE4633DA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
-		{6305D0E0-1595-4EBE-9332-102782B20D0C} = {6305D0E0-1595-4EBE-9332-102782B20D0C}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test", "..\test\rnd_util_test\swl_rnd_util_test_vc8.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_test", "..\test\machine_vision_test\swl_machine_vision_test_vc8.vcproj", "{5D408F46-2324-402F-B769-2AC8361BE51A}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA} = {1BE8A45A-EBDC-4127-B166-5138FE4633DA}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_serial_port_test", "..\test\serial_port_test\swl_serial_port_test_vc8.vcproj", "{4B163450-0DC8-4839-92C9-D3754D62DEFE}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_client_test", "..\test\tcp_socket_client_test\swl_tcp_socket_client_test_vc8.vcproj", "{D0339969-C7EF-48A9-9DDC-71866652B184}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test", "..\test\tcp_socket_server_test\swl_tcp_socket_server_test_vc8.vcproj", "{E4DAAE16-B50D-4A59-88BA-051A26BE191B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics", "..\src\kinematics\swl_kinematics_vc8.vcproj", "{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning", "..\src\machine_learning\swl_machine_learning_vc8.vcproj", "{6305D0E0-1595-4EBE-9332-102782B20D0C}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics_test", "..\test\kinematics_test\swl_kinematics_test_vc8.vcproj", "{18F61AFB-65D2-4E7C-97E0-3332894EBF78}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
+	ProjectSection(ProjectDependencies) = postProject
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289} = {2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_msvc9.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_test", "..\test\machine_learning_test\swl_machine_learning_test_vc8.vcproj", "{1289B18F-A216-4A0B-A6E3-E6865E22396B}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
+	EndProjectSection
 	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA} = {1BE8A45A-EBDC-4127-B166-5138FE4633DA}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
 		{6305D0E0-1595-4EBE-9332-102782B20D0C} = {6305D0E0-1595-4EBE-9332-102782B20D0C}
-		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289} = {2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wglview_test", "..\test\wglview_test\swl_wglview_test_msvc9.vcproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-		{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657} = {B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_test", "..\test\winview_test\swl_winview_test_msvc9.vcproj", "{40F4C552-5A56-412A-9E00-776A69183EAB}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{756B7445-B468-4814-AB86-41D586225519} = {756B7445-B468-4814-AB86-41D586225519}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA} = {7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_test", "..\test\machine_vision_test\swl_machine_vision_test_msvc9.vcproj", "{5D408F46-2324-402F-B769-2AC8361BE51A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA} = {1BE8A45A-EBDC-4127-B166-5138FE4633DA}
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test", "..\test\rnd_util_test\swl_rnd_util_test_msvc9.vcproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
-	ProjectSection(ProjectDependencies) = postProject
+		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision", "..\src\machine_vision\swl_machine_vision_msvc9.vcproj", "{1BE8A45A-EBDC-4127-B166-5138FE4633DA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\text_ui\swl_unit_test_vc8.vcproj", "{F871854A-3223-4895-A970-180448FC68DA}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util", "..\src\rnd_util\swl_rnd_util_msvc9.vcproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
-	ProjectSection(ProjectDependencies) = postProject
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_app", "..\app\gps_aided_imu_filter_app\swl_gps_aided_imu_filter_app_vc8.vcproj", "{31A60EF3-80B9-4FB2-BB20-8414D7043A80}"
+	ProjectSection(WebsiteProperties) = preProject
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.Debug = "False"
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_serial_port_test", "..\test\serial_port_test\swl_serial_port_test_msvc9.vcproj", "{4B163450-0DC8-4839-92C9-D3754D62DEFE}"
 	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_client_test", "..\test\tcp_socket_client_test\swl_tcp_socket_client_test_msvc9.vcproj", "{D0339969-C7EF-48A9-9DDC-71866652B184}"
-	ProjectSection(ProjectDependencies) = postProject
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test", "..\test\tcp_socket_server_test\swl_tcp_socket_server_test_msvc9.vcproj", "{E4DAAE16-B50D-4A59-88BA-051A26BE191B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{EAE0B359-F8CB-4983-9E41-E54A7C42A875} = {EAE0B359-F8CB-4983-9E41-E54A7C42A875}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics", "..\src\kinematics\swl_kinematics_msvc9.vcproj", "{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning", "..\src\machine_learning\swl_machine_learning_msvc9.vcproj", "{6305D0E0-1595-4EBE-9332-102782B20D0C}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics_test", "..\test\kinematics_test\swl_kinematics_test_msvc9.vcproj", "{18F61AFB-65D2-4E7C-97E0-3332894EBF78}"
-	ProjectSection(ProjectDependencies) = postProject
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289} = {2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_test", "..\test\machine_learning_test\swl_machine_learning_test_msvc9.vcproj", "{1289B18F-A216-4A0B-A6E3-E6865E22396B}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
-		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
-		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
-		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
-		{6305D0E0-1595-4EBE-9332-102782B20D0C} = {6305D0E0-1595-4EBE-9332-102782B20D0C}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_app", "..\app\gps_aided_imu_filter_app\swl_gps_aided_imu_filter_app_msvc9.vcproj", "{5BC48680-BFFF-490D-A226-6EBB047D4F31}"
-	ProjectSection(ProjectDependencies) = postProject
-		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
@@ -224,10 +303,6 @@ Global
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Debug|Win32.Build.0 = Debug|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Release|Win32.ActiveCfg = Release|Win32
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}.Release|Win32.Build.0 = Release|Win32
-		{F871854A-3223-4895-A970-180448FC68DA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{F871854A-3223-4895-A970-180448FC68DA}.Debug|Win32.Build.0 = Debug|Win32
-		{F871854A-3223-4895-A970-180448FC68DA}.Release|Win32.ActiveCfg = Release|Win32
-		{F871854A-3223-4895-A970-180448FC68DA}.Release|Win32.Build.0 = Release|Win32
 		{C48EC1C8-D6D5-448D-8842-98BF064543DE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{C48EC1C8-D6D5-448D-8842-98BF064543DE}.Debug|Win32.Build.0 = Debug|Win32
 		{C48EC1C8-D6D5-448D-8842-98BF064543DE}.Release|Win32.ActiveCfg = Release|Win32
@@ -240,22 +315,22 @@ Global
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Debug|Win32.Build.0 = Debug|Win32
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Release|Win32.ActiveCfg = Release|Win32
 		{40F4C552-5A56-412A-9E00-776A69183EAB}.Release|Win32.Build.0 = Release|Win32
-		{5D408F46-2324-402F-B769-2AC8361BE51A}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5D408F46-2324-402F-B769-2AC8361BE51A}.Debug|Win32.Build.0 = Debug|Win32
-		{5D408F46-2324-402F-B769-2AC8361BE51A}.Release|Win32.ActiveCfg = Release|Win32
-		{5D408F46-2324-402F-B769-2AC8361BE51A}.Release|Win32.Build.0 = Release|Win32
-		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Debug|Win32.ActiveCfg = Debug|Win32
-		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Debug|Win32.Build.0 = Debug|Win32
-		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Release|Win32.ActiveCfg = Release|Win32
-		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Release|Win32.Build.0 = Release|Win32
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Debug|Win32.Build.0 = Debug|Win32
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Release|Win32.ActiveCfg = Release|Win32
-		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Release|Win32.Build.0 = Release|Win32
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498}.Debug|Win32.ActiveCfg = Debug|Win32
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498}.Debug|Win32.Build.0 = Debug|Win32
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498}.Release|Win32.ActiveCfg = Release|Win32
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498}.Release|Win32.Build.0 = Release|Win32
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Debug|Win32.Build.0 = Debug|Win32
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Release|Win32.ActiveCfg = Release|Win32
+		{1BE8A45A-EBDC-4127-B166-5138FE4633DA}.Release|Win32.Build.0 = Release|Win32
+		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Debug|Win32.Build.0 = Debug|Win32
+		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Release|Win32.ActiveCfg = Release|Win32
+		{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}.Release|Win32.Build.0 = Release|Win32
+		{5D408F46-2324-402F-B769-2AC8361BE51A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5D408F46-2324-402F-B769-2AC8361BE51A}.Debug|Win32.Build.0 = Debug|Win32
+		{5D408F46-2324-402F-B769-2AC8361BE51A}.Release|Win32.ActiveCfg = Release|Win32
+		{5D408F46-2324-402F-B769-2AC8361BE51A}.Release|Win32.Build.0 = Release|Win32
 		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Debug|Win32.ActiveCfg = Debug|Win32
 		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Debug|Win32.Build.0 = Debug|Win32
 		{4B163450-0DC8-4839-92C9-D3754D62DEFE}.Release|Win32.ActiveCfg = Release|Win32
@@ -284,10 +359,14 @@ Global
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Debug|Win32.Build.0 = Debug|Win32
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Release|Win32.ActiveCfg = Release|Win32
 		{1289B18F-A216-4A0B-A6E3-E6865E22396B}.Release|Win32.Build.0 = Release|Win32
-		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Debug|Win32.ActiveCfg = Debug|Win32
-		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Debug|Win32.Build.0 = Debug|Win32
-		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Release|Win32.ActiveCfg = Release|Win32
-		{5BC48680-BFFF-490D-A226-6EBB047D4F31}.Release|Win32.Build.0 = Release|Win32
+		{F871854A-3223-4895-A970-180448FC68DA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F871854A-3223-4895-A970-180448FC68DA}.Debug|Win32.Build.0 = Debug|Win32
+		{F871854A-3223-4895-A970-180448FC68DA}.Release|Win32.ActiveCfg = Release|Win32
+		{F871854A-3223-4895-A970-180448FC68DA}.Release|Win32.Build.0 = Release|Win32
+		{31A60EF3-80B9-4FB2-BB20-8414D7043A80}.Debug|Win32.ActiveCfg = Debug|Win32
+		{31A60EF3-80B9-4FB2-BB20-8414D7043A80}.Debug|Win32.Build.0 = Debug|Win32
+		{31A60EF3-80B9-4FB2-BB20-8414D7043A80}.Release|Win32.ActiveCfg = Release|Win32
+		{31A60EF3-80B9-4FB2-BB20-8414D7043A80}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

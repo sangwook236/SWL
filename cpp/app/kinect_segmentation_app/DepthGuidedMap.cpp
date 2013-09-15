@@ -1,5 +1,7 @@
 //#include "stdafx.h"
 #include "DepthGuidedMap.h"
+//#include "nms.hpp"
+#include "NonMaximaSuppression.hpp"
 #include "gslic_lib/FastImgSeg.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/timer/timer.hpp>
@@ -52,6 +54,10 @@ void create_superpixel_boundary(const cv::Mat &superpixel_mask, cv::Mat &superpi
 // [ref] Util.cpp
 bool simple_convex_hull(const cv::Mat &img, const cv::Rect &roi, const int pixVal, std::vector<cv::Point> &convexHull);
 void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdgeThreshold, const bool useL2, cv::Mat &edge);
+void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst);
+void guo_hall_thinning_algorithm(cv::Mat &im);
+void non_maximum_suppression(const cv::Mat &in_float, cv::Mat &out_uint8);
+void find_mountain_chain(const cv::Mat &in_float, cv::Mat &out_uint8);
 
 void construct_depth_guided_map_using_superpixel(const cv::Mat &rgb_image, const cv::Mat &depth_image, const cv::Mat &depth_validity_mask, cv::Mat &depth_guided_map)
 {
@@ -187,36 +193,40 @@ void construct_depth_guided_map_using_edge_detection_and_morphological_operation
 	depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), ~depth_validity_mask & ~depth_boundary_image);  // invalid depth region (background).
 }
 
-void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_variation_mask, cv::Mat &depth_guided_map)
+void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_variation_mask, const cv::Mat &depth_input_image, cv::Mat &depth_guided_map, cv::Mat &filtered_depth_variation_mask)
 {
 	const cv::Mat &selement3 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
 	const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
 	const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
 
 	// pre-process depth variation mask.
-	cv::Mat depth_variation_mask2;
+	cv::Mat truncated_depth_variation_mask;
 	{
-		depth_variation_mask2 = depth_variation_mask > 0.05;  // CV_8UC1
+		truncated_depth_variation_mask = depth_variation_mask > 0.05;  // CV_8UC1
+		//truncated_depth_variation_mask = 0.05 < depth_variation_mask & depth_variation_mask < 0.5;  // CV_8UC1
 
-		cv::dilate(depth_variation_mask2, depth_variation_mask2, selement3, cv::Point(-1, -1), 3);
-		cv::erode(depth_variation_mask2, depth_variation_mask2, selement3, cv::Point(-1, -1), 3);
+		cv::dilate(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
+		cv::erode(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
 
-		//cv::erode(depth_variation_mask2, depth_variation_mask2, selement3, cv::Point(-1, -1), 3);
-		//cv::dilate(depth_variation_mask2, depth_variation_mask2, selement3, cv::Point(-1, -1), 3);
+		//cv::erode(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
+		//cv::dilate(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
 	}
+
+#if 0
+	// show truncated depth variation mask.
+	cv::imshow("truncated depth variation mask", truncated_depth_variation_mask);
+#endif
 
 	const bool use_color_processed_depth_variation_mask = false;
 	cv::Mat processed_depth_variation_mask(depth_variation_mask.size(), use_color_processed_depth_variation_mask ? CV_8UC3 : CV_8UC1);
 	const double MIN_CONTOUR_AREA = 200.0;
-	cv::Mat contour_image, foreground_mask(depth_variation_mask.size(), CV_8UC1), background_mask(depth_variation_mask.size(), CV_8UC1), background_info_mask;
-	cv::Mat tmp_image;
-	double minVal, maxVal;
+	cv::Mat contour_image, foreground_mask(depth_variation_mask.size(), CV_8UC1), background_mask(depth_variation_mask.size(), CV_8UC1);
 
 	// find contours.
 	std::vector<std::vector<cv::Point> > contours;
 	std::vector<cv::Vec4i> hierarchy;
 	{
-		depth_variation_mask2.copyTo(contour_image);
+		truncated_depth_variation_mask.copyTo(contour_image);
 
 		std::vector<std::vector<cv::Point> > contours2;
 		cv::findContours(contour_image, contours2, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
@@ -298,54 +308,105 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		}
 #endif
 
-#if 1
-		// show post-processed depth variation mask.
-		{
-			cv::imshow("post-processed depth variation mask", processed_depth_variation_mask);
-		}
-#endif
-
 		// post-process depth variation mask.
-		cv::morphologyEx(processed_depth_variation_mask, processed_depth_variation_mask, cv::MORPH_CLOSE, selement5, cv::Point(-1, -1), 3);
-		//cv::imshow("post-processed depth variation mask 1", processed_depth_variation_mask);
-
-		cv::morphologyEx(processed_depth_variation_mask, processed_depth_variation_mask, cv::MORPH_OPEN, selement5, cv::Point(-1, -1), 3);
-		//cv::imshow("post-processed depth variation mask 2", processed_depth_variation_mask);
-
-		//cv::erode(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
-		//cv::dilate(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
-
-		// FIXME [delete] >>
 		{
-			// construct depth-guided map.
-			depth_guided_map.setTo(cv::Scalar::all(0));
-			depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD), processed_depth_variation_mask);
+			cv::morphologyEx(processed_depth_variation_mask, processed_depth_variation_mask, cv::MORPH_CLOSE, selement3, cv::Point(-1, -1), 3);
+			//cv::imshow("post-processed depth variation mask 1", processed_depth_variation_mask);
 
-			return;
+			cv::morphologyEx(processed_depth_variation_mask, processed_depth_variation_mask, cv::MORPH_OPEN, selement3, cv::Point(-1, -1), 3);
+			//cv::imshow("post-processed depth variation mask 2", processed_depth_variation_mask);
+
+			//cv::erode(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
+			//cv::dilate(processed_depth_variation_mask, processed_depth_variation_mask, selement3, cv::Point(-1, -1), 1);
+
+#if 0
+			// show post-processed depth variation mask.
+			cv::imshow("post-processed depth variation mask", processed_depth_variation_mask);
+#endif
 		}
 
 #if 0
-		// show post-processed depth variation mask.
-		{
-			cv::imshow("post-processed depth variation mask", processed_depth_variation_mask);
-		}
+		filtered_depth_variation_mask = cv::Mat::zeros(truncated_depth_variation_mask.size(), truncated_depth_variation_mask.type());
+		truncated_depth_variation_mask.copyTo(filtered_depth_variation_mask, processed_depth_variation_mask);
+#else
+		filtered_depth_variation_mask = processed_depth_variation_mask;
 #endif
+
+		{
+			cv::Mat tmp(depth_input_image.size(), depth_input_image.type(), cv::Scalar::all(0));
+			depth_input_image.copyTo(tmp, filtered_depth_variation_mask);
+
+			const cv::Scalar mean, stdDev;
+			cv::meanStdDev(tmp, mean, stdDev, filtered_depth_variation_mask > 0);
+
+			const double sigmaRatio = 0.5;
+			tmp.setTo(cv::Scalar::all(0), mean[0] - sigmaRatio * stdDev[0] < tmp & tmp > mean[0] + sigmaRatio * stdDev[0]);
+
+			filtered_depth_variation_mask = tmp > 0;
+
+			//cv::morphologyEx(filtered_depth_variation_mask, filtered_depth_variation_mask, cv::MORPH_CLOSE, selement3, cv::Point(-1, -1), 3);
+			//cv::morphologyEx(filtered_depth_variation_mask, filtered_depth_variation_mask, cv::MORPH_OPEN, selement3, cv::Point(-1, -1), 3);
+		}
 
 		// create foreground & background masks.
 #if 0
 		// METHOD #1: using dilation & erosion.
 
-		tmp_image = cv::Mat::zeros(depth_variation_mask2.size(), depth_variation_mask2.type());
-		depth_variation_mask2.copyTo(tmp_image, processed_depth_variation_mask);
-		cv::erode(tmp_image, foreground_mask, selement5, cv::Point(-1, -1), 3);
-		cv::dilate(tmp_image, background_mask, selement5, cv::Point(-1, -1), 3);
+		cv::erode(filtered_depth_variation_mask, foreground_mask, selement5, cv::Point(-1, -1), 3);
+		cv::dilate(filtered_depth_variation_mask, background_mask, selement5, cv::Point(-1, -1), 3);
 		foreground_mask = foreground_mask > 0;
 		background_mask = 0 == background_mask;
-#elif 1
-		// METHOD #2: using distance transform for foreground and convex hull for background.
 
-		tmp_image = cv::Mat::zeros(depth_variation_mask2.size(), depth_variation_mask2.type());
-		depth_variation_mask2.copyTo(tmp_image, processed_depth_variation_mask);
+		// construct depth-guided map.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_mask);  // invalid depth region (background).
+#elif 1
+		// METHOD #2: using distance transform for foreground and dilation for background.
+
+		cv::Mat dist32f;
+		//const int distanceType = CV_DIST_C;  // C/Inf metric
+		const int distanceType = CV_DIST_L1;  // L1 metric
+		//const int distanceType = CV_DIST_L2;  // L2 metric
+		//const int maskSize = CV_DIST_MASK_3;
+		const int maskSize = CV_DIST_MASK_5;
+		//const int maskSize = CV_DIST_MASK_PRECISE;
+		cv::distanceTransform(filtered_depth_variation_mask, dist32f, distanceType, maskSize);
+
+		{
+			double minVal, maxVal;
+			cv::minMaxLoc(dist32f, &minVal, &maxVal);
+			cv::Mat tmp_image;
+			dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+			cv::imshow("distance transform of foreground mask", tmp_image);
+		}
+
+#if 1
+		foreground_mask = dist32f >= 5.0f;
+		cv::erode(foreground_mask, foreground_mask, selement3, cv::Point(-1, -1), 3);
+#elif 0
+		// FIXME [fix] >> not correctly working.
+		non_maximum_suppression(dist32f, foreground_mask);
+		//find_mountain_chain(dist32f, foreground_mask);
+#elif 0
+		const int winSize = 10;  // the size of the window.
+		nonMaximaSuppression(dist32f, winSize, foreground_mask);
+#endif
+
+		cv::dilate(filtered_depth_variation_mask, background_mask, selement5, cv::Point(-1, -1), 7);
+		background_mask = 0 == background_mask;
+
+		cv::Mat background_info_mask;
+		cv::erode(background_mask, background_info_mask, selement5, cv::Point(-1, -1), 5);
+		background_mask.setTo(cv::Scalar::all(0), background_info_mask);
+
+		// construct depth-guided map.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_BGD), background_mask);  // invalid depth region (background).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_info_mask);  // invalid depth region (background).
+#elif 0
+		// METHOD #3: using distance transform for foreground and convex hull for background.
 
 		cv::Mat dist32f;
 		const int distanceType = CV_DIST_C;  // C/Inf metric
@@ -354,60 +415,89 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		//const int maskSize = CV_DIST_MASK_3;
 		//const int maskSize = CV_DIST_MASK_5;
 		const int maskSize = CV_DIST_MASK_PRECISE;
-		cv::distanceTransform(tmp_image, dist32f, distanceType, maskSize);
-		foreground_mask = dist32f >= 7.5f;
+		cv::distanceTransform(filtered_depth_variation_mask, dist32f, distanceType, maskSize);
+
+		{
+			double minVal, maxVal;
+			cv::minMaxLoc(dist32f, &minVal, &maxVal);
+			cv::Mat tmp_image;
+			dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
+			cv::imshow("distance transform of foreground mask", tmp_image);
+		}
+
+		foreground_mask = dist32f >= 5.0f;
 
 		std::vector<cv::Point> convexHull;
-		simple_convex_hull(tmp_image, cv::Rect(), 255, convexHull);
+		simple_convex_hull(filtered_depth_variation_mask, cv::Rect(), 255, convexHull);
 
 		background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
 		std::vector<std::vector<cv::Point> > contours;
 		contours.push_back(convexHull);
 		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
 
+		cv::Mat background_info_mask;
 		cv::erode(background_mask, background_mask, selement5, cv::Point(-1, -1), 3);
 		cv::erode(background_mask, background_info_mask, selement5, cv::Point(-1, -1), 5);
 		background_mask.setTo(cv::Scalar::all(0), background_info_mask);
 
-		cv::minMaxLoc(dist32f, &minVal, &maxVal);
-		dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
-		cv::imshow("distance transform of foreground mask", tmp_image);
+		// construct depth-guided map.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_BGD), background_mask);  // invalid depth region (background).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_info_mask);  // invalid depth region (background).
 #elif 0
-		// METHOD #3: using thinning for foreground and convex hull for background.
-
-		tmp_image = cv::Mat::zeros(depth_variation_mask2.size(), depth_variation_mask2.type());
-		depth_variation_mask2.copyTo(tmp_image, processed_depth_variation_mask);
+		// METHOD #4: using thinning for foreground and dilation for background.
 
 		cv::Mat bw;
-		cv::threshold(tmp_image, bw, 10, 255, CV_THRESH_BINARY);
+		cv::threshold(filtered_depth_variation_mask, bw, 50, 255, CV_THRESH_BINARY);
 		zhang_suen_thinning_algorithm(bw, foreground_mask);
-		//guo_hall_thinning_algorithm(bw, foreground_mask);
+		//foreground_mask = bw.clone();
+		//guo_hall_thinning_algorithm(foreground_mask);
+
+		cv::dilate(foreground_mask, foreground_mask, selement5, cv::Point(-1, -1), 3);
+
+		//cv::imshow("thinning of foreground mask", foreground_mask);
+
+		cv::dilate(filtered_depth_variation_mask, background_mask, selement5, cv::Point(-1, -1), 5);
+		background_mask = 0 == background_mask;
+
+		// construct depth-guided map.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_mask);  // invalid depth region (background).
+#elif 0
+		// METHOD #5: using thinning for foreground and convex hull for background.
+
+		cv::Mat bw;
+		cv::threshold(filtered_depth_variation_mask, bw, 10, 255, CV_THRESH_BINARY);
+		zhang_suen_thinning_algorithm(bw, foreground_mask);
+		//foreground_mask = bw.clone();
+		//guo_hall_thinning_algorithm(foreground_mask);
+
+		//cv::dilate(foreground_mask, foreground_mask, selement5, cv::Point(-1, -1), 3);
+
+		cv::imshow("thinning of foreground mask", foreground_mask);
 
 		std::vector<cv::Point> convexHull;
-		simple_convex_hull(tmp_image, cv::Rect(), 255, convexHull);
+		simple_convex_hull(filtered_depth_variation_mask, cv::Rect(), 255, convexHull);
 
 		background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
 		std::vector<std::vector<cv::Point> > contours;
 		contours.push_back(convexHull);
 		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
 
-		cv::imshow("thinning of foreground mask", foreground_mask);
+		// construct depth-guided map.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
+		depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
+		depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_mask);  // invalid depth region (background).
 #endif
 	}
 
 #if 0
 	// show foreground & background masks.
-	{
-		cv::imshow("foreground mask", foreground_mask);
-		cv::imshow("background mask", background_mask);
-	}
+	cv::imshow("foreground mask", foreground_mask);
+	cv::imshow("background mask", background_mask);
 #endif
-
-	// construct depth-guided map.
-	depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // depth boundary region.
-	depth_guided_map.setTo(cv::Scalar::all(SWL_FGD), foreground_mask);  // valid depth region (foreground).
-	depth_guided_map.setTo(cv::Scalar::all(SWL_PR_BGD), background_mask);  // invalid depth region (background).
-	depth_guided_map.setTo(cv::Scalar::all(SWL_BGD), background_info_mask);  // invalid depth region (background).
 }
 
 }  // namespace swl

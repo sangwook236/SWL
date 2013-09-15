@@ -103,6 +103,7 @@
     <ClInclude Include="gslic_lib\cudaSegSLIC.h" />
     <ClInclude Include="gslic_lib\cudaUtil.h" />
     <ClInclude Include="gslic_lib\FastImgSeg.h" />
+    <ClInclude Include="NonMaximaSuppression.hpp" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -115,6 +116,7 @@
     <ClCompile Include="gSLIC.cpp" />
     <ClCompile Include="gslic_lib\FastImgSeg.cpp" />
     <ClCompile Include="LibraryAutolinking.cpp" />
+    <ClCompile Include="NonMaximaSuppression.cpp" />
     <ClCompile Include="SegmentationUsingGrabCut.cpp" />
     <ClCompile Include="SegmentationUsingGraphCut.cpp" />
     <ClCompile Include="DepthGuidedMap.cpp" />

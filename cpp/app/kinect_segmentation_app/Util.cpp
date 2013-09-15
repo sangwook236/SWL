@@ -6,6 +6,7 @@
 #include <boost/smart_ptr.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <algorithm>
+#include <cassert>
 
 
 namespace {
@@ -636,16 +637,16 @@ bool simple_convex_hull(const cv::Mat &img, const cv::Rect &roi, const int pixVa
 	return true;
 }
 
-// [ref] canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
-void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdgeThreshold, const bool useL2, cv::Mat &edge)
+void smooth_image(const cv::Mat &in, cv::Mat &out)
 {
-	// smoothing
 #if 0
 	// METHOD #1: down-scale and up-scale the image to filter out the noise.
 
-	cv::Mat blurred;
-	cv::pyrDown(gray, blurred);
-	cv::pyrUp(blurred, edge);
+	{
+		cv::Mat tmp;
+		cv::pyrDown(in, tmp);
+		cv::pyrUp(tmp, out);
+	}
 #elif 0
 	// METHOD #2: Gaussian filtering.
 
@@ -653,32 +654,43 @@ void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdg
 		// FIXME [adjust] >> adjust parameters.
 		const int kernelSize = 3;
 		const double sigma = 0;
-		cv::GaussianBlur(gray, edge, cv::Size(kernelSize, kernelSize), sigma, sigma);
+		cv::GaussianBlur(in, out, cv::Size(kernelSize, kernelSize), sigma, sigma, cv::BORDER_DEFAULT);
 	}
 #elif 1
 	// METHOD #3: box filtering.
 
 	{
 		// FIXME [adjust] >> adjust parameters.
-		const int d = -1;
-		const int kernelSize = 3;
+		const int ddepth = -1;  // the output image depth. -1 to use src.depth().
+		const int kernelSize = 5;
 		const bool normalize = true;
-		cv::boxFilter(gray, edge, d, cv::Size(kernelSize, kernelSize), cv::Point(-1, -1), normalize, cv::BORDER_DEFAULT);
-		//cv::blur(gray, edge, cv::Size(kernelSize, kernelSize));  // use the normalized box filter.
+		cv::boxFilter(in, out, ddepth, cv::Size(kernelSize, kernelSize), cv::Point(-1, -1), normalize, cv::BORDER_DEFAULT);
+		//cv::blur(in, out, cv::Size(kernelSize, kernelSize), cv::Point(-1, -1), cv::BORDER_DEFAULT);  // use the normalized box filter.
 	}
 #elif 0
 	// METHOD #4: bilateral filtering.
 
 	{
 		// FIXME [adjust] >> adjust parameters.
-		const int d = -1;
-		const double sigmaColor = 3.0;
-		const double sigmaSpace = 50.0;
-		cv::bilateralFilter(gray, edge, d, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
+		const int diameter = -1;  // diameter of each pixel neighborhood that is used during filtering. if it is non-positive, it is computed from sigmaSpace.
+		const double sigmaColor = 3.0;  // for range filter.
+		const double sigmaSpace = 50.0;  // for space filter.
+		cv::bilateralFilter(in, out, diameter, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
 	}
-#endif
+#else
+	// METHOD #5: no filtering.
 
-	// run the edge detector on grayscale
+	out = in;
+#endif
+}
+
+// [ref] canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
+void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdgeThreshold, const bool useL2, cv::Mat &edge)
+{
+	// smoothing.
+	smooth_image(gray, edge);
+
+	// run the edge detector on grayscale.
 	cv::Canny(edge, edge, lowerEdgeThreshold, upperEdgeThreshold, 3, useL2);
 }
 
@@ -734,14 +746,14 @@ bool load_kinect_images(const std::string &rgb_input_filename, const std::string
 
 #if 1
 	{
-		// show rectified images
-		cv::imshow("rectified RGB image", rgb_input_image);
+		// show input images
+		cv::imshow("input RGB image", rgb_input_image);
 
 		cv::Mat tmp_image;
 		double minVal, maxVal;
 		cv::minMaxLoc(depth_input_image, &minVal, &maxVal);
 		depth_input_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
-		cv::imshow("rectified depth image", tmp_image);
+		cv::imshow("input depth image", tmp_image);
 	}
 #endif
 
@@ -763,7 +775,7 @@ bool load_structure_tensor_mask(const std::string &filename, cv::Mat &structure_
 	structure_tensor_mask = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
 	if (structure_tensor_mask.empty())
 	{
-		std::cout << "fail to load mask file: " << filename << std::endl;
+		std::cout << "structure tensor mask file not found: " << filename << std::endl;
 		return false;
 	}
 
@@ -992,6 +1004,132 @@ void construct_depth_variation_mask_using_depth_changing(const cv::Mat &depth_im
 	// compute phase distribution from neighborhood
 	const int radius = 2;
 	compute_phase_distribution_from_neighborhood(depth_image, radius, depth_variation_mask);
+}
+
+void non_maximum_suppression(const cv::Mat &in_float, cv::Mat &out_uint8)
+{
+	// non-maxima suppression
+	out_uint8 = cv::Mat::zeros(in_float.size(), CV_8UC1);
+
+	const int &rows = in_float.rows;
+	const int &cols = in_float.cols;
+	for (int r = 0; r < rows; ++r)
+	{
+		for (int c = 0; c < cols; ++c)
+		{
+			const float &pix = in_float.at<float>(r, c);
+
+			if (r - 1 >= 0)  // (r - 1, c)
+			{
+				const float &pix2 = in_float.at<float>(r - 1, c);
+				if (pix <= pix2) continue;
+			}
+			if (c + 1 > cols)  // (r, c + 1)
+			{
+				const float &pix2 = in_float.at<float>(r, c + 1);
+				if (pix <= pix2) continue;
+			}
+			if (r + 1 > rows)  // (r + 1, c)
+			{
+				const float &pix2 = in_float.at<float>(r + 1, c);
+				if (pix <= pix2) continue;
+			}
+			if (c - 1 >= 0)  // (r, c - 1)
+			{
+				const float &pix2 = in_float.at<float>(r, c - 1);
+				if (pix <= pix2) continue;
+			}
+
+			if (r - 1 >= 0 && c + 1 < cols)  // (r - 1, c + 1)
+			{
+				const float &pix2 = in_float.at<float>(r - 1, c + 1);
+				if (pix <= pix2) continue;
+			}
+			if (r + 1 < rows && c + 1 < cols)  // (r + 1, c + 1)
+			{
+				const float &pix2 = in_float.at<float>(r + 1, c + 1);
+				if (pix <= pix2) continue;
+			}
+			if (r + 1 < rows && c - 1 >= 0)  // (r + 1, c - 1)
+			{
+				const float &pix2 = in_float.at<float>(r + 1, c - 1);
+				if (pix <= pix2) continue;
+			}
+			if (r - 1 >= 0 && c - 1 >= 0)  // (r - 1, c - 1)
+			{
+				const float &pix2 = in_float.at<float>(r - 1, c - 1);
+				if (pix <= pix2) continue;
+			}
+
+			out_uint8.at<unsigned char>(r, c) = 255;
+		}
+	}
+}
+
+// FiXME [fix] >> not correctly working.
+void check_mountain_peak(const int ridx, const int cidx, const int rows, const int cols, const cv::Mat &in_float, cv::Mat &peak_flag, cv::Mat &visit_flag, const bool start_flag)
+{
+/*
+	const int r1 = ridx - 1 < 0 ? 0 : ridx - 1;
+	const int r2 = ridx + 1 >= rows ? rows - 1 : ridx + 1;
+	const int c1 = cidx - 1 < 0 ? 0 : cidx - 1;
+	const int c2 = cidx + 1 >= cols ? cols - 1 : cidx + 1;
+*/
+	const int r1 = ridx - 1 < 0 ? ridx : ridx - 1;
+	const int r2 = ridx + 1 >= rows ? ridx : ridx + 1;
+	const int c1 = cidx - 1 < 0 ? cidx : cidx - 1;
+	const int c2 = cidx + 1 >= cols ? cidx : cidx + 1;
+	assert(r1 <= r2 && c1 <= c2);
+
+	visit_flag.at<unsigned char>(ridx, cidx) = 255;
+
+	const float &pix = in_float.at<float>(ridx, cidx);
+	bool near_peak_flag = false;
+	if (!start_flag)
+	{
+		for (int r = r1; r <= r2; ++r)
+		{
+			for (int c = c1; c <= c2; ++c)
+			{
+				if (ridx == r && cidx == c) continue;
+				if (255 == peak_flag.at<unsigned char>(r, c))
+				{
+					near_peak_flag = true;
+					continue;
+				}
+
+				if (in_float.at<float>(r, c) > pix) return;
+			}
+		}
+	}
+
+	if (start_flag || near_peak_flag)
+	{
+		peak_flag.at<unsigned char>(ridx, cidx) = 255;
+		for (int r = r1; r <= r2; ++r)
+			for (int c = c1; c <= c2; ++c)
+				if ((ridx != r || cidx != c) && 255 != peak_flag.at<unsigned char>(r, c) && 0 == visit_flag.at<unsigned char>(r, c))
+					check_mountain_peak(r, c, rows, cols, in_float, peak_flag, visit_flag, false);
+	}
+}
+
+// FiXME [fix] >> not correctly working.
+void find_mountain_chain(const cv::Mat &in_float, cv::Mat &out_uint8)
+{
+	const int &rows = in_float.rows;
+	const int &cols = in_float.cols;
+
+	cv::Mat visit_flag(in_float.size(), CV_8UC1, cv::Scalar::all(0));
+	for (int r = 0; r < rows; ++r)
+	{
+		for (int c = 0; c < cols; ++c)
+		{
+			if (255 == out_uint8.at<unsigned char>(r, c))
+			{
+				check_mountain_peak(r, c, rows, cols, in_float, out_uint8, visit_flag, true);
+			}
+		}
+	}
 }
 
 }  // namespace swl
