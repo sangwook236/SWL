@@ -35,6 +35,7 @@ namespace swl {
 	cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
 
 	throw std::runtime_error("not yet implemented");
+
 	return false;
 }
 

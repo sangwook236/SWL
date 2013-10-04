@@ -21,14 +21,12 @@ class SWL_RND_UTIL_API HmmWithVonMisesMixtureObservations: public CDHMM, HmmWith
 public:
 	typedef CDHMM base_type;
 	//typedef HmmWithMixtureObservations base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
+	typedef base_type::dmatrix_type dmatrix_type;
 
 public:
-	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C);
+	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C);  // for ML learning.
 	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &kappas);
+	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *mus_conj, const dmatrix_type *kappas_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesMixtureObservations();
 
 private:
@@ -70,9 +68,17 @@ protected:
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
+	// FIXME [modify] >>
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+
 private:
-	dmatrix_type mus_;  // the sets of mean directions of each components in the von Mises mixture distribution
-	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises mixture distribution
+	dmatrix_type mus_;  // the sets of mean directions of each components in the von Mises mixture distribution.
+	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises mixture distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // for the sets of mean directions of each components in the von Mises mixture distribution.
+	boost::scoped_ptr<const dmatrix_type> kappas_conj_;  // for the sets of concentration parameters of each components in the von Mises mixture distribution.
 
 	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
 #if 0

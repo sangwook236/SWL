@@ -13,12 +13,20 @@
 namespace swl {
 
 HMM::HMM(const std::size_t K, const std::size_t D)
-: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0)  // 0-based index
+: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0),  // 0-based index
+  pi_conj_(), A_conj_()
 {
 }
 
 HMM::HMM(const std::size_t K, const std::size_t D, const dvector_type &pi, const dmatrix_type &A)
-: K_(K), D_(D), pi_(pi), A_(A)
+: K_(K), D_(D), pi_(pi), A_(A),
+  pi_conj_(), A_conj_()
+{
+}
+
+HMM::HMM(const std::size_t K, const std::size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj)
+: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0),
+  pi_conj_(pi_conj), A_conj_(A_conj)
 {
 }
 

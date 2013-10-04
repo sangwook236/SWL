@@ -105,11 +105,11 @@
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\util\swl_util_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\util\swl_util_vc10.vcxproj">
       <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\winutil\swl_winutil_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\winutil\swl_winutil_vc10.vcxproj">
       <Project>{2368ae0d-c4a6-4dcf-9c10-8ce7220f32ce}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

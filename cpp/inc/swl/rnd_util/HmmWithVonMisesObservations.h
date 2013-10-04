@@ -19,14 +19,11 @@ class SWL_RND_UTIL_API HmmWithVonMisesObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 public:
-	HmmWithVonMisesObservations(const size_t K);
+	HmmWithVonMisesObservations(const size_t K);  // for ML learning.
 	HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas);
+	HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *kappas_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesObservations();
 
 private:
@@ -68,9 +65,17 @@ protected:
 		// do nothing
 	}
 
+	// FIXME [modify] >>
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+
 private:
 	dvector_type mus_;  // the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
 	dvector_type kappas_;  // the concentration parameters of the von Mises distribution. kappa >= 0.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dvector_type> mus_conj_;  // for the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
+	boost::scoped_ptr<const dvector_type> kappas_conj_;  // for the concentration parameters of the von Mises distribution. kappa >= 0.
 
 	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
 #if 0

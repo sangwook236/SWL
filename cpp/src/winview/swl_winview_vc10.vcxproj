@@ -138,23 +138,23 @@
     <ClInclude Include="..\..\inc\swl\winview\WinViewPrintApi.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\base\swl_base_msvc10.vcxproj">
+    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\glutil\swl_glutil_msvc10.vcxproj">
+    <ProjectReference Include="..\glutil\swl_glutil_vc10.vcxproj">
       <Project>{b02044b0-d0ec-4a9c-aad0-5e0a93bd9657}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\graphics\swl_graphics_msvc10.vcxproj">
+    <ProjectReference Include="..\graphics\swl_graphics_vc10.vcxproj">
       <Project>{7d5caa55-a4ca-4ec7-9d25-67db48b40eba}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\util\swl_util_msvc10.vcxproj">
+    <ProjectReference Include="..\util\swl_util_vc10.vcxproj">
       <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\view\swl_view_msvc10.vcxproj">
+    <ProjectReference Include="..\view\swl_view_vc10.vcxproj">
       <Project>{756b7445-b468-4814-ab86-41d586225519}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

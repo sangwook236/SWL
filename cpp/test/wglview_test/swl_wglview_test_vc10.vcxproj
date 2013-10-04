@@ -152,35 +152,35 @@
     <ResourceCompile Include="WglViewTest.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\base\swl_base_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\base\swl_base_vc10.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\glutil\swl_glutil_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\glutil\swl_glutil_vc10.vcxproj">
       <Project>{b02044b0-d0ec-4a9c-aad0-5e0a93bd9657}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\graphics\swl_graphics_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\graphics\swl_graphics_vc10.vcxproj">
       <Project>{7d5caa55-a4ca-4ec7-9d25-67db48b40eba}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\math\swl_math_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\math\swl_math_vc10.vcxproj">
       <Project>{83b1a52f-23df-44f8-88af-64e2eb07cedb}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\util\swl_util_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\util\swl_util_vc10.vcxproj">
       <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\view\swl_view_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\view\swl_view_vc10.vcxproj">
       <Project>{756b7445-b468-4814-ab86-41d586225519}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\winutil\swl_winutil_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\winutil\swl_winutil_vc10.vcxproj">
       <Project>{2368ae0d-c4a6-4dcf-9c10-8ce7220f32ce}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\winview\swl_winview_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\winview\swl_winview_vc10.vcxproj">
       <Project>{8f523111-c59a-4003-ba86-eb681db19631}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

@@ -575,7 +575,7 @@ void viterbi_algorithm()
 	}
 }
 
-void em_learning_by_mle()
+void ml_learning_by_em()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -816,7 +816,7 @@ void em_learning_by_mle()
 	}
 }
 
-void em_learning_by_map()
+void map_learning_by_em()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -1062,7 +1062,7 @@ void em_learning_by_map()
 
 void hmm_with_von_mises_observation_densities()
 {
-	std::cout << "===== CDHMM w/ von Mises observation densities =====" << std::endl;
+	std::cout << "CDHMM w/ von Mises observation densities ----------------------------" << std::endl;
 
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
@@ -1073,6 +1073,6 @@ void hmm_with_von_mises_observation_densities()
 	//local::backward_algorithm();  // not yet implemented
 	//local::viterbi_algorithm();
 
-	local::em_learning_by_mle();
-	//local::em_learning_by_map();  // not yet implemented
+	local::ml_learning_by_em();
+	//local::map_learning_by_em();  // not yet implemented
 }

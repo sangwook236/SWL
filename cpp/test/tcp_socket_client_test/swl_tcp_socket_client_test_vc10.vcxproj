@@ -94,11 +94,11 @@
     <ClCompile Include="TcpSocketClientTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\base\swl_base_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\base\swl_base_vc10.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\util\swl_util_msvc10.vcxproj">
+    <ProjectReference Include="..\..\src\util\swl_util_vc10.vcxproj">
       <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

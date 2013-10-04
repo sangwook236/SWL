@@ -17,14 +17,12 @@ class SWL_RND_UTIL_API HmmWithVonMisesFisherMixtureObservations: public CDHMM, H
 public:
 	typedef CDHMM base_type;
 	//typedef HmmWithMixtureObservations base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
+	typedef base_type::dmatrix_type dmatrix_type;
 
 public:
-	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C);
+	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C);  // for ML learning.
 	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &mus, const dmatrix_type &kappas);
+	HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *mus_conj, const dmatrix_type *kappas_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesFisherMixtureObservations();
 
 private:
@@ -66,9 +64,17 @@ protected:
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
+	// FIXME [modify] >>
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+
 private:
-	boost::multi_array<dvector_type, 2> mus_;  // the sets of mean vectors of each components in the von Mises-Fisher mixture distribution
-	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises-Fisher mixture distribution
+	boost::multi_array<dvector_type, 2> mus_;  // the sets of mean vectors of each components in the von Mises-Fisher mixture distribution.
+	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises-Fisher mixture distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const boost::multi_array<dvector_type, 2> > mus_conj_;  // for the sets of mean vectors of each components in the von Mises-Fisher mixture distribution.
+	boost::scoped_ptr<const dmatrix_type> kappas_conj_;  // for the sets of concentration parameters of each components in the von Mises-Fisher mixture distribution.
 };
 
 }  // namespace swl

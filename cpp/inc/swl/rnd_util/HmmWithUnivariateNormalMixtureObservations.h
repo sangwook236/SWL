@@ -17,14 +17,12 @@ class SWL_RND_UTIL_API HmmWithUnivariateNormalMixtureObservations: public CDHMM,
 public:
 	typedef CDHMM base_type;
 	//typedef HmmWithMixtureObservations base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
+	typedef base_type::dmatrix_type dmatrix_type;
 
 public:
-	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C);
+	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C);  // for ML learning.
 	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &sigmas);
+	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *mus_conj, const dmatrix_type *betas_conj, const dmatrix_type *sigmas_conj, const dmatrix_type *nus_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithUnivariateNormalMixtureObservations();
 
 private:
@@ -66,9 +64,18 @@ protected:
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != betas_conj_.get() && NULL != sigmas_conj_.get() && NULL != nus_conj_.get();  }
+
 private:
-	dmatrix_type mus_;  // the sets of means of each components in the univariate normal mixture distribution
-	dmatrix_type sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution
+	dmatrix_type mus_;  // the sets of means of each components in the univariate normal mixture distribution.
+	dmatrix_type sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // mu0.
+	boost::scoped_ptr<const dmatrix_type> betas_conj_;  // beta. beta > 0.
+	boost::scoped_ptr<const dmatrix_type> sigmas_conj_;  // inv(W).
+	boost::scoped_ptr<const dmatrix_type> nus_conj_;  // nu. nu > D - 1.
 
 	typedef boost::minstd_rand base_generator_type;
 	mutable base_generator_type baseGenerator_;

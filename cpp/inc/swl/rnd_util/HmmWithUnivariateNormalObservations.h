@@ -15,14 +15,11 @@ class SWL_RND_UTIL_API HmmWithUnivariateNormalObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 public:
-	HmmWithUnivariateNormalObservations(const size_t K);
+	HmmWithUnivariateNormalObservations(const size_t K);  // for ML learning.
 	HmmWithUnivariateNormalObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &sigmas);
+	HmmWithUnivariateNormalObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *betas_conj, const dvector_type *sigmas_conj, const dvector_type *nus_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithUnivariateNormalObservations();
 
 private:
@@ -64,9 +61,18 @@ protected:
 		// do nothing
 	}
 
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != mus_conj_.get() && NULL != betas_conj_.get() && NULL != sigmas_conj_.get() && NULL != nus_conj_.get();  }
+
 private:
-	dvector_type mus_;  // the means of the univariate normal distribution
-	dvector_type sigmas_;  // the standard deviations of the univariate normal distribution
+	dvector_type mus_;  // the means of the univariate normal distribution.
+	dvector_type sigmas_;  // the standard deviations of the univariate normal distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dvector_type> mus_conj_;  // mu0.
+	boost::scoped_ptr<const dvector_type> betas_conj_;  // beta. beta > 0.
+	boost::scoped_ptr<const dvector_type> sigmas_conj_;  // inv(W).
+	boost::scoped_ptr<const dvector_type> nus_conj_;  // nu. nu > D - 1.
 
 	typedef boost::minstd_rand base_generator_type;
 	mutable base_generator_type baseGenerator_;

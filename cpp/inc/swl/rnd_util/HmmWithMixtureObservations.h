@@ -4,6 +4,7 @@
 
 #include "swl/rnd_util/ExportRndUtil.h"
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/smart_ptr.hpp>
 
 
 namespace swl {
@@ -15,11 +16,13 @@ class SWL_RND_UTIL_API HmmWithMixtureObservations
 {
 public:
 	//typedef HmmWithMixtureObservations base_type;
+private:
 	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
 
 protected:
-	HmmWithMixtureObservations(const size_t C, const size_t K);
+	HmmWithMixtureObservations(const size_t C, const size_t K);  // for ML learning.
 	HmmWithMixtureObservations(const size_t C, const size_t K, const dmatrix_type &alphas);
+	HmmWithMixtureObservations(const size_t C, const size_t K, const dmatrix_type *alphas_conj);  // for MAP learning using conjugate prior.
 public:
 	virtual ~HmmWithMixtureObservations();
 
@@ -38,9 +41,12 @@ protected:
 	void normalizeObservationDensityParameters(const size_t K);
 
 protected:
-	const size_t C_;  // the number of mixture components
+	const size_t C_;  // the number of mixture components.
 
-	dmatrix_type alphas_;  // mixture coefficients(weights)
+	dmatrix_type alphas_;  // mixture coefficients(weights).
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dmatrix_type> alphas_conj_;  // eta.
 };
 
 }  // namespace swl

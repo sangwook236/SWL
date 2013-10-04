@@ -13,7 +13,8 @@
 namespace swl {
 
 HmmWithVonMisesFisherMixtureObservations::HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C)
-: base_type(K, D), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C]), kappas_(K, C, 0.0)  // 0-based index
+: base_type(K, D), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C]), kappas_(K, C, 0.0),  // 0-based index
+  mus_conj_(), kappas_conj_()
 {
 	for (size_t k = 0; k < K; ++k)
 		for (size_t c = 0; c < C; ++c)
@@ -21,7 +22,14 @@ HmmWithVonMisesFisherMixtureObservations::HmmWithVonMisesFisherMixtureObservatio
 }
 
 HmmWithVonMisesFisherMixtureObservations::HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &mus, const dmatrix_type &kappas)
-: base_type(K, D, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas)
+: base_type(K, D, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas),
+  mus_conj_(), kappas_conj_()
+{
+}
+
+HmmWithVonMisesFisherMixtureObservations::HmmWithVonMisesFisherMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *mus_conj, const dmatrix_type *kappas_conj)
+: base_type(K, D, pi_conj, A_conj), HmmWithMixtureObservations(C, K, alphas_conj), mus_(boost::extents[K][C]), kappas_(K, C, 0.0),
+  mus_conj_(mus_conj), kappas_conj_(kappas_conj)
 {
 }
 

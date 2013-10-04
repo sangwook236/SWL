@@ -21,12 +21,20 @@ bool one_dim_root_finding_using_f(const double A, const double lower, const doub
 double evaluateVonMisesDistribution(const double x, const double mu, const double kappa);
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C)
-: base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(K, C), kappas_(K, C)  // 0-based index
+: base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(K, C, 0.0), kappas_(K, C, 0.0),  // 0-based index
+  mus_conj_(), kappas_conj_()
 {
 }
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &kappas)
-: base_type(K, 1, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas)
+: base_type(K, 1, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas),
+  mus_conj_(), kappas_conj_()
+{
+}
+
+HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *mus_conj, const dmatrix_type *kappas_conj)
+: base_type(K, 1, pi_conj, A_conj), HmmWithMixtureObservations(C, K, alphas_conj), mus_(K, C, 0.0), kappas_(K, C, 0.0),
+  mus_conj_(mus_conj), kappas_conj_(kappas_conj)
 {
 }
 
@@ -41,7 +49,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	size_t c, n;
 	double numerator, denominator;
 
-	// E-step
+	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble
 	dmatrix_type zeta(N, C_, 0.0);
 	{
@@ -152,7 +160,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	size_t c, n, r;
 	double numerator, denominator;
 
-	// E-step
+	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble
 	std::vector<dmatrix_type> zetas;
 	zetas.reserve(R);

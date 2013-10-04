@@ -14,14 +14,11 @@ class SWL_RND_UTIL_API HmmWithVonMisesFisherObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 public:
-	HmmWithVonMisesFisherObservations(const size_t K, const size_t D);
+	HmmWithVonMisesFisherObservations(const size_t K, const size_t D);  // for ML learning.
 	HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &mus, const dvector_type &kappas);
+	HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *mus_conj, const dvector_type *kappas_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesFisherObservations();
 
 private:
@@ -63,9 +60,17 @@ protected:
 		// do nothing
 	}
 
+	// FIXME [implment] >>
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+
 private:
-	dmatrix_type mus_;  // the mean vectors of the von Mises-Fisher distribution
-	dvector_type kappas_;  // the concentration parameters of the von Mises-Fisher distribution
+	dmatrix_type mus_;  // the mean vectors of the von Mises-Fisher distribution.
+	dvector_type kappas_;  // the concentration parameters of the von Mises-Fisher distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // for the mean vectors of the von Mises-Fisher distribution.
+	boost::scoped_ptr<const dvector_type> kappas_conj_;  // for the concentration parameters of the von Mises-Fisher distribution.
 };
 
 }  // namespace swl

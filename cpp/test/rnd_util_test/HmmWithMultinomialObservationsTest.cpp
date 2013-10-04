@@ -518,7 +518,7 @@ void viterbi_algorithm()
 	}
 }
 
-void em_learning_by_mle()
+void ml_learning_by_em()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
@@ -530,7 +530,7 @@ void em_learning_by_mle()
 */
 
 	// initialize a model
-	const int initialization_mode = 1;
+	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
@@ -600,11 +600,11 @@ void em_learning_by_mle()
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
-#if 0
+#if 1
 			std::ifstream stream("../data/hmm/multinomial_test1_50.seq");
 #elif 0
 			std::ifstream stream("../data/hmm/multinomial_test1_100.seq");
-#elif 1
+#elif 0
 			std::ifstream stream("../data/hmm/multinomial_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
@@ -722,7 +722,7 @@ void em_learning_by_mle()
 	}
 }
 
-void em_learning_by_map()
+void map_learning_by_em()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
@@ -734,7 +734,7 @@ void em_learning_by_map()
 */
 
 	// initialize a model
-	const int initialization_mode = 1;
+	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
@@ -758,7 +758,12 @@ void em_learning_by_map()
 			return;
 		}
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		// FIXME [check] >>
+		swl::DDHMM::dvector_type *pi_conj = new swl::DDHMM::dvector_type(K, 1.0);
+		swl::DDHMM::dmatrix_type *A_conj = new swl::DDHMM::dmatrix_type(K, K, 1.0);
+		swl::DDHMM::dmatrix_type *B_conj = new swl::DDHMM::dmatrix_type(K, D, 1.0);
+
+		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D, pi_conj, A_conj, B_conj));
 
 		const bool retval = ddhmm->readModel(stream);
 		if (!retval)
@@ -787,7 +792,12 @@ void em_learning_by_map()
 		const size_t K = 3;  // the dimension of hidden states
 		const size_t D = 2;  // the dimension of observation symbols
 
-		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
+		// FIXME [check] >>
+		swl::DDHMM::dvector_type *pi_conj = new swl::DDHMM::dvector_type(K, 1.0);
+		swl::DDHMM::dmatrix_type *A_conj = new swl::DDHMM::dmatrix_type(K, K, 1.0);
+		swl::DDHMM::dmatrix_type *B_conj = new swl::DDHMM::dmatrix_type(K, D, 1.0);
+
+		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D, pi_conj, A_conj, B_conj));
 
 		ddhmm->initializeModel(std::vector<double>(), std::vector<double>());
 	}
@@ -804,11 +814,11 @@ void em_learning_by_map()
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
-#if 0
+#if 1
 			std::ifstream stream("../data/hmm/multinomial_test1_50.seq");
 #elif 0
 			std::ifstream stream("../data/hmm/multinomial_test1_100.seq");
-#elif 1
+#elif 0
 			std::ifstream stream("../data/hmm/multinomial_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
@@ -931,7 +941,7 @@ void em_learning_by_map()
 
 void hmm_with_multinomial_observation_densities()
 {
-	std::cout << "===== DDHMM w/ multinomial observation densities =====" << std::endl;
+	std::cout << "DDHMM w/ multinomial observation densities --------------------------" << std::endl;
 
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
@@ -939,9 +949,9 @@ void hmm_with_multinomial_observation_densities()
 	//local::observation_sequence_reading_and_writing();
 
 	//local::forward_algorithm();
-	//local::backward_algorithm();  // not yet implemented
+	//local::backward_algorithm();  // not yet implemented.
 	//local::viterbi_algorithm();
 
-	local::em_learning_by_mle();
-	//local::em_learning_by_map();  // not yet implemented
+	local::ml_learning_by_em();
+	local::map_learning_by_em();
 }

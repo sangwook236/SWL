@@ -22,12 +22,21 @@ double evaluateVonMisesDistribution(const double x, const double mu, const doubl
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K)
 : base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index
+  mus_conj_(), kappas_conj_(),
   targetDist_(), proposalDist_()
 {
 }
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas)
 : base_type(K, 1, pi, A), mus_(mus), kappas_(kappas),
+  mus_conj_(), kappas_conj_(),
+  targetDist_(), proposalDist_()
+{
+}
+
+HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *kappas_conj)
+: base_type(K, 1, pi_conj, A_conj), mus_(K, 0.0), kappas_(K, 0.0),
+  mus_conj_(mus_conj), kappas_conj_(kappas_conj),
   targetDist_(), proposalDist_()
 {
 }

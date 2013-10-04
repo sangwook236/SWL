@@ -14,14 +14,11 @@ class SWL_RND_UTIL_API HmmWithMultinomialObservations: public DDHMM
 {
 public:
 	typedef DDHMM base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 public:
-	HmmWithMultinomialObservations(const size_t K, const size_t D);
+	HmmWithMultinomialObservations(const size_t K, const size_t D);  // for ML learning.
 	HmmWithMultinomialObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &B);
+	HmmWithMultinomialObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *B_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithMultinomialObservations();
 
 private:
@@ -58,8 +55,14 @@ protected:
 	/*virtual*/ void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity);
 	/*virtual*/ void doNormalizeObservationDensityParameters();
 
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != B_conj_.get();  }
+
 private:
-	dmatrix_type B_;  // the observation(emission) probability distribution
+	dmatrix_type B_;  // the observation(emission) probability distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dmatrix_type> B_conj_;  // beta.
 };
 
 }  // namespace swl

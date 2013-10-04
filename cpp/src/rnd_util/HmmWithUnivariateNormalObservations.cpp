@@ -18,12 +18,21 @@ namespace swl {
 
 HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K)
 : base_type(K, 1), mus_(K, 0.0), sigmas_(K, 0.0),  // 0-based index
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
   baseGenerator_()
 {
 }
 
 HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &sigmas)
 : base_type(K, 1, pi, A), mus_(mus), sigmas_(sigmas),
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  baseGenerator_()
+{
+}
+
+HmmWithUnivariateNormalObservations::HmmWithUnivariateNormalObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *betas_conj, const dvector_type *sigmas_conj, const dvector_type *nus_conj)
+: base_type(K, 1, pi_conj, A_conj), mus_(K, 0.0), sigmas_(K, 0.0),
+  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj),
   baseGenerator_()
 {
 }
@@ -100,12 +109,68 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state
+
+	size_t n;
+	const double denominator = denominatorA + gamma(N-1, state);
+
+	//
+	double &mu = mus_[state];
+	mu = (*betas_conj_)(state) * (*mus_conj_)(state);
+	for (n = 0; n < N; ++n)
+		mu += gamma(n, state) * observations(n, 0);
+	mu = 0.001 + 0.999 * mu / (denominator + (*betas_conj_)(state));
+
+	//
+	double &sigma = sigmas_[state];
+	sigma = (*sigmas_conj_)(state) + (*betas_conj_)(state) * (mu - (*mus_conj_)(state)) * (mu - (*mus_conj_)(state));
+	for (n = 0; n < N; ++n)
+		sigma += gamma(n, state) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
+	sigma = 0.001 + 0.999 * std::sqrt(sigma / (denominator + (*nus_conj_)(state) - D_));
+	assert(sigma > 0.0);
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state
+
+	size_t n, r;
+	double denominator = denominatorA;
+	for (r = 0; r < R; ++r)
+		denominator += gammas[r](Ns[r]-1, state);
+
+	//
+	double &mu = mus_[state];
+	mu = (*betas_conj_)(state) * (*mus_conj_)(state);
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			mu += gammar(n, state) * observationr(n, 0);
+	}
+	mu = 0.001 + 0.999 * mu / (denominator + (*betas_conj_)(state));
+
+	//
+	double &sigma = sigmas_[state];
+	sigma = (*sigmas_conj_)(state) + (*betas_conj_)(state) * (mu - (*mus_conj_)(state)) * (mu - (*mus_conj_)(state));
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			sigma += gammar(n, state) * (observationr(n, 0) - mu) * (observationr(n, 0) - mu);
+	}
+	sigma = 0.001 + 0.999 * std::sqrt(sigma / (denominator + (*nus_conj_)(state) - D_));
+	assert(sigma > 0.0);
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
 }
 
 double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

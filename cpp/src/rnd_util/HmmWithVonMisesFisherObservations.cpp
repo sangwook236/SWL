@@ -13,12 +13,20 @@
 namespace swl {
 
 HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(K, D), kappas_(K, 0.0)  // 0-based index
+: base_type(K, D), mus_(K, D, 0.0), kappas_(K, 0.0),  // 0-based index
+  mus_conj_(), kappas_conj_()
 {
 }
 
 HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &mus, const dvector_type &kappas)
-: base_type(K, D, pi, A), mus_(mus), kappas_(kappas)
+: base_type(K, D, pi, A), mus_(mus), kappas_(kappas),
+  mus_conj_(), kappas_conj_()
+{
+}
+
+HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *mus_conj, const dvector_type *kappas_conj)
+: base_type(K, D, pi_conj, A_conj), mus_(K, D, 0.0), kappas_(K, 0.0),
+  mus_conj_(mus_conj), kappas_conj_(kappas_conj)
 {
 }
 

@@ -574,7 +574,7 @@ void viterbi_algorithm()
 	}
 }
 
-void em_learning_by_mle()
+void ml_learning_by_em()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -586,7 +586,7 @@ void em_learning_by_mle()
 */
 
 	// initialize a model
-	const int initialization_mode = 1;
+	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
@@ -815,7 +815,7 @@ void em_learning_by_mle()
 	}
 }
 
-void em_learning_by_map()
+void map_learning_by_em()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -827,7 +827,7 @@ void em_learning_by_map()
 */
 
 	// initialize a model
-	const int initialization_mode = 1;
+	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
@@ -851,7 +851,24 @@ void em_learning_by_map()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
+		// FIXME [check] >>
+		std::srand((unsigned int)std::time(NULL));
+		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >>
+		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
+		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
+		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dvector_type *nus_conj = new swl::CDHMM::dvector_type(K, 1.0);  // nu > D - 1.
+		for (size_t k = 0; k < K; ++k)
+		{
+			(*mus_conj)(k) = (std::rand() / RAND_MAX) * 10.0 - 5.0;
+			//(*betas_conj)(k) = (std::rand() / RAND_MAX + 1.0) * 10.0;
+			//(*sigmas_conj)(k) = ???;
+			//(*nus_conj)(k) = ???;
+		}
+
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K, pi_conj, A_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -880,7 +897,23 @@ void em_learning_by_map()
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
-		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K));
+		// FIXME [check] >>
+		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >>
+		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
+		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
+		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dvector_type *nus_conj = new swl::CDHMM::dvector_type(K, 1.0);  // nu > D - 1.
+		for (size_t k = 0; k < K; ++k)
+		{
+			(*mus_conj)(k) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
+			//(*betas_conj)(k) = (std::rand() / RAND_MAX + 1.0) * 100.0;
+			//(*sigmas_conj)(k) = ???;
+			//(*nus_conj)(k) = ???;
+		}
+
+		cdhmm.reset(new swl::HmmWithUnivariateNormalObservations(K, pi_conj, A_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
 
 		// the total number of parameters of observation density: K * D * 2
 		const size_t numParameters = K * 1 * 2;
@@ -1061,7 +1094,7 @@ void em_learning_by_map()
 
 void hmm_with_univariate_normal_observation_densities()
 {
-	std::cout << "===== CDHMM w/ univariate normal observation densities =====" << std::endl;
+	std::cout << "CDHMM w/ univariate normal observation densities --------------------" << std::endl;
 
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;
@@ -1069,9 +1102,9 @@ void hmm_with_univariate_normal_observation_densities()
 	//local::observation_sequence_reading_and_writing();
 
 	//local::forward_algorithm();
-	//local::backward_algorithm();  // not yet implemented
+	//local::backward_algorithm();  // not yet implemented.
 	//local::viterbi_algorithm();
 
-	local::em_learning_by_mle();
-	//local::em_learning_by_map();  // not yet implemented
+	local::ml_learning_by_em();
+	local::map_learning_by_em();
 }

@@ -23,6 +23,11 @@ CDHMM::CDHMM(const size_t K, const size_t D, const dvector_type &pi, const dmatr
 {
 }
 
+CDHMM::CDHMM(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj)
+: base_type(K, D, pi_conj, A_conj)
+{
+}
+
 CDHMM::~CDHMM()
 {
 }
@@ -306,9 +311,9 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 	for (n = 0; n < N; ++n)
 		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
-	// E-step
+	// E-step: evaluate gamma & xi.
 	{
-		// forward-backward algorithm
+		// forward-backward algorithm.
 		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -316,7 +321,7 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 		computeXi(N, observations, alpha, beta, xi);
 	}
 
-	initLogProbability = logprobf;  // log P(observations | initial model)
+	initLogProbability = logprobf;  // log P(observations | initial model).
 	finalLogProbability = logprobf;
 
 	double numeratorA, denominatorA;
@@ -325,13 +330,13 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 	numIteration = 0;
 	do
 	{
-		// M-step
+		// M-step.
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=0
+			// reestimate frequency of state k in time n=0.
 			pi_[k] = 0.001 + 0.999 * gamma(0, k);
 
-			// reestimate transition matrix
+			// reestimate transition matrix.
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma(n, k);
@@ -344,12 +349,12 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
-			// reestimate observation(emission) distribution in each state
+			// reestimate observation(emission) distribution in each state.
 			// run E-step & M-step as well.
 			doEstimateObservationDensityParametersByML(N, (unsigned int)k, observations, gamma, denominatorA);
 		}
 
-		// E-step
+		// E-step: evaluate gamma & xi.
 		{
 			// forward-backward algorithm
 			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
@@ -359,21 +364,21 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 			computeXi(N, observations, alpha, beta, xi);
 		}
 
-		// compute difference between log probability of two iterations
+		// compute difference between log probability of two iterations.
 #if 1
 		delta = logprobf - finalLogProbability;
 #else
 		delta = std::fabs(logprobf - finalLogProbability);
 #endif
 
-		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		finalLogProbability = logprobf;  // log P(observations | estimated model).
 		++numIteration;
-	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit
+	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit.
 
 /*
-	// compute gamma & xi
+	// compute gamma & xi.
 	{
-		// gamma can use the result from Baum-Welch algorithm
+		// gamma can use the result from Baum-Welch algorithm.
 		//dmatrix_type gamma2(boost::extents[N][K_]);
 		//computeGamma(N, alpha, beta, gamma2);
 
@@ -391,7 +396,7 @@ bool CDHMM::estimateParametersByML(const size_t N, const dmatrix_type &observati
 
 bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
-	const size_t R = Ns.size();  // number of observations sequences
+	const size_t R = Ns.size();  // number of observations sequences.
 	size_t Nr, r, n;
 
 	std::vector<dmatrix_type> alphas, betas, gammas;
@@ -417,7 +422,7 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 
 	double logprobf, logprobb;
 
-	// E-step
+	// E-step: evaluate gamma & xi.
 	for (r = 0; r < R; ++r)
 	{
 		Nr = Ns[r];
@@ -436,7 +441,7 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
 
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+		initLogProbabilities[r] = logprobf;  // log P(observations | initial model).
 		finalLogProbabilities[r] = logprobf;
 	}
 
@@ -448,16 +453,16 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 	numIteration = 0;
 	do
 	{
-		// M-step
+		// M-step.
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=0
+			// reestimate frequency of state k in time n=0.
 			numeratorPi = 0.0;
 			for (r = 0; r < R; ++r)
 				numeratorPi += gammas[r](0, k);
 			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
 
-			// reestimate transition matrix
+			// reestimate transition matrix.
 			denominatorA = 0.0;
 			for (r = 0; r < R; ++r)
 				for (n = 0; n < Ns[r] - 1; ++n)
@@ -472,12 +477,12 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
 			}
 
-			// reestimate observation(emission) distribution in each state
+			// reestimate observation(emission) distribution in each state.
 			// run E-step & M-step as well.
 			doEstimateObservationDensityParametersByML(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
-		// E-step
+		// E-step: evaluate gamma & xi.
 		continueToLoop = false;
 		for (r = 0; r < R; ++r)
 		{
@@ -490,14 +495,14 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 			std::vector<dmatrix_type> &xir = xis[r];
 			dvector_type &scaler = scales[r];
 
-			// forward-backward algorithm
+			// forward-backward algorithm.
 			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
 			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
 
 			computeGamma(Nr, alphar, betar, gammar);
 			computeXi(Nr, observations, alphar, betar, xir);
 
-			// compute difference between log probability of two iterations
+			// compute difference between log probability of two iterations.
 #if 1
 			delta = logprobf - finalLogProbabilities[r];
 #else
@@ -506,18 +511,18 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 			if (delta > terminationTolerance && numIteration <= maxIteration)
 				continueToLoop = true;
 
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
+			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model).
 		}
 
 		++numIteration;
-	} while (continueToLoop);  // if log probability does not change much, exit
+	} while (continueToLoop);  // if log probability does not change much, exit.
 
 /*
-	// compute gamma & xi
+	// compute gamma & xi.
 	{
 		for (r = 0; r < R; ++r)
 		{
-			// gamma can use the result from Baum-Welch algorithm
+			// gamma can use the result from Baum-Welch algorithm.
 			//dmatrix_type gamma2(Ns[r], K_, 0.0);
 			//computeGamma(Ns[r], alphas[r], betas[r], gamma2);
 
@@ -542,6 +547,9 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 
 bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
+	if (!pi_conj_ || !A_conj_ || !doDoHyperparametersOfConjugatePriorExist())
+		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
+
 	dvector_type scale(N, 0.0);
 	double logprobf, logprobb;
 	size_t n;
@@ -552,9 +560,9 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 	for (n = 0; n < N; ++n)
 		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
-	// E-step
+	// E-step: evaluate gamma & xi.
 	{
-		// forward-backward algorithm
+		// forward-backward algorithm.
 		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -562,42 +570,50 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 		computeXi(N, observations, alpha, beta, xi);
 	}
 
-	initLogProbability = logprobf;  // log P(observations | initial model)
+	initLogProbability = logprobf;  // log P(observations | initial model).
 	finalLogProbability = logprobf;
+
+	size_t i, k;
+	double denominatorPi0 = 1.0 - double(K_);
+	for (k = 0; k < K_; ++k)
+		denominatorPi0 += (*pi_conj_)(k);
+	dvector_type denominatorA0(K_, -double(K_));
+	for (k = 0; k < K_; ++k)
+		for (i = 0; i < K_; ++i)
+			denominatorA0(k) += (*A_conj_)(k, i);
 
 	double numeratorA, denominatorA;
 	double delta;
-	size_t i, k;
 	numIteration = 0;
 	do
 	{
-		// M-step
+		// M-step.
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=0
-			pi_[k] = 0.001 + 0.999 * gamma(0, k);
+			// reestimate frequency of state k in time n=0.
+			pi_[k] = 0.001 + 0.999 * (gamma(0, k) + (*pi_conj_)(k) - 1.0) / denominatorPi0;
 
-			// reestimate transition matrix
+			// reestimate transition matrix.
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma(n, k);
 
 			for (i = 0; i < K_; ++i)
 			{
-				numeratorA = 0.0;
+				numeratorA = (*A_conj_)(k, i) - 1.0;
 				for (n = 0; n < N - 1; ++n)
 					numeratorA += xi[n](k, i);
-				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
+				A_(k, i) = 0.001 + 0.999 * numeratorA / (denominatorA0(k) + denominatorA);
 			}
 
-			// reestimate observation(emission) distribution in each state
+			// reestimate observation(emission) distribution in each state.
 			// run E-step & M-step as well.
 			doEstimateObservationDensityParametersByMAP(N, (unsigned int)k, observations, gamma, denominatorA);
 		}
 
-		// E-step
+		// E-step: evaluate gamma & xi.
 		{
-			// forward-backward algorithm
+			// forward-backward algorithm.
 			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
 			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
 
@@ -605,21 +621,21 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 			computeXi(N, observations, alpha, beta, xi);
 		}
 
-		// compute difference between log probability of two iterations
+		// compute difference between log probability of two iterations.
 #if 1
 		delta = logprobf - finalLogProbability;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);  // log P(observations | estimated model)
+		delta = std::fabs(logprobf - finalLogProbability);  // log P(observations | estimated model).
 #endif
 
-		finalLogProbability = logprobf;  // log P(observations | estimated model)
+		finalLogProbability = logprobf;  // log P(observations | estimated model).
 		++numIteration;
-	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit
+	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit.
 
 /*
-	// compute gamma & xi
+	// compute gamma & xi.
 	{
-		// gamma can use the result from Baum-Welch algorithm
+		// gamma can use the result from Baum-Welch algorithm.
 		//dmatrix_type gamma2(boost::extents[N][K_]);
 		//computeGamma(N, alpha, beta, gamma2);
 
@@ -637,7 +653,10 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 
 bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
-	const size_t R = Ns.size();  // number of observations sequences
+	if (!pi_conj_ || !A_conj_ || !doDoHyperparametersOfConjugatePriorExist())
+		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
+
+	const size_t R = Ns.size();  // the number of observation sequences.
 	size_t Nr, r, n;
 
 	std::vector<dmatrix_type> alphas, betas, gammas;
@@ -663,7 +682,7 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 
 	double logprobf, logprobb;
 
-	// E-step
+	// E-step: evaluate gamma & xi.
 	for (r = 0; r < R; ++r)
 	{
 		Nr = Ns[r];
@@ -675,35 +694,43 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 		std::vector<dmatrix_type> &xir = xis[r];
 		dvector_type &scaler = scales[r];
 
-		// forward-backward algorithm
+		// forward-backward algorithm.
 		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
 		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
 
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
 
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model)
+		initLogProbabilities[r] = logprobf;  // log P(observations | initial model).
 		finalLogProbabilities[r] = logprobf;
 	}
+
+	size_t i, k;
+	double denominatorPi0 = double(R) - double(K_);
+	for (k = 0; k < K_; ++k)
+		denominatorPi0 += (*pi_conj_)(k);
+	dvector_type denominatorA0(K_, -double(K_));
+	for (k = 0; k < K_; ++k)
+		for (i = 0; i < K_; ++i)
+			denominatorA0(k) += (*A_conj_)(k, i);
 
 	double numeratorPi;
 	double numeratorA, denominatorA;
 	double delta;;
 	bool continueToLoop;
-	size_t i, k;
 	numIteration = 0;
 	do
 	{
-		// M-step
+		// M-step.
 		for (k = 0; k < K_; ++k)
 		{
-			// reestimate frequency of state k in time n=0
-			numeratorPi = 0.0;
+			// reestimate frequency of state k in time n=0.
+			numeratorPi = (*pi_conj_)(k) - 1.0;
 			for (r = 0; r < R; ++r)
 				numeratorPi += gammas[r](0, k);
-			pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
+			pi_[k] = 0.001 + 0.999 * numeratorPi / denominatorPi0;
 
-			// reestimate transition matrix
+			// reestimate transition matrix.
 			denominatorA = 0.0;
 			for (r = 0; r < R; ++r)
 				for (n = 0; n < Ns[r] - 1; ++n)
@@ -711,19 +738,19 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 
 			for (i = 0; i < K_; ++i)
 			{
-				numeratorA = 0.0;
+				numeratorA = (*A_conj_)(k, i) - 1.0;
 				for (r = 0; r < R; ++r)
 					for (n = 0; n < Ns[r] - 1; ++n)
 						numeratorA += xis[r][n](k, i);
-				A_(k, i) = 0.001 + 0.999 * numeratorA / denominatorA;
+				A_(k, i) = 0.001 + 0.999 * numeratorA / (denominatorA0(k) + denominatorA);
 			}
 
-			// reestimate observation(emission) distribution in each state
+			// reestimate observation(emission) distribution in each state.
 			// run E-step & M-step as well.
 			doEstimateObservationDensityParametersByMAP(Ns, (unsigned int)k, observationSequences, gammas, R, denominatorA);
 		}
 
-		// E-step
+		// E-step: evaluate gamma & xi.
 		continueToLoop = false;
 		for (r = 0; r < R; ++r)
 		{
@@ -736,14 +763,14 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 			std::vector<dmatrix_type> &xir = xis[r];
 			dvector_type &scaler = scales[r];
 
-			// forward-backward algorithm
+			// forward-backward algorithm.
 			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
 			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
 
 			computeGamma(Nr, alphar, betar, gammar);
 			computeXi(Nr, observations, alphar, betar, xir);
 
-			// compute difference between log probability of two iterations
+			// compute difference between log probability of two iterations.
 #if 1
 			delta = logprobf - finalLogProbabilities[r];
 #else
@@ -752,18 +779,18 @@ bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::ve
 			if (delta > terminationTolerance && numIteration <= maxIteration)
 				continueToLoop = true;
 
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model)
+			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model).
 		}
 
 		++numIteration;
-	} while (continueToLoop);  // if log probability does not change much, exit
+	} while (continueToLoop);  // if log probability does not change much, exit.
 
 /*
-	// compute gamma & xi
+	// compute gamma & xi.
 	{
 		for (r = 0; r < R; ++r)
 		{
-			// gamma can use the result from Baum-Welch algorithm
+			// gamma can use the result from Baum-Welch algorithm.
 			//dmatrix_type gamma2(Ns[r], K_, 0.0);
 			//computeGamma(Ns[r], alphas[r], betas[r], gamma2);
 

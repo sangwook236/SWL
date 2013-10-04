@@ -304,7 +304,7 @@ void observation_sequence_reading_and_writing()
 	swl::ContinuousDensityMixtureModel::writeSequence(std::cout, observations);
 }
 
-void em_learning_by_mle()
+void ml_learning_by_em()
 {
 	boost::scoped_ptr<swl::ContinuousDensityMixtureModel> cdmm;
 
@@ -467,7 +467,7 @@ void em_learning_by_mle()
 	}
 }
 
-void em_learning_by_map()
+void map_learning_by_em()
 {
 	boost::scoped_ptr<swl::ContinuousDensityMixtureModel> cdmm;
 
@@ -642,6 +642,6 @@ void von_mises_mixture_model()
 	//local::observation_sequence_generation(outputToFile);
 	//local::observation_sequence_reading_and_writing();
 
-	local::em_learning_by_mle();
-	//local::em_learning_by_map();  // not yet implemented
+	local::ml_learning_by_em();
+	//local::map_learning_by_em();  // not yet implemented
 }

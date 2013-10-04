@@ -39,8 +39,6 @@ void ddhmm_segmentation_by_viterbi_algorithm()
 	swl::HmmSegmenter::uivector_type states(N, (unsigned int)-1);
 
 	const bool retval = swl::HmmSegmenter::segmentByViterbiAlgorithm(cdhmm, observations, logProbability, startStateIndex, endStateIndex, states);
-
-	throw std::runtime_error("not yet implemented");
 }
 
 void cdhmm_segmentation_by_viterbi_algorithm()
@@ -73,8 +71,8 @@ void cdhmm_segmentation_by_viterbi_algorithm()
 
 void hmm_segmentation()
 {
-	std::cout << "===== HMM Segmentation =====" << std::endl;
+	std::cout << "HMM segmentation ----------------------------------------------------" << std::endl;
 
-	local::ddhmm_segmentation_by_viterbi_algorithm();
-	local::cdhmm_segmentation_by_viterbi_algorithm();
+	local::ddhmm_segmentation_by_viterbi_algorithm();  // not yet implemented.
+	local::cdhmm_segmentation_by_viterbi_algorithm();  // not yet implemented.
 }

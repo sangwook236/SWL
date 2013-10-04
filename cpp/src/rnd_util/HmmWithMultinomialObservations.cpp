@@ -13,12 +13,20 @@
 namespace swl {
 
 HmmWithMultinomialObservations::HmmWithMultinomialObservations(const size_t K, const size_t D)
-: base_type(K, D), B_(K, D, 0.0)  // 0-based index
+: base_type(K, D), B_(K, D, 0.0),  // 0-based index
+  B_conj_()
 {
 }
 
 HmmWithMultinomialObservations::HmmWithMultinomialObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &B)
-: base_type(K, D, pi, A), B_(B)
+: base_type(K, D, pi, A), B_(B),
+  B_conj_()
+{
+}
+
+HmmWithMultinomialObservations::HmmWithMultinomialObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *B_conj)
+: base_type(K, D, pi_conj, A_conj), B_(K, D, 0.0),
+  B_conj_(B_conj)
 {
 }
 
@@ -72,9 +80,6 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
-/*
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -82,23 +87,19 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	double numeratorB;
 	for (size_t d = 0; d < D_; ++d)
 	{
-		numeratorB = 0.0;
+		numeratorB = (*B_conj_)(state, d) - 1.0;
 		for (n = 0; n < N; ++n)
 		{
 			if (observations[n] == (unsigned int)d)
 				numeratorB += gamma(n, state);
 		}
 
-		B_(state, d) = 0.001 + 0.999 * numeratorB / denominatorB;
+		B_(state, d) = 0.001 + 0.999 * numeratorB / (denominatorB + D_ * ((*B_conj_)(state, d) - 1.0));
 	}
-*/
 }
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
-/*
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -117,9 +118,8 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 					numeratorB += gammas[r](n, state);
 			}
 
-		B_(state, d) = 0.001 + 0.999 * numeratorB / denominatorB;
+		B_(state, d) = 0.001 + 0.999 * numeratorB / (denominatorB + D_ * ((*B_conj_)(state, d) - 1.0));
 	}
-*/
 }
 
 unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const unsigned int state) const

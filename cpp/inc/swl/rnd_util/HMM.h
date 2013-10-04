@@ -4,6 +4,7 @@
 
 #include "swl/rnd_util/ExportRndUtil.h"
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/smart_ptr.hpp>
 
 
 namespace swl {
@@ -21,8 +22,9 @@ public:
 	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 protected:
-	HMM(const size_t K, const size_t D);
+	HMM(const size_t K, const size_t D);  // for ML learning.
 	HMM(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A);
+	HMM(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj);  // for MAP learning using conjugate prior.
 	virtual ~HMM();
 
 private:
@@ -53,15 +55,21 @@ protected:
 	virtual void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity) = 0;
 	virtual void doNormalizeObservationDensityParameters() = 0;
 
+	virtual bool doDoHyperparametersOfConjugatePriorExist() const  {  return false;  }
+
 	unsigned int generateInitialState() const;
 	unsigned int generateNextState(const unsigned int currState) const;
 
 protected:
-	const size_t K_;  // the dimension of hidden states
-	const size_t D_;  // the dimension of observation symbols
+	const size_t K_;  // the dimension of hidden states.
+	const size_t D_;  // the dimension of observation symbols.
 
-	dvector_type pi_;  // the initial state distribution
-	dmatrix_type A_;  // the state transition probability matrix
+	dvector_type pi_;  // the initial state distribution.
+	dmatrix_type A_;  // the state transition probability matrix.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const dvector_type> pi_conj_;  // for the initial state distribution.
+	boost::scoped_ptr<const dmatrix_type> A_conj_;  // for the state transition probability matrix.
 };
 
 }  // namespace swl

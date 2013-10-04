@@ -14,14 +14,11 @@ class SWL_RND_UTIL_API CDHMM: public HMM
 {
 public:
 	typedef HMM base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
 
 protected:
-	CDHMM(const size_t K, const size_t D);
+	CDHMM(const size_t K, const size_t D);  // for ML learning.
 	CDHMM(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A);
+	CDHMM(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj);  // for MAP learning using conjugate prior.
 public:
 	virtual ~CDHMM();
 
@@ -37,15 +34,15 @@ public:
 	// forward algorithm without scaling
 	void runForwardAlgorithm(const size_t N, const dmatrix_type &observations, dmatrix_type &alpha, double &probability) const;
 	// forward algorithm with scaling
-	// probability is the LOG probability
+	// probability is the log probability
 	void runForwardAlgorithm(const size_t N, const dmatrix_type &observations, dvector_type &scale, dmatrix_type &alpha, double &probability) const;
 	// backward algorithm without scaling
 	void runBackwardAlgorithm(const size_t N, const dmatrix_type &observations, dmatrix_type &beta, double &probability) const;
 	// backward algorithm with scaling
-	// probability is the LOG probability
+	// probability is the log probability
 	void runBackwardAlgorithm(const size_t N, const dmatrix_type &observations, const dvector_type &scale, dmatrix_type &beta, double &probability) const;
 
-	// if useLog = true, probability is the LOG probability
+	// if useLog = true, probability is the log probability
 	void runViterbiAlgorithm(const size_t N, const dmatrix_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability, const bool useLog = true) const;
 
 	// for a single independent observation sequence

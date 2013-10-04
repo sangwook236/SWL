@@ -17,14 +17,12 @@ class SWL_RND_UTIL_API HmmWithMultivariateNormalMixtureObservations: public CDHM
 public:
 	typedef CDHMM base_type;
 	//typedef HmmWithMixtureObservations base_type;
-	typedef boost::numeric::ublas::vector<double> dvector_type;
-	typedef boost::numeric::ublas::matrix<double> dmatrix_type;
-	typedef boost::numeric::ublas::vector<unsigned int> uivector_type;
-	typedef boost::numeric::ublas::matrix<unsigned int> uimatrix_type;
+	typedef base_type::dmatrix_type dmatrix_type;
 
 public:
-	HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C);
+	HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C);  // for ML learning.
 	HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &mus, const boost::multi_array<dmatrix_type, 2> &sigmas);
+	HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *mus_conj, const dmatrix_type *betas_conj, const boost::multi_array<dmatrix_type, 2> *sigmas_conj, const dmatrix_type *nus_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithMultivariateNormalMixtureObservations();
 
 private:
@@ -66,9 +64,18 @@ protected:
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
+	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != betas_conj_.get() && NULL != sigmas_conj_.get() && NULL != nus_conj_.get();  }
+
 private:
-	boost::multi_array<dvector_type, 2> mus_;  // the sets of mean vectors of each components in the multivariate normal mixture distribution
-	boost::multi_array<dmatrix_type, 2> sigmas_;  // the sets of covariance matrices of each components in the multivariate normal mixture distribution
+	boost::multi_array<dvector_type, 2> mus_;  // the sets of mean vectors of each components in the multivariate normal mixture distribution.
+	boost::multi_array<dmatrix_type, 2> sigmas_;  // the sets of covariance matrices of each components in the multivariate normal mixture distribution.
+
+	// hyperparameters for the conjugate prior.
+	boost::scoped_ptr<const boost::multi_array<dvector_type, 2> > mus_conj_;  // mu0.
+	boost::scoped_ptr<const dmatrix_type> betas_conj_;  // beta. beta > 0.
+	boost::scoped_ptr<const boost::multi_array<dmatrix_type, 2> > sigmas_conj_;  // inv(W).
+	boost::scoped_ptr<const dmatrix_type> nus_conj_;  // nu. nu > D - 1.
 };
 
 }  // namespace swl

@@ -22,7 +22,8 @@ namespace swl {
 double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv);
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(K), sigmas_(K)  // 0-based index
+: base_type(K, D), mus_(K), sigmas_(K),  // 0-based index
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
 {
 	for (size_t k = 0; k < K; ++k)
 	{
@@ -32,7 +33,14 @@ HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(con
 }
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const std::vector<dvector_type> &mus, const std::vector<dmatrix_type> &sigmas)
-: base_type(K, D, pi, A), mus_(mus), sigmas_(sigmas)
+: base_type(K, D, pi, A), mus_(mus), sigmas_(sigmas),
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
+{
+}
+
+HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const std::vector<dvector_type> *mus_conj, const dvector_type *betas_conj, const std::vector<dmatrix_type> *sigmas_conj, const dvector_type *nus_conj)
+: base_type(K, D, pi_conj, A_conj), mus_(K), sigmas_(K),
+  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj)
 {
 }
 
@@ -116,12 +124,80 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state
+
+	size_t n;
+	const double denominator = denominatorA + gamma(N-1, state);
+	const double factorMu = 0.999 / (denominator + (*betas_conj_)(state));
+	const double factorSigma = 0.999 / (denominator + (*nus_conj_)(state) - D_);
+
+	//
+	dvector_type &mu = mus_[state];
+	mu = (*betas_conj_)(state) * (*mus_conj_)[state];
+	for (n = 0; n < N; ++n)
+		mu += gamma(n, state) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
+	//mu = mu * factorMu + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+	mu = mu * factorMu + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
+
+	//
+	dmatrix_type &sigma = sigmas_[state];
+	sigma = (*sigmas_conj_)[state];
+	boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)(state), mu - (*mus_conj_)[state]);
+	for (n = 0; n < N; ++n)
+		boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
+	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+	//sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+	sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+
+	// POSTCONDITIONS [] >>
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state
+
+	size_t n, r;
+	double denominator = denominatorA;
+	for (r = 0; r < R; ++r)
+		denominator += gammas[r](Ns[r]-1, state);
+	const double factorMu = 0.999 / (denominator + (*betas_conj_)(state));
+	const double factorSigma = 0.999 / (denominator + (*nus_conj_)(state) - D_);
+
+	//
+	dvector_type &mu = mus_[state];
+	mu = (*betas_conj_)(state) * (*mus_conj_)[state];
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &gammar = gammas[r];
+		const dmatrix_type &observationr = observationSequences[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			mu += gammar(n, state) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n);
+	}
+	//mu = mu * factorMu + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+	mu = mu * factorMu + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
+
+	//
+	dmatrix_type &sigma = sigmas_[state];
+	sigma = (*sigmas_conj_)[state];
+	boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)(state), mu - (*mus_conj_)[state]);
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &gammar = gammas[r];
+		const dmatrix_type &observationr = observationSequences[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			boost::numeric::ublas::blas_2::sr(sigma, gammar(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
+	}
+	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+	
+	//sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+	sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+
+	// POSTCONDITIONS [] >>
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

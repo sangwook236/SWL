@@ -11,12 +11,20 @@
 namespace swl {
 
 HmmWithMixtureObservations::HmmWithMixtureObservations(const size_t C, const size_t K)
-: C_(C), alphas_(K, C, 0.0)  // 0-based index
+: C_(C), alphas_(K, C, 0.0),  // 0-based index
+  alphas_conj_()
 {
 }
 
 HmmWithMixtureObservations::HmmWithMixtureObservations(const size_t C, const size_t K, const dmatrix_type &alphas)
-: C_(C), alphas_(alphas)
+: C_(C), alphas_(alphas),
+  alphas_conj_()
+{
+}
+
+HmmWithMixtureObservations::HmmWithMixtureObservations(const size_t C, const size_t K, const dmatrix_type *alphas_conj)
+: C_(C), alphas_(K, C, 0.0),
+  alphas_conj_(alphas_conj)
 {
 }
 
