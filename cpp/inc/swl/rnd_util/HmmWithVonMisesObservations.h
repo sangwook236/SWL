@@ -23,7 +23,7 @@ public:
 public:
 	HmmWithVonMisesObservations(const size_t K);  // for ML learning.
 	HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas);
-	HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *kappas_conj);  // for MAP learning using conjugate prior.
+	HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *ms_conj, const dvector_type *Rs_conj, const dvector_type *cs_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesObservations();
 
 private:
@@ -65,17 +65,22 @@ protected:
 		// do nothing
 	}
 
-	// FIXME [modify] >>
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
-	{  return NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+	{
+		return base_type::doDoHyperparametersOfConjugatePriorExist() &&
+			NULL != ms_conj_.get() && NULL != Rs_conj_.get() && NULL != cs_conj_.get();
+	}
 
 private:
 	dvector_type mus_;  // the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
 	dvector_type kappas_;  // the concentration parameters of the von Mises distribution. kappa >= 0.
 
 	// hyperparameters for the conjugate prior.
-	boost::scoped_ptr<const dvector_type> mus_conj_;  // for the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
-	boost::scoped_ptr<const dvector_type> kappas_conj_;  // for the concentration parameters of the von Mises distribution. kappa >= 0.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Finding the Location of a Signal: A Bayesian Analysis", Peter Guttorp and Richard A. Lockhart, JASA, 1988.
+	boost::scoped_ptr<const dvector_type> ms_conj_;  // m.
+	boost::scoped_ptr<const dvector_type> Rs_conj_;  // R. R >= 0.
+	boost::scoped_ptr<const dvector_type> cs_conj_;  // c.
 
 	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
 #if 0

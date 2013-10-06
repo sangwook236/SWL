@@ -56,8 +56,8 @@ int main(int argc, char *argv[])
 		// hidden Markov model (HMM) --------------------------------
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
-		hmm_with_univariate_normal_mixture_observation_densities();
-		//hmm_with_von_mises_observation_densities();
+		//hmm_with_univariate_normal_mixture_observation_densities();
+		hmm_with_von_mises_observation_densities();
 		//hmm_with_von_mises_mixture_observation_densities();
 
 		//-----------------------------------------------------------

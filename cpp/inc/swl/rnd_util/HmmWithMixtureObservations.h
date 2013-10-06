@@ -46,6 +46,8 @@ protected:
 	dmatrix_type alphas_;  // mixture coefficients(weights).
 
 	// hyperparameters for the conjugate prior.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	boost::scoped_ptr<const dmatrix_type> alphas_conj_;  // eta.
 };
 

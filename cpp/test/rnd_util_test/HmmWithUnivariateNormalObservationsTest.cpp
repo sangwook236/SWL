@@ -815,7 +815,7 @@ void ml_learning_by_em()
 	}
 }
 
-void map_learning_by_em()
+void map_learning_by_em_using_conjugate_prior()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -851,11 +851,12 @@ void map_learning_by_em()
 			return;
 		}
 
-		// FIXME [check] >>
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
 		std::srand((unsigned int)std::time(NULL));
 		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
-		// FIXME [check] >>
+		// FIXME [check] >> hyperparameters for univariate normal distribution.
 		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
 		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
 		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
@@ -897,10 +898,11 @@ void map_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states
 		//const size_t D = 1;  // the dimension of observation symbols
 
-		// FIXME [check] >>
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
 		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
-		// FIXME [check] >>
+		// FIXME [check] >> hyperparameters for univariate normal distribution.
 		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
 		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
 		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
@@ -1106,5 +1108,5 @@ void hmm_with_univariate_normal_observation_densities()
 	//local::viterbi_algorithm();
 
 	local::ml_learning_by_em();
-	local::map_learning_by_em();
+	local::map_learning_by_em_using_conjugate_prior();
 }

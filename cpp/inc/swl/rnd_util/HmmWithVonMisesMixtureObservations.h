@@ -26,7 +26,7 @@ public:
 public:
 	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C);  // for ML learning.
 	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &kappas);
-	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *mus_conj, const dmatrix_type *kappas_conj);  // for MAP learning using conjugate prior.
+	HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *ms_conj, const dmatrix_type *Rs_conj, const dmatrix_type *cs_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesMixtureObservations();
 
 private:
@@ -68,17 +68,22 @@ protected:
 		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
-	// FIXME [modify] >>
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
-	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+	{
+		return base_type::doDoHyperparametersOfConjugatePriorExist() &&
+			NULL != ms_conj_.get() && NULL != Rs_conj_.get() && NULL != cs_conj_.get();
+	}
 
 private:
 	dmatrix_type mus_;  // the sets of mean directions of each components in the von Mises mixture distribution.
 	dmatrix_type kappas_;  // the sets of concentration parameters of each components in the von Mises mixture distribution.
 
 	// hyperparameters for the conjugate prior.
-	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // for the sets of mean directions of each components in the von Mises mixture distribution.
-	boost::scoped_ptr<const dmatrix_type> kappas_conj_;  // for the sets of concentration parameters of each components in the von Mises mixture distribution.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Finding the Location of a Signal: A Bayesian Analysis", Peter Guttorp and Richard A. Lockhart, JASA, 1988.
+	boost::scoped_ptr<const dmatrix_type> ms_conj_;  // m.
+	boost::scoped_ptr<const dmatrix_type> Rs_conj_;  // R. R >= 0.
+	boost::scoped_ptr<const dmatrix_type> cs_conj_;  // c.
 
 	mutable boost::scoped_ptr<VonMisesTargetDistribution> targetDist_;
 #if 0

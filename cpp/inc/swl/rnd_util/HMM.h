@@ -55,7 +55,8 @@ protected:
 	virtual void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity) = 0;
 	virtual void doNormalizeObservationDensityParameters() = 0;
 
-	virtual bool doDoHyperparametersOfConjugatePriorExist() const  {  return false;  }
+	virtual bool doDoHyperparametersOfConjugatePriorExist() const
+	{  return NULL != pi_conj_.get() && NULL != A_conj_.get();  }
 
 	unsigned int generateInitialState() const;
 	unsigned int generateNextState(const unsigned int currState) const;
@@ -68,6 +69,8 @@ protected:
 	dmatrix_type A_;  // the state transition probability matrix.
 
 	// hyperparameters for the conjugate prior.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	boost::scoped_ptr<const dvector_type> pi_conj_;  // for the initial state distribution.
 	boost::scoped_ptr<const dmatrix_type> A_conj_;  // for the state transition probability matrix.
 };

@@ -22,19 +22,19 @@ double evaluateVonMisesDistribution(const double x, const double mu, const doubl
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C)
 : base_type(K, 1), HmmWithMixtureObservations(C, K), mus_(K, C, 0.0), kappas_(K, C, 0.0),  // 0-based index
-  mus_conj_(), kappas_conj_()
+  ms_conj_(), Rs_conj_(), cs_conj_()
 {
 }
 
 HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const dmatrix_type &mus, const dmatrix_type &kappas)
 : base_type(K, 1, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), kappas_(kappas),
-  mus_conj_(), kappas_conj_()
+  ms_conj_(), Rs_conj_(), cs_conj_()
 {
 }
 
-HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *mus_conj, const dmatrix_type *kappas_conj)
+HmmWithVonMisesMixtureObservations::HmmWithVonMisesMixtureObservations(const size_t K, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const dmatrix_type *ms_conj, const dmatrix_type *Rs_conj, const dmatrix_type *cs_conj)
 : base_type(K, 1, pi_conj, A_conj), HmmWithMixtureObservations(C, K, alphas_conj), mus_(K, C, 0.0), kappas_(K, C, 0.0),
-  mus_conj_(mus_conj), kappas_conj_(kappas_conj)
+  ms_conj_(ms_conj), Rs_conj_(Rs_conj), cs_conj_(cs_conj)
 {
 }
 
@@ -44,13 +44,13 @@ HmmWithVonMisesMixtureObservations::~HmmWithVonMisesMixtureObservations()
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t c, n;
 	double numerator, denominator;
 
 	// E-step: evaluate zeta.
-	// TODO [check] >> frequent memory reallocation may make trouble
+	// TODO [check] >> frequent memory reallocation may make trouble.
 	dmatrix_type zeta(N, C_, 0.0);
 	{
 		const double eps = 1e-50;
@@ -92,18 +92,19 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		}
 	}
 
-	// M-step
+	// M-step.
 	const double denominatorAlpha = denominatorA + gamma(N-1, state);
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		// reestimate mixture coefficients(weights)
 		sumZeta = 0.0;
 		for (n = 0; n < N; ++n)
 			sumZeta += zeta(n, c);
+
+		// reestimate mixture coefficients(weights).
 		alphas_(state, c) = 0.001 + 0.999 * sumZeta / denominatorAlpha;
 
-		// reestimate observation(emission) distribution in each state
+		// reestimate observation(emission) distribution in each state.
 		numerator = denominator = 0.0;
 		for (n = 0; n < N; ++n)
 		{
@@ -113,7 +114,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 		double &mu = mus_(state, c);
 
-		// TODO [check] >> check the range of each mu, [0, 2 * pi)
+		// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
 		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
 		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
@@ -129,18 +130,18 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 			numerator += zeta(n, c) * std::cos(observations(n, 0) - mu);
 
 #if 0
-		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?)
+		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
 #else
-		const double A = numerator / sumZeta;  // -1 < A < 1 (?)
+		const double A = numerator / sumZeta;  // -1 < A < 1 (?).
 #endif
-		// FIXME [modify] >> lower & upper bounds have to be adjusted
+		// FIXME [modify] >> lower & upper bounds have to be adjusted.
 		const double lb = -2000.0, ub = 2000.0;
 		const std::size_t maxIteration = 100;
 		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
 		assert(retval);
 
 		// TODO [check] >>
-		if (kappas_(state, c) < 0.0)  // kappa >= 0.0
+		if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
 		{
 			kappas_(state, c) = -kappas_(state, c);
 			mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
@@ -155,13 +156,13 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t c, n, r;
 	double numerator, denominator;
 
 	// E-step: evaluate zeta.
-	// TODO [check] >> frequent memory reallocation may make trouble
+	// TODO [check] >> frequent memory reallocation may make trouble.
 	std::vector<dmatrix_type> zetas;
 	zetas.reserve(R);
 	for (r = 0; r < R; ++r)
@@ -212,7 +213,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		}
 	}
 
-	// M-step
+	// M-step.
 	double denominatorAlpha = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominatorAlpha += gammas[r](Ns[r]-1, state);
@@ -221,7 +222,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		// reestimate mixture coefficients(weights)
 		sumZeta = 0.0;
 		for (r = 0; r < R; ++r)
 		{
@@ -230,9 +230,11 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 			for (n = 0; n < Ns[r]; ++n)
 				sumZeta += zetar(n, c);
 		}
+
+		// reestimate mixture coefficients(weights).
 		alphas_(state, c) = 0.001 + factor * sumZeta;
 
-		// reestimate observation(emission) distribution in each state
+		// reestimate observation(emission) distribution in each state.
 		numerator = 0.0;
 		for (r = 0; r < R; ++r)
 		{
@@ -249,7 +251,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 		double &mu = mus_(state, c);
 
-		// TODO [check] >> check the range of each mu, [0, 2 * pi)
+		// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
 		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
 		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
@@ -271,11 +273,269 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		}
 
 #if 0
-		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?)
+		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
 #else
-		const double A = numerator / sumZeta;  // -1 < A < 1 (?)
+		const double A = numerator / sumZeta;  // -1 < A < 1 (?).
 #endif
-		// FIXME [modify] >> lower & upper bounds have to be adjusted
+		// FIXME [modify] >> lower & upper bounds have to be adjusted.
+		const double lb = -10000.0, ub = 10000.0;
+		const std::size_t maxIteration = 100;
+		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
+		assert(retval);
+
+		// TODO [check] >>
+		if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
+		{
+			kappas_(state, c) = -kappas_(state, c);
+			mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+			assert(0.0 <= mu && mu < MathConstant::_2_PI);
+		}
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all mean directions have to be in [0, 2 * pi).
+	//	-. all concentration parameters have to be greater than or equal to 0.
+}
+
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+{
+	// reestimate observation(emission) distribution in each state.
+
+	size_t c, n;
+	double numerator, denominator;
+
+	// E-step: evaluate zeta.
+	// TODO [check] >> frequent memory reallocation may make trouble.
+	dmatrix_type zeta(N, C_, 0.0);
+	{
+		const double eps = 1e-50;
+		double val;
+		for (n = 0; n < N; ++n)
+		{
+			const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
+
+			denominator = 0.0;
+			for (c = 0; c < C_; ++c)
+			{
+				//val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+				//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
+				val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+
+				zeta(n, c) = val;
+				denominator += val;  // this value can be nearly zero if the observation is not generated by the corresponding mixture model.
+			}
+
+			if (denominator < eps)
+			{
+				// FIXME [check] >>
+				//	because responsibilities, gamma(y_nc) means membership, the values may become zero if the corresponding mixture model doesn't generate a sample.
+				for (c = 0; c < C_; ++c)
+					zeta(n, c) = 0.0;
+			}
+			else
+			{
+#if 0
+				val = 0.999 * gamma(n, state) / denominator;
+				for (c = 0; c < C_; ++c)
+					zeta(n, c) = 0.001 + val * zeta(n, c);
+#else
+				val = gamma(n, state) / denominator;
+				for (c = 0; c < C_; ++c)
+					zeta(n, c) *= val;
+#endif
+			}
+		}
+	}
+
+	// M-step.
+	const double denominatorAlpha = denominatorA + gamma(N-1, state);
+	double sumZeta;
+	for (c = 0; c < C_; ++c)
+	{
+		sumZeta = 0.0;
+		for (n = 0; n < N; ++n)
+			sumZeta += zeta(n, c);
+
+		// reestimate mixture coefficients(weights).
+		alphas_(state, c) = 0.001 + 0.999 * sumZeta / denominatorAlpha;
+
+		// reestimate observation(emission) distribution in each state.
+		numerator = (*Rs_conj_)(state, c) * std::sin((*ms_conj_)(state, c));
+		denominator = (*Rs_conj_)(state, c) * std::cos((*ms_conj_)(state, c));
+		for (n = 0; n < N; ++n)
+		{
+			numerator += zeta(n, c) * std::sin(observations(n, 0));
+			denominator += zeta(n, c) * std::cos(observations(n, 0));
+		}
+
+		double &mu = mus_(state, c);
+
+		// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+		//mu = std::atan2(numerator, denominator);
+		mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
+		assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+		//
+		denominator = sumZeta + (*cs_conj_)(state, c);
+		numerator = (*Rs_conj_)(state, c) * std::cos(mu - (*ms_conj_)(state, c));
+		for (n = 0; n < N; ++n)
+			numerator += zeta(n, c) * std::cos(observations(n, 0) - mu);
+
+#if 0
+		const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+#else
+		const double A = numerator / denominator;  // -1 < A < 1 (?).
+#endif
+		// FIXME [modify] >> lower & upper bounds have to be adjusted.
+		const double lb = -2000.0, ub = 2000.0;
+		const std::size_t maxIteration = 100;
+		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
+		assert(retval);
+
+		// TODO [check] >>
+		if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
+		{
+			kappas_(state, c) = -kappas_(state, c);
+			mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+			assert(0.0 <= mu && mu < MathConstant::_2_PI);
+		}
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all mean directions have to be in [0, 2 * pi).
+	//	-. all concentration parameters have to be greater than or equal to 0.
+}
+
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	// reestimate observation(emission) distribution in each state.
+
+	size_t c, n, r;
+	double numerator, denominator;
+
+	// E-step: evaluate zeta.
+	// TODO [check] >> frequent memory reallocation may make trouble.
+	std::vector<dmatrix_type> zetas;
+	zetas.reserve(R);
+	for (r = 0; r < R; ++r)
+		zetas.push_back(dmatrix_type(Ns[r], C_, 0.0));
+
+	{
+		const double eps = 1e-50;
+		double val;
+		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &gammar = gammas[r];
+			dmatrix_type &zetar = zetas[r];
+
+			for (n = 0; n < Ns[r]; ++n)
+			{
+				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observationSequences[r], n);
+
+				denominator = 0.0;
+				for (c = 0; c < C_; ++c)
+				{
+					//val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+					//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
+					val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+
+					zetar(n, c) = val;
+					denominator += val;  // this value can be nearly zero if the observation is not generated by the corresponding mixture model.
+				}
+
+				if (denominator < eps)
+				{
+					// FIXME [check] >>
+					for (c = 0; c < C_; ++c)
+						zetar(n, c) = 0.0;
+				}
+				else
+				{
+#if 0
+					val = 0.999 * gammar(n, state) / denominator;
+					for (c = 0; c < C_; ++c)
+						zetar(n, c) = 0.001 + val * zetar(n, c);
+#else
+					val = gammar(n, state) / denominator;
+					for (c = 0; c < C_; ++c)
+						zetar(n, c) *= val;
+#endif
+				}
+			}
+		}
+	}
+
+	// M-step.
+	double denominatorAlpha = denominatorA;
+	for (r = 0; r < R; ++r)
+		denominatorAlpha += gammas[r](Ns[r]-1, state);
+	const double factor = 0.999 / denominatorAlpha;
+
+	double sumZeta;
+	for (c = 0; c < C_; ++c)
+	{
+		sumZeta = 0.0;
+		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &zetar = zetas[r];
+
+			for (n = 0; n < Ns[r]; ++n)
+				sumZeta += zetar(n, c);
+		}
+
+		// reestimate mixture coefficients(weights).
+		alphas_(state, c) = 0.001 + factor * sumZeta;
+
+		// reestimate observation(emission) distribution in each state.
+		numerator = (*Rs_conj_)(state, c) * std::sin((*ms_conj_)(state, c));
+		denominator = (*Rs_conj_)(state, c) * std::cos((*ms_conj_)(state, c));
+		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &observationr = observationSequences[r];
+			const dmatrix_type &zetar = zetas[r];
+
+			for (n = 0; n < Ns[r]; ++n)
+			{
+				numerator += zetar(n, c) * std::sin(observationr(n, 0));
+				denominator += zetar(n, c) * std::cos(observationr(n, 0));
+			}
+		}
+
+		double &mu = mus_(state, c);
+
+		// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+		//mu = std::atan2(numerator, denominator);
+		mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
+		assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+		//
+		denominator = sumZeta + (*cs_conj_)(state, c);
+		numerator = (*Rs_conj_)(state, c) * std::cos(mu - (*ms_conj_)(state, c));
+		for (r = 0; r < R; ++r)
+		{
+			const dmatrix_type &observationr = observationSequences[r];
+			const dmatrix_type &zetar = zetas[r];
+
+			for (n = 0; n < Ns[r]; ++n)
+				numerator += zetar(n, c) * std::cos(observationr(n, 0) - mu);
+		}
+
+#if 0
+		const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+#else
+		const double A = numerator / denominator;  // -1 < A < 1 (?).
+#endif
+		// FIXME [modify] >> lower & upper bounds have to be adjusted.
 		const double lb = -10000.0, ub = 10000.0;
 		const std::size_t maxIteration = 100;
 		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
@@ -293,16 +553,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	// POSTCONDITIONS [] >>
 	//	-. all mean directions have to be in [0, 2 * pi).
 	//	-. all concentration parameters have to be greater than or equal to 0.
-}
-
-void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
-{
-	throw std::runtime_error("not yet implemented");
-}
-
-void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
-{
-	throw std::runtime_error("not yet implemented");
 }
 
 double HmmWithVonMisesMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

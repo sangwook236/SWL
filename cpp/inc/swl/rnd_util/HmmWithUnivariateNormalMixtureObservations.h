@@ -65,14 +65,19 @@ protected:
 	}
 
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
-	{  return NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != betas_conj_.get() && NULL != sigmas_conj_.get() && NULL != nus_conj_.get();  }
+	{
+		return base_type::doDoHyperparametersOfConjugatePriorExist() &&
+			NULL != alphas_conj_.get() && NULL != mus_conj_.get() && NULL != betas_conj_.get() && NULL != sigmas_conj_.get() && NULL != nus_conj_.get();
+	}
 
 private:
 	dmatrix_type mus_;  // the sets of means of each components in the univariate normal mixture distribution.
 	dmatrix_type sigmas_;  // the sets of standard deviations of each components in the univariate normal mixture distribution.
 
 	// hyperparameters for the conjugate prior.
-	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // mu0.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
+	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // m.
 	boost::scoped_ptr<const dmatrix_type> betas_conj_;  // beta. beta > 0.
 	boost::scoped_ptr<const dmatrix_type> sigmas_conj_;  // inv(W).
 	boost::scoped_ptr<const dmatrix_type> nus_conj_;  // nu. nu > D - 1.

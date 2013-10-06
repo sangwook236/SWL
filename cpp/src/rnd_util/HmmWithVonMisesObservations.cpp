@@ -22,21 +22,21 @@ double evaluateVonMisesDistribution(const double x, const double mu, const doubl
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K)
 : base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index
-  mus_conj_(), kappas_conj_(),
+  ms_conj_(), Rs_conj_(), cs_conj_(),
   targetDist_(), proposalDist_()
 {
 }
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type &pi, const dmatrix_type &A, const dvector_type &mus, const dvector_type &kappas)
 : base_type(K, 1, pi, A), mus_(mus), kappas_(kappas),
-  mus_conj_(), kappas_conj_(),
+  ms_conj_(), Rs_conj_(), cs_conj_(),
   targetDist_(), proposalDist_()
 {
 }
 
-HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *mus_conj, const dvector_type *kappas_conj)
+HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dvector_type *ms_conj, const dvector_type *Rs_conj, const dvector_type *cs_conj)
 : base_type(K, 1, pi_conj, A_conj), mus_(K, 0.0), kappas_(K, 0.0),
-  mus_conj_(mus_conj), kappas_conj_(kappas_conj),
+  ms_conj_(ms_conj), Rs_conj_(Rs_conj), cs_conj_(cs_conj),
   targetDist_(), proposalDist_()
 {
 }
@@ -47,7 +47,7 @@ HmmWithVonMisesObservations::~HmmWithVonMisesObservations()
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
 	double numerator = 0.0, denominator = 0.0;
@@ -59,7 +59,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 	double &mu = mus_[state];
 
-	// TODO [check] >> check the range of each mu, [0, 2 * pi)
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
 	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
 	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
@@ -76,18 +76,18 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?)
+	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?)
+	const double A = numerator / denominator;  // -1 < A < 1 (?).
 #endif
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
 	const std::size_t maxIteration = 100;
 	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
 	assert(retval);
 
 	// TODO [check] >>
-	if (kappas_[state] < 0.0)  // kappa >= 0.0
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
 	{
 		kappas_[state] = -kappas_[state];
 		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
@@ -101,7 +101,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
 	double numerator = 0.0, denominator = 0.0;
@@ -119,7 +119,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 	double &mu = mus_[state];
 
-	// TODO [check] >> check the range of each mu, [0, 2 * pi)
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
 	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
 	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
@@ -145,18 +145,18 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	}
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?)
+	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?)
+	const double A = numerator / denominator;  // -1 < A < 1 (?).
 #endif
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
 	const std::size_t maxIteration = 100;
 	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
 	assert(retval);
 
 	// TODO [check] >>
-	if (kappas_[state] < 0.0)  // kappa >= 0.0
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
 	{
 		kappas_[state] = -kappas_[state];
 		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
@@ -170,12 +170,125 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state.
+
+	size_t n;
+	double numerator = (*Rs_conj_)(state) * std::sin((*ms_conj_)(state)), denominator = (*Rs_conj_)(state) * std::cos((*ms_conj_)(state));
+	for (n = 0; n < N; ++n)
+	{
+		numerator += gamma(n, state) * std::sin(observations(n, 0));
+		denominator += gamma(n, state) * std::cos(observations(n, 0));
+	}
+
+	double &mu = mus_[state];
+
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+	//mu = std::atan2(numerator, denominator);
+	mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
+	assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+	//
+	denominator = denominatorA + gamma(N-1, state) + (*cs_conj_)(state);
+	numerator = (*Rs_conj_)(state) * std::cos(mu - (*ms_conj_)(state));
+	for (n = 0; n < N; ++n)
+		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
+
+#if 0
+	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+#else
+	const double A = numerator / denominator;  // -1 < A < 1 (?).
+#endif
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
+	const double lb = -10000.0, ub = 10000.0;
+	const std::size_t maxIteration = 100;
+	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
+	assert(retval);
+
+	// TODO [check] >>
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
+	{
+		kappas_[state] = -kappas_[state];
+		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+		assert(0.0 <= mu && mu < MathConstant::_2_PI);
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all mean directions have to be in [0, 2 * pi).
+	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	// reestimate observation(emission) distribution in each state.
+
+	size_t n, r;
+	double numerator = (*Rs_conj_)(state) * std::sin((*ms_conj_)(state)), denominator = (*Rs_conj_)(state) * std::cos((*ms_conj_)(state));
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+		{
+			numerator += gammar(n, state) * std::sin(observationr(n, 0));
+			denominator += gammar(n, state) * std::cos(observationr(n, 0));
+		}
+	}
+
+	double &mu = mus_[state];
+
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+	//mu = std::atan2(numerator, denominator);
+	mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
+	assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+	//
+	denominator = denominatorA + (*cs_conj_)(state);
+	for (r = 0; r < R; ++r)
+		denominator += gammas[r](Ns[r]-1, state);
+
+	numerator = (*Rs_conj_)(state) * std::cos(mu - (*ms_conj_)(state));
+	for (r = 0; r < R; ++r)
+	{
+		const dmatrix_type &observationr = observationSequences[r];
+		const dmatrix_type &gammar = gammas[r];
+
+		for (n = 0; n < Ns[r]; ++n)
+			numerator += gammar(n, state) * std::cos(observationr(n, 0) - mu);
+	}
+
+#if 0
+	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+#else
+	const double A = numerator / denominator;  // -1 < A < 1 (?).
+#endif
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
+	const double lb = -10000.0, ub = 10000.0;
+	const std::size_t maxIteration = 100;
+	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
+	assert(retval);
+
+	// TODO [check] >>
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
+	{
+		kappas_[state] = -kappas_[state];
+		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+		assert(0.0 <= mu && mu < MathConstant::_2_PI);
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all mean directions have to be in [0, 2 * pi).
+	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
 double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

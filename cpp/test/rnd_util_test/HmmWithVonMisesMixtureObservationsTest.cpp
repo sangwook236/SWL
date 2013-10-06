@@ -983,7 +983,7 @@ void ml_learning_by_em()
 	}
 }
 
-void map_learning_by_em()
+void map_learning_by_em_using_conjugate_prior()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
@@ -1028,7 +1028,25 @@ void map_learning_by_em()
 			return;
 		}
 
-		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
+		std::srand((unsigned int)std::time(NULL));
+		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >> hyperparameters for von Mises mixture distributions.
+		swl::CDHMM::dmatrix_type *alphas_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		swl::CDHMM::dmatrix_type *ms_conj = new swl::CDHMM::dmatrix_type(K, C, 0.0);
+		swl::CDHMM::dmatrix_type *Rs_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // R >= 0.
+		swl::CDHMM::dmatrix_type *cs_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);
+		for (size_t k = 0; k < K; ++k)
+			for (size_t c = 0; c < C; ++c)
+			{
+				(*ms_conj)(k, c) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
+				//(*Rs_conj)(k, c) = (std::rand() / RAND_MAX + 1.0) * 100.0;
+				//(*cs_conj)(k, c) = ???;
+			}
+
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C, pi_conj, A_conj, alphas_conj, ms_conj, Rs_conj, cs_conj));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -1058,7 +1076,24 @@ void map_learning_by_em()
 		//const size_t D = 1;  // the dimension of observation symbols
 		const size_t C = 2;  // the number of mixture components
 
-		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
+		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
+		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >> hyperparameters for von Mises mixture distributions.
+		swl::CDHMM::dmatrix_type *alphas_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
+		swl::CDHMM::dmatrix_type *ms_conj = new swl::CDHMM::dmatrix_type(K, C, 0.0);
+		swl::CDHMM::dmatrix_type *Rs_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // R >= 0.
+		swl::CDHMM::dmatrix_type *cs_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);
+		for (size_t k = 0; k < K; ++k)
+			for (size_t c = 0; c < C; ++c)
+			{
+				(*ms_conj)(k, c) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
+				//(*Rs_conj)(k, c) = (std::rand() / RAND_MAX + 1.0) * 100.0;
+				//(*cs_conj)(k, c) = ???;
+			}
+
+		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C, pi_conj, A_conj, alphas_conj, ms_conj, Rs_conj, cs_conj));
 
 		// the total number of parameters of observation density = K * C * D * 2
 		std::vector<double> lowerBounds, upperBounds;
@@ -1266,9 +1301,9 @@ void hmm_with_von_mises_mixture_observation_densities()
 	//local::observation_sequence_reading_and_writing();
 
 	//local::forward_algorithm();
-	//local::backward_algorithm();  // not yet implemented
+	//local::backward_algorithm();  // not yet implemented.
 	//local::viterbi_algorithm();
 
-	//local::ml_learning_by_em();
-	local::map_learning_by_em();  // not yet implemented
+	local::ml_learning_by_em();
+	local::map_learning_by_em_using_conjugate_prior();
 }

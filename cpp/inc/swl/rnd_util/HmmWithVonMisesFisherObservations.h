@@ -18,7 +18,7 @@ public:
 public:
 	HmmWithVonMisesFisherObservations(const size_t K, const size_t D);  // for ML learning.
 	HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &mus, const dvector_type &kappas);
-	HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *mus_conj, const dvector_type *kappas_conj);  // for MAP learning using conjugate prior.
+	HmmWithVonMisesFisherObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *ms_conj, const dvector_type *Rs_conj, const dvector_type *cs_conj);  // for MAP learning using conjugate prior.
 	virtual ~HmmWithVonMisesFisherObservations();
 
 private:
@@ -60,17 +60,22 @@ protected:
 		// do nothing
 	}
 
-	// FIXME [implment] >>
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
-	{  return NULL != mus_conj_.get() && NULL != kappas_conj_.get();  }
+	{
+		return base_type::doDoHyperparametersOfConjugatePriorExist() &&
+			NULL != ms_conj_.get() && NULL != Rs_conj_.get() && NULL != cs_conj_.get();
+	}
 
 private:
 	dmatrix_type mus_;  // the mean vectors of the von Mises-Fisher distribution.
 	dvector_type kappas_;  // the concentration parameters of the von Mises-Fisher distribution.
 
 	// hyperparameters for the conjugate prior.
-	boost::scoped_ptr<const dmatrix_type> mus_conj_;  // for the mean vectors of the von Mises-Fisher distribution.
-	boost::scoped_ptr<const dvector_type> kappas_conj_;  // for the concentration parameters of the von Mises-Fisher distribution.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "A Bayesian Analysis of Directional data Using the von Mises-Fisher Distribution", Gabriel Nunez-Antonio and Eduarodo Gutierrez-Pena, CSSC, 2005.
+	boost::scoped_ptr<const dmatrix_type> ms_conj_;  // m.
+	boost::scoped_ptr<const dvector_type> Rs_conj_;  // R. R >= 0.
+	boost::scoped_ptr<const dvector_type> cs_conj_;  // c.
 };
 
 }  // namespace swl

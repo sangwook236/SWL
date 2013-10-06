@@ -547,7 +547,7 @@ bool CDHMM::estimateParametersByML(const std::vector<size_t> &Ns, const std::vec
 
 bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
-	if (!pi_conj_ || !A_conj_ || !doDoHyperparametersOfConjugatePriorExist())
+	if (!doDoHyperparametersOfConjugatePriorExist())
 		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
 
 	dvector_type scale(N, 0.0);
@@ -653,7 +653,7 @@ bool CDHMM::estimateParametersByMAP(const size_t N, const dmatrix_type &observat
 
 bool CDHMM::estimateParametersByMAP(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
-	if (!pi_conj_ || !A_conj_ || !doDoHyperparametersOfConjugatePriorExist())
+	if (!doDoHyperparametersOfConjugatePriorExist())
 		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
 
 	const size_t R = Ns.size();  // the number of observation sequences.

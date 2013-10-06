@@ -722,7 +722,7 @@ void ml_learning_by_em()
 	}
 }
 
-void map_learning_by_em()
+void map_learning_by_em_using_conjugate_prior()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
@@ -758,9 +758,11 @@ void map_learning_by_em()
 			return;
 		}
 
-		// FIXME [check] >>
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
 		swl::DDHMM::dvector_type *pi_conj = new swl::DDHMM::dvector_type(K, 1.0);
 		swl::DDHMM::dmatrix_type *A_conj = new swl::DDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >> hyperparameters for multinomial distribution.
 		swl::DDHMM::dmatrix_type *B_conj = new swl::DDHMM::dmatrix_type(K, D, 1.0);
 
 		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D, pi_conj, A_conj, B_conj));
@@ -792,9 +794,11 @@ void map_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states
 		const size_t D = 2;  // the dimension of observation symbols
 
-		// FIXME [check] >>
+		// hyperparameters for the conjugate prior.
+		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
 		swl::DDHMM::dvector_type *pi_conj = new swl::DDHMM::dvector_type(K, 1.0);
 		swl::DDHMM::dmatrix_type *A_conj = new swl::DDHMM::dmatrix_type(K, K, 1.0);
+		// FIXME [check] >> hyperparameters for multinomial distribution.
 		swl::DDHMM::dmatrix_type *B_conj = new swl::DDHMM::dmatrix_type(K, D, 1.0);
 
 		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D, pi_conj, A_conj, B_conj));
@@ -953,5 +957,5 @@ void hmm_with_multinomial_observation_densities()
 	//local::viterbi_algorithm();
 
 	local::ml_learning_by_em();
-	local::map_learning_by_em();
+	local::map_learning_by_em_using_conjugate_prior();
 }

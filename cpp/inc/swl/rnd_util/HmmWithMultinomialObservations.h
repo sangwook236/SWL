@@ -56,12 +56,17 @@ protected:
 	/*virtual*/ void doNormalizeObservationDensityParameters();
 
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const
-	{  return NULL != B_conj_.get();  }
+	{
+		return base_type::doDoHyperparametersOfConjugatePriorExist() &&
+			NULL != B_conj_.get();
+	}
 
 private:
 	dmatrix_type B_;  // the observation(emission) probability distribution.
 
 	// hyperparameters for the conjugate prior.
+	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
+	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	boost::scoped_ptr<const dmatrix_type> B_conj_;  // beta.
 };
 
