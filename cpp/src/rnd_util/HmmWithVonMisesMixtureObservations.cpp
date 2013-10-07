@@ -235,13 +235,12 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		alphas_(state, c) = 0.001 + factor * sumZeta;
 
 		// reestimate observation(emission) distribution in each state.
-		numerator = 0.0;
+		numerator = denominator = 0.0;
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
 			const dmatrix_type &zetar = zetas[r];
 
-			numerator = denominator = 0.0;
 			for (n = 0; n < Ns[r]; ++n)
 			{
 				numerator += zetar(n, c) * std::sin(observationr(n, 0));
@@ -381,8 +380,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 		//
-		denominator = sumZeta + (*cs_conj_)(state, c);
 		numerator = (*Rs_conj_)(state, c) * std::cos(mu - (*ms_conj_)(state, c));
+		denominator = sumZeta + (*cs_conj_)(state, c);
 		for (n = 0; n < N; ++n)
 			numerator += zeta(n, c) * std::cos(observations(n, 0) - mu);
 
@@ -519,8 +518,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 		//
-		denominator = sumZeta + (*cs_conj_)(state, c);
 		numerator = (*Rs_conj_)(state, c) * std::cos(mu - (*ms_conj_)(state, c));
+		denominator = sumZeta + (*cs_conj_)(state, c);
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
