@@ -1,4 +1,4 @@
-%addpath('..\..\src\directional_statistics');
+%addpath('../../../src/statistical_analysis/directional_statistics');
 
 % plot a mixture of Kent distributions on the 2-dimensional sphere in the 3-dimensional space
 kappa = [ 1000 10 200 ];

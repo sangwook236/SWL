@@ -1,6 +1,6 @@
 %---------------------------------------------------------------
-%addpath('../../src/em');
-%addpath('../../src/statistics');
+%addpath('../../../src/statistical_inference/em');
+%addpath('../../../src/statistical_analysis');
 
 %---------------------------------------------------------------
 num_mix_comp = 3;
