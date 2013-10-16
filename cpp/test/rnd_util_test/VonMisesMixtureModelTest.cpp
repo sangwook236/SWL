@@ -450,7 +450,7 @@ void ml_learning_by_em()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdmm->estimateParametersByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi
 			//cdmm->normalizeModelParameters();
@@ -613,7 +613,7 @@ void map_learning_by_em()
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdmm->estimateParametersByMAP(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
 			// normalize pi
 			//cdmm->normalizeModelParameters();

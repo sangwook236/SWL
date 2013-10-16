@@ -89,7 +89,7 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
+void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
 	throw std::runtime_error("not yet implemented");
 }

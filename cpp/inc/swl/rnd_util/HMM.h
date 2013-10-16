@@ -28,8 +28,8 @@ protected:
 	virtual ~HMM();
 
 private:
-	HMM(const HMM &rhs);  // not implemented
-	HMM & operator=(const HMM &rhs);  // not implemented
+	HMM(const HMM &rhs);  // not implemented.
+	HMM & operator=(const HMM &rhs);  // not implemented.
 
 public:
 	bool readModel(std::istream &stream);
@@ -60,6 +60,9 @@ protected:
 
 	unsigned int generateInitialState() const;
 	unsigned int generateNextState(const unsigned int currState) const;
+
+	// find MAP estimate of multinomial using entropic prior.
+	bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst = true) const;
 
 protected:
 	const size_t K_;  // the dimension of hidden states.

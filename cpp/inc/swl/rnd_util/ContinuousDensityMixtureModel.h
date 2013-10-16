@@ -34,10 +34,10 @@ public:
 	static bool writeSequence(std::ostream &stream, const dmatrix_type &observations);
 
 	// for IID observations
-	bool estimateParametersByML(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByML(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 
 	// for IID observations
-	bool estimateParametersByMAP(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByMAPUsingConjugatePrior(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 
 	// if seed != -1, the seed value is set
 	void generateSample(const size_t N, dmatrix_type &observations, std::vector<unsigned int> &states, const unsigned int seed = (unsigned int)-1) const;
@@ -57,7 +57,7 @@ protected:
 	virtual void doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma) = 0;
 
 	// for IID observations
-	virtual void doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma) = 0;
+	virtual void doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma) = 0;
 
 private:
 	void computeGamma(const std::size_t N, const dmatrix_type &observations, dmatrix_type &gamma, double &logProbability) const;

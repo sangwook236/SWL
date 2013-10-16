@@ -8,7 +8,7 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density HMM with von Mises-Fisher observation densities
+// continuous density HMM with von Mises-Fisher observation densities.
 
 class SWL_RND_UTIL_API HmmWithVonMisesFisherObservations: public CDHMM
 {
@@ -22,8 +22,8 @@ public:
 	virtual ~HmmWithVonMisesFisherObservations();
 
 private:
-	HmmWithVonMisesFisherObservations(const HmmWithVonMisesFisherObservations &rhs);  // not implemented
-	HmmWithVonMisesFisherObservations & operator=(const HmmWithVonMisesFisherObservations &rhs);  // not implemented
+	HmmWithVonMisesFisherObservations(const HmmWithVonMisesFisherObservations &rhs);  // not implemented.
+	HmmWithVonMisesFisherObservations & operator=(const HmmWithVonMisesFisherObservations &rhs);  // not implemented.
 
 public:
 	//
@@ -33,23 +33,31 @@ public:
 	const dvector_type & getConcentrationParameter() const  {  return  kappas_;  }
 
 protected:
-	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ]
-	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ]
+	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ].
+	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ].
 	// ...
-	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ]
+	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
 	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const;
-	// if seed != -1, the seed value is set
+	// if seed != -1, the seed value is set.
 	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed = (unsigned int)-1) const;
 
-	// for a single independent observation sequence
-	/*virtual*/ void doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA);
-	// for multiple independent observation sequences
+	// ML learning.
+	//	-. for a single independent observation sequence.
+	/*virtual*/ void doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA);
+	//	-. for multiple independent observation sequences.
 	/*virtual*/ void doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
 
-	// for a single independent observation sequence
-	/*virtual*/ void doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA);
-	// for multiple independent observation sequences
-	/*virtual*/ void doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
+	// MAP learning using conjugate prior.
+	//	-. for a single independent observation sequence.
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA);
+	//	-. for multiple independent observation sequences.
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA);
+
+	// MAP learning using entropic prior.
+	//	-. for a single independent observation sequence.
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA);
+	//	-. for multiple independent observation sequences.
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
@@ -57,7 +65,7 @@ protected:
 	/*virtual*/ void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity);
 	/*virtual*/ void doNormalizeObservationDensityParameters()
 	{
-		// do nothing
+		// do nothing.
 	}
 
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const

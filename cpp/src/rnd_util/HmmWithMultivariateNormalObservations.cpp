@@ -48,7 +48,7 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 {
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -122,7 +122,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -154,7 +154,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -198,6 +198,16 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 
 	// POSTCONDITIONS [] >>
 	//	-. all covariance matrices have to be symmetric positive definite.
+}
+
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
+}
+
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
 double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

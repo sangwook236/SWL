@@ -37,7 +37,7 @@ HmmWithVonMisesFisherMixtureObservations::~HmmWithVonMisesFisherMixtureObservati
 {
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
@@ -47,12 +47,22 @@ void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParam
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+{
+	throw std::runtime_error("not yet implemented");
+}
+
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
 	throw std::runtime_error("not yet implemented");
 }

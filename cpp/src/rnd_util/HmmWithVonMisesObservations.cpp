@@ -45,7 +45,7 @@ HmmWithVonMisesObservations::~HmmWithVonMisesObservations()
 {
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state.
 
@@ -168,7 +168,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state.
 
@@ -222,7 +222,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(co
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state.
 
@@ -289,6 +289,16 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAP(co
 	// POSTCONDITIONS [] >>
 	//	-. all mean directions have to be in [0, 2 * pi).
 	//	-. all concentration parameters have to be greater than or equal to 0.
+}
+
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
+}
+
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
 double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const

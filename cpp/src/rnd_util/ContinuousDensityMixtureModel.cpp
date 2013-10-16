@@ -50,7 +50,7 @@ void ContinuousDensityMixtureModel::computeGamma(const std::size_t N, const dmat
 	}
 }
 
-bool ContinuousDensityMixtureModel::estimateParametersByML(const std::size_t N, const dmatrix_type &observations, const double terminationTolerance, const std::size_t maxIteration, std::size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool ContinuousDensityMixtureModel::trainByML(const std::size_t N, const dmatrix_type &observations, const double terminationTolerance, const std::size_t maxIteration, std::size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	dmatrix_type gamma(N, K_, 0.0);
 	double logProb;
@@ -97,7 +97,7 @@ bool ContinuousDensityMixtureModel::estimateParametersByML(const std::size_t N, 
 	return true;
 }
 
-bool ContinuousDensityMixtureModel::estimateParametersByMAP(const std::size_t N, const dmatrix_type &observations, const double terminationTolerance, const std::size_t maxIteration, std::size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool ContinuousDensityMixtureModel::trainByMAPUsingConjugatePrior(const std::size_t N, const dmatrix_type &observations, const double terminationTolerance, const std::size_t maxIteration, std::size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
 	// FIXME [modify] >>
 	throw std::runtime_error("not yet implemented");
@@ -128,7 +128,7 @@ bool ContinuousDensityMixtureModel::estimateParametersByMAP(const std::size_t N,
 			pi_[k] = 0.001 + 0.999 * sumGamma / N;
 
 			// reestimate observation(emission) distribution in each state
-			doEstimateObservationDensityParametersByMAP(N, (unsigned int)k, observations, gamma, sumGamma);
+			doEstimateObservationDensityParametersByMAPUsingConjugatePrior(N, (unsigned int)k, observations, gamma, sumGamma);
 		}
 
 		// E-step

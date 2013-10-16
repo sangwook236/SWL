@@ -116,6 +116,7 @@
     <ClCompile Include="HmmWithVonMisesObservations.cpp" />
     <ClCompile Include="HoughTransform.cpp" />
     <ClCompile Include="KalmanFilter.cpp" />
+    <ClCompile Include="LambertWFunction.cpp" />
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
     <ClCompile Include="MixtureModel.cpp" />
     <ClCompile Include="UnivariateNormalMixtureModel.cpp" />

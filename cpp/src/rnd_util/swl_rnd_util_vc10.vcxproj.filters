@@ -108,6 +108,9 @@
     <ClCompile Include="UnivariateNormalMixtureModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LambertWFunction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h">

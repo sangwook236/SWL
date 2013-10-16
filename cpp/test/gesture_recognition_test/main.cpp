@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 			const bool IGNORE_NO_MOION = true;
 			swl::recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
 		}
-#elif 0
+#elif 1
 		// for AIM's gesture dataset
 
 		const std::string input_directory_path("F:/AIM_gesture_dataset/s01_sangwook.lee_20120719_per_gesture_avi_640x480_30fps_3000kbps");
@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 				const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 				const bool IGNORE_NO_MOION = false;
-				local::extractTHoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+				swl::extractTHoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
 			}
 			else
 			{

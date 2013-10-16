@@ -55,7 +55,7 @@ void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByML(co
 	//	-. all standard deviations have to be positive.
 }
 
-void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
+void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
 	throw std::runtime_error("not yet implemented");
 }

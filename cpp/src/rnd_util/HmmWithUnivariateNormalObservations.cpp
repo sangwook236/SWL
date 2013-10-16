@@ -41,7 +41,7 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 {
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -107,7 +107,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	//	-. all standard deviations have to be positive.
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const size_t N, const unsigned int state, const dmatrix_type &observations, dmatrix_type &gamma, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -133,7 +133,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	//	-. all standard deviations have to be positive.
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAP(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// reestimate observation(emission) distribution in each state
 
@@ -171,6 +171,16 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 	// POSTCONDITIONS [] >>
 	//	-. all standard deviations have to be positive.
+}
+
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
+}
+
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+{
+	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
 double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
