@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultinomialObservations.h"
+#include "RndUtilLocalApi.h"
 #include <cstring>
 #include <stdexcept>
 

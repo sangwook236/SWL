@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultivariateNormalMixtureObservations.h"
+#include "RndUtilLocalApi.h"
 #include "swl/math/MathConstant.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>

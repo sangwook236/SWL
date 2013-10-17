@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/CDHMM.h"
+#include "RndUtilLocalApi.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <cstring>
 #include <stdexcept>

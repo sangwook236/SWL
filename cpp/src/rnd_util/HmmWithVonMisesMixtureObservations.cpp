@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithVonMisesMixtureObservations.h"
+#include "RndUtilLocalApi.h"
 #include "swl/math/MathConstant.h"
 #include "RndUtilLocalApi.h"
 #include "swl/rnd_util/RejectionSampling.h"

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithUnivariateNormalMixtureObservations.h"
+#include "RndUtilLocalApi.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/distributions/normal.hpp>  // for normal distribution
 #include <boost/random/normal_distribution.hpp>

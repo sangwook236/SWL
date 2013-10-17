@@ -92,6 +92,13 @@ private:
 	double lower_, upper_;  // the lower & upper bound of the univariate uniform distribution
 };
 
+//--------------------------------------------------------------------------
+// find MAP estimate of multinomial using entropic prior.
+
+// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+
+bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst = true);
+
 }  // namespace swl
 
 
