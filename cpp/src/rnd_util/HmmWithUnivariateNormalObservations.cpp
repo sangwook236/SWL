@@ -43,6 +43,7 @@ HmmWithUnivariateNormalObservations::~HmmWithUnivariateNormalObservations()
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -69,6 +70,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -109,6 +111,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -135,6 +138,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 
 void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -173,12 +177,12 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	//	-. all standard deviations have to be positive.
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
 }
 
-void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const size_t R, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
@@ -191,16 +195,19 @@ double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const 
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithUnivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
-	if ((unsigned int)-1 != seed)
-		baseGenerator_.seed(seed);
-
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
 	observation[0] = normal_gen();
+}
+
+void HmmWithUnivariateNormalObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if ((unsigned int)-1 != seed)
+		baseGenerator_.seed(seed);
 }
 
 bool HmmWithUnivariateNormalObservations::doReadObservationDensity(std::istream &stream)
@@ -273,7 +280,7 @@ bool HmmWithUnivariateNormalObservations::doWriteObservationDensity(std::ostream
 void HmmWithUnivariateNormalObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	// initialize the parameters of observation density
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();

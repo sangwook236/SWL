@@ -31,7 +31,7 @@ RejectionSampling::~RejectionSampling()
 bool RejectionSampling::sample(vector_type &x, const std::size_t maxIteration /*= 100*/) const
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	std::size_t iter = 1;
 	do

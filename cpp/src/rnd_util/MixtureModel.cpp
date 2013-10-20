@@ -15,12 +15,20 @@
 namespace swl {
 
 MixtureModel::MixtureModel(const std::size_t K, const std::size_t D)
-: K_(K), D_(D)
+: K_(K), D_(D), pi_(K, 0.0),
+  pi_conj_()
 {
 }
 
 MixtureModel::MixtureModel(const std::size_t K, const std::size_t D, const std::vector<double> &pi)
-: K_(K), D_(D), pi_(pi)
+: K_(K), D_(D), pi_(pi),
+  pi_conj_()
+{
+}
+
+MixtureModel::MixtureModel(const std::size_t K, const std::size_t D, const std::vector<double> *pi_conj)
+: K_(K), D_(D), pi_(K, 0.0),
+  pi_conj_(pi_conj)
 {
 }
 
@@ -60,7 +68,7 @@ bool MixtureModel::readModel(std::istream &stream)
 
 	// TODO [check] >>
 	std::size_t K;
-	stream >> dummy >> K;  // the number of mixture components
+	stream >> dummy >> K;  // the number of mixture components.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "K=") != 0 || K_ != K)
 #elif defined(_MSC_VER)
@@ -69,7 +77,7 @@ bool MixtureModel::readModel(std::istream &stream)
 		return false;
 
 	std::size_t D;
-	stream >> dummy >> D;  // the dimension of observation symbols
+	stream >> dummy >> D;  // the dimension of observation symbols.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "D=") != 0 || D_ != D)
 #elif defined(_MSC_VER)
@@ -85,7 +93,7 @@ bool MixtureModel::readModel(std::istream &stream)
 #endif
 		return false;
 
-	// K
+	// K.
 	pi_.resize(K_);
 	for (std::size_t k = 0; k < K_; ++k)
 		stream >> pi_[k];
@@ -95,10 +103,10 @@ bool MixtureModel::readModel(std::istream &stream)
 
 bool MixtureModel::writeModel(std::ostream &stream) const
 {
-	stream << "K= " << K_ << std::endl;  // the number of mixture components
-	stream << "D= " << D_ << std::endl;  // the dimension of observation symbols
+	stream << "K= " << K_ << std::endl;  // the number of mixture components.
+	stream << "D= " << D_ << std::endl;  // the dimension of observation symbols.
 
-	// K
+	// K.
 	stream << "pi:" << std::endl;
 	for (std::size_t k = 0; k < K_; ++k)
 		stream << pi_[k] << ' ';
@@ -110,7 +118,7 @@ bool MixtureModel::writeModel(std::ostream &stream) const
 void MixtureModel::initializeModel(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	std::size_t k;
 	double sum = 0.0;

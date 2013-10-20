@@ -2,7 +2,7 @@
 #include "swl/rnd_util/UnivariateNormalMixtureModel.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
-#include <boost/math/distributions/normal.hpp>  // for normal distribution
+#include <boost/math/distributions/normal.hpp>  // for normal distribution.
 #include <boost/random/normal_distribution.hpp>
 #include <boost/random/variate_generator.hpp>
 #include <iostream>
@@ -17,12 +17,23 @@
 namespace swl {
 
 UnivariateNormalMixtureModel::UnivariateNormalMixtureModel(const size_t K)
-: base_type(K, 1), mus_(K, 0.0), sigmas_(K, 0.0)
+: base_type(K, 1), mus_(K, 0.0), sigmas_(K, 0.0),
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  baseGenerator_()
 {
 }
 
 UnivariateNormalMixtureModel::UnivariateNormalMixtureModel(const size_t K, const std::vector<double> &pi, const dvector_type &mus, const dvector_type &sigmas)
-: base_type(K, 1, pi), mus_(mus), sigmas_(sigmas)
+: base_type(K, 1, pi), mus_(mus), sigmas_(sigmas),
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  baseGenerator_()
+{
+}
+
+UnivariateNormalMixtureModel::UnivariateNormalMixtureModel(const size_t K, const std::vector<double> *pi_conj, const dvector_type *mus_conj, const dvector_type *betas_conj, const dvector_type *sigmas_conj, const dvector_type *nus_conj)
+: base_type(K, 1, pi_conj), mus_(K, 0.0), sigmas_(K, 0.0),
+  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj),
+  baseGenerator_()
 {
 }
 
@@ -32,11 +43,11 @@ UnivariateNormalMixtureModel::~UnivariateNormalMixtureModel()
 
 void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
-	// reestimate observation(emission) distribution in each state
+	// M-step.
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
 
-	// M-step
 	double &mu = mus_[state];
 	mu = 0.0;
 	for (n = 0; n < N; ++n)
@@ -57,7 +68,32 @@ void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByML(co
 
 void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
-	throw std::runtime_error("not yet implemented");
+	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
+	size_t n;
+
+	double &mu = mus_[state];
+	mu = (*betas_conj_)[state] * (*mus_conj_)[state];
+	for (n = 0; n < N; ++n)
+		mu += gamma(n, state) * observations(n, 0);
+	mu = 0.001 + 0.999 * mu / (sumGamma + (*betas_conj_)[state]);
+
+	//
+	double &sigma = sigmas_[state];
+	sigma = (*sigmas_conj_)[state] + (*betas_conj_)[state] * (mu - (*mus_conj_)[state]) * (mu - (*mus_conj_)[state]);
+	for (n = 0; n < N; ++n)
+		sigma += gamma(n, state) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
+	sigma = 0.001 + 0.999 * std::sqrt(sigma / (sumGamma + (*nus_conj_)[state] - D_));
+	assert(sigma > 0.0);
+
+	// POSTCONDITIONS [] >>
+	//	-. all standard deviations have to be positive.
+}
+
+void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma)
+{
+	doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
 }
 
 double UnivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
@@ -66,16 +102,19 @@ double UnivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void UnivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void UnivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
-	if ((unsigned int)-1 != seed)
-		baseGenerator_.seed(seed);
-
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
 	observation[0] = normal_gen();
+}
+
+void UnivariateNormalMixtureModel::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if ((unsigned int)-1 != seed)
+		baseGenerator_.seed(seed);
 }
 
 bool UnivariateNormalMixtureModel::doReadObservationDensity(std::istream &stream)
@@ -156,7 +195,7 @@ bool UnivariateNormalMixtureModel::doWriteObservationDensity(std::ostream &strea
 void UnivariateNormalMixtureModel::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	// initialize the parameters of observation density
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();

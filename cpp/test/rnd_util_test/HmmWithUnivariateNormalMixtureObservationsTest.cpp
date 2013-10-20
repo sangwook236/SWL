@@ -26,28 +26,28 @@ namespace local {
 
 void model_reading_and_writing()
 {
-	// reading a model
+	// reading a model.
 	{
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -71,20 +71,20 @@ void model_reading_and_writing()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		cdhmm->writeModel(std::cout);
 	}
 
-	// writing a model
+	// writing a model.
 	{
 		boost::scoped_ptr<swl::CDHMM> cdhmm;
 
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -113,9 +113,9 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("../data/hmm/uni_normal_mixture_test0_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -144,9 +144,9 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("../data/hmm/uni_normal_mixture_test1_writing.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -205,26 +205,26 @@ void observation_sequence_generation(const bool outputToFile)
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
-	// read a model
+	// read a model.
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -248,13 +248,13 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
 	}
 
-	// generate a sample sequence
+	// generate a sample sequence.
 	{
 #if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
 		const unsigned int seed = 34586u;
@@ -319,13 +319,13 @@ void observation_sequence_generation(const bool outputToFile)
 			cdhmm->generateSample(N, observations, states, seed);
 
 #if 0
-			// output states
+			// output states.
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
-			// write a sample sequence
+			// write a sample sequence.
 			swl::CDHMM::writeSequence(stream, observations);
 		}
 		else
@@ -337,13 +337,13 @@ void observation_sequence_generation(const bool outputToFile)
 			cdhmm->generateSample(N, observations, states, seed);
 
 #if 0
-			// output states
+			// output states.
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
-			// write a sample sequence
+			// write a sample sequence.
 			swl::CDHMM::writeSequence(std::cout, observations);
 		}
 	}
@@ -352,7 +352,7 @@ void observation_sequence_generation(const bool outputToFile)
 void observation_sequence_reading_and_writing()
 {
 	swl::CDHMM::dmatrix_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 
 #if __TEST_HMM_MODEL == 0
 
@@ -399,7 +399,7 @@ void observation_sequence_reading_and_writing()
 		return;
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	size_t D = 0;
 	const bool retval = swl::CDHMM::readSequence(stream, N, D, observations);
 	if (!retval)
@@ -410,7 +410,7 @@ void observation_sequence_reading_and_writing()
 		return;
 	}
 
-	// write a observation sequence
+	// write a observation sequence.
 	swl::CDHMM::writeSequence(std::cout, observations);
 }
 
@@ -418,26 +418,26 @@ void forward_algorithm()
 {
 	boost::scoped_ptr<swl::CDHMM> cdhmm;
 
-	// read a model
+	// read a model.
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -461,15 +461,15 @@ void forward_algorithm()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	swl::CDHMM::dmatrix_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 	{
 #if __TEST_HMM_MODEL == 0
 
@@ -529,7 +529,7 @@ void forward_algorithm()
 
 	const size_t K = cdhmm->getStateDim();
 
-	// forward algorithm without scaling
+	// forward algorithm without scaling.
 	{
 		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
 		double probability = 0.0;
@@ -541,7 +541,7 @@ void forward_algorithm()
 		std::cout << "\tlog prob(observations | model) = " << std::scientific << std::log(probability) << std::endl;
 	}
 
-	// forward algorithm with scaling
+	// forward algorithm with scaling.
 	{
 		swl::CDHMM::dvector_type scale(N, 0.0);
 		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
@@ -567,23 +567,23 @@ void viterbi_algorithm()
 	// read a model
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -607,15 +607,15 @@ void viterbi_algorithm()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	swl::CDHMM::dmatrix_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 	{
 #if __TEST_HMM_MODEL == 0
 
@@ -675,7 +675,7 @@ void viterbi_algorithm()
 
 	const size_t K = cdhmm->getStateDim();
 
-	// Viterbi algorithm using direct probabilities
+	// Viterbi algorithm using direct probabilities.
 	{
 		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
@@ -693,7 +693,7 @@ void viterbi_algorithm()
 		std::cout << std::endl;
 	}
 
-	// Viterbi algorithm using log probabilities
+	// Viterbi algorithm using log probabilities.
 	{
 		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
@@ -723,28 +723,28 @@ void ml_learning_by_em()
 		3) with a specific random model by specifying N, M and seed.
 */
 
-	// initialize a model
+	// initialize a model.
 	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -768,7 +768,7 @@ void ml_learning_by_em()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -783,24 +783,24 @@ void ml_learning_by_em()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
-		// the total number of parameters of observation density = K * C * D * 2
+		// the total number of parameters of observation density = K * C * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
 		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means
+		// means.
 		for (size_t i = 0; i < K * C; ++i)
 		{
 			lowerBounds.push_back(-10000.0);
 			upperBounds.push_back(10000.0);
 		}
-		// standard deviations: sigma > 0
+		// standard deviations: sigma > 0.
 		const double small = 1.0e-10;
 		for (size_t i = K * C; i < numParameters; ++i)
 		{
@@ -812,11 +812,11 @@ void ml_learning_by_em()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::CDHMM::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 0
 
@@ -874,7 +874,7 @@ void ml_learning_by_em()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -882,7 +882,7 @@ void ml_learning_by_em()
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			cdhmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -896,28 +896,28 @@ void ml_learning_by_em()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
 		// read a observation sequence
 		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 0
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test0_50.seq",
 				"../data/hmm/uni_normal_mixture_test0_100.seq",
 				"../data/hmm/uni_normal_mixture_test0_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 1
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test1_50.seq",
 				"../data/hmm/uni_normal_mixture_test1_100.seq",
 				"../data/hmm/uni_normal_mixture_test1_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test2_50.seq",
 				"../data/hmm/uni_normal_mixture_test2_100.seq",
@@ -949,9 +949,9 @@ void ml_learning_by_em()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -959,7 +959,7 @@ void ml_learning_by_em()
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
 			cdhmm->trainByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -998,23 +998,23 @@ void map_learning_by_em_using_conjugate_prior()
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -1027,9 +1027,10 @@ void map_learning_by_em_using_conjugate_prior()
 			return;
 		}
 
+		std::srand((unsigned int)std::time(NULL));
+
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
-		std::srand((unsigned int)std::time(NULL));
 		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		swl::CDHMM::dmatrix_type *alphas_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
@@ -1058,7 +1059,7 @@ void map_learning_by_em_using_conjugate_prior()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -1073,9 +1074,9 @@ void map_learning_by_em_using_conjugate_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
@@ -1098,18 +1099,18 @@ void map_learning_by_em_using_conjugate_prior()
 
 		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C, pi_conj, A_conj, alphas_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
 
-		// the total number of parameters of observation density = K * C * D * 2
+		// the total number of parameters of observation density = K * C * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
 		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means
+		// means.
 		for (size_t i = 0; i < K * C; ++i)
 		{
 			lowerBounds.push_back(-10000.0);
 			upperBounds.push_back(10000.0);
 		}
-		// standard deviations: sigma > 0
+		// standard deviations: sigma > 0.
 		const double small = 1.0e-10;
 		for (size_t i = K * C; i < numParameters; ++i)
 		{
@@ -1121,11 +1122,11 @@ void map_learning_by_em_using_conjugate_prior()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::CDHMM::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 0
 
@@ -1183,7 +1184,7 @@ void map_learning_by_em_using_conjugate_prior()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -1191,7 +1192,7 @@ void map_learning_by_em_using_conjugate_prior()
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			cdhmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -1205,28 +1206,28 @@ void map_learning_by_em_using_conjugate_prior()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 0
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test0_50.seq",
 				"../data/hmm/uni_normal_mixture_test0_100.seq",
 				"../data/hmm/uni_normal_mixture_test0_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 1
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test1_50.seq",
 				"../data/hmm/uni_normal_mixture_test1_100.seq",
 				"../data/hmm/uni_normal_mixture_test1_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test2_50.seq",
 				"../data/hmm/uni_normal_mixture_test2_100.seq",
@@ -1258,9 +1259,9 @@ void map_learning_by_em_using_conjugate_prior()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -1268,7 +1269,7 @@ void map_learning_by_em_using_conjugate_prior()
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
 			cdhmm->trainByMAPUsingConjugatePrior(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -1307,23 +1308,23 @@ void map_learning_by_em_using_entropic_prior()
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 0
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test0.cdhmm");
 #elif __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		//
 		std::ifstream stream("../data/hmm/uni_normal_mixture_test2.cdhmm");
@@ -1351,7 +1352,7 @@ void map_learning_by_em_using_entropic_prior()
 			return;
 		}
 
-		// normalize pi, A, & alpha
+		// normalize pi, A, & alpha.
 		cdhmm->normalizeModelParameters();
 
 		//cdhmm->writeModel(std::cout);
@@ -1366,9 +1367,9 @@ void map_learning_by_em_using_entropic_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		//const size_t D = 1;  // the dimension of observation symbols
-		const size_t C = 2;  // the number of mixture components
+		const size_t K = 3;  // the dimension of hidden states.
+		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t C = 2;  // the number of mixture components.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
@@ -1376,18 +1377,18 @@ void map_learning_by_em_using_entropic_prior()
 		//cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C, mus_conj, betas_conj, sigmas_conj, nus_conj));
 		cdhmm.reset(new swl::HmmWithUnivariateNormalMixtureObservations(K, C));
 
-		// the total number of parameters of observation density = K * C * D * 2
+		// the total number of parameters of observation density = K * C * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
 		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means
+		// means.
 		for (size_t i = 0; i < K * C; ++i)
 		{
 			lowerBounds.push_back(-10000.0);
 			upperBounds.push_back(10000.0);
 		}
-		// standard deviations: sigma > 0
+		// standard deviations: sigma > 0.
 		const double small = 1.0e-10;
 		for (size_t i = K * C; i < numParameters; ++i)
 		{
@@ -1399,11 +1400,11 @@ void map_learning_by_em_using_entropic_prior()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::CDHMM::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 0
 
@@ -1461,21 +1462,22 @@ void map_learning_by_em_using_entropic_prior()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			// z = 1 (default) is min. entropy.
 			// z = 0 is max. likelihood.
 			// z = -1 is max. entropy.
 			// z = -inf corresponds to very high temperature (good for initialization).
 			const double z = 1.0;
+			const bool doesTrimParameter = true;
 
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->trainByMAPUsingEntropicPrior(N, observations, z, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			cdhmm->trainByMAPUsingEntropicPrior(N, observations, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//
@@ -1489,28 +1491,28 @@ void map_learning_by_em_using_entropic_prior()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		std::vector<swl::CDHMM::dmatrix_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 0
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test0_50.seq",
 				"../data/hmm/uni_normal_mixture_test0_100.seq",
 				"../data/hmm/uni_normal_mixture_test0_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 1
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test1_50.seq",
 				"../data/hmm/uni_normal_mixture_test1_100.seq",
 				"../data/hmm/uni_normal_mixture_test1_1500.seq"
 			};
 #elif __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/uni_normal_mixture_test2_50.seq",
 				"../data/hmm/uni_normal_mixture_test2_100.seq",
@@ -1542,23 +1544,24 @@ void map_learning_by_em_using_entropic_prior()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			// z = 1 (default) is min. entropy.
 			// z = 0 is max. likelihood.
 			// z = -1 is max. entropy.
 			// z = -inf corresponds to very high temperature (good for initialization).
 			const double z = 1.0;
+			const bool doesTrimParameter = true;
 
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			cdhmm->trainByMAPUsingEntropicPrior(Ns, observationSequences, z, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			cdhmm->trainByMAPUsingEntropicPrior(Ns, observationSequences, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & alpha
+			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
 
 			//

@@ -59,9 +59,9 @@ public:
 
 	// MAP learning using entropic prior.
 	//	-. for a single independent observation sequence.
-	bool trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
 	//	-. for multiple independent observation sequences.
-	bool trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double z, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
+	bool trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities);
 
 	// if seed != -1, the seed value is set.
 	void generateSample(const size_t N, dmatrix_type &observations, uivector_type &states, const unsigned int seed = (unsigned int)-1) const;
@@ -75,8 +75,9 @@ protected:
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
 	virtual double doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const = 0;
+
 	// if seed != -1, the seed value is set.
-	virtual void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed = (unsigned int)-1) const = 0;
+	virtual void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const = 0;
 
 	// ML learning.
 	//	-. for a single independent observation sequence.
@@ -92,9 +93,9 @@ protected:
 
 	// MAP learning using entropic prior.
 	//	-. for a single independent observation sequence.
-	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double denominatorA) = 0;
+	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double denominatorA) = 0;
 	//	-. for multiple independent observation sequences.
-	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double denominatorA) = 0;
+	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double denominatorA) = 0;
 
 private:
 	void runViterbiAlgorithmNotUsigLog(const size_t N, const dmatrix_type &observations, dmatrix_type &delta, uimatrix_type &psi, uivector_type &states, double &probability) const;

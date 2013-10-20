@@ -117,7 +117,8 @@ const bool doesApplyMagnitudeWeighting = false;  // FIXME [implement] >> not yet
 // histograms' parameters
 const int histDims = 1;
 
-const int phaseHistBins = 360;
+const int phaseHistBins = 360;  // for 1 degree.
+//const int phaseHistBins = 36;  // for 10 degree. error: not working.
 const int phaseHistSize[] = { phaseHistBins };
 // phase varies from 0 to 359
 const float phaseHistRange1[] = { 0, phaseHistBins };

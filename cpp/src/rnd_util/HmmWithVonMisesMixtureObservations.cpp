@@ -6,7 +6,9 @@
 #include "swl/rnd_util/RejectionSampling.h"
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <numeric>
 #include <stdexcept>
+#include <cassert>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -45,8 +47,6 @@ HmmWithVonMisesMixtureObservations::~HmmWithVonMisesMixtureObservations()
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n;
 	double numerator, denominator;
 
@@ -94,6 +94,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	const double denominatorAlpha = denominatorA + gamma(N-1, state);
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
@@ -157,8 +159,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double numerator, denominator;
 
@@ -215,6 +215,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	double denominatorAlpha = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominatorAlpha += gammas[r](Ns[r]-1, state);
@@ -299,8 +301,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n;
 	double numerator, denominator;
 
@@ -348,6 +348,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	const double denominatorAlpha = denominatorA + gamma(N-1, state);
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
@@ -413,8 +415,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double numerator, denominator;
 
@@ -471,6 +471,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	double denominatorAlpha = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominatorAlpha += gammas[r](Ns[r]-1, state);
@@ -555,18 +557,16 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n;
 	double numerator, denominator;
+	const double eps = 1e-50;
 
 	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble.
 	dmatrix_type zeta(N, C_, 0.0);
 	{
-		const double eps = 1e-50;
 		double val;
 		for (n = 0; n < N; ++n)
 		{
@@ -575,9 +575,12 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 			denominator = 0.0;
 			for (c = 0; c < C_; ++c)
 			{
-				//val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+#if 0
+				val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
 				//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
 				val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+#endif
 
 				zeta(n, c) = val;
 				denominator += val;  // this value can be nearly zero if the observation is not generated by the corresponding mixture model.
@@ -606,6 +609,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	// reestimate mixture coefficients(weights).
 	{
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
@@ -619,6 +624,56 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
+
+		// trim mixture coefficients(weights).
+		if (doesTrimParameter)
+		{
+			// FIXME [fix] >>
+			throw std::runtime_error("not yet implemented");
+
+			double numerator;
+			dmatrix_type prob(N, C_, 0.0);
+			for (n = 0; n < N; ++n)
+			{
+				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
+				for (c = 0; c < C_; ++c)
+#if 0
+					prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
+					//prob(n, c) = 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
+					prob(n, c) = evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+#endif
+			}
+
+			size_t i;
+			bool isTrimmed = false;
+			for (c = 0; c < C_; ++c)
+			{
+				numerator = 0.0;
+				denominator = 0.0;
+				for (n = 0; n < N; ++n)
+				{
+					numerator += prob(n, c);
+					for (i = 0; i < C_; ++i)
+						denominator += prob(n, i) * theta[i];
+				}
+
+				if (theta[c] <= std::exp(-numerator / denominator))
+				{
+					theta[c] = 0.0;
+					isTrimmed = true;
+				}
+			}
+
+			if (isTrimmed)
+			{
+				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
+				assert(std::fabs(sumTheta) >= eps);
+				for (c = 0; c < C_; ++c)
+					theta[c] /= sumTheta;
+			}
+		}
+
 		for (c = 0; c < C_; ++c)
 			alphas_(state, c) = theta[c];
 	}
@@ -681,10 +736,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double numerator, denominator;
 
@@ -710,9 +763,12 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 				denominator = 0.0;
 				for (c = 0; c < C_; ++c)
 				{
-					//val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+#if 0
+					val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
 					//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
 					val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+#endif
 
 					zetar(n, c) = val;
 					denominator += val;  // this value can be nearly zero if the observation is not generated by the corresponding mixture model.
@@ -741,6 +797,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	// reestimate mixture coefficients(weights).
 	{
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
@@ -758,6 +816,13 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
+
+		// trim mixture coefficients(weights).
+		if (doesTrimParameter)
+		{
+			throw std::runtime_error("not yet implemented");
+		}
+
 		for (c = 0; c < C_; ++c)
 			alphas_(state, c) = theta[c];
 	}
@@ -850,11 +915,8 @@ double HmmWithVonMisesMixtureObservations::doEvaluateEmissionProbability(const u
 	return prob;
 }
 
-void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
-	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
-
 	const double prob = (double)std::rand() / RAND_MAX;
 
 	double accum = 0.0;
@@ -878,8 +940,7 @@ void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsi
 	targetDist_->setParameters(mus_(state, component), kappas_(state, component));
 
 #if 0
-	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
-
+	// when using univariate normal proposal distribution.
 	{
 		// FIXME [modify] >> these parameters are incorrect.
 		const double sigma = 1.55;
@@ -887,8 +948,7 @@ void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsi
 		proposalDist_->setParameters(mus_(state, component), sigma, k);
 	}
 #else
-	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
-
+	// when using univariate uniform proposal distribution.
 	{
 		const double lower = 0.0;
 		const double upper = MathConstant::_2_PI;
@@ -897,9 +957,6 @@ void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsi
 		proposalDist_->setParameters(lower, upper, k);
 	}
 #endif
-
-	if ((unsigned int)-1 != seed)
-		proposalDist_->setSeed(seed);
 
 	swl::RejectionSampling sampler(*targetDist_, *proposalDist_);
 
@@ -910,6 +967,28 @@ void HmmWithVonMisesMixtureObservations::doGenerateObservationsSymbol(const unsi
 	const bool retval = sampler.sample(x, maxIteration);
 	assert(retval);
 	observation[0] = x[0];
+}
+
+void HmmWithVonMisesMixtureObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
+#if 0
+	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
+#else
+	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
+#endif
+
+	if ((unsigned int)-1 != seed)
+	{
+		std::srand(seed);
+		if (!!proposalDist_) proposalDist_->setSeed(seed);
+	}
+}
+
+void HmmWithVonMisesMixtureObservations::doFinalizeRandomSampleGeneration() const
+{
+	targetDist_.reset();
+	proposalDist_.reset();
 }
 
 bool HmmWithVonMisesMixtureObservations::doReadObservationDensity(std::istream &stream)
@@ -1036,7 +1115,7 @@ bool HmmWithVonMisesMixtureObservations::doWriteObservationDensity(std::ostream 
 void HmmWithVonMisesMixtureObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	// initialize mixture coefficients(weights)
 	{

@@ -55,6 +55,15 @@ protected:
 	virtual void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity) = 0;
 	virtual void doNormalizeObservationDensityParameters() = 0;
 
+	virtual void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const
+	{
+		// do nothing.
+	}
+	virtual void doFinalizeRandomSampleGeneration() const
+	{
+		// do nothing.
+	}
+
 	virtual bool doDoHyperparametersOfConjugatePriorExist() const
 	{  return NULL != pi_conj_.get() && NULL != A_conj_.get();  }
 

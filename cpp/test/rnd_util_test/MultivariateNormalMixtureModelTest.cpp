@@ -1,6 +1,7 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/rnd_util/VonMisesMixtureModel.h"
+#include "swl/rnd_util/MultivariateNormalMixtureModel.h"
+#include <gsl/gsl_rng.h>
 #include <boost/smart_ptr.hpp>
 #include <fstream>
 #include <iostream>
@@ -15,7 +16,7 @@
 
 //#define __TEST_MIXTURE_MODEL 1
 #define __TEST_MIXTURE_MODEL 2
-#define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
+//#define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
 namespace {
@@ -29,16 +30,16 @@ void model_reading_and_writing()
 
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -48,7 +49,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		const bool retval = cdmm->readModel(stream);
 		if (!retval)
@@ -59,7 +60,7 @@ void model_reading_and_writing()
 			return;
 		}
 
-		// normalize pi
+		// normalize pi.
 		cdmm->normalizeModelParameters();
 
 		cdmm->writeModel(std::cout);
@@ -71,36 +72,44 @@ void model_reading_and_writing()
 
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
-			0.30, 0.40, 0.30
+			0.25, 0.60, 0.15
 		};
 		const double arrMu[] = {
-			0.0, 3.0, 5.0
+			0.0, 5.0,
+			30.0, 40.0,
+			-20.0, -25.0
 		};
-		const double arrKappa[] = {
-			50.0, 100.0, 85.0
+		const double arrCov[] = {
+			8.0, 0.0,  0.0, 10.0,
+			12.0, 3.0,  3.0, 4.0,
+			11.5, 6.0,  6.0, 12.5
 		};
 
 		//
-		std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_writing.cdmm");
+		std::ofstream stream("../data/mixture_model/bi_normal_mixture_test1_writing.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
-			0.20, 0.45, 0.35
+			0.25, 0.60, 0.15
 		};
 		const double arrMu[] = {
-			1.2, 3.2, 5.2
+			0.0, -5.0,
+			-30.0, -35.0,
+			20.0, 15.0
 		};
-		const double arrKappa[] = {
-			40.0, 55.0, 80.0
+		const double arrCov[] = {
+			18.0, 0.0,  0.0, 12.0,
+			6.0, 6.0,  6.0, 14.0,
+			13.5, 3.0,  3.0, 8.5
 		};
 
 		//
-		std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_writing.cdmm");
+		std::ofstream stream("../data/mixture_model/bi_normal_mixture_test2_writing.cdmm");
 #endif
 		if (!stream)
 		{
@@ -111,9 +120,21 @@ void model_reading_and_writing()
 		}
 
 		std::vector<double> pi(arrPi, arrPi + K);
-		swl::VonMisesMixtureModel::dvector_type mus(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrMu, arrMu + K)));
-		swl::VonMisesMixtureModel::dvector_type kappas(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrKappa, arrKappa + K)));
-		cdmm.reset(new swl::VonMisesMixtureModel(K, pi, mus, kappas));
+		std::vector<swl::MultivariateNormalMixtureModel::dvector_type> mus(K, swl::MultivariateNormalMixtureModel::dvector_type(D, 0.0));
+		std::vector<swl::MultivariateNormalMixtureModel::dmatrix_type> covs(K, swl::MultivariateNormalMixtureModel::dmatrix_type(D, D, 1.0));
+		size_t mm = 0, cc = 0;
+		for (size_t k = 0; k < K; ++k)
+		{
+			swl::MultivariateNormalMixtureModel::dvector_type &mu = mus[k];
+			swl::MultivariateNormalMixtureModel::dmatrix_type &cov = covs[k];
+			for (size_t d = 0; d < D; ++d, ++mm)
+			{
+				mu[d] = arrMu[mm];
+				for (size_t i = 0; i < D; ++i, ++cc)
+					cov(d, i) = arrCov[cc];
+			}
+		}
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, pi, mus, covs));
 
 		const bool retval = cdmm->writeModel(stream);
 		if (!retval)
@@ -134,16 +155,16 @@ void observation_sequence_generation(const bool outputToFile)
 	{
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -153,7 +174,7 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		const bool retval = cdmm->readModel(stream);
 		if (!retval)
@@ -178,6 +199,7 @@ void observation_sequence_generation(const bool outputToFile)
 		const unsigned int seed = (unsigned int)std::time(NULL);
 #endif
 		std::srand(seed);
+		gsl_rng_env_setup();
 		std::cout << "random seed: " << seed << std::endl;
 
 		if (outputToFile)
@@ -186,26 +208,26 @@ void observation_sequence_generation(const bool outputToFile)
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #endif
 
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ofstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #endif
 
 #endif
@@ -260,11 +282,11 @@ void observation_sequence_reading_and_writing()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 1
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -272,11 +294,11 @@ void observation_sequence_reading_and_writing()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 1
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+	std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -322,16 +344,16 @@ void ml_learning_by_em()
 	{
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -341,7 +363,7 @@ void ml_learning_by_em()
 			return;
 		}
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		const bool retval = cdmm->readModel(stream);
 		if (!retval)
@@ -368,9 +390,9 @@ void ml_learning_by_em()
 		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		// the total number of parameters of observation density = K * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
@@ -404,11 +426,11 @@ void ml_learning_by_em()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("../data/mixture_model/ni_normal_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -416,11 +438,11 @@ void ml_learning_by_em()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -485,16 +507,16 @@ void map_learning_by_em_using_conjugate_prior()
 	{
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -507,19 +529,30 @@ void map_learning_by_em_using_conjugate_prior()
 		std::srand((unsigned int)std::time(NULL));
 
 		// hyperparameters for the conjugate prior.
-		// FIXME [check] >> hyperparameters for von Mises mixture distributions.
+		// FIXME [check] >> hyperparameters for multivariate normal mixture distributions.
 		std::vector<double> *pi_conj = new std::vector<double>(K, 1.0);
-		swl::ContinuousDensityMixtureModel::dvector_type *ms_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 0.0);
-		swl::ContinuousDensityMixtureModel::dvector_type *Rs_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // R >= 0.
-		swl::ContinuousDensityMixtureModel::dvector_type *cs_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // non-negative integer.
+		std::vector<swl::ContinuousDensityMixtureModel::dvector_type> *mus_conj = new std::vector<swl::ContinuousDensityMixtureModel::dvector_type>(K, swl::ContinuousDensityMixtureModel::dvector_type(D, 0.0));
+		swl::ContinuousDensityMixtureModel::dvector_type *betas_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // beta > 0.
+		std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type> *covs_conj = new std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type>(K, swl::ContinuousDensityMixtureModel::dmatrix_type(D, D, 1.0));
+		swl::ContinuousDensityMixtureModel::dvector_type *nus_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // nu > D - 1.
 		for (size_t k = 0; k < K; ++k)
 		{
-			(*ms_conj)[k] = (std::rand() / RAND_MAX) * 100.0 - 50.0;
-			//(*Rs_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 100.0;
-			//(*cs_conj)[k] = ???;
+			//(*betas_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 10.0;
+			//(*nus_conj)[k] = ???;
+
+			swl::MultivariateNormalMixtureModel::dvector_type &mu_conj = (*mus_conj)[k];
+			swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
+			for (size_t d = 0; d < D; ++d)
+			{
+				mu_conj[d] = (std::rand() / RAND_MAX) * 10.0 - 5.0;
+				for (size_t i = 0; i < D; ++i)
+				{
+					//cov_conj(d, i) = ???;
+				}
+			}
 		}
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K, pi_conj, ms_conj, Rs_conj, cs_conj));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, pi_conj, mus_conj, betas_conj, covs_conj, nus_conj));
 
 		const bool retval = cdmm->readModel(stream);
 		if (!retval)
@@ -546,26 +579,37 @@ void map_learning_by_em_using_conjugate_prior()
 		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the conjugate prior.
-		// FIXME [check] >> hyperparameters for von Mises mixture distributions.
+		// FIXME [check] >> hyperparameters for multivariate normal mixture distributions.
 		std::vector<double> *pi_conj = new std::vector<double>(K, 1.0);
-		swl::ContinuousDensityMixtureModel::dvector_type *ms_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 0.0);
-		swl::ContinuousDensityMixtureModel::dvector_type *Rs_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // R >= 0.
-		swl::ContinuousDensityMixtureModel::dvector_type *cs_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // non-negative integer.
+		std::vector<swl::ContinuousDensityMixtureModel::dvector_type> *mus_conj = new std::vector<swl::ContinuousDensityMixtureModel::dvector_type>(K, swl::ContinuousDensityMixtureModel::dvector_type(D, 0.0));
+		swl::ContinuousDensityMixtureModel::dvector_type *betas_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // beta > 0.
+		std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type> *covs_conj = new std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type>(K, swl::ContinuousDensityMixtureModel::dmatrix_type(D, D, 1.0));
+		swl::ContinuousDensityMixtureModel::dvector_type *nus_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // nu > D - 1.
 		for (size_t k = 0; k < K; ++k)
 		{
-			(*ms_conj)[k] = (std::rand() / RAND_MAX) * 100.0 - 50.0;
-			//(*Rs_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 100.0;
-			//(*cs_conj)[k] = ???;
+			//(*betas_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 10.0;
+			//(*nus_conj)[k] = ???;
+
+			swl::MultivariateNormalMixtureModel::dvector_type &mu_conj = (*mus_conj)[k];
+			swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
+			for (size_t d = 0; d < D; ++d)
+			{
+				mu_conj[d] = (std::rand() / RAND_MAX) * 10.0 - 5.0;
+				for (size_t i = 0; i < D; ++i)
+				{
+					//cov_conj(d, i) = ???;
+				}
+			}
 		}
 
-		cdmm.reset(new swl::VonMisesMixtureModel(K, pi_conj, ms_conj, Rs_conj, cs_conj));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, pi_conj, mus_conj, betas_conj, covs_conj, nus_conj));
 
 		// the total number of parameters of observation density = K * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * D * 2;
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
 		// means.
@@ -595,11 +639,11 @@ void map_learning_by_em_using_conjugate_prior()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -607,11 +651,11 @@ void map_learning_by_em_using_conjugate_prior()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -676,16 +720,16 @@ void map_learning_by_em_using_entropic_prior()
 	{
 #if __TEST_MIXTURE_MODEL == 1
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -698,8 +742,8 @@ void map_learning_by_em_using_entropic_prior()
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		//cdmm.reset(new swl::VonMisesMixtureModel(K, ms_conj, Rs_conj, cs_conj));
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		//cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		const bool retval = cdmm->readModel(stream);
 		if (!retval)
@@ -726,16 +770,13 @@ void map_learning_by_em_using_entropic_prior()
 		std::cout << "random seed: " << seed << std::endl;
 
 		const size_t K = 3;  // the number of mixture components.
-		//const size_t D = 1;  // the dimension of observation symbols.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		// hyperparameters for the entropic prior.
-		//	don't need.
-
-		//cdmm.reset(new swl::VonMisesMixtureModel(K, ms_conj, Rs_conj, cs_conj));
-		cdmm.reset(new swl::VonMisesMixtureModel(K));
+		//cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		// the total number of parameters of observation density = K * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
@@ -769,11 +810,11 @@ void map_learning_by_em_using_entropic_prior()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -781,11 +822,11 @@ void map_learning_by_em_using_entropic_prior()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -843,9 +884,9 @@ void map_learning_by_em_using_entropic_prior()
 }  // namespace local
 }  // unnamed namespace
 
-void von_mises_mixture_model()
+void multivariate_normal_mixture_model()
 {
-	std::cout << "von Mises mixture model ---------------------------------------------" << std::endl;
+	std::cout << "multivariate normal mixture model -------------------------------------" << std::endl;
 
 	//local::model_reading_and_writing();
 	//const bool outputToFile = false;

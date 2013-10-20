@@ -47,6 +47,7 @@ HmmWithVonMisesObservations::~HmmWithVonMisesObservations()
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
@@ -101,6 +102,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
@@ -170,6 +172,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
@@ -224,6 +227,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 
 void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
@@ -291,12 +295,12 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
 }
 
-void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const size_t R, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
@@ -308,17 +312,13 @@ double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned
 	return evaluateVonMisesDistribution(observation[0], mus_[state], kappas_[state]);
 }
 
-void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
-	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
-
 	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
 	targetDist_->setParameters(mus_[state], kappas_[state]);
 
 #if 0
-	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
-
+	// when using univariate normal proposal distribution.
 	{
 		// FIXME [modify] >> these parameters are incorrect.
 		const double sigma = 1.55;
@@ -326,8 +326,7 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 		proposalDist_->setParameters(mus_[state], sigma, k);
 	}
 #else
-	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
-
+	// when using univariate uniform proposal distribution.
 	{
 		const double lower = 0.0;
 		const double upper = MathConstant::_2_PI;
@@ -336,9 +335,6 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 		proposalDist_->setParameters(lower, upper, k);
 	}
 #endif
-
-	if ((unsigned int)-1 != seed)
-		proposalDist_->setSeed(seed);
 
 	swl::RejectionSampling sampler(*targetDist_, *proposalDist_);
 
@@ -349,6 +345,28 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 	const bool retval = sampler.sample(x, maxIteration);
 	assert(retval);
 	observation[0] = x[0];
+}
+
+void HmmWithVonMisesObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
+#if 0
+	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
+#else
+	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
+#endif
+
+	if ((unsigned int)-1 != seed)
+	{
+		std::srand(seed);
+		if (!!proposalDist_) proposalDist_->setSeed(seed);
+	}
+}
+
+void HmmWithVonMisesObservations::doFinalizeRandomSampleGeneration() const
+{
+	targetDist_.reset();
+	proposalDist_.reset();
 }
 
 bool HmmWithVonMisesObservations::doReadObservationDensity(std::istream &stream)
@@ -421,7 +439,7 @@ bool HmmWithVonMisesObservations::doWriteObservationDensity(std::ostream &stream
 void HmmWithVonMisesObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	// initialize the parameters of observation density
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();

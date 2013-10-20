@@ -548,6 +548,8 @@ bool CDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<dmatrix_t
 
 bool CDHMM::trainByMAPUsingConjugatePrior(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
+	//	[ref] "Maximum a Posteriori Estimation for Multivariate Gaussian Mixture Observations of Markov Chains", J.-L. Gauvain adn C.-H. Lee, TSAP, 1994.
+
 	if (!doDoHyperparametersOfConjugatePriorExist())
 		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
 
@@ -654,6 +656,8 @@ bool CDHMM::trainByMAPUsingConjugatePrior(const size_t N, const dmatrix_type &ob
 
 bool CDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
+	//	[ref] "Maximum a Posteriori Estimation for Multivariate Gaussian Mixture Observations of Markov Chains", J.-L. Gauvain adn C.-H. Lee, TSAP, 1994.
+
 	if (!doDoHyperparametersOfConjugatePriorExist())
 		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
 
@@ -814,8 +818,10 @@ bool CDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 	return true;
 }
 
-bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
 {
+	// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+
 	//if (!doDoHyperparametersOfEntropicPriorExist())
 	//	throw std::runtime_error("Hyperparameters of the entropic prior have to be assigned for MAP learning.");
 
@@ -866,6 +872,13 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &obs
 
 			const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
 			assert(retval);
+
+			// trim transition probabilities.
+			if (doesTrimParameter)
+			{
+				throw std::runtime_error("not yet implemented");
+			}
+
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
@@ -875,7 +888,7 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &obs
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma(n, k);
 
-			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(N, (unsigned int)k, observations, gamma, z, terminationTolerance, maxIteration, denominatorA);
+			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(N, (unsigned int)k, observations, gamma, z, doesTrimParameter, terminationTolerance, maxIteration, denominatorA);
 		}
 
 		// E-step: evaluate gamma & xi.
@@ -918,8 +931,10 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &obs
 	return true;
 }
 
-bool CDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double z, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool CDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<dmatrix_type> &observationSequences, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
 {
+	// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+
 	//if (!doDoHyperparametersOfEntropicPriorExist())
 	//	throw std::runtime_error("Hyperparameters of the entropic prior have to be assigned for MAP learning.");
 
@@ -1002,6 +1017,13 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 
 			const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
 			assert(retval);
+
+			// trim transition probabilities.
+			if (doesTrimParameter)
+			{
+				throw std::runtime_error("not yet implemented");
+			}
+
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
@@ -1012,7 +1034,7 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 				for (n = 0; n < Ns[r] - 1; ++n)
 					denominatorA += gammas[r](n, k);
 
-			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(Ns, (unsigned int)k, observationSequences, gammas, z, R, terminationTolerance, maxIteration, denominatorA);
+			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(Ns, (unsigned int)k, observationSequences, gammas, z, doesTrimParameter, terminationTolerance, maxIteration, R, denominatorA);
 		}
 
 		// E-step: evaluate gamma & xi.
@@ -1102,16 +1124,18 @@ void CDHMM::computeXi(const size_t N, const dmatrix_type &observations, const dm
 void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_type &states, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
+
+	doInitializeRandomSampleGeneration(seed);
 
 	states[0] = generateInitialState();
 #if defined(__GNUC__)
     {
         boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, 0);
-        doGenerateObservationsSymbol(states[0], obs, seed);
+        doGenerateObservationsSymbol(states[0], obs);
     }
 #else
-	doGenerateObservationsSymbol(states[0], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, 0), seed);
+	doGenerateObservationsSymbol(states[0], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, 0));
 #endif
 
 	for (size_t n = 1; n < N; ++n)
@@ -1119,11 +1143,13 @@ void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_
 		states[n] = generateNextState(states[n-1]);
 #if defined(__GNUC__)
 		boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, n);
-		doGenerateObservationsSymbol(states[n], obs, (unsigned int)-1);
+		doGenerateObservationsSymbol(states[n], obs);
 #else
-		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n), (unsigned int)-1);
+		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n));
 #endif
 	}
+
+	doFinalizeRandomSampleGeneration();
 }
 
 /*static*/ bool CDHMM::readSequence(std::istream &stream, size_t &N, size_t &D, dmatrix_type &observations)

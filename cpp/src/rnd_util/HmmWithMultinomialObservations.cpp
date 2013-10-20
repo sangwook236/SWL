@@ -37,6 +37,7 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -57,6 +58,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -81,6 +83,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -101,6 +104,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -123,8 +127,9 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	}
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	std::vector<double> omega(D_, 0.0), theta(D_, 0.0);
@@ -142,12 +147,20 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	double entropicMAPLogLikelihood = 0.0;
 	const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 	assert(retval);
+
+	// trim parameters.
+	if (doesTrimParameter)
+	{
+		throw std::runtime_error("not yet implemented");
+	}
+
 	for (d = 0; d < D_; ++d)
 		B_(state, d) = theta[d];
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	std::vector<double> omega(D_, 0.0), theta(D_, 0.0);
@@ -166,6 +179,13 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	double entropicMAPLogLikelihood = 0.0;
 	const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
 	assert(retval);
+
+	// trim parameters.
+	if (doesTrimParameter)
+	{
+		throw std::runtime_error("not yet implemented");
+	}
+
 	for (d = 0; d < D_; ++d)
 		B_(state, d) = theta[d];
 }
@@ -173,7 +193,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const unsigned int state) const
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	const double prob = (double)std::rand() / RAND_MAX;
 
@@ -194,6 +214,12 @@ unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const 
 
 	// POSTCONDITIONS [] >>
 	//	-. if observation = D_, an error occurs.
+}
+
+/*virtual*/ void HmmWithMultinomialObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if ((unsigned int)-1 != seed)
+		std::srand(seed);
 }
 
 bool HmmWithMultinomialObservations::doReadObservationDensity(std::istream &stream)
@@ -237,7 +263,7 @@ bool HmmWithMultinomialObservations::doWriteObservationDensity(std::ostream &str
 void HmmWithMultinomialObservations::doInitializeObservationDensity(const std::vector<double> & /*lowerBoundsOfObservationDensity*/, const std::vector<double> & /*upperBoundsOfObservationDensity*/)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	size_t i;
 	double sum;

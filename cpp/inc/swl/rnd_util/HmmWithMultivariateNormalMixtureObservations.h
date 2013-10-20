@@ -4,6 +4,7 @@
 
 #include "swl/rnd_util/CDHMM.h"
 #include "swl/rnd_util/HmmWithMixtureObservations.h"
+#include <gsl/gsl_rng.h>
 #include <boost/multi_array.hpp>
 
 
@@ -42,8 +43,11 @@ protected:
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
 	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const;
+
 	// if seed != -1, the seed value is set.
-	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed = (unsigned int)-1) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const;
+	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
+	/*virtual*/ void doFinalizeRandomSampleGeneration() const;
 
 	// ML learning.
 	//	-. for a single independent observation sequence.
@@ -59,9 +63,9 @@ protected:
 
 	// MAP learning using entropic prior.
 	//	-. for a single independent observation sequence.
-	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/);
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/);
 	//	-. for multiple independent observation sequences.
-	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/);
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);
@@ -89,6 +93,8 @@ private:
 	boost::scoped_ptr<const dmatrix_type> betas_conj_;  // beta. beta > 0.
 	boost::scoped_ptr<const boost::multi_array<dmatrix_type, 2> > sigmas_conj_;  // inv(W).
 	boost::scoped_ptr<const dmatrix_type> nus_conj_;  // nu. nu > D - 1.
+
+	mutable gsl_rng *r_;
 };
 
 }  // namespace swl

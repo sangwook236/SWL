@@ -21,6 +21,7 @@ int main(int argc, char *argv[])
 	void unscented_kalman_filter_with_additive_noise();
 
 	void univariate_normal_mixture_model();
+	void multivariate_normal_mixture_model();
 	void von_mises_mixture_model();
 
 	void hmm_with_multinomial_observation_densities();
@@ -51,6 +52,7 @@ int main(int argc, char *argv[])
 
 		// mixture model (MM) ---------------------------------------
 		//univariate_normal_mixture_model();
+		multivariate_normal_mixture_model();
 		//von_mises_mixture_model();
 
 		// hidden Markov model (HMM) --------------------------------
@@ -58,7 +60,7 @@ int main(int argc, char *argv[])
 		//hmm_with_univariate_normal_observation_densities();
 		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
-		hmm_with_von_mises_mixture_observation_densities();
+		//hmm_with_von_mises_mixture_observation_densities();
 
 		//-----------------------------------------------------------
 		// application

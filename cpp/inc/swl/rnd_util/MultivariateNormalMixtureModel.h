@@ -1,37 +1,37 @@
-#if !defined(__SWL_RND_UTIL__UNIVARIATE_NORMAL_MIXUTRE_MODEL__H_)
-#define __SWL_RND_UTIL__UNIVARIATE_NORMAL_MIXUTRE_MODEL__H_ 1
+#if !defined(__SWL_RND_UTIL__MULTIVARIATE_NORMAL_MIXUTRE_MODEL__H_)
+#define __SWL_RND_UTIL__MULTIVARIATE_NORMAL_MIXUTRE_MODEL__H_ 1
 
 
 #include "swl/rnd_util/ContinuousDensityMixtureModel.h"
-#include <boost/random/linear_congruential.hpp>
+#include <gsl/gsl_rng.h>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// univariate normal mixture model
+// multivariate normal mixture model
 
-class SWL_RND_UTIL_API UnivariateNormalMixtureModel: public ContinuousDensityMixtureModel
+class SWL_RND_UTIL_API MultivariateNormalMixtureModel: public ContinuousDensityMixtureModel
 {
 public:
 	typedef ContinuousDensityMixtureModel base_type;
 
 public:
-	UnivariateNormalMixtureModel(const size_t K);  // for ML learning.
-	UnivariateNormalMixtureModel(const size_t K, const std::vector<double> &pi, const dvector_type &mus, const dvector_type &sigmas);
-	UnivariateNormalMixtureModel(const size_t K, const std::vector<double> *pi_conj, const dvector_type *mus_conj, const dvector_type *betas_conj, const dvector_type *sigmas_conj, const dvector_type *nus_conj);  // for MAP learning using conjugate prior.
-	virtual ~UnivariateNormalMixtureModel();
+	MultivariateNormalMixtureModel(const size_t K, const size_t D);  // for ML learning.
+	MultivariateNormalMixtureModel(const size_t K, const size_t D, const std::vector<double> &pi, const std::vector<dvector_type> &mus, const std::vector<dmatrix_type> &sigmas);
+	MultivariateNormalMixtureModel(const size_t K, const size_t D, const std::vector<double> *pi_conj, const std::vector<dvector_type> *mus_conj, const dvector_type *betas_conj, const std::vector<dmatrix_type> *sigmas_conj, const dvector_type *nus_conj);  // for MAP learning using conjugate prior.
+	virtual ~MultivariateNormalMixtureModel();
 
 private:
-	UnivariateNormalMixtureModel(const UnivariateNormalMixtureModel &rhs);  // not implemented.
-	UnivariateNormalMixtureModel & operator=(const UnivariateNormalMixtureModel &rhs);  // not implemented.
+	MultivariateNormalMixtureModel(const MultivariateNormalMixtureModel &rhs);  // not implemented.
+	MultivariateNormalMixtureModel & operator=(const MultivariateNormalMixtureModel &rhs);  // not implemented.
 
 public:
 	//
-	dvector_type & getMean()  {  return mus_;  }
-	const dvector_type & getMean() const  {  return mus_;  }
-	dvector_type & getStandardDeviation()  {  return  sigmas_;  }
-	const dvector_type & getStandardDeviation() const  {  return  sigmas_;  }
+	std::vector<dvector_type> & getMean()  {  return mus_;  }
+	const std::vector<dvector_type> & getMean() const  {  return mus_;  }
+	std::vector<dmatrix_type> & getStandardDeviation()  {  return  sigmas_;  }
+	const std::vector<dmatrix_type> & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ].
@@ -43,7 +43,7 @@ protected:
 	// if seed != -1, the seed value is set.
 	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const;
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
-	///*virtual*/ void doFinalizeRandomSampleGeneration() const;
+	/*virtual*/ void doFinalizeRandomSampleGeneration() const;
 
 	// ML learning.
 	//	-. for IID observations.
@@ -73,23 +73,22 @@ protected:
 	}
 
 protected:
-	dvector_type mus_;  // the means of each components in the univariate normal mixture distribution.
-	dvector_type sigmas_;  // the standard deviations of each components in the univariate normal mixture distribution.
+	std::vector<dvector_type> mus_;  // the means of each components in the univariate normal mixture distribution.
+	std::vector<dmatrix_type> sigmas_;  // the standard deviations of each components in the univariate normal mixture distribution.
 
 	// hyperparameters for the conjugate prior.
 	//	[ref] "Maximum a Posteriori Estimation for Multivariate Gaussian Mixture Observations of Markov Chains", J.-L. Gauvain adn C.-H. Lee, TSAP, 1994.
 	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
-	boost::scoped_ptr<const dvector_type> mus_conj_;  // m.
+	boost::scoped_ptr<const std::vector<dvector_type> > mus_conj_;  // m.
 	boost::scoped_ptr<const dvector_type> betas_conj_;  // beta. beta > 0.
-	boost::scoped_ptr<const dvector_type> sigmas_conj_;  // inv(W).
+	boost::scoped_ptr<const std::vector<dmatrix_type> > sigmas_conj_;  // inv(W).
 	boost::scoped_ptr<const dvector_type> nus_conj_;  // nu. nu > D - 1.
 
-	typedef boost::minstd_rand base_generator_type;
-	mutable base_generator_type baseGenerator_;
+	mutable gsl_rng *r_;
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__UNIVARIATE_NORMAL_MIXUTRE_MODEL__H_
+#endif  // __SWL_RND_UTIL__MULTIVARIATE_NORMAL_MIXUTRE_MODEL__H_

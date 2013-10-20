@@ -30,7 +30,7 @@ MetropolisHastingsAlgorithm::~MetropolisHastingsAlgorithm()
 void MetropolisHastingsAlgorithm::sample(const vector_type &x, vector_type &newX) const
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	proposalDistribution_.sample(x, newX);
 

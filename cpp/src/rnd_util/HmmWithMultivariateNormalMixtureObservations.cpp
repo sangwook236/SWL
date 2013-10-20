@@ -8,8 +8,10 @@
 #include <boost/numeric/ublas/blas.hpp>
 #include <boost/numeric/ublas/lu.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <numeric>
 #include <ctime>
 #include <stdexcept>
+#include <cassert>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -25,7 +27,8 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 
 HmmWithMultivariateNormalMixtureObservations::HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C)
 : base_type(K, D), HmmWithMixtureObservations(C, K), mus_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),  // 0-based index
-  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  r_(NULL)
 {
 	for (size_t k = 0; k < K; ++k)
 		for (size_t c = 0; c < C; ++c)
@@ -37,13 +40,15 @@ HmmWithMultivariateNormalMixtureObservations::HmmWithMultivariateNormalMixtureOb
 
 HmmWithMultivariateNormalMixtureObservations::HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &mus, const boost::multi_array<dmatrix_type, 2> &sigmas)
 : base_type(K, D, pi, A), HmmWithMixtureObservations(C, K, alphas), mus_(mus), sigmas_(sigmas),
-  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  r_(NULL)
 {
 }
 
 HmmWithMultivariateNormalMixtureObservations::HmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *mus_conj, const dmatrix_type *betas_conj, const boost::multi_array<dmatrix_type, 2> *sigmas_conj, const dmatrix_type *nus_conj)
 : base_type(K, D, pi_conj, A_conj), HmmWithMixtureObservations(C, K, alphas_conj), mus_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),
-  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj)
+  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj),
+  r_(NULL)
 {
 }
 
@@ -53,8 +58,6 @@ HmmWithMultivariateNormalMixtureObservations::~HmmWithMultivariateNormalMixtureO
 
 void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n;
 	double denominator;
 
@@ -113,6 +116,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	denominator = denominatorA + gamma(N-1, state);
 	const double factorAlpha = 0.999 / denominator;
 
@@ -151,8 +156,6 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 
 void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double denominator;
 
@@ -220,6 +223,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	denominator = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominator += gammas[r](Ns[r]-1, state);
@@ -277,8 +282,6 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 
 void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state
-
 	size_t c, n;
 	double denominator;
 
@@ -337,6 +340,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state
+
 	denominator = denominatorA + gamma(N-1, state);
 	double denominatorAlpha0 = -double(C_);
 	for (c = 0; c < C_; ++c)
@@ -379,8 +384,6 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 
 void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double denominator;
 
@@ -448,6 +451,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	denominator = denominatorA;
 	for (r = 0; r < R; ++r)
 		denominator += gammas[r](Ns[r]-1, state);
@@ -507,20 +512,19 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n;
 	double denominator;
+	const double eps = 1e-50;
+
+	dmatrix_type inv(D_, D_);
 
 	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble.
 	dmatrix_type zeta(N, C_, 0.0);
 	{
-		const double eps = 1e-50;
 		double val;
-		dmatrix_type inv(D_, D_);
 		for (n = 0; n < N; ++n)
 		{
 			const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
@@ -569,6 +573,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	// reestimate mixture coefficients(weights).
 	{
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
@@ -582,6 +588,63 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
+
+		// trim mixture coefficients(weights).
+		if (doesTrimParameter)
+		{
+			// FIXME [fix] >>
+			throw std::runtime_error("not yet implemented");
+
+			double numerator;
+			dmatrix_type prob(N, C_, 0.0);
+			for (n = 0; n < N; ++n)
+			{
+				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
+				for (c = 0; c < C_; ++c)
+#if 0
+					prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
+					{
+						const dmatrix_type &sigma = sigmas_[state][c];
+						//if (0 == c)
+						//	inv.resize(sigma.size1(), sigma.size2());
+						const double det = det_and_inv_by_lu(sigma, inv);
+
+						const dvector_type x_mu(obs - mus_[state][c]);
+						prob(n, c) = std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
+					}
+#endif
+			}
+
+			size_t i;
+			bool isTrimmed = false;
+			for (c = 0; c < C_; ++c)
+			{
+				numerator = 0.0;
+				denominator = 0.0;
+				for (n = 0; n < N; ++n)
+				{
+					numerator += prob(n, c);
+					for (i = 0; i < C_; ++i)
+						denominator += prob(n, i) * theta[i];
+				}
+
+				if (theta[c] <= std::exp(-numerator / denominator))
+				{
+					theta[c] = 0.0;
+					isTrimmed = true;
+				}
+			}
+
+			if (isTrimmed)
+			{
+				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
+				assert(std::fabs(sumTheta) >= eps);
+				for (c = 0; c < C_; ++c)
+					theta[c] /= sumTheta;
+			}
+		}
+
 		for (c = 0; c < C_; ++c)
 			alphas_(state, c) = theta[c];
 	}
@@ -617,10 +680,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
-	// reestimate observation(emission) distribution in each state.
-
 	size_t c, n, r;
 	double denominator;
 
@@ -688,6 +749,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	}
 
 	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
 	// reestimate mixture coefficients(weights).
 	{
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
@@ -705,6 +768,13 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
+
+		// trim mixture coefficients(weights).
+		if (doesTrimParameter)
+		{
+			throw std::runtime_error("not yet implemented");
+		}
+
 		for (c = 0; c < C_; ++c)
 			alphas_(state, c) = theta[c];
 	}
@@ -775,12 +845,11 @@ double HmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbabili
 	return prob;
 }
 
-void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
-	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	assert(NULL != r_);
 
-	// bivariate normal distribution
+	// bivariate normal distribution.
 	if (2 == D_)
 	{
 		const double prob = (double)std::rand() / RAND_MAX;
@@ -802,29 +871,15 @@ void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(
 			component = (unsigned int)(C_ - 1);
 
 		//
-		if ((unsigned int)-1 != seed)
-		{
-			// random number generator algorithms
-			gsl_rng_default = gsl_rng_mt19937;
-			//gsl_rng_default = gsl_rng_taus;
-			gsl_rng_default_seed = (unsigned long)std::time(NULL);
-		}
-
-		const gsl_rng_type *T = gsl_rng_default;
-		gsl_rng *r = gsl_rng_alloc(T);
-
-		//
 		const dvector_type &mu = mus_[state][component];
-		const dmatrix_type &sigma = sigmas_[state][component];
+		const dmatrix_type &cov = sigmas_[state][component];
 
-		const double sigma_x = sigma(0, 0);
-		const double sigma_y = sigma(1, 1);
-		const double rho = sigma(0, 1) / std::sqrt(sigma_x * sigma_y);  // correlation coefficient
+		const double sigma_x = std::sqrt(cov(0, 0));  // sigma_x = sqrt(cov_xx).
+		const double sigma_y = std::sqrt(cov(1, 1));  // sigma_y = sqrt(cov_yy).
+		const double rho = cov(0, 1) / (sigma_x * sigma_y);  // correlation coefficient: rho = cov_xy / (sigma_x * sigma_y).
 
 		double x = 0.0, y = 0.0;
-		gsl_ran_bivariate_gaussian(r, sigma_x, sigma_y, rho, &x, &y);
-
-		gsl_rng_free(r);
+		gsl_ran_bivariate_gaussian(r_, sigma_x, sigma_y, rho, &x, &y);
 
 		observation[0] = mu[0] + x;
 		observation[1] = mu[1] + y;
@@ -833,6 +888,26 @@ void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(
 	{
 		throw std::runtime_error("not yet implemented");
 	}
+}
+
+void HmmWithMultivariateNormalMixtureObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if ((unsigned int)-1 != seed)
+	{
+		// random number generator algorithms.
+		gsl_rng_default = gsl_rng_mt19937;
+		//gsl_rng_default = gsl_rng_taus;
+		gsl_rng_default_seed = seed;
+	}
+
+	const gsl_rng_type *T = gsl_rng_default;
+	r_ = gsl_rng_alloc(T);
+}
+
+void HmmWithMultivariateNormalMixtureObservations::doFinalizeRandomSampleGeneration() const
+{
+	gsl_rng_free(r_);
+	r_ = NULL;
 }
 
 bool HmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std::istream &stream)
@@ -864,7 +939,7 @@ bool HmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std:
 
 	// TODO [check] >>
 	size_t C;
-	stream >> dummy >> C;  // the number of mixture components
+	stream >> dummy >> C;  // the number of mixture components.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "C=") != 0 || C_ != C)
 #elif defined(_MSC_VER)
@@ -895,7 +970,7 @@ bool HmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std:
 #endif
 		return false;
 
-	// K x C x D
+	// K x C x D.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 		{
@@ -907,13 +982,13 @@ bool HmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std:
 
 	stream >> dummy;
 #if defined(__GNUC__)
-	if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+	if (strcasecmp(dummy.c_str(), "covariance:") != 0)
 #elif defined(_MSC_VER)
-	if (_stricmp(dummy.c_str(), "sigma:") != 0)
+	if (_stricmp(dummy.c_str(), "covariance:") != 0)
 #endif
 		return false;
 
-	// K x C x (D * D)
+	// K x C x (D * D).
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 		{
@@ -935,7 +1010,7 @@ bool HmmWithMultivariateNormalMixtureObservations::doWriteObservationDensity(std
 
 	size_t i, k, c, d;
 
-	// K x C
+	// K x C.
 	stream << "alpha:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
@@ -944,7 +1019,7 @@ bool HmmWithMultivariateNormalMixtureObservations::doWriteObservationDensity(std
 		stream << std::endl;
 	}
 
-	// K x C x D
+	// K x C x D.
 	stream << "mu:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
@@ -959,8 +1034,8 @@ bool HmmWithMultivariateNormalMixtureObservations::doWriteObservationDensity(std
 		stream << std::endl;
 	}
 
-	// K x C x (D * D)
-	stream << "sigma:" << std::endl;
+	// K x C x (D * D).
+	stream << "covariance:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
 		for (c = 0; c < C_; ++c)
@@ -984,9 +1059,9 @@ bool HmmWithMultivariateNormalMixtureObservations::doWriteObservationDensity(std
 void HmmWithMultivariateNormalMixtureObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
-	// initialize mixture coefficients(weights)
+	// initialize mixture coefficients(weights).
 	{
 		double sum;
 		size_t c;
@@ -1003,11 +1078,11 @@ void HmmWithMultivariateNormalMixtureObservations::doInitializeObservationDensit
 		}
 	}
 
-	// initialize the parameters of observation density
+	// initialize the parameters of observation density.
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * C_ * (D_ + D_ * D_);  // the total number of parameters of observation density
+	const std::size_t numParameters = K_ * C_ * (D_ + D_ * D_);  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);

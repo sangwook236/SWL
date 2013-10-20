@@ -188,7 +188,7 @@ bool HMM::writeModel(std::ostream &stream) const
 void HMM::initializeModel(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	std::size_t i, k;
 	double sum = 0.0;

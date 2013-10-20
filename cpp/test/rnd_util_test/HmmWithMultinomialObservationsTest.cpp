@@ -25,19 +25,19 @@ namespace local {
 
 void model_reading_and_writing()
 {
-	// reading a model
+	// reading a model.
 	{
 		boost::scoped_ptr<swl::DDHMM> ddhmm;
 
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -61,19 +61,19 @@ void model_reading_and_writing()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		ddhmm->writeModel(std::cout);
 	}
 
-	// writing a model
+	// writing a model.
 	{
 		boost::scoped_ptr<swl::DDHMM> ddhmm;
 
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -92,8 +92,8 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("../data/hmm/multinomial_test1_writing.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -140,17 +140,17 @@ void observation_sequence_generation(const bool outputToFile)
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
-	// read a model
+	// read a model.
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -174,13 +174,13 @@ void observation_sequence_generation(const bool outputToFile)
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
 	}
 
-	// generate a sample sequence
+	// generate a sample sequence.
 	{
 #if defined(__USE_SPECIFIED_VALUE_FOR_RANDOM_SEED)
 		const unsigned int seed = 34586u;
@@ -219,13 +219,14 @@ void observation_sequence_generation(const bool outputToFile)
 			swl::DDHMM::uivector_type states(N, (unsigned int)-1);
 			ddhmm->generateSample(N, observations, states);
 
-#if 0			// output states
+#if 0
+			// output states.
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
-			// write a sample sequence
+			// write a sample sequence.
 			swl::DDHMM::writeSequence(stream, observations);
 		}
 		else
@@ -236,13 +237,14 @@ void observation_sequence_generation(const bool outputToFile)
 			swl::DDHMM::uivector_type states(N, (unsigned int)-1);
 			ddhmm->generateSample(N, observations, states);
 
-#if 0			// output states
+#if 0
+			// output states.
 			for (size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
 
-			// write a sample sequence
+			// write a sample sequence.
 			swl::DDHMM::writeSequence(std::cout, observations);
 		}
 	}
@@ -251,7 +253,7 @@ void observation_sequence_generation(const bool outputToFile)
 void observation_sequence_reading_and_writing()
 {
 	swl::DDHMM::uivector_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -274,7 +276,7 @@ void observation_sequence_reading_and_writing()
 		return;
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	const bool retval = swl::DDHMM::readSequence(stream, N, observations);
 	if (!retval)
 	{
@@ -284,7 +286,7 @@ void observation_sequence_reading_and_writing()
 		return;
 	}
 
-	// write a observation sequence
+	// write a observation sequence.
 	swl::DDHMM::writeSequence(std::cout, observations);
 }
 
@@ -292,17 +294,17 @@ void forward_algorithm()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
-	// read a model
+	// read a model.
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -326,15 +328,15 @@ void forward_algorithm()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	swl::DDHMM::uivector_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 	{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -369,7 +371,7 @@ void forward_algorithm()
 
 	const size_t K = ddhmm->getStateDim();
 
-	// forward algorithm without scaling
+	// forward algorithm without scaling.
 	{
 		swl::DDHMM::dmatrix_type alpha(N, K, 0.0);
 		double probability = 0.0;
@@ -381,7 +383,7 @@ void forward_algorithm()
 		std::cout << "\tlog prob(observations | model) = " << std::scientific << std::log(probability) << std::endl;
 	}
 
-	// forward algorithm with scaling
+	// forward algorithm with scaling.
 	{
 		swl::DDHMM::dvector_type scale(N, 0.0);
 		swl::DDHMM::dmatrix_type alpha(N, K, 0.0);
@@ -404,17 +406,17 @@ void viterbi_algorithm()
 {
 	boost::scoped_ptr<swl::DDHMM> ddhmm;
 
-	// read a model
+	// read a model.
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -438,15 +440,15 @@ void viterbi_algorithm()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
 	}
 
-	// read a observation sequence
+	// read a observation sequence.
 	swl::DDHMM::uivector_type observations;
-	size_t N = 0;  // length of observation sequence, N
+	size_t N = 0;  // length of observation sequence, N.
 	{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -481,7 +483,7 @@ void viterbi_algorithm()
 
 	const size_t K = ddhmm->getStateDim();
 
-	// Viterbi algorithm using direct probabilities
+	// Viterbi algorithm using direct probabilities.
 	{
 		swl::DDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::DDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
@@ -499,7 +501,7 @@ void viterbi_algorithm()
 		std::cout << std::endl;
 	}
 
-	// Viterbi algorithm using log probabilities
+	// Viterbi algorithm using log probabilities.
 	{
 		swl::DDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::DDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
@@ -529,19 +531,19 @@ void ml_learning_by_em()
 		3) with a specific random model by specifying N, M and seed.
 */
 
-	// initialize a model
+	// initialize a model.
 	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -565,7 +567,7 @@ void ml_learning_by_em()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
@@ -580,8 +582,8 @@ void ml_learning_by_em()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		ddhmm.reset(new swl::HmmWithMultinomialObservations(K, D));
 
@@ -592,11 +594,11 @@ void ml_learning_by_em()
 
 	const size_t K = ddhmm->getStateDim();
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::DDHMM::uivector_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -629,7 +631,7 @@ void ml_learning_by_em()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -637,7 +639,7 @@ void ml_learning_by_em()
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			ddhmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//
@@ -651,14 +653,14 @@ void ml_learning_by_em()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		std::vector<swl::DDHMM::uivector_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/multinomial_test1_50.seq",
 				"../data/hmm/multinomial_test1_100.seq",
@@ -689,9 +691,9 @@ void ml_learning_by_em()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -699,7 +701,7 @@ void ml_learning_by_em()
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
 			ddhmm->trainByML(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//
@@ -733,19 +735,19 @@ void map_learning_by_em_using_conjugate_prior()
 		3) with a specific random model by specifying N, M and seed.
 */
 
-	// initialize a model
+	// initialize a model.
 	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -757,6 +759,8 @@ void map_learning_by_em_using_conjugate_prior()
 			throw std::runtime_error(stream.str().c_str());
 			return;
 		}
+
+		std::srand((unsigned int)std::time(NULL));
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
@@ -776,7 +780,7 @@ void map_learning_by_em_using_conjugate_prior()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
@@ -791,8 +795,8 @@ void map_learning_by_em_using_conjugate_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
@@ -810,11 +814,11 @@ void map_learning_by_em_using_conjugate_prior()
 
 	const size_t K = ddhmm->getStateDim();
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::DDHMM::uivector_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -847,7 +851,7 @@ void map_learning_by_em_using_conjugate_prior()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -855,7 +859,7 @@ void map_learning_by_em_using_conjugate_prior()
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			ddhmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//
@@ -869,14 +873,14 @@ void map_learning_by_em_using_conjugate_prior()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		std::vector<swl::DDHMM::uivector_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/multinomial_test1_50.seq",
 				"../data/hmm/multinomial_test1_100.seq",
@@ -907,9 +911,9 @@ void map_learning_by_em_using_conjugate_prior()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
@@ -917,7 +921,7 @@ void map_learning_by_em_using_conjugate_prior()
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
 			ddhmm->trainByMAPUsingConjugatePrior(Ns, observationSequences, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//
@@ -951,19 +955,19 @@ void map_learning_by_em_using_entropic_prior()
 		3) with a specific random model by specifying N, M and seed.
 */
 
-	// initialize a model
+	// initialize a model.
 	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_HMM_MODEL == 1
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test1.hmm");
 #elif __TEST_HMM_MODEL == 2
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("../data/hmm/multinomial_test2.hmm");
@@ -990,7 +994,7 @@ void map_learning_by_em_using_entropic_prior()
 			return;
 		}
 
-		// normalize pi, A, & B
+		// normalize pi, A, & B.
 		ddhmm->normalizeModelParameters();
 
 		//ddhmm->writeModel(std::cout);
@@ -1005,8 +1009,8 @@ void map_learning_by_em_using_entropic_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the dimension of hidden states
-		const size_t D = 2;  // the dimension of observation symbols
+		const size_t K = 3;  // the dimension of hidden states.
+		const size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
@@ -1020,11 +1024,11 @@ void map_learning_by_em_using_entropic_prior()
 
 	const size_t K = ddhmm->getStateDim();
 
-	// for a single observation sequence
+	// for a single observation sequence.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		swl::DDHMM::uivector_type observations;
-		size_t N = 0;  // length of observation sequence, N
+		size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
 
@@ -1057,21 +1061,22 @@ void map_learning_by_em_using_entropic_prior()
 			}
 		}
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			// z = 1 (default) is min. entropy.
 			// z = 0 is max. likelihood.
 			// z = -1 is max. entropy.
 			// z = -inf corresponds to very high temperature (good for initialization).
 			const double z = 1.0;
+			const bool doesTrimParameter = true;
 
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			ddhmm->trainByMAPUsingEntropicPrior(N, observations, z, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			ddhmm->trainByMAPUsingEntropicPrior(N, observations, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//
@@ -1085,14 +1090,14 @@ void map_learning_by_em_using_entropic_prior()
 		}
 	}
 
-	// for multiple independent observation sequences
+	// for multiple independent observation sequences.
 	{
-		// read a observation sequence
+		// read a observation sequence.
 		std::vector<swl::DDHMM::uivector_type> observationSequences;
-		std::vector<size_t> Ns;  // lengths of observation sequences
+		std::vector<size_t> Ns;  // lengths of observation sequences.
 		{
 #if __TEST_HMM_MODEL == 1 || __TEST_HMM_MODEL == 2
-			const size_t R = 3;  // number of observations sequences
+			const size_t R = 3;  // number of observations sequences.
 			const std::string observationSequenceFiles[] = {
 				"../data/hmm/multinomial_test1_50.seq",
 				"../data/hmm/multinomial_test1_100.seq",
@@ -1123,23 +1128,24 @@ void map_learning_by_em_using_entropic_prior()
 			}
 		}
 
-		const size_t R = observationSequences.size();  // number of observations sequences
+		const size_t R = observationSequences.size();  // number of observations sequences.
 
-		// Baum-Welch algorithm
+		// Baum-Welch algorithm.
 		{
 			// z = 1 (default) is min. entropy.
 			// z = 0 is max. likelihood.
 			// z = -1 is max. entropy.
 			// z = -inf corresponds to very high temperature (good for initialization).
 			const double z = 1.0;
+			const bool doesTrimParameter = true;
 
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
 			std::vector<double> initLogProbabilities(R, 0.0), finalLogProbabilities(R, 0.0);
-			ddhmm->trainByMAPUsingEntropicPrior(Ns, observationSequences, z, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
+			ddhmm->trainByMAPUsingEntropicPrior(Ns, observationSequences, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbabilities, finalLogProbabilities);
 
-			// normalize pi, A, & B
+			// normalize pi, A, & B.
 			//ddhmm->normalizeModelParameters();
 
 			//

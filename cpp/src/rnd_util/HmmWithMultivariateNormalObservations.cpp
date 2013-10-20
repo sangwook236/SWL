@@ -8,6 +8,7 @@
 #include <boost/numeric/ublas/matrix_expression.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <stdexcept>
+#include <cassert>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -23,7 +24,8 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D)
 : base_type(K, D), mus_(K), sigmas_(K),  // 0-based index
-  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  r_(NULL)
 {
 	for (size_t k = 0; k < K; ++k)
 	{
@@ -34,13 +36,15 @@ HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(con
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D, const dvector_type &pi, const dmatrix_type &A, const std::vector<dvector_type> &mus, const std::vector<dmatrix_type> &sigmas)
 : base_type(K, D, pi, A), mus_(mus), sigmas_(sigmas),
-  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_()
+  mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
+  r_(NULL)
 {
 }
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D, const dvector_type *pi_conj, const dmatrix_type *A_conj, const std::vector<dvector_type> *mus_conj, const dvector_type *betas_conj, const std::vector<dmatrix_type> *sigmas_conj, const dvector_type *nus_conj)
 : base_type(K, D, pi_conj, A_conj), mus_(K), sigmas_(K),
-  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj)
+  mus_conj_(mus_conj), betas_conj_(betas_conj), sigmas_conj_(sigmas_conj), nus_conj_(nus_conj),
+  r_(NULL)
 {
 }
 
@@ -50,6 +54,7 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
@@ -80,6 +85,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -124,16 +130,17 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n;
 	const double denominator = denominatorA + gamma(N-1, state);
-	const double factorMu = 0.999 / (denominator + (*betas_conj_)(state));
-	const double factorSigma = 0.999 / (denominator + (*nus_conj_)(state) - D_);
+	const double factorMu = 0.999 / (denominator + (*betas_conj_)[state]);
+	const double factorSigma = 0.999 / (denominator + (*nus_conj_)[state] - D_);
 
 	//
 	dvector_type &mu = mus_[state];
-	mu = (*betas_conj_)(state) * (*mus_conj_)[state];
+	mu = (*betas_conj_)[state] * (*mus_conj_)[state];
 	for (n = 0; n < N; ++n)
 		mu += gamma(n, state) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
 	//mu = mu * factorMu + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
@@ -142,7 +149,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	//
 	dmatrix_type &sigma = sigmas_[state];
 	sigma = (*sigmas_conj_)[state];
-	boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)(state), mu - (*mus_conj_)[state]);
+	boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)[state], mu - (*mus_conj_)[state]);
 	for (n = 0; n < N; ++n)
 		boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
 	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
@@ -156,6 +163,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
+	// M-step.
 	// reestimate observation(emission) distribution in each state
 
 	size_t n, r;
@@ -200,12 +208,12 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(N, state, observations, gamma, denominatorA);
 }
 
-void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const size_t R, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
+void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const size_t R, const double denominatorA)
 {
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
@@ -220,34 +228,22 @@ double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(cons
 	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 }
 
-void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
-	// bivariate normal distribution
+	assert(NULL != r_);
+
+	// bivariate normal distribution.
 	if (2 == D_)
 	{
-		if ((unsigned int)-1 != seed)
-		{
-			// random number generator algorithms
-			gsl_rng_default = gsl_rng_mt19937;
-			//gsl_rng_default = gsl_rng_taus;
-			gsl_rng_default_seed = (unsigned long)std::time(NULL);
-		}
-
-		const gsl_rng_type *T = gsl_rng_default;
-		gsl_rng *r = gsl_rng_alloc(T);
-
-		//
 		const dvector_type &mu = mus_[state];
-		const dmatrix_type &sigma = sigmas_[state];
+		const dmatrix_type &cov = sigmas_[state];
 
-		const double sigma_x = sigma(0, 0);
-		const double sigma_y = sigma(1, 1);
-		const double rho = sigma(0, 1) / std::sqrt(sigma_x * sigma_y);  // correlation coefficient
+		const double sigma_x = std::sqrt(cov(0, 0));  // sigma_x = sqrt(cov_xx).
+		const double sigma_y = std::sqrt(cov(1, 1));  // sigma_y = sqrt(cov_yy).
+		const double rho = cov(0, 1) / (sigma_x * sigma_y);  // correlation coefficient: rho = cov_xy / (sigma_x * sigma_y).
 
 		double x = 0.0, y = 0.0;
-		gsl_ran_bivariate_gaussian(r, sigma_x, sigma_y, rho, &x, &y);
-
-		gsl_rng_free(r);
+		gsl_ran_bivariate_gaussian(r_, sigma_x, sigma_y, rho, &x, &y);
 
 		observation[0] = mu[0] + x;
 		observation[1] = mu[1] + y;
@@ -256,6 +252,26 @@ void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const u
 	{
 		throw std::runtime_error("not yet implemented");
 	}
+}
+
+void HmmWithMultivariateNormalObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if ((unsigned int)-1 != seed)
+	{
+		// random number generator algorithms.
+		gsl_rng_default = gsl_rng_mt19937;
+		//gsl_rng_default = gsl_rng_taus;
+		gsl_rng_default_seed = seed;
+	}
+
+	const gsl_rng_type *T = gsl_rng_default;
+	r_ = gsl_rng_alloc(T);
+}
+
+void HmmWithMultivariateNormalObservations::doFinalizeRandomSampleGeneration() const
+{
+	gsl_rng_free(r_);
+	r_ = NULL;
 }
 
 bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istream &stream)
@@ -287,7 +303,7 @@ bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istrea
 
 	size_t d, i;
 
-	// K x D
+	// K x D.
 	for (size_t k = 0; k < K_; ++k)
 	{
 		dvector_type &mu = mus_[k];
@@ -298,13 +314,13 @@ bool HmmWithMultivariateNormalObservations::doReadObservationDensity(std::istrea
 
 	stream >> dummy;
 #if defined(__GNUC__)
-	if (strcasecmp(dummy.c_str(), "sigma:") != 0)
+	if (strcasecmp(dummy.c_str(), "covariance:") != 0)
 #elif defined(_MSC_VER)
-	if (_stricmp(dummy.c_str(), "sigma:") != 0)
+	if (_stricmp(dummy.c_str(), "covariance:") != 0)
 #endif
 		return false;
 
-	// K x (D * D)
+	// K x (D * D).
 	for (size_t k = 0; k < K_; ++k)
 	{
 		dmatrix_type &sigma = sigmas_[k];
@@ -323,7 +339,7 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 
 	size_t i, k, d;
 
-	// K x D
+	// K x D.
 	stream << "mu:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
@@ -334,8 +350,8 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 		stream << std::endl;
 	}
 
-	// K x (D * D)
-	stream << "sigma:" << std::endl;
+	// K x (D * D).
+	stream << "covariance:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
 		const dmatrix_type &sigma = sigmas_[k];
@@ -355,13 +371,13 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 void HmmWithMultivariateNormalObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
-	// initialize the parameters of observation density
+	// initialize the parameters of observation density.
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * (D_ + D_ * D_);  // the total number of parameters of observation density
+	const std::size_t numParameters = K_ * (D_ + D_ * D_);  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);

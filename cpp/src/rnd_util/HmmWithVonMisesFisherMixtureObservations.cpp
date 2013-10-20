@@ -57,12 +57,12 @@ void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParam
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const size_t R, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithVonMisesFisherMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
 	throw std::runtime_error("not yet implemented");
 }
@@ -72,7 +72,7 @@ double HmmWithVonMisesFisherMixtureObservations::doEvaluateEmissionProbability(c
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void HmmWithVonMisesFisherMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }

@@ -22,12 +22,21 @@ double evaluateVonMisesDistribution(const double x, const double mu, const doubl
 
 VonMisesMixtureModel::VonMisesMixtureModel(const size_t K)
 : base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),
+  ms_conj_(), Rs_conj_(), cs_conj_(),
   targetDist_(), proposalDist_()
 {
 }
 
 VonMisesMixtureModel::VonMisesMixtureModel(const size_t K, const std::vector<double> &pi, const dvector_type &mus, const dvector_type &kappas)
 : base_type(K, 1, pi), mus_(mus), kappas_(kappas),
+  ms_conj_(), Rs_conj_(), cs_conj_(),
+  targetDist_(), proposalDist_()
+{
+}
+
+VonMisesMixtureModel::VonMisesMixtureModel(const size_t K, const std::vector<double> *pi_conj, const dvector_type *ms_conj, const dvector_type *Rs_conj, const dvector_type *cs_conj)
+: base_type(K, 1, pi_conj), mus_(K, 0.0), kappas_(K, 0.0),
+  ms_conj_(ms_conj), Rs_conj_(Rs_conj), cs_conj_(cs_conj),
   targetDist_(), proposalDist_()
 {
 }
@@ -38,9 +47,11 @@ VonMisesMixtureModel::~VonMisesMixtureModel()
 
 void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
-	// reestimate observation(emission) distribution in each state
+	// M-step.
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
+
 	double numerator = 0.0, denominator = 0.0;
 	for (n = 0; n < N; ++n)
 	{
@@ -50,7 +61,7 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size
 
 	double &mu = mus_[state];
 
-	// TODO [check] >> check the range of each mu, [0, 2 * pi)
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
 	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
 	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
@@ -66,18 +77,18 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size
 		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?)
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / sumGamma;  // -1 < A < 1 (?)
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?).
 #endif
-	// FIXME [modify] >> lower & upper bounds have to be adjusted
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
 	const std::size_t maxIteration = 100;
 	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
 	assert(retval);
 
 	// TODO [check] >>
-	if (kappas_[state] < 0.0)  // kappa >= 0.0
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
 	{
 		kappas_[state] = -kappas_[state];
 		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
@@ -91,7 +102,63 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByML(const size
 
 void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double sumGamma)
 {
-	throw std::runtime_error("not yet implemented");
+	// M-step.
+	// reestimate observation(emission) distribution in each state.
+
+	size_t n;
+
+	double numerator = (*Rs_conj_)[state] * std::sin((*ms_conj_)[state]), denominator = (*Rs_conj_)[state] * std::cos((*ms_conj_)[state]);;
+	for (n = 0; n < N; ++n)
+	{
+		numerator += gamma(n, state) * std::sin(observations(n, 0));
+		denominator += gamma(n, state) * std::cos(observations(n, 0));
+	}
+
+	double &mu = mus_[state];
+
+	// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+	//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+	mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+	//mu = std::atan2(numerator, denominator);
+	mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
+	assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+	//
+	numerator = (*Rs_conj_)[state] * std::cos(mu - (*ms_conj_)[state]);
+	denominator = sumGamma + (*cs_conj_)[state];
+	for (n = 0; n < N; ++n)
+		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
+
+#if 0
+	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+#else
+	const double A = numerator / denominator;  // -1 < A < 1 (?).
+#endif
+	// FIXME [modify] >> lower & upper bounds have to be adjusted.
+	const double lb = -10000.0, ub = 10000.0;
+	const std::size_t maxIteration = 100;
+	const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_[state]);
+	assert(retval);
+
+	// TODO [check] >>
+	if (kappas_[state] < 0.0)  // kappa >= 0.0.
+	{
+		kappas_[state] = -kappas_[state];
+		mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+		assert(0.0 <= mu && mu < MathConstant::_2_PI);
+	}
+
+	// POSTCONDITIONS [] >>
+	//	-. all mean directions have to be in [0, 2 * pi).
+	//	-. all concentration parameters have to be greater than or equal to 0.
+}
+
+void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma)
+{
+	doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
 }
 
 double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
@@ -101,17 +168,14 @@ double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigne
 	return evaluateVonMisesDistribution(observation[0], mus_[state], kappas_[state]);
 }
 
-void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation, const unsigned int seed /*= (unsigned int)-1*/) const
+void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
 {
-	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	assert(!!targetDist_ && !!proposalDist_);
 
-	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
 	targetDist_->setParameters(mus_[state], kappas_[state]);
 
 #if 0
-	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
-
+	// when using univariate normal proposal distribution.
 	{
 		// FIXME [modify] >> these parameters are incorrect.
 		const double sigma = 1.55;
@@ -119,8 +183,7 @@ void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state
 		proposalDist_->setParameters(mus_[state], sigma, k);
 	}
 #else
-	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
-
+	// when using univariate uniform proposal distribution.
 	{
 		const double lower = 0.0;
 		const double upper = MathConstant::_2_PI;
@@ -129,9 +192,6 @@ void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state
 		proposalDist_->setParameters(lower, upper, k);
 	}
 #endif
-
-	if ((unsigned int)-1 != seed)
-		proposalDist_->setSeed(seed);
 
 	swl::RejectionSampling sampler(*targetDist_, *proposalDist_);
 
@@ -142,6 +202,28 @@ void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state
 	const bool retval = sampler.sample(x, maxIteration);
 	assert(retval);
 	observation[0] = x[0];
+}
+
+void VonMisesMixtureModel::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+{
+	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
+#if 0
+	if (!proposalDist_) proposalDist_.reset(new UnivariateNormalProposalDistribution());
+#else
+	if (!proposalDist_) proposalDist_.reset(new UnivariateUniformProposalDistribution());
+#endif
+
+	if ((unsigned int)-1 != seed)
+	{
+		std::srand(seed);
+		if (!!proposalDist_) proposalDist_->setSeed(seed);
+	}
+}
+
+void VonMisesMixtureModel::doFinalizeRandomSampleGeneration() const
+{
+	targetDist_.reset();
+	proposalDist_.reset();
 }
 
 bool VonMisesMixtureModel::doReadObservationDensity(std::istream &stream)
@@ -222,7 +304,7 @@ bool VonMisesMixtureModel::doWriteObservationDensity(std::ostream &stream) const
 void VonMisesMixtureModel::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
-	//	-. std::srand() had to be called before this function is called.
+	//	-. std::srand() has to be called before this function is called.
 
 	// initialize the parameters of observation density
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
