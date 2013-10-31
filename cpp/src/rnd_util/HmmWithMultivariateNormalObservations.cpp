@@ -218,7 +218,7 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
-double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	const dmatrix_type &sigma = sigmas_[state];
 	dmatrix_type inv(sigma.size1(), sigma.size2());
@@ -419,7 +419,9 @@ void HmmWithMultivariateNormalObservations::doInitializeObservationDensity(const
 	for (size_t k = 0; k < K_; ++k)
 	{
 		dmatrix_type &sigma = sigmas_[k];
-		// TODO [check] >> all covariance matrices have to be symmetric positive definite.
+
+		// all covariance matrices have to be symmetric positive definite.
+		boost::numeric::ublas::blas_3::srk(sigma, 0.0, 1.0, sigma);  // m1 = t1 * m1 + t2 * (m2 * m2^T).
 		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
 	}
 

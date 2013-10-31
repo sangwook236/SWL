@@ -535,6 +535,11 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 #if 0
 				val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
+				// TODO [check] >> we need to check if a component is trimmed or not.
+				//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+				if (std::fabs(alphas_(state, c)) < eps)
+					val = 0.0;
+				else
 				{
 					const dmatrix_type &sigma = sigmas_[state][c];
 					//if (0 == c)
@@ -575,8 +580,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
-	// reestimate mixture coefficients(weights).
 	{
+		// compute expected sufficient statistics (ESS).
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
 		for (c = 0; c < C_; ++c)
 		{
@@ -585,95 +590,123 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 				omega[c] += zeta(n, c);
 		}
 
+		// reestimate mixture coefficients(weights).
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
 
 		// trim mixture coefficients(weights).
-		if (doesTrimParameter)
+		if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 		{
-			// FIXME [fix] >>
-			throw std::runtime_error("not yet implemented");
-
-			double numerator;
 			dmatrix_type prob(N, C_, 0.0);
 			for (n = 0; n < N; ++n)
 			{
 				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
 				for (c = 0; c < C_; ++c)
+				{
 #if 0
 					prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
+					// TODO [check] >> we need to check if a component is trimmed or not.
+					//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+					if (std::fabs(alphas_(state, c)) < eps)
+						prob(n, c) = 0.0;
+					else
 					{
 						const dmatrix_type &sigma = sigmas_[state][c];
 						//if (0 == c)
 						//	inv.resize(sigma.size1(), sigma.size2());
 						const double det = det_and_inv_by_lu(sigma, inv);
+						assert(det >= eps);
 
 						const dvector_type x_mu(obs - mus_[state][c]);
 						prob(n, c) = std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 					}
 #endif
+				}
 			}
 
 			size_t i;
-			bool isTrimmed = false;
+			double grad;
+			bool isNormalized = false;
+			double numerator;
 			for (c = 0; c < C_; ++c)
 			{
-				numerator = 0.0;
-				denominator = 0.0;
-				for (n = 0; n < N; ++n)
+				if (alphas_(state, c) >= eps)  // not yet trimmed.
 				{
-					numerator += prob(n, c);
-					for (i = 0; i < C_; ++i)
-						denominator += prob(n, i) * theta[i];
-				}
+					grad = 0.0;
+					for (n = 0; n < N; ++n)
+					{
+						numerator = prob(n, c);
+						denominator = 0.0;
+						for (i = 0; i < C_; ++i)
+							denominator += prob(n, i) * theta[i];
 
-				if (theta[c] <= std::exp(-numerator / denominator))
-				{
-					theta[c] = 0.0;
-					isTrimmed = true;
+						assert(std::fabs(denominator) >= eps);
+						grad += numerator / denominator;
+					}
+
+					if (theta[c] <= std::exp(-grad / z))
+					{
+						theta[c] = 0.0;
+						isNormalized = true;
+					}
 				}
 			}
 
-			if (isTrimmed)
+			if (isNormalized)
 			{
 				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
 				assert(std::fabs(sumTheta) >= eps);
 				for (c = 0; c < C_; ++c)
-					theta[c] /= sumTheta;
+					alphas_(state, c) = theta[c] / sumTheta;
+			}
+			else
+			{
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c];
 			}
 		}
-
-		for (c = 0; c < C_; ++c)
-			alphas_(state, c) = theta[c];
+		else
+		{
+			for (c = 0; c < C_; ++c)
+				alphas_(state, c) = theta[c];
+		}
 	}
 
 	//
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		sumZeta = 0.0;
-		for (n = 0; n < N; ++n)
-			sumZeta += zeta(n, c);
+		// reestimate observation(emission) distribution in each state.
+		if (alphas_(state, c) < eps)  // already trimmed.
+		{
+			mus_[state][c].clear();
+			sigmas_[state][c].clear();
+		}
+		else
+		{
+			sumZeta = 0.0;
+			for (n = 0; n < N; ++n)
+				sumZeta += zeta(n, c);
 
-		// reestimate symbol prob in each state.
-		dvector_type &mu = mus_[state][c];
-		mu.clear();
-		for (n = 0; n < N; ++n)
-			mu += zeta(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
-		//mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
-		mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
+			dvector_type &mu = mus_[state][c];
+			mu.clear();
+			for (n = 0; n < N; ++n)
+				mu += zeta(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
+			//mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+			mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
 
-		//
-		dmatrix_type &sigma = sigmas_[state][c];
-		sigma.clear();
-		for (n = 0; n < N; ++n)
-			boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
-		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+			//
+			dmatrix_type &sigma = sigmas_[state][c];
+			sigma.clear();
+			for (n = 0; n < N; ++n)
+				boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
+			sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
 
-		//sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
-		sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+			//sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+			sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
+		}
 	}
 
 	// POSTCONDITIONS [] >>
@@ -682,8 +715,11 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 
 void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
+	const double eps = 1e-50;
 	size_t c, n, r;
 	double denominator;
+
+	dmatrix_type inv(D_, D_);
 
 	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble.
@@ -693,9 +729,7 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 		zetas.push_back(dmatrix_type(Ns[r], C_, 0.0));
 
 	{
-		const double eps = 1e-50;
 		double val;
-		dmatrix_type inv(D_, D_);
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &gammar = gammas[r];
@@ -711,6 +745,11 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 #if 0
 					val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
+					// TODO [check] >> we need to check if a component is trimmed or not.
+					//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+					if (std::fabs(alphas_(state, c)) < eps)
+						val = 0.0;
+					else
 					{
 						const dmatrix_type &sigma = sigmas_[state][c];
 						//if (0 == c)
@@ -751,8 +790,8 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
-	// reestimate mixture coefficients(weights).
 	{
+		// compute expected sufficient statistics (ESS).
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
 		for (c = 0; c < C_; ++c)
 		{
@@ -765,69 +804,161 @@ void HmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityP
 			}
 		}
 
+		// reestimate mixture coefficients(weights).
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
 
 		// trim mixture coefficients(weights).
-		if (doesTrimParameter)
+		if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 		{
-			throw std::runtime_error("not yet implemented");
-		}
+			std::vector<dmatrix_type> probs(R);
+			for (r = 0; r < R; ++r)
+			{
+				const size_t &Nr = Ns[r];
+				const dmatrix_type &observationr = observationSequences[r];
 
-		for (c = 0; c < C_; ++c)
-			alphas_(state, c) = theta[c];
+				dmatrix_type &probr = probs[r];
+				probr.resize(Nr, C_);
+				for (n = 0; n < Nr; ++n)
+				{
+					const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observationr, n);
+					for (c = 0; c < C_; ++c)
+					{
+#if 0
+						prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
+						// TODO [check] >> we need to check if a component is trimmed or not.
+						//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+						if (std::fabs(alphas_(state, c)) < eps)
+							probr(n, c) = 0.0;
+						else
+						{
+							const dmatrix_type &sigma = sigmas_[state][c];
+							//if (0 == c)
+							//	inv.resize(sigma.size1(), sigma.size2());
+							const double det = det_and_inv_by_lu(sigma, inv);
+							assert(det >= eps);
+
+							const dvector_type x_mu(obs - mus_[state][c]);
+							probr(n, c) = std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
+						}
+#endif
+					}
+				}
+			}
+
+			size_t i;
+			double grad;
+			bool isNormalized = false;
+			double numerator;
+			for (c = 0; c < C_; ++c)
+			{
+				if (alphas_(state, c) >= eps)  // not yet trimmed.
+				{
+					grad = 0.0;
+					for (r = 0; r < R; ++r)
+					{
+						const size_t &Nr = Ns[r];
+						const dmatrix_type &probr = probs[r];
+						for (n = 0; n < Nr; ++n)
+						{
+							numerator = probr(n, c);
+							denominator = 0.0;
+							for (i = 0; i < C_; ++i)
+								denominator += probr(n, i) * theta[i];
+
+							assert(std::fabs(denominator) >= eps);
+							grad += numerator / denominator;
+						}
+					}
+
+					if (theta[c] <= std::exp(-grad / z))
+					{
+						theta[c] = 0.0;
+						isNormalized = true;
+					}
+				}
+			}
+
+			if (isNormalized)
+			{
+				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
+				assert(std::fabs(sumTheta) >= eps);
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c] / sumTheta;
+			}
+			else
+			{
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c];
+			}
+		}
+		else
+		{
+			for (c = 0; c < C_; ++c)
+				alphas_(state, c) = theta[c];
+		}
 	}
 
 	//
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		sumZeta = 0.0;
-		for (r = 0; r < R; ++r)
-		{
-			const dmatrix_type &zetar = zetas[r];
-
-			for (n = 0; n < Ns[r]; ++n)
-				sumZeta += zetar(n, c);
-		}
-
 		// reestimate observation(emission) distribution in each state.
-		dvector_type &mu = mus_[state][c];
-		mu.clear();
-		for (r = 0; r < R; ++r)
+		if (alphas_(state, c) < eps)  // already trimmed.
 		{
-			const dmatrix_type &observationr = observationSequences[r];
-			const dmatrix_type &zetar = zetas[r];
-
-			for (n = 0; n < Ns[r]; ++n)
-				mu += zetar(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n);
+			mus_[state][c].clear();
+			sigmas_[state][c].clear();
 		}
-		//mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
-		mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
-
-		//
-		dmatrix_type &sigma = sigmas_[state][c];
-		sigma.clear();
-		for (r = 0; r < R; ++r)
+		else
 		{
-			const dmatrix_type &observationr = observationSequences[r];
-			const dmatrix_type &zetar = zetas[r];
+			sumZeta = 0.0;
+			for (r = 0; r < R; ++r)
+			{
+				const dmatrix_type &zetar = zetas[r];
 
-			for (n = 0; n < Ns[r]; ++n)
-				boost::numeric::ublas::blas_2::sr(sigma, zetar(n, c), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
+				for (n = 0; n < Ns[r]; ++n)
+					sumZeta += zetar(n, c);
+			}
+
+			// reestimate observation(emission) distribution in each state.
+			dvector_type &mu = mus_[state][c];
+			mu.clear();
+			for (r = 0; r < R; ++r)
+			{
+				const dmatrix_type &observationr = observationSequences[r];
+				const dmatrix_type &zetar = zetas[r];
+
+				for (n = 0; n < Ns[r]; ++n)
+					mu += zetar(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n);
+			}
+			//mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+			mu = mu * (0.999 / sumZeta) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
+
+			//
+			dmatrix_type &sigma = sigmas_[state][c];
+			sigma.clear();
+			for (r = 0; r < R; ++r)
+			{
+				const dmatrix_type &observationr = observationSequences[r];
+				const dmatrix_type &zetar = zetas[r];
+
+				for (n = 0; n < Ns[r]; ++n)
+					boost::numeric::ublas::blas_2::sr(sigma, zetar(n, c), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
+			}
+			sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+			//sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+			sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 		}
-		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
-
-		//sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
-		sigma = sigma * (0.999 / sumZeta) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 	}
 
 	// POSTCONDITIONS [] >>
 	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
-double HmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	double prob = 0.0;
 	dmatrix_type inv(D_, D_, 0.0);
@@ -1128,8 +1259,10 @@ void HmmWithMultivariateNormalMixtureObservations::doInitializeObservationDensit
 		for (size_t c = 0; c < C_; ++c)
 		{
 			dmatrix_type &sigma = sigmas_[k][c];
-			// TODO [check] >> all covariance matrices have to be symmetric positive definite.
-			sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+			// all covariance matrices have to be symmetric positive definite.
+			boost::numeric::ublas::blas_3::srk(sigma, 0.0, 1.0, sigma);  // m1 = t1 * m1 + t2 * (m2 * m2^T).
+			//sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
 		}
 
 	// POSTCONDITIONS [] >>

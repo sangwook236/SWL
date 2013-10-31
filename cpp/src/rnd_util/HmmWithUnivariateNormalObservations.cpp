@@ -187,7 +187,7 @@ void HmmWithUnivariateNormalObservations::doEstimateObservationDensityParameters
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
-double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity)
 	boost::math::normal pdf(mus_[state], sigmas_[state]);
@@ -309,6 +309,13 @@ void HmmWithUnivariateNormalObservations::doInitializeObservationDensity(const s
 		for (k = 0; k < K_; ++k, ++idx)
 			// TODO [check] >> all standard deviations have to be positive.
 			sigmas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+	}
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		// all standard deviations have to be positive.
+		if (sigmas_[k] < 0.0)
+			sigmas_[k] = -sigmas_[k];
 	}
 
 	// POSTCONDITIONS [] >>

@@ -234,7 +234,7 @@ void extract_foreground_based_on_depth_guided_map()
 			construct_depth_variation_mask_using_depth_changing(depth_input_image, depth_variation_mask);
 #endif
 
-#if 1
+#if 0
 			// show depth variation mask.
 			cv::imshow("depth variation mask", depth_variation_mask);
 #endif
@@ -258,7 +258,7 @@ void extract_foreground_based_on_depth_guided_map()
 
 		construct_valid_depth_image(depth_input_image, depth_validity_mask, valid_depth_image);
 
-#if 1
+#if 0
 		// show depth validity mask.
 		cv::imshow("depth validity mask", depth_validity_mask);
 #endif
@@ -307,15 +307,20 @@ void extract_foreground_based_on_depth_guided_map()
 		}
 #endif
 
-#if 1
+#if 0
 		// show filtered depth variation mask.
 		cv::imshow("filtered depth variation mask", filtered_depth_variation_mask);
 #endif
 
-#if 0
+#if 1
 		{
 			std::ostringstream strm;
+
+			//cv::minMaxLoc(depth_guided_map, &minVal, &maxVal);
+			//depth_guided_map.convertTo(tmp_image, CV_8UC1, 255.0 / maxVal, 0.0);
+			//cv::cvtColor(tmp_image, tmp_image, CV_GRAY2BGR);
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
+
 			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
@@ -440,11 +445,12 @@ void extract_foreground_based_on_depth_guided_map()
 			const int apertureSize = 3;  // aperture size for the Sobel() operator.
 			cv::Canny(gray, edge, lowerEdgeThreshold, upperEdgeThreshold, apertureSize, useL2);
 		}
-		
+
+/*
 		{
-			//const int distanceType = CV_DIST_C;  // C/Inf metric
-			//const int distanceType = CV_DIST_L1;  // L1 metric
-			const int distanceType = CV_DIST_L2;  // L2 metric
+			//const int distanceType = CV_DIST_C;  // C/Inf metric.
+			//const int distanceType = CV_DIST_L1;  // L1 metric.
+			const int distanceType = CV_DIST_L2;  // L2 metric.
 			//const int maskSize = CV_DIST_MASK_3;
 			//const int maskSize = CV_DIST_MASK_5;
 			const int maskSize = CV_DIST_MASK_PRECISE;
@@ -485,7 +491,7 @@ void extract_foreground_based_on_depth_guided_map()
 				cv::imshow("distance transform - result", out_img);
 			}
 		}
-
+*/
 		const int64 elapsed = cv::getTickCount() - startTime;
 		const double freq = cv::getTickFrequency();
 		const double etime = elapsed * 1000.0 / freq;

@@ -91,12 +91,18 @@ void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUs
 	//	-. all standard deviations have to be positive.
 }
 
-void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma)
+void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const bool isTrimmed, const double sumGamma)
 {
-	doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
+	if (isTrimmed)
+	{
+		mus_[state] = 0.0;
+		sigmas_[state] = 0.0;
+	}
+	else
+		doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
 }
 
-double UnivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double UnivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const
 {
 	boost::math::normal pdf(mus_[state], sigmas_[state]);
 	return boost::math::pdf(pdf, observation[0]);
@@ -224,8 +230,15 @@ void UnivariateNormalMixtureModel::doInitializeObservationDensity(const std::vec
 			sigmas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
 	}
 
+	for (size_t k = 0; k < K_; ++k)
+	{
+		// all standard deviations have to be positive.
+		if (sigmas_[k] < 0.0)
+			sigmas_[k] = -sigmas_[k];
+	}
+
 	// POSTCONDITIONS [] >>
-	//	-. all concentration parameters have to be greater than or equal to 0.
+	//	-. all standard deviations have to be positive.
 }
 
 }  // namespace swl

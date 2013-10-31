@@ -16,6 +16,7 @@
 
 //#define __TEST_MIXTURE_MODEL 1
 #define __TEST_MIXTURE_MODEL 2
+
 //#define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
@@ -394,23 +395,16 @@ void ml_learning_by_em()
 
 		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+		// mean vector & convariance matrix.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
-		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
-		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-1000.0);
+			upperBounds.push_back(1000.0);
 		}
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}
@@ -607,23 +601,16 @@ void map_learning_by_em_using_conjugate_prior()
 
 		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, pi_conj, mus_conj, betas_conj, covs_conj, nus_conj));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * D * 2;
+		const size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+		// mean vector & convariance matrix.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
-		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
-		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-1000.0);
+			upperBounds.push_back(1000.0);
 		}
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}
@@ -715,7 +702,7 @@ void map_learning_by_em_using_entropic_prior()
 */
 
 	// initialize a model.
-	const int initialization_mode = 1;
+	const int initialization_mode = 2;
 	if (1 == initialization_mode)
 	{
 #if __TEST_MIXTURE_MODEL == 1
@@ -769,7 +756,7 @@ void map_learning_by_em_using_entropic_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the number of mixture components.
+		const size_t K = 30;  // the number of mixture components.
 		const size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the entropic prior.
@@ -778,24 +765,34 @@ void map_learning_by_em_using_entropic_prior()
 		//cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D, mus_conj, betas_conj, sigmas_conj, nus_conj));
 		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+#if 0
+		// mean vector & convariance matrix.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-1000.0);
+			upperBounds.push_back(1000.0);
 		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
+#else
+		// for annulus problem.
+
+		// mean vector.
+		for (size_t i = 0; i < K * D; ++i)
 		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-100.0);
+			upperBounds.push_back(100.0);
 		}
+		// convariance matrix.
+		for (size_t i = K * D; i < numParameters; ++i)
+		{
+			lowerBounds.push_back(-10.0);
+			upperBounds.push_back(10.0);
+		}
+#endif
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}
 	else
@@ -813,8 +810,12 @@ void map_learning_by_em_using_entropic_prior()
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_100.seq");
-#elif 1
+#elif 0
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test1_1500.seq");
+#elif 1
+			// annulus problem.
+			// [ref] "Neural Networks for Pattern Recognition", C. M. Bishop, Oxford University Press, 1995, pp. 68.
+			std::ifstream stream("../data/mixture_model/annulus_data_20_to_50.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -825,8 +826,12 @@ void map_learning_by_em_using_entropic_prior()
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_100.seq");
-#elif 1
+#elif 0
 			std::ifstream stream("../data/mixture_model/bi_normal_mixture_test2_1500.seq");
+#elif 1
+			// annulus problem.
+			// [ref] "Neural Networks for Pattern Recognition", C. M. Bishop, Oxford University Press, 1995, pp. 68.
+			std::ifstream stream("../data/mixture_model/annulus_data_20_to_50.seq");
 #else
 			std::istream stream = std::cin;
 #endif

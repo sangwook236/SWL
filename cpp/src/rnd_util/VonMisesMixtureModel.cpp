@@ -156,12 +156,18 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingConju
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma)
+void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const bool isTrimmed, const double sumGamma)
 {
-	doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
+	if (isTrimmed)
+	{
+		mus_[state] = 0.0;
+		kappas_[state] = 0.0;
+	}
+	else
+		doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
 }
 
-double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const
 {
 	// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
 	//return 0.5 * std::exp(kappas_[k] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
@@ -331,6 +337,13 @@ void VonMisesMixtureModel::doInitializeObservationDensity(const std::vector<doub
 			mus_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
 		for (k = 0; k < K_; ++k, ++idx)
 			kappas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+	}
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		// all concentration parameters have to be greater than or equal to 0.
+		if (kappas_[k] < 0.0)
+			kappas_[k] = -kappas_[k];
 	}
 
 #if defined(DEBUG) || defined(_DEBUG)

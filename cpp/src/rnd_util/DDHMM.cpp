@@ -1,6 +1,8 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/DDHMM.h"
 #include "RndUtilLocalApi.h"
+#include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <numeric>
 #include <cstring>
 #include <stdexcept>
 
@@ -32,7 +34,7 @@ DDHMM::~DDHMM()
 {
 }
 
-void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &alpha, double &probability) const
+void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &alpha, double &likelihood) const
 {
 	size_t i, k;  // state indices
 
@@ -59,13 +61,13 @@ void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observation
 	}
 
 	// 3. Termination
-	probability = 0.0;
+	likelihood = 0.0;
 	n_1 = N - 1;
 	for (k = 0; k < K_; ++k)
-		probability += alpha(n_1, k);
+		likelihood += alpha(n_1, k);
 }
 
-void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dvector_type &scale, dmatrix_type &alpha, double &probability) const
+void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observations, dvector_type &scale, dmatrix_type &alpha, double &logLikelihood) const
 {
 	size_t i, k;  // state indices
 
@@ -102,12 +104,12 @@ void DDHMM::runForwardAlgorithm(const size_t N, const uivector_type &observation
 	}
 
 	// 3. Termination
-	probability = 0.0;
+	logLikelihood = 0.0;
 	for (n = 0; n < N; ++n)
-		probability += std::log(scale[n]);
+		logLikelihood += std::log(scale[n]);
 }
 
-void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &beta, double &probability) const
+void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, dmatrix_type &beta) const
 {
 	size_t i, k;  // state indices
 	size_t n_1;
@@ -131,14 +133,15 @@ void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observatio
 			beta(n_1, k) = sum;
 		}
 	}
-
+/*
 	// 3. Termination
 	probability = 0.0;
 	for (k = 0; k < K_; ++k)
 		probability += beta(0, k);
+*/
 }
 
-void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, const dvector_type &scale, dmatrix_type &beta, double &probability) const
+void DDHMM::runBackwardAlgorithm(const size_t N, const uivector_type &observations, const dvector_type &scale, dmatrix_type &beta) const
 {
 	size_t i, k;  // state indices
 	size_t n_1;
@@ -299,31 +302,32 @@ void DDHMM::runViterbiAlgorithmUsingLog(const size_t N, const uivector_type &obs
 		states[n-1] = psi(n, states[n]);
 }
 
-bool DDHMM::trainByML(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::trainByML(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood)
 {
 	dvector_type scale(N, 0.0);
-	double logprobf, logprobb;
+	double logLikelihood;
 	size_t n;
 
 	dmatrix_type alpha(N, K_, 0.0), beta(N, K_, 0.0), gamma(N, K_, 0.0);
 	std::vector<dmatrix_type> xi;
-	xi.reserve(N);
-	for (n = 0; n < N; ++n)
+	xi.reserve(N - 1);
+	for (n = 0; n < N - 1; ++n)
 		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
 	// E-step: evaluate gamma & xi.
 	{
 		// forward-backward algorithm
-		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+		runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+		runBackwardAlgorithm(N, observations, scale, beta);
 
 		computeGamma(N, alpha, beta, gamma);
 		computeXi(N, observations, alpha, beta, xi);
 	}
 
-	initLogProbability = logprobf;  // log P(observations | initial model).
-	finalLogProbability = logprobf;
+	initLogLikelihood = logLikelihood;  // log P(observations | initial model).
+	finalLogLikelihood = logLikelihood;
 
+	//
 	double numeratorA, denominatorA;
 	double delta;
 	size_t i, k;
@@ -357,8 +361,8 @@ bool DDHMM::trainByML(const size_t N, const uivector_type &observations, const d
 		// E-step: evaluate gamma & xi.
 		{
 			// forward-backward algorithm.
-			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+			runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+			runBackwardAlgorithm(N, observations, scale, beta);
 
 			computeGamma(N, alpha, beta, gamma);
 			computeXi(N, observations, alpha, beta, xi);
@@ -366,12 +370,12 @@ bool DDHMM::trainByML(const size_t N, const uivector_type &observations, const d
 
 		// compute difference between log probability of two iterations.
 #if 1
-		delta = logprobf - finalLogProbability;
+		delta = logLikelihood - finalLogLikelihood;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);
+		delta = std::fabs(logLikelihood - finalLogLikelihood);
 #endif
 
-		finalLogProbability = logprobf;  // log P(observations | estimated model).
+		finalLogLikelihood = logLikelihood;  // log P(observations | estimated model).
 		++numIteration;
 	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit.
 
@@ -384,23 +388,24 @@ bool DDHMM::trainByML(const size_t N, const uivector_type &observations, const d
 
 		//
 		std::vector<dmatrix_type> xi2;
-		xi.reserve(N);
-		for (n = 0; n < N; ++n)
-			xi.push_back(dmatrix_type(K_, K_, 0.0));
+		xi2.reserve(N - 1);
+		for (n = 0; n < N - 1; ++n)
+			xi2.push_back(dmatrix_type(K_, K_, 0.0));
 		computeXi(N, observations, alpha, beta, xi2);
 	}
 */
+
 	return true;
 }
 
-bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogLikelihoods, std::vector<double> &finalLogLikelihoods)
 {
 	const size_t R = Ns.size();  // number of observations sequences.
 	size_t Nr, r, n;
 
 	std::vector<dmatrix_type> alphas, betas, gammas;
 	std::vector<std::vector<dmatrix_type> > xis;
-	std::vector<dvector_type > scales;
+	std::vector<dvector_type> scales;
 	alphas.reserve(R);
 	betas.reserve(R);
 	gammas.reserve(R);
@@ -413,13 +418,13 @@ bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_
 		betas.push_back(dmatrix_type(Nr, K_, 0.0));
 		gammas.push_back(dmatrix_type(Nr, K_, 0.0));
 		xis.push_back(std::vector<dmatrix_type>());
-		xis[r].reserve(Nr);
-		for (n = 0; n < Nr; ++n)
+		xis[r].reserve(Nr - 1);
+		for (n = 0; n < Nr - 1; ++n)
 			xis[r].push_back(dmatrix_type(K_, K_, 0.0));
 		scales.push_back(dvector_type(Nr, 0.0));
 	}
 
-	double logprobf, logprobb;
+	double logLikelihood;
 
 	// E-step: evaluate gamma & xi.
 	for (r = 0; r < R; ++r)
@@ -434,15 +439,17 @@ bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_
 		dvector_type &scaler = scales[r];
 
 		// forward-backward algorithm.
-		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+		runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+		runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
 
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model).
+		initLogLikelihoods[r] = logLikelihood;  // log P(observations | initial model).
+		finalLogLikelihoods[r] = logLikelihood;
 	}
 
+	//
 	double numeratorPi;
 	double numeratorA, denominatorA;
 	double delta;
@@ -494,22 +501,22 @@ bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_
 			dvector_type &scaler = scales[r];
 
 			// forward-backward algorithm.
-			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+			runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+			runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 			computeGamma(Nr, alphar, betar, gammar);
 			computeXi(Nr, observations, alphar, betar, xir);
 
 			// compute difference between log probability of two iterations.
 #if 1
-			delta = logprobf - finalLogProbabilities[r];
+			delta = logLikelihood - finalLogLikelihoods[r];
 #else
-			delta = std::fabs(logprobf - finalLogProbabilities[r]);
+			delta = std::fabs(logLikelihood - finalLogLikelihoods[r]);
 #endif
 			if (delta > terminationTolerance && numIteration <= maxIteration)
 				continueToLoop = true;
 
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model).
+			finalLogLikelihoods[r] = logLikelihood;  // log P(observations | estimated model).
 		}
 
 		++numIteration;
@@ -531,8 +538,8 @@ bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_
 			{
 				Nr = Ns[r];
 				xis2.push_back(std::vector<dmatrix_type>());
-				xis2[r].reserve(Nr);
-				for (n = 0; n < Nr; ++n)
+				xis2[r].reserve(Nr - 1);
+				for (n = 0; n < Nr - 1; ++n)
 					xis2[r].push_back(dmatrix_type(K_, K_, 0.0));
 			}
 			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xis2[r]);
@@ -543,7 +550,7 @@ bool DDHMM::trainByML(const std::vector<size_t> &Ns, const std::vector<uivector_
 	return true;
 }
 
-bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood)
 {
 	//	[ref] "Maximum a Posteriori Estimation for Multivariate Gaussian Mixture Observations of Markov Chains", J.-L. Gauvain adn C.-H. Lee, TSAP, 1994.
 
@@ -551,28 +558,29 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &o
 		throw std::runtime_error("Hyperparameters of the conjugate prior have to be assigned for MAP learning.");
 
 	dvector_type scale(N, 0.0);
-	double logprobf, logprobb;
+	double logLikelihood;
 	size_t n;
 
 	dmatrix_type alpha(N, K_, 0.0), beta(N, K_, 0.0), gamma(N, K_, 0.0);
 	std::vector<dmatrix_type> xi;
-	xi.reserve(N);
-	for (n = 0; n < N; ++n)
+	xi.reserve(N - 1);
+	for (n = 0; n < N - 1; ++n)
 		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
 	// E-step: evaluate gamma & xi.
 	{
 		// forward-backward algorithm.
-		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+		runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+		runBackwardAlgorithm(N, observations, scale, beta);
 
 		computeGamma(N, alpha, beta, gamma);
 		computeXi(N, observations, alpha, beta, xi);
 	}
 
-	initLogProbability = logprobf;  // log P(observations | initial model).
-	finalLogProbability = logprobf;
+	initLogLikelihood = logLikelihood;  // log P(observations | initial model).
+	finalLogLikelihood = logLikelihood;
 
+	//
 	size_t i, k;
 	double denominatorPi = 1.0 - double(K_);
 	for (k = 0; k < K_; ++k)
@@ -613,8 +621,8 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &o
 		// E-step: evaluate gamma & xi.
 		{
 			// forward-backward algorithm.
-			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+			runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+			runBackwardAlgorithm(N, observations, scale, beta);
 
 			computeGamma(N, alpha, beta, gamma);
 			computeXi(N, observations, alpha, beta, xi);
@@ -622,12 +630,12 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &o
 
 		// compute difference between log probability of two iterations.
 #if 1
-		delta = logprobf - finalLogProbability;
+		delta = logLikelihood - finalLogLikelihood;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);
+		delta = std::fabs(logLikelihood - finalLogLikelihood);
 #endif
 
-		finalLogProbability = logprobf;  // log P(observations | estimated model).
+		finalLogLikelihood = logLikelihood;  // log P(observations | estimated model).
 		++numIteration;
 	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit.
 
@@ -640,16 +648,17 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const size_t N, const uivector_type &o
 
 		//
 		std::vector<dmatrix_type> xi2;
-		xi.reserve(N);
-		for (n = 0; n < N; ++n)
-			xi.push_back(dmatrix_type(K_, K_, 0.0));
+		xi2.reserve(N - 1);
+		for (n = 0; n < N - 1; ++n)
+			xi2.push_back(dmatrix_type(K_, K_, 0.0));
 		computeXi(N, observations, alpha, beta, xi2);
 	}
 */
+
 	return true;
 }
 
-bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogLikelihoods, std::vector<double> &finalLogLikelihoods)
 {
 	//	[ref] "Maximum a Posteriori Estimation for Multivariate Gaussian Mixture Observations of Markov Chains", J.-L. Gauvain adn C.-H. Lee, TSAP, 1994.
 
@@ -661,7 +670,7 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 
 	std::vector<dmatrix_type> alphas, betas, gammas;
 	std::vector<std::vector<dmatrix_type> > xis;
-	std::vector<dvector_type > scales;
+	std::vector<dvector_type> scales;
 	alphas.reserve(R);
 	betas.reserve(R);
 	gammas.reserve(R);
@@ -674,13 +683,13 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 		betas.push_back(dmatrix_type(Nr, K_, 0.0));
 		gammas.push_back(dmatrix_type(Nr, K_, 0.0));
 		xis.push_back(std::vector<dmatrix_type>());
-		xis[r].reserve(Nr);
-		for (n = 0; n < Nr; ++n)
+		xis[r].reserve(Nr - 1);
+		for (n = 0; n < Nr - 1; ++n)
 			xis[r].push_back(dmatrix_type(K_, K_, 0.0));
 		scales.push_back(dvector_type(Nr, 0.0));
 	}
 
-	double logprobf, logprobb;
+	double logLikelihood;
 
 	// E-step: evaluate gamma & xi.
 	for (r = 0; r < R; ++r)
@@ -695,15 +704,17 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 		dvector_type &scaler = scales[r];
 
 		// forward-backward algorithm.
-		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+		runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+		runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
 
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model).
+		initLogLikelihoods[r] = logLikelihood;  // log P(observations | initial model).
+		finalLogLikelihoods[r] = logLikelihood;
 	}
 
+	//
 	size_t i, k;
 	double denominatorPi = double(R) - double(K_);
 	for (k = 0; k < K_; ++k)
@@ -762,22 +773,22 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 			dvector_type &scaler = scales[r];
 
 			// forward-backward algorithm.
-			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+			runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+			runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 			computeGamma(Nr, alphar, betar, gammar);
 			computeXi(Nr, observations, alphar, betar, xir);
 
 			// compute difference between log probability of two iterations.
 #if 1
-			delta = logprobf - finalLogProbabilities[r];
+			delta = logLikelihood - finalLogLikelihoods[r];
 #else
-			delta = std::fabs(logprobf - finalLogProbabilities[r]);
+			delta = std::fabs(logLikelihood - finalLogLikelihoods[r]);
 #endif
 			if (delta > terminationTolerance && numIteration <= maxIteration)
 				continueToLoop = true;
 
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model).
+			finalLogLikelihoods[r] = logLikelihood;  // log P(observations | estimated model).
 		}
 
 		++numIteration;
@@ -799,8 +810,8 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 			{
 				Nr = Ns[r];
 				xis2.push_back(std::vector<dmatrix_type>());
-				xis2[r].reserve(Nr);
-				for (n = 0; n < Nr; ++n)
+				xis2[r].reserve(Nr - 1);
+				for (n = 0; n < Nr - 1; ++n)
 					xis2[r].push_back(dmatrix_type(K_, K_, 0.0));
 			}
 			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xis2[r]);
@@ -811,44 +822,67 @@ bool DDHMM::trainByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const s
 	return true;
 }
 
-bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability)
+bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood)
 {
 	// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+	// [ref] "Pattern discovery via entropy minimization", M. Brand, AISTATS, 1999.
 
 	//if (!doDoHyperparametersOfEntropicPriorExist())
 	//	throw std::runtime_error("Hyperparameters of the entropic prior have to be assigned for MAP learning.");
 
 	dvector_type scale(N, 0.0);
-	double logprobf, logprobb;
+	double logLikelihood;
 	size_t n;
 
 	dmatrix_type alpha(N, K_, 0.0), beta(N, K_, 0.0), gamma(N, K_, 0.0);
 	std::vector<dmatrix_type> xi;
-	xi.reserve(N);
-	for (n = 0; n < N; ++n)
+	xi.reserve(N - 1);
+	for (n = 0; n < N - 1; ++n)
 		xi.push_back(dmatrix_type(K_, K_, 0.0));
 
 	// E-step: evaluate gamma & xi.
 	{
 		// forward-backward algorithm.
-		runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-		runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+		runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+		runBackwardAlgorithm(N, observations, scale, beta);
 
 		computeGamma(N, alpha, beta, gamma);
 		computeXi(N, observations, alpha, beta, xi);
 	}
 
-	initLogProbability = logprobf;  // log P(observations | initial model).
-	finalLogProbability = logprobf;
+	initLogLikelihood = logLikelihood;  // log P(observations | initial model).
+	finalLogLikelihood = logLikelihood;
+
+	//
+	const double eps = 1e-50;
+
+#if 0
+	std::vector<double> omega(K_, 0.0), theta(K_, 0.0);
+#else
+	dvector_type expNumVisits1(K_, 0.0), expNumVisitsN(K_, 0.0);
+	dmatrix_type expNumTrans(K_, K_, 0.0), expNumEmit(K_, D_, 0.0);
+	std::vector<double> thetaTrans(K_, 0.0), thetaEmit(D_, 0.0);
+	bool isNormalized;
+	double grad;
+#endif
+
+	std::vector<bool> isTransitionsTrimmed, isObservationsTrimmed; //, isStatesTrimmed;
+	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
+	{
+		isTransitionsTrimmed.resize(K_, false);
+		isObservationsTrimmed.resize(K_, false);
+		//isStatesTrimmed.resize(K_, false);
+	}
 
 	double delta;
-	std::vector<double> omega(K_, 0.0), theta(K_, 0.0);
 	double entropicMAPLogLikelihood = 0.0;
+	double sumTheta, sumPi;
 	size_t i, k;
 	numIteration = 0;
 	do
 	{
 		// M-step.
+#if 0
 		for (k = 0; k < K_; ++k)
 		{
 			// reestimate frequency of state k in time n=0.
@@ -866,7 +900,7 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &ob
 			assert(retval);
 
 			// trim transition probabilities.
-			if (doesTrimParameter)
+			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
 				throw std::runtime_error("not yet implemented");
 			}
@@ -885,12 +919,83 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &ob
 			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(N, (unsigned int)k, observations, gamma, z, doesTrimParameter, terminationTolerance, maxIteration, 0.0);
 #endif
 		}
+#else
+		{
+			// compute expected sufficient statistics (ESS).
+			expNumVisits1.clear();
+			expNumVisitsN.clear();
+			expNumTrans.clear();
+			expNumEmit.clear();
+			doComputeExpectedSufficientStatistics(N, observations, gamma, xi, expNumVisits1, expNumVisitsN, expNumTrans, expNumEmit);
+			sumPi = std::accumulate(expNumVisits1.begin(), expNumVisits1.end(), 0.0);
+			assert(std::fabs(sumPi) >= eps);
+
+			for (k = 0; k < K_; ++k)
+			{
+				// reestimate frequency of state k in time n=0.
+#if 0
+				pi_[k] = 0.001 + 0.999 * gamma(0, k);
+#else
+				pi_[k] = expNumVisits1[k] / sumPi;
+#endif
+
+				// reestimate transition matrix in each state.
+				const bool retval1 = computeMAPEstimateOfMultinomialUsingEntropicPrior(boost::numeric::ublas::matrix_row<dmatrix_type>(expNumTrans, k), z, thetaTrans, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
+				assert(retval1);
+
+				// trim transition probabilities.
+				//	only trim if we are in the min. entropy setting (z = 1).
+				//	if z << 0, we would trim everything.
+				if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
+				{
+					isNormalized = false;
+					if (!isTransitionsTrimmed[k])  // not yet trimmed.
+					{
+						for (i = 0; i < K_; ++i)
+						{
+							grad = std::fabs(thetaTrans[i]) < eps ? expNumTrans(k, i) : (expNumTrans(k, i) / thetaTrans[i]);
+							if (thetaTrans[i] <= std::exp(-grad / z))
+							{
+								thetaTrans[i] = 0.0;
+								isTransitionsTrimmed[k] = true;
+								isNormalized = true;
+							}
+						}
+					}
+
+					if (isNormalized)
+					{
+						sumTheta = std::accumulate(thetaTrans.begin(), thetaTrans.end(), 0.0);
+						assert(std::fabs(sumTheta) >= eps);
+						for (i = 0; i < K_; ++i)
+							A_(k, i) = thetaTrans[i] / sumTheta;
+					}
+					else
+					{
+						for (i = 0; i < K_; ++i)
+							A_(k, i) = thetaTrans[i];
+					}
+				}
+				else
+				{
+					for (i = 0; i < K_; ++i)
+						A_(k, i) = thetaTrans[i];
+				}
+
+				// reestimate observation(emission) distribution in each state.
+				const bool retval2 = computeMAPEstimateOfMultinomialUsingEntropicPrior(boost::numeric::ublas::matrix_row<dmatrix_type>(expNumEmit, k), z, thetaEmit, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
+				assert(retval2);
+
+				doEstimateObservationDensityParametersByMAPUsingEntropicPrior(k, z, doesTrimParameter, expNumEmit, thetaEmit, isObservationsTrimmed);
+			}
+		}
+#endif
 
 		// E-step: evaluate gamma & xi.
 		{
 			// forward-backward algorithm.
-			runForwardAlgorithm(N, observations, scale, alpha, logprobf);
-			runBackwardAlgorithm(N, observations, scale, beta, logprobb);
+			runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
+			runBackwardAlgorithm(N, observations, scale, beta);
 
 			computeGamma(N, alpha, beta, gamma);
 			computeXi(N, observations, alpha, beta, xi);
@@ -898,12 +1003,12 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &ob
 
 		// compute difference between log probability of two iterations.
 #if 1
-		delta = logprobf - finalLogProbability;
+		delta = logLikelihood - finalLogLikelihood;
 #else
-		delta = std::fabs(logprobf - finalLogProbability);
+		delta = std::fabs(logLikelihood - finalLogLikelihood);
 #endif
 
-		finalLogProbability = logprobf;  // log P(observations | estimated model).
+		finalLogLikelihood = logLikelihood;  // log P(observations | estimated model).
 		++numIteration;
 	} while (delta > terminationTolerance && numIteration <= maxIteration);  // if log probability does not change much, exit.
 
@@ -916,18 +1021,20 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &ob
 
 		//
 		std::vector<dmatrix_type> xi2;
-		xi.reserve(N);
-		for (n = 0; n < N; ++n)
-			xi.push_back(dmatrix_type(K_, K_, 0.0));
+		xi2.reserve(N - 1);
+		for (n = 0; n < N - 1; ++n)
+			xi2.push_back(dmatrix_type(K_, K_, 0.0));
 		computeXi(N, observations, alpha, beta, xi2);
 	}
 */
+
 	return true;
 }
 
-bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogProbabilities, std::vector<double> &finalLogProbabilities)
+bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, std::vector<double> &initLogLikelihoods, std::vector<double> &finalLogLikelihoods)
 {
 	// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+	// [ref] "Pattern discovery via entropy minimization", M. Brand, AISTATS, 1999.
 
 	//if (!doDoHyperparametersOfEntropicPriorExist())
 	//	throw std::runtime_error("Hyperparameters of the entropic prior have to be assigned for MAP learning.");
@@ -937,7 +1044,7 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 
 	std::vector<dmatrix_type> alphas, betas, gammas;
 	std::vector<std::vector<dmatrix_type> > xis;
-	std::vector<dvector_type > scales;
+	std::vector<dvector_type> scales;
 	alphas.reserve(R);
 	betas.reserve(R);
 	gammas.reserve(R);
@@ -950,13 +1057,13 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 		betas.push_back(dmatrix_type(Nr, K_, 0.0));
 		gammas.push_back(dmatrix_type(Nr, K_, 0.0));
 		xis.push_back(std::vector<dmatrix_type>());
-		xis[r].reserve(Nr);
-		for (n = 0; n < Nr; ++n)
+		xis[r].reserve(Nr - 1);
+		for (n = 0; n < Nr - 1; ++n)
 			xis[r].push_back(dmatrix_type(K_, K_, 0.0));
 		scales.push_back(dvector_type(Nr, 0.0));
 	}
 
-	double logprobf, logprobb;
+	double logLikelihood;
 
 	// E-step: evaluate gamma & xi.
 	for (r = 0; r < R; ++r)
@@ -971,25 +1078,48 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 		dvector_type &scaler = scales[r];
 
 		// forward-backward algorithm.
-		runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-		runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+		runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+		runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 		computeGamma(Nr, alphar, betar, gammar);
 		computeXi(Nr, observations, alphar, betar, xir);
 
-		initLogProbabilities[r] = logprobf;  // log P(observations | initial model).
+		initLogLikelihoods[r] = logLikelihood;  // log P(observations | initial model).
+		finalLogLikelihoods[r] = logLikelihood;
 	}
 
-	double numeratorPi;
+	//
+	const double eps = 1e-50;
+
+#if 0
+	std::vector<double> omega(K_, 0.0), theta(K_, 0.0);
+#else
+	dvector_type expNumVisits1(K_, 0.0), expNumVisitsN(K_, 0.0);
+	dmatrix_type expNumTrans(K_, K_, 0.0), expNumEmit(K_, D_, 0.0);
+	std::vector<double> thetaTrans(K_, 0.0), thetaEmit(D_, 0.0);
+	bool isNormalized;
+	double grad;
+#endif
+
+	std::vector<bool> isTransitionsTrimmed, isObservationsTrimmed; //, isStatesTrimmed;
+	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
+	{
+		isTransitionsTrimmed.resize(K_, false);
+		isObservationsTrimmed.resize(K_, false);
+		//isStatesTrimmed.resize(K_, false);
+	}
+
+	//double numeratorPi;
 	double delta;
 	bool continueToLoop;
-	std::vector<double> omega(K_, 0.0), theta(K_, 0.0);
 	double entropicMAPLogLikelihood = 0.0;
+	double sumTheta, sumPi;
 	size_t i, k;
 	numIteration = 0;
 	do
 	{
 		// M-step.
+#if 0
 		for (k = 0; k < K_; ++k)
 		{
 			// reestimate frequency of state k in time n=0.
@@ -1011,7 +1141,7 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			assert(retval);
 
 			// trim transition probabilities.
-			if (doesTrimParameter)
+			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
 				throw std::runtime_error("not yet implemented");
 			}
@@ -1031,6 +1161,80 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			doEstimateObservationDensityParametersByMAPUsingEntropicPrior(Ns, (unsigned int)k, observationSequences, gammas, z, doesTrimParameter, terminationTolerance, maxIteration, R, 0.0);
 #endif
 		}
+#else
+		{
+			// compute expected sufficient statistics (ESS).
+			expNumVisits1.clear();
+			expNumVisitsN.clear();
+			expNumTrans.clear();
+			expNumEmit.clear();
+			doComputeExpectedSufficientStatistics(Ns, observationSequences, gammas, xis, expNumVisits1, expNumVisitsN, expNumTrans, expNumEmit);
+			sumPi = std::accumulate(expNumVisits1.begin(), expNumVisits1.end(), 0.0);
+			assert(std::fabs(sumPi) >= eps);
+
+			for (k = 0; k < K_; ++k)
+			{
+				// reestimate frequency of state k in time n=0.
+#if 0
+				numeratorPi = 0.0;
+				for (r = 0; r < R; ++r)
+					numeratorPi += gammas[r](0, k);
+				pi_[k] = 0.001 + 0.999 * numeratorPi / (double)R;
+#else
+				pi_[k] = expNumVisits1[k] / sumPi;
+#endif
+
+				// reestimate transition matrix in each state.
+				const bool retval1 = computeMAPEstimateOfMultinomialUsingEntropicPrior(boost::numeric::ublas::matrix_row<dmatrix_type>(expNumTrans, k), z, thetaTrans, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
+				assert(retval1);
+
+				// trim transition probabilities.
+				//	only trim if we are in the min. entropy setting (z = 1).
+				//	if z << 0, we would trim everything.
+				if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
+				{
+					isNormalized = false;
+					if (!isTransitionsTrimmed[k])  // not yet trimmed.
+					{
+						for (i = 0; i < K_; ++i)
+						{
+							grad = std::fabs(thetaTrans[i]) < eps ? expNumTrans(k, i) : (expNumTrans(k, i) / thetaTrans[i]);
+							if (thetaTrans[i] <= std::exp(-grad / z))
+							{
+								thetaTrans[i] = 0.0;
+								isTransitionsTrimmed[k] = true;
+								isNormalized = true;
+							}
+						}
+					}
+
+					if (isNormalized)
+					{
+						sumTheta = std::accumulate(thetaTrans.begin(), thetaTrans.end(), 0.0);
+						assert(std::fabs(sumTheta) >= eps);
+						for (i = 0; i < K_; ++i)
+							A_(k, i) = thetaTrans[i] / sumTheta;
+					}
+					else
+					{
+						for (i = 0; i < K_; ++i)
+							A_(k, i) = thetaTrans[i];
+					}
+				}
+				else
+				{
+					for (i = 0; i < K_; ++i)
+						A_(k, i) = thetaTrans[i];
+				}
+
+				// reestimate observation(emission) distribution in each state.
+				const bool retval2 = computeMAPEstimateOfMultinomialUsingEntropicPrior(boost::numeric::ublas::matrix_row<dmatrix_type>(expNumEmit, k), z, thetaEmit, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
+				assert(retval2);
+
+				doEstimateObservationDensityParametersByMAPUsingEntropicPrior(k, z, doesTrimParameter, expNumEmit, thetaEmit, isObservationsTrimmed);
+			}
+		}
+#endif
 
 		// E-step: evaluate gamma & xi.
 		continueToLoop = false;
@@ -1046,22 +1250,22 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			dvector_type &scaler = scales[r];
 
 			// forward-backward algorithm.
-			runForwardAlgorithm(Nr, observations, scaler, alphar, logprobf);
-			runBackwardAlgorithm(Nr, observations, scaler, betar, logprobb);
+			runForwardAlgorithm(Nr, observations, scaler, alphar, logLikelihood);
+			runBackwardAlgorithm(Nr, observations, scaler, betar);
 
 			computeGamma(Nr, alphar, betar, gammar);
 			computeXi(Nr, observations, alphar, betar, xir);
 
 			// compute difference between log probability of two iterations.
 #if 1
-			delta = logprobf - finalLogProbabilities[r];
+			delta = logLikelihood - finalLogLikelihoods[r];
 #else
-			delta = std::fabs(logprobf - finalLogProbabilities[r]);
+			delta = std::fabs(logLikelihood - finalLogLikelihoods[r]);
 #endif
 			if (delta > terminationTolerance && numIteration <= maxIteration)
 				continueToLoop = true;
 
-			finalLogProbabilities[r] = logprobf;  // log P(observations | estimated model).
+			finalLogLikelihoods[r] = logLikelihood;  // log P(observations | estimated model).
 		}
 
 		++numIteration;
@@ -1083,8 +1287,8 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			{
 				Nr = Ns[r];
 				xis2.push_back(std::vector<dmatrix_type>());
-				xis2[r].reserve(Nr);
-				for (n = 0; n < Nr; ++n)
+				xis2[r].reserve(Nr - 1);
+				for (n = 0; n < Nr - 1; ++n)
 					xis2[r].push_back(dmatrix_type(K_, K_, 0.0));
 			}
 			computeXi(Ns[r], observationSequences[r], alphas[r], betas[r], xis2[r]);
@@ -1114,6 +1318,84 @@ void DDHMM::computeXi(const size_t N, const uivector_type &observations, const d
 			for (i = 0; i < K_; ++i)
 				xi[n](k, i) /= sum;
 	}
+}
+
+void DDHMM::doComputeObservationLikelihood(const size_t N, const uivector_type &observations, dmatrix_type &obsLikelihood) const
+{
+	// PRECONDITIONS [] >>
+	//	-. obsLikelihood is allocated and initialized before this function is called.
+
+	// [ref] mk_dhmm_obs_lik in http://www.merl.com/people/brand/ or http://mcgill-android-parking.googlecode.com/svn/trunk/MatLab_v1.3/.
+
+	// function B = mk_dhmm_obs_lik(data, obsmat, obsmat1)
+	//
+	// MK_DHMM_OBS_LIK  Make the observation likelihood vector for a discrete HMM.
+	//
+	// Inputs:
+	// data(n) = x(n) = observation at time n
+	// obsmat(i,o) = Pr(x(n)=o | z(n)=i)
+	// obsmat1(i,o) = Pr(x(1)=o | z(1)=i). Defaults to obsmat if omitted.
+	//
+	// Output:
+	// B(i,n) = Pr(x(n) | z(t)=i)
+
+	size_t n, k;
+	for (n = 0; n < N; ++n)
+		for (k = 0; k < K_; ++k)
+			//obsLikelihood(k, n) = B_(k, observations[n]);
+			obsLikelihood(k, n) = doEvaluateEmissionProbability(k, observations[n]);
+}
+
+void DDHMM::doComputeExpectedSufficientStatistics(const size_t N, const uivector_type &observations, const dmatrix_type &gamma, const std::vector<dmatrix_type> &xi, dvector_type &expNumVisits1, dvector_type &expNumVisitsN, dmatrix_type &expNumTrans, dmatrix_type &expNumEmit) const
+{
+	// PRECONDITIONS [] >>
+	//	-. expNumVisits1, expNumVisitsN, expNumTrans, and expNumEmit are allocated and initialized before this function is called.
+
+	// [ref] compute_ess_dhmm in http://www.merl.com/people/brand/ or http://mcgill-android-parking.googlecode.com/svn/trunk/MatLab_v1.3/.
+
+	// function [loglik, exp_num_trans, exp_num_visits1, exp_num_emit, exp_num_visitsN] = ...
+	//	compute_ess_dhmm(startprob, transmat, obsmat, data, dirichlet)
+	//
+	// Compute the Expected Sufficient Statistics for a discrete Hidden Markov Model.
+	//
+	// Outputs:
+	// exp_num_trans(i,j) = sum_{n=2}^N Pr(z(n-1)=i, z(n)=j | Obs)
+	// exp_num_visits1(i) = Pr(z(1)=i | Obs)
+	// exp_num_visitsN(i) = Pr(z(N)=i | Obs) 
+	// exp_num_emit(i,o) = sum_{n=1}^N Pr(z(n)=i, x(n)=o | Obs)
+	// where Obs = O_1 .. O_N for observation sequence.
+
+	expNumVisits1 += boost::numeric::ublas::matrix_row<dmatrix_type>((dmatrix_type &)gamma, 0);
+	expNumVisitsN += boost::numeric::ublas::matrix_row<dmatrix_type>((dmatrix_type &)gamma, N - 1);
+	for (size_t n = 0; n < N; ++n)
+	{
+		if (n < N - 1) expNumTrans += xi[n];
+		boost::numeric::ublas::matrix_column<dmatrix_type>((dmatrix_type &)expNumEmit, observations[n]) += boost::numeric::ublas::matrix_row<dmatrix_type>((dmatrix_type &)gamma, n);
+	}
+}
+
+void DDHMM::doComputeExpectedSufficientStatistics(const std::vector<size_t> &Ns, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const std::vector<std::vector<dmatrix_type> > &xis, dvector_type &expNumVisits1, dvector_type &expNumVisitsN, dmatrix_type &expNumTrans, dmatrix_type &expNumEmit) const
+{
+	// PRECONDITIONS [] >>
+	//	-. expNumVisits1, expNumVisitsN, expNumTrans, and expNumEmit are allocated and initialized before this function is called.
+
+	// [ref] compute_ess_dhmm in http://www.merl.com/people/brand/ or http://mcgill-android-parking.googlecode.com/svn/trunk/MatLab_v1.3/.
+
+	// function [loglik, exp_num_trans, exp_num_visits1, exp_num_emit, exp_num_visitsN] = ...
+	//	compute_ess_dhmm(startprob, transmat, obsmat, data, dirichlet)
+	//
+	// Compute the Expected Sufficient Statistics for a discrete Hidden Markov Model.
+	//
+	// Outputs:
+	// exp_num_trans(i,j) = sum_r sum_{n=2}^N Pr(z(n-1)=i, z(n)=j | Obs(r))
+	// exp_num_visits1(i) = sum_r Pr(z(1)=i | Obs(r))
+	// exp_num_visitsN(i) = sum_r Pr(z(N)=i | Obs(r)) 
+	// exp_num_emit(i,o) = sum_r sum_{n=1}^N Pr(z(n)=i, x(n)=o | Obs(r))
+	// where Obs(r) = O_1 .. O_N for sequence r.
+
+	const size_t R = Ns.size();  // number of observations sequences.
+	for (size_t r = 0; r < R; ++r)
+		doComputeExpectedSufficientStatistics(Ns[r], observationSequences[r], gammas[r], xis[r], expNumVisits1, expNumVisitsN, expNumTrans, expNumEmit);
 }
 
 void DDHMM::generateSample(const size_t N, uivector_type &observations, uivector_type &states, const unsigned int seed /*= (unsigned int)-1*/) const

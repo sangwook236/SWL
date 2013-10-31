@@ -3,6 +3,7 @@
 #include "swl/math/MathConstant.h"
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
+#include <boost/numeric/ublas/operation.hpp>
 #include <boost/numeric/ublas/blas.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -104,16 +105,24 @@ void MultivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAP
 	//	-. all standard deviations have to be positive.
 }
 
-void MultivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma)
+void MultivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const bool isTrimmed, const double sumGamma)
 {
-	doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
+	if (isTrimmed)
+	{
+		mus_[state] = boost::numeric::ublas::zero_vector<double>(D_);
+		sigmas_[state] = boost::numeric::ublas::zero_matrix<double>(D_);
+	}
+	else
+		doEstimateObservationDensityParametersByML(N, state, observations, gamma, sumGamma);
 }
 
-double MultivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double MultivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const
 {
 	const dmatrix_type &sigma = sigmas_[state];
 	dmatrix_type inv(sigma.size1(), sigma.size2());
 	const double det = det_and_inv_by_lu(sigma, inv);
+	const double eps = 1e-50;
+	assert(det >= eps);
 
 	const dvector_type x_mu(observation - mus_[state]);
 	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
@@ -276,7 +285,7 @@ void MultivariateNormalMixtureModel::doInitializeObservationDensity(const std::v
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density.
+	const std::size_t numParameters = K_ * (D_ + D_ * D_);  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);
@@ -318,12 +327,14 @@ void MultivariateNormalMixtureModel::doInitializeObservationDensity(const std::v
 	for (size_t k = 0; k < K_; ++k)
 	{
 		dmatrix_type &sigma = sigmas_[k];
-		// TODO [check] >> all covariance matrices have to be symmetric positive definite.
-		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+		// all covariance matrices have to be symmetric positive definite.
+		boost::numeric::ublas::blas_3::srk(sigma, 0.0, 1.0, sigma);  // m1 = t1 * m1 + t2 * (m2 * m2^T).
+		//sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all concentration parameters have to be greater than or equal to 0.
+	//	-. all covariance matrices have to be symmetric positive definite.
 }
 
 }  // namespace swl

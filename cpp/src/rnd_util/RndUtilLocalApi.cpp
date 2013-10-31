@@ -76,7 +76,16 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 	boost::numeric::ublas::matrix<double> A(m);
 	// create a permutation matrix for the LU factorization
 	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
-
+/*
+	// FIXME [delete] >>
+	std::cout << "mat = ";
+	for (size_t i = 0; i < m.size1(); ++i)
+	{
+		for (size_t j = 0; j < m.size2(); ++j)
+			std::cout << m(i,j) << ", ";
+	}
+	std::cout << std::endl;
+*/
 	// perform LU factorization
 	if (boost::numeric::ublas::lu_factorize(A, pm))
 		return 0.0;
@@ -87,7 +96,16 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 
 		// back-substitute to get the inverse
 		boost::numeric::ublas::lu_substitute(A, pm, inv);
-
+/*
+		// FIXME [delete] >>
+		std::cout << "inv = ";
+		for (size_t i = 0; i < inv.size1(); ++i)
+		{
+			for (size_t j = 0; j < inv.size2(); ++j)
+				std::cout << inv(i,j) << ", ";
+		}
+		std::cout << std::endl;
+*/
 		//
 	    double det = 1.0;
 		for (std::size_t i = 0; i < pm.size(); ++i)
@@ -284,6 +302,7 @@ void UnivariateUniformProposalDistribution::setSeed(const unsigned int seed)
 bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst /*= true*/)
 {
 	// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+	// [ref] "Pattern discovery via entropy minimization", M. Brand, AISTATS, 1999.
 
 #if 0
 	// FIXME [fix] >> not working.
@@ -933,6 +952,11 @@ bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double>
 		std::cerr << "max. iteration exceeded: " << iteration << std::endl;
 
 	return true;
+}
+
+bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const boost::numeric::ublas::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst /*= true*/)
+{
+	return computeMAPEstimateOfMultinomialUsingEntropicPrior(std::vector<double>(omega.begin(), omega.end()), z, theta, logLikelihood, terminationTolerance, maxIteration, doesInitializeLambdaFirst);
 }
 
 }  // namespace swl

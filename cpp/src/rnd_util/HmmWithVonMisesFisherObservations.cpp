@@ -64,7 +64,7 @@ void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersBy
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
-double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	throw std::runtime_error("not yet implemented");
 }

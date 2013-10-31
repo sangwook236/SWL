@@ -252,8 +252,9 @@ bool classifyGesture(const cv::MatND &temporalOrientationHist)
 
 namespace swl {
 
-// temporal HoG (THoG) or temporal orientation histogram (TOH)
-void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
+// temporal HoG (THoG) or temporal orientation histogram (TOH).
+//void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG, std::ostream *streamNoMotion = NULL)
 {
 	local::createReferenceFullPhaseHistograms();
 
@@ -267,11 +268,13 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 	cv::Mat mhi, img, tmp_img, blurred;
 	cv::Mat processed_mhi, component_label_map;
 	cv::Mat contour_mask;
-	cv::Mat prev_img_for_flow, curr_img_for_flow, flow, flow_phase, flow_mag;
+	cv::Mat prev_img_for_flow, curr_img_for_flow, flow, flow_phase, flow_mag, no_flow_phase;
 	cv::MatND temporalOrientationHist;
+	std::size_t frame_no = 0;
+
 	for (;;)
 	{
-		const double timestamp = (double)std::clock() / CLOCKS_PER_SEC;  // get current time in seconds
+		const double timestamp = (double)std::clock() / CLOCKS_PER_SEC;  // get current time in seconds.
 
 		if (IMAGE_DOWNSIZING)
 		{
@@ -283,7 +286,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 				//continue;
 			}
 
-			cv::resize(frame2, frame, cv::Size(frame2.cols/2, frame2.rows/2), 0.0, 0.0, cv::INTER_LINEAR);
+			//cv::resize(frame2, frame, cv::Size(frame2.cols/2, frame2.rows/2), 0.0, 0.0, cv::INTER_LINEAR);
 			cv::pyrDown(frame2, frame);
 		}
 		else
@@ -297,13 +300,20 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 			}
 		}
 
+		if (no_flow_phase.empty() || no_flow_phase.size() != frame.size())
+		{
+			//no_flow_phase = cv::Mat::zeros(frame.size(), CV_32FC1);
+			// TODO [check] >> magic number, -1 is correct ?
+			no_flow_phase = -1.0 * cv::Mat::ones(frame.size(), CV_32FC1);
+		}
+
 		cv::cvtColor(frame, gray, CV_BGR2GRAY);
 
 		//if (blurred.empty()) blurred = gray.clone();
 
-		// smoothing
+		// smoothing.
 #if 0
-		// down-scale and up-scale the image to filter out the noise
+		// down-scale and up-scale the image to filter out the noise.
 		cv::pyrDown(gray, blurred);
 		cv::pyrUp(blurred, gray);
 #elif 0
@@ -353,7 +363,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 				prevgray.copyTo(prev_img_for_flow, contour_mask);
 				gray.copyTo(curr_img_for_flow, contour_mask);
 
-				// calculate optical flow
+				// calculate optical flow.
 				cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.5, 3, 15, 3, 5, 1.1, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
 				//cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.5, 7, 15, 3, 7, 1.5, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
 				//cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.25, 7, 15, 3, 7, 1.5, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
@@ -370,8 +380,19 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 					std::cout << "motion not detected !!!" << std::endl;
 					local::clearOrientationHistogramHistory();
 				}
+				else
+				{
 
-				// for display
+					local::accumulateOrientationHistogram(no_flow_phase, streamHoG);
+				}
+
+				// save no-motion.
+				if (NULL != streamNoMotion)
+				{
+					*streamNoMotion << frame_no << std::endl;  // 0-based index.
+				}
+
+				// for display.
 				const int fontFace = cv::FONT_HERSHEY_COMPLEX;
 				const double fontScale = 0.5;
 				cv::putText(img, "No motion", cv::Point(5, 20), fontFace, fontScale, CV_RGB(255, 0, 255), 1, 8, false);
@@ -379,15 +400,15 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 
 			if (local::computeTemporalOrientationHistogram(temporalOrientationHist))
 			{
-				// draw THoG
+				// draw THoG.
 				local::drawTemporalOrientationHistogram(temporalOrientationHist, windowName2);
 
-				//if (local::classifyGesture(temporalOrientationHist))  // not yet implemented
+				//if (local::classifyGesture(temporalOrientationHist))  // not yet implemented.
 				{
 					// FIXME [implement] >>
 				}
 
-				// save THoG
+				// save THoG.
 				if (NULL != streamTHoG)
 				{
 					for (int col = 0; col < temporalOrientationHist.cols; ++col)
@@ -402,10 +423,12 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 		}
 
 		const int ch = cv::waitKey(1);
-		if ('q' == ch || 27 == ch)  // 'q' or ESC
+		if ('q' == ch || 27 == ch)  // 'q' or ESC.
 			break;
 
 		std::swap(prevgray, gray);
+
+		++frame_no;
 	}
 
 	cv::destroyWindow(windowName1);

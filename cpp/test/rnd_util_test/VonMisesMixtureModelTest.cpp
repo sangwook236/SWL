@@ -372,23 +372,16 @@ void ml_learning_by_em()
 
 		cdmm.reset(new swl::VonMisesMixtureModel(K));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * (1 + 1 * 1);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+		// means & concentration parameters.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
-		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
-		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-100.0);
+			upperBounds.push_back(100.0);
 		}
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}
@@ -563,23 +556,16 @@ void map_learning_by_em_using_conjugate_prior()
 
 		cdmm.reset(new swl::VonMisesMixtureModel(K, pi_conj, ms_conj, Rs_conj, cs_conj));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * (1 + 1 * 1);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+		// means & concentration parameters.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
-		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
-		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-100.0);
+			upperBounds.push_back(100.0);
 		}
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}
@@ -737,23 +723,16 @@ void map_learning_by_em_using_entropic_prior()
 		//cdmm.reset(new swl::VonMisesMixtureModel(K, ms_conj, Rs_conj, cs_conj));
 		cdmm.reset(new swl::VonMisesMixtureModel(K));
 
-		// the total number of parameters of observation density = K * D * 2.
+		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * 1 * 2;
+		const size_t numParameters = K * (1 + 1 * 1);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
-		// means.
-		for (size_t i = 0; i < K; ++i)
+		// means & concentration parameters.
+		for (size_t i = 0; i < numParameters; ++i)
 		{
-			lowerBounds.push_back(-10000.0);
-			upperBounds.push_back(10000.0);
-		}
-		// standard deviations: sigma > 0.
-		const double small = 1.0e-10;
-		for (size_t i = K; i < numParameters; ++i)
-		{
-			lowerBounds.push_back(small);
-			upperBounds.push_back(10000.0);
+			lowerBounds.push_back(-100.0);
+			upperBounds.push_back(100.0);
 		}
 		cdmm->initializeModel(lowerBounds, upperBounds);
 	}

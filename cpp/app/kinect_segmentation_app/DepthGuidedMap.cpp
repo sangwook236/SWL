@@ -202,8 +202,8 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 	// pre-process depth variation mask.
 	cv::Mat truncated_depth_variation_mask;
 	{
-		truncated_depth_variation_mask = depth_variation_mask > 0.05;  // CV_8UC1
-		//truncated_depth_variation_mask = 0.05 < depth_variation_mask & depth_variation_mask < 0.5;  // CV_8UC1
+		truncated_depth_variation_mask = depth_variation_mask > 0.05;  // CV_8UC1.
+		//truncated_depth_variation_mask = 0.05 < depth_variation_mask & depth_variation_mask < 0.5;  // CV_8UC1.
 
 		cv::dilate(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
 		cv::erode(truncated_depth_variation_mask, truncated_depth_variation_mask, selement3, cv::Point(-1, -1), 3);
@@ -373,6 +373,7 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		//const int maskSize = CV_DIST_MASK_PRECISE;
 		cv::distanceTransform(filtered_depth_variation_mask, dist32f, distanceType, maskSize);
 
+#if 0
 		{
 			double minVal, maxVal;
 			cv::minMaxLoc(dist32f, &minVal, &maxVal);
@@ -380,6 +381,7 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 			dist32f.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
 			cv::imshow("distance transform of foreground mask", tmp_image);
 		}
+#endif
 
 #if 1
 		foreground_mask = dist32f >= 5.0f;

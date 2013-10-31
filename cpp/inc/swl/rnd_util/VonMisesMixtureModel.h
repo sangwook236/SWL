@@ -42,10 +42,11 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ].
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
-	/*virtual*/ double doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const;
+	/*virtual*/ double doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const;
 
-	// if seed != -1, the seed value is set.
+	//
 	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const;
+	// if seed != -1, the seed value is set.
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
 	/*virtual*/ void doFinalizeRandomSampleGeneration() const;
 
@@ -59,7 +60,7 @@ protected:
 
 	// MAP learning using entropic prior.
 	//	-. for IID observations.
-	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double sumGamma);
+	/*virtual*/ void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const bool isTrimmed, const double sumGamma);
 
 	//
 	/*virtual*/ bool doReadObservationDensity(std::istream &stream);

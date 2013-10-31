@@ -305,7 +305,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	doEstimateObservationDensityParametersByML(Ns, state, observationSequences, gammas, R, denominatorA);
 }
 
-double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
 	//return 0.5 * std::exp(kappas_[state] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
@@ -466,6 +466,13 @@ void HmmWithVonMisesObservations::doInitializeObservationDensity(const std::vect
 			mus_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
 		for (k = 0; k < K_; ++k, ++idx)
 			kappas_[k] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+	}
+
+	for (size_t k = 0; k < K_; ++k)
+	{
+		// all concentration parameters have to be greater than or equal to 0.
+		if (kappas_[k] < 0.0)
+			kappas_[k] = -kappas_[k];
 	}
 
 #if defined(DEBUG) || defined(_DEBUG)

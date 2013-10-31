@@ -59,6 +59,15 @@ void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_image, const cv::Mat
 	rgb_image.copyTo(tmp_image, cv::Mat(grabCut_mask & 1));
 	cv::imshow("GrabCut result", tmp_image);
 #endif
+
+#if 0
+	{
+		static int idx = 0;
+		std::ostringstream strm;
+		strm << "../data/kinect_segmentation/grabcut_result_" << idx++ << ".png";
+		cv::imwrite(strm.str(), tmp_image);
+	}
+#endif
 }
 	
 }  // namespace swl

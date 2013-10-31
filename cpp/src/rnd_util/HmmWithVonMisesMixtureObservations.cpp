@@ -578,8 +578,10 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 #if 0
 				val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
-				//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
-				val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+				// TODO [check] >> we need to check if a component is trimmed or not.
+				//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+				//val = std::fabs(alphas_(state, c)) < eps ? 0.0 : (alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c))));
+				val = std::fabs(alphas_(state, c)) < eps ? 0.0 : (alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c)));
 #endif
 
 				zeta(n, c) = val;
@@ -611,8 +613,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
-	// reestimate mixture coefficients(weights).
 	{
+		// compute expected sufficient statistics (ESS).
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
 		for (c = 0; c < C_; ++c)
 		{
@@ -621,17 +623,14 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 				omega[c] += zeta(n, c);
 		}
 
+		// reestimate mixture coefficients(weights).
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
 
 		// trim mixture coefficients(weights).
-		if (doesTrimParameter)
+		if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 		{
-			// FIXME [fix] >>
-			throw std::runtime_error("not yet implemented");
-
-			double numerator;
 			dmatrix_type prob(N, C_, 0.0);
 			for (n = 0; n < N; ++n)
 			{
@@ -640,94 +639,119 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 #if 0
 					prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
-					//prob(n, c) = 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
-					prob(n, c) = evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+					// TODO [check] >> we need to check if a component is trimmed or not.
+					//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+					//prob(n, c) = std::fabs(alphas_(state, c)) < eps ? 0.0 : (0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c))));
+					prob(n, c) = std::fabs(alphas_(state, c)) < eps ? 0.0 : evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
 #endif
 			}
 
 			size_t i;
-			bool isTrimmed = false;
+			double grad;
+			bool isNormalized = false;
+			double numerator;
 			for (c = 0; c < C_; ++c)
 			{
-				numerator = 0.0;
-				denominator = 0.0;
-				for (n = 0; n < N; ++n)
+				if (alphas_(state, c) >= eps)  // not yet trimmed.
 				{
-					numerator += prob(n, c);
-					for (i = 0; i < C_; ++i)
-						denominator += prob(n, i) * theta[i];
-				}
+					grad = 0.0;
+					for (n = 0; n < N; ++n)
+					{
+						numerator = prob(n, c);
+						denominator = 0.0;
+						for (i = 0; i < C_; ++i)
+							denominator += prob(n, i) * theta[i];
 
-				if (theta[c] <= std::exp(-numerator / denominator))
-				{
-					theta[c] = 0.0;
-					isTrimmed = true;
+						assert(std::fabs(denominator) >= eps);
+						grad += numerator / denominator;
+					}
+
+					if (theta[c] <= std::exp(-grad / z))
+					{
+						theta[c] = 0.0;
+						isNormalized = true;
+					}
 				}
 			}
 
-			if (isTrimmed)
+			if (isNormalized)
 			{
 				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
 				assert(std::fabs(sumTheta) >= eps);
 				for (c = 0; c < C_; ++c)
-					theta[c] /= sumTheta;
+					alphas_(state, c) = theta[c] / sumTheta;
+			}
+			else
+			{
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c];
 			}
 		}
-
-		for (c = 0; c < C_; ++c)
-			alphas_(state, c) = theta[c];
+		else
+		{
+			for (c = 0; c < C_; ++c)
+				alphas_(state, c) = theta[c];
+		}
 	}
 
 	//
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		sumZeta = 0.0;
-		for (n = 0; n < N; ++n)
-			sumZeta += zeta(n, c);
-
 		// reestimate observation(emission) distribution in each state.
-		numerator = denominator = 0.0;
-		for (n = 0; n < N; ++n)
+		if (alphas_(state, c) < eps)  // already trimmed.
 		{
-			numerator += zeta(n, c) * std::sin(observations(n, 0));
-			denominator += zeta(n, c) * std::cos(observations(n, 0));
+			mus_(state, c) = 0.0;
+			kappas_(state, c) = 0.0;
 		}
-
-		double &mu = mus_(state, c);
-
-		// TODO [check] >> check the range of each mu, [0, 2 * pi).
-#if 0
-		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
-		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
-#else
-		//mu = std::atan2(numerator, denominator);
-		mu = std::atan2(numerator, denominator) + MathConstant::PI;
-#endif
-		assert(0.0 <= mu && mu < MathConstant::_2_PI);
-
-		//
-		numerator = 0.0;
-		for (n = 0; n < N; ++n)
-			numerator += zeta(n, c) * std::cos(observations(n, 0) - mu);
-
-#if 0
-		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
-#else
-		const double A = numerator / sumZeta;  // -1 < A < 1 (?).
-#endif
-		// FIXME [modify] >> lower & upper bounds have to be adjusted.
-		const double lb = -2000.0, ub = 2000.0;
-		const std::size_t maxIteration = 100;
-		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
-		assert(retval);
-
-		// TODO [check] >>
-		if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
+		else
 		{
-			kappas_(state, c) = -kappas_(state, c);
-			mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+			sumZeta = 0.0;
+			for (n = 0; n < N; ++n)
+				sumZeta += zeta(n, c);
+
+			numerator = denominator = 0.0;
+			for (n = 0; n < N; ++n)
+			{
+				numerator += zeta(n, c) * std::sin(observations(n, 0));
+				denominator += zeta(n, c) * std::cos(observations(n, 0));
+			}
+
+			double &mu = mus_(state, c);
+
+			// TODO [check] >> check the range of each mu, [0, 2 * pi).
+#if 0
+			//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+			mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+#else
+			//mu = std::atan2(numerator, denominator);
+			mu = std::atan2(numerator, denominator) + MathConstant::PI;
+#endif
 			assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+			//
+			numerator = 0.0;
+			for (n = 0; n < N; ++n)
+				numerator += zeta(n, c) * std::cos(observations(n, 0) - mu);
+
+#if 0
+			const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
+#else
+			const double A = numerator / sumZeta;  // -1 < A < 1 (?).
+#endif
+			// FIXME [modify] >> lower & upper bounds have to be adjusted.
+			const double lb = -2000.0, ub = 2000.0;
+			const std::size_t maxIteration = 100;
+			const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
+			assert(retval);
+
+			// TODO [check] >>
+			if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
+			{
+				kappas_(state, c) = -kappas_(state, c);
+				mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+				assert(0.0 <= mu && mu < MathConstant::_2_PI);
+			}
 		}
 	}
 
@@ -738,6 +762,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 
 void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
+	const double eps = 1e-50;
 	size_t c, n, r;
 	double numerator, denominator;
 
@@ -749,7 +774,6 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 		zetas.push_back(dmatrix_type(Ns[r], C_, 0.0));
 
 	{
-		const double eps = 1e-50;
 		double val;
 		for (r = 0; r < R; ++r)
 		{
@@ -766,8 +790,10 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 #if 0
 					val = alphas_(state, c) * doEvaluateEmissionProbability(state, obs);  // error !!!
 #else
-					//val = alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c)));
-					val = alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+					// TODO [check] >> we need to check if a component is trimmed or not.
+					//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+					//val = std::fabs(alphas_(state, c)) < eps ? 0.0 : (alphas_(state, c) * 0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c))));
+					val = std::fabs(alphas_(state, c)) < eps ? 0.0 : (alphas_(state, c) * evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c)));
 #endif
 
 					zetar(n, c) = val;
@@ -799,8 +825,8 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
-	// reestimate mixture coefficients(weights).
 	{
+		// compute expected sufficient statistics (ESS).
 		std::vector<double> omega(C_, 0.0), theta(C_, 0.0);
 		for (c = 0; c < C_; ++c)
 		{
@@ -813,87 +839,168 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 			}
 		}
 
+		// reestimate mixture coefficients(weights).
 		double entropicMAPLogLikelihood = 0.0;
 		const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, false);
 		assert(retval);
 
 		// trim mixture coefficients(weights).
-		if (doesTrimParameter)
+		if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 		{
-			throw std::runtime_error("not yet implemented");
-		}
+			std::vector<dmatrix_type> probs(R);
+			for (r = 0; r < R; ++r)
+			{
+				const size_t &Nr = Ns[r];
+				const dmatrix_type &observationr = observationSequences[r];
 
-		for (c = 0; c < C_; ++c)
-			alphas_(state, c) = theta[c];
+				dmatrix_type &probr = probs[r];
+				probr.resize(Nr, C_);
+				for (n = 0; n < Nr; ++n)
+				{
+					const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observationr, n);
+					for (c = 0; c < C_; ++c)
+					{
+#if 0
+						prob(n, c) = doEvaluateEmissionProbability(state, obs);  // error !!!
+#else
+						// TODO [check] >> we need to check if a component is trimmed or not.
+						//	Here, we use the value of alpha in order to check if a component is trimmed or not.
+						//probr(n, c) = std::fabs(alphas_(state, c)) < eps ? 0.0 : (0.5 * std::exp(kappas_(state, c) * std::cos(obs[0] - mus_(state, c))) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_(state, c))));
+						probr(n, c) = std::fabs(alphas_(state, c)) < eps ? 0.0 : evaluateVonMisesDistribution(obs[0], mus_(state, c), kappas_(state, c));
+#endif
+					}
+				}
+			}
+
+			size_t i;
+			double grad;
+			bool isNormalized = false;
+			double numerator;
+			for (c = 0; c < C_; ++c)
+			{
+				if (alphas_(state, c) >= eps)  // not yet trimmed.
+				{
+					grad = 0.0;
+					for (r = 0; r < R; ++r)
+					{
+						const size_t &Nr = Ns[r];
+						const dmatrix_type &probr = probs[r];
+						for (n = 0; n < Nr; ++n)
+						{
+							numerator = probr(n, c);
+							denominator = 0.0;
+							for (i = 0; i < C_; ++i)
+								denominator += probr(n, i) * theta[i];
+
+							assert(std::fabs(denominator) >= eps);
+							grad += numerator / denominator;
+						}
+					}
+
+					if (theta[c] <= std::exp(-grad / z))
+					{
+						theta[c] = 0.0;
+						isNormalized = true;
+					}
+				}
+			}
+
+			if (isNormalized)
+			{
+				double sumTheta = std::accumulate(theta.begin(), theta.end(), 0.0);
+				assert(std::fabs(sumTheta) >= eps);
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c] / sumTheta;
+			}
+			else
+			{
+				for (c = 0; c < C_; ++c)
+					alphas_(state, c) = theta[c];
+			}
+		}
+		else
+		{
+			for (c = 0; c < C_; ++c)
+				alphas_(state, c) = theta[c];
+		}
 	}
 
 	//
 	double sumZeta;
 	for (c = 0; c < C_; ++c)
 	{
-		sumZeta = 0.0;
-		for (r = 0; r < R; ++r)
-		{
-			const dmatrix_type &zetar = zetas[r];
-
-			for (n = 0; n < Ns[r]; ++n)
-				sumZeta += zetar(n, c);
-		}
-
 		// reestimate observation(emission) distribution in each state.
-		numerator = denominator = 0.0;
-		for (r = 0; r < R; ++r)
+		if (alphas_(state, c) < eps)  // already trimmed.
 		{
-			const dmatrix_type &observationr = observationSequences[r];
-			const dmatrix_type &zetar = zetas[r];
-
-			for (n = 0; n < Ns[r]; ++n)
+			mus_(state, c) = 0.0;
+			kappas_(state, c) = 0.0;
+		}
+		else
+		{
+			sumZeta = 0.0;
+			for (r = 0; r < R; ++r)
 			{
-				numerator += zetar(n, c) * std::sin(observationr(n, 0));
-				denominator += zetar(n, c) * std::cos(observationr(n, 0));
+				const dmatrix_type &zetar = zetas[r];
+
+				for (n = 0; n < Ns[r]; ++n)
+					sumZeta += zetar(n, c);
 			}
-		}
 
-		double &mu = mus_(state, c);
+			// reestimate observation(emission) distribution in each state.
+			numerator = denominator = 0.0;
+			for (r = 0; r < R; ++r)
+			{
+				const dmatrix_type &observationr = observationSequences[r];
+				const dmatrix_type &zetar = zetas[r];
 
-		// TODO [check] >> check the range of each mu, [0, 2 * pi).
+				for (n = 0; n < Ns[r]; ++n)
+				{
+					numerator += zetar(n, c) * std::sin(observationr(n, 0));
+					denominator += zetar(n, c) * std::cos(observationr(n, 0));
+				}
+			}
+
+			double &mu = mus_(state, c);
+
+			// TODO [check] >> check the range of each mu, [0, 2 * pi).
 #if 0
-		//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
-		mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
+			//mu = 0.001 + 0.999 * std::atan2(numerator, denominator);
+			mu = 0.001 + 0.999 * std::atan2(numerator, denominator) + MathConstant::PI;
 #else
-		//mu = std::atan2(numerator, denominator);
-		mu = std::atan2(numerator, denominator) + MathConstant::PI;
+			//mu = std::atan2(numerator, denominator);
+			mu = std::atan2(numerator, denominator) + MathConstant::PI;
 #endif
-		assert(0.0 <= mu && mu < MathConstant::_2_PI);
-
-		//
-		numerator = 0.0;
-		for (r = 0; r < R; ++r)
-		{
-			const dmatrix_type &observationr = observationSequences[r];
-			const dmatrix_type &zetar = zetas[r];
-
-			for (n = 0; n < Ns[r]; ++n)
-				numerator += zetar(n, c) * std::cos(observationr(n, 0) - mu);
-		}
-
-#if 0
-		const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
-#else
-		const double A = numerator / sumZeta;  // -1 < A < 1 (?).
-#endif
-		// FIXME [modify] >> lower & upper bounds have to be adjusted.
-		const double lb = -10000.0, ub = 10000.0;
-		const std::size_t maxIteration = 100;
-		const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
-		assert(retval);
-
-		// TODO [check] >>
-		if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
-		{
-			kappas_(state, c) = -kappas_(state, c);
-			mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
 			assert(0.0 <= mu && mu < MathConstant::_2_PI);
+
+			//
+			numerator = 0.0;
+			for (r = 0; r < R; ++r)
+			{
+				const dmatrix_type &observationr = observationSequences[r];
+				const dmatrix_type &zetar = zetas[r];
+
+				for (n = 0; n < Ns[r]; ++n)
+					numerator += zetar(n, c) * std::cos(observationr(n, 0) - mu);
+			}
+
+#if 0
+			const double A = 0.001 + 0.999 * numerator / sumZeta;  // -1 < A < 1 (?).
+#else
+			const double A = numerator / sumZeta;  // -1 < A < 1 (?).
+#endif
+			// FIXME [modify] >> lower & upper bounds have to be adjusted.
+			const double lb = -10000.0, ub = 10000.0;
+			const std::size_t maxIteration = 100;
+			const bool retval = one_dim_root_finding_using_f(A, lb, ub, maxIteration, kappas_(state, c));
+			assert(retval);
+
+			// TODO [check] >>
+			if (kappas_(state, c) < 0.0)  // kappa >= 0.0.
+			{
+				kappas_(state, c) = -kappas_(state, c);
+				mu = std::fmod(mu + MathConstant::PI, MathConstant::_2_PI);
+				assert(0.0 <= mu && mu < MathConstant::_2_PI);
+			}
 		}
 	}
 
@@ -902,7 +1009,7 @@ void HmmWithVonMisesMixtureObservations::doEstimateObservationDensityParametersB
 	//	-. all concentration parameters have to be greater than or equal to 0.
 }
 
-double HmmWithVonMisesMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const
+double HmmWithVonMisesMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	double prob = 0.0;
 	for (size_t c = 0; c < C_; ++c)
@@ -1164,6 +1271,14 @@ void HmmWithVonMisesMixtureObservations::doInitializeObservationDensity(const st
 			for (c = 0; c < C_; ++c, ++idx)
 				kappas_(k, c) = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
 	}
+
+	for (size_t k = 0; k < K_; ++k)
+		for (size_t c = 0; c < C_; ++c)
+		{
+			// all concentration parameters have to be greater than or equal to 0.
+			if (kappas_(k, c) < 0.0)
+				kappas_(k, c) = -kappas_(k, c);
+		}
 
 #if defined(DEBUG) || defined(_DEBUG)
 	for (size_t k = 0; k < K_; ++k)

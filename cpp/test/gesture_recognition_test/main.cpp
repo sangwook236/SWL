@@ -22,7 +22,8 @@ namespace local {
 namespace swl {
 
 void gestureRecognitionByHistogram(cv::VideoCapture &capture);
-void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
+//void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG);
+void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG, std::ostream *streamNoMotion = NULL);
 
 bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, const std::string &output_directory_path, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD)
 {
@@ -44,12 +45,21 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 		return false;
 	}
 
+	const std::string no_motion_filename(avi_filename.substr(0, pos) + "_no_motion.txt");
+	std::ofstream streamNoMotion(output_directory_path + '/' + no_motion_filename, std::ios::out);
+	if (!streamNoMotion.is_open())
+	{
+		std::cout << "a no-motion file, '" << (output_directory_path + '/' + no_motion_filename) << "' not opened" << std::endl;
+		return false;
+	}
+
 	try
 	{
 		//gestureRecognitionByHistogram(capture);
 
-		// temporal HoG (THoG) or temporal orientation histogram (TOH)
-		recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, (streamTHoG.is_open() ? &streamTHoG : NULL), (streamHoG.is_open() ? &streamHoG : NULL));
+		// temporal HoG (THoG) or temporal orientation histogram (TOH).
+		//recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, (streamTHoG.is_open() ? &streamTHoG : NULL), (streamHoG.is_open() ? &streamHoG : NULL));
+		recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, (streamTHoG.is_open() ? &streamTHoG : NULL), (streamHoG.is_open() ? &streamHoG : NULL), (streamNoMotion.is_open() ? &streamNoMotion : NULL));
 	}
 	catch (const cv::Exception &)
 	{
@@ -99,19 +109,19 @@ int main(int argc, char *argv[])
 		{
 			//swl::gestureRecognitionByHistogram(capture);
 
-			// temporal HoG (THoG) or temporal orientation histogram (TOH)
+			// temporal HoG (THoG) or temporal orientation histogram (TOH).
 			const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
 			const bool IMAGE_DOWNSIZING = true;
 
-			const double MHI_TIME_DURATION = 0.5;  // [sec]
+			const double MHI_TIME_DURATION = 0.5;  // [sec].
 			//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 			const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
 			const bool IGNORE_NO_MOION = true;
 			swl::recognizeGestureBasedOnTHoG(capture, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD, NULL, NULL);
 		}
-#elif 1
-		// for AIM's gesture dataset
+#elif 0
+		// for AIM's gesture dataset.
 
 		const std::string input_directory_path("F:/AIM_gesture_dataset/s01_sangwook.lee_20120719_per_gesture_avi_640x480_30fps_3000kbps");
 		const std::string output_directory_path(input_directory_path + "_thog");
@@ -145,7 +155,7 @@ int main(int argc, char *argv[])
 				const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
 				const bool IMAGE_DOWNSIZING = true;
 
-				const double MHI_TIME_DURATION = 0.5;  // [sec]
+				const double MHI_TIME_DURATION = 0.5;  // [sec].
 				//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 				const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 
@@ -158,20 +168,20 @@ int main(int argc, char *argv[])
 				retval = EXIT_FAILURE;
 			}
 		}
-#else
-		// for ChaLearn Gesture Challenge dataset
+#elif 1
+		// for ChaLearn Gesture Challenge dataset.
 		//	[ref] http://gesture.chalearn.org/data
 
-		const int DATASET_START_INDEX = 1, DATASET_END_INDEX = 10;
+		const int DATASET_START_INDEX = 11, DATASET_END_INDEX = 20;
 		for (int idx = DATASET_START_INDEX; idx <= DATASET_END_INDEX; ++idx)
 		{
 			std::ostringstream sstream;
 			sstream << std::setw(2) << std::setfill('0') << idx;
 			const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/quasi_lossless_format/train_data/devel" + sstream.str());
 			//const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/lossy_format/devel-1-20_valid-1-20/devel" + sstream.str());
-			const std::string avi_file_prefix = "M_";  // RGB image
-			//const std::string avi_file_prefix = "K_";  // depth image
-			const std::string output_directory_path(input_directory_path + "_thog");
+			const std::string avi_file_prefix = "M_";  // RGB image.
+			//const std::string avi_file_prefix = "K_";  // depth image.
+			const std::string output_directory_path(input_directory_path + "_thog2");
 
 			std::vector<std::string> avi_filenames;
 #if 0
@@ -222,7 +232,7 @@ int main(int argc, char *argv[])
 					const int IMAGE_WIDTH = 320, IMAGE_HEIGHT = 240;
 					const bool IMAGE_DOWNSIZING = false;
 
-					const double MHI_TIME_DURATION = 0.5;  // [sec]
+					const double MHI_TIME_DURATION = 0.5;  // [sec].
 					//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 					const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 200 : 400, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
 

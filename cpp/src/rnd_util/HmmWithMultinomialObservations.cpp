@@ -1,6 +1,7 @@
 #include "swl/Config.h"
 #include "swl/rnd_util/HmmWithMultinomialObservations.h"
 #include "RndUtilLocalApi.h"
+#include <numeric>
 #include <cstring>
 #include <stdexcept>
 
@@ -127,8 +128,9 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	}
 }
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const unsigned int state, const double z, const bool doesTrimParameter, const dmatrix_type &expNumEmit, std::vector<double> &thetaEmit, std::vector<bool> &isObservationsTrimmed)
 {
+#if 0
 	// M-step.
 	// reestimate observation(emission) distribution in each state
 
@@ -149,45 +151,47 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	assert(retval);
 
 	// trim parameters.
-	if (doesTrimParameter)
+	const double eps = 1e-50;
+	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 	{
 		throw std::runtime_error("not yet implemented");
 	}
 
 	for (d = 0; d < D_; ++d)
 		B_(state, d) = theta[d];
-}
+#else
+	const double eps = 1e-50;
 
-void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
-{
-	// M-step.
-	// reestimate observation(emission) distribution in each state
-
-	std::vector<double> omega(D_, 0.0), theta(D_, 0.0);
-	size_t d, n, r;
-	for (d = 0; d < D_; ++d)
+	// trim transition probabilities.
+	//	only trim if we are in the min. entropy setting (z = 1).
+	//	if z << 0, we would trim everything.
+	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 	{
-		omega[d] = 0.0;
-		for (r = 0; r < R; ++r)
-			for (n = 0; n < Ns[r]; ++n)
+		if (!isObservationsTrimmed[state])  // not yet trimmed.
+		{
+			double grad;
+			for (size_t d = 0; d < D_; ++d)
 			{
-				if (observationSequences[r][n] == (unsigned int)d)
-					omega[d] += gammas[r](n, state);
+				grad = expNumEmit(state, d) / (std::fabs(thetaEmit[d]) < eps ? 1.0 : thetaEmit[d]);
+				if (thetaEmit[d] <= std::exp(-grad / z))
+				{
+					thetaEmit[d] = 0.0;
+					isObservationsTrimmed[state] = true;
+				}
 			}
+
+			const double sumTheta = std::accumulate(thetaEmit.begin(), thetaEmit.end(), 0.0);
+			assert(std::fabs(sumTheta) >= eps);
+			for (size_t d = 0; d < D_; ++d)
+				B_(state, d) = thetaEmit[d] / sumTheta; 
+		}
 	}
-
-	double entropicMAPLogLikelihood = 0.0;
-	const bool retval = computeMAPEstimateOfMultinomialUsingEntropicPrior(omega, z, theta, entropicMAPLogLikelihood, terminationTolerance, maxIteration, true);
-	assert(retval);
-
-	// trim parameters.
-	if (doesTrimParameter)
+	else
 	{
-		throw std::runtime_error("not yet implemented");
+		for (size_t d = 0; d < D_; ++d)
+			B_(state, d) = thetaEmit[d];
 	}
-
-	for (d = 0; d < D_; ++d)
-		B_(state, d) = theta[d];
+#endif
 }
 
 unsigned int HmmWithMultinomialObservations::doGenerateObservationsSymbol(const unsigned int state) const

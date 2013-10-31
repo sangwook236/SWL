@@ -55,6 +55,7 @@ protected:
 	virtual void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity) = 0;
 	virtual void doNormalizeObservationDensityParameters() = 0;
 
+	// if seed != -1, the seed value is set.
 	virtual void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const
 	{
 		// do nothing.

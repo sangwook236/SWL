@@ -36,15 +36,15 @@ public:
 
 	// ML learning.
 	//	-. for IID observations.
-	bool trainByML(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByML(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood);
 
 	// MAP learning using conjugate prior.
 	//	-. for IID observations.
-	bool trainByMAPUsingConjugatePrior(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByMAPUsingConjugatePrior(const size_t N, const dmatrix_type &observations, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood);
 
 	// MAP learning using entropic prior.
 	//	-. for IID observations.
-	bool trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogProbability, double &finalLogProbability);
+	bool trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &observations, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, size_t &numIteration, double &initLogLikelihood, double &finalLogLikelihood);
 
 	// if seed != -1, the seed value is set
 	void generateSample(const size_t N, dmatrix_type &observations, std::vector<unsigned int> &states, const unsigned int seed = (unsigned int)-1) const;
@@ -54,11 +54,11 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ].
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
-	double evaluateEmissionProbability(const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const;
+	double evaluateEmissionProbability(const dvector_type &observation) const;
 
-	virtual double doEvaluateMixtureComponentProbability(const unsigned int state, const boost::numeric::ublas::matrix_row<const dmatrix_type> &observation) const = 0;
+	virtual double doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const = 0;
 
-	// if seed != -1, the seed value is set.
+	//
 	virtual void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const = 0;
 
 	// ML learning.
@@ -71,10 +71,10 @@ protected:
 
 	// MAP learning using entropic prior.
 	//	-. for IID observations.
-	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double sumGamma) = 0;
+	virtual void doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const bool isTrimmed, const double sumGamma) = 0;
 
 private:
-	void computeGamma(const std::size_t N, const dmatrix_type &observations, dmatrix_type &gamma, double &logProbability) const;
+	void computeGamma(const std::size_t N, const dmatrix_type &observations, dmatrix_type &gamma, double &logLikelihood) const;
 };
 
 }  // namespace swl

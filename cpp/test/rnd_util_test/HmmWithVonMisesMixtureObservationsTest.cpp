@@ -533,26 +533,26 @@ void forward_algorithm()
 	// forward algorithm without scaling.
 	{
 		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
-		double probability = 0.0;
-		cdhmm->runForwardAlgorithm(N, observations, alpha, probability);
+		double likelihood = 0.0;
+		cdhmm->runForwardAlgorithm(N, observations, alpha, likelihood);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "forward algorithm without scaling" << std::endl;
-		std::cout << "\tlog prob(observations | model) = " << std::scientific << std::log(probability) << std::endl;
+		std::cout << "\tlog prob(observations | model) = " << std::scientific << std::log(likelihood) << std::endl;
 	}
 
 	// forward algorithm with scaling.
 	{
 		swl::CDHMM::dvector_type scale(N, 0.0);
 		swl::CDHMM::dmatrix_type alpha(N, K, 0.0);
-		double logProbability = 0.0;
-		cdhmm->runForwardAlgorithm(N, observations, scale, alpha, logProbability);
+		double logLikelihood = 0.0;
+		cdhmm->runForwardAlgorithm(N, observations, scale, alpha, logLikelihood);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
 		std::cout << "forward algorithm with scaling" << std::endl;
-		std::cout << "\tlog prob(observations | model) = " << std::scientific << logProbability << std::endl;
+		std::cout << "\tlog prob(observations | model) = " << std::scientific << logLikelihood << std::endl;
 	}
 }
 
@@ -676,36 +676,36 @@ void viterbi_algorithm()
 
 	const size_t K = cdhmm->getStateDim();
 
-	// Viterbi algorithm using direct probabilities.
+	// Viterbi algorithm using direct likelihood.
 	{
 		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
 		swl::CDHMM::uivector_type states(N, (unsigned int)-1);
-		double probability = 0.0;
-		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, probability, false);
+		double likelihood = 0.0;
+		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, likelihood, false);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
-		std::cout << "Viterbi algorithm using direct probabilities" << std::endl;
-		std::cout << "\tViterbi MLE log prob = " << std::scientific << std::log(probability) << std::endl;
+		std::cout << "Viterbi algorithm using direct likelihood" << std::endl;
+		std::cout << "\tViterbi MLE log likelihood = " << std::scientific << std::log(likelihood) << std::endl;
 		std::cout << "\toptimal state sequence:" << std::endl;
 		for (size_t n = 0; n < N; ++n)
 			std::cout << states[n] << ' ';
 		std::cout << std::endl;
 	}
 
-	// Viterbi algorithm using log probabilities.
+	// Viterbi algorithm using log likelihood.
 	{
 		swl::CDHMM::dmatrix_type delta(N, K, 0.0);
 		swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
 		swl::CDHMM::uivector_type states(N, (unsigned int)-1);
-		double logProbability = 0.0;
-		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
+		double logLikelihood = 0.0;
+		cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logLikelihood, true);
 
 		//
 		std::cout << "------------------------------------" << std::endl;
-		std::cout << "Viterbi algorithm using log probabilities" << std::endl;
-		std::cout << "\tViterbi MLE log prob = " << std::scientific << logProbability << std::endl;
+		std::cout << "Viterbi algorithm using log likelihood" << std::endl;
+		std::cout << "\tViterbi MLE log likelihood = " << std::scientific << logLikelihood << std::endl;
 		std::cout << "\toptimal state sequence:" << std::endl;
 		for (size_t n = 0; n < N; ++n)
 			std::cout << states[n] << ' ';
@@ -880,8 +880,8 @@ void ml_learning_by_em()
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
-			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			double initLogLikelihood = 0.0, finalLogLikelihood = 0.0;
+			cdhmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogLikelihood, finalLogLikelihood);
 
 			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
@@ -890,8 +890,8 @@ void ml_learning_by_em()
 			std::cout << "------------------------------------" << std::endl;
 			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
-			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
-			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogLikelihood << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogLikelihood << std::endl;
 			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
@@ -1186,8 +1186,8 @@ void map_learning_by_em_using_conjugate_prior()
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
-			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			double initLogLikelihood = 0.0, finalLogLikelihood = 0.0;
+			cdhmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogLikelihood, finalLogLikelihood);
 
 			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
@@ -1196,8 +1196,8 @@ void map_learning_by_em_using_conjugate_prior()
 			std::cout << "------------------------------------" << std::endl;
 			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
-			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
-			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogLikelihood << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogLikelihood << std::endl;
 			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
@@ -1471,8 +1471,8 @@ void map_learning_by_em_using_entropic_prior()
 			const double terminationTolerance = 0.001;
 			const size_t maxIteration = 1000;
 			size_t numIteration = (size_t)-1;
-			double initLogProbability = 0.0, finalLogProbability = 0.0;
-			cdhmm->trainByMAPUsingEntropicPrior(N, observations, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
+			double initLogLikelihood = 0.0, finalLogLikelihood = 0.0;
+			cdhmm->trainByMAPUsingEntropicPrior(N, observations, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogLikelihood, finalLogLikelihood);
 
 			// normalize pi, A, & alpha.
 			//cdhmm->normalizeModelParameters();
@@ -1481,8 +1481,8 @@ void map_learning_by_em_using_entropic_prior()
 			std::cout << "------------------------------------" << std::endl;
 			std::cout << "Baum-Welch algorithm for a single observation sequence" << std::endl;
 			std::cout << "\tnumber of iterations = " << numIteration << std::endl;
-			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogProbability << std::endl;
-			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogProbability << std::endl;
+			std::cout << "\tlog prob(observations | initial model) = " << std::scientific << initLogLikelihood << std::endl;
+			std::cout << "\tlog prob(observations | estimated model) = " << std::scientific << finalLogLikelihood << std::endl;
 			std::cout << "\testimated model:" << std::endl;
 			cdhmm->writeModel(std::cout);
 		}
@@ -1599,7 +1599,7 @@ void hmm_with_von_mises_mixture_observation_densities()
 
 	std::cout << "\ntrain by ML ---------------------------------------------------------" << std::endl;
 	local::ml_learning_by_em();
-	//std::cout << "\ntrain by MAP using conjugate prior ----------------------------------" << std::endl;
+	std::cout << "\ntrain by MAP using conjugate prior ----------------------------------" << std::endl;
 	//local::map_learning_by_em_using_conjugate_prior();
 	std::cout << "\ntrain by MAP using entropic prior -----------------------------------" << std::endl;
 	local::map_learning_by_em_using_entropic_prior();
