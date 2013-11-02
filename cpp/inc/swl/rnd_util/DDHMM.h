@@ -74,6 +74,7 @@ protected:
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
 	virtual double doEvaluateEmissionProbability(const unsigned int state, const unsigned int observation) const = 0;
+	//virtual double doEvaluateEmissionProbability(const unsigned int state, const size_t n, const uivector_type &observations) const = 0;
 
 	//
 	virtual unsigned int doGenerateObservationsSymbol(const unsigned int state) const = 0;

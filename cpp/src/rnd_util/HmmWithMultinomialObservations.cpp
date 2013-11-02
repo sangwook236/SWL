@@ -15,7 +15,7 @@
 namespace swl {
 
 HmmWithMultinomialObservations::HmmWithMultinomialObservations(const size_t K, const size_t D)
-: base_type(K, D), B_(K, D, 0.0),  // 0-based index
+: base_type(K, D), B_(K, D, 0.0),  // 0-based index.
   B_conj_()
 {
 }
@@ -39,7 +39,7 @@ HmmWithMultinomialObservations::~HmmWithMultinomialObservations()
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
 	const double denominatorB = denominatorA + gamma(N-1, state);
@@ -60,7 +60,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
 	double denominatorB = denominatorA;
@@ -85,7 +85,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByML(
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const uivector_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
 	const double denominatorB = denominatorA + gamma(N-1, state);
@@ -106,7 +106,7 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<uivector_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
 	double denominatorB = denominatorA;
@@ -130,9 +130,11 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 
 void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const unsigned int state, const double z, const bool doesTrimParameter, const dmatrix_type &expNumEmit, std::vector<double> &thetaEmit, std::vector<bool> &isObservationsTrimmed)
 {
+	const double eps = 1e-50;
+
 #if 0
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	std::vector<double> omega(D_, 0.0), theta(D_, 0.0);
 	size_t d, n;
@@ -151,7 +153,6 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	assert(retval);
 
 	// trim parameters.
-	const double eps = 1e-50;
 	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 	{
 		throw std::runtime_error("not yet implemented");
@@ -160,8 +161,6 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	for (d = 0; d < D_; ++d)
 		B_(state, d) = theta[d];
 #else
-	const double eps = 1e-50;
-
 	// trim transition probabilities.
 	//	only trim if we are in the min. entropy setting (z = 1).
 	//	if z << 0, we would trim everything.

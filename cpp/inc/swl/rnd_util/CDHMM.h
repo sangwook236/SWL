@@ -74,9 +74,10 @@ protected:
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
 	virtual double doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const = 0;
+	virtual double doEvaluateEmissionProbability(const unsigned int state, const size_t n, const dmatrix_type &observations) const;
 
 	//
-	virtual void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const = 0;
+	virtual void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const = 0;
 
 	//
 	virtual void doComputeObservationLikelihood(const size_t N, const dmatrix_type &observations, dmatrix_type &obsLikelihood) const;

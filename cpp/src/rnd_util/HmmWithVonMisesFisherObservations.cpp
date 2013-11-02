@@ -13,7 +13,7 @@
 namespace swl {
 
 HmmWithVonMisesFisherObservations::HmmWithVonMisesFisherObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(K, D, 0.0), kappas_(K, 0.0),  // 0-based index
+: base_type(K, D), mus_(K, D, 0.0), kappas_(K, 0.0),  // 0-based index.
   ms_conj_(), Rs_conj_(), cs_conj_()
 {
 }
@@ -69,7 +69,7 @@ double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const un
 	throw std::runtime_error("not yet implemented");
 }
 
-void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	throw std::runtime_error("not yet implemented");
 }

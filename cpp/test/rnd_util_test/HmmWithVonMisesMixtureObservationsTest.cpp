@@ -790,7 +790,7 @@ void ml_learning_by_em()
 
 		cdhmm.reset(new swl::HmmWithVonMisesMixtureObservations(K, C));
 
-		// the total number of parameters of observation density = K * C * D * 2
+		// the total number of parameters of observation density = K * C * D * 2.
 		std::vector<double> lowerBounds, upperBounds;
 		const size_t numParameters = K * C * 1 * 2;
 		lowerBounds.reserve(numParameters);

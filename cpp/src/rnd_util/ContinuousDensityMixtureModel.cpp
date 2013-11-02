@@ -49,12 +49,12 @@ void ContinuousDensityMixtureModel::computeGamma(const std::size_t N, const dmat
 		denominator = 0.0;
 		for (k = 0; k < K_; ++k)
 		{
-#if 0
-			//gamma(n, k) = pi_[k] * evaluateEmissionProbability(k, obs);  // error !!!
-			gamma(n, k) = pi_[k] * doEvaluateMixtureComponentProbability(k, obs);
-#else
 			// TODO [check] >> we need to check if a component is trimmed or not.
 			//	Here, we use the value of pi in order to check if a component is trimmed or not.
+#if 0
+			//gamma(n, k) = std::fabs(pi_[k]) < eps ? 0.0 : (pi_[k] * evaluateEmissionProbability(k, obs));  // error !!!
+			gamma(n, k) = std::fabs(pi_[k]) < eps ? 0.0 : (pi_[k] * doEvaluateMixtureComponentProbability(k, obs));
+#else
 			gamma(n, k) = std::fabs(pi_[k]) < eps ? 0.0 : (pi_[k] * doEvaluateMixtureComponentProbability(k, obs));
 #endif
 			denominator += gamma(n, k);
@@ -234,13 +234,15 @@ bool ContinuousDensityMixtureModel::trainByMAPUsingEntropicPrior(const std::size
 			{
 				const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
 				for (k = 0; k < K_; ++k)
-#if 0
-					prob(n, k) = doEvaluateMixtureComponentProbability(k, obs);
-#else
+				{
 					// TODO [check] >> we need to check if a component is trimmed or not.
 					//	Here, we use the value of pi in order to check if a component is trimmed or not.
+#if 0
+					prob(n, k) = std::fabs(pi_[k]) < eps ? 0.0 : doEvaluateMixtureComponentProbability(k, obs);
+#else
 					prob(n, k) = std::fabs(pi_[k]) < eps ? 0.0 : doEvaluateMixtureComponentProbability(k, obs);
 #endif
+				}
 			}
 
 			isNormalized = false;
@@ -323,12 +325,7 @@ void ContinuousDensityMixtureModel::generateSample(const std::size_t N, dmatrix_
 	for (std::size_t n = 0; n < N; ++n)
 	{
 		states[n] = generateState();
-#if defined(__GNUC__)
-		boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, n);
-		doGenerateObservationsSymbol(states[n], obs, seed);
-#else
-		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n));
-#endif
+		doGenerateObservationsSymbol(states[n], n, observations);
 	}
 
 	doFinalizeRandomSampleGeneration();
@@ -339,13 +336,15 @@ double ContinuousDensityMixtureModel::evaluateEmissionProbability(const dvector_
 	const double eps = 1e-50;
 	double prob = 0.0;
 	for (size_t k = 0; k < K_; ++k)
-#if 0
-		prob += pi_[k] * doEvaluateMixtureComponentProbability(k, observation);
-#else
+	{
 		// TODO [check] >> we need to check if a component is trimmed or not.
 		//	Here, we use the value of pi in order to check if a component is trimmed or not.
+#if 0
+		prob += std::fabs(pi_[k]) < eps ? 0.0 : (pi_[k] * doEvaluateMixtureComponentProbability(k, observation));
+#else
 		prob += std::fabs(pi_[k]) < eps ? 0.0 : (pi_[k] * doEvaluateMixtureComponentProbability(k, observation));
 #endif
+	}
 
 	return prob;
 }

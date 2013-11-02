@@ -59,7 +59,7 @@ protected:
 	virtual double doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const = 0;
 
 	//
-	virtual void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const = 0;
+	virtual void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const = 0;
 
 	// ML learning.
 	//	-. for IID observations.

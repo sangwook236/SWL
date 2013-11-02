@@ -93,6 +93,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArHmmWithUnivariateNormalMixtureObservationsTest.cpp" />
+    <ClCompile Include="ArHmmWithUnivariateNormalObservationsTest.cpp" />
     <ClCompile Include="ExtendedKalmanFilterTest.cpp" />
     <ClCompile Include="HmmSegmentationTest.cpp" />
     <ClCompile Include="HmmWithMultinomialObservationsTest.cpp" />

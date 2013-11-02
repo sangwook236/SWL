@@ -41,7 +41,8 @@ void CDHMM::runForwardAlgorithm(const size_t N, const dmatrix_type &observations
 	// 1. Initialization
 	for (k = 0; k < K_; ++k)
 		//alpha(0, k) = pi_[k] * B_(k, observations[0]);
-		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		//alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, 0, observations);
 
 	// 2. Induction
 	double sum;  // partial sum
@@ -56,7 +57,8 @@ void CDHMM::runForwardAlgorithm(const size_t N, const dmatrix_type &observations
 				sum += alpha(n_1, i) * A_(i, k);
 
 			//alpha(n, k) = sum * B_(k, observations[n]);
-			alpha(n, k) = sum * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			//alpha(n, k) = sum * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			alpha(n, k) = sum * doEvaluateEmissionProbability(k, n, observations);
 		}
 	}
 
@@ -76,7 +78,8 @@ void CDHMM::runForwardAlgorithm(const size_t N, const dmatrix_type &observations
 	for (k = 0; k < K_; ++k)
 	{
 		//alpha(0, k) = pi_[k] * B_(k, observations[0]);
-		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		//alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		alpha(0, k) = pi_[k] * doEvaluateEmissionProbability(k, 0, observations);
 		scale[0] += alpha(0, k);
 	}
 	for (k = 0; k < K_; ++k)
@@ -96,7 +99,8 @@ void CDHMM::runForwardAlgorithm(const size_t N, const dmatrix_type &observations
 				sum += alpha(n_1, i) * A_(i, k);
 
 			//alpha(n, k) = sum * B_(k, observations[n]);
-			alpha(n, k) = sum * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>((dmatrix_type)observations, n));
+			//alpha(n, k) = sum * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>((dmatrix_type)observations, n));
+			alpha(n, k) = sum * doEvaluateEmissionProbability(k, n, observations);
 			scale[n] += alpha(n, k);
 		}
 		for (k = 0; k < K_; ++k)
@@ -129,7 +133,8 @@ void CDHMM::runBackwardAlgorithm(const size_t N, const dmatrix_type &observation
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
 				//sum += A_(k, i) * B_(i, observations[n]) * beta(n, i);
-				sum += A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)) * beta(n, i);
+				//sum += A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)) * beta(n, i);
+				sum += A_(k, i) * doEvaluateEmissionProbability(i, n, observations) * beta(n, i);
 			beta(n_1, k) = sum;
 		}
 	}
@@ -161,7 +166,8 @@ void CDHMM::runBackwardAlgorithm(const size_t N, const dmatrix_type &observation
 			sum = 0.0;
 			for (i = 0; i < K_; ++i)
 				//sum += A_(k, i) * B_(i, observations[n]) * beta(n, i);
-				sum += A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)) * beta(n, i);
+				//sum += A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)) * beta(n, i);
+				sum += A_(k, i) * doEvaluateEmissionProbability(i, n, observations) * beta(n, i);
 			beta(n_1, k) = sum / scale[n];
 		}
 	}
@@ -181,7 +187,8 @@ void CDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const dmatrix_type &ob
 	for (k = 0; k < K_; ++k)
 	{
 		//delta(0, k) = pi_[k] * B_(k, observations[0]);
-		delta(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		//delta(0, k) = pi_[k] * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, 0));
+		delta(0, k) = pi_[k] * doEvaluateEmissionProbability(k, 0, observations);
 		psi(0, k) = 0u;
 	}
 
@@ -207,7 +214,8 @@ void CDHMM::runViterbiAlgorithmNotUsigLog(const size_t N, const dmatrix_type &ob
 			}
 
 			//delta(n, k) = maxval * B_(k, observations[n]);
-			delta(n, k) = maxval * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			//delta(n, k) = maxval * doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			delta(n, k) = maxval * doEvaluateEmissionProbability(k, n, observations);
 			psi(n, k) = (unsigned int)maxvalind;
 		}
 	}
@@ -248,7 +256,8 @@ void CDHMM::runViterbiAlgorithmUsingLog(const size_t N, const dmatrix_type &obse
 
 		for (n = 0; n < N; ++n)
 			//logO(k, n) = std::log(B_(k, observations[n]));
-			logO(k, n) = std::log(doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)));
+			//logO(k, n) = std::log(doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n)));
+			logO(k, n) = std::log(doEvaluateEmissionProbability(k, n, observations));
 	}
 
 	// 1. Initialization
@@ -1314,7 +1323,8 @@ void CDHMM::computeXi(const size_t N, const dmatrix_type &observations, const dm
 			for (i = 0; i < K_; ++i)
 			{
 				//xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * B_(i, observations[n+1]);
-				xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n+1));
+				//xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * doEvaluateEmissionProbability(i, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n+1));
+				xi[n](k, i) = alpha(n, k) * beta(n+1, i) * A_(k, i) * doEvaluateEmissionProbability(i, n+1, observations);
 				sum += xi[n](k, i);
 			}
 
@@ -1346,7 +1356,8 @@ void CDHMM::doComputeObservationLikelihood(const size_t N, const dmatrix_type &o
 	size_t n, k;
 	for (n = 0; n < N; ++n)
 		for (k = 0; k < K_; ++k)
-			obsLikelihood(k, n) = doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			//obsLikelihood(k, n) = doEvaluateEmissionProbability(k, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+			obsLikelihood(k, n) = doEvaluateEmissionProbability(k, n, observations);
 }
 
 void CDHMM::doComputeExpectedSufficientStatistics(const size_t N, const dmatrix_type &observations, const dmatrix_type &gamma, const std::vector<dmatrix_type> &xi, dvector_type &expNumVisits1, dvector_type &expNumVisitsN, dmatrix_type &expNumTrans/*, dmatrix_type &expNumEmit*/) const
@@ -1406,6 +1417,11 @@ void CDHMM::doComputeExpectedSufficientStatistics(const std::vector<size_t> &Ns,
 		doComputeExpectedSufficientStatistics(Ns[r], observationSequences[r], gammas[r], xis[r], expNumVisits1, expNumVisitsN, expNumTrans/*, expNumEmit*/);
 }
 
+double CDHMM::doEvaluateEmissionProbability(const unsigned int state, const size_t n, const dmatrix_type &observations) const
+{
+	return doEvaluateEmissionProbability(state, boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n));
+}
+
 void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_type &states, const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	// PRECONDITIONS [] >>
@@ -1414,24 +1430,12 @@ void CDHMM::generateSample(const size_t N, dmatrix_type &observations, uivector_
 	doInitializeRandomSampleGeneration(seed);
 
 	states[0] = generateInitialState();
-#if defined(__GNUC__)
-    {
-        boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, 0);
-        doGenerateObservationsSymbol(states[0], obs);
-    }
-#else
-	doGenerateObservationsSymbol(states[0], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, 0));
-#endif
+	doGenerateObservationsSymbol(states[0], 0, observations);
 
 	for (size_t n = 1; n < N; ++n)
 	{
 		states[n] = generateNextState(states[n-1]);
-#if defined(__GNUC__)
-		boost::numeric::ublas::matrix_row<dmatrix_type> obs(observations, n);
-		doGenerateObservationsSymbol(states[n], obs);
-#else
-		doGenerateObservationsSymbol(states[n], boost::numeric::ublas::matrix_row<dmatrix_type>(observations, n));
-#endif
+		doGenerateObservationsSymbol(states[n], n, observations);
 	}
 
 	doFinalizeRandomSampleGeneration();

@@ -16,12 +16,12 @@
 
 namespace swl {
 
-// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp
+// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp.
 bool one_dim_root_finding_using_f(const double A, const double lower, const double upper, const std::size_t maxIteration, double &kappa);
 double evaluateVonMisesDistribution(const double x, const double mu, const double kappa);
 
 HmmWithVonMisesObservations::HmmWithVonMisesObservations(const size_t K)
-: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index
+: base_type(K, 1), mus_(K, 0.0), kappas_(K, 0.0),  // 0-based index.
   ms_conj_(), Rs_conj_(), cs_conj_(),
   targetDist_(), proposalDist_()
 {
@@ -50,6 +50,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n;
 	double numerator = 0.0, denominator = 0.0;
 	for (n = 0; n < N; ++n)
@@ -71,15 +72,16 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 	//
-	denominator = denominatorA + gamma(N-1, state);
+	const double sumGamma = denominatorA + gamma(N-1, state);
+	assert(std::fabs(sumGamma) >= eps);
 	numerator = 0.0;
 	for (n = 0; n < N; ++n)
 		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?).
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?).
 #endif
 	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
@@ -105,6 +107,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n, r;
 	double numerator = 0.0, denominator = 0.0;
 	for (r = 0; r < R; ++r)
@@ -132,9 +135,10 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 	//
-	denominator = denominatorA;
+	double sumGamma = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominator += gammas[r](Ns[r]-1, state);
+		sumGamma += gammas[r](Ns[r]-1, state);
+	assert(std::fabs(sumGamma) >= eps);
 
 	numerator = 0.0;
 	for (r = 0; r < R; ++r)
@@ -147,9 +151,9 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByML(con
 	}
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?).
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?).
 #endif
 	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
@@ -175,6 +179,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n;
 	double numerator = (*Rs_conj_)(state) * std::sin((*ms_conj_)(state)), denominator = (*Rs_conj_)(state) * std::cos((*ms_conj_)(state));
 	for (n = 0; n < N; ++n)
@@ -196,15 +201,16 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 	//
-	denominator = denominatorA + gamma(N-1, state) + (*cs_conj_)(state);
+	const double sumGamma = denominatorA + gamma(N-1, state) + (*cs_conj_)(state);
+	assert(std::fabs(sumGamma) >= eps);
 	numerator = (*Rs_conj_)(state) * std::cos(mu - (*ms_conj_)(state));
 	for (n = 0; n < N; ++n)
 		numerator += gamma(n, state) * std::cos(observations(n, 0) - mu);
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?).
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?).
 #endif
 	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
@@ -230,6 +236,7 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	// M-step.
 	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n, r;
 	double numerator = (*Rs_conj_)(state) * std::sin((*ms_conj_)(state)), denominator = (*Rs_conj_)(state) * std::cos((*ms_conj_)(state));
 	for (r = 0; r < R; ++r)
@@ -257,9 +264,10 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	assert(0.0 <= mu && mu < MathConstant::_2_PI);
 
 	//
-	denominator = denominatorA + (*cs_conj_)(state);
+	double sumGamma = denominatorA + (*cs_conj_)(state);
 	for (r = 0; r < R; ++r)
-		denominator += gammas[r](Ns[r]-1, state);
+		sumGamma += gammas[r](Ns[r]-1, state);
+	assert(std::fabs(sumGamma) >= eps);
 
 	numerator = (*Rs_conj_)(state) * std::cos(mu - (*ms_conj_)(state));
 	for (r = 0; r < R; ++r)
@@ -272,9 +280,9 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 	}
 
 #if 0
-	const double A = 0.001 + 0.999 * numerator / denominator;  // -1 < A < 1 (?).
+	const double A = 0.001 + 0.999 * numerator / sumGamma;  // -1 < A < 1 (?).
 #else
-	const double A = numerator / denominator;  // -1 < A < 1 (?).
+	const double A = numerator / sumGamma;  // -1 < A < 1 (?).
 #endif
 	// FIXME [modify] >> lower & upper bounds have to be adjusted.
 	const double lb = -10000.0, ub = 10000.0;
@@ -307,12 +315,14 @@ void HmmWithVonMisesObservations::doEstimateObservationDensityParametersByMAPUsi
 
 double HmmWithVonMisesObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
+	assert(kappas_[state] >= 0.0);
+
 	// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
 	//return 0.5 * std::exp(kappas_[state] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
 	return evaluateVonMisesDistribution(observation[0], mus_[state], kappas_[state]);
 }
 
-void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	if (!targetDist_) targetDist_.reset(new VonMisesTargetDistribution());
 	targetDist_->setParameters(mus_[state], kappas_[state]);
@@ -344,7 +354,7 @@ void HmmWithVonMisesObservations::doGenerateObservationsSymbol(const unsigned in
 	// the range of each observation, [0, 2 * pi)
 	const bool retval = sampler.sample(x, maxIteration);
 	assert(retval);
-	observation[0] = x[0];
+	observations(n, 0) = x[0];
 }
 
 void HmmWithVonMisesObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
@@ -441,11 +451,11 @@ void HmmWithVonMisesObservations::doInitializeObservationDensity(const std::vect
 	// PRECONDITIONS [] >>
 	//	-. std::srand() has to be called before this function is called.
 
-	// initialize the parameters of observation density
+	// initialize the parameters of observation density.
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density
+	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);

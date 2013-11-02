@@ -15,7 +15,7 @@
 namespace swl {
 
 HMM::HMM(const std::size_t K, const std::size_t D)
-: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0),  // 0-based index
+: K_(K), D_(D), pi_(K, 0.0), A_(K, K, 0.0),  // 0-based index.
   pi_conj_(), A_conj_()
 {
 }
@@ -112,7 +112,7 @@ bool HMM::readModel(std::istream &stream)
 
 	// TODO [check] >>
 	std::size_t K;
-	stream >> dummy >> K;  // the dimension of hidden states
+	stream >> dummy >> K;  // the dimension of hidden states.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "K=") != 0 || K_ != K)
 #elif defined(_MSC_VER)
@@ -121,7 +121,7 @@ bool HMM::readModel(std::istream &stream)
 		return false;
 
 	std::size_t D;
-	stream >> dummy >> D;  // the dimension of observation symbols
+	stream >> dummy >> D;  // the dimension of observation symbols.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "D=") != 0 || D_ != D)
 #elif defined(_MSC_VER)
@@ -138,7 +138,7 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	// K
+	// K.
 	pi_.resize(K_);
 	for (k = 0; k < K_; ++k)
 		stream >> pi_[k];
@@ -151,7 +151,7 @@ bool HMM::readModel(std::istream &stream)
 #endif
 		return false;
 
-	// K x K
+	// K x K.
 	A_.resize(K_, K_);
 	for (k = 0; k < K_; ++k)
 		for (i = 0; i < K_; ++i)
@@ -164,16 +164,16 @@ bool HMM::writeModel(std::ostream &stream) const
 {
 	std::size_t i, k;
 
-	stream << "K= " << K_ << std::endl;  // the dimension of hidden states
-	stream << "D= " << D_ << std::endl;  // the dimension of observation symbols
+	stream << "K= " << K_ << std::endl;  // the dimension of hidden states.
+	stream << "D= " << D_ << std::endl;  // the dimension of observation symbols.
 
-	// K
+	// K.
 	stream << "pi:" << std::endl;
 	for (k = 0; k < K_; ++k)
 		stream << pi_[k] << ' ';
 	stream << std::endl;
 
-	// K x K
+	// K x K.
 	stream << "A:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{

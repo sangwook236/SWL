@@ -169,12 +169,14 @@ void VonMisesMixtureModel::doEstimateObservationDensityParametersByMAPUsingEntro
 
 double VonMisesMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const
 {
+	assert(kappas_[state] > 0.0);
+
 	// each observation are expressed as a random angle, 0 <= observation[0] < 2 * pi. [rad].
 	//return 0.5 * std::exp(kappas_[k] * std::cos(observation[0] - mus_[state])) / (MathConstant::PI * boost::math::cyl_bessel_i(0.0, kappas_[state]));
 	return evaluateVonMisesDistribution(observation[0], mus_[state], kappas_[state]);
 }
 
-void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	assert(!!targetDist_ && !!proposalDist_);
 
@@ -207,7 +209,7 @@ void VonMisesMixtureModel::doGenerateObservationsSymbol(const unsigned int state
 	// the range of each observation, [0, 2 * pi)
 	const bool retval = sampler.sample(x, maxIteration);
 	assert(retval);
-	observation[0] = x[0];
+	observations(n, 0) = x[0];
 }
 
 void VonMisesMixtureModel::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
@@ -312,11 +314,11 @@ void VonMisesMixtureModel::doInitializeObservationDensity(const std::vector<doub
 	// PRECONDITIONS [] >>
 	//	-. std::srand() has to be called before this function is called.
 
-	// initialize the parameters of observation density
+	// initialize the parameters of observation density.
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density
+	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);

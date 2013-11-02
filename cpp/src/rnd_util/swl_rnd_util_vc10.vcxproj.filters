@@ -51,9 +51,6 @@
     <ClCompile Include="HmmWithMultinomialObservations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HmmWithMixtureObservations.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CDHMM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -114,6 +111,18 @@
     <ClCompile Include="MultivariateNormalMixtureModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ArHmmWithUnivariateNormalMixtureObservations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ArHmmWithUnivariateNormalObservations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDHMMWithMixtureObservations.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="AutoRegression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h">
@@ -162,9 +171,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMixtureObservations.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h">
@@ -225,6 +231,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMMWithMixtureObservations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoRegression.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

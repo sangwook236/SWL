@@ -2,8 +2,7 @@
 #define __SWL_RND_UTIL__HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_ 1
 
 
-#include "swl/rnd_util/CDHMM.h"
-#include "swl/rnd_util/HmmWithMixtureObservations.h"
+#include "swl/rnd_util/CDHMMWithMixtureObservations.h"
 #include <boost/random/linear_congruential.hpp>
 
 
@@ -12,12 +11,10 @@ namespace swl {
 //--------------------------------------------------------------------------
 // continuous density HMM with univariate normal mixture observation densities.
 
-class SWL_RND_UTIL_API HmmWithUnivariateNormalMixtureObservations: public CDHMM, HmmWithMixtureObservations
+class SWL_RND_UTIL_API HmmWithUnivariateNormalMixtureObservations: public CDHMMWithMixtureObservations
 {
 public:
-	typedef CDHMM base_type;
-	//typedef HmmWithMixtureObservations base_type;
-	typedef base_type::dmatrix_type dmatrix_type;
+	typedef CDHMMWithMixtureObservations base_type;
 
 public:
 	HmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C);  // for ML learning.
@@ -41,10 +38,10 @@ protected:
 	// if state == 1, hidden state = [ 0 1 0 ... 0 0 ].
 	// ...
 	// if state == N-1, hidden state = [ 0 0 0 ... 0 1 ].
-	/*virtual*/ double doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const;
+	/*virtual*/ double doEvaluateEmissionMixtureComponentProbability(const unsigned int state, const unsigned int component, const dvector_type &observation) const;
 
 	//
-	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const;
 	// if seed != -1, the seed value is set.
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
 	///*virtual*/ void doFinalizeRandomSampleGeneration() const;
@@ -73,7 +70,7 @@ protected:
 	/*virtual*/ void doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity);
 	/*virtual*/ void doNormalizeObservationDensityParameters()
 	{
-		HmmWithMixtureObservations::normalizeObservationDensityParameters(K_);
+		CDHMMWithMixtureObservations::normalizeObservationDensityParameters(K_);
 	}
 
 	/*virtual*/ bool doDoHyperparametersOfConjugatePriorExist() const

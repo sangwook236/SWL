@@ -19,11 +19,11 @@
 
 namespace swl {
 
-// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp
+// [ref] swl/src/rnd_util/RndUtilLocalApi.cpp.
 double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv);
 
 HmmWithMultivariateNormalObservations::HmmWithMultivariateNormalObservations(const size_t K, const size_t D)
-: base_type(K, D), mus_(K), sigmas_(K),  // 0-based index
+: base_type(K, D), mus_(K), sigmas_(K),  // 0-based index.
   mus_conj_(), betas_conj_(), sigmas_conj_(), nus_conj_(),
   r_(NULL)
 {
@@ -55,11 +55,13 @@ HmmWithMultivariateNormalObservations::~HmmWithMultivariateNormalObservations()
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n;
-	const double denominator = denominatorA + gamma(N-1, state);
-	const double factor = 0.999 / denominator;
+	const double sumGamma = denominatorA + gamma(N-1, state);
+	assert(std::fabs(sumGamma) >= eps);
+	const double factor = 0.999 / sumGamma;
 
 	//
 	dvector_type &mu = mus_[state];
@@ -86,13 +88,15 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
+	const double eps = 1e-50;
 	size_t n, r;
-	double denominator = denominatorA;
+	double sumGamma = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominator += gammas[r](Ns[r]-1, state);
-	const double factor = 0.999 / denominator;
+		sumGamma += gammas[r](Ns[r]-1, state);
+	assert(std::fabs(sumGamma) >= eps);
+	const double factor = 0.999 / sumGamma;
 
 	//
 	dvector_type &mu = mus_[state];
@@ -131,12 +135,13 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n;
-	const double denominator = denominatorA + gamma(N-1, state);
-	const double factorMu = 0.999 / (denominator + (*betas_conj_)[state]);
-	const double factorSigma = 0.999 / (denominator + (*nus_conj_)[state] - D_);
+	const double sumGamma = denominatorA + gamma(N-1, state);
+	//assert(std::fabs(sumGamma) >= eps);
+	const double factorMu = 0.999 / (sumGamma + (*betas_conj_)[state]);
+	const double factorSigma = 0.999 / (sumGamma + (*nus_conj_)[state] - D_);
 
 	//
 	dvector_type &mu = mus_[state];
@@ -164,14 +169,15 @@ void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParamete
 void HmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// M-step.
-	// reestimate observation(emission) distribution in each state
+	// reestimate observation(emission) distribution in each state.
 
 	size_t n, r;
-	double denominator = denominatorA;
+	double sumGamma = denominatorA;
 	for (r = 0; r < R; ++r)
-		denominator += gammas[r](Ns[r]-1, state);
-	const double factorMu = 0.999 / (denominator + (*betas_conj_)(state));
-	const double factorSigma = 0.999 / (denominator + (*nus_conj_)(state) - D_);
+		sumGamma += gammas[r](Ns[r]-1, state);
+	//assert(std::fabs(sumGamma) >= eps);
+	const double factorMu = 0.999 / (sumGamma + (*betas_conj_)(state));
+	const double factorSigma = 0.999 / (sumGamma + (*nus_conj_)(state) - D_);
 
 	//
 	dvector_type &mu = mus_[state];
@@ -223,12 +229,13 @@ double HmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(cons
 	const dmatrix_type &sigma = sigmas_[state];
 	dmatrix_type inv(sigma.size1(), sigma.size2());
 	const double det = det_and_inv_by_lu(sigma, inv);
+	assert(det > 0.0);
 
 	const dvector_type x_mu(observation - mus_[state]);
 	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 }
 
-void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	assert(NULL != r_);
 
@@ -245,8 +252,8 @@ void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const u
 		double x = 0.0, y = 0.0;
 		gsl_ran_bivariate_gaussian(r_, sigma_x, sigma_y, rho, &x, &y);
 
-		observation[0] = mu[0] + x;
-		observation[1] = mu[1] + y;
+		observations(n, 0) = mu[0] + x;
+		observations(n, 1) = mu[1] + y;
 	}
 	else
 	{

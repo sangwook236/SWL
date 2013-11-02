@@ -41,7 +41,7 @@ protected:
 	/*virtual*/ double doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const;
 
 	//
-	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const;
+	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const;
 	// if seed != -1, the seed value is set.
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
 	/*virtual*/ void doFinalizeRandomSampleGeneration() const;

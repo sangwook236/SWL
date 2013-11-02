@@ -30,6 +30,9 @@ int main(int argc, char *argv[])
 	void hmm_with_von_mises_observation_densities();
 	void hmm_with_von_mises_mixture_observation_densities();
 
+	void ar_hmm_with_univariate_normal_observation_densities();
+	void ar_hmm_with_univariate_normal_mixture_observation_densities();
+
 	void hmm_segmentation();
 
 	int retval = EXIT_SUCCESS;
@@ -52,7 +55,7 @@ int main(int argc, char *argv[])
 
 		// mixture model (MM) ---------------------------------------
 		//univariate_normal_mixture_model();
-		multivariate_normal_mixture_model();
+		//multivariate_normal_mixture_model();
 		//von_mises_mixture_model();
 
 		// hidden Markov model (HMM) --------------------------------
@@ -61,6 +64,10 @@ int main(int argc, char *argv[])
 		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
 		//hmm_with_von_mises_mixture_observation_densities();
+
+		// autoregressive hidden Markov model (AR HMM) --------------
+		//ar_hmm_with_univariate_normal_observation_densities();
+		ar_hmm_with_univariate_normal_mixture_observation_densities();
 
 		//-----------------------------------------------------------
 		// application

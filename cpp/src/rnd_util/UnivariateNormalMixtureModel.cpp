@@ -104,17 +104,19 @@ void UnivariateNormalMixtureModel::doEstimateObservationDensityParametersByMAPUs
 
 double UnivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(const unsigned int state, const dvector_type &observation) const
 {
+	assert(sigmas_[state] > 0.0);
+
 	boost::math::normal pdf(mus_[state], sigmas_[state]);
 	return boost::math::pdf(pdf, observation[0]);
 }
 
-void UnivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void UnivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	typedef boost::normal_distribution<> distribution_type;
 	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
 
 	generator_type normal_gen(baseGenerator_, distribution_type(mus_[state], sigmas_[state]));
-	observation[0] = normal_gen();
+	observations(n, 0) = normal_gen();
 }
 
 void UnivariateNormalMixtureModel::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
@@ -203,11 +205,11 @@ void UnivariateNormalMixtureModel::doInitializeObservationDensity(const std::vec
 	// PRECONDITIONS [] >>
 	//	-. std::srand() has to be called before this function is called.
 
-	// initialize the parameters of observation density
+	// initialize the parameters of observation density.
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density
+	const std::size_t numParameters = K_ * D_ * 2;  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);

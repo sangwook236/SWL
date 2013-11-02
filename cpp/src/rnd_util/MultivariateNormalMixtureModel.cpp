@@ -121,14 +121,13 @@ double MultivariateNormalMixtureModel::doEvaluateMixtureComponentProbability(con
 	const dmatrix_type &sigma = sigmas_[state];
 	dmatrix_type inv(sigma.size1(), sigma.size2());
 	const double det = det_and_inv_by_lu(sigma, inv);
-	const double eps = 1e-50;
-	assert(det >= eps);
+	assert(det >= 0.0);
 
 	const dvector_type x_mu(observation - mus_[state]);
 	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 }
 
-void MultivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, boost::numeric::ublas::matrix_row<dmatrix_type> &observation) const
+void MultivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
 	assert(NULL != r_);
 
@@ -145,8 +144,8 @@ void MultivariateNormalMixtureModel::doGenerateObservationsSymbol(const unsigned
 		double x = 0.0, y = 0.0;
 		gsl_ran_bivariate_gaussian(r_, sigma_x, sigma_y, rho, &x, &y);
 
-		observation[0] = mu[0] + x;
-		observation[1] = mu[1] + y;
+		observations(n, 0) = mu[0] + x;
+		observations(n, 1) = mu[1] + y;
 	}
 	else
 	{
