@@ -95,6 +95,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ArHmmWithMultivariateNormalMixtureObservations.cpp" />
+    <ClCompile Include="ArHmmWithMultivariateNormalObservations.cpp" />
     <ClCompile Include="ArHmmWithUnivariateNormalMixtureObservations.cpp" />
     <ClCompile Include="ArHmmWithUnivariateNormalObservations.cpp" />
     <ClCompile Include="AutoRegression.cpp" />
@@ -133,6 +135,8 @@
     <ClCompile Include="VonMisesMixtureModel.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h" />

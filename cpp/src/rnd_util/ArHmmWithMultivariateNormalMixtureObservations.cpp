@@ -1,12 +1,15 @@
 #include "swl/Config.h"
-#include "swl/rnd_util/ArHmmWithUnivariateNormalMixtureObservations.h"
+#include "swl/rnd_util/ArHmmWithMultivariateNormalMixtureObservations.h"
 #include "RndUtilLocalApi.h"
+#include "swl/math/MathConstant.h"
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/math/distributions/normal.hpp>  // for normal distribution.
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/variate_generator.hpp>
+#include <boost/numeric/ublas/blas.hpp>
+#include <boost/numeric/ublas/lu.hpp>
+#include <boost/math/constants/constants.hpp>
 #include <numeric>
-#include <iostream>
+#include <ctime>
 #include <stdexcept>
 #include <cassert>
 
@@ -20,35 +23,36 @@
 namespace swl {
 
 // [ref] swl/src/rnd_util/RndUtilLocalApi.cpp.
+double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv);
 bool solve_linear_equations_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::vector<double> &x);
 
-ArHmmWithUnivariateNormalMixtureObservations::ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P)
-: base_type(K, 1, C), P_(P), coeffs_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),  // 0-based index.
+ArHmmWithMultivariateNormalMixtureObservations::ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P)
+: base_type(K, D, C), P_(P), coeffs_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),  // 0-based index.
   coeffs_conj_(),
-  baseGenerator_()
+  r_(NULL)
 {
 	assert(P_ > 0);
 
 	for (size_t k = 0; k < K; ++k)
 		for (size_t c = 0; c < C; ++c)
 		{
-			coeffs_[k][c] = dvector_type(P, 0.0);
-			sigmas_[k][c] = 0.0;
+			coeffs_[k][c] = dmatrix_type(D, P, 0.0);
+			sigmas_[k][c] = dvector_type(D, 0.0);
 		}
 }
 
-ArHmmWithUnivariateNormalMixtureObservations::ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &coeffs, const boost::multi_array<double, 2> &sigmas)
-: base_type(K, 1, C, pi, A, alphas), P_(P), coeffs_(coeffs), sigmas_(sigmas),
+ArHmmWithMultivariateNormalMixtureObservations::ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dmatrix_type, 2> &coeffs, const boost::multi_array<dvector_type, 2> &sigmas)
+: base_type(K, D, C, pi, A, alphas), P_(P), coeffs_(coeffs), sigmas_(sigmas),
   coeffs_conj_(),
-  baseGenerator_()
+  r_(NULL)
 {
 	assert(P_ > 0);
 }
 
-ArHmmWithUnivariateNormalMixtureObservations::ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *coeffs_conj)
-: base_type(K, 1, C, pi_conj, A_conj, alphas_conj), P_(P), coeffs_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),
+ArHmmWithMultivariateNormalMixtureObservations::ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dmatrix_type, 2> *coeffs_conj)
+: base_type(K, D, C, pi_conj, A_conj, alphas_conj), P_(P), coeffs_(boost::extents[K][C]), sigmas_(boost::extents[K][C]),
   coeffs_conj_(coeffs_conj),
-  baseGenerator_()
+  r_(NULL)
 {
 	// FIXME [modify] >>
 	throw std::runtime_error("not yet implemented");
@@ -58,19 +62,17 @@ ArHmmWithUnivariateNormalMixtureObservations::ArHmmWithUnivariateNormalMixtureOb
 	for (size_t k = 0; k < K; ++k)
 		for (size_t c = 0; c < C; ++c)
 		{
-			coeffs_[k][c] = dvector_type(P, 0.0);
-			sigmas_[k][c] = 0.0;
+			coeffs_[k][c] = dmatrix_type(D, P, 0.0);
+			sigmas_[k][c] = dvector_type(D, 0.0);
 		}
 }
 
-ArHmmWithUnivariateNormalMixtureObservations::~ArHmmWithUnivariateNormalMixtureObservations()
+ArHmmWithMultivariateNormalMixtureObservations::~ArHmmWithMultivariateNormalMixtureObservations()
 {
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	assert(N > P_);
-
 	const double eps = 1e-50;
 	size_t c, n;
 
@@ -80,6 +82,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	{
 		double denominator;
 		double val;
+		dmatrix_type inv(D_, D_);
 		for (n = 0; n < N; ++n)
 		{
 			//const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
@@ -133,83 +136,90 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	size_t p, j;
 	int w;
 
-	// calculate autocovariance functions.
 	dmatrix_type autocovariance(N, P_ + 1, 0.0);  // autocovariance function.
-	double meanWinObs;
-	for (n = 0; n < N; ++n)
-	{
-		for (w = -W; w <= W; ++w)
-		{
-			// TODO [check] >> which one is better?
-			//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(N)) ? 0.0 : observations(n + w, 0);
-			winObs(w + W) = int(n) + w < 0 ? observations(0, 0) : (int(n) + w >= int(N) ? observations(N - 1, 0) : observations(n + w, 0));
-		}
-
-		meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
-		// zero mean observations.
-		for (j = 0; j < L; ++j)
-			winObs(j) -= meanWinObs;
-
-		for (p = 0; p <= P_; ++p)
-			for (j = 0; j < L - p; ++j)
-				autocovariance(n, p) += winObs(j) * winObs(j + p);
-	}
-
 	dvector_type autocovariance_bar(P_ + 1, 0.0);
 	boost::numeric::ublas::matrix<double> A(P_, P_, 0.0);
 	boost::numeric::ublas::vector<double> x(P_, 0.0);
+	double meanWinObs;
 	double sumZeta;
-	for (c = 0; c < C_; ++c)
+	for (size_t d = 0; d < D_; ++d)
 	{
-		sumZeta = 0.0;
-		for (n = 0; n < N; ++n)
-			sumZeta += zeta(n, c);
-		assert(std::fabs(sumZeta) >= eps);
+		const dvector_type &observation_d = boost::numeric::ublas::matrix_column<const dmatrix_type>(observations, d);
 
-		// reestimate mixture coefficients(weights).
-		alphas_(state, c) = 0.001 + factorAlpha * sumZeta;
+		// calculate autocovariance functions.
+		autocovariance.clear();
+		for (n = 0; n < N; ++n)
+		{
+			for (w = -W; w <= W; ++w)
+			{
+				// TODO [check] >> which one is better?
+				//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(N)) ? 0.0 : observation_d(n + w);
+				winObs(w + W) = int(n) + w < 0 ? observation_d(0) : (int(n) + w >= int(N) ? observation_d(N - 1) : observation_d(n + w));
+			}
+
+			meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
+			// zero mean observations.
+			for (j = 0; j < L; ++j)
+				winObs(j) -= meanWinObs;
+
+			for (p = 0; p <= P_; ++p)
+				for (j = 0; j < L - p; ++j)
+					autocovariance(n, p) += winObs(j) * winObs(j + p);
+		}
 
 		autocovariance_bar.clear();
-		for (p = 0; p <= P_; ++p)
+		for (c = 0; c < C_; ++c)
 		{
+			sumZeta = 0.0;
 			for (n = 0; n < N; ++n)
-				autocovariance_bar(p) += zeta(n, c) * autocovariance(n, p);
-			autocovariance_bar(p) /= sumZeta;
-		}
+				sumZeta += zeta(n, c);
+			assert(std::fabs(sumZeta) >= eps);
 
-		// reestimate the autoregression coefficients.
-		for (p = 0; p < P_; ++p)
-		{
-			x(p) = autocovariance_bar(p + 1);
-			for (j = 0; j < p; ++j)
-				A(p, j) = autocovariance_bar(p - j);
-			for (j = p; j < P_; ++j)
-				A(p, j) = autocovariance_bar(j - p);
-		}
+			// reestimate mixture coefficients(weights).
+			alphas_(state, c) = 0.001 + factorAlpha * sumZeta;
 
-		if (solve_linear_equations_by_lu(A, x))
-		{
-			dvector_type &coeff = coeffs_[state][c];
-			coeff = x;
+			autocovariance_bar.clear();
+			for (p = 0; p <= P_; ++p)
+			{
+				for (n = 0; n < N; ++n)
+					autocovariance_bar(p) += zeta(n, c) * autocovariance(n, p);
+				autocovariance_bar(p) /= sumZeta;
+			}
 
-			// reestimate the variances of the input noise process.
-			double &sigma2 = sigmas_[state][c];
-			sigma2 = autocovariance_bar(0);
+			// reestimate the autoregression coefficients.
 			for (p = 0; p < P_; ++p)
-				sigma2 -= coeff(p) * autocovariance_bar(p + 1);
-			assert(sigma2 > 0.0);
-		}
-		else
-		{
-			assert(false);
+			{
+				x(p) = autocovariance_bar(p + 1);
+				for (j = 0; j < p; ++j)
+					A(p, j) = autocovariance_bar(p - j);
+				for (j = p; j < P_; ++j)
+					A(p, j) = autocovariance_bar(j - p);
+			}
+
+			if (solve_linear_equations_by_lu(A, x))
+			{
+				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+				coeff = x;
+
+				// reestimate the variances of the input noise process.
+				double &sigma2 = sigmas_[state][c](d);
+				sigma2 = autocovariance_bar(0);
+				for (p = 0; p < P_; ++p)
+					sigma2 -= coeff(p) * autocovariance_bar(p + 1);
+				assert(sigma2 > 0.0);
+			}
+			else
+			{
+				assert(false);
+			}
 		}
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all variances have to be positive.
+	//	-. all variances have to be symmetric positive definite.
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	const double eps = 1e-50;
 	size_t c, n, r;
@@ -224,6 +234,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	{
 		double denominator;
 		double val;
+		dmatrix_type inv(D_, D_);
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
@@ -286,105 +297,110 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	int w;
 
 	std::vector<dmatrix_type> autocovariances(R);  // autocovariance functions.
-	double meanWinObs;
-	for (r = 0; r < R; ++r)
-	{
-		assert(Ns[r] > P_);
-
-		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &zetar = zetas[r];
-		dmatrix_type &autocovariancer = autocovariances[r];
-
-		// calculate autocovariance functions.
-		autocovariancer.resize(Ns[r], P_ + 1, false);
-		autocovariancer.clear();
-		for (n = 0; n < Ns[r]; ++n)
-		{
-			for (w = -W; w <= W; ++w)
-			{
-				// TODO [check] >> which one is better?
-				//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(Ns[r])) ? 0.0 : observationr(n + w, 0);
-				winObs(w + W) = int(n) + w < 0 ? observationr(0, 0) : (int(n) + w >= int(Ns[r]) ? observationr(Ns[r] - 1, 0) : observationr(n + w, 0));
-			}
-
-			meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
-			// zero mean observations.
-			for (j = 0; j < L; ++j)
-				winObs(j) -= meanWinObs;
-
-			for (p = 0; p <= P_; ++p)
-				for (j = 0; j < L - p; ++j)
-					autocovariancer(n, p) += winObs(j) * winObs(j + p);
-		}
-	}
-
 	dvector_type autocovariance_bar(P_ + 1, 0.0);
 	boost::numeric::ublas::matrix<double> A(P_, P_, 0.0);
 	boost::numeric::ublas::vector<double> x(P_, 0.0);
+	double meanWinObs;
 	double sumZeta;
-	for (c = 0; c < C_; ++c)
+	for (size_t d = 0; d < D_; ++d)
 	{
-		sumZeta = 0.0;
 		for (r = 0; r < R; ++r)
 		{
+			assert(Ns[r] > P_);
+
+			const dmatrix_type &observationr = observationSequences[r];
 			const dmatrix_type &zetar = zetas[r];
+			dmatrix_type &autocovariancer = autocovariances[r];
 
+			const dvector_type &observationr_d = boost::numeric::ublas::matrix_column<const dmatrix_type>(observationr, d);
+
+			// calculate autocovariance functions.
+			autocovariancer.resize(Ns[r], P_ + 1, false);
+			autocovariancer.clear();
 			for (n = 0; n < Ns[r]; ++n)
-				sumZeta += zetar(n, c);
+			{
+				for (w = -W; w <= W; ++w)
+				{
+					// TODO [check] >> which one is better?
+					//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(Ns[r])) ? 0.0 : observationr_d(n + w);
+					winObs(w + W) = int(n) + w < 0 ? observationr_d(0) : (int(n) + w >= int(Ns[r]) ? observationr_d(Ns[r] - 1) : observationr_d(n + w));
+				}
+
+				meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
+				// zero mean observations.
+				for (j = 0; j < L; ++j)
+					winObs(j) -= meanWinObs;
+
+				for (p = 0; p <= P_; ++p)
+					for (j = 0; j < L - p; ++j)
+						autocovariancer(n, p) += winObs(j) * winObs(j + p);
+			}
 		}
-		assert(std::fabs(sumZeta) >= eps);
 
-		// reestimate mixture coefficients(weights).
-		alphas_(state, c) = 0.001 + factorAlpha * sumZeta;
-
-		autocovariance_bar.clear();
-		for (p = 0; p <= P_; ++p)
+		for (c = 0; c < C_; ++c)
 		{
+			sumZeta = 0.0;
 			for (r = 0; r < R; ++r)
 			{
 				const dmatrix_type &zetar = zetas[r];
-				const dmatrix_type &autocovariancer = autocovariances[r];
 
 				for (n = 0; n < Ns[r]; ++n)
-					autocovariance_bar(p) += zetar(n, c) * autocovariancer(n, p);
+					sumZeta += zetar(n, c);
+			}
+			assert(std::fabs(sumZeta) >= eps);
+
+			// reestimate mixture coefficients(weights).
+			alphas_(state, c) = 0.001 + factorAlpha * sumZeta;
+
+			autocovariance_bar.clear();
+			for (p = 0; p <= P_; ++p)
+			{
+				for (r = 0; r < R; ++r)
+				{
+					const dmatrix_type &zetar = zetas[r];
+					const dmatrix_type &autocovariancer = autocovariances[r];
+
+					for (n = 0; n < Ns[r]; ++n)
+						autocovariance_bar(p) += zetar(n, c) * autocovariancer(n, p);
+				}
+
+				autocovariance_bar(p) /= sumZeta;
 			}
 
-			autocovariance_bar(p) /= sumZeta;
-		}
-
-		// reestimate the autoregression coefficients.
-		for (p = 0; p < P_; ++p)
-		{
-			x(p) = autocovariance_bar(p + 1);
-			for (j = 0; j < p; ++j)
-				A(p, j) = autocovariance_bar(p - j);
-			for (j = p; j < P_; ++j)
-				A(p, j) = autocovariance_bar(j - p);
-		}
-
-		if (solve_linear_equations_by_lu(A, x))
-		{
-			dvector_type &coeff = coeffs_[state][c];
-			coeff = x;
-
-			// reestimate the variances of the input noise process.
-			double &sigma2 = sigmas_[state][c];
-			sigma2 = autocovariance_bar(0);
+			// reestimate the autoregression coefficients.
 			for (p = 0; p < P_; ++p)
-				sigma2 -= coeff(p) * autocovariance_bar(p + 1);
-			assert(sigma2 > 0.0);
-		}
-		else
-		{
-			assert(false);
+			{
+				x(p) = autocovariance_bar(p + 1);
+				for (j = 0; j < p; ++j)
+					A(p, j) = autocovariance_bar(p - j);
+				for (j = p; j < P_; ++j)
+					A(p, j) = autocovariance_bar(j - p);
+			}
+
+			if (solve_linear_equations_by_lu(A, x))
+			{
+				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+				coeff = x;
+
+				// reestimate the variances of the input noise process.
+				double &sigma2 = sigmas_[state][c](d);
+				sigma2 = autocovariance_bar(0);
+				for (p = 0; p < P_; ++p)
+					sigma2 -= coeff(p) * autocovariance_bar(p + 1);
+				assert(sigma2 > 0.0);
+			}
+			else
+			{
+				assert(false);
+			}
 		}
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all variances have to be positive.
+	//	-. all variances have to be symmetric positive definite.
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// FIXME [modify] >>
 	throw std::runtime_error("not yet implemented");
@@ -399,6 +415,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	{
 		double denominator;
 		double val;
+		dmatrix_type inv(D_, D_);
 		for (n = 0; n < N; ++n)
 		{
 			//const boost::numeric::ublas::matrix_row<const dmatrix_type> obs(observations, n);
@@ -456,28 +473,32 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 		// reestimate mixture coefficients(weights).
 		alphas_(state, c) = 0.001 + factorAlpha * (sumZeta + (*alphas_conj_)(state, c) - 1.0);
 
-		// reestimate observation(emission) distribution in each state.
-		double &mu = mus_(state, c);
-		mu = (*betas_conj_)(state, c) * (*mus_conj_)(state, c);
+		// reestimate symbol prob in each state.
+		dvector_type &mu = mus_[state][c];
+		mu = (*betas_conj_)(state, c) * (*mus_conj_)[state][c];
 		for (n = 0; n < N; ++n)
-			mu += zeta(n, c) * observations(n, 0);
-		mu = 0.001 + 0.999 * mu / (sumZeta + (*betas_conj_)(state, c));
+			mu += zeta(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n);
+		//mu = mu * (0.999 / (sumZeta + (*betas_conj_)(state, c))) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+		mu = mu * (0.999 / (sumZeta + (*betas_conj_)(state, c))) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
 
 		//
-		double &sigma = sigmas_(state, c);
-		sigma = (*sigmas_conj_)(state, c) + (*betas_conj_)(state, c) * (mu - (*mus_conj_)(state, c)) * (mu - (*mus_conj_)(state, c));
+		dmatrix_type &sigma = sigmas_[state][c];
+		sigma = (*sigmas_conj_)[state][c];
+		boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)(state, c), mu - (*mus_conj_)[state][c]);
 		for (n = 0; n < N; ++n)
-			sigma += zeta(n, c) * (observations(n, 0) - mu) * (observations(n, 0) - mu);
-		sigma = 0.001 + 0.999 * std::sqrt(sigma / (sumZeta + (*nus_conj_)(state, c) - D_));
-		assert(sigma > 0.0);
+			boost::numeric::ublas::blas_2::sr(sigma, gamma(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - mu);
+		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+		//sigma = sigma * (0.999 / (sumZeta + (*nus_conj_)(state, c) - D_)) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+		sigma = sigma * (0.999 / (sumZeta + (*nus_conj_)(state, c) - D_)) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all standard deviations have to be positive.
+	//	-. all covariance matrices have to be symmetric positive definite.
 #endif
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// FIXME [modify] >>
 	throw std::runtime_error("not yet implemented");
@@ -496,6 +517,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	{
 		double denominator;
 		double val;
+		dmatrix_type inv(D_, D_);
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
@@ -567,42 +589,48 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 		alphas_(state, c) = 0.001 + factorAlpha * (sumZeta + (*alphas_conj_)(state, c) - 1.0);
 
 		// reestimate observation(emission) distribution in each state.
-		double &mu = mus_(state, c);
-		mu = (*betas_conj_)(state, c) * (*mus_conj_)(state, c);
+		dvector_type &mu = mus_[state][c];
+		mu = (*betas_conj_)(state, c) * (*mus_conj_)[state][c];
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
 			const dmatrix_type &zetar = zetas[r];
 
 			for (n = 0; n < Ns[r]; ++n)
-				mu += zetar(n, c) * observationr(n, 0);
+				mu += zetar(n, c) * boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n);
 		}
-		mu = 0.001 + 0.999 * mu / (sumZeta + (*betas_conj_)(state, c));
+		//mu = mu * (0.999 / (sumZeta + (*betas_conj_)(state, c))) + boost::numeric::ublas::scalar_vector<double>(mu.size(), 0.001);
+		mu = mu * (0.999 / (sumZeta + (*betas_conj_)(state, c))) + boost::numeric::ublas::scalar_vector<double>(D_, 0.001);
 
 		//
-		double &sigma = sigmas_(state, c);
-		sigma = (*sigmas_conj_)(state, c) + (*betas_conj_)(state, c) * (mu - (*mus_conj_)(state, c)) * (mu - (*mus_conj_)(state, c));
+		dmatrix_type &sigma = sigmas_[state][c];
+		sigma = (*sigmas_conj_)[state][c];
+		boost::numeric::ublas::blas_2::sr(sigma, (*betas_conj_)(state, c), mu - (*mus_conj_)[state][c]);
 		for (r = 0; r < R; ++r)
 		{
 			const dmatrix_type &observationr = observationSequences[r];
 			const dmatrix_type &zetar = zetas[r];
 
 			for (n = 0; n < Ns[r]; ++n)
-				sigma += zetar(n, c) * (observationr(n, 0) - mu) * (observationr(n, 0) - mu);
+				boost::numeric::ublas::blas_2::sr(sigma, zetar(n, c), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
 		}
-		sigma = 0.001 + 0.999 * std::sqrt(sigma / (sumZeta + (*nus_conj_)(state, c) - D_));
-		assert(sigma > 0.0);
+		sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
+
+		//sigma = sigma * (0.999 / (sumZeta + (*nus_conj_)(state, c) - D_)) + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
+		sigma = sigma * (0.999 / (sumZeta + (*nus_conj_)(state, c) - D_)) + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all standard deviations have to be positive.
+	//	-. all covariance matrices have to be symmetric positive definite.
 #endif
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const double /*denominatorA*/)
 {
-	const double eps = 1e-40;
+	const double eps = 1e-50;
 	size_t c, n;
+
+	dmatrix_type inv(D_, D_);
 
 	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble.
@@ -744,91 +772,101 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	size_t p, j;
 	int w;
 
-	// calculate autocovariance functions.
 	dmatrix_type autocovariance(N, P_ + 1, 0.0);  // autocovariance function.
-	double meanWinObs;
-	for (n = 0; n < N; ++n)
-	{
-		for (w = -W; w <= W; ++w)
-		{
-			// TODO [check] >> which one is better?
-			//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(N)) ? 0.0 : observations(n + w, 0);
-			winObs(w + W) = int(n) + w < 0 ? observations(0, 0) : (int(n) + w >= int(N) ? observations(N - 1, 0) : observations(n + w, 0));
-		}
-
-		meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
-		// zero mean observations.
-		for (j = 0; j < L; ++j)
-			winObs(j) -= meanWinObs;
-
-		for (p = 0; p <= P_; ++p)
-			for (j = 0; j < L - p; ++j)
-				autocovariance(n, p) += winObs(j) * winObs(j + p);
-	}
-
 	dvector_type autocovariance_bar(P_ + 1, 0.0);
 	boost::numeric::ublas::matrix<double> A(P_, P_, 0.0);
 	boost::numeric::ublas::vector<double> x(P_, 0.0);
+	double meanWinObs;
 	double sumZeta;
-	for (c = 0; c < C_; ++c)
+	for (size_t d = 0; d < D_; ++d)
 	{
-		if (alphas_(state, c) < eps)  // already trimmed.
-		{
-			coeffs_[state][c].clear();
-			sigmas_[state][c] = 0.0;
-		}
-		else
-		{
-			sumZeta = 0.0;
-			for (n = 0; n < N; ++n)
-				sumZeta += zeta(n, c);
-			assert(std::fabs(sumZeta) >= eps);
+		const dvector_type &observation_d = boost::numeric::ublas::matrix_column<const dmatrix_type>(observations, d);
 
-			autocovariance_bar.clear();
+		// calculate autocovariance functions.
+		autocovariance.clear();
+		for (n = 0; n < N; ++n)
+		{
+			for (w = -W; w <= W; ++w)
+			{
+				// TODO [check] >> which one is better?
+				//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(N)) ? 0.0 : observation_d(n + w);
+				winObs(w + W) = int(n) + w < 0 ? observation_d(0) : (int(n) + w >= int(N) ? observation_d(N - 1) : observation_d(n + w));
+			}
+
+			meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
+			// zero mean observations.
+			for (j = 0; j < L; ++j)
+				winObs(j) -= meanWinObs;
+
 			for (p = 0; p <= P_; ++p)
-			{
-				for (n = 0; n < N; ++n)
-					autocovariance_bar(p) += zeta(n, c) * autocovariance(n, p);
-				autocovariance_bar(p) /= sumZeta;
-			}
+				for (j = 0; j < L - p; ++j)
+					autocovariance(n, p) += winObs(j) * winObs(j + p);
+		}
 
-			// reestimate the autoregression coefficients.
-			for (p = 0; p < P_; ++p)
+		autocovariance_bar.clear();
+		for (c = 0; c < C_; ++c)
+		{
+			if (alphas_(state, c) < eps)  // already trimmed.
 			{
-				x(p) = autocovariance_bar(p + 1);
-				for (j = 0; j < p; ++j)
-					A(p, j) = autocovariance_bar(p - j);
-				for (j = p; j < P_; ++j)
-					A(p, j) = autocovariance_bar(j - p);
-			}
-
-			if (solve_linear_equations_by_lu(A, x))
-			{
-				dvector_type &coeff = coeffs_[state][c];
-				coeff = x;
-
-				// reestimate the variances of the input noise process.
-				double &sigma2 = sigmas_[state][c];
-				sigma2 = autocovariance_bar(0);
-				for (p = 0; p < P_; ++p)
-					sigma2 -= coeff(p) * autocovariance_bar(p + 1);
-				assert(sigma2 > 0.0);
+				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+				coeff = dvector_type(coeff.size(), 0.0);
+				sigmas_[state][c](d) = 0.0;
 			}
 			else
 			{
-				assert(false);
+				sumZeta = 0.0;
+				for (n = 0; n < N; ++n)
+					sumZeta += zeta(n, c);
+				assert(std::fabs(sumZeta) >= eps);
+
+				autocovariance_bar.clear();
+				for (p = 0; p <= P_; ++p)
+				{
+					for (n = 0; n < N; ++n)
+						autocovariance_bar(p) += zeta(n, c) * autocovariance(n, p);
+					autocovariance_bar(p) /= sumZeta;
+				}
+
+				// reestimate the autoregression coefficients.
+				for (p = 0; p < P_; ++p)
+				{
+					x(p) = autocovariance_bar(p + 1);
+					for (j = 0; j < p; ++j)
+						A(p, j) = autocovariance_bar(p - j);
+					for (j = p; j < P_; ++j)
+						A(p, j) = autocovariance_bar(j - p);
+				}
+
+				if (solve_linear_equations_by_lu(A, x))
+				{
+					boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+					coeff = x;
+
+					// reestimate the variances of the input noise process.
+					double &sigma2 = sigmas_[state][c](d);
+					sigma2 = autocovariance_bar(0);
+					for (p = 0; p < P_; ++p)
+						sigma2 -= coeff(p) * autocovariance_bar(p + 1);
+					assert(sigma2 > 0.0);
+				}
+				else
+				{
+					assert(false);
+				}
 			}
 		}
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all variances have to be positive.
+	//	-. all variancews have to be symmetric positive definite.
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
+void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const double z, const bool doesTrimParameter, const double terminationTolerance, const size_t maxIteration, const size_t R, const double /*denominatorA*/)
 {
 	const double eps = 1e-50;
 	size_t c, n, r;
+
+	dmatrix_type inv(D_, D_);
 
 	// E-step: evaluate zeta.
 	// TODO [check] >> frequent memory reallocation may make trouble.
@@ -998,214 +1036,263 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 	int w;
 
 	std::vector<dmatrix_type> autocovariances(R);  // autocovariance functions.
-	double meanWinObs;
-	for (r = 0; r < R; ++r)
-	{
-		assert(Ns[r] > P_);
-
-		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &zetar = zetas[r];
-		dmatrix_type &autocovariancer = autocovariances[r];
-
-		// calculate autocovariance functions.
-		autocovariancer.resize(Ns[r], P_ + 1, false);
-		autocovariancer.clear();
-		for (n = 0; n < Ns[r]; ++n)
-		{
-			for (w = -W; w <= W; ++w)
-			{
-				// TODO [check] >> which one is better?
-				//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(Ns[r])) ? 0.0 : observationr(n + w, 0);
-				winObs(w + W) = int(n) + w < 0 ? observationr(0, 0) : (int(n) + w >= int(Ns[r]) ? observationr(Ns[r] - 1, 0) : observationr(n + w, 0));
-			}
-
-			meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
-			// zero mean observations.
-			for (j = 0; j < L; ++j)
-				winObs(j) -= meanWinObs;
-
-			for (p = 0; p <= P_; ++p)
-				for (j = 0; j < L - p; ++j)
-					autocovariancer(n, p) += winObs(j) * winObs(j + p);
-		}
-	}
-
 	dvector_type autocovariance_bar(P_ + 1, 0.0);
 	boost::numeric::ublas::matrix<double> A(P_, P_, 0.0);
 	boost::numeric::ublas::vector<double> x(P_, 0.0);
+	double meanWinObs;
 	double sumZeta;
-	for (c = 0; c < C_; ++c)
+	for (size_t d = 0; d < D_; ++d)
 	{
-		if (alphas_(state, c) < eps)  // already trimmed.
+		for (r = 0; r < R; ++r)
 		{
-			coeffs_[state][c].clear();
-			sigmas_[state][c] = 0.0;
-		}
-		else
-		{
-			sumZeta = 0.0;
-			for (r = 0; r < R; ++r)
-			{
-				const dmatrix_type &zetar = zetas[r];
+			assert(Ns[r] > P_);
 
-				for (n = 0; n < Ns[r]; ++n)
-					sumZeta += zetar(n, c);
-			}
-			assert(std::fabs(sumZeta) > eps);
+			const dmatrix_type &observationr = observationSequences[r];
+			const dmatrix_type &zetar = zetas[r];
+			dmatrix_type &autocovariancer = autocovariances[r];
 
-			//
-			autocovariance_bar.clear();
-			for (p = 0; p <= P_; ++p)
+			const dvector_type &observationr_d = boost::numeric::ublas::matrix_column<const dmatrix_type>(observationr, d);
+
+			// calculate autocovariance functions.
+			autocovariancer.resize(Ns[r], P_ + 1, false);
+			autocovariancer.clear();
+			for (n = 0; n < Ns[r]; ++n)
 			{
-				for (r = 0; r < R; ++r)
+				for (w = -W; w <= W; ++w)
 				{
-					const dmatrix_type &zetar = zetas[r];
-					const dmatrix_type &autocovariancer = autocovariances[r];
-
-					for (n = 0; n < Ns[r]; ++n)
-						autocovariance_bar(p) += zetar(n, c) * autocovariancer(n, p);
+					// TODO [check] >> which one is better?
+					//winObs(w + W) = (int(n) + w < 0 || int(n) + w >= int(Ns[r])) ? 0.0 : observationr_d(n + w);
+					winObs(w + W) = int(n) + w < 0 ? observationr_d(0) : (int(n) + w >= int(Ns[r]) ? observationr_d(Ns[r] - 1) : observationr_d(n + w));
 				}
 
-				autocovariance_bar(p) /= sumZeta;
+				meanWinObs = std::accumulate(winObs.begin(), winObs.end(), 0.0) / double(L);
+				// zero mean observations.
+				for (j = 0; j < L; ++j)
+					winObs(j) -= meanWinObs;
+
+				for (p = 0; p <= P_; ++p)
+					for (j = 0; j < L - p; ++j)
+						autocovariancer(n, p) += winObs(j) * winObs(j + p);
 			}
+		}
 
-			// reestimate the autoregression coefficients.
-			for (p = 0; p < P_; ++p)
+		for (c = 0; c < C_; ++c)
+		{
+			if (alphas_(state, c) < eps)  // already trimmed.
 			{
-				x(p) = autocovariance_bar(p + 1);
-				for (j = 0; j < p; ++j)
-					A(p, j) = autocovariance_bar(p - j);
-				for (j = p; j < P_; ++j)
-					A(p, j) = autocovariance_bar(j - p);
-			}
-
-			if (solve_linear_equations_by_lu(A, x))
-			{
-				dvector_type &coeff = coeffs_[state][c];
-				coeff = x;
-
-				// reestimate the variances of the input noise process.
-				double &sigma2 = sigmas_[state][c];
-				sigma2 = autocovariance_bar(0);
-				for (p = 0; p < P_; ++p)
-					sigma2 -= coeff(p) * autocovariance_bar(p + 1);
-				assert(sigma2 > 0.0);
+				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+				coeff = dvector_type(coeff.size(), 0.0);
+				sigmas_[state][c](d) = 0.0;
 			}
 			else
 			{
-				assert(false);
+				sumZeta = 0.0;
+				for (r = 0; r < R; ++r)
+				{
+					const dmatrix_type &zetar = zetas[r];
+
+					for (n = 0; n < Ns[r]; ++n)
+						sumZeta += zetar(n, c);
+				}
+				assert(std::fabs(sumZeta) >= eps);
+
+				//
+				autocovariance_bar.clear();
+				for (p = 0; p <= P_; ++p)
+				{
+					for (r = 0; r < R; ++r)
+					{
+						const dmatrix_type &zetar = zetas[r];
+						const dmatrix_type &autocovariancer = autocovariances[r];
+
+						for (n = 0; n < Ns[r]; ++n)
+							autocovariance_bar(p) += zetar(n, c) * autocovariancer(n, p);
+					}
+
+					autocovariance_bar(p) /= sumZeta;
+				}
+
+				// reestimate the autoregression coefficients.
+				for (p = 0; p < P_; ++p)
+				{
+					x(p) = autocovariance_bar(p + 1);
+					for (j = 0; j < p; ++j)
+						A(p, j) = autocovariance_bar(p - j);
+					for (j = p; j < P_; ++j)
+						A(p, j) = autocovariance_bar(j - p);
+				}
+
+				if (solve_linear_equations_by_lu(A, x))
+				{
+					boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+					coeff = x;
+
+					// reestimate the variances of the input noise process.
+					double &sigma2 = sigmas_[state][c](d);
+					sigma2 = autocovariance_bar(0);
+					for (p = 0; p < P_; ++p)
+						sigma2 -= coeff(p) * autocovariance_bar(p + 1);
+					assert(sigma2 > 0.0);
+				}
+				else
+				{
+					assert(false);
+				}
 			}
 		}
 	}
 
 	// POSTCONDITIONS [] >>
-	//	-. all standard deviations have to be positive.
+	//	-. all variances have to be symmetric positive definite.
 }
 
-double ArHmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
+double ArHmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
 	assert(false);
 
 	return base_type::doEvaluateEmissionProbability(state, observation);
 }
 
-double ArHmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const size_t n, const dmatrix_type &observations) const
+double ArHmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionProbability(const unsigned int state, const size_t n, const dmatrix_type &observations) const
 {
 	return base_type::doEvaluateEmissionProbability(state, n, observations);
 }
 
-double ArHmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionMixtureComponentProbability(const unsigned int state, const unsigned int component, const dvector_type &observation) const
+double ArHmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionMixtureComponentProbability(const unsigned int state, const unsigned int component, const dvector_type &observation) const
 {
 	assert(false);
 
-	double M = 0.0;
+	dvector_type M(D_, 0.0);
+	dmatrix_type S(D_, D_, 0.0);
 
-	const dvector_type &coeff = coeffs_[state][component];
-	for (size_t p = 0; p < P_; ++p)
+	const dmatrix_type &coeff = coeffs_[state][component];
+	const dvector_type &sigma2 = sigmas_[state][component];
+	for (size_t d = 0; d < D_; ++d)
 	{
-		// FIXME [check] > is it correct?
-		// TODO [check] >> which one is better?
-		M = 0.0;  //coeff(p) * 0.0;
-		//M = coeff(p) * observation(0);
-	}
-
-	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity).
-	boost::math::normal pdf(M, sigmas_[state][component]);
-
-	return boost::math::pdf(pdf, observation(0));
-}
-
-double ArHmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionMixtureComponentProbability(const unsigned int state, const unsigned int component, const size_t n, const dmatrix_type &observations) const
-{
-	double M = 0.0;
-
-	const dvector_type &coeff = coeffs_[state][component];
-	for (size_t p = 0; p < P_; ++p)
-	{
-		// TODO [check] >> which one is better?
-		//M = coeff(p) * ((int(n) - int(p) - 1 < 0) ? 0.0 : observations(n-p-1, 0));
-		M = coeff(p) * ((int(n) - int(p) - 1 < 0) ? observations(0, 0) : observations(n-p-1, 0));
-	}
-
-	//boost::math::normal pdf;  // (default mean = zero, and standard deviation = unity).
-	boost::math::normal pdf(M, sigmas_[state][component]);
-
-	return boost::math::pdf(pdf, observations(n, 0));
-}
-
-void ArHmmWithUnivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
-{
-	const double prob = (double)std::rand() / RAND_MAX;
-
-	double accum = 0.0;
-	unsigned int component = (unsigned int)C_;
-	for (size_t c = 0; c < C_; ++c)
-	{
-		accum += alphas_(state, c);
-		if (prob < accum)
+		for (size_t p = 0; p < P_; ++p)
 		{
-			component = (unsigned int)c;
-			break;
+			// FIXME [check] > is it correct?
+			// TODO [check] >> which one is better?
+			M(d) = 0.0;  //coeff(d, p) * 0.0;
+			//M(d) = coeff(d, p) * observation(d);
 		}
+		S(d, d) = sigma2(d);
 	}
 
-	// TODO [check] >>
-	if ((unsigned int)C_ == component)
-		component = (unsigned int)(C_ - 1);
+	dmatrix_type inv(S.size1(), S.size2());
+	const double det = det_and_inv_by_lu(S, inv);
+	assert(det > 0.0);
 
-	//
-	double M = 0.0;
-
-	const dvector_type &coeff = coeffs_[state][component];
-	for (size_t p = 0; p < P_; ++p)
-	{
-		// TODO [check] >> which one is better?
-		//M = coeff(p) * ((int(n) - int(p) - 1 < 0) ? 0.0 : observations(n-p-1, 0));
-		M = coeff(p) * ((int(n) - int(p) - 1 < 0) ? observations(0, 0) : observations(n-p-1, 0));
-	}
-
-	//
-	typedef boost::normal_distribution<> distribution_type;
-	typedef boost::variate_generator<base_generator_type &, distribution_type> generator_type;
-
-	// TODO [check] >> assume x_-1 = observations(-1, 0) = 0.
-	generator_type normal_gen(baseGenerator_, distribution_type(M, sigmas_[state][component]));
-	observations(n, 0) = normal_gen();
+	const dvector_type x_mu(observation - M);
+	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
+double ArHmmWithMultivariateNormalMixtureObservations::doEvaluateEmissionMixtureComponentProbability(const unsigned int state, const unsigned int component, const size_t n, const dmatrix_type &observations) const
+{
+	dvector_type M(D_, 0.0);
+	dmatrix_type S(D_, D_, 0.0);
+
+	const dmatrix_type &coeff = coeffs_[state][component];
+	const dvector_type &sigma2 = sigmas_[state][component];
+	for (size_t d = 0; d < D_; ++d)
+	{
+		for (size_t p = 0; p < P_; ++p)
+		{
+			// TODO [check] >> which one is better?
+			//M(d) = coeff(d, p) * ((int(n) - int(p) - 1 < 0) ? 0.0 : observations(n-p-1, 0));
+			M(d) = coeff(d, p) * ((int(n) - int(p) - 1 < 0) ? observations(0, 0) : observations(n-p-1, 0));
+		}
+		S(d, d) = sigma2(d);
+	}
+
+	dmatrix_type inv(S.size1(), S.size2());
+	const double det = det_and_inv_by_lu(S, inv);
+	assert(det > 0.0);
+
+	const dvector_type x_mu(boost::numeric::ublas::matrix_row<const dmatrix_type>(observations, n) - M);
+	return std::exp(-0.5 * boost::numeric::ublas::inner_prod(x_mu, boost::numeric::ublas::prod(inv, x_mu))) / std::sqrt(std::pow(MathConstant::_2_PI, (double)D_) * det);
+}
+
+void ArHmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
+{
+	assert(NULL != r_);
+
+	// bivariate normal distribution.
+	if (2 == D_)
+	{
+		const double prob = (double)std::rand() / RAND_MAX;
+
+		double accum = 0.0;
+		unsigned int component = (unsigned int)C_;
+		for (size_t c = 0; c < C_; ++c)
+		{
+			accum += alphas_(state, c);
+			if (prob < accum)
+			{
+				component = (unsigned int)c;
+				break;
+			}
+		}
+
+		// TODO [check] >>
+		if ((unsigned int)C_ == component)
+			component = (unsigned int)(C_ - 1);
+
+		//
+		dvector_type M(D_, 0.0);
+		dmatrix_type S(D_, D_, 0.0);
+
+		const dmatrix_type &coeff = coeffs_[state][component];
+		const dvector_type &sigma2 = sigmas_[state][component];
+		for (size_t d = 0; d < D_; ++d)
+		{
+			for (size_t p = 0; p < P_; ++p)
+			{
+				// TODO [check] >> which one is better?
+				//M(d) = coeff(d, p) * ((int(n) - int(p) - 1 < 0) ? 0.0 : observations(n-p-1, d));
+				M(d) = coeff(d, p) * ((int(n) - int(p) - 1 < 0) ? observations(0, d) : observations(n-p-1, d));
+			}
+			S(d, d) = sigma2(d);
+		}
+
+		const double sigma_x = std::sqrt(S(0, 0));  // sigma_x = sqrt(cov_xx).
+		const double sigma_y = std::sqrt(S(1, 1));  // sigma_y = sqrt(cov_yy).
+		const double rho = S(0, 1) / (sigma_x * sigma_y);  // correlation coefficient: rho = cov_xy / (sigma_x * sigma_y).
+
+		double x = 0.0, y = 0.0;
+		gsl_ran_bivariate_gaussian(r_, sigma_x, sigma_y, rho, &x, &y);
+
+		observations(n, 0) = M[0] + x;
+		observations(n, 1) = M[1] + y;
+	}
+	else
+	{
+		throw std::runtime_error("not yet implemented");
+	}
+}
+
+void ArHmmWithMultivariateNormalMixtureObservations::doInitializeRandomSampleGeneration(const unsigned int seed /*= (unsigned int)-1*/) const
 {
 	if ((unsigned int)-1 != seed)
 	{
-		std::srand(seed);
-		baseGenerator_.seed(seed);
+		// random number generator algorithms.
+		gsl_rng_default = gsl_rng_mt19937;
+		//gsl_rng_default = gsl_rng_taus;
+		gsl_rng_default_seed = seed;
 	}
+
+	const gsl_rng_type *T = gsl_rng_default;
+	r_ = gsl_rng_alloc(T);
 }
 
-bool ArHmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::istream &stream)
+void ArHmmWithMultivariateNormalMixtureObservations::doFinalizeRandomSampleGeneration() const
 {
-	if (1 != D_) return false;
+	gsl_rng_free(r_);
+	r_ = NULL;
+}
 
+bool ArHmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std::istream &stream)
+{
 	std::string dummy;
 	stream >> dummy;
 #if defined(__GNUC__)
@@ -1217,9 +1304,9 @@ bool ArHmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std:
 
 	stream >> dummy;
 #if defined(__GNUC__)
-	if (strcasecmp(dummy.c_str(), "univariate") != 0)
+	if (strcasecmp(dummy.c_str(), "multivariate") != 0)
 #elif defined(_MSC_VER)
-	if (_stricmp(dummy.c_str(), "univariate") != 0)
+	if (_stricmp(dummy.c_str(), "multivariate") != 0)
 #endif
 		return false;
 
@@ -1267,7 +1354,7 @@ bool ArHmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std:
 #endif
 		return false;
 
-	size_t k, c, p;
+	size_t k, c, d, p;
 
 	// K x C.
 	for (k = 0; k < K_; ++k)
@@ -1282,11 +1369,16 @@ bool ArHmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std:
 #endif
 		return false;
 
-	// K x C x P.
+	// K x C x D x P.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
-			for (p = 0; p < P_; ++p)
-				stream >> coeffs_[k][c](p);
+		{
+			dmatrix_type &coeff = coeffs_[k][c];
+
+			for (d = 0; d < D_; ++d)
+				for (p = 0; p < P_; ++p)
+					stream >> coeff(d, p);
+		}
 
 	stream >> dummy;
 #if defined(__GNUC__)
@@ -1296,23 +1388,28 @@ bool ArHmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std:
 #endif
 		return false;
 
-	// K x C.
+	// K x C x D.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
-			stream >> sigmas_[k][c];
+		{
+			dvector_type &sigma2 = sigmas_[k][c];
+
+			for (d = 0; d < D_; ++d)
+				stream >> sigma2(d);
+		}
 
 	return true;
 }
 
-bool ArHmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::ostream &stream) const
+bool ArHmmWithMultivariateNormalMixtureObservations::doWriteObservationDensity(std::ostream &stream) const
 {
-	stream << "ar univariate normal mixture:" << std::endl;
+	stream << "ar multivariate normal mixture:" << std::endl;
 
 	stream << "C= " << C_ << std::endl;  // the number of mixture components.
 
 	stream << "P= " << P_ << std::endl;  // the order of autoregressive model.
 
-	size_t k, c, p;
+	size_t k, c, d, p;
 
 	// K x C.
 	stream << "alpha:" << std::endl;
@@ -1323,42 +1420,55 @@ bool ArHmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std
 		stream << std::endl;
 	}
 
-	// K x C x P.
+	// K x C x D x P.
 	stream << "coeff:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
 		for (c = 0; c < C_; ++c)
 		{
-			for (p = 0; p < P_; ++p)
-				stream << coeffs_[k][c](p) << ' ';
-			stream << "  ";
+			const dmatrix_type &coeff = coeffs_[k][c];
+
+			for (d = 0; d < D_; ++d)
+			{
+				for (p = 0; p < D_; ++p)
+					stream << coeff(d, p) << ' ';
+				stream << "  ";
+			}
+			stream << std::endl;
 		}
 		stream << std::endl;
 	}
 
-	// K x C.
+	// K x C x D.
 	stream << "sigma:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
 		for (c = 0; c < C_; ++c)
-			stream << sigmas_[k][c] << ' ';
+		{
+			const dvector_type &sigma2 = sigmas_[k][c];
+
+			for (d = 0; d < D_; ++d)
+				stream << sigma2(d) << ' ';
+			stream << std::endl;
+		}
 		stream << std::endl;
 	}
 
 	return true;
 }
 
-void ArHmmWithUnivariateNormalMixtureObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
+void ArHmmWithMultivariateNormalMixtureObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
 	// PRECONDITIONS [] >>
 	//	-. std::srand() has to be called before this function is called.
 
 	// initialize mixture coefficients(weights).
 	{
-		double sum = 0.0;
+		double sum;
 		size_t c;
 		for (size_t k = 0; k < K_; ++k)
 		{
+			sum = 0.0;
 			for (c = 0; c < C_; ++c)
 			{
 				alphas_(k, c) = (double)std::rand() / RAND_MAX;
@@ -1373,7 +1483,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doInitializeObservationDensit
 	const std::size_t numLowerBound = lowerBoundsOfObservationDensity.size();
 	const std::size_t numUpperBound = upperBoundsOfObservationDensity.size();
 
-	const std::size_t numParameters = K_ * C_ * P_ + K_ * C_;  // the total number of parameters of observation density.
+	const std::size_t numParameters = K_ * C_ * D_ * P_ + K_ * C_ * D_;  // the total number of parameters of observation density.
 
 	assert(numLowerBound == numUpperBound);
 	assert(1 == numLowerBound || numParameters == numLowerBound);
@@ -1381,39 +1491,53 @@ void ArHmmWithUnivariateNormalMixtureObservations::doInitializeObservationDensit
 	if (1 == numLowerBound)
 	{
 		const double lb = lowerBoundsOfObservationDensity[0], ub = upperBoundsOfObservationDensity[0];
-		size_t k, c, p;
+		size_t k, c, d, p;
 		for (k = 0; k < K_; ++k)
 			for (c = 0; c < C_; ++c)
 			{
-				for (p = 0; p < P_; ++p)
-					coeffs_[k][c](p) = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
-				// TODO [check] >> all variances have to be positive.
-				sigmas_[k][c] = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+				dmatrix_type &coeff = coeffs_[k][c];
+				dvector_type &sigma2 = sigmas_[k][c];
+				for (d = 0; d < D_; ++d)
+				{
+					for (p = 0; p < P_; ++p)
+						coeff(d, p) = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+					sigma2(d) = ((double)std::rand() / RAND_MAX) * (ub - lb) + lb;
+				}
 			}
  	}
 	else if (numParameters == numLowerBound)
 	{
-		size_t k, c, p, idx = 0;
+		size_t k, c, d, p, idx = 0;
 		for (k = 0; k < K_; ++k)
 			for (c = 0; c < C_; ++c)
-				for (p = 0; p < P_; ++p, ++idx)
-					coeffs_[k][c](p) = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+			{
+				dmatrix_type &coeff = coeffs_[k][c];
+				for (d = 0; d < D_; ++d)
+					for (p = 0; p < P_; ++p, ++idx)
+						coeff(d, p) = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+			}
 		for (k = 0; k < K_; ++k)
-			for (c = 0; c < C_; ++c, ++idx)
-				// TODO [check] >> all variances have to be positive.
-				sigmas_[k][c] = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+			for (c = 0; c < C_; ++c)
+			{
+				dvector_type &sigma2 = sigmas_[k][c];
+				for (d = 0; d < D_; ++d, ++idx)
+					sigma2(d) = ((double)std::rand() / RAND_MAX) * (upperBoundsOfObservationDensity[idx] - lowerBoundsOfObservationDensity[idx]) + lowerBoundsOfObservationDensity[idx];
+			}
 	}
 
 	for (size_t k = 0; k < K_; ++k)
 		for (size_t c = 0; c < C_; ++c)
 		{
-			// all variances have to be positive.
-			if (sigmas_[k][c] < 0.0)
-				sigmas_[k][c] = -sigmas_[k][c];
+			dvector_type &sigma2 = sigmas_[k][c];
+
+			// all variances have to be symmetric positive definite.
+			for (size_t d = 0; d < D_; ++d)
+				if (sigma2(d) < 0.0)
+					sigma2(d) = -sigma2(d);
 		}
 
 	// POSTCONDITIONS [] >>
-	//	-. all variances have to be positive.
+	//	-. all variances have to be symmetric positive definite.
 }
 
 }  // namespace swl

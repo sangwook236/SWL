@@ -1,40 +1,40 @@
-#if !defined(__SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_)
-#define __SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_ 1
+#if !defined(__SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_)
+#define __SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_ 1
 
 
 #include "swl/rnd_util/CDHMM.h"
-#include <boost/random/linear_congruential.hpp>
+#include <gsl/gsl_rng.h>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density autoregressive (AR) HMM with univariate normal observation densities.
+// continuous density autoregressive (AR) HMM with multivariate normal observation densities.
 
-class SWL_RND_UTIL_API ArHmmWithUnivariateNormalObservations: public CDHMM
+class SWL_RND_UTIL_API ArHmmWithMultivariateNormalObservations: public CDHMM
 {
 public:
 	typedef CDHMM base_type;
 
 public:
-	ArHmmWithUnivariateNormalObservations(const size_t K, const size_t P);  // for ML learning.
-	ArHmmWithUnivariateNormalObservations(const size_t K, const size_t P, const dvector_type &pi, const dmatrix_type &A, const std::vector<dvector_type> &coeffs, const std::vector<double> &sigmas);
+	ArHmmWithMultivariateNormalObservations(const size_t K, const size_t D, const size_t P);  // for ML learning.
+	ArHmmWithMultivariateNormalObservations(const size_t K, const size_t D, const size_t P, const dvector_type &pi, const dmatrix_type &A, const std::vector<dmatrix_type> &coeffs, const std::vector<dvector_type> &sigmas);
 	// FIXME [fix] >> 
-	ArHmmWithUnivariateNormalObservations(const size_t K, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const std::vector<dvector_type> *coeffs_conj);  // for MAP learning using conjugate prior.
-	virtual ~ArHmmWithUnivariateNormalObservations();
+	ArHmmWithMultivariateNormalObservations(const size_t K, const size_t D, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const std::vector<dmatrix_type> *coeffs_conj);  // for MAP learning using conjugate prior.
+	virtual ~ArHmmWithMultivariateNormalObservations();
 
 private:
-	ArHmmWithUnivariateNormalObservations(const ArHmmWithUnivariateNormalObservations &rhs);  // not implemented.
-	ArHmmWithUnivariateNormalObservations & operator=(const ArHmmWithUnivariateNormalObservations &rhs);  // not implemented.
+	ArHmmWithMultivariateNormalObservations(const ArHmmWithMultivariateNormalObservations &rhs);  // not implemented.
+	ArHmmWithMultivariateNormalObservations & operator=(const ArHmmWithMultivariateNormalObservations &rhs);  // not implemented.
 
 public:
 	//
 	size_t getAutoregressiveOrder() const { return P_; }
 
-	std::vector<dvector_type> & getAutoregressiveCoefficient()  {  return coeffs_;  }
-	const std::vector<dvector_type> & getAutoregressiveCoefficient() const  {  return coeffs_;  }
-	std::vector<double> & getStandardDeviation()  {  return  sigmas_;  }
-	const std::vector<double> & getStandardDeviation() const  {  return  sigmas_;  }
+	std::vector<dmatrix_type> & getAutoregressiveCoefficient()  {  return coeffs_;  }
+	const std::vector<dmatrix_type> & getAutoregressiveCoefficient() const  {  return coeffs_;  }
+	std::vector<dvector_type> & getStandardDeviation()  {  return  sigmas_;  }
+	const std::vector<dvector_type> & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ].
@@ -48,7 +48,7 @@ protected:
 	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const;
 	// if seed != -1, the seed value is set.
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
-	///*virtual*/ void doFinalizeRandomSampleGeneration() const;
+	/*virtual*/ void doFinalizeRandomSampleGeneration() const;
 
 	// ML learning.
 	//	-. for a single independent observation sequence.
@@ -88,20 +88,19 @@ protected:
 private:
 	const size_t P_;  // the order of autoregressive model. p >= 1.
 
-	std::vector<dvector_type> coeffs_;  // the autoregression coefficients.
-	std::vector<double> sigmas_;  // the variances of the input noise processes. sigam^2.
+	std::vector<dmatrix_type> coeffs_;  // autoregression coefficients.
+	std::vector<dvector_type> sigmas_;  // the variances of the input noise processes. sigam^2.
 
 	// hyperparameters for the conjugate prior.
 	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
 	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	// FIXME [implement] >> 
-	boost::scoped_ptr<const std::vector<dvector_type> > coeffs_conj_;
+	boost::scoped_ptr<const std::vector<dmatrix_type> > coeffs_conj_;
 
-	typedef boost::minstd_rand base_generator_type;
-	mutable base_generator_type baseGenerator_;
+	mutable gsl_rng *r_;
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_OBSERVATIONS__H_
+#endif  // __SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_OBSERVATIONS__H_

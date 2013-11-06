@@ -15,8 +15,8 @@
 #endif
 
 
-//#define __TEST_HMM_MODEL 1
-#define __TEST_HMM_MODEL 2
+#define __TEST_HMM_MODEL 1
+//#define __TEST_HMM_MODEL 2
 #define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
 
@@ -32,14 +32,14 @@ void model_reading_and_writing()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -76,7 +76,7 @@ void model_reading_and_writing()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -86,11 +86,10 @@ void model_reading_and_writing()
 			0.45, 0.1,  0.45,
 			0.45, 0.45, 0.1
 		};
-		const double arrW[] = {
-			-0.01, 0.02, 0.04
-		};
-		const double arrMu[] = {
-			0.0, 30.0, -20.0
+		const double arrCoeff[] = {
+			-0.5, 0.2,
+			1.0, -0.4,
+			-1.0, 1.5
 		};
 		const double arrSigma[] = {
 			1.0, 2.0, 1.5
@@ -101,7 +100,7 @@ void model_reading_and_writing()
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -111,11 +110,10 @@ void model_reading_and_writing()
 			0.2, 0.4,  0.4,
 			0.1, 0.45, 0.45
 		};
-		const double arrW[] = {
-			-0.02, 0.05, 0.03
-		};
-		const double arrMu[] = {
-			0.0, -30.0, 20.0
+		const double arrCoeff[] = {
+			-0.2, 0.5,
+			2.0, 0.0,
+			-2.0, 2.0
 		};
 		const double arrSigma[] = {
 			1.0, 2.0, 1.5
@@ -134,10 +132,15 @@ void model_reading_and_writing()
 
 		swl::ArHmmWithUnivariateNormalObservations::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
 		swl::ArHmmWithUnivariateNormalObservations::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
-		swl::ArHmmWithUnivariateNormalObservations::dvector_type mus(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrMu, arrMu + K)));
-		swl::ArHmmWithUnivariateNormalObservations::dvector_type sigmas(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrSigma, arrSigma + K)));
-		swl::ArHmmWithUnivariateNormalObservations::dvector_type Ws(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrW, arrW + K)));
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi, A, mus, sigmas, Ws));
+		std::vector<swl::ArHmmWithUnivariateNormalObservations::dvector_type> coeffs(K, swl::ArHmmWithUnivariateNormalObservations::dvector_type(P, 0.0));
+		std::vector<double> sigmas(arrSigma, arrSigma + K);
+		for (size_t k = 0, idx = 0; k < K; ++k)
+		{
+			for (size_t p = 0; p < P; ++p, ++idx)
+				coeffs[k](p) = arrCoeff[idx];
+		}
+
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi, A, coeffs, sigmas));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -159,14 +162,14 @@ void observation_sequence_generation(const bool outputToFile)
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -340,14 +343,14 @@ void forward_algorithm()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -467,14 +470,14 @@ void viterbi_algorithm()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -609,14 +612,14 @@ void ml_learning_by_em()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -657,7 +660,7 @@ void ml_learning_by_em()
 
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P));
 
@@ -846,14 +849,14 @@ void map_learning_by_em_using_conjugate_prior()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -873,19 +876,14 @@ void map_learning_by_em_using_conjugate_prior()
 		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		// FIXME [check] >> hyperparameters for univariate normal distribution.
-		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
-		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
-		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
-		swl::CDHMM::dvector_type *nus_conj = new swl::CDHMM::dvector_type(K, 1.0);  // nu > D - 1.
+		std::vector<swl::CDHMM::dvector_type> *coeffs_conj = new std::vector<swl::CDHMM::dvector_type>(K, swl::CDHMM::dvector_type(P, 0.0));
 		for (size_t k = 0; k < K; ++k)
-		{
-			(*mus_conj)(k) = (std::rand() / RAND_MAX) * 10.0 - 5.0;
-			//(*betas_conj)(k) = (std::rand() / RAND_MAX + 1.0) * 10.0;
-			//(*sigmas_conj)(k) = ???;
-			//(*nus_conj)(k) = ???;
-		}
+			for (size_t p = 0; p < P; ++p)
+			{
+				(*coeffs_conj)[k](p) = (std::rand() / RAND_MAX) * 10.0 - 5.0;
+			}
 
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi_conj, A_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi_conj, A_conj, coeffs_conj));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -913,26 +911,21 @@ void map_learning_by_em_using_conjugate_prior()
 
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
 		swl::CDHMM::dvector_type *pi_conj = new swl::CDHMM::dvector_type(K, 1.0);
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		// FIXME [check] >> hyperparameters for univariate normal distribution.
-		swl::CDHMM::dvector_type *mus_conj = new swl::CDHMM::dvector_type(K, 0.0);
-		swl::CDHMM::dvector_type *betas_conj = new swl::CDHMM::dvector_type(K, 1.0);  // beta > 0.
-		swl::CDHMM::dvector_type *sigmas_conj = new swl::CDHMM::dvector_type(K, 1.0);
-		swl::CDHMM::dvector_type *nus_conj = new swl::CDHMM::dvector_type(K, 1.0);  // nu > D - 1.
+		std::vector<swl::CDHMM::dvector_type> *coeffs_conj = new std::vector<swl::CDHMM::dvector_type>(K, swl::CDHMM::dvector_type(P, 0.0));
 		for (size_t k = 0; k < K; ++k)
-		{
-			(*mus_conj)(k) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
-			//(*betas_conj)(k) = (std::rand() / RAND_MAX + 1.0) * 100.0;
-			//(*sigmas_conj)(k) = ???;
-			//(*nus_conj)(k) = ???;
-		}
+			for (size_t p = 0; p < P; ++p)
+			{
+				(*coeffs_conj)[k](p) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
+			}
 
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi_conj, A_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, pi_conj, A_conj, coeffs_conj));
 
 		// the total number of parameters of observation density: K * D * 3.
 		const size_t numParameters = K * 1 * 3;
@@ -1119,14 +1112,14 @@ void map_learning_by_em_using_entropic_prior()
 #if __TEST_HMM_MODEL == 1
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test1.cdhmm");
 #elif __TEST_HMM_MODEL == 2
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_test2.cdhmm");
@@ -1142,7 +1135,7 @@ void map_learning_by_em_using_entropic_prior()
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, betas_conj, sigmas_conj, nus_conj));
+		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, coeffs_conj));
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P));
 
 		const bool retval = cdhmm->readModel(stream);
@@ -1171,12 +1164,12 @@ void map_learning_by_em_using_entropic_prior()
 
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, betas_conj, sigmas_conj, nus_conj));
+		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P, coeffs));
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalObservations(K, P));
 
 		// the total number of parameters of observation density: K * D * 3.

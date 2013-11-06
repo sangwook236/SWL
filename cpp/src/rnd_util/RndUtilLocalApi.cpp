@@ -50,20 +50,20 @@ double determinant_by_lu(const boost::numeric::ublas::matrix<double> &m)
 
 bool inverse_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv)
 {
-	// create a working copy of the m
+	// create a working copy of the m.
 	boost::numeric::ublas::matrix<double> A(m);
-	// create a permutation matrix for the LU factorization
+	// create a permutation matrix for the LU factorization.
 	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
 
-	// perform LU factorization
+	// perform LU factorization.
 	if (boost::numeric::ublas::lu_factorize(A, pm))
 		return false;
 	else
 	{
-		// create identity matrix of inv
+		// create identity matrix of inv.
 		inv.assign(boost::numeric::ublas::identity_matrix<double>(A.size1()));
 
-		// back-substitute to get the inverse
+		// back-substitute to get the inverse.
 		boost::numeric::ublas::lu_substitute(A, pm, inv);
 
 		return true;
@@ -72,9 +72,9 @@ bool inverse_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeri
 
 double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::matrix<double> &inv)
 {
-	// create a working copy of the m
+	// create a working copy of the m.
 	boost::numeric::ublas::matrix<double> A(m);
-	// create a permutation matrix for the LU factorization
+	// create a permutation matrix for the LU factorization.
 	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
 /*
 	// FIXME [delete] >>
@@ -86,15 +86,15 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 	}
 	std::cout << std::endl;
 */
-	// perform LU factorization
+	// perform LU factorization.
 	if (boost::numeric::ublas::lu_factorize(A, pm))
 		return 0.0;
 	else
 	{
-		// create identity matrix of inv
+		// create identity matrix of inv.
 		inv.assign(boost::numeric::ublas::identity_matrix<double>(A.size1()));
 
-		// back-substitute to get the inverse
+		// back-substitute to get the inverse.
 		boost::numeric::ublas::lu_substitute(A, pm, inv);
 /*
 		// FIXME [delete] >>
@@ -115,6 +115,25 @@ double det_and_inv_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::
 	}
 }
 
+bool solve_linear_equations_by_lu(const boost::numeric::ublas::matrix<double> &m, boost::numeric::ublas::vector<double> &x)
+{
+	// create a working copy of the m.
+	boost::numeric::ublas::matrix<double> A(m);
+	// create a permutation matrix for the LU factorization.
+	boost::numeric::ublas::permutation_matrix<std::size_t> pm(A.size1());
+
+	// perform LU factorization.
+	if (boost::numeric::ublas::lu_factorize(A, pm))
+		return false;
+	else
+	{
+		// back-substitute.
+		boost::numeric::ublas::lu_substitute(A, pm, x);
+
+		return true;
+	}
+}
+
 //--------------------------------------------------------------------------
 //
 
@@ -129,15 +148,15 @@ double kappa_objective_function(double x, void *params)
 			return boost::math::cyl_bessel_i(1.0, x) / boost::math::cyl_bessel_i(0.0, x) - *A;
 		else
 		{
-			// [ref] "Directional Statistics" by K. Mardia, pp. 40
+			// [ref] "Directional Statistics" by K. Mardia, pp. 40.
 /*
-			// for small kappa
+			// for small kappa.
 			//return 0.5 * x * (1.0 - x*x/8.0 + x*x*x*x/48.0 - x*x*x*x*x*x*11.0/3072.0) - *A;
 			const double x2 = x * x;
 			//return 0.5 * x * (1.0 + x2 * (-1.0/8.0 + x2 * (1.0/48.0 - x2 * 11.0/3072.0))) - *A;
 			return 0.5 * x * (1.0 + x2 * (-0.125 + x2 * (0.020833333333333 - x2 * 0.003580729166667))) - *A;
 */
-			// for large kappa
+			// for large kappa.
 			//const double x2 = x * x;
 			//const double val = x >= 0 ? (1.0 - 1.0 / (2.0 * x) - 1.0 / (8.0 * x2) - 1.0 / (8.0 * x2 * x)) : (-1.0 - 1.0 / (2.0 * x) + 1.0 / (8.0 * x2) - 1.0 / (8.0 * x2 * x));
 			const double val = x >= 0 ? (1.0 - (0.5 + (0.125 + 0.125 / x) / x) / x) : (-1.0 - (0.5 - (0.125 - 0.125 / x) / x) / x);

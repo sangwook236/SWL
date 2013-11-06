@@ -1,41 +1,41 @@
-#if !defined(__SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_)
-#define __SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_ 1
+#if !defined(__SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_)
+#define __SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_ 1
 
 
 #include "swl/rnd_util/CDHMMWithMixtureObservations.h"
-#include <boost/random/linear_congruential.hpp>
+#include <gsl/gsl_rng.h>
 #include <boost/multi_array.hpp>
 
 
 namespace swl {
 
 //--------------------------------------------------------------------------
-// continuous density autoregressive (AR) HMM with univariate normal mixture observation densities.
+// continuous density autoregressive (AR) HMM with multivariate normal mixture observation densities.
 
-class SWL_RND_UTIL_API ArHmmWithUnivariateNormalMixtureObservations: public CDHMMWithMixtureObservations
+class SWL_RND_UTIL_API ArHmmWithMultivariateNormalMixtureObservations: public CDHMMWithMixtureObservations
 {
 public:
 	typedef CDHMMWithMixtureObservations base_type;
 
 public:
-	ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P);  // for ML learning.
-	ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dvector_type, 2> &coeffs, const boost::multi_array<double, 2> &sigmas);
+	ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P);  // for ML learning.
+	ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P, const dvector_type &pi, const dmatrix_type &A, const dmatrix_type &alphas, const boost::multi_array<dmatrix_type, 2> &coeffs, const boost::multi_array<dvector_type, 2> &sigmas);
 	// FIXME [fix] >> 
-	ArHmmWithUnivariateNormalMixtureObservations(const size_t K, const size_t C, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dvector_type, 2> *coeffs_conj);  // for MAP learning using conjugate prior.
-	virtual ~ArHmmWithUnivariateNormalMixtureObservations();
+	ArHmmWithMultivariateNormalMixtureObservations(const size_t K, const size_t D, const size_t C, const size_t P, const dvector_type *pi_conj, const dmatrix_type *A_conj, const dmatrix_type *alphas_conj, const boost::multi_array<dmatrix_type, 2> *coeffs_conj);  // for MAP learning using conjugate prior.
+	virtual ~ArHmmWithMultivariateNormalMixtureObservations();
 
 private:
-	ArHmmWithUnivariateNormalMixtureObservations(const ArHmmWithUnivariateNormalMixtureObservations &rhs);  // not implemented.
-	ArHmmWithUnivariateNormalMixtureObservations & operator=(const ArHmmWithUnivariateNormalMixtureObservations &rhs);  // not implemented.
+	ArHmmWithMultivariateNormalMixtureObservations(const ArHmmWithMultivariateNormalMixtureObservations &rhs);  // not implemented.
+	ArHmmWithMultivariateNormalMixtureObservations & operator=(const ArHmmWithMultivariateNormalMixtureObservations &rhs);  // not implemented.
 
 public:
 	//
 	size_t getAutoregressiveOrder() const { return P_; }
 
-	boost::multi_array<dvector_type, 2> & getAutoregressiveCoefficient()  {  return coeffs_;  }
-	const boost::multi_array<dvector_type, 2> & getAutoregressiveCoefficient() const  {  return coeffs_;  }
-	boost::multi_array<double, 2> & getStandardDeviation()  {  return  sigmas_;  }
-	const boost::multi_array<double, 2> & getStandardDeviation() const  {  return  sigmas_;  }
+	boost::multi_array<dmatrix_type, 2> & getAutoregressiveCoefficient()  {  return coeffs_;  }
+	const boost::multi_array<dmatrix_type, 2> & getAutoregressiveCoefficient() const  {  return coeffs_;  }
+	boost::multi_array<dvector_type, 2> & getStandardDeviation()  {  return  sigmas_;  }
+	const boost::multi_array<dvector_type, 2> & getStandardDeviation() const  {  return  sigmas_;  }
 
 protected:
 	// if state == 0, hidden state = [ 1 0 0 ... 0 0 ].
@@ -51,7 +51,7 @@ protected:
 	/*virtual*/ void doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const;
 	// if seed != -1, the seed value is set.
 	/*virtual*/ void doInitializeRandomSampleGeneration(const unsigned int seed = (unsigned int)-1) const;
-	///*virtual*/ void doFinalizeRandomSampleGeneration() const;
+	/*virtual*/ void doFinalizeRandomSampleGeneration() const;
 
 	// ML learning.
 	//	-. for a single independent observation sequence.
@@ -91,20 +91,19 @@ protected:
 private:
 	const size_t P_;  // the order of autoregressive model. p >= 1.
 
-	boost::multi_array<dvector_type, 2> coeffs_;  // autoregression coefficients.
-	boost::multi_array<double, 2> sigmas_;  // the variances of the input noise processes. sigam^2.
+	boost::multi_array<dmatrix_type, 2> coeffs_;  // autoregression coefficients.
+	boost::multi_array<dvector_type, 2> sigmas_;  // the variances of the input noise processes. sigam^2.
 
 	// hyperparameters for the conjugate prior.
 	//	[ref] "EM Algorithm 3 - THE EM Algorithm for MAP Estimates of HMM", personal note.
 	//	[ref] "Pattern Recognition and Machine Learning", C. M. Bishop, Springer, 2006.
 	// FIXME [implement] >> 
-	boost::scoped_ptr<const boost::multi_array<dvector_type, 2> > coeffs_conj_;
+	boost::scoped_ptr<const boost::multi_array<dmatrix_type, 2> > coeffs_conj_;
 
-	typedef boost::minstd_rand base_generator_type;
-	mutable base_generator_type baseGenerator_;
+	mutable gsl_rng *r_;
 };
 
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__AR_HMM_WITH_UNIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_
+#endif  // __SWL_RND_UTIL__AR_HMM_WITH_MULTIVARIATE_NORMAL_MIXTURE_OBSERVATIONS__H_

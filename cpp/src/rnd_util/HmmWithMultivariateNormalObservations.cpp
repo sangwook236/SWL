@@ -367,7 +367,7 @@ bool HmmWithMultivariateNormalObservations::doWriteObservationDensity(std::ostre
 		{
 			for (i = 0; i < D_; ++i)
 				stream << sigma(d, i) << ' ';
-			std::cout << "  ";
+			stream << "  ";
 		}
 		stream << std::endl;
 	}

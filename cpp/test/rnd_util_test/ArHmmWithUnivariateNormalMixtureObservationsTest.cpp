@@ -15,8 +15,8 @@
 #endif
 
 
-//#define __TEST_HMM_MODEL 0
-#define __TEST_HMM_MODEL 1
+#define __TEST_HMM_MODEL 0
+//#define __TEST_HMM_MODEL 1
 //#define __TEST_HMM_MODEL 2
 //#define __USE_SPECIFIED_VALUE_FOR_RANDOM_SEED 1
 
@@ -33,7 +33,8 @@ void model_reading_and_writing()
 #if __TEST_HMM_MODEL == 0
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
-		const size_t C = 2;  // the number of mixture components. p >= 0. if p == 0, we can use all observations.
+		const size_t C = 2;  // the number of mixture components. p >= 1.
+		const size_t P = 2;  // the order of prautoregressive prcess. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -41,7 +42,7 @@ void model_reading_and_writing()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of prautoregressive prcess. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of prautoregressive prcess. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -49,7 +50,7 @@ void model_reading_and_writing()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -87,7 +88,7 @@ void model_reading_and_writing()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -102,20 +103,15 @@ void model_reading_and_writing()
 			0.35, 0.65,
 			0.7, 0.3
 		};
-		const double arrW[] = {
-			-0.03, 0.04,
-			-0.05, -0.05,
-			0.08, 0.06
-		};
-		const double arrMu[] = {
-			0.0, -200.0,
-			1500.0, 2000.0,
-			-2000.0, -4000.0
+		const double arrCoeff[] = {
+			-0.3, 1.4,    1.3, -1.4,
+			-1.5, -0.5,   1.5, -1.5,
+			0.8,  1.6,    1.8,  -1.6
 		};
 		const double arrSigma[] = {
-			5.0, 3.0,
-			2.0, 10.0,
-			6.0, 8.5
+			1.2, 0.7,
+			0.5, 1.0,
+			1.0, 1.2
 		};
 
 		//
@@ -124,7 +120,7 @@ void model_reading_and_writing()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -139,15 +135,10 @@ void model_reading_and_writing()
 			0.2, 0.8,
 			0.5, 0.5
 		};
-		const double arrW[] = {
-			0.02, 0.07,
-			-0.02, 0.03,
-			0.04, 0.04
-		};
-		const double arrMu[] = {
-			0.0, 5.0,
-			30.0, 40.0,
-			-20.0, -25.0
+		const double arrCoeff[] = {
+			2.0,  1.7,   -1.0, 0.0,
+			-2.5, 3.3,   2.0,  -1.7,
+			2.4,  1.4,   1.3,  1.7
 		};
 		const double arrSigma[] = {
 			3.0, 1.0,
@@ -161,7 +152,7 @@ void model_reading_and_writing()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		const double arrPi[] = {
 			1.0/3.0, 1.0/3.0, 1.0/3.0
@@ -176,19 +167,14 @@ void model_reading_and_writing()
 			0.6, 0.4,
 			0.75, 0.25
 		};
-		const double arrW[] = {
-			0.03, -0.02,
-			0.02, 0.04,
-			-0.05, 0.02
-		};
-		const double arrMu[] = {
-			0.0, -5.0,
-			-30.0, -35.0,
-			20.0, 15.0
+		const double arrCoeff[] = {
+			3.3,  -1.2,   0.4, 2.7,
+			0.2,  1.4,    1.2, 1.3,
+			-1.5, 1.2,    0.3, -0.3
 		};
 		const double arrSigma[] = {
 			1.0, 2.0,
-			2.0, 4.0,
+			1.3, 0.7,
 			0.5, 1.5
 		};
 
@@ -203,13 +189,21 @@ void model_reading_and_writing()
 			return;
 		}
 
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dmatrix_type alphas(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrAlpha, arrAlpha + K * C)));
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dmatrix_type mus(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrMu, arrMu + K * C)));
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dmatrix_type sigmas(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrSigma, arrSigma + K * C)));
-		swl::ArHmmWithUnivariateNormalMixtureObservations::dmatrix_type Ws(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrW, arrW + K * C)));
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi, A, alphas, mus, sigmas, Ws));
+		swl::CDHMM::dvector_type pi(boost::numeric::ublas::vector<double, std::vector<double> >(K, std::vector<double>(arrPi, arrPi + K)));
+		swl::CDHMM::dmatrix_type A(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, K, std::vector<double>(arrA, arrA + K * K)));
+		swl::CDHMM::dmatrix_type alphas(boost::numeric::ublas::matrix<double, boost::numeric::ublas::row_major, std::vector<double> >(K, C, std::vector<double>(arrAlpha, arrAlpha + K * C)));
+		boost::multi_array<swl::CDHMM::dvector_type, 2> coeffs(boost::extents[K][C]);
+		boost::multi_array<double, 2> sigmas(boost::extents[K][C]);
+		for (size_t k = 0, idx = 0; k < K; ++k)
+			for (size_t c = 0; c < C; ++c)
+			{
+				coeffs[k][c].resize(P, false);
+				for (size_t p = 0; p < P; ++p, ++idx)
+					coeffs[k][c](p) = arrCoeff[idx];
+				sigmas[k][c] = arrSigma[k * C + c];
+			}
+
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi, A, alphas, coeffs, sigmas));
 
 		const bool retval = cdhmm->writeModel(stream);
 		if (!retval)
@@ -232,7 +226,7 @@ void observation_sequence_generation(const bool outputToFile)
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -240,7 +234,7 @@ void observation_sequence_generation(const bool outputToFile)
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -248,7 +242,7 @@ void observation_sequence_generation(const bool outputToFile)
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -448,7 +442,7 @@ void forward_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -456,7 +450,7 @@ void forward_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -464,7 +458,7 @@ void forward_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -597,7 +591,7 @@ void viterbi_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -605,7 +599,7 @@ void viterbi_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -613,7 +607,7 @@ void viterbi_algorithm()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -761,7 +755,7 @@ void ml_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -769,7 +763,7 @@ void ml_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -777,7 +771,7 @@ void ml_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -819,7 +813,7 @@ void ml_learning_by_em()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P));
 
@@ -1028,7 +1022,7 @@ void map_learning_by_em_using_conjugate_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -1036,7 +1030,7 @@ void map_learning_by_em_using_conjugate_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -1044,7 +1038,7 @@ void map_learning_by_em_using_conjugate_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -1065,20 +1059,18 @@ void map_learning_by_em_using_conjugate_prior()
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		swl::CDHMM::dmatrix_type *alphas_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		// FIXME [check] >> hyperparameters for univariate normal mixture distributions.
-		swl::CDHMM::dmatrix_type *mus_conj = new swl::CDHMM::dmatrix_type(K, C, 0.0);
-		swl::CDHMM::dmatrix_type *betas_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // beta > 0.
-		swl::CDHMM::dmatrix_type *sigmas_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);
-		swl::CDHMM::dmatrix_type *nus_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // nu > D - 1.
+		boost::multi_array<swl::CDHMM::dvector_type, 2> *coeffs_conj = new boost::multi_array<swl::CDHMM::dvector_type, 2>(boost::extents[K][C]);
 		for (size_t k = 0; k < K; ++k)
 			for (size_t c = 0; c < C; ++c)
 			{
-				(*mus_conj)(k, c) = (std::rand() / RAND_MAX) * 10.0 - 5.0;
-				//(*betas_conj)(k, c) = (std::rand() / RAND_MAX + 1.0) * 10.0;
-				//(*sigmas_conj)(k, c) = ???;
-				//(*nus_conj)(k, c) = ???;
+				(*coeffs_conj)[k][c].resize(P, false);
+				for (size_t p = 0; p < P; ++p)
+				{
+					(*coeffs_conj)[k][c](p) = (std::rand() / RAND_MAX) * 10.0 - 5.0;
+				}
 			}
 
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi_conj, A_conj, alphas_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi_conj, A_conj, alphas_conj, coeffs_conj));
 
 		const bool retval = cdhmm->readModel(stream);
 		if (!retval)
@@ -1107,7 +1099,7 @@ void map_learning_by_em_using_conjugate_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for initial state distribution & state transition probability matrix.
@@ -1115,20 +1107,18 @@ void map_learning_by_em_using_conjugate_prior()
 		swl::CDHMM::dmatrix_type *A_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
 		// FIXME [check] >> hyperparameters for univariate normal mixture distributions.
 		swl::CDHMM::dmatrix_type *alphas_conj = new swl::CDHMM::dmatrix_type(K, K, 1.0);
-		swl::CDHMM::dmatrix_type *mus_conj = new swl::CDHMM::dmatrix_type(K, C, 0.0);
-		swl::CDHMM::dmatrix_type *betas_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // beta > 0.
-		swl::CDHMM::dmatrix_type *sigmas_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);
-		swl::CDHMM::dmatrix_type *nus_conj = new swl::CDHMM::dmatrix_type(K, C, 1.0);  // nu > D - 1.
+		boost::multi_array<swl::CDHMM::dvector_type, 2> *coeffs_conj = new boost::multi_array<swl::CDHMM::dvector_type, 2>(boost::extents[K][C]);
 		for (size_t k = 0; k < K; ++k)
 			for (size_t c = 0; c < C; ++c)
 			{
-				(*mus_conj)(k, c) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
-				//(*betas_conj)(k, c) = (std::rand() / RAND_MAX + 1.0) * 100.0;
-				//(*sigmas_conj)(k, c) = ???;
-				//(*nus_conj)(k, c) = ???;
+				(*coeffs_conj)[k][c].resize(P, false);
+				for (size_t p = 0; p < P; ++p)
+				{
+					(*coeffs_conj)[k][c](p) = (std::rand() / RAND_MAX) * 100.0 - 50.0;
+				}
 			}
 
-		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi_conj, A_conj, alphas_conj, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, pi_conj, A_conj, alphas_conj, coeffs_conj));
 
 		// the total number of parameters of observation density = K * C * D * 3.
 		std::vector<double> lowerBounds, upperBounds;
@@ -1335,7 +1325,7 @@ void map_learning_by_em_using_entropic_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test0.cdhmm");
@@ -1343,7 +1333,7 @@ void map_learning_by_em_using_entropic_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test1.cdhmm");
@@ -1351,7 +1341,7 @@ void map_learning_by_em_using_entropic_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		//
 		std::ifstream stream("../data/hmm/ar_uni_normal_mixture_test2.cdhmm");
@@ -1367,7 +1357,7 @@ void map_learning_by_em_using_entropic_prior()
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, coeffs_conj));
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P));
 
 		const bool retval = cdhmm->readModel(stream);
@@ -1397,12 +1387,12 @@ void map_learning_by_em_using_entropic_prior()
 		const size_t K = 3;  // the dimension of hidden states.
 		//const size_t D = 1;  // the dimension of observation symbols.
 		const size_t C = 2;  // the number of mixture components.
-		const size_t P = 0;  // the order of autoregressive model. p >= 0. if p == 0, we can use all observations.
+		const size_t P = 2;  // the order of autoregressive model. p >= 1.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
 
-		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, mus_conj, betas_conj, sigmas_conj, nus_conj));
+		//cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P, coeffs_conj));
 		cdhmm.reset(new swl::ArHmmWithUnivariateNormalMixtureObservations(K, C, P));
 
 		// the total number of parameters of observation density = K * C * D * 3.
@@ -1622,7 +1612,7 @@ void ar_hmm_with_univariate_normal_mixture_observation_densities()
 	//local::viterbi_algorithm();
 
 	std::cout << "\ntrain by ML ---------------------------------------------------------" << std::endl;
-	//local::ml_learning_by_em();
+	local::ml_learning_by_em();
 	std::cout << "\ntrain by MAP using conjugate prior ----------------------------------" << std::endl;
 	//local::map_learning_by_em_using_conjugate_prior();  // not yet implemented.
 	std::cout << "\ntrain by MAP using entropic prior -----------------------------------" << std::endl;

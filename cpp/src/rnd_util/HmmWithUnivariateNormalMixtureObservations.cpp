@@ -983,7 +983,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 
 	// TODO [check] >>
 	size_t C;
-	stream >> dummy >> C;  // the number of mixture components
+	stream >> dummy >> C;  // the number of mixture components.
 #if defined(__GNUC__)
 	if (strcasecmp(dummy.c_str(), "C=") != 0 || C_ != C)
 #elif defined(_MSC_VER)
@@ -1001,7 +1001,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 
 	size_t k, c;
 
-	// K x C
+	// K x C.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 			stream >> alphas_(k, c);
@@ -1014,7 +1014,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 #endif
 		return false;
 
-	// K x C
+	// K x C.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 			stream >> mus_(k, c);
@@ -1027,7 +1027,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doReadObservationDensity(std::i
 #endif
 		return false;
 
-	// K x C
+	// K x C.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 			stream >> sigmas_(k, c);
@@ -1039,11 +1039,11 @@ bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::
 {
 	stream << "univariate normal mixture:" << std::endl;
 
-	stream << "C= " << C_ << std::endl;  // the number of mixture components
+	stream << "C= " << C_ << std::endl;  // the number of mixture components.
 
 	size_t k, c;
 
-	// K x C
+	// K x C.
 	stream << "alpha:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
@@ -1052,7 +1052,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::
 		stream << std::endl;
 	}
 
-	// K x C
+	// K x C.
 	stream << "mu:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{
@@ -1061,7 +1061,7 @@ bool HmmWithUnivariateNormalMixtureObservations::doWriteObservationDensity(std::
 		stream << std::endl;
 	}
 
-	// K x C
+	// K x C.
 	stream << "sigma:" << std::endl;
 	for (k = 0; k < K_; ++k)
 	{

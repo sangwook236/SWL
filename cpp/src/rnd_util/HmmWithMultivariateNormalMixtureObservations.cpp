@@ -1115,7 +1115,7 @@ bool HmmWithMultivariateNormalMixtureObservations::doReadObservationDensity(std:
 
 	size_t i, k, c, d;
 
-	// K x C
+	// K x C.
 	for (k = 0; k < K_; ++k)
 		for (c = 0; c < C_; ++c)
 			stream >> alphas_(k, c);
