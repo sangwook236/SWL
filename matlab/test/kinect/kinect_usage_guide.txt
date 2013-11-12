@@ -1,0 +1,22 @@
+[-] Calibration
+	http://www.ros.org/wiki/kinect_calibration/technical
+		inverse depth equation
+		offset between the disparity image and the IR image
+	http://www.ros.org/wiki/kinect_node/Calibration
+		inverse depth equation
+	http://www.ros.org/wiki/openni_launch/Tutorials/IntrinsicCalibration?action=show&redirect=openni_camera%2Fcalibration
+	http://www.ros.org/wiki/openni_kinect/kinect_accuracy
+	
+	http://burrus.name/index.php/Research/KinectCalibration
+	http://graphics.stanford.edu/~mdfisher/Kinect.html
+
+	http://cv4mar.blogspot.kr/2011/03/kinect-color-detph-camera-calibration.html
+	http://anybody-has-a-blog.tistory.com/142
+
+	http://pavankumarvasu.wordpress.com/programming-kinect-in-c-and-opengl-color-stream-rendering/
+	http://pavankumarvasu.wordpress.com/programming-kinect-in-c-and-opengl-depth-stream-rendering/
+	http://pavankumarvasu.wordpress.com/programming-kinect-in-c-and-opengl-mapping-color-and-depth-streams/
+
+[-] IR Imaging
+	http://msdn.microsoft.com/en-us/library/jj663803.aspx
+	http://www.codeproject.com/Articles/528305/GetplustheplusIRplusStreamplusandpluscontrolplusth
