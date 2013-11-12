@@ -1,0 +1,73 @@
+[-] Used Libraries
+	-. HCRF library (C++ & Matlab)
+		${HCRF_HOME}/bin/matHCRF.mexw32 or matHCRF.mexw64
+		${HCRF_HOME}/bin/openMP/matHCRF.mexw32 or matHCRF.mexw64
+		${HCRF_HOME}/samples/matlab
+	-. MoVMF library (C++ & Matlab)
+		${MoVMF_HOME}
+	-. SWL Matlab library
+		${SWL_HOME}/matlab/src/statistical_analysis/directional_statistics
+
+[-] dataset
+	-. ChaLearn Gesture Challenge dataset
+	-. AIM gesture dataset
+
+[-] Environment Setting
+	-. set path
+		for HCRF library
+			addpath('${HCRF_HOME}\bin\openMP');
+			addpath('${HCRF_HOME}\samples\matlab');
+		for MoVMF library
+			addpath('${MoVMF_HOME}');
+
+[-] Running Procedure (MovM training & plotting)
+	1. generating THoG & HoG features
+		use SWL C++ library
+			${SWL_HOME}/cpp/test/gesture_recognition_test
+	2. training MovM
+		chalearn_MovM_training_main.m
+		training을 통해 생성된 결과 data.
+			chalearn_HoG_MovM directory 하에 있는 zip files.
+			AIM_gesture_dataset_HoG_MovM directory 하에 있는 zip files.
+	3. plotting HoG, MovM, & MovM map
+		chalearn_HoG_and_MovM_plotting_main.m
+		chalearn_MovM_map_plotting_main.m
+
+[-] Running Procedure (CRF training)
+	1. generating THoG & HoG features
+		use SWL C++ library
+			${SWL_HOME}/cpp/test/gesture_recognition_test
+	2. generating THoG & HoG features and labels for HCRF libray
+		chalearn_HoG_to_HCRF_format_conversion_main.m
+		chalearn_HCRF_label_file_generation_main.m
+		chalearn_HoG_segmented_file_generation_main.m
+		AIM_gesture_dataset_HoG_to_HCRF_format_conversion_main.m
+	3. training CRF
+		chalearn_HCRF_training_main.m
+
+[-] Running Procedure (HoG clustering)
+	1. generating THoG & HoG features
+		use SWL C++ library
+			${SWL_HOME}/cpp/test/gesture_recognition_test
+	2. clustering HoG
+		chalearn_HoG_clustering_main.m
+		    distance metric matrix
+		    spectral clustering & k-means clustering
+
+[-] Matlab function
+    boxplot    Box plot
+    cdfplot    Empirical cumulative distribution function plot
+    dfittool    Interactive distribution fitting
+    disttool    Interactive density and distribution plots
+    ecdfhist    Empirical cumulative distribution function histogram
+    fsurfht    Interactive contour plot
+    hist3    Bivariate histogram
+    histfit    Histogram with a distribution fit
+    normplot    Normal probability plot
+    normspec    Normal density plot between specifications
+    probplot    Probability plots
+    qqplot    Quantile-quantile plot
+    randtool    Interactive random number generation
+    scatterhist    Scatter plot with marginal histograms
+    surfht    Interactive contour plot
+    wblplot    Weibull probability plot
