@@ -45,6 +45,7 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 		return false;
 	}
 
+#if 0
 	const std::string no_motion_filename(avi_filename.substr(0, pos) + "_no_motion.txt");
 	std::ofstream streamNoMotion(output_directory_path + '/' + no_motion_filename, std::ios::out);
 	if (!streamNoMotion.is_open())
@@ -52,6 +53,9 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 		std::cout << "a no-motion file, '" << (output_directory_path + '/' + no_motion_filename) << "' not opened" << std::endl;
 		return false;
 	}
+#else
+	std::ofstream streamNoMotion;
+#endif
 
 	try
 	{
@@ -123,7 +127,7 @@ int main(int argc, char *argv[])
 #elif 0
 		// for AIM's gesture dataset.
 
-		const std::string input_directory_path("F:/AIM_gesture_dataset/s01_sangwook.lee_20120719_per_gesture_avi_640x480_30fps_3000kbps");
+		const std::string input_directory_path("F:/AIM_gesture_dataset/s01_sangwook_lee_20120719_per_gesture_avi_640x480_30fps_3000kbps");
 		const std::string output_directory_path(input_directory_path + "_thog");
 		const std::string avi_filename_list("file_list_s01.txt");
 
@@ -169,6 +173,54 @@ int main(int argc, char *argv[])
 			}
 		}
 #elif 1
+		// for AIM's gesture dataset (segmented).
+
+		const std::string input_directory_path("F:/AIM_gesture_dataset_segmented/s01_sangwook_lee_20120719_per_gesture_mp4_640x480");
+		const std::string output_directory_path(input_directory_path + "_thog");
+		const std::string avi_filename_list("file_list_s01.txt");
+
+		std::vector<std::string> avi_filenames;
+		std::ifstream stream(input_directory_path + '/' + avi_filename_list, std::ios::in);
+		if (stream.is_open())
+		{
+			while (!stream.eof())
+			{
+				std::string filename;
+				std::getline(stream, filename);
+				if (!filename.empty())
+					avi_filenames.push_back(filename);
+			}
+			stream.close();
+		}
+		else
+		{
+			std::cout << "a list file, '" << (input_directory_path + '/' + avi_filename_list) << "' not found" << std::endl;
+			retval = EXIT_FAILURE;
+		}
+
+		//
+		for (std::vector<std::string>::iterator it = avi_filenames.begin(); it != avi_filenames.end(); ++it)
+		{
+			cv::VideoCapture capture(input_directory_path + '/' + *it);
+			if (capture.isOpened())
+			{
+				const int IMAGE_WIDTH = 640, IMAGE_HEIGHT = 480;
+				const bool IMAGE_DOWNSIZING = true;
+
+				const double MHI_TIME_DURATION = 0.5;  // [sec].
+				//const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 1000 : 2000, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
+				const std::size_t MIN_MOTION_AREA_THRESHOLD = IMAGE_DOWNSIZING ? 100 : 200, MAX_MOTION_AREA_THRESHOLD = (IMAGE_WIDTH * IMAGE_HEIGHT) / (IMAGE_DOWNSIZING ? 4 : 2);
+
+				const bool IGNORE_NO_MOION = false;
+				swl::extractTHoG(capture, *it, output_directory_path, IGNORE_NO_MOION, IMAGE_DOWNSIZING, MHI_TIME_DURATION, MIN_MOTION_AREA_THRESHOLD, MAX_MOTION_AREA_THRESHOLD);
+			}
+			else
+			{
+				std::cout << "a video file, '" << (input_directory_path + '/' + *it) << "' not found" << std::endl;
+				retval = EXIT_FAILURE;
+			}
+		}
+#elif 0
 		// for ChaLearn Gesture Challenge dataset.
 		//	[ref] http://gesture.chalearn.org/data
 
