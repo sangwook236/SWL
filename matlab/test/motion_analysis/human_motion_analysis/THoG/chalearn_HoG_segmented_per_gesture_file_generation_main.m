@@ -13,7 +13,7 @@ dataset_base_directory_path = 'E:\dataset\motion\ChaLearn_Gesture_Challenge_data
 
 feature_directory_path_prefix = 'quasi_lossless_format\train_data\';
 feature_directory_prefix = 'devel';
-feature_source_directory_suffix = '_thog2';
+feature_source_directory_suffix = '_thog3';
 
 segmentation_annotation_file_name = 'data_annotation\tempo_segment.csv';
 
@@ -23,8 +23,8 @@ feature_file_prefix = 'M_';
 %feature_type_name = 'THoG';
 feature_type_name = 'HoG';
 
-%degree = '1deg';
-degree = '10deg';
+degree = '1deg';
+%degree = '10deg';
 
 dataset_directory_indexes = 1:20;  % devel01 ~ devel20.
 

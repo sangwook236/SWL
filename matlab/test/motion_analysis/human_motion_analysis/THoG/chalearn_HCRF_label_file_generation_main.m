@@ -13,9 +13,9 @@ dataset_base_directory_path = 'E:\dataset\motion\ChaLearn_Gesture_Challenge_data
 
 feature_directory_path_prefix = 'quasi_lossless_format\train_data\';
 feature_directory_prefix = 'devel';
-feature_source_directory_suffix = '_thog2';
-%feature_target_directory_suffix = '_thog2_1deg_hcrf';
-feature_target_directory_suffix = '_thog2_10deg_hcrf';
+feature_source_directory_suffix = '_thog3';
+feature_target_directory_suffix = '_thog3_1deg_hcrf';
+%feature_target_directory_suffix = '_thog3_10deg_hcrf';
 
 segmentation_annotation_file_name = 'data_annotation\tempo_segment.csv';
 
