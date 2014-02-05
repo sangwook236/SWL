@@ -45,7 +45,7 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 		return false;
 	}
 
-#if 0
+#if 1
 	const std::string no_motion_filename(avi_filename.substr(0, pos) + "_no_motion.txt");
 	std::ofstream streamNoMotion(output_directory_path + '/' + no_motion_filename, std::ios::out);
 	if (!streamNoMotion.is_open())
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 	int retval = EXIT_SUCCESS;
 	try
 	{
-#if 0
+#if 1
 #	if 0
 		const int camId = -1;
 		cv::VideoCapture capture(camId);
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 				retval = EXIT_FAILURE;
 			}
 		}
-#elif 1
+#elif 0
 		// for AIM's gesture dataset (segmented).
 
 		const std::string input_directory_path("F:/AIM_gesture_dataset_segmented/s01_sangwook_lee_20120719_per_gesture_mp4_640x480");
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
 		// for ChaLearn Gesture Challenge dataset.
 		//	[ref] http://gesture.chalearn.org/data
 
-		const int DATASET_START_INDEX = 11, DATASET_END_INDEX = 20;
+		const int DATASET_START_INDEX = 1, DATASET_END_INDEX = 20;  // 1 ~ 10: devel01 ~ devel20.
 		for (int idx = DATASET_START_INDEX; idx <= DATASET_END_INDEX; ++idx)
 		{
 			std::ostringstream sstream;
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
 			//const std::string input_directory_path("E:/dataset/motion/ChaLearn_Gesture_Challenge_dataset/lossy_format/devel-1-20_valid-1-20/devel" + sstream.str());
 			const std::string avi_file_prefix = "M_";  // RGB image.
 			//const std::string avi_file_prefix = "K_";  // depth image.
-			const std::string output_directory_path(input_directory_path + "_thog2");
+			const std::string output_directory_path(input_directory_path + "_thog4");
 
 			std::vector<std::string> avi_filenames;
 #if 0

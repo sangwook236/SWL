@@ -1045,6 +1045,8 @@ void HmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbol(
 	else
 	{
 		throw std::runtime_error("not yet implemented");
+
+		// [ref] "Gaussian Process for Machine Learning", C. E. Rasmussen and C. K. I. Williams, pp. 201, The MIT Press, 2006
 	}
 }
 

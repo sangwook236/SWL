@@ -2,9 +2,13 @@
 #define __SWL_RND_UTIL__AUTOREGRESSION__H_
 
 
+namespace swl {
+
 // [ref] http://paulbourke.net/miscellaneous/ar/.
 
-bool AutoRegression(double *inputseries, int length, int degree, double *coefficients, int method);
+bool computeAutoRegression(double *inputseries, int length, int degree, double *coefficients, int method);
+
+}  // namespace swl
 
 
 #endif  // __SWL_RND_UTIL__AUTOREGRESSION__H_

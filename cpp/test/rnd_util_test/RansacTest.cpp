@@ -155,7 +155,7 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inliers, const s
 }  // namespace local
 }  // unnamed namespace
 
-void estimate_3d_plane_using_ransac()
+void plane3d_estimation_using_ransac()
 {
 	std::srand((unsigned int)time(NULL));
 

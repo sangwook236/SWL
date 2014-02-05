@@ -4,6 +4,9 @@
 #include <cstdlib>
 #include <cstdio>
 
+
+namespace swl {
+
 // [ref] http://paulbourke.net/miscellaneous/ar/.
 
 #define MAXENTROPY      0
@@ -91,7 +94,7 @@ int main(int argc, char* argv[])
 	}
 
 	// Calculate and print the coefficients.
-	if (!AutoRegression(data, length, degree, coefficients, method))
+	if (!computeAutoRegression(data, length, degree, coefficients, method))
 	{
 		std::cerr << "AR routine failed" << std::endl;
 		return EXIT_FAILURE;
@@ -111,7 +114,7 @@ int main(int argc, char* argv[])
 }
 #endif
 
-bool AutoRegression(
+bool computeAutoRegression(
    double   *inputseries,
    int      length,
    int      degree,
@@ -377,7 +380,8 @@ bool ARLeastSquare(
 */
 bool SolveLE(double **mat,double *vec,unsigned int n)
 {
-   int i,j,k,maxi;
+   //int i,j,k,maxi;
+   unsigned int i,j,k,maxi;
    double vswap,*mswap,*hvec,max,h,pivot,q;
   
    for (i=0;i<n-1;i++) {
@@ -501,3 +505,5 @@ void ARMaxEntropy2 (double *inputseries, int length, int degree,
         coef [n] = g [n + 1];
 #endif
 }
+
+}  // namespace swl

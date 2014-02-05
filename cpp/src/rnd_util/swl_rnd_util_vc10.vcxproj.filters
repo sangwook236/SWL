@@ -129,6 +129,9 @@
     <ClCompile Include="ArHmmWithMultivariateNormalObservations.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="LevenshteinDistance.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h">
@@ -255,6 +258,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -122,6 +122,7 @@
     <ClCompile Include="HoughTransform.cpp" />
     <ClCompile Include="KalmanFilter.cpp" />
     <ClCompile Include="LambertWFunction.cpp" />
+    <ClCompile Include="LevenshteinDistance.cpp" />
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
     <ClCompile Include="MixtureModel.cpp" />
     <ClCompile Include="MultivariateNormalMixtureModel.cpp" />
@@ -147,6 +148,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
@@ -165,6 +167,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesObservations.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h" />
