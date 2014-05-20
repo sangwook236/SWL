@@ -3,6 +3,10 @@
 %	Yoshikawa's book pp. 38
 %
 
+%addpath('../../src/robot_kinematics');
+
+notation = 'craig';
+
 %------------------------------------------------------------------------------
 d2 = 100.0;
 d3 = 250.0;
@@ -51,7 +55,6 @@ T_init{6} = T5;
 T_init{7} = T6;
 
 %------------------------------------------------------------------------------
-notation = 'craig';
 
 % [ a alpha d theta ]
 dh_param = calc_dh_param(T_init, notation);

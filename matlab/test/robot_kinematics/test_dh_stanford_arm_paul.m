@@ -3,6 +3,10 @@
 %	Fu's book pp. 38
 %
 
+%addpath('../../src/robot_kinematics');
+
+dof = 6;
+
 %------------------------------------------------------------------------------
 d1 = 150.0;
 d2 = 100.0;
@@ -48,28 +52,7 @@ T6 = [
 	0	0	0	1
 ];
 
-a = zeros(6, 1);
-alpha = zeros(6, 1);
-d = zeros(6, 1);
-theta = zeros(6, 1);
-
-idx = 1;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T0, T1, 'paul');
-idx = 2;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T1, T2, 'paul');
-idx = 3;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T2, T3, 'paul');
-idx = 4;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T3, T4, 'paul');
-idx = 5;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T4, T5, 'paul');
-idx = 6;
-[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T5, T6, 'paul');
-
-dh_param1 = [ a, alpha, d, theta ];
-
-%------------------------------------------------------------------------------
-T = cell(1, 7);
+T = cell(1, dof + 1);
 T{1} = T0;
 T{2} = T1;
 T{3} = T2;
@@ -77,5 +60,18 @@ T{4} = T3;
 T{5} = T4;
 T{6} = T5;
 T{7} = T6;
+
+%------------------------------------------------------------------------------
+a = zeros(dof, 1);
+alpha = zeros(dof, 1);
+d = zeros(dof, 1);
+theta = zeros(dof, 1);
+
+for idx = 1:dof
+	[ a(idx), alpha(idx), d(idx), theta(idx) ] = calc_dh(T{idx}, T{idx+1}, 'craig');
+end;
+dh_param1 = [ a, alpha, d, theta ];
+
+%------------------------------------------------------------------------------
 
 dh_param2 = calc_dh_param(T, 'paul');

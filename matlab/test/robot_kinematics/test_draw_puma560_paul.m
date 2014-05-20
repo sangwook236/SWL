@@ -3,6 +3,10 @@
 %	Fu's book pp. 37
 %
 
+%addpath('../../src/robot_kinematics');
+
+notation = 'paul';
+
 %------------------------------------------------------------------------------
 a2 = 431.8;
 a3 = 20.32;
@@ -59,7 +63,6 @@ T_init{6} = T5;
 T_init{7} = T6;
 
 %------------------------------------------------------------------------------
-notation = 'paul';
 
 % [ a alpha d theta ]
 dh_param = calc_dh_param(T_init, notation);
