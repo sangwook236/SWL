@@ -1,5 +1,7 @@
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base", "..\src\base\swl_base_vc12.vcxproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util_vc12.vcxproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
