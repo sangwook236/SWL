@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_serial_port_test_vc10</ProjectName>
+    <ProjectName>swl_serial_port_test</ProjectName>
     <ProjectGuid>{4B163450-0DC8-4839-92C9-D3754D62DEFE}</ProjectGuid>
     <RootNamespace>swl_serial_port_test</RootNamespace>
     <Keyword>Win32Proj</Keyword>

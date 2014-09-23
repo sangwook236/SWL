@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_winview_vc12</ProjectName>
+    <ProjectName>swl_winview</ProjectName>
     <ProjectGuid>{8F523111-C59A-4003-BA86-EB681DB19631}</ProjectGuid>
     <RootNamespace>swl_winview</RootNamespace>
     <Keyword>Win32Proj</Keyword>

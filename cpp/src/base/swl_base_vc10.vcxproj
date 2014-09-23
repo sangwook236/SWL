@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_base_vc10</ProjectName>
+    <ProjectName>swl_base</ProjectName>
     <ProjectGuid>{33FEEA51-49EA-483E-BBAE-C889DC0D5991}</ProjectGuid>
     <RootNamespace>swl_base</RootNamespace>
     <Keyword>Win32Proj</Keyword>

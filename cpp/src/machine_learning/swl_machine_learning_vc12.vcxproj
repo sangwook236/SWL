@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_machine_learning_vc12</ProjectName>
+    <ProjectName>swl_machine_learning</ProjectName>
     <ProjectGuid>{6305D0E0-1595-4EBE-9332-102782B20D0C}</ProjectGuid>
     <RootNamespace>swl_machine_learning</RootNamespace>
     <Keyword>Win32Proj</Keyword>

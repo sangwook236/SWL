@@ -29,7 +29,7 @@
     <ProjectGuid>{901C25BD-0202-45AB-9C8A-8B522420EA3D}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_imu_filter_app</RootNamespace>
-    <ProjectName>swl_imu_filter_app_vc10</ProjectName>
+    <ProjectName>swl_imu_filter_app</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

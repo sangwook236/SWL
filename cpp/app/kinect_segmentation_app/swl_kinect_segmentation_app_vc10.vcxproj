@@ -14,7 +14,7 @@
     <ProjectGuid>{5E3E3B86-FD45-450D-8BDA-7447AB51F371}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_kinect_segmentation_app</RootNamespace>
-    <ProjectName>swl_kinect_segmentation_app_vc10</ProjectName>
+    <ProjectName>swl_kinect_segmentation_app</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

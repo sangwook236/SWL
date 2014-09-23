@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_wglview_test_vc10</ProjectName>
+    <ProjectName>swl_wglview_test</ProjectName>
     <ProjectGuid>{042FA8D4-C813-4654-94D0-497D5BB6F3D8}</ProjectGuid>
     <RootNamespace>swl_wglview_test</RootNamespace>
     <Keyword>MFCProj</Keyword>

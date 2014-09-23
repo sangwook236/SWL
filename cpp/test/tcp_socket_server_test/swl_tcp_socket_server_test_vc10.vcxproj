@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_tcp_socket_server_test_vc10</ProjectName>
+    <ProjectName>swl_tcp_socket_server_test</ProjectName>
     <ProjectGuid>{E4DAAE16-B50D-4A59-88BA-051A26BE191B}</ProjectGuid>
     <RootNamespace>swl_tcp_socket_server_test</RootNamespace>
     <Keyword>Win32Proj</Keyword>

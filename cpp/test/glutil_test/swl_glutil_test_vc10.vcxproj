@@ -14,7 +14,7 @@
     <ProjectGuid>{F7113640-0290-4F03-ABA4-27604093F81A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_glutil_test</RootNamespace>
-    <ProjectName>swl_glutil_test_vc10</ProjectName>
+    <ProjectName>swl_glutil_test</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

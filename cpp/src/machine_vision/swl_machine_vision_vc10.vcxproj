@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_machine_vision_vc10</ProjectName>
+    <ProjectName>swl_machine_vision</ProjectName>
     <ProjectGuid>{1BE8A45A-EBDC-4127-B166-5138FE4633DA}</ProjectGuid>
     <RootNamespace>swl_machine_vision</RootNamespace>
     <Keyword>Win32Proj</Keyword>

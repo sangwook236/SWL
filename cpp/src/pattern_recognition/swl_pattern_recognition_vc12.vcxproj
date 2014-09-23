@@ -14,7 +14,7 @@
     <ProjectGuid>{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_pattern_recognition</RootNamespace>
-    <ProjectName>swl_pattern_recognition_vc12</ProjectName>
+    <ProjectName>swl_pattern_recognition</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

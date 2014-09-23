@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_glutil_vc10</ProjectName>
+    <ProjectName>swl_glutil</ProjectName>
     <ProjectGuid>{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}</ProjectGuid>
     <RootNamespace>swl_glutil</RootNamespace>
     <Keyword>Win32Proj</Keyword>

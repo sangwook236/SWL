@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_kinematics_test_vc12</ProjectName>
+    <ProjectName>swl_kinematics_test</ProjectName>
     <ProjectGuid>{18F61AFB-65D2-4E7C-97E0-3332894EBF78}</ProjectGuid>
     <RootNamespace>swl_kinematics_test</RootNamespace>
     <Keyword>Win32Proj</Keyword>
