@@ -14,7 +14,7 @@
     <ProjectGuid>{3A6EE950-7C7F-44F4-9D18-EEDE65C445CF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_gesture_recognition_test</RootNamespace>
-    <ProjectName>swl_gesture_recognition_test</ProjectName>
+    <ProjectName>swl_gesture_recognition_test_vc12</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

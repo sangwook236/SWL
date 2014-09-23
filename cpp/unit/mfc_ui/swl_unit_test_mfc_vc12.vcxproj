@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_unit_test_mfc</ProjectName>
+    <ProjectName>swl_unit_test_mfc_vc12</ProjectName>
     <ProjectGuid>{C48EC1C8-D6D5-448D-8842-98BF064543DE}</ProjectGuid>
     <RootNamespace>swl_unit_test_mfc</RootNamespace>
     <Keyword>MFCProj</Keyword>

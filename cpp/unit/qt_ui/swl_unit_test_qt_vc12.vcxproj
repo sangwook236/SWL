@@ -14,7 +14,7 @@
     <ProjectGuid>{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_unit_test_qt</RootNamespace>
-    <ProjectName>swl_unit_test_qt</ProjectName>
+    <ProjectName>swl_unit_test_qt_vc12</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

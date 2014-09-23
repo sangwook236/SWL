@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_gps_aided_imu_filter_app</ProjectName>
+    <ProjectName>swl_gps_aided_imu_filter_app_vc10</ProjectName>
     <ProjectGuid>{5BC48680-BFFF-490D-A226-6EBB047D4F31}</ProjectGuid>
     <RootNamespace>swl_gps_aided_imu_filter_app</RootNamespace>
     <Keyword>MFCProj</Keyword>

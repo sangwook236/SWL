@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_math</ProjectName>
+    <ProjectName>swl_math_vc10</ProjectName>
     <ProjectGuid>{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}</ProjectGuid>
     <RootNamespace>swl_math</RootNamespace>
     <Keyword>Win32Proj</Keyword>

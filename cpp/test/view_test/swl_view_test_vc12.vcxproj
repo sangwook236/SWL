@@ -14,7 +14,7 @@
     <ProjectGuid>{CD7D63E4-7F44-4629-A7C0-A789156FCEC0}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>swl_view_test</RootNamespace>
-    <ProjectName>swl_view_test</ProjectName>
+    <ProjectName>swl_view_test_vc12</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

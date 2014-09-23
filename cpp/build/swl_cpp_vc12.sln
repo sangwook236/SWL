@@ -2,90 +2,90 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base", "..\src\base\swl_base_vc12.vcxproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base_vc12", "..\src\base\swl_base_vc12.vcxproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util", "..\src\util\swl_util_vc12.vcxproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util_vc12", "..\src\util\swl_util_vc12.vcxproj", "{EAE0B359-F8CB-4983-9E41-E54A7C42A875}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view", "..\src\view\swl_view_vc12.vcxproj", "{756B7445-B468-4814-AB86-41D586225519}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view_vc12", "..\src\view\swl_view_vc12.vcxproj", "{756B7445-B468-4814-AB86-41D586225519}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math", "..\src\math\swl_math_vc12.vcxproj", "{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math_vc12", "..\src\math\swl_math_vc12.vcxproj", "{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics", "..\src\graphics\swl_graphics_vc12.vcxproj", "{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics_vc12", "..\src\graphics\swl_graphics_vc12.vcxproj", "{7D5CAA55-A4CA-4EC7-9D25-67DB48B40EBA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview", "..\src\winview\swl_winview_vc12.vcxproj", "{8F523111-C59A-4003-BA86-EB681DB19631}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_vc12", "..\src\winview\swl_winview_vc12.vcxproj", "{8F523111-C59A-4003-BA86-EB681DB19631}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil", "..\src\glutil\swl_glutil_vc12.vcxproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil_vc12", "..\src\glutil\swl_glutil_vc12.vcxproj", "{B02044B0-D0EC-4A9C-AAD0-5E0A93BD9657}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winutil\swl_winutil_vc12.vcxproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_vc12", "..\src\winutil\swl_winutil_vc12.vcxproj", "{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\text_ui\swl_unit_test_vc12.vcxproj", "{F871854A-3223-4895-A970-180448FC68DA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_vc12", "..\unit\text_ui\swl_unit_test_vc12.vcxproj", "{F871854A-3223-4895-A970-180448FC68DA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_vc12.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc_vc12", "..\unit\mfc_ui\swl_unit_test_mfc_vc12.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wglview_test", "..\test\wglview_test\swl_wglview_test_vc12.vcxproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wglview_test_vc12", "..\test\wglview_test\swl_wglview_test_vc12.vcxproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_test", "..\test\winview_test\swl_winview_test_vc12.vcxproj", "{40F4C552-5A56-412A-9E00-776A69183EAB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winview_test_vc12", "..\test\winview_test\swl_winview_test_vc12.vcxproj", "{40F4C552-5A56-412A-9E00-776A69183EAB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_test", "..\test\machine_vision_test\swl_machine_vision_test_vc12.vcxproj", "{5D408F46-2324-402F-B769-2AC8361BE51A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_test_vc12", "..\test\machine_vision_test\swl_machine_vision_test_vc12.vcxproj", "{5D408F46-2324-402F-B769-2AC8361BE51A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test", "..\test\rnd_util_test\swl_rnd_util_test_vc12.vcxproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_test_vc12", "..\test\rnd_util_test\swl_rnd_util_test_vc12.vcxproj", "{50AC9CB5-9590-4C9A-8A8C-40EF6D41C33E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision", "..\src\machine_vision\swl_machine_vision_vc12.vcxproj", "{1BE8A45A-EBDC-4127-B166-5138FE4633DA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_vision_vc12", "..\src\machine_vision\swl_machine_vision_vc12.vcxproj", "{1BE8A45A-EBDC-4127-B166-5138FE4633DA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util", "..\src\rnd_util\swl_rnd_util_vc12.vcxproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_rnd_util_vc12", "..\src\rnd_util\swl_rnd_util_vc12.vcxproj", "{2D51E376-F18C-4095-9B5B-29F4D2A58498}"
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_serial_port_test", "..\test\serial_port_test\swl_serial_port_test_vc12.vcxproj", "{4B163450-0DC8-4839-92C9-D3754D62DEFE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_serial_port_test_vc12", "..\test\serial_port_test\swl_serial_port_test_vc12.vcxproj", "{4B163450-0DC8-4839-92C9-D3754D62DEFE}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_client_test", "..\test\tcp_socket_client_test\swl_tcp_socket_client_test_vc12.vcxproj", "{D0339969-C7EF-48A9-9DDC-71866652B184}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_client_test_vc12", "..\test\tcp_socket_client_test\swl_tcp_socket_client_test_vc12.vcxproj", "{D0339969-C7EF-48A9-9DDC-71866652B184}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test", "..\test\tcp_socket_server_test\swl_tcp_socket_server_test_vc12.vcxproj", "{E4DAAE16-B50D-4A59-88BA-051A26BE191B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_tcp_socket_server_test_vc12", "..\test\tcp_socket_server_test\swl_tcp_socket_server_test_vc12.vcxproj", "{E4DAAE16-B50D-4A59-88BA-051A26BE191B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics", "..\src\kinematics\swl_kinematics_vc12.vcxproj", "{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics_vc12", "..\src\kinematics\swl_kinematics_vc12.vcxproj", "{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning", "..\src\machine_learning\swl_machine_learning_vc12.vcxproj", "{6305D0E0-1595-4EBE-9332-102782B20D0C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_vc12", "..\src\machine_learning\swl_machine_learning_vc12.vcxproj", "{6305D0E0-1595-4EBE-9332-102782B20D0C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics_test", "..\test\kinematics_test\swl_kinematics_test_vc12.vcxproj", "{18F61AFB-65D2-4E7C-97E0-3332894EBF78}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinematics_test_vc12", "..\test\kinematics_test\swl_kinematics_test_vc12.vcxproj", "{18F61AFB-65D2-4E7C-97E0-3332894EBF78}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_test", "..\test\machine_learning_test\swl_machine_learning_test_vc12.vcxproj", "{1289B18F-A216-4A0B-A6E3-E6865E22396B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_machine_learning_test_vc12", "..\test\machine_learning_test\swl_machine_learning_test_vc12.vcxproj", "{1289B18F-A216-4A0B-A6E3-E6865E22396B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_app", "..\app\gps_aided_imu_filter_app\swl_gps_aided_imu_filter_app_vc12.vcxproj", "{5BC48680-BFFF-490D-A226-6EBB047D4F31}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gps_aided_imu_filter_app_vc12", "..\app\gps_aided_imu_filter_app\swl_gps_aided_imu_filter_app_vc12.vcxproj", "{5BC48680-BFFF-490D-A226-6EBB047D4F31}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gesture_recognition_test", "..\test\gesture_recognition_test\swl_gesture_recognition_test_vc12.vcxproj", "{3A6EE950-7C7F-44F4-9D18-EEDE65C445CF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_gesture_recognition_test_vc12", "..\test\gesture_recognition_test\swl_gesture_recognition_test_vc12.vcxproj", "{3A6EE950-7C7F-44F4-9D18-EEDE65C445CF}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB} = {7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition", "..\src\pattern_recognition\swl_pattern_recognition_vc12.vcxproj", "{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_vc12", "..\src\pattern_recognition\swl_pattern_recognition_vc12.vcxproj", "{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}"
 	ProjectSection(ProjectDependencies) = postProject
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt", "..\unit\qt_ui\swl_unit_test_qt_vc12.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt_vc12", "..\unit\qt_ui\swl_unit_test_qt_vc12.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app", "..\app\imu_filter_app\swl_imu_filter_app_vc12.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app_vc12", "..\app\imu_filter_app\swl_imu_filter_app_vc12.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base_test", "..\test\base_test\swl_base_test_vc12.vcxproj", "{1E86E3BD-4BFB-49F0-A4D7-5EB190BBC0FA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base_test_vc12", "..\test\base_test\swl_base_test_vc12.vcxproj", "{1E86E3BD-4BFB-49F0-A4D7-5EB190BBC0FA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math_test", "..\test\math_test\swl_math_test_vc12.vcxproj", "{088C7057-EF31-4233-98E7-0DE93E25A67F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_math_test_vc12", "..\test\math_test\swl_math_test_vc12.vcxproj", "{088C7057-EF31-4233-98E7-0DE93E25A67F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util_test", "..\test\util_test\swl_util_test_vc12.vcxproj", "{C0E09E3B-7BC9-4193-B1CE-1DD2569B629D}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_util_test_vc12", "..\test\util_test\swl_util_test_vc12.vcxproj", "{C0E09E3B-7BC9-4193-B1CE-1DD2569B629D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil_test", "..\test\glutil_test\swl_glutil_test_vc12.vcxproj", "{F7113640-0290-4F03-ABA4-27604093F81A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_glutil_test_vc12", "..\test\glutil_test\swl_glutil_test_vc12.vcxproj", "{F7113640-0290-4F03-ABA4-27604093F81A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics_test", "..\test\graphics_test\swl_graphics_test_vc12.vcxproj", "{2699083A-616C-488F-8422-E9FE449A4C8B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_graphics_test_vc12", "..\test\graphics_test\swl_graphics_test_vc12.vcxproj", "{2699083A-616C-488F-8422-E9FE449A4C8B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view_test", "..\test\view_test\swl_view_test_vc12.vcxproj", "{CD7D63E4-7F44-4629-A7C0-A789156FCEC0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_view_test_vc12", "..\test\view_test\swl_view_test_vc12.vcxproj", "{CD7D63E4-7F44-4629-A7C0-A789156FCEC0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_test", "..\test\winutil_test\swl_winutil_test_vc12.vcxproj", "{F0E11330-18C5-43B1-9C8D-5DB7B4293C4A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_test_vc12", "..\test\winutil_test\swl_winutil_test_vc12.vcxproj", "{F0E11330-18C5-43B1-9C8D-5DB7B4293C4A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_test", "..\test\pattern_recognition_test\swl_pattern_recognition_test_vc12.vcxproj", "{38E116CD-0D2C-4459-98BF-EDAAF8637547}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_test_vc12", "..\test\pattern_recognition_test\swl_pattern_recognition_test_vc12.vcxproj", "{38E116CD-0D2C-4459-98BF-EDAAF8637547}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinect_segmentation_app", "..\app\kinect_segmentation_app\swl_kinect_segmentation_app_vc12.vcxproj", "{5E3E3B86-FD45-450D-8BDA-7447AB51F371}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_kinect_segmentation_app_vc12", "..\app\kinect_segmentation_app\swl_kinect_segmentation_app_vc12.vcxproj", "{5E3E3B86-FD45-450D-8BDA-7447AB51F371}"
 	ProjectSection(ProjectDependencies) = postProject
 		{83B1A52F-23DF-44F8-88AF-64E2EB07CEDB} = {83B1A52F-23DF-44F8-88AF-64E2EB07CEDB}
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}

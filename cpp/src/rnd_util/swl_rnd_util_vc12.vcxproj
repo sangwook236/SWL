@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>swl_rnd_util</ProjectName>
+    <ProjectName>swl_rnd_util_vc12</ProjectName>
     <ProjectGuid>{2D51E376-F18C-4095-9B5B-29F4D2A58498}</ProjectGuid>
     <RootNamespace>swl_rnd_util</RootNamespace>
     <Keyword>Win32Proj</Keyword>
