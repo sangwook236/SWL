@@ -95,11 +95,11 @@
     Namespace: swl (except for the macros, of course)
     
     \code
-    int main(int argc, char ** argv)
+    int main(int argc, char **argv)
     {
         try
         {
-            const char* input_file_name = argv[1];
+            const char *input_file_name = argv[1];
 
             // read input image
             swl::ImageImportInfo info(input_file_name);
@@ -109,7 +109,7 @@
 
             ...// process image
         }
-        catch (std::exception & e)
+        catch (std::exception &e)
         {
             std::cerr << e.what() << std::endl;  // print message
             return 1;
