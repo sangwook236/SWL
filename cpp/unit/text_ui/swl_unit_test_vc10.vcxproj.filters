@@ -13,34 +13,34 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
-    <Filter Include="testcase">
+    <Filter Include="Source Files\testcase">
       <UniqueIdentifier>{247206b8-46fd-4644-aa89-1312a90acf9c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\util">
+    <Filter Include="Source Files\testcase\util">
       <UniqueIdentifier>{3952ca72-34b4-42e2-b644-66208ae42cc4}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\math">
+    <Filter Include="Source Files\testcase\math">
       <UniqueIdentifier>{fadceb2a-079c-4965-9f0a-48a8e2e87a53}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\base">
+    <Filter Include="Source Files\testcase\base">
       <UniqueIdentifier>{352309f5-784e-4d08-8dce-3d615f62f7bf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\graphics">
+    <Filter Include="Source Files\testcase\graphics">
       <UniqueIdentifier>{60e7e642-8e65-4d24-bdd4-434d7ab1e916}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\kinematics">
+    <Filter Include="Source Files\testcase\kinematics">
       <UniqueIdentifier>{90497aec-5699-406b-b615-c1f6e002966e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\machine_learning">
+    <Filter Include="Source Files\testcase\machine_learning">
       <UniqueIdentifier>{ba1c7fb1-728f-43e3-a7df-5529393bbe72}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\machine_vision">
+    <Filter Include="Source Files\testcase\machine_vision">
       <UniqueIdentifier>{6b095799-20c0-4bca-b796-0e2103c3eb62}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\winutil">
+    <Filter Include="Source Files\testcase\winutil">
       <UniqueIdentifier>{88a92116-9aa5-4aca-8291-6a50fcb7c27f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="testcase\rnd_util">
+    <Filter Include="Source Files\testcase\rnd_util">
       <UniqueIdentifier>{6c42422c-6eae-419f-9157-54f02612de9e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -49,55 +49,55 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketSession.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketTest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\LineROITest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\PolygonROITest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\PolylineROITest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\RectangleROITest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\RegionOfInterestMgrTest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\RegionOfInterestTest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\util\ROIWithVariablePointsTest.cpp">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp">
-      <Filter>testcase\math</Filter>
+      <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\math\LineSegmentTest.cpp">
-      <Filter>testcase\math</Filter>
+      <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\math\LineTest.cpp">
-      <Filter>testcase\math</Filter>
+      <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\math\PlaneTest.cpp">
-      <Filter>testcase\math</Filter>
+      <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\math\TriangleTest.cpp">
-      <Filter>testcase\math</Filter>
+      <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\base\LoggerTest.cpp">
-      <Filter>testcase\base</Filter>
+      <Filter>Source Files\testcase\base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -105,10 +105,10 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\testcase\util\EchoTcpSocketConnection.h">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClInclude>
     <ClInclude Include="..\testcase\util\EchoTcpSocketSession.h">
-      <Filter>testcase\util</Filter>
+      <Filter>Source Files\testcase\util</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
