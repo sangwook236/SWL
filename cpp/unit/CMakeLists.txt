@@ -27,4 +27,4 @@ add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_UNIT)
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})
 
-add_test(swl_unit_test ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET})
+add_test(unit_test/${TARGET} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET})

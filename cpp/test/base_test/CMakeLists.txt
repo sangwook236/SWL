@@ -8,3 +8,5 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})
+
+add_test(test/${TARGET} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET})
