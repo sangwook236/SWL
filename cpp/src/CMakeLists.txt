@@ -1,6 +1,6 @@
 add_subdirectory(base)
-#add_subdirectory(math)
-#add_subdirectory(util)
+add_subdirectory(math)
+add_subdirectory(util)
 #add_subdirectory(graphics)
 #add_subdirectory(view)
 #add_subdirectory(posixutil)

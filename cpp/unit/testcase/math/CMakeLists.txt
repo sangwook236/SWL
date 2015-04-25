@@ -1,0 +1,6 @@
+set(BASE_SRCS BaseFieldConversionTest.cpp LineSegmentTest.cpp LineTest.cpp PlaneTest.cpp TriangleTest.cpp)
+if(CMAKE_BUILD_TYPE MATCHES DEBUG)
+    set(BASE_LIBS swl_math)
+else(CMAKE_BUILD_TYPE MATCHES DEBUG)
+    set(BASE_LIBS swl_math)
+endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
