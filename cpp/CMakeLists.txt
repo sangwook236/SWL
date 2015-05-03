@@ -1,32 +1,35 @@
-project(SWL)
+project(SWL_CPP)
 cmake_minimum_required(VERSION 2.8)
 
-# Add path for custom modules
+##
+## Add path for custom modules.
+##
 set(
     CMAKE_MODULE_PATH
 	${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake"
 )
 
-set(PACKAGE_NAME "Sang-Wook's Library")
+set(PACKAGE_NAME "Sang-Wook's Library for C++")
 set(PACKAGE_VERSION "1.0")
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set(PACKAGE_WEBSITE "http://www.sangwook.com/")
 set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 
-###
-### Set compiler specific options
-###
+##
+## Set compiler specific options.
+##
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
-	###
-	### Explicitly specify standard c++ library
-	###
+	##
+	## Explicitly specify standard c++ library.
+	##
 	SET(CLANG_LINK_FLAGS "-stdlib=libstdc++")
 	add_definitions(${CLANG_LINK_FLAGS})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
-	### add_definitions() is needed to remove unknown warnings
+	## add_definitions() is needed to remove unknown warnings.
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Intel)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    SET(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL 
+    SET(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
 #   set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
 #   set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
 #   set(CMAKE_C_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
@@ -37,16 +40,16 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
 #   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
 endif()
 
-###
-### Set Binary Directories
-###
+##
+## Set binary directories.
+##
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-###
-### Find Packages
-###
+##
+## Find packages.
+##
 find_package(Threads REQUIRED)
 find_package(Boost 1.52 REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -58,18 +61,19 @@ find_package(Doxygen)
 #set(LYX_FOUND YES)
 #set(LYX_EXECUTABLE lyx)
 
-###
-### Testing
-###
+##
+## Set options.
+##
 option(BUILD_TESTS "Build tests" ON)
+option(BUILD_DOCS "Build documents" ON)
 
 if (BUILD_TESTS)
 	enable_testing()
 endif()
 
-###
-### Add include paths and subdirs to build 
-###
+##
+## Add include and link paths.
+##
 include_directories(${CMAKE_SOURCE_DIR}/inc)
 link_directories(${CMAKE_SOURCE_DIR}/lib)
 add_definitions(-D_UNICODE -DUNICODE)
@@ -81,14 +85,16 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-# Adding build directories
+##
+## Adding sub directories to build.
+##
 #add_subdirectory(3rd)
 add_subdirectory(src)
-# Adding test directories
+add_subdirectory(app)
 if (BUILD_TESTS)
 	add_subdirectory(test)
 	add_subdirectory(unit)
-endif()
-add_subdirectory(app)
-add_subdirectory(doc)
-
+endif(BUILD_TESTS)
+if (BUILD_DOCS)
+    add_subdirectory(doc)
+endif(BUILD_DOCS)
