@@ -48,7 +48,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(USR_LOCAL_INCLUDE)/eigen3;../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -71,7 +71,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(USR_LOCAL_INCLUDE)/eigen3;../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_MATH_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -95,6 +95,7 @@
   <ItemGroup>
     <ClCompile Include="ConvexHull.cpp" />
     <ClCompile Include="Coordinates.cpp" />
+    <ClCompile Include="DataNormalization.cpp" />
     <ClCompile Include="GeometryUtil.cpp" />
     <ClCompile Include="MathConstant.cpp" />
     <ClCompile Include="MathExt.cpp" />
@@ -102,9 +103,12 @@
     <ClCompile Include="Rational.cpp" />
     <ClCompile Include="RootFinder.cpp" />
     <ClCompile Include="Rotation.cpp" />
+    <ClCompile Include="Statistic.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\math\Complex.h" />
+    <ClInclude Include="..\..\inc\swl\math\DataNormalization.h" />
+    <ClInclude Include="..\..\inc\swl\math\Statistic.h" />
     <ClInclude Include="ConvexHull.h" />
     <ClInclude Include="..\..\inc\swl\math\Coordinates.h" />
     <ClInclude Include="..\..\inc\swl\math\Duplex.h" />

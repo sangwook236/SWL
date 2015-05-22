@@ -41,7 +41,13 @@
 #include <sstream>
 #include <string>
 #include <stdexcept>
-          
+
+
+#if !defined(__FUNCTION__)
+#define __FUNCTION__ NULL
+#endif
+
+
 /** \page ErrorReporting Error Reporting
     Exceptions and assertions provided by VIGRA
 
@@ -128,9 +134,12 @@ public:
 	ContractViolation()
 	{}
 
-	ContractViolation(char const *prefix, char const *message, char const *file, const int line)
+	ContractViolation(char const *prefix, char const *message, char const *file, const int line, const char *method)
 	{
-		(*this) << "\n" << prefix << "\n" << message << "\n(" << file << ":" << line << ")\n";
+		if (method)
+			(*this) << "\n" << prefix << "\n" << message << "\n(" << file << ':' << method << ':' << line << ")\n";
+		else
+			(*this) << "\n" << prefix << "\n" << message << "\n(" << file << ':' << line << ")\n";
 	}
 
 	ContractViolation(char const *prefix, char const *message)
@@ -158,7 +167,7 @@ public:
 		}
 		catch (...)
 		{
-			return "swl::ContractViolation: error message was lost, sorry.";
+			return "swl::ContractViolation: error message was lost";
 		}
 	}
 
@@ -169,8 +178,8 @@ private:
 class PreconditionViolation: public ContractViolation
 {
 public:
-	PreconditionViolation(char const *message, const char *file, const int line)
-	: ContractViolation("Precondition violation!", message, file, line)
+	PreconditionViolation(char const *message, const char *file, const int line, const char *method)
+	: ContractViolation("Precondition violation!", message, file, line, method)
 	{}
 
 	PreconditionViolation(char const *message)
@@ -181,8 +190,8 @@ public:
 class PostconditionViolation: public ContractViolation
 {
 public:
-	PostconditionViolation(char const *message, const char *file, const int line)
-	: ContractViolation("Postcondition violation!", message, file, line)
+	PostconditionViolation(char const *message, const char *file, const int line, const char *method)
+	: ContractViolation("Postcondition violation!", message, file, line, method)
 	{}
 
 	PostconditionViolation(char const *message)
@@ -193,8 +202,8 @@ public:
 class InvariantViolation: public ContractViolation
 {
 public:
-	InvariantViolation(char const *message, const char *file, const int line)
-	: ContractViolation("Invariant violation!", message, file, line)
+	InvariantViolation(char const *message, const char *file, const int line, const char *method)
+	: ContractViolation("Invariant violation!", message, file, line, method)
 	{}
 
 	InvariantViolation(char const *message)
@@ -205,59 +214,65 @@ public:
 //#if !defined(NDEBUG)
 #if 1
 
-inline void throwInvariantError(const bool predicate, char const *message, char const *file, const int line)
+inline void throwInvariantError(const bool predicate, char const *message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::InvariantViolation(message, file, line); 
+	if (!predicate) throw swl::InvariantViolation(message, file, line, method); 
 }
 
-inline void throwInvariantError(const bool predicate, const std::string &message, char const *file, const int line)
+inline void throwInvariantError(const bool predicate, const std::string &message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::InvariantViolation(message.c_str(), file, line); 
+	if (!predicate) throw swl::InvariantViolation(message.c_str(), file, line, method); 
 }
 
-inline void throwPreconditionError(const bool predicate, char const *message, char const *file, const int line)
+inline void throwPreconditionError(const bool predicate, char const *message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::PreconditionViolation(message, file, line); 
+	if (!predicate) throw swl::PreconditionViolation(message, file, line, method); 
 }
 
-inline void throwPreconditionError(const bool predicate, const std::string &message, char const *file, const int line)
+inline void throwPreconditionError(const bool predicate, const std::string &message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::PreconditionViolation(message.c_str(), file, line); 
+	if (!predicate) throw swl::PreconditionViolation(message.c_str(), file, line, method); 
 }
 
-inline void throwPostconditionError(const bool predicate, char const *message, char const *file, const int line)
+inline void throwPostconditionError(const bool predicate, char const *message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::PostconditionViolation(message, file, line); 
+	if (!predicate) throw swl::PostconditionViolation(message, file, line, method); 
 }
 
-inline void throwPostconditionError(const bool predicate, const std::string &message, char const *file, const int line)
+inline void throwPostconditionError(const bool predicate, const std::string &message, char const *file, const int line, const char *method)
 {
-	if (!predicate) throw swl::PostconditionViolation(message.c_str(), file, line); 
+	if (!predicate) throw swl::PostconditionViolation(message.c_str(), file, line, method); 
 }
 
-inline void throwRuntimeError(char const *message, char const *file, const int line)
+inline void throwRuntimeError(char const *message, char const *file, const int line, const char *method)
 {
 	std::ostringstream what;
-	what << "\n" << message << "\n(" << file << ":" << line << ")\n";
+	if (method)
+		what << "\n" << message << "\n(" << file << ":" << method << ':' << line << ")\n";
+	else
+		what << "\n" << message << "\n(" << file << ":" << line << ")\n";
 	throw std::runtime_error(what.str()); 
 }
 
-inline void throwRuntimeError(const std::string &message, char const *file, const int line)
+inline void throwRuntimeError(const std::string &message, char const *file, const int line, const char *method)
 {
 	std::ostringstream what;
-	what << "\n" << message << "\n(" << file << ":" << line << ")\n";
+	if (method)
+		what << "\n" << message << "\n(" << file << ':' << method << ':' << line << ")\n";
+	else
+		what << "\n" << message << "\n(" << file << ':' << line << ")\n";
 	throw std::runtime_error(what.str()); 
 }
 
-#define SWL_PRECONDITION(PREDICATE, MESSAGE) swl::throwPreconditionError((PREDICATE), (MESSAGE), __FILE__, __LINE__)
+#define SWL_PRECONDITION(PREDICATE, MESSAGE) swl::throwPreconditionError((PREDICATE), (MESSAGE), __FILE__, __LINE__, __FUNCTION__)
 
 #define SWL_ASSERT(PREDICATE, MESSAGE) SWL_PRECONDITION((PREDICATE), (MESSAGE))
 
-#define SWL_POSTCONDITION(PREDICATE, MESSAGE) swl::throwPostconditionError((PREDICATE), (MESSAGE), __FILE__, __LINE__)
+#define SWL_POSTCONDITION(PREDICATE, MESSAGE) swl::throwPostconditionError((PREDICATE), (MESSAGE), __FILE__, __LINE__, __FUNCTION__)
 
-#define SWL_INVARIANT(PREDICATE, MESSAGE) swl::throwInvariantError((PREDICATE), (MESSAGE), __FILE__, __LINE__)
+#define SWL_INVARIANT(PREDICATE, MESSAGE) swl::throwInvariantError((PREDICATE), (MESSAGE), __FILE__, __LINE__, __FUNCTION__)
 
-#define SWL_FAIL(MESSAGE) swl::throwRuntimeError((MESSAGE), __FILE__, __LINE__)
+#define SWL_FAIL(MESSAGE) swl::throwRuntimeError((MESSAGE), __FILE__, __LINE__, __FUNCTION__)
 
 #else  // NDEBUG
 

@@ -52,12 +52,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\usr\local\Qt-4.7.4\include;../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:/usr/local/Qt-4.7.4/include;$(USR_LOCAL_INCLUDE)/eigen3;../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>D:\usr\local\Qt-4.7.4\lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:/usr/local/Qt-4.7.4/lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QtCored4.lib;QtGuid4.lib;log4cxx.lib;swl_base.lib;swl_math.lib;swl_glutil.lib;swl_util.lib;swl_view.lib;swl_winutil.lib;swl_winview.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -69,14 +69,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\usr\local\Qt-4.7.4\include;../../inc/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:/usr/local/Qt-4.7.4/include;$(USR_LOCAL_INCLUDE)/eigen3;../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>D:\usr\local\Qt-4.7.4\lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>D:/usr/local/Qt-4.7.4/lib;../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>QtCore4.lib;QtGui4.lib;log4cxx.lib;swl_base.lib;swl_math.lib;swl_glutil.lib;swl_util.lib;swl_view.lib;swl_winutil.lib;swl_winview.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -93,9 +93,11 @@
   <ItemGroup>
     <ClCompile Include="..\testcase\base\LoggerTest.cpp" />
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp" />
+    <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />
     <ClCompile Include="..\testcase\math\LineSegmentTest.cpp" />
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
     <ClCompile Include="..\testcase\math\PlaneTest.cpp" />
+    <ClCompile Include="..\testcase\math\StatisticTest.cpp" />
     <ClCompile Include="..\testcase\math\TriangleTest.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp" />
