@@ -9,6 +9,9 @@ set(
 	${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake"
 )
 
+##
+## Set package information.
+##
 set(PACKAGE_NAME "Sang-Wook's Library for C++")
 set(PACKAGE_VERSION "1.0")
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -29,15 +32,15 @@ if(${CMAKE_CXX_COMPILER_ID} STREQUAL Clang)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL GNU)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL Intel)
 elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL MSVC)
-    SET(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
-#   set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
-#   set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
-#   set(CMAKE_C_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
-#   set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
-#   set(CMAKE_CXX_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
-#   set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
-#   set(CMAKE_CXX_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
-#   set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
+	SET(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
+#	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
+#	set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
+#	set(CMAKE_C_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
+#	set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
+#	set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
 endif()
 
 ##
@@ -86,6 +89,21 @@ link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
 ##
+## Set and add include and link paths for dev/sw_dev & dev/hw_dev.
+##
+set(SW_DEV_SW_EXT_INCLUDE /usr/local/include)
+set(SW_DEV_SW_EXT_LIB /usr/local/lib)
+set(SW_DEV_SW_RND_INCLUDE /usr/local/include)
+set(SW_DEV_SW_RND_LIB /usr/local/lib)
+set(SW_DEV_HW_EXT_INCLUDE /usr/local/include)
+set(SW_DEV_HW_EXT_LIB /usr/local/lib)
+set(SW_DEV_HW_RND_INCLUDE /usr/local/include)
+set(SW_DEV_HW_RND_LIB /usr/local/lib)
+
+include_directories(${SW_DEV_SW_EXT_INCLUDE} ${SW_DEV_SW_RND_INCLUDE})
+link_directories(${SW_DEV_SW_EXT_LIB} ${SW_DEV_SW_RND_LIB})
+
+##
 ## Adding sub directories to build.
 ##
 #add_subdirectory(3rd)
@@ -96,5 +114,5 @@ if (BUILD_TESTS)
 	add_subdirectory(unit)
 endif(BUILD_TESTS)
 if (BUILD_DOCS)
-    add_subdirectory(doc)
+	add_subdirectory(doc)
 endif(BUILD_DOCS)

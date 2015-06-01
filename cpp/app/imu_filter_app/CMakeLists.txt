@@ -1,5 +1,5 @@
-include_directories(D:/work/dev_https/hw_dev/ext/inc)
-link_directories(D:/work/dev_https/hw_dev/ext/lib)
+include_directories(${SW_DEV_HW_EXT_INCLUDE})
+link_directories(${SW_DEV_HW_EXT_LIB})
 
 set(TARGET swl_imu_filter_app)
 set(SRCS main.cpp ImuCalibration.cpp ImuExtendedKalmanFilterRunner.cpp ImuExtendedKalmanFilterWithCalibration.cpp ImuKalmanFilter.cpp ImuSystem.cpp ImuUnscentedKalmanFilterRunner.cpp ImuUnscentedKalmanFilterWithCalibration.cpp)
