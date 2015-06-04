@@ -261,4 +261,26 @@ namespace swl {
 	return a * e * i - a * f * h - b * d * i + b * f * g + c * d * h - c * e * g;
 }
 
+
+/*static*/ double MathExt::centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double tol /*= MathConstant::EPS*/)
+{
+    const double sin_phi1 = std::sin(latitude1), cos_phi1 = std::cos(latitude1);
+    const double sin_phi2 = std::sin(latitude2), cos_phi2 = std::cos(latitude2);
+#if 0
+    const double delta_lambda = std::abs(longitude2 - longitude1);
+#else
+    double delta_lambda = std::abs(MathUtil::wrap(longitude2, 0.0, 2.0*MathConstant::PI, tol) - MathUtil::wrap(longitude1, 0.0, 2.0*MathConstant::PI, tol));
+    if (delta_lambda > MathConstant::PI) delta_lambda = 2.0*MathConstant::PI - delta_lambda;
+#endif
+    const double sin_delta_lambda = std::sin(delta_lambda), cos_delta_lambda = std::cos(delta_lambda);
+
+    const double num1 = cos_phi2 * sin_delta_lambda, num2 = cos_phi1 * sin_phi2 - sin_phi1 * cos_phi2 * cos_delta_lambda;
+    // TODO [check] >>
+    const double num = std::sqrt(num1*num1 + num2*num2);
+    //const double num = -std::sqrt(num1*num1 + num2*num2);
+    const double den = sin_phi1 * sin_phi2 + cos_phi1 * cos_phi2 * cos_delta_lambda;
+
+    return std::atan2(num, den);
+}
+
 }  // namespace swl

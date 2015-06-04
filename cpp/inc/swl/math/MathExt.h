@@ -53,6 +53,20 @@ public:
 	// [  d  e  f  ]
 	// [  g  h  i  ]
 	static double det(const double a, const double b, const double c, const double d, const double e, const double f, const double g, const double h, const double i);
+
+    /**
+     * @brief Compute a central angle between two objects.
+     *
+     * @param [in] longitude1  the longitude of the first object. [rad].
+     * @param [in] latitude1  the latitude of the first object. [rad].
+     * @param [in] longitude2  the longitude of the second object. [rad].
+     * @param [in] latitude2  the latitude of the second object. [rad].
+     * @param [in] tol  tolerance.
+     * @return a (positive) central angle. [rad].
+     *
+     * @see http://en.wikipedia.org/wiki/Great-circle_distance
+     */
+    static double centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double tol = MathConstant::EPS);
 };
 
 }  // namespace swl
