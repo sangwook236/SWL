@@ -11,7 +11,7 @@
 //     - Added Unicode support
 //
 //     Version 1.1 - 2002 March 10
-//     - Added example to XGetopt.cpp module header 
+//     - Added example to XGetopt.cpp module header
 //
 // This software is released into the public domain.
 // You are free to use it in any way you like.
@@ -153,7 +153,19 @@
 //       }
 //
 ///////////////////////////////////////////////////////////////////////////////
+//--S [] 2015/06/05 : Sang-Wook Lee
+#if defined(WIN32)
+//--E [] 2015/06/05 : Sang-Wook Lee
 #include <tchar.h>
+//--S [] 2015/06/05 : Sang-Wook Lee
+#else
+#if defined(UNICODE) || defined(_UNICODE)
+#include <cwchar>
+#else
+#include <cstring>
+#endif
+#endif
+//--E [] 2015/06/05 : Sang-Wook Lee
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
 #include "swl/ResourceLeakageCheck.h"
@@ -192,7 +204,19 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 			return EOF;
 		}
 
+        //--S [] 2015/06/05 : Sang-Wook Lee
+#if defined(WIN32)
+        //--E [] 2015/06/05 : Sang-Wook Lee
 		if (_tcscmp(argv[optind], char_str("--")) == 0)
+        //--S [] 2015/06/05 : Sang-Wook Lee
+#else
+#if defined(_UNICODE) || defined(UNICODE)
+		if (wcscmp(argv[optind], char_str("--")) == 0)
+#else
+		if (strcmp(argv[optind], char_str("--")) == 0)
+#endif
+#endif
+        //--E [] 2015/06/05 : Sang-Wook Lee
 		{
 			optind++;
 			optarg = NULL;
@@ -207,7 +231,19 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 	}
 
 	char_t c = *next++;
+	//--S [] 2015/06/05 : Sang-Wook Lee
+#if defined(WIN32)
+	//--E [] 2015/06/05 : Sang-Wook Lee
 	char_t *cp = _tcschr(optstring, c);
+	//--S [] 2015/06/05 : Sang-Wook Lee
+#else
+#if defined(_UNICODE) || defined(UNICODE)
+	char_t *cp = wcschr(optstring, c);
+#else
+	char_t *cp = strchr(optstring, c);
+#endif
+#endif
+	//--E [] 2015/06/05 : Sang-Wook Lee
 
 	if (cp == NULL || c == char_str(':'))
 		return char_str('?');

@@ -4,6 +4,7 @@
 #if defined(WIN32)
 #include <windows.h>
 #endif
+#include <clocale>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)

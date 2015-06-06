@@ -1,9 +1,9 @@
 set(TARGET swl_base_test)
 set(SRCS main.cpp)
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-    set(LIBS swl_base)
+	set(LIBS swl_base)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-    set(LIBS swl_base)
+	set(LIBS swl_base)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 add_executable(${TARGET} ${SRCS})

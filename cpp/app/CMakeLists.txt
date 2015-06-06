@@ -1,3 +1,5 @@
-add_subdirectory(gps_aided_imu_filter_app)
+if(WIN32 AND NOT CYGWIN)
+	add_subdirectory(gps_aided_imu_filter_app)
+endif(WIN32 AND NOT CYGWIN)
 add_subdirectory(imu_filter_app)
 #add_subdirectory(kinect_segmentation_app)

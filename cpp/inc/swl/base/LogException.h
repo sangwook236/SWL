@@ -9,11 +9,11 @@
 
 
 #if !defined(__FUNCTION__)
-#if defined(UNICODE) || defined(_UNICODE)
-#define __FUNCTION__ L""
-#else
-#define __FUNCTION__ ""
-#endif
+//#if defined(UNICODE) || defined(_UNICODE)
+//#define __FUNCTION__ (L"")
+//#else
+#define __FUNCTION__ ("")
+//#endif
 #endif
 
 
@@ -76,8 +76,9 @@ public:
 	 *
 	 *	exception 발생시 지정되는 여러 인자값들로부터 log를 위해 필요한 정보를 뽑아내고 관리한다.
 	 */
-	LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName);
+	//LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName);
 	LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName);
+	//LogException(const unsigned int level, const std::string &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName);
 	LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName);
 	/**
 	 *	@brief  [copy ctor] copy constructor.
@@ -178,7 +179,7 @@ public:
 	 *	log stream를 통해 exception log가 정상적으로 출력되기 위해서는 아래의 조건을 만족시켜야 한다.
 	 *		-# log stream 객체를 사용하는 동안 해당 객체는 valid하여야 한다.
 	 *		-# log stream 객체는 open된 상태이어야 한다.
-	 *	
+	 *
 	 */
 #if defined(UNICODE) || defined(_UNICODE)
 	static void setLogStream(std::wostream &logStream)

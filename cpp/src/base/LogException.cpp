@@ -21,6 +21,7 @@ namespace swl {
 /*static*/ std::ostream * LogException::logStream_ = NULL;
 #endif
 
+/*
 LogException::LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName)
 #if defined(UNICODE) || defined(_UNICODE)
 : level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
@@ -30,6 +31,7 @@ LogException::LogException(const unsigned int level, const std::wstring &message
 {
 	 report();
 }
+*/
 
 LogException::LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName)
 #if defined(UNICODE) || defined(_UNICODE)
@@ -40,6 +42,18 @@ LogException::LogException(const unsigned int level, const std::wstring &message
 {
 	 report();
 }
+
+/*
+LogException::LogException(const unsigned int level, const std::string &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName)
+#if defined(UNICODE) || defined(_UNICODE)
+: level_(level), message_(String::mbs2wcs(message)), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
+#else
+: level_(level), message_(message), filePath_(String::wcs2mbs(filePath)), lineNo_(lineNo), methodName_(String::wcs2mbs(methodName))
+#endif
+{
+	 report();
+}
+*/
 
 LogException::LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName)
 #if defined(UNICODE) || defined(_UNICODE)
