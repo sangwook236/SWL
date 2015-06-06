@@ -122,20 +122,41 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+#include_directories(/usr/local/include /usr/include)
+#link_directories(/usr/local/lib /usr/lib)
+
 ##
 ## Set and add include and link paths for dev/sw_dev & dev/hw_dev.
 ##
-set(SW_DEV_SW_EXT_INCLUDE /usr/local/include)
-set(SW_DEV_SW_EXT_LIB /usr/local/lib)
-set(SW_DEV_SW_RND_INCLUDE /usr/local/include)
-set(SW_DEV_SW_RND_LIB /usr/local/lib)
-set(SW_DEV_HW_EXT_INCLUDE /usr/local/include)
-set(SW_DEV_HW_EXT_LIB /usr/local/lib)
-set(SW_DEV_HW_RND_INCLUDE /usr/local/include)
-set(SW_DEV_HW_RND_LIB /usr/local/lib)
+if(WIN32 AND NOT CYGWIN)
+	set(MY_DEV_SW_EXT_HOME /usr/local)
+	set(MY_DEV_SW_RND_HOME /usr/local)
+	set(MY_DEV_HW_EXT_HOME /usr/local)
+#elseif(APPLE)
+#elseif(CYGWIN)
+#elseif(MSYS)
+#elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
+#elseif(MINGW)
+#elseif(BORLAND)
+#elseif(WATCOM)
+#elseif(MSVC)
+else()
+	set(MY_DEV_SW_EXT_HOME $ENV{HOME}/my_usr/local)
+	set(MY_DEV_SW_RND_HOME $ENV{HOME}/my_usr/local)
+	set(MY_DEV_HW_EXT_HOME $ENV{HOME}/my_usr/local)
+endif()
 
-include_directories(${SW_DEV_SW_EXT_INCLUDE} ${SW_DEV_SW_RND_INCLUDE})
-link_directories(${SW_DEV_SW_EXT_LIB} ${SW_DEV_SW_RND_LIB})
+set(MY_DEV_SW_EXT_INCLUDE ${MY_DEV_SW_EXT_HOME}/include)
+set(MY_DEV_SW_EXT_LIB ${MY_DEV_SW_EXT_HOME}/lib)
+set(MY_DEV_SW_RND_INCLUDE ${MY_DEV_SW_RND_HOME}/include)
+set(MY_DEV_SW_RND_LIB ${MY_DEV_SW_RND_HOME}/lib)
+set(MY_DEV_HW_EXT_INCLUDE ${MY_DEV_HW_EXT_HOME}/include)
+set(MY_DEV_HW_EXT_LIB ${MY_DEV_HW_EXT_HOME}/lib)
+
+#include_directories(${MY_DEV_SW_EXT_INCLUDE} ${MY_DEV_SW_RND_INCLUDE} ${MY_DEV_HW_EXT_INCLUDE})
+include_directories(${MY_DEV_SW_EXT_INCLUDE} ${MY_DEV_SW_RND_INCLUDE})
+#link_directories(${MY_DEV_SW_EXT_LIB} ${MY_DEV_SW_RND_LIB} ${MY_DEV_HW_EXT_LIB})
+link_directories(${MY_DEV_SW_EXT_LIB} ${MY_DEV_SW_RND_LIB})
 
 ##
 ## Set options.
