@@ -55,12 +55,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./efficient_graph_based_image_segmentation_lib;../../inc;D:\work\dev_https\sw_dev\cpp\rnd\inc\opengm_external\maxflow;D:\work\dev_https\sw_dev\cpp\rnd\inc\opencv-2.4.3;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./efficient_graph_based_image_segmentation_lib;../../inc;$(MY_USR_LOCAL_INCLUDE)/opengm_external/maxflow;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>../../lib/$(Configuration);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -72,7 +72,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>./efficient_graph_based_image_segmentation_lib;../../inc;D:\work\dev_https\sw_dev\cpp\rnd\inc\opengm_external\maxflow;D:\work\dev_https\sw_dev\cpp\rnd\inc\opencv-2.4.3;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./efficient_graph_based_image_segmentation_lib;../../inc;$(MY_USR_LOCAL_INCLUDE)/opengm_external/maxflow;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
@@ -80,7 +80,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>../../lib/$(Configuration);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v6.5\lib\Win32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>cudart.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

@@ -1,5 +1,5 @@
-include_directories(${MY_DEV_HW_EXT_INCLUDE})
-link_directories(${MY_DEV_HW_EXT_LIB})
+include_directories(${MY_HW_DEV_EXT_INCLUDE})
+link_directories(${MY_HW_DEV_EXT_LIB})
 
 set(TARGET swl_gps_aided_imu_filter_app)
 set(SRCS stdafx.cpp Adis16350Interface.cpp DataDefinition.cpp FileBasedFilteringDialog.cpp GpsAidedImuFilterDialog.cpp GpsAidedImuFilterRunner.cpp GpsAidedImuSystem.cpp GpsInterface.cpp swl_gps_aided_imu_filter_app.cpp swl_gps_aided_imu_filter_appDlg.cpp swl_gps_aided_imu_filter_app.rc)
