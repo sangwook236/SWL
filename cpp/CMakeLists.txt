@@ -21,17 +21,54 @@ set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 find_package(Threads REQUIRED)
 find_package(Boost 1.52 REQUIRED)
 find_package(GSL REQUIRED)
+if(APPLE)
+	find_package(vecLib REQUIRED)
+	#find_package(LAPACK REQUIRED)
+	# variables : LAPACKLIBS_VECLIB_FRAMEWORK, LAPACKLIBS_ACCELERATE_FRAMEWORK, LAPACK_LIBRARIES, BLAS_LIBRARIES
+
+	if(NOT LAPACK_LIBRARIES_DIR)
+		set(ATLAS_LIBRARIES_DIR /opt/local/lib)
+	else()
+		set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+	endif()
+	if(NOT LAPACK_INCLUDE_DIR)
+		set(ATLAS_INCLUDE_DIR /opt/local/include)
+	else()
+		set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+	endif()
+else(APPLE)
+	find_package(LAPACK REQUIRED)
+	# variables : LAPACK_FOUND, LAPACK_LINKER_FLAGS, LAPACK_LIBRARIES, LAPACK95_LIBRARIES, LAPACK95_FOUND, BLA_STATIC, BLA_VENDOR, BLA_F95
+
+	if(NOT LAPACK_LIBRARIES_DIR)
+		set(ATLAS_LIBRARIES_DIR /usr/lib/atlas-base)  # for Ubuntu.
+#		set(ATLAS_LIBRARIES_DIR /usr/lib64/atlas)  # for RHEL.
+	else()
+		set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+	endif()
+	if(NOT LAPACK_INCLUDE_DIR)
+		set(ATLAS_INCLUDE_DIR /usr/include/atlas)  # for Ubuntu.
+#		set(ATLAS_INCLUDE_DIR /usr/include)  # for RHEL.
+	else()
+		set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+	endif()
+endif()
+
+#find_package(FFTW3 REQUIRED)  # error : the file, 'FindFFTW3.cmake' doesn't exist in CMAKE_MODULE_PATH ...
+#set(FFTW3_FOUND NO)  # if FFTW3 is not found or does not try being found, FFTW3_FOUND is set to NO.
+
 find_package(OpenCV REQUIRED)
 #find_package(PCL 1.5 REQUIRED)
 
 find_package(Doxygen)
-#find_package(LyX)  # error : By not providing "FindLyX.cmake" in CMAKE_MODULE_PATH ...
+#find_package(LyX)  # error : the file, 'FindLyX.cmake' doesn't exist in CMAKE_MODULE_PATH ...
 #set(LYX_FOUND NO)  # if LyX is not found or does not try being found, LYX_FOUND is set to NO.
 #set(LYX_FOUND YES)
 #set(LYX_EXECUTABLE lyx)
 
 ##
 ## Set platform specific options.
+##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
 ##
 if(APPLE)
 	message(STATUS ">>---> Platform : Apple <---<<")
@@ -50,6 +87,9 @@ elseif(MSYS)
 	message(STATUS ">>---> Platform : MSYS <---<<")
 elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
 	message(STATUS ">>---> Platform : Unix <---<<")
+
+	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")  # for Linux.
+	endif()
 elseif(WIN32 AND NOT CYGWIN)
 	message(STATUS ">>---> Platform : WIN32 <---<<")
 elseif(MINGW)
