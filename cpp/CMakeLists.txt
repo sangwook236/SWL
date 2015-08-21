@@ -10,61 +10,127 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 ## Set package information.
 ##
 set(PACKAGE_NAME "Sang-Wook's Library for C++")
-set(PACKAGE_VERSION "1.0")
+set(PACKAGE_VERSION "1.0.0")
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_WEBSITE "http://www.sangwook.com/")
 set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 
 ##
+## Set options.
+##
+option(BUILD_SHARED_LIBS "Build shared libraries" ON)
+option(BUILD_TESTS "Build tests" ON)
+option(BUILD_DOCS "Build documents" ON)
+
+#option(USE_PTHREADS "Thread-safe build (using pthreads)" OFF)
+set(USE_PTHREADS OFF)
+#option(USE_LAPACK "" ON)
+set(USE_LAPACK ON)
+#option(USE_BOOST "" ON)
+set(USE_BOOST ON)
+#option(USE_GSL "" OFF)
+set(USE_GSL OFF)
+#option(USE_FFTW3 "" OFF)
+set(USE_FFTW3 OFF)
+#option(USE_OPENCV "" OFF)
+set(USE_OPENCV OFF)
+#option(USE_PCL "" OFF)
+set(USE_PCL OFF)
+
+#option(USE_DOXYGEN "" ON)
+set(USE_DOXYGEN ON)
+#option(USE_LYX "" OFF)
+set(USE_LYX OFF)
+
+if(BUILD_SHARED_LIBS)
+	set(LIB_TYPE SHARED)
+else(BUILD_SHARED_LIBS)
+	set(LIB_TYPE STATIC)
+endif(BUILD_SHARED_LIBS)
+
+if(BUILD_TESTS)
+	enable_testing()
+endif(BUILD_TESTS)
+
+##
 ## Find packages.
 ##
-find_package(Threads REQUIRED)
-find_package(Boost 1.52 REQUIRED)
-find_package(GSL REQUIRED)
-if(APPLE)
-	find_package(vecLib REQUIRED)
-	#find_package(LAPACK REQUIRED)
-	# variables : LAPACKLIBS_VECLIB_FRAMEWORK, LAPACKLIBS_ACCELERATE_FRAMEWORK, LAPACK_LIBRARIES, BLAS_LIBRARIES
+if(USE_PTHREADS)
+	find_package(pthreads REQUIRED)
+	include_directories(${PTHREADS_INCLUDE_DIR})
+	add_definitions(-D_REENTRANT)
+else(USE_PTHREADS)
+	## TODO [check] >>
+	find_package(Threads REQUIRED)
+	# variables : CMAKE_THREAD_LIBS_INIT, CMAKE_USE_SPROC_INIT, CMAKE_USE_WIN32_THREADS_INIT, CMAKE_USE_PTHREADS_INIT, CMAKE_HP_PTHREADS_INIT, CMAKE_THREAD_PREFER_PTHREAD
+endif(USE_PTHREADS)
+	
+if(USE_LAPACK)
+	if(APPLE)
+		find_package(vecLib REQUIRED)
+#		find_package(LAPACK REQUIRED)
+		# variables : LAPACKLIBS_VECLIB_FRAMEWORK, LAPACKLIBS_ACCELERATE_FRAMEWORK, LAPACK_LIBRARIES, BLAS_LIBRARIES
 
-	if(NOT LAPACK_LIBRARIES_DIR)
-		set(ATLAS_LIBRARIES_DIR /opt/local/lib)
-	else()
-		set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
-	endif()
-	if(NOT LAPACK_INCLUDE_DIR)
-		set(ATLAS_INCLUDE_DIR /opt/local/include)
-	else()
-		set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
-	endif()
-else(APPLE)
-	find_package(LAPACK REQUIRED)
-	# variables : LAPACK_FOUND, LAPACK_LINKER_FLAGS, LAPACK_LIBRARIES, LAPACK95_LIBRARIES, LAPACK95_FOUND, BLA_STATIC, BLA_VENDOR, BLA_F95
+		if(NOT LAPACK_LIBRARIES_DIR)
+			set(ATLAS_LIBRARIES_DIR /opt/local/lib)
+		else()
+			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+		if(NOT LAPACK_INCLUDE_DIR)
+			set(ATLAS_INCLUDE_DIR /opt/local/include)
+		else()
+			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+	else(APPLE)
+		find_package(LAPACK REQUIRED)
+		# variables : LAPACK_FOUND, LAPACK_LINKER_FLAGS, LAPACK_LIBRARIES, LAPACK95_LIBRARIES, LAPACK95_FOUND, BLA_STATIC, BLA_VENDOR, BLA_F95
 
-	if(NOT LAPACK_LIBRARIES_DIR)
-		set(ATLAS_LIBRARIES_DIR /usr/lib/atlas-base)  # for Ubuntu.
-#		set(ATLAS_LIBRARIES_DIR /usr/lib64/atlas)  # for RHEL.
-	else()
-		set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
-	endif()
-	if(NOT LAPACK_INCLUDE_DIR)
-		set(ATLAS_INCLUDE_DIR /usr/include/atlas)  # for Ubuntu.
-#		set(ATLAS_INCLUDE_DIR /usr/include)  # for RHEL.
-	else()
-		set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
-	endif()
-endif()
+		if(NOT LAPACK_LIBRARIES_DIR)
+			set(ATLAS_LIBRARIES_DIR /usr/lib/atlas-base)  # for Ubuntu.
+#			set(ATLAS_LIBRARIES_DIR /usr/lib64/atlas)  # for RHEL.
+		else()
+			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+		if(NOT LAPACK_INCLUDE_DIR)
+			set(ATLAS_INCLUDE_DIR /usr/include/atlas)  # for Ubuntu.
+#			set(ATLAS_INCLUDE_DIR /usr/include)  # for RHEL.
+		else()
+			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+	endif(APPLE)
+endif(USE_LAPACK)
 
-#find_package(FFTW3 REQUIRED)  # error : the file, 'FindFFTW3.cmake' doesn't exist in CMAKE_MODULE_PATH ...
-#set(FFTW3_FOUND NO)  # if FFTW3 is not found or does not try being found, FFTW3_FOUND is set to NO.
+if(USE_BOOST)
+	find_package(Boost 1.52 REQUIRED)
+	include_directories(${Boost_INCLUDE_DIRS})
+	link_directories(${Boost_LIBRARY_DIRS})
+	# variables : Boost_FOUND, Boost_LIBRARIES, Boost_<C>_FOUND, Boost_<C>_LIBRARY, Boost_VERSION, BOOST_ROOT
+endif(USE_BOOST)
+if(USE_GSL)
+	find_package(GSL REQUIRED)
+	include_directories(${GSL_INCLUDE_DIRS})
+	# variables : GSL_FOUND, GSL_LIBRARIES, GSL_VERSION, GSL_ROOT_DIR
+endif(USE_GSL)
 
-find_package(OpenCV REQUIRED)
-#find_package(PCL 1.5 REQUIRED)
+if(USE_FFTW3)
+	find_package(FFTW3 REQUIRED)  # error : the file, 'FindFFTW3.cmake' doesn't exist in CMAKE_MODULE_PATH ...
+#	set(FFTW3_FOUND NO)  # if FFTW3 is not found or does not try being found, FFTW3_FOUND is set to NO.
+endif(USE_FFTW3)
+if(USE_OPENCV)
+	find_package(OpenCV REQUIRED)
+endif(USE_OPENCV)
+if(USE_PCL)
+	find_package(PCL 1.5 REQUIRED)
+endif(USE_PCL)
 
-find_package(Doxygen)
-#find_package(LyX)  # error : the file, 'FindLyX.cmake' doesn't exist in CMAKE_MODULE_PATH ...
-#set(LYX_FOUND NO)  # if LyX is not found or does not try being found, LYX_FOUND is set to NO.
-#set(LYX_FOUND YES)
-#set(LYX_EXECUTABLE lyx)
+if(USE_DOXYGEN)
+	find_package(Doxygen)
+endif(USE_DOXYGEN)
+if(USE_LYX)
+	find_package(LyX)  # error : the file, 'FindLyX.cmake' doesn't exist in CMAKE_MODULE_PATH ...
+#	set(LYX_FOUND NO)  # if LyX is not found or does not try being found, LYX_FOUND is set to NO.
+	set(LYX_EXECUTABLE lyx)
+endif(USE_LYX)
 
 ##
 ## Set platform specific options.
@@ -100,6 +166,8 @@ elseif(WATCOM)
 	message(STATUS ">>---> Platform : Watcom <---<<")
 elseif(MSVC)
 	message(STATUS ">>---> Platform : MSVC <---<<")
+	
+#	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif()
 
 ##
@@ -225,17 +293,22 @@ else()
 endif()
 
 ##
-## Set options.
+## Install header files, data files, and binaries.
 ##
-option(BUILD_TESTS "Build tests" ON)
-option(BUILD_DOCS "Build documents" ON)
-
-if(BUILD_TESTS)
-	enable_testing()
-endif(BUILD_TESTS)
+# FIXME [check & correct] >>
+file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/inc/*.h")
+install(FILES ${HEADER_FILES} DESTINATION include)
+file(GLOB_RECURSE DATA_FILES "${CMAKE_SOURCE_DIR}/bin/data/*")
+install(FILES ${DATA_FILES} DESTINATION bin/data)
+#install(PROGRAMS test.sh DESTINATION bin)
+install(TARGETS myExe myStaticLib mySharedLib
+	RUNTIME DESTINATION bin
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
 
 ##
-## Adding sub directories to build.
+## Add sub directories to build.
 ##
 #add_subdirectory(3rd)
 add_subdirectory(src)
