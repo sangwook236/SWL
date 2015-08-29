@@ -49,7 +49,7 @@
 		</Compiler>
 		<Linker>
 			<Add library="boost_thread" />
-			<Add library="boost_thread" />
+			<Add library="boost_system" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="EchoTcpSocketConnection.cpp" />
