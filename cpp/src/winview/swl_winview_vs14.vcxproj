@@ -1,0 +1,167 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>swl_winview</ProjectName>
+    <ProjectGuid>{8F523111-C59A-4003-BA86-EB681DB19631}</ProjectGuid>
+    <RootNamespace>swl_winview</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../bin/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../bin/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>swl_graphics.lib;swl_glutil.lib;swl_view.lib;gdiplus.lib;opengl32.lib;glu32.lib;glut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_WIN_VIEW_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>swl_graphics.lib;swl_glutil.lib;swl_view.lib;gdiplus.lib;opengl32.lib;glu32.lib;glut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="GdiBitmapBufferedContext.cpp" />
+    <ClCompile Include="GdiContext.cpp" />
+    <ClCompile Include="GdiContextBase.cpp" />
+    <ClCompile Include="GdiplusBitmapBufferedContext.cpp" />
+    <ClCompile Include="GdiplusContext.cpp" />
+    <ClCompile Include="GdiplusContextBase.cpp" />
+    <ClCompile Include="GdiPrintContext.cpp" />
+    <ClCompile Include="GdiRubberBand.cpp" />
+    <ClCompile Include="WglBitmapBufferedContext.cpp" />
+    <ClCompile Include="WglContextBase.cpp" />
+    <ClCompile Include="WglDoubleBufferedContext.cpp" />
+    <ClCompile Include="WglFont.cpp" />
+    <ClCompile Include="WglPrintContext.cpp" />
+    <ClCompile Include="WglViewBase.cpp" />
+    <ClCompile Include="WglViewCaptureApi.cpp" />
+    <ClCompile Include="WglViewPrintApi.cpp" />
+    <ClCompile Include="WinClipboardApi.cpp" />
+    <ClCompile Include="WinViewBase.cpp" />
+    <ClCompile Include="WinViewCaptureApi.cpp" />
+    <ClCompile Include="WinViewPrintApi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\inc\swl\winview\ExportWinView.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiContextBase.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiplusBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiplusContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiplusContextBase.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiPrintContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\GdiRubberBand.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglBitmapBufferedContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglContextBase.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglDoubleBufferedContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglFont.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglPrintContext.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglViewBase.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglViewCaptureApi.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WglViewPrintApi.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WinClipboardApi.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WinViewBase.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WinViewCaptureApi.h" />
+    <ClInclude Include="..\..\inc\swl\winview\WinViewPrintApi.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
+      <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\glutil\swl_glutil_vc10.vcxproj">
+      <Project>{b02044b0-d0ec-4a9c-aad0-5e0a93bd9657}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\graphics\swl_graphics_vc10.vcxproj">
+      <Project>{7d5caa55-a4ca-4ec7-9d25-67db48b40eba}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\util\swl_util_vc10.vcxproj">
+      <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\view\swl_view_vc10.vcxproj">
+      <Project>{756b7445-b468-4814-ab86-41d586225519}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>swl_rnd_util</ProjectName>
+    <ProjectGuid>{2D51E376-F18C-4095-9B5B-29F4D2A58498}</ProjectGuid>
+    <RootNamespace>swl_rnd_util</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">../../bin/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">../../bin/$(Configuration)/</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>swl_base.lib;swl_math.lib;cblas.lib;gsl.lib;opencv_calib3d243d.lib;opencv_contrib243d.lib;opencv_core243d.lib;opencv_features2d243d.lib;opencv_flann243d.lib;opencv_gpu243d.lib;opencv_highgui243d.lib;opencv_imgproc243d.lib;opencv_legacy243d.lib;opencv_ml243d.lib;opencv_nonfree243d.lib;opencv_objdetect243d.lib;opencv_photo243d.lib;opencv_stitching243d.lib;opencv_ts243d.lib;opencv_video243d.lib;opencv_videostab243d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-2.4.3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_RND_UTIL_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>swl_base.lib;swl_math.lib;cblas.lib;gsl.lib;opencv_calib3d243.lib;opencv_contrib243.lib;opencv_core243.lib;opencv_features2d243.lib;opencv_flann243.lib;opencv_gpu243.lib;opencv_highgui243.lib;opencv_imgproc243.lib;opencv_legacy243.lib;opencv_ml243.lib;opencv_nonfree243.lib;opencv_objdetect243.lib;opencv_photo243.lib;opencv_stitching243.lib;opencv_ts243.lib;opencv_video243.lib;opencv_videostab243.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>../../lib/$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>../../lib/$(Configuration)/$(TargetName).lib</ImportLibrary>
+      <TargetMachine>MachineX86</TargetMachine>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="ArHmmWithMultivariateNormalMixtureObservations.cpp" />
+    <ClCompile Include="ArHmmWithMultivariateNormalObservations.cpp" />
+    <ClCompile Include="ArHmmWithUnivariateNormalMixtureObservations.cpp" />
+    <ClCompile Include="ArHmmWithUnivariateNormalObservations.cpp" />
+    <ClCompile Include="AutoRegression.cpp" />
+    <ClCompile Include="CDHMM.cpp" />
+    <ClCompile Include="CDHMMWithMixtureObservations.cpp" />
+    <ClCompile Include="ContinuousDensityMixtureModel.cpp" />
+    <ClCompile Include="DDHMM.cpp" />
+    <ClCompile Include="ExtendedKalmanFilter.cpp" />
+    <ClCompile Include="HistogramAccumulator.cpp" />
+    <ClCompile Include="HistogramMatcher.cpp" />
+    <ClCompile Include="HistogramUitl.cpp" />
+    <ClCompile Include="HMM.cpp" />
+    <ClCompile Include="HmmSegmenter.cpp" />
+    <ClCompile Include="HmmWithMultinomialObservations.cpp" />
+    <ClCompile Include="HmmWithMultivariateNormalMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithMultivariateNormalObservations.cpp" />
+    <ClCompile Include="HmmWithUnivariateNormalMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithUnivariateNormalObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesFisherMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesFisherObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesMixtureObservations.cpp" />
+    <ClCompile Include="HmmWithVonMisesObservations.cpp" />
+    <ClCompile Include="HoughTransform.cpp" />
+    <ClCompile Include="KalmanFilter.cpp" />
+    <ClCompile Include="LambertWFunction.cpp" />
+    <ClCompile Include="LevenshteinDistance.cpp" />
+    <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
+    <ClCompile Include="MixtureModel.cpp" />
+    <ClCompile Include="MultivariateNormalMixtureModel.cpp" />
+    <ClCompile Include="UnivariateNormalMixtureModel.cpp" />
+    <ClCompile Include="Ransac.cpp" />
+    <ClCompile Include="RejectionSampling.cpp" />
+    <ClCompile Include="RndUtilLocalApi.cpp" />
+    <ClCompile Include="SamplingImportanceResampling.cpp" />
+    <ClCompile Include="UnscentedKalmanFilter.cpp" />
+    <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoise.cpp" />
+    <ClCompile Include="VonMisesMixtureModel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithMultivariateNormalObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ArHmmWithUnivariateNormalObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\CDHMMWithMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousDensityMixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DDHMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteLinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DiscreteNonlinearStochasticSystem.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HistogramUtil.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HMM.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmSegmenter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultinomialObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithMultivariateNormalObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithUnivariateNormalObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesFisherObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesMixtureObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HmmWithVonMisesObservations.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\HoughTransform.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\KalmanFilter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\SamplingImportanceResampling.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\UnscentedKalmanFilterWithAdditiveNoise.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\VonMisesMixtureModel.h" />
+    <ClInclude Include="AutoRegression.h" />
+    <ClInclude Include="RndUtilLocalApi.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
+      <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
