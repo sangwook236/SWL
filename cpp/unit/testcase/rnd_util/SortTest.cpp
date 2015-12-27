@@ -1,7 +1,6 @@
 #include "swl/Config.h"
 #include "../../UnitTestConfig.h"
 #include "swl/rnd_util/Sort.h"
-#include <iostream>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -48,8 +47,6 @@ public:
 		std::vector<int>::iterator it = data2.begin();
 		for (auto val : data1)
 			BOOST_CHECK_EQUAL(val, *it++);
-
-		std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << std::endl;
 	}
 
 	void testQuickSort()
@@ -65,8 +62,6 @@ public:
 		std::vector<int>::iterator it = data2.begin();
 		for (auto val : data1)
 			BOOST_CHECK_EQUAL(val, *it++);
-
-		std::cout << "&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&" << std::endl;
 	}
 };
 
