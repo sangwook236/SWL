@@ -35,7 +35,7 @@ private:
 	};
 
 public:
-	void test()
+	void testFoo()
 	{
 		Fixture fixture;
 
@@ -49,7 +49,7 @@ struct LineTestSuite: public boost::unit_test_framework::test_suite
 	{
 		boost::shared_ptr<Line3Test> test(new Line3Test());
 
-		add(BOOST_CLASS_TEST_CASE(&Line3Test::test, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&Line3Test::testFoo, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);
 	}
@@ -66,7 +66,7 @@ struct Line3Test: public CppUnit::TestFixture
 {
 private:
 	CPPUNIT_TEST_SUITE(Line3Test);
-	CPPUNIT_TEST(test);
+	CPPUNIT_TEST(testFoo);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -78,7 +78,7 @@ public:
 	{
 	}
 
-	void test()
+	void testFoo()
 	{
 	}
 };

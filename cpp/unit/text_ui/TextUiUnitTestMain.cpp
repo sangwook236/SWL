@@ -5,7 +5,8 @@
 #include "../UnitTestConfig.h"
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
-#include <boost/test/detail/unit_test_parameters.hpp>
+#include <boost/test/unit_test_parameters.hpp>
+#include <boost/test/unit_test.hpp>
 #include <fstream>
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 #include <cppunit/extensions/TestFactoryRegistry.h>
@@ -37,7 +38,7 @@ struct BoostUnitGlobalFixture
 	: logStream_("swl_unittest.log")
 	{
 		boost::unit_test::unit_test_log.set_stream(logStream_);
-		boost::unit_test::unit_test_log.set_format(boost::unit_test::XML);
+		boost::unit_test::unit_test_log.set_format(boost::unit_test::OF_XML);
 		//boost::unit_test::unit_test_log.set_formatter();
 		if (boost::unit_test::runtime_config::log_level() < boost::unit_test::log_warnings)
 			boost::unit_test::unit_test_log.set_threshold_level(boost::unit_test::log_warnings);

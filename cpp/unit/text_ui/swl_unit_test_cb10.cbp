@@ -60,6 +60,7 @@
 		<Unit filename="../testcase/math/LineTest.cpp" />
 		<Unit filename="../testcase/math/PlaneTest.cpp" />
 		<Unit filename="../testcase/math/TriangleTest.cpp" />
+		<Unit filename="../testcase/rnd_util/SortTest.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketConnection.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketConnection.h" />
 		<Unit filename="../testcase/util/EchoTcpSocketServerTest.cpp" />

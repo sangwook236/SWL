@@ -88,6 +88,7 @@
 		<Unit filename="../../inc/swl/rnd_util/Ransac.h" />
 		<Unit filename="../../inc/swl/rnd_util/RejectionSampling.h" />
 		<Unit filename="../../inc/swl/rnd_util/SamplingImportanceResampling.h" />
+		<Unit filename="../../inc/swl/rnd_util/Sort.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnivariateNormalMixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h" />

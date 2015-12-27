@@ -99,10 +99,17 @@
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
     <ClCompile Include="..\testcase\math\PlaneTest.cpp" />
     <ClCompile Include="..\testcase\math\TriangleTest.cpp" />
+    <ClCompile Include="..\testcase\rnd_util\SortTest.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp" />
-    <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp" />
+    <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketSession.cpp" />
-    <ClCompile Include="..\testcase\util\EchoTcpSocketTest.cpp" />
+    <ClCompile Include="..\testcase\util\EchoTcpSocketTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\testcase\util\LineROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolygonROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolylineROITest.cpp" />

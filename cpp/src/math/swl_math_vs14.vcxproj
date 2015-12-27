@@ -131,7 +131,7 @@
     <ClInclude Include="..\..\inc\swl\math\Vector.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
+    <ProjectReference Include="..\base\swl_base_vs14.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

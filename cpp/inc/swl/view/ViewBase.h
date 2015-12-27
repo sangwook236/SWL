@@ -105,8 +105,12 @@ public:
 	}
 
 private:
-	std::stack<const boost::shared_ptr<context_type> > contextStack_;
-	std::stack<const boost::shared_ptr<camera_type> > cameraStack_;
+	//--S [] 2015/12/27: Sang-Wook Lee
+	//std::stack<const boost::shared_ptr<context_type> > contextStack_;
+	//std::stack<const boost::shared_ptr<camera_type> > cameraStack_;
+	std::stack<boost::shared_ptr<context_type> > contextStack_;
+	std::stack<boost::shared_ptr<camera_type> > cameraStack_;
+	//--E [] 2015/12/27: Sang-Wook Lee
 
 	const boost::shared_ptr<context_type> nullContext_;
 	const boost::shared_ptr<camera_type> nullCamera_;

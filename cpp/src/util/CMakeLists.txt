@@ -16,9 +16,19 @@ set(SRCS
 	xgetopt.cpp
 )
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS swl_math swl_base boost_system-mt log4cxx)
+	set(LIBS
+		swl_math
+		swl_base
+		boost_system-mt
+		log4cxx
+	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS swl_math swl_base boost_system-mt log4cxx)
+	set(LIBS
+		swl_math
+		swl_base
+		boost_system-mt
+		log4cxx
+	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 add_definitions(-DSWL_UTIL_EXPORT)

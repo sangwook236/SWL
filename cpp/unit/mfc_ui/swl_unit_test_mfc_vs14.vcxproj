@@ -116,6 +116,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\testcase\rnd_util\SortTest.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -123,9 +124,15 @@
     <ClCompile Include="UnitTestMfc.cpp" />
     <ClCompile Include="UnitTestMfcDlg.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp" />
-    <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp" />
+    <ClCompile Include="..\testcase\util\EchoTcpSocketServerTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\testcase\util\EchoTcpSocketSession.cpp" />
-    <ClCompile Include="..\testcase\util\EchoTcpSocketTest.cpp" />
+    <ClCompile Include="..\testcase\util\EchoTcpSocketTest.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\testcase\util\LineROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolygonROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolylineROITest.cpp" />
@@ -158,51 +165,51 @@
     <ResourceCompile Include="UnitTestMfc.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\base\swl_base_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\base\swl_base_vs14.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\glutil\swl_glutil_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\glutil\swl_glutil_vs14.vcxproj">
       <Project>{b02044b0-d0ec-4a9c-aad0-5e0a93bd9657}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\graphics\swl_graphics_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\graphics\swl_graphics_vs14.vcxproj">
       <Project>{7d5caa55-a4ca-4ec7-9d25-67db48b40eba}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\kinematics\swl_kinematics_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\kinematics\swl_kinematics_vs14.vcxproj">
       <Project>{2aec0ee7-da7c-4bd5-97fb-35d385bc2289}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\machine_learning\swl_machine_learning_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\machine_learning\swl_machine_learning_vs14.vcxproj">
       <Project>{6305d0e0-1595-4ebe-9332-102782b20d0c}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\machine_vision\swl_machine_vision_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\machine_vision\swl_machine_vision_vs14.vcxproj">
       <Project>{1be8a45a-ebdc-4127-b166-5138fe4633da}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\math\swl_math_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\math\swl_math_vs14.vcxproj">
       <Project>{83b1a52f-23df-44f8-88af-64e2eb07cedb}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\rnd_util\swl_rnd_util_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\rnd_util\swl_rnd_util_vs14.vcxproj">
       <Project>{2d51e376-f18c-4095-9b5b-29f4d2a58498}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\util\swl_util_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\util\swl_util_vs14.vcxproj">
       <Project>{eae0b359-f8cb-4983-9e41-e54a7c42a875}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\view\swl_view_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\view\swl_view_vs14.vcxproj">
       <Project>{756b7445-b468-4814-ab86-41d586225519}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\winutil\swl_winutil_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\winutil\swl_winutil_vs14.vcxproj">
       <Project>{2368ae0d-c4a6-4dcf-9c10-8ce7220f32ce}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\winview\swl_winview_vc10.vcxproj">
+    <ProjectReference Include="..\..\src\winview\swl_winview_vs14.vcxproj">
       <Project>{8f523111-c59a-4003-ba86-eb681db19631}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

@@ -173,6 +173,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\Sort.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\RejectionSampling.h" />
@@ -184,7 +185,7 @@
     <ClInclude Include="RndUtilLocalApi.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
+    <ProjectReference Include="..\base\swl_base_vs14.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

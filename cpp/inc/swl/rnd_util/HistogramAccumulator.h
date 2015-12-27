@@ -18,11 +18,7 @@ class SWL_RND_UTIL_API HistogramAccumulator
 {
 public:
 	//typedef HistogramAccumulator base_type;
-#if defined(__GNUC__)
     typedef cv::MatND histogram_type;
-#else
-    typedef const cv::MatND histogram_type;
-#endif
 
 public:
 	HistogramAccumulator(const size_t histogramNum);

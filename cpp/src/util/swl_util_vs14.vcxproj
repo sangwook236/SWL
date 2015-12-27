@@ -139,11 +139,11 @@
     <ClInclude Include="xgetopt.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\base\swl_base_vc10.vcxproj">
+    <ProjectReference Include="..\base\swl_base_vs14.vcxproj">
       <Project>{33feea51-49ea-483e-bbae-c889dc0d5991}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\math\swl_math_vc10.vcxproj">
+    <ProjectReference Include="..\math\swl_math_vs14.vcxproj">
       <Project>{83b1a52f-23df-44f8-88af-64e2eb07cedb}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>

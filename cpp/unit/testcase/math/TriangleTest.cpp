@@ -35,7 +35,7 @@ private:
 	};
 
 public:
-	void test()
+	void testFoo()
 	{
 		Fixture fixture;
 
@@ -49,7 +49,7 @@ struct TriangleTestSuite: public boost::unit_test_framework::test_suite
 	{
 		boost::shared_ptr<TriangleTest> test(new TriangleTest());
 
-		add(BOOST_CLASS_TEST_CASE(&TriangleTest::test, test), 0);
+		add(BOOST_CLASS_TEST_CASE(&TriangleTest::testFoo, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);
 	}
@@ -66,7 +66,7 @@ struct TriangleTest: public CppUnit::TestFixture
 {
 private:
 	CPPUNIT_TEST_SUITE(TriangleTest);
-	CPPUNIT_TEST(test);
+	CPPUNIT_TEST(testFoo);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -78,7 +78,7 @@ public:
 	{
 	}
 
-	void test()
+	void testFoo()
 	{
 	}
 };

@@ -266,5 +266,8 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\LevenshteinDistance.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\Sort.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
