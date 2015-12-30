@@ -24,23 +24,36 @@ option(BUILD_DOCS "Build documents" ON)
 
 #option(USE_PTHREADS "Thread-safe build (using pthreads)" OFF)
 set(USE_PTHREADS OFF)
-#option(USE_LAPACK "" ON)
-set(USE_LAPACK ON)
-#option(USE_BOOST "" ON)
+#option(USE_OPENGL "OpenGL" ON)
+set(USE_OPENGL ON)
+#option(USE_GLUT "OpenGL Utility Toolkit (GLUT)" ON)
+set(USE_GLUT ON)
+#option(USE_BOOST "Boost C++ Libraries" ON)
 set(USE_BOOST ON)
-#option(USE_GSL "" OFF)
-set(USE_GSL OFF)
-#option(USE_FFTW3 "" OFF)
-set(USE_FFTW3 OFF)
-#option(USE_OPENCV "" OFF)
-set(USE_OPENCV OFF)
-#option(USE_PCL "" OFF)
-set(USE_PCL OFF)
+#option(USE_LAPACK "Linear Algebra PACKage (LAPACK)" ON)
+set(USE_LAPACK ON)
+#option(USE_EIGEN "C++ template library for linear algebra" ON)
+set(USE_EIGEN ON)
 
-#option(USE_DOXYGEN "" ON)
-set(USE_DOXYGEN ON)
-#option(USE_LYX "" OFF)
-set(USE_LYX OFF)
+#option(USE_GSL "GNU Scientific Library (GSL)" ON)
+set(USE_GSL ON)
+#option(USE_OPENCV "Open Source Computer Vision (OpenCV)" ON)
+set(USE_OPENCV ON)
+
+option(USE_FFTW3 "Fastest Fourier Transform in the West (FFTW), version 3" OFF)
+#set(USE_FFTW3 OFF)
+option(USE_PCL "Point Cloud Library (PCL)" OFF)
+#set(USE_PCL OFF)
+option(USE_CUDA  "Compute Unified Device Architecture (CUDA), a parallel computing platform and programming model invented by NVIDIA" OFF)
+#set(USE_CUDA OFF)
+
+option(USE_QT4 "Coss-platform application framework" OFF)
+#set(USE_QT4 OFF)
+
+option(USE_DOXYGEN "De facto standard tool for generating documentation from annotated C++ sources" ON)
+#set(USE_DOXYGEN ON)
+option(USE_LYX "Document Processor" OFF)
+#set(USE_LYX OFF)
 
 if(BUILD_SHARED_LIBS)
 	set(LIB_TYPE SHARED)
@@ -60,68 +73,101 @@ if(USE_PTHREADS)
 	include_directories(${PTHREADS_INCLUDE_DIR})
 	add_definitions(-D_REENTRANT)
 else(USE_PTHREADS)
-	## TODO [check] >>
-	find_package(Threads REQUIRED)
 	# variables : CMAKE_THREAD_LIBS_INIT, CMAKE_USE_SPROC_INIT, CMAKE_USE_WIN32_THREADS_INIT, CMAKE_USE_PTHREADS_INIT, CMAKE_HP_PTHREADS_INIT, CMAKE_THREAD_PREFER_PTHREAD
+	## TODO [check] >>
+	find_package(Threads REQUIRED)  # target_link_libraries(myexe ${CMAKE_THREAD_LIBS_INIT})
 endif(USE_PTHREADS)
-	
-if(USE_LAPACK)
-	if(APPLE)
-		find_package(vecLib REQUIRED)
-#		find_package(LAPACK REQUIRED)
-		# variables : LAPACKLIBS_VECLIB_FRAMEWORK, LAPACKLIBS_ACCELERATE_FRAMEWORK, LAPACK_LIBRARIES, BLAS_LIBRARIES
 
-		if(NOT LAPACK_LIBRARIES_DIR)
-			set(ATLAS_LIBRARIES_DIR /opt/local/lib)
-		else()
-			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
-		endif()
-		if(NOT LAPACK_INCLUDE_DIR)
-			set(ATLAS_INCLUDE_DIR /opt/local/include)
-		else()
-			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
-		endif()
-	else(APPLE)
-		find_package(LAPACK REQUIRED)
-		# variables : LAPACK_FOUND, LAPACK_LINKER_FLAGS, LAPACK_LIBRARIES, LAPACK95_LIBRARIES, LAPACK95_FOUND, BLA_STATIC, BLA_VENDOR, BLA_F95
-
-		if(NOT LAPACK_LIBRARIES_DIR)
-			set(ATLAS_LIBRARIES_DIR /usr/lib/atlas-base)  # for Ubuntu.
-#			set(ATLAS_LIBRARIES_DIR /usr/lib64/atlas)  # for RHEL.
-		else()
-			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
-		endif()
-		if(NOT LAPACK_INCLUDE_DIR)
-			set(ATLAS_INCLUDE_DIR /usr/include/atlas)  # for Ubuntu.
-#			set(ATLAS_INCLUDE_DIR /usr/include)  # for RHEL.
-		else()
-			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
-		endif()
-	endif(APPLE)
-endif(USE_LAPACK)
+if(USE_OPENGL)
+	# variables : OPENGL_FOUND, OPENGL_XMESA_FOUND, OPENGL_GLU_FOUND, OPENGL_INCLUDE_DIR, OPENGL_LIBRARIES
+	find_package(OpenGL REQUIRED)
+	include_directories(${OPENGL_INCLUDE_DIR})
+endif(USE_OPENGL)
+if(USE_GLUT)
+	# variables : GLUT_FOUND, GLUT_INCLUDE_DIR, GLUT_LIBRARIES
+	find_package(GLUT REQUIRED)
+	include_directories(${GLUT_INCLUDE_DIR})
+endif(USE_GLUT)
 
 if(USE_BOOST)
+	# variables : Boost_FOUND, Boost_LIBRARIES, Boost_<C>_FOUND, Boost_<C>_LIBRARY, Boost_VERSION, BOOST_ROOT
 	find_package(Boost 1.52 REQUIRED)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
-	# variables : Boost_FOUND, Boost_LIBRARIES, Boost_<C>_FOUND, Boost_<C>_LIBRARY, Boost_VERSION, BOOST_ROOT
 endif(USE_BOOST)
+
+if(USE_LAPACK)
+	if(APPLE)
+		# variables : LAPACKLIBS_VECLIB_FRAMEWORK, LAPACKLIBS_ACCELERATE_FRAMEWORK, LAPACK_LIBRARIES, BLAS_LIBRARIES
+		find_package(vecLib REQUIRED)
+#		find_package(LAPACK REQUIRED)
+
+		if(NOT LAPACK_LIBRARIES_DIR)
+			set(ATLAS_LIBRARIES_DIR /opt/local/lib)
+		else()
+			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+		if(NOT LAPACK_INCLUDE_DIR)
+			set(ATLAS_INCLUDE_DIR /opt/local/include)
+		else()
+			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+	else(APPLE)
+		# variables : LAPACK_FOUND, LAPACK_LINKER_FLAGS, LAPACK_LIBRARIES, LAPACK95_LIBRARIES, LAPACK95_FOUND, BLA_STATIC, BLA_VENDOR, BLA_F95
+		find_package(LAPACK REQUIRED)
+
+		if(NOT LAPACK_LIBRARIES_DIR)
+			set(ATLAS_LIBRARIES_DIR /usr/lib/atlas-base)  # for Ubuntu.
+#			set(ATLAS_LIBRARIES_DIR /usr/lib64/atlas)  # for RHEL.
+		else()
+			set(ATLAS_LIBRARIES_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+		if(NOT LAPACK_INCLUDE_DIR)
+			set(ATLAS_INCLUDE_DIR /usr/include/atlas)  # for Ubuntu.
+#			set(ATLAS_INCLUDE_DIR /usr/include)  # for RHEL.
+		else()
+			set(ATLAS_INCLUDE_DIR ${LAPACK_LIBRARIES_DIR})
+		endif()
+	endif(APPLE)
+endif(USE_LAPACK)
+if(USE_EIGEN)
+	# variables : EIGEN_FOUND, EIGEN_VERSION, EIGEN_INCLUDE_DIRS
+	find_package(Eigen 3.2 REQUIRED)
+	include_directories(${EIGEN_INCLUDE_DIRS})
+endif(USE_EIGEN)
+
 if(USE_GSL)
+	# variables : GSL_FOUND, GSL_LIBRARIES, GSL_VERSION, GSL_ROOT_DIR
 	find_package(GSL REQUIRED)
 	include_directories(${GSL_INCLUDE_DIRS})
-	# variables : GSL_FOUND, GSL_LIBRARIES, GSL_VERSION, GSL_ROOT_DIR
 endif(USE_GSL)
+if(USE_OPENCV)
+	find_package(OpenCV REQUIRED)
+	include_directories(${OPENCV_INCLUDE_DIRS})
+endif(USE_OPENCV)
 
 if(USE_FFTW3)
 	find_package(FFTW3 REQUIRED)  # error : the file, 'FindFFTW3.cmake' doesn't exist in CMAKE_MODULE_PATH ...
 #	set(FFTW3_FOUND NO)  # if FFTW3 is not found or does not try being found, FFTW3_FOUND is set to NO.
 endif(USE_FFTW3)
-if(USE_OPENCV)
-	find_package(OpenCV REQUIRED)
-endif(USE_OPENCV)
 if(USE_PCL)
 	find_package(PCL 1.5 REQUIRED)
+	include_directories(${PCL_INCLUDE_DIRS})
+	link_directories(${PCL_LIBRARY_DIRS})
+	add_definitions(${PCL_DEFINITIONS})
 endif(USE_PCL)
+if(USE_CUDA)
+	# variables : CUDA_VERSION, CUDA_VERSION_STRING, CUDA_TOOLKIT_ROOT_DIR, CUDA_SDK_ROOT_DIR, CUDA_INCLUDE_DIRS, CUDA_LIBRARIES, CUDA_CUFFT_LIBRARIES, CUDA_CUBLAS_LIBRARIES, CUDA_cupti_LIBRARY, CUDA_curand_LIBRARY, CUDA_cusparse_LIBRARY, CUDA_npp_LIBRARY, CUDA_nppc_LIBRARY, CUDA_nppi_LIBRARY, CUDA_npps_LIBRARY, CUDA_nvcuvenc_LIBRARY, CUDA_nvcuvid_LIBRARY
+	find_package(CUDA REQUIRED)
+	include_directories(${CUDA_INCLUDE_DIRS})
+endif(USE_CUDA)
+
+if(USE_QT4)
+	# variables : QT_FOUND, Qt4_FOUND, QT4_FOUND, QT_VERSION_MAJOR, QT_VERSION_MINOR, QT_VERSION_PATCH, QT_INCLUDE_DIR, QT_LIBRARIES, QT_DEFINITIONS
+	find_package(Qt4 4.7.4 REQUIRED QtGui QtXml)  # target_link_libraries(myexe Qt4::QtGui Qt4::QtXml)
+	include_directories(${QT_INCLUDE_DIR})
+	add_definitions(${QT_DEFINITIONS})
+endif(USE_QT4)
 
 if(USE_DOXYGEN)
 	find_package(Doxygen)
@@ -219,22 +265,15 @@ endif()
 ##
 ## Add include and link paths.
 ##
-include_directories(${CMAKE_SOURCE_DIR}/inc)
-link_directories(${CMAKE_SOURCE_DIR}/lib)
+include_directories(${CMAKE_SOURCE_DIR}/inc)  # ../../inc
+link_directories(${CMAKE_SOURCE_DIR}/lib)  # ../../lib
 add_definitions(-D_UNICODE -DUNICODE)
-
-include_directories(${BOOST_INCLUDE_DIRS})
-link_directories(${BOOST_LIBRARY_DIRS})
-include_directories(${OPENCV_INCLUDE_DIRS})
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
 
 #include_directories(/usr/local/include /usr/include)
 #link_directories(/usr/local/lib /usr/lib)
 
 ##
-## Set and add include and link paths for dev/sw_dev & dev/hw_dev.
+## Set and add include and link paths for gdt/sw_dev & gdt/hw_dev.
 ##
 if(WIN32 AND NOT CYGWIN)
 #	set(MY_USR_LOCAL_BIN D:/usr/local/bin)

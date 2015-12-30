@@ -1,8 +1,14 @@
-set(TARGET swl_util)
+if(CMAKE_BUILD_TYPE MATCHES DEBUG)
+	set(TARGET swl_util_d)
+else(CMAKE_BUILD_TYPE MATCHES DEBUG)
+	set(TARGET swl_util)
+endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+
 set(SRCS
 	AsyncTcpSocketClient.cpp
 	dictionary.cpp
 	GuardedBuffer.cpp
+#	iniexample.cpp
 	IniParser.cpp
 	iniparser_impl.cpp
 	PacketPacker.cpp
@@ -14,20 +20,17 @@ set(SRCS
 	TcpSocketConnection.cpp
 	TcpSocketSession.cpp
 	xgetopt.cpp
+#	xgetopt_example.cpp
 )
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
-		swl_math
-		swl_base
-		boost_system-mt
-		log4cxx
+		swl_math_d
+		swl_base_d
 	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
 		swl_math
 		swl_base
-		boost_system-mt
-		log4cxx
 	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 

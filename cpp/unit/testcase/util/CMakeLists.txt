@@ -1,6 +1,0 @@
-set(UTIL_SRCS EchoTcpSocketConnection.cpp EchoTcpSocketServerTest.cpp EchoTcpSocketSession.cpp EchoTcpSocketTest.cpp LineROITest.cpp PolygonROITest.cpp PolylineROITest.cpp RectangleROITest.cpp RegionOfInterestMgrTest.cpp RegionOfInterestTest.cpp ROIWithVariablePointsTest.cpp)
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(UTIL_LIBS swl_util)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(UTIL_LIBS swl_util)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)

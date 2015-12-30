@@ -1,7 +1,3 @@
-#add_subdirectory(text_ui)
-#add_subdirectory(testcase)
-
-set(TEXT_UI_SRCS text_ui/TextUiUnitTestMain.cpp)
 set(BASE_SRCS
 	testcase/base/LoggerTest.cpp
 )
@@ -25,43 +21,47 @@ set(UTIL_SRCS
 	testcase/util/RegionOfInterestTest.cpp
 	testcase/util/ROIWithVariablePointsTest.cpp
 )
-set(UTIL_SRCS
+set(RND_UTIL_SRCS
 	testcase/rnd_util/SortTest.cpp
 )
 
-set(TARGET swl_unit_test)
-set(SRCS ${TEXT_UI_SRCS} ${BASE_SRCS} ${MATH_SRCS} ${UTIL_SRCS})
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
-#		swl_machine_vision
-#		swl_pattern_recognition
-#		swl_machine_learning
-#		swl_kinematics
-		swl_rnd_util
-#		swl_graphics
-#		swl_winview
-#		swl_view
-#		swl_glutil
-#		swl_winutil
-#		swl_posixutil
-		swl_util
-		swl_math
-		swl_base
-		log4cxx
+		swl_machine_vision_d
+		swl_pattern_recognition_d
+		swl_machine_learning_d
+		swl_kinematics_d
+		swl_rnd_util_d
+if(WIN32 AND NOT CYGWIN)
+		swl_winview_d
+		swl_winutil_d
+else(WIN32 AND NOT CYGWIN)
+		swl_posixutil_d
+endif(WIN32 AND NOT CYGWIN)
+		swl_glutil_d
+		swl_view_d
+		swl_graphics_d
+		swl_util_d
+		swl_math_d
+		swl_base_d
+		log4cxx_d
 	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
-#		swl_machine_vision
-#		swl_pattern_recognition
-#		swl_machine_learning
-#		swl_kinematics
+		swl_machine_vision
+		swl_pattern_recognition
+		swl_machine_learning
+		swl_kinematics
 		swl_rnd_util
-#		swl_graphics
-#		swl_winview
-#		swl_view
-#		swl_glutil
-#		swl_winutil
-#		swl_posixutil
+if(WIN32 AND NOT CYGWIN)
+		swl_winview
+		swl_winutil
+else(WIN32 AND NOT CYGWIN)
+		swl_posixutil
+endif(WIN32 AND NOT CYGWIN)
+		swl_glutil
+		swl_view
+		swl_graphics
 		swl_util
 		swl_math
 		swl_base
@@ -69,13 +69,10 @@ else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
-add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_UNIT)
-
-add_executable(${TARGET} ${SRCS})
-target_link_libraries(${TARGET} ${LIBS})
-
-add_test(
-	NAME unit_test/${TARGET}
-	COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TARGET}
-	WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
-)
+add_subdirectory(text_ui)
+if(WIN32 AND NOT CYGWIN)
+	add_subdirectory(mfc_ui)
+endif(WIN32 AND NOT CYGWIN)
+if(QT_FOUND)
+	add_subdirectory(qt_ui)
+endif(QT_FOUND)

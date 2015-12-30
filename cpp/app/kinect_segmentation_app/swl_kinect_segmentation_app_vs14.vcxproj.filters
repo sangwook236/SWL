@@ -95,9 +95,6 @@
     <ClCompile Include="gslic_lib\FastImgSeg.cpp">
       <Filter>Source Files\gslic_lib</Filter>
     </ClCompile>
-    <ClCompile Include="LibraryAutolinking.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gSLIC.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
