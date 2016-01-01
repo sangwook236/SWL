@@ -14,9 +14,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -165,7 +165,120 @@ struct BaseFieldConversionTestSuite: public boost::unit_test_framework::test_sui
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class BaseFieldConversionTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(BaseFieldConversionTest, testDec2Bin)
+{
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num = MathUtil::dec2bin(432ul);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2bin(432ul));
+#else
+	const std::string &num = MathUtil::dec2bin(432ul);
+#endif
+	EXPECT_STREQ(num.c_str(), "110110000");
+	EXPECT_STRNE(num.c_str(), "110101111");
+	EXPECT_STRNE(num.c_str(), "110110001");
+
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num1 = MathUtil::dec2bin(-3796ul);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2bin(-3796ul));
+	//const std::wstring &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+#else
+	const std::string &num1 = MathUtil::dec2bin(-3796ul);
+	const std::string &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+#endif
+	EXPECT_STREQ(num1.c_str(), num2.c_str());
+}
+
+TEST_F(BaseFieldConversionTest, testDec2Oct)
+{
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num = MathUtil::dec2oct(432ul);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2oct(432ul));
+#else
+	const std::string &num = MathUtil::dec2oct(432ul);
+#endif
+	EXPECT_STREQ(num.c_str(), "660");
+	EXPECT_STRNE(num.c_str(), "657");
+	EXPECT_STRNE(num.c_str(), "661");
+
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num1 = MathUtil::dec2oct(-3796ul);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2oct(-3796ul));
+	//const std::wstring &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+#else
+	const std::string &num1 = MathUtil::dec2oct(-3796ul);
+	const std::string &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+#endif
+	EXPECT_STREQ(num1.c_str(), num2.c_str());
+}
+
+TEST_F(BaseFieldConversionTest, testDec2Hex)
+{
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num = MathUtil::dec2hex(432ul);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2hex(432ul));
+#else
+	const std::string &num = MathUtil::dec2hex(432ul);
+#endif
+	EXPECT_STREQ(num.c_str(), "1B0");
+	EXPECT_STRNE(num.c_str(), "1AF");
+	EXPECT_STRNE(num.c_str(), "1B1");
+
+#if defined(UNICODE) || defined(_UNIODE)
+	//const std::wstring &num1 = MathUtil::dec2hex(-3796ul);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2hex(-3796ul));
+	//const std::wstring &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+#else
+	const std::string &num1 = MathUtil::dec2hex(-3796ul);
+	const std::string &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+#endif
+	EXPECT_STREQ(num1.c_str(), num2.c_str());
+}
+
+TEST_F(BaseFieldConversionTest, testBin2Dec)
+{
+	const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
+	EXPECT_EQ(dec, 432ul);
+	EXPECT_NE(dec, 431ul);
+	EXPECT_NE(dec, 433ul);
+}
+
+TEST_F(BaseFieldConversionTest, testOct2Dec)
+{
+	const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
+	EXPECT_EQ(dec, 432ul);
+	EXPECT_NE(dec, 431ul);
+	EXPECT_NE(dec, 433ul);
+}
+
+TEST_F(BaseFieldConversionTest, testHex2Dec)
+{
+	const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
+	EXPECT_EQ(dec, 432ul);
+	EXPECT_NE(dec, 431ul);
+	EXPECT_NE(dec, 433ul);
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

@@ -1,0 +1,32 @@
+# LOG4CXX_FOUND - system has log4cxx
+# LOG4CXX_INCLUDE_DIR - the log4cxx include directory
+# LOG4CXX_LIBRARIES - log4cxx library
+
+find_path(LOG4CXX_INCLUDE_DIR
+	NAMES log4cxx/log4cxx.h log4cxx/logger.h
+	HINTS $ENV{LOG4CXX_DIR}/include
+#	PATHS /include /usr/include /usr/local/include
+)
+find_library(LOG4CXX_LIBRARIES
+	NAMES log4cxx log4cxxd
+	HINTS $ENV{LOG4CXX_DIR}/lib
+#	PATHS /lib /usr/lib /usr/local/lib
+)
+
+if(LOG4CXX_INCLUDE_DIR AND LOG4CXX_LIBRARIES)
+	set(LOG4CXX_FOUND 1)
+#	remove last /log4cxx string
+	string(REGEX REPLACE "/log4cxx" "" LOG4CXX_INCLUDE_DIR_SUP_LEVEL ${LOG4CXX_INCLUDE_DIR})
+	set(LOG4CXX_INCLUDE_DIR ${LOG4CXX_INCLUDE_DIR_SUP_LEVEL} ${LOG4CXX_INCLUDE_DIR})
+	if(NOT Log4cxx_FIND_QUIETLY)
+		message(STATUS "Found log4cxx: ${LOG4CXX_LIBRARIES}")
+	endif(NOT Log4cxx_FIND_QUIETLY)
+else(LOG4CXX_INCLUDE_DIR AND LOG4CXX_LIBRARIES)
+	set(LOG4CXX_FOUND 0 CACHE BOOL "Not found log4cxx library")
+	message(STATUS "NOT Found log4cxx, disabling it")
+endif(LOG4CXX_INCLUDE_DIR AND LOG4CXX_LIBRARIES)
+
+#INCLUDE(FindPackageHandleStandardArgs)
+#FIND_PACKAGE_HANDLE_STANDARD_ARGS(Log4cxx DEFAULT_MSG LOG4CXX_INCLUDE_DIRS LOG4CXX_LIBRARIES)
+
+MARK_AS_ADVANCED(LOG4CXX_INCLUDE_DIR LOG4CXX_LIBRARIES)

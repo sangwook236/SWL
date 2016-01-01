@@ -13,9 +13,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -82,7 +82,50 @@ struct SortTestSuite : public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class SortTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(SortTest, testMergeSort)
+{
+	std::vector<int> data1 = { 1, -1, 3, 10, 23, 37, 17, -5, -19, 2, 3, 81 };
+	std::vector<int> data2(data1);
+
+	std::sort(data1.begin(), data1.end());
+	swl::Sort::mergeSort(data2.begin(), data2.end());
+
+	std::vector<int>::iterator it = data2.begin();
+	for (auto val : data1)
+		EXPECT_EQ(val, *it++);
+}
+
+TEST_F(SortTest, testQuickSort)
+{
+	std::vector<int> data1 = { 1, -1, 3, 10, 23, 37, 17, -5, -19, 2, 3, 81 };
+	std::vector<int> data2(data1);
+
+	std::sort(data1.begin(), data1.end());
+	swl::Sort::quickSort(data2.begin(), data2.end());
+
+	std::vector<int>::iterator it = data2.begin();
+	for (auto val : data1)
+		EXPECT_EQ(val, *it++);
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

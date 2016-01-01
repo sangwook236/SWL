@@ -15,9 +15,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -91,7 +91,64 @@ struct LoggerTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class LoggerTest : public testing::Test
+{
+public:
+	LoggerTest()
+		: logger_(log4cxx::Logger::getLogger(L"swlLogger.logger")), tracer_(log4cxx::Logger::getLogger(L"swlLogger.tracer"))
+	{
+		const int config = 1;
+		switch (config)
+		{
+		case 1:
+			log4cxx::PropertyConfigurator::configure(L"../data/test_data/swl_logger_conf.properties");
+			break;
+		case 2:
+			log4cxx::xml::DOMConfigurator::configure(L"../data/test_data/swl_logger_conf.xml");
+			break;
+		case 0:
+		default:
+			log4cxx::BasicConfigurator::configure();
+			break;
+		}
+	}
+
+public:
+	log4cxx::LoggerPtr getLogger()  { return logger_; }
+	log4cxx::LoggerPtr getTracer()  { return tracer_; }
+
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+
+private:
+	log4cxx::LoggerPtr logger_;
+	log4cxx::LoggerPtr tracer_;
+};
+
+TEST_F(LoggerTest, testBasic)
+{
+	LOG4CXX_WARN(getLogger(), L"Low fuel level.");
+	LOG4CXX_ERROR(getTracer(), L"Located nearest gas station.");
+
+	getLogger()->setLevel(log4cxx::Level::getInfo());
+	EXPECT_EQ(log4cxx::Level::getInfo(), getLogger()->getLevel());
+
+	LOG4CXX_DEBUG(getLogger(), L"Starting search for nearest gas station.");
+	LOG4CXX_DEBUG(getTracer(), L"Exiting gas station search.");
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

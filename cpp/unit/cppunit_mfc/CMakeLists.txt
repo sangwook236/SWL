@@ -1,7 +1,7 @@
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_unit_test_mfc_d)
+	set(TARGET swl_cppunit_mfc_d)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_unit_test_mfc)
+	set(TARGET swl_cppunit_mfc)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 set(SRCS
@@ -15,8 +15,9 @@ set(SRCS
 	${RND_UTIL_SRCS}
 )
 
-#add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_UNIT)
-add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)
+#add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
+#add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  // deprecated.
 #add_definitions(-D_AFXDLL)
 
 add_executable(${TARGET} WIN32 ${SRCS})

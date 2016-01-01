@@ -14,9 +14,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -58,7 +58,28 @@ struct LineTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class Line3Test : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(Line3Test, testFoo)
+{
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

@@ -12,11 +12,19 @@ set(SRCS
 	${RND_UTIL_SRCS}
 )
 
-add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_UNIT)
-#add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)
+if(CPPUNIT_FOUND)
+	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  // deprecated.
+	set(TEST_LIBS CPPUNIT_LIBRARIES)
+elseif(GTEST_FOUND)
+	add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+	set(TEST_LIBS GTEST_BOTH_LIBRARIES)
+else()
+	add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
+	set(TEST_LIBS )
+endif()
 
 add_executable(${TARGET} ${SRCS})
-target_link_libraries(${TARGET} ${LIBS})
+target_link_libraries(${TARGET} ${LIBS} ${TEST_LIBS})
 
 add_test(
 	NAME unit_test/${TARGET}

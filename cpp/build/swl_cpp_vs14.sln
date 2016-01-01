@@ -20,7 +20,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil", "..\src\winut
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\text_ui\swl_unit_test_vs14.vcxproj", "{F871854A-3223-4895-A970-180448FC68DA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_vs14.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_cppunit_mfc", "..\unit\cppunit_mfc\swl_cppunit_mfc_vs14.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB} = {7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}
 	EndProjectSection
@@ -67,8 +67,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition", "
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt", "..\unit\qt_ui\swl_unit_test_qt_vs14.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app", "..\app\imu_filter_app\swl_imu_filter_app_vs14.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
 EndProject
@@ -183,10 +181,6 @@ Global
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Debug|Win32.Build.0 = Debug|Win32
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Release|Win32.ActiveCfg = Release|Win32
 		{7D6AB8AD-1089-4150-8287-4B1FBE0ADBDB}.Release|Win32.Build.0 = Release|Win32
-		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.ActiveCfg = Debug|Win32
-		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.Build.0 = Debug|Win32
-		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.ActiveCfg = Release|Win32
-		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.Build.0 = Release|Win32
 		{901C25BD-0202-45AB-9C8A-8B522420EA3D}.Debug|Win32.ActiveCfg = Debug|Win32
 		{901C25BD-0202-45AB-9C8A-8B522420EA3D}.Debug|Win32.Build.0 = Debug|Win32
 		{901C25BD-0202-45AB-9C8A-8B522420EA3D}.Release|Win32.ActiveCfg = Release|Win32

@@ -19,8 +19,8 @@ set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 ## Set options.
 ##
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
-option(BUILD_TESTS "Build tests" ON)
-option(BUILD_DOCS "Build documents" ON)
+option(BUILD_TESTS "Build tests" OFF)
+option(BUILD_DOCS "Build documents" OFF)
 
 #option(USE_PTHREADS "Thread-safe build (using pthreads)" OFF)
 set(USE_PTHREADS OFF)
@@ -30,9 +30,21 @@ set(USE_OPENGL ON)
 set(USE_GLUT ON)
 #option(USE_BOOST "Boost C++ Libraries" ON)
 set(USE_BOOST ON)
+
+#option(USE_LOG4CXX "Apache log4cxx - a logging framework for C++" ON)
+set(USE_LOG4CXX ON)
+#option(USE_GLOG "glog - C++ implementation of the Google logging module" OFF)
+set(USE_GLOG OFF)
+#option(USE_CPPUNIT "CppUnit - C++ port of JUnit" OFF)  # deprecated.
+set(USE_CPPUNIT OFF)
+option(USE_GOOGLE_TEST "Google Test - Google's C++ test framework" OFF)
+#set(USE_GOOGLE_TEST OFF)
+#option(USE_GOOGLE_MOCK "Google Mock - Google C++ Mocking Framework" OFF)
+set(USE_GOOGLE_MOCK OFF)
+
 #option(USE_LAPACK "Linear Algebra PACKage (LAPACK)" ON)
 set(USE_LAPACK ON)
-#option(USE_EIGEN "C++ template library for linear algebra" ON)
+#option(USE_EIGEN "Eigen - C++ template library for linear algebra" ON)
 set(USE_EIGEN ON)
 
 #option(USE_GSL "GNU Scientific Library (GSL)" ON)
@@ -47,12 +59,12 @@ option(USE_PCL "Point Cloud Library (PCL)" OFF)
 option(USE_CUDA  "Compute Unified Device Architecture (CUDA), a parallel computing platform and programming model invented by NVIDIA" OFF)
 #set(USE_CUDA OFF)
 
-option(USE_QT4 "Coss-platform application framework" OFF)
+option(USE_QT4 "Qt4 - Coss-platform application framework" OFF)
 #set(USE_QT4 OFF)
 
-option(USE_DOXYGEN "De facto standard tool for generating documentation from annotated C++ sources" ON)
+option(USE_DOXYGEN "Doxygen - De facto standard tool for generating documentation from annotated C++ sources" ON)
 #set(USE_DOXYGEN ON)
-option(USE_LYX "Document Processor" OFF)
+option(USE_LYX "LyX - Document Processor" OFF)
 #set(USE_LYX OFF)
 
 if(BUILD_SHARED_LIBS)
@@ -95,6 +107,29 @@ if(USE_BOOST)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 endif(USE_BOOST)
+
+if(USE_LOG4CXX)
+	# ${SWL_CPP_HOME}/cmake/FindLog4cxx.cmake
+	# variables : LOG4CXX_FOUND, LOG4CXX_INCLUDE_DIR, LOG4CXX_LIBRARIES
+	find_package(Log4cxx REQUIRED)
+	include_directories(${LOG4CXX_INCLUDE_DIR})
+endif(USE_LOG4CXX)
+if(USE_GLOG)
+	# variables : 
+endif(USE_GLOG)
+if(USE_CPPUNIT)
+	# variables : CPPUNIT_FOUND, CPPUNIT_INCLUDE_DIR, CPPUNIT_LIBRARIES
+	find_package(CPPUNIT REQUIRED)
+	include_directories(${CPPUNIT_INCLUDE_DIR})
+endif(USE_CPPUNIT)
+if(USE_GOOGLE_TEST)
+	# variables : GTEST_FOUND, GTEST_INCLUDE_DIRS, GTEST_BOTH_LIBRARIES, GTEST_LIBRARIES, GTEST_MAIN_LIBRARIES
+	find_package(GTEST REQUIRED)
+	include_directories(${GTEST_INCLUDE_DIRS})
+endif(USE_GOOGLE_TEST)
+if(USE_GOOGLE_MOCK)
+	# variables : 
+endif(USE_GOOGLE_MOCK)
 
 if(USE_LAPACK)
 	if(APPLE)

@@ -35,12 +35,18 @@ struct echo_tcp_socket_server_worker_thread_functor
 		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, serverPortNumber_withSession);
 		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, serverPortNumber_withoutSession);
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 		BOOST_TEST_MESSAGE("start TCP socket servers: w/o & w/ session");
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("start TCP socket servers: w/o & w/ session");
 #endif
 		ioService.run();
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 		BOOST_TEST_MESSAGE("finish TCP socket servers: w/o & w/ session");
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("finish TCP socket servers: w/o & w/ session");
 #endif
 	}
 };
@@ -48,9 +54,9 @@ struct echo_tcp_socket_server_worker_thread_functor
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -95,7 +101,7 @@ public:
 			BOOST_CHECK(ret);
 			if (ret)
 			{
-				BOOST_CHECK_EQUAL(client.isConnected(), true);
+				BOOST_CHECK(client.isConnected());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -106,7 +112,7 @@ public:
 					BOOST_CHECK_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					BOOST_CHECK_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					BOOST_CHECK(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					BOOST_CHECK_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				{
@@ -118,11 +124,11 @@ public:
 					BOOST_CHECK_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					BOOST_CHECK_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					BOOST_CHECK(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					BOOST_CHECK_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				client.disconnect();
-				BOOST_CHECK_EQUAL(client.isConnected(), false);
+				BOOST_CHECK(!client.isConnected());
 			}
 		}
 		BOOST_TEST_MESSAGE("finish synchronous TCP socket client that communicates with TCP socket server w/o session");
@@ -140,7 +146,7 @@ public:
 			BOOST_CHECK(ret);
 			if (ret)
 			{
-				BOOST_CHECK_EQUAL(client.isConnected(), true);
+				BOOST_CHECK(client.isConnected());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -151,7 +157,7 @@ public:
 					BOOST_CHECK_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					BOOST_CHECK_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					BOOST_CHECK(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					BOOST_CHECK_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				{
@@ -163,11 +169,11 @@ public:
 					BOOST_CHECK_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					BOOST_CHECK_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					BOOST_CHECK(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					BOOST_CHECK_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				client.disconnect();
-				BOOST_CHECK_EQUAL(client.isConnected(), false);
+				BOOST_CHECK(!client.isConnected());
 			}
 		}
 		BOOST_TEST_MESSAGE("finish synchronous TCP socket client that communicates with TCP socket server w/ session");
@@ -209,12 +215,12 @@ public:
 				timer.wait();
 				++idx;
 			}
-			BOOST_CHECK(MAX_ITER != idx);
+			BOOST_CHECK_NE(MAX_ITER, idx);
 
 			{
-				BOOST_CHECK_EQUAL(client.isConnected(), true);
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isConnected());
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -230,16 +236,16 @@ public:
 						timer.wait();
 						++idx;
 					}
-					BOOST_CHECK(MAX_ITER != idx);
+					BOOST_CHECK_EQUAL(MAX_ITER, idx);
 
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					BOOST_CHECK(!msg.empty());
-					BOOST_CHECK(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					BOOST_CHECK_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 				client.clearSendBuffer();
 				client.clearReceiveBuffer();
 
@@ -257,16 +263,16 @@ public:
 						timer.wait();
 						++idx;
 					}
-					BOOST_CHECK(MAX_ITER != idx);
+					BOOST_CHECK_EQUAL(MAX_ITER, idx);
 
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					BOOST_CHECK(!msg.empty());
-					BOOST_CHECK(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					BOOST_CHECK_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 
 				client.disconnect();
 				idx = 0;
@@ -277,8 +283,8 @@ public:
 					timer.wait();
 					++idx;
 				}
-				BOOST_CHECK(MAX_ITER != idx);
-				BOOST_CHECK_EQUAL(client.isConnected(), false);
+				BOOST_CHECK_NE(MAX_ITER, idx);
+				BOOST_CHECK(!client.isConnected());
 			}
 
 			clientWorkerThread.reset();
@@ -315,12 +321,12 @@ public:
 				timer.wait();
 				++idx;
 			}
-			BOOST_CHECK(MAX_ITER != idx);
+			BOOST_CHECK_NE(MAX_ITER, idx);
 
 			{
-				BOOST_CHECK_EQUAL(client.isConnected(), true);
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isConnected());
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -336,16 +342,16 @@ public:
 						timer.wait();
 						++idx;
 					}
-					BOOST_CHECK(MAX_ITER != idx);
+					BOOST_CHECK_NE(MAX_ITER, idx);
 
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					BOOST_CHECK(!msg.empty());
-					BOOST_CHECK(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					BOOST_CHECK_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 				client.clearSendBuffer();
 				client.clearReceiveBuffer();
 
@@ -363,16 +369,16 @@ public:
 						timer.wait();
 						++idx;
 					}
-					BOOST_CHECK(MAX_ITER != idx);
+					BOOST_CHECK_NE(MAX_ITER, idx);
 
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					BOOST_CHECK(!msg.empty());
-					BOOST_CHECK(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					BOOST_CHECK_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				BOOST_CHECK_EQUAL(client.isSendBufferEmpty(), true);
-				BOOST_CHECK_EQUAL(client.isReceiveBufferEmpty(), true);
+				BOOST_CHECK(client.isSendBufferEmpty());
+				BOOST_CHECK(client.isReceiveBufferEmpty());
 
 				client.disconnect();
 				idx = 0;
@@ -383,8 +389,8 @@ public:
 					timer.wait();
 					++idx;
 				}
-				BOOST_CHECK(MAX_ITER != idx);
-				BOOST_CHECK_EQUAL(client.isConnected(), false);
+				BOOST_CHECK_NE(MAX_ITER, idx);
+				BOOST_CHECK(!client.isConnected());
 			}
 
 			clientWorkerThread.reset();
@@ -415,7 +421,359 @@ struct TcpSocketClientTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class EchoTcpSocketTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("start thread for TCP socket servers");
+		thrd_.reset(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
+	}
+
+	/*virtual*/ void TearDown()
+	{
+		thrd_.reset();
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("terminate thread for TCP socket servers");
+	}
+
+private:
+	boost::scoped_ptr<boost::thread> thrd_;
+};
+
+TEST_F(EchoTcpSocketTest, testSyncClient)
+{
+	boost::asio::io_service ioService;
+	swl::TcpSocketClient client(ioService);
+
+	// synchronous TCP socket client that communicates with TCP socket server w/o session
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("start synchronous TCP socket client that communicates with TCP socket server w/o session");
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wostringstream stream;
+#else
+		std::ostringstream stream;
+#endif
+		stream << serverPortNumber_withoutSession;
+		const bool ret = client.connect(SWL_STR("localhost"), stream.str());
+		EXPECT_TRUE(ret);
+		if (ret)
+		{
+			EXPECT_TRUE(client.isConnected());
+
+			{
+				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
+				unsigned char receiveMsg[256] = { '\0', };
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				const size_t sentLen = client.send(sendMsg, sendingLen);
+				EXPECT_EQ(sendingLen, sentLen);
+				const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
+				EXPECT_EQ(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
+				EXPECT_EQ(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
+			}
+
+			{
+				const unsigned char sendMsg[] = "9876543210";
+				unsigned char receiveMsg[256] = { '\0', };
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				const size_t sentLen = client.send(sendMsg, sendingLen);
+				EXPECT_EQ(sendingLen, sentLen);
+				const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
+				EXPECT_EQ(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
+				EXPECT_EQ(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
+			}
+
+			client.disconnect();
+			EXPECT_TRUE(!client.isConnected());
+		}
+	}
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("finish synchronous TCP socket client that communicates with TCP socket server w/o session");
+
+	// synchronous TCP socket client that communicates with TCP socket server using session
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("start synchronous TCP socket client that communicates with TCP socket server w/ session");
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wostringstream stream;
+#else
+		std::ostringstream stream;
+#endif
+		stream << serverPortNumber_withSession;
+		const bool ret = client.connect(SWL_STR("localhost"), stream.str());
+		EXPECT_TRUE(ret);
+		if (ret)
+		{
+			EXPECT_TRUE(client.isConnected());
+
+			{
+				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
+				unsigned char receiveMsg[256] = { '\0', };
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				const size_t sentLen = client.send(sendMsg, sendingLen);
+				EXPECT_EQ(sendingLen, sentLen);
+				const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
+				EXPECT_EQ(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
+				EXPECT_EQ(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
+			}
+
+			{
+				const unsigned char sendMsg[] = "9876543210";
+				unsigned char receiveMsg[256] = { '\0', };
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				const size_t sentLen = client.send(sendMsg, sendingLen);
+				EXPECT_EQ(sendingLen, sentLen);
+				const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
+				EXPECT_EQ(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
+				EXPECT_EQ(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
+			}
+
+			client.disconnect();
+			EXPECT_TRUE(!client.isConnected());
+		}
+	}
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("finish synchronous TCP socket client that communicates with TCP socket server w/ session");
+}
+
+TEST_F(EchoTcpSocketTest, testAsyncClient)
+{
+	const int MAX_ITER = 100;
+	int idx = 0;
+
+	// asynchronous TCP socket client that communicates with TCP socket server w/o session
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("start asynchronous TCP socket client that communicates with TCP socket server w/o session");
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wostringstream stream;
+#else
+		std::ostringstream stream;
+#endif
+		stream << serverPortNumber_withoutSession;
+
+		// caution: step 1 -> step 2 -> step 3
+		// step 1
+		boost::asio::io_service ioService;
+		// step 2
+		swl::AsyncTcpSocketClient client(ioService, SWL_STR("localhost"), stream.str());
+
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("start thread for TCP socket client");
+		// step 3
+		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService)); 
+		boost::scoped_ptr<boost::thread> clientWorkerThread(new boost::thread(boost::bind(&boost::asio::io_service::run, &ioService)));
+
+		idx = 0;
+		while (!client.isConnected() && idx < MAX_ITER)
+		{
+			boost::asio::deadline_timer timer(ioService);
+			timer.expires_from_now(boost::posix_time::milliseconds(10));
+			timer.wait();
+			++idx;
+		}
+		EXPECT_NE(MAX_ITER, idx);
+
+		{
+			EXPECT_TRUE(client.isConnected());
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+
+			{
+				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
+				std::vector<unsigned char> receiveMsg;
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				client.send(sendMsg, sendingLen);
+				idx = 0;
+				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
+				{
+					boost::asio::deadline_timer timer(ioService);
+					timer.expires_from_now(boost::posix_time::milliseconds(10));
+					timer.wait();
+					++idx;
+				}
+				EXPECT_EQ(MAX_ITER, idx);
+
+				std::vector<unsigned char> msg(sendingLen);
+				client.receive(&msg[0], sendingLen);
+				EXPECT_FALSE(msg.empty());
+				EXPECT_EQ(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
+			}
+
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+			client.clearSendBuffer();
+			client.clearReceiveBuffer();
+
+			{
+				const unsigned char sendMsg[] = "9876543210";
+				std::vector<unsigned char> receiveMsg;
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				client.send(sendMsg, sendingLen);
+				idx = 0;
+				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
+				{
+					boost::asio::deadline_timer timer(ioService);
+					timer.expires_from_now(boost::posix_time::milliseconds(10));
+					timer.wait();
+					++idx;
+				}
+				EXPECT_EQ(MAX_ITER, idx);
+
+				std::vector<unsigned char> msg(sendingLen);
+				client.receive(&msg[0], sendingLen);
+				EXPECT_FALSE(msg.empty());
+				EXPECT_EQ(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
+			}
+
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+
+			client.disconnect();
+			idx = 0;
+			while (client.isConnected() && idx < MAX_ITER)
+			{
+				boost::asio::deadline_timer timer(ioService);
+				timer.expires_from_now(boost::posix_time::milliseconds(10));
+				timer.wait();
+				++idx;
+			}
+			EXPECT_NE(MAX_ITER, idx);
+			EXPECT_FALSE(client.isConnected());
+		}
+
+		clientWorkerThread.reset();
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("terminate thread for TCP socket client");
+	}
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("finish asynchronous TCP socket client that communicates with TCP socket server w/o session");
+
+	// asynchronous TCP socket client that communicates with TCP socket server using session
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("start asynchronous TCP socket client that communicates with TCP socket server w/ session");
+	{
+#if defined(_UNICODE) || defined(UNICODE)
+		std::wostringstream stream;
+#else
+		std::ostringstream stream;
+#endif
+		stream << serverPortNumber_withSession;
+
+		// caution: step 1 -> step 2 -> step 3
+		// step 1
+		boost::asio::io_service ioService;
+		// step 2
+		swl::AsyncTcpSocketClient client(ioService, SWL_STR("localhost"), stream.str());
+
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("start thread for TCP socket client");
+		// step 3
+		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService)); 
+		boost::scoped_ptr<boost::thread> clientWorkerThread(new boost::thread(boost::bind(&boost::asio::io_service::run, &ioService)));
+
+		idx = 0;
+		while (!client.isConnected() && idx < MAX_ITER)
+		{
+			boost::asio::deadline_timer timer(ioService);
+			timer.expires_from_now(boost::posix_time::milliseconds(10));
+			timer.wait();
+			++idx;
+		}
+		EXPECT_NE(MAX_ITER, idx);
+
+		{
+			EXPECT_TRUE(client.isConnected());
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+
+			{
+				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
+				std::vector<unsigned char> receiveMsg;
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				client.send(sendMsg, sendingLen);
+				idx = 0;
+				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
+				{
+					boost::asio::deadline_timer timer(ioService);
+					timer.expires_from_now(boost::posix_time::milliseconds(10));
+					timer.wait();
+					++idx;
+				}
+				EXPECT_NE(MAX_ITER, idx);
+
+				std::vector<unsigned char> msg(sendingLen);
+				client.receive(&msg[0], sendingLen);
+				EXPECT_FALSE(msg.empty());
+				EXPECT_EQ(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
+			}
+
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+			client.clearSendBuffer();
+			client.clearReceiveBuffer();
+
+			{
+				const unsigned char sendMsg[] = "9876543210";
+				std::vector<unsigned char> receiveMsg;
+				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
+				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				client.send(sendMsg, sendingLen);
+				idx = 0;
+				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
+				{
+					boost::asio::deadline_timer timer(ioService);
+					timer.expires_from_now(boost::posix_time::milliseconds(10));
+					timer.wait();
+					++idx;
+				}
+				EXPECT_NE(MAX_ITER, idx);
+
+				std::vector<unsigned char> msg(sendingLen);
+				client.receive(&msg[0], sendingLen);
+				EXPECT_FALSE(msg.empty());
+				EXPECT_EQ(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
+			}
+
+			EXPECT_TRUE(client.isSendBufferEmpty());
+			EXPECT_TRUE(client.isReceiveBufferEmpty());
+
+			client.disconnect();
+			idx = 0;
+			while (client.isConnected() && idx < MAX_ITER)
+			{
+				boost::asio::deadline_timer timer(ioService);
+				timer.expires_from_now(boost::posix_time::milliseconds(10));
+				timer.wait();
+				++idx;
+			}
+			EXPECT_NE(MAX_ITER, idx);
+			EXPECT_FALSE(client.isConnected());
+		}
+
+		clientWorkerThread.reset();
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("terminate thread for TCP socket client");
+	}
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("finish asynchronous TCP socket client that communicates with TCP socket server w/ session");
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -461,7 +819,7 @@ public:
 			CPPUNIT_ASSERT(ret);
 			if (ret)
 			{
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), true);
+				CPPUNIT_ASSERT(client.isConnected());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -472,7 +830,7 @@ public:
 					CPPUNIT_ASSERT_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					CPPUNIT_ASSERT_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					CPPUNIT_ASSERT(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				{
@@ -484,11 +842,11 @@ public:
 					CPPUNIT_ASSERT_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					CPPUNIT_ASSERT_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					CPPUNIT_ASSERT(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				client.disconnect();
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), false);
+				CPPUNIT_ASSERT(!client.isConnected());
 			}
 		}
 		//CPPUNIT_MESSAGE("finish synchronous TCP socket client that communicates with TCP socket server w/o session");
@@ -506,7 +864,7 @@ public:
 			CPPUNIT_ASSERT(ret);
 			if (ret)
 			{
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), true);
+				CPPUNIT_ASSERT(client.isConnected());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -517,7 +875,7 @@ public:
 					CPPUNIT_ASSERT_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					CPPUNIT_ASSERT_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					CPPUNIT_ASSERT(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				{
@@ -529,11 +887,11 @@ public:
 					CPPUNIT_ASSERT_EQUAL(sendingLen, sentLen);
 					const size_t receivedLen = client.receive(receiveMsg, maxReceivingLen);
 					CPPUNIT_ASSERT_EQUAL(std::strlen((char *)receiveMsg) * sizeof(receiveMsg[0]), receivedLen);
-					CPPUNIT_ASSERT(std::strcmp((char *)receiveMsg, (char *)sendMsg) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strcmp((char *)receiveMsg, (char *)sendMsg), 0);
 				}
 
 				client.disconnect();
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), false);
+				CPPUNIT_ASSERT(!client.isConnected());
 			}
 		}
 		//CPPUNIT_MESSAGE("finish synchronous TCP socket client that communicates with TCP socket server w/ session");
@@ -576,9 +934,9 @@ public:
 			CPPUNIT_ASSERT(MAX_ITER != idx);
 
 			{
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isConnected());
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -599,11 +957,11 @@ public:
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					CPPUNIT_ASSERT(!msg.empty());
-					CPPUNIT_ASSERT(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 				client.clearSendBuffer();
 				client.clearReceiveBuffer();
 
@@ -626,11 +984,11 @@ public:
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					CPPUNIT_ASSERT(!msg.empty());
-					CPPUNIT_ASSERT(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 
 				client.disconnect();
 				idx = 0;
@@ -642,7 +1000,7 @@ public:
 					++idx;
 				}
 				CPPUNIT_ASSERT(MAX_ITER != idx);
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), false);
+				CPPUNIT_ASSERT(!client.isConnected());
 			}
 
 			clientWorkerThread.reset();
@@ -682,9 +1040,9 @@ public:
 			CPPUNIT_ASSERT(MAX_ITER != idx);
 
 			{
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isConnected());
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 
 				{
 					const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
@@ -705,11 +1063,11 @@ public:
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					CPPUNIT_ASSERT(!msg.empty());
-					CPPUNIT_ASSERT(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 				client.clearSendBuffer();
 				client.clearReceiveBuffer();
 
@@ -732,11 +1090,11 @@ public:
 					std::vector<unsigned char> msg(sendingLen);
 					client.receive(&msg[0], sendingLen);
 					CPPUNIT_ASSERT(!msg.empty());
-					CPPUNIT_ASSERT(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen) == 0);
+					CPPUNIT_ASSERT_EQUAL(std::strncmp((char *)&msg[0], (char *)sendMsg, sendingLen), 0);
 				}
 
-				CPPUNIT_ASSERT_EQUAL(client.isSendBufferEmpty(), true);
-				CPPUNIT_ASSERT_EQUAL(client.isReceiveBufferEmpty(), true);
+				CPPUNIT_ASSERT(client.isSendBufferEmpty());
+				CPPUNIT_ASSERT(client.isReceiveBufferEmpty());
 
 				client.disconnect();
 				idx = 0;
@@ -748,7 +1106,7 @@ public:
 					++idx;
 				}
 				CPPUNIT_ASSERT(MAX_ITER != idx);
-				CPPUNIT_ASSERT_EQUAL(client.isConnected(), false);
+				CPPUNIT_ASSERT(!client.isConnected());
 			}
 
 			clientWorkerThread.reset();

@@ -64,7 +64,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test", "..\unit\te
 		{2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289} = {2AEC0EE7-DA7C-4BD5-97FB-35D385BC2289}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc", "..\unit\mfc_ui\swl_unit_test_mfc_vc9.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_cppunit_mfc", "..\unit\cppunit_mfc\swl_cppunit_mfc_vc9.vcproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE} = {2368AE0D-C4A6-4DCF-9C10-8CE7220F32CE}
 		{8F523111-C59A-4003-BA86-EB681DB19631} = {8F523111-C59A-4003-BA86-EB681DB19631}

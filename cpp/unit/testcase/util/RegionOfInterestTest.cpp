@@ -27,9 +27,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -55,13 +55,13 @@ public:
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
-		BOOST_CHECK_EQUAL(roi->isVisible(), true);
+		BOOST_CHECK(roi->isVisible());
 
 		roi->setVisible(false);
-		BOOST_CHECK_EQUAL(roi->isVisible(), false);
+		BOOST_CHECK(!roi->isVisible());
 
 		roi->setVisible(true);
-		BOOST_CHECK_EQUAL(roi->isVisible(), true);
+		BOOST_CHECK(roi->isVisible());
 	}
 
 	void testLineColor()
@@ -84,6 +84,8 @@ public:
 
 	void testLineWidth()
 	{
+		Fixture fixture;
+
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
@@ -95,6 +97,8 @@ public:
 
 	void testPointSize()
 	{
+		Fixture fixture;
+
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
@@ -106,6 +110,8 @@ public:
 
 	void testPointColor()
 	{
+		Fixture fixture;
+
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
@@ -174,7 +180,122 @@ struct RegionOfInterestTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class RegionOfInterestTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(RegionOfInterestTest, testVisible)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_TRUE(roi->isVisible());
+
+	roi->setVisible(false);
+	EXPECT_FALSE(roi->isVisible());
+
+	roi->setVisible(true);
+	EXPECT_TRUE(roi->isVisible());
+}
+
+TEST_F(RegionOfInterestTest, testLineColor)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_TRUE(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type()));
+
+	// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
+	// but it's working normally
+	roi->setLineColor(swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f));
+	EXPECT_TRUE(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(2.0f, 2.0f, 2.0f, 2.0f)));
+
+	roi->setLineColor(swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f));
+	EXPECT_TRUE(compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type(0.1f, 0.2f, 0.8f, 0.9f)));
+}
+
+TEST_F(RegionOfInterestTest, testLineWidth)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_EQ(swl::RegionOfInterest::real_type(1), roi->getLineWidth());
+
+	roi->setLineWidth(12.345f);
+	EXPECT_EQ(swl::RegionOfInterest::real_type(12.345), roi->getLineWidth());
+}
+
+TEST_F(RegionOfInterestTest, testPointSize)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_EQ(swl::RegionOfInterest::real_type(1), roi->getPointSize());
+
+	roi->setPointSize(5.302f);
+	EXPECT_EQ(swl::RegionOfInterest::real_type(5.302f), roi->getPointSize());
+}
+
+TEST_F(RegionOfInterestTest, testPointColor)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_TRUE(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type()));
+
+	// TODO [modify] >> erroneous case: 0.0f <= r, g, b, a <= 1.0f
+	// but it's working normally
+	roi->setPointColor(swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f));
+	EXPECT_TRUE(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(6.0f, 7.0f, 8.0f, 1.0f)));
+
+	roi->setPointColor(swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f));
+	EXPECT_TRUE(compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type(0.4f, 0.9f, 0.3f, 0.45f)));
+}
+
+TEST_F(RegionOfInterestTest, testName)
+{
+	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+#if defined(UNICODE) || defined(_UNICODE)
+	EXPECT_STREQ(roi->getName().c_str(), L"");
+	EXPECT_STREQ(roi->getName().c_str(), std::wstring().c_str());
+
+	roi->setName(L"line ROI");
+	EXPECT_STRNE(roi->getName().c_str(), L"");
+	EXPECT_STREQ(roi->getName().c_str(), L"line ROI");
+	EXPECT_STRNE(roi->getName().c_str(), L"Line ROI");
+
+	roi->setName(L"LINE_ROI");
+	EXPECT_STREQ(roi->getName().c_str(), L"LINE_ROI");
+#else
+	EXPECT_STREQ(roi->getName().c_str(), "");
+	EXPECT_STREQ(roi->getName().c_str(), std::string().c_str());
+
+	roi->setName("line ROI");
+	EXPECT_STRNE(roi->getName().c_str(), "");
+	EXPECT_STREQ(roi->getName().c_str(), "line ROI");
+	EXPECT_STRNE(roi->getName().c_str(), "Line ROI");
+
+	roi->setName("LINE_ROI");
+	EXPECT_STREQ(roi->getName().c_str(), "LINE_ROI");
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -204,13 +325,13 @@ public:
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
-		CPPUNIT_ASSERT_EQUAL(roi->isVisible(), true);
+		CPPUNIT_ASSERT(roi->isVisible());
 
 		roi->setVisible(false);
-		CPPUNIT_ASSERT_EQUAL(roi->isVisible(), false);
+		CPPUNIT_ASSERT(!roi->isVisible());
 
 		roi->setVisible(true);
-		CPPUNIT_ASSERT_EQUAL(roi->isVisible(), true);
+		CPPUNIT_ASSERT(roi->isVisible());
 	}
 
 	void testLineWidth()

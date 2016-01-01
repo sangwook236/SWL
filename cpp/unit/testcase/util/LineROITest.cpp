@@ -30,9 +30,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -237,14 +237,183 @@ struct LineROITestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class LineROITest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(LineROITest, testMoveVertex)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI::point_type delta(3.0f, -7.0f);
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_FALSE(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, 0.1f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, 2.0f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1 + delta));
+		EXPECT_FALSE(comparePoints(roi.point2(), pt2 + delta));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+	}
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_FALSE(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, 0.1f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, 2.0f));
+		EXPECT_FALSE(comparePoints(roi.point1(), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2 + delta));
+	}
+}
+
+TEST_F(LineROITest, testMoveVertexWithLimit)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI::point_type delta(5.0f, 10.0f);
+	const swl::LineROI::point_type bigDelta(100.0f, -100.0f);
+	const swl::LineROI::region_type limitRegion(swl::LineROI::point_type(-5.0f, -5.0f), swl::LineROI::point_type(50.0f, 50.0f));
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_FALSE(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), delta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+	}
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_FALSE(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), delta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2 + delta));
+	}
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_FALSE(comparePoints(roi.point2(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2));
+	}
+
+	{
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		EXPECT_TRUE(roi.moveVertex(swl::LineROI::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
+		EXPECT_FALSE(comparePoints(roi.point1(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1));
+		EXPECT_TRUE(comparePoints(roi.point2(), swl::LineROI::point_type(limitRegion.right, limitRegion.bottom)));
+	}
+}
+
+TEST_F(LineROITest, testMoveRegion)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI::point_type delta(3.0f, -7.0f);
+
+	swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+	roi.moveRegion(delta);
+	EXPECT_TRUE(comparePoints(roi.point1(), pt1 + delta));
+	EXPECT_TRUE(comparePoints(roi.point2(), pt2 + delta));
+}
+
+TEST_F(LineROITest, testMoveRegionWithLimit)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI::region_type limitRegion(swl::LineROI::point_type(-5.0f, -5.0f), swl::LineROI::point_type(50.0f, 50.0f));
+
+	{
+		const swl::LineROI::point_type delta(5.0f, 10.0f);
+
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		roi.moveRegion(delta, limitRegion);
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2 + delta));
+	}
+
+	{
+		const swl::LineROI::point_type bigDelta(100.0f, -100.0f);
+		const swl::LineROI::real_type dx = 10.0f, dy = -15.0f;  // actual displacement
+
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		roi.moveRegion(bigDelta, limitRegion);
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-5, -5), but (-10, -5)
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
+	}
+
+	{
+		const swl::LineROI::point_type delta(-5.0f, 100.0f);
+		const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
+		const swl::LineROI::real_type dx2 = 15.0f;  // actual displacement
+
+		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+		roi.moveRegion(delta, limitRegion);
+		EXPECT_FALSE(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+		EXPECT_TRUE(comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
+		EXPECT_FALSE(comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
+		EXPECT_TRUE(comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx2, dy)));
+	}
+}
+
+TEST_F(LineROITest, testIsVertex)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+
+	EXPECT_TRUE(roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.5)));
+	EXPECT_FALSE(roi.isVertex(swl::LineROI::point_type(-20.1f, 10.0f), swl::LineROI::real_type(0.05)));
+	EXPECT_TRUE(roi.isVertex(swl::LineROI::point_type(41.0f, 23.5f), swl::LineROI::real_type(3)));
+	EXPECT_FALSE(roi.isVertex(swl::LineROI::point_type(40.1f, 25.3f), swl::LineROI::real_type(0.2)));
+
+	EXPECT_FALSE(roi.isVertex((pt1 + pt2) / swl::RectangleROI::real_type(2), swl::LineROI::real_type(1)));
+}
+
+TEST_F(LineROITest, testInclude)
+{
+	const swl::LineROI::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f);
+	const swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
+
+	EXPECT_FALSE(roi.include(swl::LineROI::point_type(0, 0), swl::LineROI::real_type(0.01)));
+	EXPECT_TRUE(roi.include((pt1 + pt2) / swl::LineROI::real_type(2), swl::LineROI::real_type(0.01)));
+
+	EXPECT_TRUE(roi.include(calculatePoint(pt1, pt2, swl::LineROI::real_type(0.1)), swl::LineROI::real_type(0.01)));
+	EXPECT_TRUE(roi.include(calculatePoint(pt1, pt2, swl::LineROI::real_type(0.83)), swl::LineROI::real_type(0.01)));
+	EXPECT_FALSE(roi.include(calculatePoint(pt1, pt2, swl::LineROI::real_type(2.1)), swl::LineROI::real_type(0.01)));
+	EXPECT_FALSE(roi.include(calculatePoint(pt1, pt2, swl::LineROI::real_type(-15.8)), swl::LineROI::real_type(0.01)));
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
-struct LineROI: public CppUnit::TestFixture
+struct LineROITest: public CppUnit::TestFixture
 {
 private:
-	CPPUNIT_TEST_SUITE(LineROI);
+	CPPUNIT_TEST_SUITE(LineROITest);
 	CPPUNIT_TEST(testMoveVertex);
 	CPPUNIT_TEST(testMoveVertexWithLimit);
 	CPPUNIT_TEST(testMoveRegion);
@@ -421,7 +590,7 @@ public:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::LineROI);
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::LineROITest);
 CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Util");
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::LineROI, "SWL.Util");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::LineROITest, "SWL.Util");
 #endif

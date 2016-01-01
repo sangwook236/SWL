@@ -4,10 +4,13 @@
 #include "swl/Config.h"
 #include "../UnitTestConfig.h"
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 #include <boost/test/unit_test_parameters.hpp>
 #include <boost/test/unit_test.hpp>
 #include <fstream>
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+//#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
@@ -22,15 +25,16 @@
 #endif
 
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 namespace local {
 
-//
+//-----------------------------------------------------------------------------
+// Boost Test
+
 //	runtime configration: command line arguments
 //		--show_progress=yes --log_level=message --run_test=*
-//
 
 struct BoostUnitGlobalFixture
 {
@@ -66,6 +70,49 @@ boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
 	return 0;
 }
 #endif
+
+//-----------------------------------------------------------------------------
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+int main(int argc, char *argv[])
+{
+	int retval = EXIT_SUCCESS;
+	try
+	{
+#if 0
+		testing::InitGoogleMock(&argc, argv);
+		//testing::InitGoogleTest(&argc, argv);  // do not need to be called.
+#else
+		testing::InitGoogleTest(&argc, argv);
+#endif
+		retval = RUN_ALL_TESTS();
+	}
+	catch (const std::bad_alloc &e)
+	{
+		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "std::exception caught: " << e.what() << std::endl;
+		retval = EXIT_FAILURE;
+	}
+	catch (...)
+	{
+		std::cout << "unknown exception caught" << std::endl;
+		retval = EXIT_FAILURE;
+	}
+
+	std::cout << "press any key to exit ..." << std::endl;
+	std::cin.get();
+
+	return retval;
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

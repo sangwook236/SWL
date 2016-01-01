@@ -18,7 +18,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_winutil_vs10", "..\src\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_vs10", "..\unit\text_ui\swl_unit_test_vs10.vcxproj", "{F871854A-3223-4895-A970-180448FC68DA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_mfc_vs10", "..\unit\mfc_ui\swl_unit_test_mfc_vs10.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_cppunit_mfc_vs10", "..\unit\cppunit_mfc\swl_cppunit_mfc_vs10.vcxproj", "{C48EC1C8-D6D5-448D-8842-98BF064543DE}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_wglview_test_vs10", "..\test\wglview_test\swl_wglview_test_vs10.vcxproj", "{042FA8D4-C813-4654-94D0-497D5BB6F3D8}"
 EndProject
@@ -62,8 +62,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_pattern_recognition_vs1
 		{33FEEA51-49EA-483E-BBAE-C889DC0D5991} = {33FEEA51-49EA-483E-BBAE-C889DC0D5991}
 		{2D51E376-F18C-4095-9B5B-29F4D2A58498} = {2D51E376-F18C-4095-9B5B-29F4D2A58498}
 	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_unit_test_qt_vs10", "..\unit\qt_ui\swl_unit_test_qt_vs10.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_imu_filter_app_vs10", "..\app\imu_filter_app\swl_imu_filter_app_vs10.vcxproj", "{901C25BD-0202-45AB-9C8A-8B522420EA3D}"
 EndProject

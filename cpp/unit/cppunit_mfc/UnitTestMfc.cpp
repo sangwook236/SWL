@@ -78,14 +78,14 @@ BOOL CUnitTestMfcApp::InitInstance()
 		//  dismissed with Cancel
 	}
 */
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
-	AfxMessageBox(_T("Boost.UnitTest is not supported"), MB_ICONERROR | MB_OK);
-#elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 	CppUnit::MfcUi::TestRunner runner;
 	runner.addTest(CppUnit::TestFactoryRegistry::getRegistry().makeTest());
 
 	//runner.setOutputter();
 	runner.run();
+#else
+	AfxMessageBox(_T("CppUnit is only supported"), MB_ICONERROR | MB_OK);
 #endif
 	//--E [] 2009/07/04
 

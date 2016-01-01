@@ -28,9 +28,9 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -72,7 +72,7 @@ public:
 		roi->addPoint(pt5);
 
 		BOOST_CHECK(roi->containPoint());
-		BOOST_CHECK_EQUAL((size_t)6, roi->countPoint());  // not 5
+		BOOST_CHECK_EQUAL((std::size_t)6, roi->countPoint());  // not 5
 
 		BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
 		BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
@@ -84,9 +84,9 @@ public:
 		BOOST_CHECK_THROW(roi->getPoint(6), swl::LogException);
 
 		roi->removePoint(pt4);
-		BOOST_CHECK_EQUAL((size_t)4, roi->countPoint());  // remove 2 points
+		BOOST_CHECK_EQUAL((std::size_t)4, roi->countPoint());  // remove 2 points
 		roi->removePoint(pt3);
-		BOOST_CHECK_EQUAL((size_t)3, roi->countPoint());
+		BOOST_CHECK_EQUAL((std::size_t)3, roi->countPoint());
 
 		BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
 		BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
@@ -94,7 +94,7 @@ public:
 
 		roi->clearAllPoints();
 		BOOST_CHECK(!roi->containPoint());
-		BOOST_CHECK_EQUAL((size_t)0, roi->countPoint());
+		BOOST_CHECK_EQUAL((std::size_t)0, roi->countPoint());
 	}
 
 	void testMoveVertex()
@@ -346,7 +346,286 @@ struct ROIWithVariablePointsTestSuite: public boost::unit_test_framework::test_s
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class ROIWithVariablePointsTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(ROIWithVariablePointsTest, testHandlePoint)
+{
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	EXPECT_FALSE(roi->containPoint());
+
+	const swl::ROIWithVariablePoints::point_type pt1((swl::ROIWithVariablePoints::real_type)std::rand(), (swl::ROIWithVariablePoints::real_type)std::rand());
+	roi->addPoint(pt1);
+	const swl::ROIWithVariablePoints::point_type pt2((swl::ROIWithVariablePoints::real_type)std::rand(), (swl::ROIWithVariablePoints::real_type)std::rand());
+	roi->addPoint(pt2);
+	const swl::ROIWithVariablePoints::point_type pt3((swl::ROIWithVariablePoints::real_type)std::rand(), (swl::ROIWithVariablePoints::real_type)std::rand());
+	roi->addPoint(pt3);
+	const swl::ROIWithVariablePoints::point_type pt4((swl::ROIWithVariablePoints::real_type)std::rand(), (swl::ROIWithVariablePoints::real_type)std::rand());
+	roi->addPoint(pt4);
+	roi->addPoint(pt4);  // add the same point
+	const swl::ROIWithVariablePoints::point_type pt5((swl::ROIWithVariablePoints::real_type)std::rand(), (swl::ROIWithVariablePoints::real_type)std::rand());
+	roi->addPoint(pt5);
+
+	EXPECT_TRUE(roi->containPoint());
+	EXPECT_EQ((std::size_t)6, roi->countPoint());  // not 5
+
+	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt3));
+	EXPECT_TRUE(comparePoints(roi->getPoint(3), pt4));
+	EXPECT_TRUE(comparePoints(roi->getPoint(4), pt4));
+	EXPECT_TRUE(comparePoints(roi->getPoint(5), pt5));
+
+	EXPECT_THROW(roi->getPoint(6), swl::LogException);
+
+	roi->removePoint(pt4);
+	EXPECT_EQ((std::size_t)4, roi->countPoint());  // remove 2 points
+	roi->removePoint(pt3);
+	EXPECT_EQ((std::size_t)3, roi->countPoint());
+
+	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt5));
+
+	roi->clearAllPoints();
+	EXPECT_FALSE(roi->containPoint());
+	EXPECT_EQ((std::size_t)0, roi->countPoint());
+}
+
+TEST_F(ROIWithVariablePointsTest, testMoveVertex)
+{
+	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
+	const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
+
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	roi->addPoint(pt1);
+	roi->addPoint(pt2);
+	roi->addPoint(pt3);
+	roi->addPoint(pt4);
+	roi->addPoint(pt5);
+
+	{
+		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 0.1f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 2.0f));
+		EXPECT_FALSE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2 + delta));
+	}
+
+	{
+		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 0.1f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 2.0f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+	}
+}
+
+TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
+{
+	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
+	const swl::ROIWithVariablePoints::point_type delta(5.0f, 10.0f);
+	const swl::ROIWithVariablePoints::point_type bigDelta(100.0f, -100.0f);
+	const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
+
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+	}
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+	}
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_FALSE(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+	}
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
+		EXPECT_FALSE(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+	}
+}
+
+TEST_F(ROIWithVariablePointsTest, testMoveRegion)
+{
+	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
+	const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
+
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	roi->addPoint(pt1);
+	roi->addPoint(pt2);
+	roi->addPoint(pt3);
+	roi->addPoint(pt4);
+	roi->addPoint(pt5);
+
+	roi->moveRegion(delta);
+	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt3 + delta));
+	EXPECT_TRUE(comparePoints(roi->getPoint(3), pt4 + delta));
+	EXPECT_TRUE(comparePoints(roi->getPoint(4), pt5 + delta));
+}
+
+TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
+{
+	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 32.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
+	const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
+
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		const swl::ROIWithVariablePoints::point_type delta(5.0f, 10.0f);
+
+		roi->moveRegion(delta, limitRegion);
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+	}
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		const swl::ROIWithVariablePoints::point_type bigDelta(100.0f, -100.0f);
+		const swl::ROIWithVariablePoints::real_type dx = 10.0f, dy = -8.5f;  // actual displacement
+
+		roi->moveRegion(bigDelta, limitRegion);
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+	}
+
+	{
+		roi->clearAllPoints();
+		roi->addPoint(pt1);
+		roi->addPoint(pt2);
+		roi->addPoint(pt3);
+		roi->addPoint(pt4);
+		roi->addPoint(pt5);
+
+		const swl::ROIWithVariablePoints::point_type delta(-5.0f, 100.0f);
+		const swl::ROIWithVariablePoints::real_type dx = -5.0f, dy = 18.0f;  // computed displacement
+		const swl::ROIWithVariablePoints::real_type dx2 = 0.0f;  // actual displacement
+
+		roi->moveRegion(delta, limitRegion);
+		EXPECT_FALSE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+	}
+}
+
+TEST_F(ROIWithVariablePointsTest, testIsVertex)
+{
+	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
+
+	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
+	EXPECT_TRUE(roi);
+
+	roi->addPoint(pt1);
+	roi->addPoint(pt2);
+	roi->addPoint(pt3);
+	roi->addPoint(pt4);
+	roi->addPoint(pt5);
+
+	EXPECT_TRUE(roi->isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.5)));
+	EXPECT_FALSE(roi->isVertex(swl::RectangleROI::point_type(-20.1f, 10.0f), swl::RectangleROI::real_type(0.05)));
+	EXPECT_TRUE(roi->isVertex(swl::RectangleROI::point_type(41.0f, 23.5f), swl::RectangleROI::real_type(3)));
+	EXPECT_FALSE(roi->isVertex(swl::RectangleROI::point_type(40.1f, 25.3f), swl::RectangleROI::real_type(0.2)));
+
+	EXPECT_FALSE(roi->isVertex((pt1 + pt2) / swl::RectangleROI::real_type(2), swl::RectangleROI::real_type(0.01)));
+	EXPECT_FALSE(roi->isVertex((pt2 + pt3) / swl::RectangleROI::real_type(2), swl::RectangleROI::real_type(0.01)));
+	EXPECT_FALSE(roi->isVertex((pt3 + pt4) / swl::RectangleROI::real_type(2), swl::RectangleROI::real_type(0.01)));
+	EXPECT_FALSE(roi->isVertex((pt4 + pt5) / swl::RectangleROI::real_type(2), swl::RectangleROI::real_type(0.01)));
+	EXPECT_FALSE(roi->isVertex((pt5 + pt1) / swl::RectangleROI::real_type(2), swl::RectangleROI::real_type(0.01)));
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -392,7 +671,7 @@ public:
 		roi->addPoint(pt5);
 
 		CPPUNIT_ASSERT(roi->containPoint());
-		CPPUNIT_ASSERT_EQUAL((size_t)6, roi->countPoint());  // not 5
+		CPPUNIT_ASSERT_EQUAL((std::size_t)6, roi->countPoint());  // not 5
 
 		CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
 		CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
@@ -404,9 +683,9 @@ public:
 		CPPUNIT_ASSERT_THROW(roi->getPoint(6), swl::LogException);
 
 		roi->removePoint(pt4);
-		CPPUNIT_ASSERT_EQUAL((size_t)4, roi->countPoint());  // remove 2 points
+		CPPUNIT_ASSERT_EQUAL((std::size_t)4, roi->countPoint());  // remove 2 points
 		roi->removePoint(pt3);
-		CPPUNIT_ASSERT_EQUAL((size_t)3, roi->countPoint());
+		CPPUNIT_ASSERT_EQUAL((std::size_t)3, roi->countPoint());
 
 		CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
 		CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
@@ -414,7 +693,7 @@ public:
 
 		roi->clearAllPoints();
 		CPPUNIT_ASSERT(!roi->containPoint());
-		CPPUNIT_ASSERT_EQUAL((size_t)0, roi->countPoint());
+		CPPUNIT_ASSERT_EQUAL((std::size_t)0, roi->countPoint());
 	}
 
 	void testMoveVertex()

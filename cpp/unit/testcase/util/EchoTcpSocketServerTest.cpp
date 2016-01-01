@@ -29,20 +29,26 @@ struct echo_tcp_socket_server_worker_thread_functor
 		swl::TcpSocketServer<swl::EchoTcpSocketConnection> server(ioService, portNum_withoutSession);
 		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, portNum_withSession);
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 		BOOST_TEST_MESSAGE("start TCP socket servers: w/o & w/ session");
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("start TCP socket servers: w/o & w/ session");
 #endif
 		ioService.run();
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 		BOOST_TEST_MESSAGE("finish TCP socket servers: w/o & w/ session");
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+		// FIXME [fix] >> change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("finish TCP socket servers: w/o & w/ session");
 #endif
 	}
 };
 
 //-----------------------------------------------------------------------------
-//
+// Boost Test
 
-#if defined(__SWL_UNIT_TEST__USE_BOOST_UNIT)
+#if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
@@ -90,7 +96,34 @@ struct TcpSocketServerTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-//
+// Google Test
+
+#elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
+class EchoTcpSocketServerTest : public testing::Test
+{
+protected:
+	/*virtual*/ void SetUp()
+	{
+	}
+
+	/*virtual*/ void TearDown()
+	{
+	}
+};
+
+TEST_F(EchoTcpSocketServerTest, testServerRun)
+{
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("start thread for TCP socket servers");
+	boost::scoped_ptr<boost::thread> workerThread(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
+	//if (workerThread.get()) workerThread->join();
+	// FIXME [fix] >> change SCOPED_TRACE to message output function.
+	SCOPED_TRACE("terminate thread for TCP socket servers");
+}
+
+//-----------------------------------------------------------------------------
+// CppUnit
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 

@@ -44,7 +44,7 @@ endif(WIN32 AND NOT CYGWIN)
 		swl_util_d
 		swl_math_d
 		swl_base_d
-		log4cxx_d
+		${LOG4CXX_LIBRARIES}
 	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
@@ -65,14 +65,14 @@ endif(WIN32 AND NOT CYGWIN)
 		swl_util
 		swl_math
 		swl_base
-		log4cxx
+		${LOG4CXX_LIBRARIES}
 	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 add_subdirectory(text_ui)
 if(WIN32 AND NOT CYGWIN)
-	add_subdirectory(mfc_ui)
+	add_subdirectory(cppunit_mfc)
 endif(WIN32 AND NOT CYGWIN)
 if(QT_FOUND)
-	add_subdirectory(qt_ui)
+#	add_subdirectory(cppunit_qt)
 endif(QT_FOUND)
