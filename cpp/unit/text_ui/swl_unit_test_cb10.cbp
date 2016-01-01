@@ -43,18 +43,21 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-fpermissive" />
-			<Add option="-std=c++11" />
+			<Add option="-D__SWL_UNIT_TEST__USE_GOOGLE_TEST" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
-			<Add library="cppunit" />
+			<Add library="gtest_main" />
+			<Add library="gtest" />
 			<Add library="log4cxx" />
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
+			<Add library="pthread" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="../testcase/base/LoggerTest.cpp" />
@@ -66,10 +69,16 @@
 		<Unit filename="../testcase/rnd_util/SortTest.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketConnection.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketConnection.h" />
-		<Unit filename="../testcase/util/EchoTcpSocketServerTest.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketServerTest.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
 		<Unit filename="../testcase/util/EchoTcpSocketSession.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketSession.h" />
-		<Unit filename="../testcase/util/EchoTcpSocketTest.cpp" />
+		<Unit filename="../testcase/util/EchoTcpSocketTest.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
 		<Unit filename="../testcase/util/LineROITest.cpp" />
 		<Unit filename="../testcase/util/PolygonROITest.cpp" />
 		<Unit filename="../testcase/util/PolylineROITest.cpp" />

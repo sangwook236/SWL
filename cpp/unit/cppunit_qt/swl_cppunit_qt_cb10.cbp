@@ -49,6 +49,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-fpermissive" />
+			<Add option="-D__SWL_UNIT_TEST__USE_CPP_UNIT" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/include/qt4" />
 			<Add directory="/usr/local/include" />
