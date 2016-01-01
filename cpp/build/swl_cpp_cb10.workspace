@@ -30,7 +30,7 @@
 		<Project filename="../src/kinematics/swl_kinematics_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 		</Project>
-		<Project filename="../app/kinect_segmentation_app/swl_kinect_segmentation_app_cb10.cbp" active="1" />
+		<Project filename="../app/kinect_segmentation_app/swl_kinect_segmentation_app_cb10.cbp" />
 		<Project filename="../test/kinematics_test/swl_kinematics_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/kinematics/swl_kinematics_cb10.cbp" />
@@ -92,20 +92,6 @@
 			<Depends filename="../src/util/swl_util_cb10.cbp" />
 		</Project>
 		<Project filename="../unit/text_ui/swl_unit_test_cb10.cbp">
-			<Depends filename="../src/base/swl_base_cb10.cbp" />
-			<Depends filename="../src/glutil/swl_glutil_cb10.cbp" />
-			<Depends filename="../src/graphics/swl_graphics_cb10.cbp" />
-			<Depends filename="../src/kinematics/swl_kinematics_cb10.cbp" />
-			<Depends filename="../src/machine_learning/swl_machine_learning_cb10.cbp" />
-			<Depends filename="../src/machine_vision/swl_machine_vision_cb10.cbp" />
-			<Depends filename="../src/math/swl_math_cb10.cbp" />
-			<Depends filename="../src/pattern_recognition/swl_pattern_recognition_cb10.cbp" />
-			<Depends filename="../src/posixutil/swl_posixutil_cb10.cbp" />
-			<Depends filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
-			<Depends filename="../src/util/swl_util_cb10.cbp" />
-			<Depends filename="../src/view/swl_view_cb10.cbp" />
-		</Project>
-		<Project filename="../unit/qt_ui/swl_unit_test_qt_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/glutil/swl_glutil_cb10.cbp" />
 			<Depends filename="../src/graphics/swl_graphics_cb10.cbp" />

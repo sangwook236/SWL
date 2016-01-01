@@ -16,6 +16,7 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
+					<Add library="swl_rnd_util_d" />
 					<Add library="swl_util_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
@@ -34,6 +35,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="swl_rnd_util" />
 					<Add library="swl_util" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
@@ -43,6 +45,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-fpermissive" />
@@ -59,9 +62,9 @@
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
 			<Add directory="/usr/local/lib" />
+			<Add directory="/usr/lib" />
 		</Linker>
 		<Unit filename="../UnitTestConfig.h" />
-		<Unit filename="main.cpp" />
 		<Unit filename="../testcase/base/LoggerTest.cpp" />
 		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
 		<Unit filename="../testcase/math/LineSegmentTest.cpp" />
@@ -82,6 +85,7 @@
 		<Unit filename="../testcase/util/RectangleROITest.cpp" />
 		<Unit filename="../testcase/util/RegionOfInterestMgrTest.cpp" />
 		<Unit filename="../testcase/util/RegionOfInterestTest.cpp" />
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

@@ -16,6 +16,7 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
+					<Add library="swl_rnd_util_d" />
 					<Add library="swl_util_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
@@ -33,6 +34,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
+					<Add library="swl_rnd_util" />
 					<Add library="swl_util" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
@@ -44,6 +46,7 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add option="-fpermissive" />
+			<Add option="-std=c++11" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
