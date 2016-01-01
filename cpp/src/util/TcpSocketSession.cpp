@@ -15,6 +15,11 @@
 
 namespace swl {
 
+#if defined(__GNUC__)
+/*static*/ const std::size_t TcpSocketSession::MAX_SEND_LENGTH_;
+/*static*/ const std::size_t TcpSocketSession::MAX_RECEIVE_LENGTH_;
+#endif
+
 TcpSocketSession::TcpSocketSession(boost::asio::ip::tcp::socket &socket)
 : socket_(socket), state_(RECEIVING),
   receiveBuffer_(), sendBuffer_()
