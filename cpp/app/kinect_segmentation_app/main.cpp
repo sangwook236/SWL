@@ -96,14 +96,14 @@ void extract_foreground_based_on_depth_guided_map()
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130530T103805.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023152.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023346.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023359.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130530T103805.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023152.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023346.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023359.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130530T103805.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023152.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023346.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023359.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130530T103805.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023152.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023346.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023359.png");
 
 	std::vector<cv::Range> depth_range_list;
 	depth_range_list.reserve(num_images);
@@ -133,24 +133,24 @@ void extract_foreground_based_on_depth_guided_map()
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
 	structure_tensor_mask_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
 
 	std::vector<cv::Range> depth_range_list;
 	depth_range_list.reserve(num_images);
@@ -175,21 +175,21 @@ void extract_foreground_based_on_depth_guided_map()
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
 	structure_tensor_mask_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211659.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211705.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211713.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211839.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect2_rgba_20130725T211842.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211659.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211705.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211713.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211839.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_20130725T211842.png");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211659.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211705.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211713.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211839.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211842.tif");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect2_rgba_20130725T211659.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect2_rgba_20130725T211705.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect2_rgba_20130725T211713.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect2_rgba_20130725T211839.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect2_rgba_20130725T211842.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_20130725T211659.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_20130725T211705.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_20130725T211713.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_20130725T211839.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_20130725T211842.png");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211659.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211705.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211713.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211839.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect2_depth_transformed_ev_ratio_20130725T211842.tif");
 
 	std::vector<cv::Range> depth_range_list;
 	depth_range_list.reserve(num_images);
@@ -242,7 +242,7 @@ void extract_foreground_based_on_depth_guided_map()
 #if 0
 			{
 				std::ostringstream strm;
-				strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+				strm << "./data/kinect_segmentation/depth_variation_mask_" << i << ".png";
 				cv::imwrite(strm.str(), depth_variation_mask);
 			}
 #endif
@@ -266,7 +266,7 @@ void extract_foreground_based_on_depth_guided_map()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_validity_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
@@ -274,7 +274,7 @@ void extract_foreground_based_on_depth_guided_map()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			strm << "./data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
@@ -321,7 +321,7 @@ void extract_foreground_based_on_depth_guided_map()
 			//cv::cvtColor(tmp_image, tmp_image, CV_GRAY2BGR);
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
 
-			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
 #endif
@@ -332,7 +332,7 @@ void extract_foreground_based_on_depth_guided_map()
 			cv::Mat trimap(depth_guided_map.size(), CV_8UC1, cv::Scalar::all(128));
 			trimap.setTo(cv::Scalar::all(0), SWL_BGD == depth_guided_map | SWL_PR_BGD == depth_guided_map);
 			trimap.setTo(cv::Scalar::all(255), SWL_FGD == depth_guided_map);
-			strm << "../data/kinect_segmentation/trimap_" << i << ".png";
+			strm << "./data/kinect_segmentation/trimap_" << i << ".png";
 			cv::imwrite(strm.str(), trimap);
 		}
 #endif
@@ -343,7 +343,7 @@ void extract_foreground_based_on_depth_guided_map()
 			cv::Mat scribble = rgb_input_image.clone();
 			scribble.setTo(cv::Scalar::all(0), SWL_PR_BGD == depth_guided_map);
 			scribble.setTo(cv::Scalar::all(255), SWL_FGD == depth_guided_map);
-			strm << "../data/kinect_segmentation/scribble_" << i << ".png";
+			strm << "./data/kinect_segmentation/scribble_" << i << ".png";
 			cv::imwrite(strm.str(), scribble);
 		}
 #endif
@@ -515,14 +515,14 @@ void segment_foreground_based_on_depth_guided_map()
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130530T103805.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023152.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023346.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130531T023359.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130530T103805.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023152.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023346.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130531T023359.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130530T103805.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023152.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023346.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130531T023359.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130530T103805.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023152.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023346.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130531T023359.png");
 
 	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -548,18 +548,18 @@ void segment_foreground_based_on_depth_guided_map()
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162552.png");
 
 	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -612,7 +612,7 @@ void segment_foreground_based_on_depth_guided_map()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_validity_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
@@ -620,7 +620,7 @@ void segment_foreground_based_on_depth_guided_map()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			strm << "./data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
@@ -646,7 +646,7 @@ void segment_foreground_based_on_depth_guided_map()
 #if 0
 			std::ostringstream strm;
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
-			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 #endif
 		}
@@ -683,24 +683,24 @@ void segment_foreground_based_on_structure_tensor()
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
 	structure_tensor_mask_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
 
 	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -752,7 +752,7 @@ void segment_foreground_based_on_structure_tensor()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_variation_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
@@ -775,7 +775,7 @@ void segment_foreground_based_on_structure_tensor()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_validity_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
@@ -783,7 +783,7 @@ void segment_foreground_based_on_structure_tensor()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			strm << "./data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
@@ -805,7 +805,7 @@ void segment_foreground_based_on_structure_tensor()
 		{
 			std::ostringstream strm;
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
-			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
 #endif
@@ -885,24 +885,24 @@ void segment_foreground_using_single_layered_graphical_model()
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
 	structure_tensor_mask_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
-	structure_tensor_mask_file_list.push_back("../data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162309.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162314.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162348.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162459.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162525.tif");
+	structure_tensor_mask_file_list.push_back("./data/kinect_segmentation/kinect_depth_rectified_valid_ev_ratio_20130614T162552.tif");
 
 	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -954,7 +954,7 @@ void segment_foreground_using_single_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_variation_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
@@ -977,7 +977,7 @@ void segment_foreground_using_single_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_validity_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
@@ -985,7 +985,7 @@ void segment_foreground_using_single_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			strm << "./data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
@@ -1007,7 +1007,7 @@ void segment_foreground_using_single_layered_graphical_model()
 		{
 			std::ostringstream strm;
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
-			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 		}
 #endif
@@ -1043,18 +1043,18 @@ void segment_foreground_using_two_layered_graphical_model()
 	std::vector<std::string> rgb_input_file_list, depth_input_file_list;
 	rgb_input_file_list.reserve(num_images);
 	depth_input_file_list.reserve(num_images);
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162309.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162314.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162348.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162459.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162525.png");
-	rgb_input_file_list.push_back("../data/kinect_segmentation/kinect_rgba_20130614T162552.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162309.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162314.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162348.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162459.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162525.png");
-	depth_input_file_list.push_back("../data/kinect_segmentation/kinect_depth_20130614T162552.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162309.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162314.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162348.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162459.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162525.png");
+	rgb_input_file_list.push_back("./data/kinect_segmentation/kinect_rgba_20130614T162552.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162309.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162314.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162348.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162459.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162525.png");
+	depth_input_file_list.push_back("./data/kinect_segmentation/kinect_depth_20130614T162552.png");
 
 	const bool useDepthRangeFiltering = false;
 	std::vector<cv::Range> depth_range_list;
@@ -1105,7 +1105,7 @@ void segment_foreground_using_two_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_variation_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_variation_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_variation_mask);
 		}
 #endif
@@ -1128,7 +1128,7 @@ void segment_foreground_using_two_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/depth_validity_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_validity_mask_" << i << ".png";
 			cv::imwrite(strm.str(), depth_validity_mask);
 		}
 #endif
@@ -1136,7 +1136,7 @@ void segment_foreground_using_two_layered_graphical_model()
 #if 0
 		{
 			std::ostringstream strm;
-			strm << "../data/kinect_segmentation/valid_depth_image_" << i << ".png";
+			strm << "./data/kinect_segmentation/valid_depth_image_" << i << ".png";
 			cv::imwrite(strm.str(), valid_depth_image);
 		}
 #endif
@@ -1157,7 +1157,7 @@ void segment_foreground_using_two_layered_graphical_model()
 #if 0
 			std::ostringstream strm;
 			cv::cvtColor(depth_guided_map, tmp_image, CV_GRAY2BGR);
-			strm << "../data/kinect_segmentation/depth_guided_mask_" << i << ".png";
+			strm << "./data/kinect_segmentation/depth_guided_mask_" << i << ".png";
 			cv::imwrite(strm.str(), tmp_image);
 #endif
 		}

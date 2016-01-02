@@ -64,7 +64,7 @@ void run_grabcut_using_depth_guided_mask(const cv::Mat &rgb_image, const cv::Mat
 	{
 		static int idx = 0;
 		std::ostringstream strm;
-		strm << "../data/kinect_segmentation/grabcut_result_" << idx++ << ".png";
+		strm << "./data/kinect_segmentation/grabcut_result_" << idx++ << ".png";
 		cv::imwrite(strm.str(), tmp_image);
 	}
 #endif

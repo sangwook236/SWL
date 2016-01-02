@@ -510,7 +510,7 @@ void simple_system_extended_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("../data/extened_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/extened_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "state", state);
@@ -657,7 +657,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 #endif
 
 	//
-	std::ofstream stream("../data/extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/extended_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "pos", pos);

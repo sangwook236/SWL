@@ -9,15 +9,12 @@ set(SRCS
 	UnitTestMfc.cpp
 	UnitTestMfc.rc
 	UnitTestMfcDlg.cpp
-	${BASE_SRCS}
-	${MATH_SRCS}
-	${UTIL_SRCS}
-	${RND_UTIL_SRCS}
+	${TESTCASE_SRCS}
 )
 
 #add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
 #add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
-add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  // deprecated.
+add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  # deprecated.
 #add_definitions(-D_AFXDLL)
 
 add_executable(${TARGET} WIN32 ${SRCS})

@@ -6,14 +6,11 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 set(SRCS
 	TextUiUnitTestMain.cpp
-	${BASE_SRCS}
-	${MATH_SRCS}
-	${UTIL_SRCS}
-	${RND_UTIL_SRCS}
+	${TESTCASE_SRCS}
 )
 
 if(CPPUNIT_FOUND)
-	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  // deprecated.
+	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  # deprecated.
 	set(TEST_LIBS CPPUNIT_LIBRARIES)
 elseif(GTEST_FOUND)
 	add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)

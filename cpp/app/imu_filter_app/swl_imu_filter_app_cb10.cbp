@@ -7,8 +7,8 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/Debug/swl_imu_filter_app_d" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Debug/" />
+				<Option output="../../bin/swl_imu_filter_app_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -16,12 +16,12 @@
 					<Add option="-g" />
 				</Compiler>
 				<Linker>
-					<Add directory="../../bin/Debug" />
+					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/Release/swl_imu_filter_app" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Release/" />
+				<Option output="../../bin/swl_imu_filter_app" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -30,7 +30,7 @@
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
-					<Add directory="../../bin/Release" />
+					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>

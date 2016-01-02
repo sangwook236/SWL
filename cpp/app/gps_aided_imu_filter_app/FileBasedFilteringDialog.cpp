@@ -156,7 +156,7 @@ void CFileBasedFilteringDialog::OnBnClickedButtonStartFiltering()
 		// load calibration parameters
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("load calibration parameters of ADIS16350"));
 		{
-			const std::string calibration_param_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
+			const std::string calibration_param_filename("./data/adis16350_data_20100801/imu_calibration_result.txt");
 			if (!imu_->loadCalibrationParam(calibration_param_filename))
 			{
 				AfxMessageBox(_T("fail to load a IMU's calibration parameters"), MB_ICONERROR | MB_OK);

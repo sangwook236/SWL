@@ -47,7 +47,7 @@ struct Gyro
 void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 {
 #if 0
-	std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_20100701.txt");
+	std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_20100701.txt");
 
 	if (!stream.is_open())
 	{
@@ -70,12 +70,12 @@ void read_adis16350(std::list<Acceleration> &accels, std::list<Gyro> &gyros)
 
 	stream.close();
 #elif 1
-	std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_no_motion_20100706.txt");
-	//std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_x_20100706.txt");
-	//std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_y_20100706.txt");
-	//std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_xy45_20100706.txt");
-	//std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_rotation_small_circle_20100706.txt");
-	//std::ifstream stream("../data/adis16350_data_20100706/adis16350_raw_data_rotation_large_circle_20100706.txt");
+	std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_no_motion_20100706.txt");
+	//std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_x_20100706.txt");
+	//std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_y_20100706.txt");
+	//std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_xy45_20100706.txt");
+	//std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_rotation_small_circle_20100706.txt");
+	//std::ifstream stream("./data/adis16350_data_20100706/adis16350_raw_data_rotation_large_circle_20100706.txt");
 
 	// data format:
 	//	gpsPos_.latitude / gpsPos_.longitude / compass_.heading_ / adjustOrientation /
@@ -367,8 +367,8 @@ void imu_kalman_filter()
 #else
 	const size_t Nstep = std::min(accels.size(), gyros.size());
 
-	std::ofstream streamAccelState("../data/accel_state.txt", std::ios::in | std::ios::trunc), streamAccelCovar("../data/accel_covar.txt", std::ios::in | std::ios::trunc), streamAccelGain("../data/accel_gain.txt", std::ios::in | std::ios::trunc);
-	std::ofstream streamGyroState("../data/gyro_state.txt", std::ios::in | std::ios::trunc), streamGyroCovar("../data/gyro_covar.txt", std::ios::in | std::ios::trunc), streamGyroGain("../data/gyro_gain.txt", std::ios::in | std::ios::trunc);
+	std::ofstream streamAccelState("./data/accel_state.txt", std::ios::in | std::ios::trunc), streamAccelCovar("./data/accel_covar.txt", std::ios::in | std::ios::trunc), streamAccelGain("./data/accel_gain.txt", std::ios::in | std::ios::trunc);
+	std::ofstream streamGyroState("./data/gyro_state.txt", std::ios::in | std::ios::trunc), streamGyroCovar("./data/gyro_covar.txt", std::ios::in | std::ios::trunc), streamGyroGain("./data/gyro_gain.txt", std::ios::in | std::ios::trunc);
 
 	if (!streamAccelState.is_open() || !streamAccelCovar.is_open() || !streamAccelGain.is_open() ||
 		!streamGyroState.is_open() || !streamGyroCovar.is_open() || !streamGyroGain.is_open())

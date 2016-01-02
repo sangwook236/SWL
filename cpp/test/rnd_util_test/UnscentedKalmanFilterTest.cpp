@@ -692,7 +692,7 @@ void simple_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	std::ofstream stream("../data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "state", state);
@@ -820,7 +820,7 @@ void linear_mass_spring_damper_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	std::ofstream stream("../data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "pos", pos);
@@ -998,7 +998,7 @@ void simple_nonlinear_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	std::ofstream stream("../data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "actualPos", actualPos);
@@ -1115,7 +1115,7 @@ void nonstationary_growth_system_unscented_kalman_filter()
 	gsl_matrix_free(R);  R = NULL;
 
 	//
-	std::ofstream stream("../data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
+	std::ofstream stream("./data/unscented_kalman_filter.dat", std::ios::out | std::ios::trunc);
 	if (stream)
 	{
 		output_data_to_file(stream, "state", state);

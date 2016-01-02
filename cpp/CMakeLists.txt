@@ -1,5 +1,5 @@
 project(SWL_CPP)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.4)
 
 ##
 ## Add path for custom modules.
@@ -9,10 +9,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 ##
 ## Set package information.
 ##
-set(PACKAGE_NAME "Sang-Wook's Library for C++")
+set(PACKAGE_NAME "SWL-C++: Sang-Wook's Library for C++")
 set(PACKAGE_VERSION "1.0.0")
 set(PACKAGE_STRING "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-set(PACKAGE_WEBSITE "http://www.sangwook.com/")
+set(PACKAGE_WEBSITE "https://github.com/sangwook236/sangwook-library")
 set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 
 ##
@@ -166,6 +166,7 @@ if(USE_LAPACK)
 	endif(APPLE)
 endif(USE_LAPACK)
 if(USE_EIGEN)
+	# ${SWL_CPP_HOME}/cmake/FindEigen.cmake
 	# variables : EIGEN_FOUND, EIGEN_VERSION, EIGEN_INCLUDE_DIRS
 	find_package(Eigen 3.2 REQUIRED)
 	include_directories(${EIGEN_INCLUDE_DIRS})
@@ -177,6 +178,7 @@ if(USE_GSL)
 	include_directories(${GSL_INCLUDE_DIRS})
 endif(USE_GSL)
 if(USE_OPENCV)
+	# ${SWL_CPP_HOME}/cmake/FindOpenCV.cmake
 	find_package(OpenCV REQUIRED)
 	include_directories(${OPENCV_INCLUDE_DIRS})
 endif(USE_OPENCV)
@@ -218,7 +220,7 @@ endif(USE_LYX)
 ##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
 ##
 if(APPLE)
-	message(STATUS ">>---> Platform : Apple <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: Apple")
 
 	if(POLICY CMP0042)
 		cmake_policy(SET CMP0042 NEW)
@@ -229,24 +231,24 @@ if(APPLE)
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  # for Mac OS X.
 	endif()
 elseif(CYGWIN)
-	message(STATUS ">>---> Platform : Cygwin <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: Cygwin")
 elseif(MSYS)
-	message(STATUS ">>---> Platform : MSYS <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: MSYS")
 elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
-	message(STATUS ">>---> Platform : Unix <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: Unix")
 
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")  # for Linux.
 	endif()
 elseif(WIN32 AND NOT CYGWIN)
-	message(STATUS ">>---> Platform : WIN32 <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: WIN32")
 elseif(MINGW)
-	message(STATUS ">>---> Platform : MinGW <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: MinGW")
 elseif(BORLAND)
-	message(STATUS ">>---> Platform : Borland <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: Borland")
 elseif(WATCOM)
-	message(STATUS ">>---> Platform : Watcom <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: Watcom")
 elseif(MSVC)
-	message(STATUS ">>---> Platform : MSVC <---<<")
+	message(STATUS "<--- SWL-C++ ---> Platform: MSVC")
 	
 #	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif()
@@ -255,7 +257,7 @@ endif()
 ## Set compiler specific options.
 ##
 if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-	message(STATUS ">>---> Compiler : Clang <---<<")
+	message(STATUS "<--- SWL-C++ ---> Compiler: Clang")
 
 	## Explicitly specify standard c++ library.
 #	set(CLANG_LINK_FLAGS "-stdlib=libstdc++")
@@ -264,11 +266,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
 	add_definitions(${CLANG_LINK_FLAGS})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-	message(STATUS ">>---> Compiler : GNU <---<<")
+	message(STATUS "<--- SWL-C++ ---> Compiler: GNU")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES Intel)
-	message(STATUS ">>---> Compiler : Intel <---<<")
+	message(STATUS "<--- SWL-C++ ---> Compiler: Intel")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-	message(STATUS ">>---> Compiler : MSVC <---<<")
+	message(STATUS "<--- SWL-C++ ---> Compiler: MSVC")
 
 	set(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
 #	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
@@ -282,20 +284,22 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 endif()
 
 ##
-## Set binary directories.
+## Set build mode.
 ##
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	message(STATUS ">>---> Build : Debug <---<<")
-	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/Debug)
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Debug)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Debug)
+#	message(STATUS "<--- SWL-C++ ---> Build: Debug")
 #elseif(CMAKE_BUILD_TYPE MATCHES RELEASE)
 else()
-	message(STATUS ">>---> Build : Release <---<<")
-	set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib/Release)
-	set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Release)
-	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/Release)
+#	message(STATUS "<--- SWL-C++ ---> Build: Release")
 endif()
+set(CMAKE_DEBUG_POSTFIX _d)
+
+##
+## Set binary directories.
+##
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 ##
 ## Add include and link paths.

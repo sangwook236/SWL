@@ -760,9 +760,9 @@ bool load_kinect_images(const std::string &rgb_input_filename, const std::string
 #if 0
 	{
 		std::ostringstream strm1, strm2;
-		strm1 << "../data/kinect_segmentation/rectified_image_depth_" << i << ".png";
+		strm1 << "./data/kinect_segmentation/rectified_image_depth_" << i << ".png";
 		cv::imwrite(strm1.str(), rectified_depth_image);
-		strm2 << "../data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
+		strm2 << "./data/kinect_segmentation/rectified_image_rgb_" << i << ".png";
 		cv::imwrite(strm2.str(), rectified_rgb_image);
 	}
 #endif

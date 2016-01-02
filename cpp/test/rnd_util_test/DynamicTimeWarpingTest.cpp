@@ -192,7 +192,7 @@ void THoG_example()
 	std::cout << "dynamic time warping (DTW) test for THoG ..." << std::endl;
 
 #if 1
-	const std::string resultant_filename("../data/THoG_DTW_result.txt");
+	const std::string resultant_filename("./data/THoG_DTW_result.txt");
 	std::ofstream stream(resultant_filename, std::ios::out | std::ios::trunc);
 	if (!stream.is_open())
 	{

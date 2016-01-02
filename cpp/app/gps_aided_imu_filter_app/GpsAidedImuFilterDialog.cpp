@@ -255,7 +255,7 @@ void CGpsAidedImuFilterDialog::OnBnClickedButtonSaveRawData()
 		gps_.reset();
 
 		//
-		const std::string raw_data_filename("../data/adis16350_data_20100930/mesaured_raw_data.txt");
+		const std::string raw_data_filename("./data/adis16350_data_20100930/mesaured_raw_data.txt");
 		std::ofstream stream(raw_data_filename.c_str());
 		if (stream)
 		{
@@ -329,7 +329,7 @@ void CGpsAidedImuFilterDialog::OnBnClickedButtonCheckImu()
 		// load calibration parameters
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("load calibration parameters of ADIS16350"));
 		{
-			const std::string calibration_param_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
+			const std::string calibration_param_filename("./data/adis16350_data_20100801/imu_calibration_result.txt");
 			if (!imu_->loadCalibrationParam(calibration_param_filename))
 			{
 				AfxMessageBox(_T("fail to load a IMU's calibration parameters"), MB_ICONERROR | MB_OK);
@@ -508,7 +508,7 @@ void CGpsAidedImuFilterDialog::OnBnClickedButtonRunFilter()
 		// load calibration parameters
 		GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("load calibration parameters of ADIS16350"));
 		{
-			const std::string calibration_param_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
+			const std::string calibration_param_filename("./data/adis16350_data_20100801/imu_calibration_result.txt");
 			if (!imu_->loadCalibrationParam(calibration_param_filename))
 			{
 				AfxMessageBox(_T("fail to load a IMU's calibration parameters"), MB_ICONERROR | MB_OK);
@@ -693,7 +693,7 @@ bool CGpsAidedImuFilterDialog::initializeSensors()
 	// load calibration parameters
 	GetDlgItem(IDC_EDIT_MESSAGE)->SetWindowText(_T("load calibration parameters of ADIS16350"));
 	{
-		const std::string calibration_param_filename("../data/adis16350_data_20100801/imu_calibration_result.txt");
+		const std::string calibration_param_filename("./data/adis16350_data_20100801/imu_calibration_result.txt");
 		if (!imu_->loadCalibrationParam(calibration_param_filename))
 		{
 			AfxMessageBox(_T("fail to load a IMU's calibration parameters"), MB_ICONERROR | MB_OK);

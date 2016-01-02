@@ -125,7 +125,7 @@ const float mesh_min_color_r = 0.5f, mesh_min_color_g = 0.5f, mesh_min_color_b =
 
 void loadMesh()
 {
-	const std::string filename("../data/mesh.txt");
+	const std::string filename("./data/mesh.txt");
 
 	std::ifstream stream(filename.c_str());
 	stream >> mesh_row >> mesh_col;

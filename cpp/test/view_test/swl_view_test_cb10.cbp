@@ -7,8 +7,8 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/Debug/swl_view_test_d" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Debug/" />
+				<Option output="../../bin/swl_view_test_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -17,12 +17,12 @@
 				</Compiler>
 				<Linker>
 					<Add library="swl_base_d" />
-					<Add directory="../../bin/Debug" />
+					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/Release/swl_view_test" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin/Release/" />
+				<Option output="../../bin/swl_view_test" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Release/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -32,7 +32,7 @@
 				<Linker>
 					<Add option="-s" />
 					<Add library="swl_base" />
-					<Add directory="../../bin/Release" />
+					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>

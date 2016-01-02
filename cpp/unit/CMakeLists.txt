@@ -1,28 +1,34 @@
 set(BASE_SRCS
-	testcase/base/LoggerTest.cpp
+	../testcase/base/LoggerTest.cpp
 )
 set(MATH_SRCS
-	testcase/math/BaseFieldConversionTest.cpp
-	testcase/math/LineSegmentTest.cpp
-	testcase/math/LineTest.cpp
-	testcase/math/PlaneTest.cpp
-	testcase/math/TriangleTest.cpp
+	../testcase/math/BaseFieldConversionTest.cpp
+	../testcase/math/LineSegmentTest.cpp
+	../testcase/math/LineTest.cpp
+	../testcase/math/PlaneTest.cpp
+	../testcase/math/TriangleTest.cpp
 )
 set(UTIL_SRCS
-	testcase/util/EchoTcpSocketConnection.cpp
-	testcase/util/EchoTcpSocketServerTest.cpp
-	testcase/util/EchoTcpSocketSession.cpp
-	testcase/util/EchoTcpSocketTest.cpp
-	testcase/util/LineROITest.cpp
-	testcase/util/PolygonROITest.cpp
-	testcase/util/PolylineROITest.cpp
-	testcase/util/RectangleROITest.cpp
-	testcase/util/RegionOfInterestMgrTest.cpp
-	testcase/util/RegionOfInterestTest.cpp
-	testcase/util/ROIWithVariablePointsTest.cpp
+	../testcase/util/EchoTcpSocketConnection.cpp
+	../testcase/util/EchoTcpSocketServerTest.cpp
+	../testcase/util/EchoTcpSocketSession.cpp
+	../testcase/util/EchoTcpSocketTest.cpp
+	../testcase/util/LineROITest.cpp
+	../testcase/util/PolygonROITest.cpp
+	../testcase/util/PolylineROITest.cpp
+	../testcase/util/RectangleROITest.cpp
+	../testcase/util/RegionOfInterestMgrTest.cpp
+	../testcase/util/RegionOfInterestTest.cpp
+	../testcase/util/ROIWithVariablePointsTest.cpp
 )
 set(RND_UTIL_SRCS
-	testcase/rnd_util/SortTest.cpp
+	../testcase/rnd_util/SortTest.cpp
+)
+set(TESTCASE_SRCS
+	${BASE_SRCS}
+	${MATH_SRCS}
+	${UTIL_SRCS}
+	${RND_UTIL_SRCS}
 )
 
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)

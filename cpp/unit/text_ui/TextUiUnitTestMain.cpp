@@ -4,17 +4,33 @@
 #include "swl/Config.h"
 #include "../UnitTestConfig.h"
 
+//-----------------------------------------------------------------------------
+// Boost Test
+
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
+
 #include <boost/test/unit_test_parameters.hpp>
 #include <boost/test/unit_test.hpp>
 #include <fstream>
+
+//-----------------------------------------------------------------------------
+// Google Test
+
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
+
 //#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
+//-----------------------------------------------------------------------------
+// CppUnit
+
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
+
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
+
 #endif
+
 #include <iostream>
 #include <cstdlib>
 
@@ -25,13 +41,13 @@
 #endif
 
 
+//-----------------------------------------------------------------------------
+// Boost Test
+
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 namespace local {
-
-//-----------------------------------------------------------------------------
-// Boost Test
 
 //	runtime configration: command line arguments
 //		--show_progress=yes --log_level=message --run_test=*

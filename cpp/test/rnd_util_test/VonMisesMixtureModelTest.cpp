@@ -32,13 +32,13 @@ void model_reading_and_writing()
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -84,7 +84,7 @@ void model_reading_and_writing()
 		};
 
 		//
-		std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_writing.cdmm");
+		std::ofstream stream("./data/mixture_model/von_mises_mixture_test1_writing.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
@@ -100,7 +100,7 @@ void model_reading_and_writing()
 		};
 
 		//
-		std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_writing.cdmm");
+		std::ofstream stream("./data/mixture_model/von_mises_mixture_test2_writing.cdmm");
 #endif
 		if (!stream)
 		{
@@ -137,13 +137,13 @@ void observation_sequence_generation(const bool outputToFile)
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -186,26 +186,26 @@ void observation_sequence_generation(const bool outputToFile)
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test1_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test1_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test1_1500.seq");
 #endif
 
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 1
 			const size_t N = 50;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test2_50.seq");
 #elif 0
 			const size_t N = 100;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test2_100.seq");
 #elif 0
 			const size_t N = 1500;
-			std::ofstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ofstream stream("./data/mixture_model/von_mises_mixture_test2_1500.seq");
 #endif
 
 #endif
@@ -260,11 +260,11 @@ void observation_sequence_reading_and_writing()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 1
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_50.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_100.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -272,11 +272,11 @@ void observation_sequence_reading_and_writing()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 1
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_50.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_100.seq");
 #elif 0
-	std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+	std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_1500.seq");
 #else
 	std::istream stream = std::cin;
 #endif
@@ -325,13 +325,13 @@ void ml_learning_by_em()
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -397,11 +397,11 @@ void ml_learning_by_em()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -409,11 +409,11 @@ void ml_learning_by_em()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -481,13 +481,13 @@ void map_learning_by_em_using_conjugate_prior()
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -581,11 +581,11 @@ void map_learning_by_em_using_conjugate_prior()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -593,11 +593,11 @@ void map_learning_by_em_using_conjugate_prior()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -665,13 +665,13 @@ void map_learning_by_em_using_entropic_prior()
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test1.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
 		const size_t K = 3;  // the number of mixture components.
 		//const size_t D = 1;  // the dimension of observation symbols.
 
 		//
-		std::ifstream stream("../data/mixture_model/von_mises_mixture_test2.cdmm");
+		std::ifstream stream("./data/mixture_model/von_mises_mixture_test2.cdmm");
 #endif
 		if (!stream)
 		{
@@ -748,11 +748,11 @@ void map_learning_by_em_using_entropic_prior()
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test1_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test1_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif
@@ -760,11 +760,11 @@ void map_learning_by_em_using_entropic_prior()
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_50.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_50.seq");
 #elif 0
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_100.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_100.seq");
 #elif 1
-			std::ifstream stream("../data/mixture_model/von_mises_mixture_test2_1500.seq");
+			std::ifstream stream("./data/mixture_model/von_mises_mixture_test2_1500.seq");
 #else
 			std::istream stream = std::cin;
 #endif

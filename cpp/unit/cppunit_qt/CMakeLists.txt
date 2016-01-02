@@ -6,10 +6,7 @@ endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 set(SRCS
 	main.cpp
-	${BASE_SRCS}
-	${MATH_SRCS}
-	${UTIL_SRCS}
-	${RND_UTIL_SRCS}
+	${TESTCASE_SRCS}
 )
 
 #add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
