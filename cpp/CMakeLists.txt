@@ -374,12 +374,13 @@ file(GLOB_RECURSE HEADER_FILES "${CMAKE_SOURCE_DIR}/inc/*.h")
 install(FILES ${HEADER_FILES} DESTINATION include)
 file(GLOB_RECURSE DATA_FILES "${CMAKE_SOURCE_DIR}/bin/data/*")
 install(FILES ${DATA_FILES} DESTINATION bin/data)
-#install(PROGRAMS test.sh DESTINATION bin)
-install(TARGETS myExe myStaticLib mySharedLib
-	RUNTIME DESTINATION bin
-	LIBRARY DESTINATION lib
-	ARCHIVE DESTINATION lib
-)
+file(GLOB EXECUTABLE_FILES "${CMAKE_SOURCE_DIR}/bin/*")
+#install(PROGRAMS ${EXECUTABLE_FILES} DESTINATION bin)
+#install(TARGETS myExe myStaticLib mySharedLib
+#	RUNTIME DESTINATION bin
+#	LIBRARY DESTINATION lib
+#	ARCHIVE DESTINATION lib
+#)
 
 ##
 ## Add sub directories to build.

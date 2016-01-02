@@ -5,11 +5,10 @@ else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 
 set(SRCS
-	INotifier.cpp
-	IObserver.cpp
-	LogException.cpp
-	ReturnException.cpp
-	String.cpp
+	GestureClassifierByHistogram.cpp
+	GestureType.cpp
+	HistogramGenerator.cpp
+	MotionSegmenter.cpp
 )
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
