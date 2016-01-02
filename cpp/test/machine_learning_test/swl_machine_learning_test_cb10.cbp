@@ -20,7 +20,6 @@
 					<Add library="swl_posixutil_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -38,17 +37,18 @@
 					<Add library="swl_posixutil" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-fpermissive" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
+			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="CliffWalkingSystem.cpp" />

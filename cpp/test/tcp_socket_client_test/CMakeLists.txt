@@ -11,11 +11,19 @@ if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
 		swl_util_d
 		swl_base_d
+#		${Boost_THREAD_LIBRARY}
+#		${Boost_SYSTEM_LIBRARY}
+		boost_thread
+		boost_system
 	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
 		swl_util
 		swl_base
+#		${Boost_THREAD_LIBRARY}
+#		${Boost_SYSTEM_LIBRARY}
+		boost_thread
+		boost_system
 	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 

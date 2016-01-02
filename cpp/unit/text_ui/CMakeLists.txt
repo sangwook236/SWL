@@ -11,14 +11,26 @@ set(SRCS
 
 if(CPPUNIT_FOUND)
 	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  # deprecated.
-	set(TEST_LIBS CPPUNIT_LIBRARIES)
+	set(TEST_LIBS
+		$[CPPUNIT_LIBRARIES}
+	)
 elseif(GTEST_FOUND)
 	add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
-	set(TEST_LIBS GTEST_BOTH_LIBRARIES)
+	set(TEST_LIBS
+		${GTEST_BOTH_LIBRARIES}
+	)
 else()
 	add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
-	set(TEST_LIBS )
+	set(TEST_LIBS
+#		${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
+		boost_unit_test_framework
+	)
 endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+	add_compile_options(-std=c++11)
+	add_compile_options(-fpermissive)
+endif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS} ${TEST_LIBS})

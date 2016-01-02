@@ -23,7 +23,6 @@
 					<Add library="swl_rnd_util_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -44,7 +43,6 @@
 					<Add library="swl_rnd_util" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
@@ -70,8 +68,14 @@
 			<Add library="opencv_core" />
 			<Add library="gsl" />
 			<Add library="gslcblas" />
+			<Add library="boost_timer" />
+			<Add library="boost_system" />
+			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
+		<Unit filename="ArHmmWithUnivariateNormalMixtureObservationsTest.cpp" />
+		<Unit filename="ArHmmWithUnivariateNormalObservationsTest.cpp" />
+		<Unit filename="DynamicTimeWarpingTest.cpp" />
 		<Unit filename="ExtendedKalmanFilterTest.cpp" />
 		<Unit filename="HmmSegmentationTest.cpp" />
 		<Unit filename="HmmWithMultinomialObservationsTest.cpp" />
@@ -81,7 +85,9 @@
 		<Unit filename="HmmWithVonMisesObservationsTest.cpp" />
 		<Unit filename="HoughTransformTest.cpp" />
 		<Unit filename="KalmanFilterTest.cpp" />
+		<Unit filename="LevenshteinDistanceTest.cpp" />
 		<Unit filename="MetropolisHastingsAlgorithmTest.cpp" />
+		<Unit filename="MultivariateNormalMixtureModelTest.cpp" />
 		<Unit filename="ParticleFilterTest.cpp">
 			<Option compile="0" />
 			<Option link="0" />

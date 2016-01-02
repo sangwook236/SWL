@@ -17,6 +17,7 @@
 namespace swl {
 
 namespace {
+namespace local {
 
 #if defined(_UNICODE) || defined(UNICODE)
 static std::wstring convert_base_field(const unsigned long dec, const unsigned long base)
@@ -160,6 +161,7 @@ static long convert_base_field(const std::string &num, const unsigned long base)
 	return isNegative ? -dec : dec;
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------------------
@@ -208,41 +210,41 @@ static long convert_base_field(const std::string &num, const unsigned long base)
 #else
 /*static*/ std::string MathUtil::dec2bin(const unsigned long dec)
 #endif
-{  return convert_base_field(dec, 2ul);  }
+{  return local::convert_base_field(dec, 2ul);  }
 
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ std::wstring MathUtil::dec2oct(const unsigned long dec)
 #else
 /*static*/ std::string MathUtil::dec2oct(const unsigned long dec)
 #endif
-{  return convert_base_field(dec, 8ul);  }
+{  return local::convert_base_field(dec, 8ul);  }
 
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ std::wstring MathUtil::dec2hex(const unsigned long dec)
 #else
 /*static*/ std::string MathUtil::dec2hex(const unsigned long dec)
 #endif
-{  return convert_base_field(dec, 16ul);  }
+{  return local::convert_base_field(dec, 16ul);  }
 
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ unsigned long MathUtil::bin2dec(const std::wstring &bin)
 #else
 /*static*/ unsigned long MathUtil::bin2dec(const std::string &bin)
 #endif
-{  return convert_base_field(bin, 2ul);  }
+{  return local::convert_base_field(bin, 2ul);  }
 
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ unsigned long MathUtil::oct2dec(const std::wstring &oct)
 #else
 /*static*/ unsigned long MathUtil::oct2dec(const std::string &oct)
 #endif
-{  return convert_base_field(oct, 8ul);  }
+{  return local::convert_base_field(oct, 8ul);  }
 
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ unsigned long MathUtil::hex2dec(const std::wstring &hex)
 #else
 /*static*/ unsigned long MathUtil::hex2dec(const std::string &hex)
 #endif
-{  return convert_base_field(hex, 16ul);  }
+{  return local::convert_base_field(hex, 16ul);  }
 
 }  //  namespace swl

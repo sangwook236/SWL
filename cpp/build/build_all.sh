@@ -7,3 +7,5 @@ cmake ..
 make
 make test
 make doc
+
+#export LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH

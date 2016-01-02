@@ -19,6 +19,7 @@
 namespace swl {
 
 namespace {
+namespace local {
 
 // line equation: (x - x0) / a = (y - y0) / b ==> b * (x - x0) - a * (y - y0) = 0
 bool isInTheSameSide(const double &px, const double &py, const double &cx, const double &cy, const double &a, const double &b, const double &x0, const double &y0, const double &tol)
@@ -26,7 +27,8 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 	return (b * (px - x0) - a * (py - y0)) * (b * (cx - x0) - a * (cy - y0)) >= 0.0;
 }
 
-}
+}  // namespace local
+}  // unnamed namespace
 
 /*static*/ void GeometryUtil::getConvexHull(const std::list<Point2<float> > &points, std::list<Point2<float> > &convexHull)
 {
@@ -114,11 +116,11 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 
 		for (; it != hull.end(); ++it)
 		{
-			if (!isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
+			if (!local::isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
 			itPrev = it;
 		}
 		it = hull.begin();
-		return isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
+		return local::isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
 	}
 #endif
 }
@@ -146,11 +148,11 @@ bool isInTheSameSide(const double &px, const double &py, const double &cx, const
 
 		for (; it != convexHull.end(); ++it)
 		{
-			if (!isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
+			if (!local::isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol)) return false;
 			itPrev = it;
 		}
 		it = convexHull.begin();
-		return isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
+		return local::isInTheSameSide(pt.x, pt.y, center.x, center.y, it->x - itPrev->x, it->y - itPrev->y, itPrev->x, itPrev->y, tol);
 	}
 }
 

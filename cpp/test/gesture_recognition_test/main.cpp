@@ -15,7 +15,7 @@
 
 namespace {
 namespace local {
-	
+
 }  // namespace local
 }  // unnamed namespace
 
@@ -32,8 +32,13 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 	const std::string thog_filename(avi_filename.substr(0, pos) + ".THoG");
 	const std::string hog_filename(avi_filename.substr(0, pos) + ".HoG");
 
+#if defined(__GNUC__)
+	std::ofstream streamTHoG((output_directory_path + '/' + thog_filename).c_str(), std::ios::out);
+	std::ofstream streamHoG((output_directory_path + '/' + hog_filename).c_str(), std::ios::out);
+#else
 	std::ofstream streamTHoG(output_directory_path + '/' + thog_filename, std::ios::out);
 	std::ofstream streamHoG(output_directory_path + '/' + hog_filename, std::ios::out);
+#endif
 	if (!streamTHoG.is_open())
 	{
 		std::cout << "a THoG file, '" << (output_directory_path + '/' + thog_filename) << "' not opened" << std::endl;
@@ -47,7 +52,11 @@ bool extractTHoG(cv::VideoCapture &capture, const std::string &avi_filename, con
 
 #if 1
 	const std::string no_motion_filename(avi_filename.substr(0, pos) + "_no_motion.txt");
+#if defined(__GNUC__)
+	std::ofstream streamNoMotion((output_directory_path + '/' + no_motion_filename).c_str(), std::ios::out);
+#else
 	std::ofstream streamNoMotion(output_directory_path + '/' + no_motion_filename, std::ios::out);
+#endif
 	if (!streamNoMotion.is_open())
 	{
 		std::cout << "a no-motion file, '" << (output_directory_path + '/' + no_motion_filename) << "' not opened" << std::endl;
@@ -98,7 +107,7 @@ int main(int argc, char *argv[])
 #	else
 		const std::string avi_filename("./machine_vision_data/opencv/tree.avi");
 		//const std::string avi_filename("./machine_vision_data/opencv/s01_g01_1_ccw_normal.avi");
-	
+
 		//const int imageWidth = 640, imageHeight = 480;
 
 		cv::VideoCapture capture(avi_filename);

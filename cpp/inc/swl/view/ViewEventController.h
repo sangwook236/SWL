@@ -4,7 +4,7 @@
 
 #include "swl/view/ExportView.h"
 #include "swl/base/MvcController.h"
-#include <boost/signal.hpp>
+#include <boost/signals2/signal.hpp>
 
 
 namespace swl {
@@ -12,9 +12,8 @@ namespace swl {
 struct MouseEvent;
 struct KeyEvent;
 
-
 //-----------------------------------------------------------------------------------
-// 
+//
 
 class SWL_VIEW_API ViewEventController: public MvcController
 {
@@ -26,8 +25,8 @@ public:
 	virtual ~ViewEventController()  {}
 
 private:
-	ViewEventController(const ViewEventController&);
-	ViewEventController& operator=(const ViewEventController&);
+	ViewEventController(const ViewEventController &);
+	ViewEventController& operator=(const ViewEventController &);
 
 public:
 	template<typename Functor>
@@ -161,18 +160,18 @@ public:
 	virtual void hitKey(const KeyEvent &evt) const;
 
 protected:
-	boost::signal<void (const MouseEvent &)> pressMouse_;
-	boost::signal<void (const MouseEvent &)> releaseMouse_;
-	boost::signal<void (const MouseEvent &)> moveMouse_;
-	boost::signal<void (const MouseEvent &)> wheelMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> pressMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> releaseMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> moveMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> wheelMouse_;
 
-	boost::signal<void (const MouseEvent &)> clickMouse_;
-	boost::signal<void (const MouseEvent &)> doubleClickMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> clickMouse_;
+	boost::signals2::signal<void (const MouseEvent &)> doubleClickMouse_;
 
-	boost::signal<void (const KeyEvent &)> pressKey_;
-	boost::signal<void (const KeyEvent &)> releaseKey_;
+	boost::signals2::signal<void (const KeyEvent &)> pressKey_;
+	boost::signals2::signal<void (const KeyEvent &)> releaseKey_;
 
-	boost::signal<void (const KeyEvent &)> hitKey_;
+	boost::signals2::signal<void (const KeyEvent &)> hitKey_;
 };
 
 }  // namespace swl

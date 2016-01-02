@@ -7,8 +7,8 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/libswl_math_d" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin" />
+				<Option output="../../lib/swl_math_d" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Debug/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
@@ -21,12 +21,11 @@
 				</Compiler>
 				<Linker>
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/libswl_math" prefix_auto="1" extension_auto="1" />
-				<Option working_dir="../../bin" />
+				<Option output="../../lib/swl_math" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Release/" />
 				<Option type="3" />
 				<Option compiler="gcc" />
@@ -40,14 +39,18 @@
 				<Linker>
 					<Add option="-s" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
 			<Add directory="../../inc" />
+			<Add directory="/usr/local/include" />
 		</Compiler>
+		<Linker>
+			<Add directory="../../lib" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
 		<Unit filename="../../inc/swl/math/Complex.h" />
 		<Unit filename="../../inc/swl/math/Coordinates.h" />
 		<Unit filename="../../inc/swl/math/Duplex.h" />

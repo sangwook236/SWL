@@ -99,7 +99,11 @@ void THoG_example()
 		// read HoG.
 		std::vector<std::vector<float> > data;
 		{
+#if defined(__GNUC__)
+			std::ifstream strm(filename_list[i].c_str());
+#else
 			std::ifstream strm(filename_list[i]);
+#endif
 
 			std::string str;
 			std::vector<float> record;
@@ -193,7 +197,11 @@ void THoG_example()
 
 #if 1
 	const std::string resultant_filename("./data/THoG_DTW_result.txt");
+#if defined(__GNUC__)
+	std::ofstream stream(resultant_filename.c_str(), std::ios::out | std::ios::trunc);
+#else
 	std::ofstream stream(resultant_filename, std::ios::out | std::ios::trunc);
+#endif
 	if (!stream.is_open())
 	{
 		std::cerr << "file not found: " << resultant_filename << std::endl;

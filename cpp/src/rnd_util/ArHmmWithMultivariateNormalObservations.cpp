@@ -128,7 +128,12 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 
 		if (solve_linear_equations_by_lu(A, x))
 		{
+#if defined(__GNUC__)
+            // FIXME [check] >> is it correct?
+			boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state], d));
+#else
 			boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state], d);
+#endif
 			coeff = x;
 
 			// reestimate the variances of the input noise process.
@@ -235,7 +240,12 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 
 		if (solve_linear_equations_by_lu(A, x))
 		{
+#if defined(__GNUC__)
+            // FIXME [check] >> is it correct?
+			boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state], d));
+#else
 			boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state], d);
+#endif
 			coeff = x;
 
 			// reestimate the variances of the input noise process.
@@ -338,7 +348,7 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 			boost::numeric::ublas::blas_2::sr(sigma, gammar(n, state), boost::numeric::ublas::matrix_row<const dmatrix_type>(observationr, n) - mu);
 	}
 	sigma = 0.5 * (sigma + boost::numeric::ublas::trans(sigma));
-	
+
 	//sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(sigma.size1(), sigma.size2(), 0.001);
 	sigma = sigma * factorSigma + boost::numeric::ublas::scalar_matrix<double>(D_, D_, 0.001);
 
@@ -540,7 +550,7 @@ bool ArHmmWithMultivariateNormalObservations::doReadObservationDensity(std::istr
 	for (k = 0; k < K_; ++k)
 	{
 		dvector_type &sigma2 = sigmas_[k];
-	
+
 		for (d = 0; d < D_; ++d)
 			stream >> sigma2(d);
 	}

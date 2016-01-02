@@ -198,7 +198,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 
 			if (solve_linear_equations_by_lu(A, x))
 			{
+#if defined(__GNUC__)
+                // FIXME [check] >> is it correct?
+				boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 				coeff = x;
 
 				// reestimate the variances of the input noise process.
@@ -379,7 +384,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 
 			if (solve_linear_equations_by_lu(A, x))
 			{
+#if defined(__GNUC__)
+                // FIXME [check] >> is it correct?
+				boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 				coeff = x;
 
 				// reestimate the variances of the input noise process.
@@ -808,7 +818,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 		{
 			if (alphas_(state, c) < eps)  // already trimmed.
 			{
+#if defined(__GNUC__)
+                // FIXME [check] >> is it correct?
+				boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 				coeff = dvector_type(coeff.size(), 0.0);
 				sigmas_[state][c](d) = 0.0;
 			}
@@ -839,7 +854,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 
 				if (solve_linear_equations_by_lu(A, x))
 				{
+#if defined(__GNUC__)
+                    // FIXME [check] >> is it correct?
+					boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 					boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 					coeff = x;
 
 					// reestimate the variances of the input noise process.
@@ -1080,7 +1100,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 		{
 			if (alphas_(state, c) < eps)  // already trimmed.
 			{
+#if defined(__GNUC__)
+                // FIXME [check] >> is it correct?
+				boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 				boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 				coeff = dvector_type(coeff.size(), 0.0);
 				sigmas_[state][c](d) = 0.0;
 			}
@@ -1124,7 +1149,12 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 
 				if (solve_linear_equations_by_lu(A, x))
 				{
+#if defined(__GNUC__)
+                    // FIXME [check] >> is it correct?
+					boost::numeric::ublas::matrix_row<dmatrix_type> coeff(boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d));
+#else
 					boost::numeric::ublas::matrix_row<dmatrix_type> &coeff = boost::numeric::ublas::matrix_row<dmatrix_type>(coeffs_[state][c], d);
+#endif
 					coeff = x;
 
 					// reestimate the variances of the input noise process.

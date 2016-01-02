@@ -7,7 +7,7 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="../../bin/swl_rnd_util_d" prefix_auto="1" extension_auto="1" />
+				<Option output="../../lib/swl_rnd_util_d" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Debug/" />
 				<Option type="3" />
@@ -21,11 +21,10 @@
 				</Compiler>
 				<Linker>
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
-				<Option output="../../bin/swl_rnd_util" prefix_auto="1" extension_auto="1" />
+				<Option output="../../lib/swl_rnd_util" prefix_auto="1" extension_auto="1" />
 				<Option working_dir="../../bin/" />
 				<Option object_output="obj/Release/" />
 				<Option type="3" />
@@ -40,13 +39,11 @@
 				<Linker>
 					<Add option="-s" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
-			<Add option="-std=c++11" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
@@ -56,6 +53,7 @@
 			<Add library="opencv_core" />
 			<Add library="gsl" />
 			<Add library="gslcblas" />
+			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="../../inc/swl/rnd_util/CDHMM.h" />
@@ -94,7 +92,14 @@
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilter.h" />
 		<Unit filename="../../inc/swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h" />
 		<Unit filename="../../inc/swl/rnd_util/VonMisesMixtureModel.h" />
+		<Unit filename="ArHmmWithMultivariateNormalMixtureObservations.cpp" />
+		<Unit filename="ArHmmWithMultivariateNormalObservations.cpp" />
+		<Unit filename="ArHmmWithUnivariateNormalMixtureObservations.cpp" />
+		<Unit filename="ArHmmWithUnivariateNormalObservations.cpp" />
+		<Unit filename="AutoRegression.cpp" />
+		<Unit filename="AutoRegression.h" />
 		<Unit filename="CDHMM.cpp" />
+		<Unit filename="CDHMMWithMixtureObservations.cpp" />
 		<Unit filename="ContinuousDensityMixtureModel.cpp" />
 		<Unit filename="DDHMM.cpp" />
 		<Unit filename="ExtendedKalmanFilter.cpp" />
@@ -114,8 +119,11 @@
 		<Unit filename="HmmWithVonMisesObservations.cpp" />
 		<Unit filename="HoughTransform.cpp" />
 		<Unit filename="KalmanFilter.cpp" />
+		<Unit filename="LambertWFunction.cpp" />
+		<Unit filename="LevenshteinDistance.cpp" />
 		<Unit filename="MetropolisHastingsAlgorithm.cpp" />
 		<Unit filename="MixtureModel.cpp" />
+		<Unit filename="MultivariateNormalMixtureModel.cpp" />
 		<Unit filename="Ransac.cpp" />
 		<Unit filename="RejectionSampling.cpp" />
 		<Unit filename="RndUtilLocalApi.cpp" />

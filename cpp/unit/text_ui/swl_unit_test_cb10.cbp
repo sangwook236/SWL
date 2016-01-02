@@ -20,7 +20,6 @@
 					<Add library="swl_util_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -38,7 +37,6 @@
 					<Add library="swl_util" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
@@ -58,6 +56,7 @@
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
 			<Add library="pthread" />
+			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="../testcase/base/LoggerTest.cpp" />

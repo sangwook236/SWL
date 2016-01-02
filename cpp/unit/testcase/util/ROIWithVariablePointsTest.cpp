@@ -15,6 +15,7 @@
 
 
 namespace {
+namespace local {
 
 bool comparePoints(const swl::ROIWithVariablePoints::point_type &lhs, const swl::ROIWithVariablePoints::point_type &rhs)
 {
@@ -22,6 +23,7 @@ bool comparePoints(const swl::ROIWithVariablePoints::point_type &lhs, const swl:
 	return std::fabs(lhs.x - rhs.x) <= eps && std::fabs(lhs.y - rhs.y) <= eps;
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 namespace swl {
@@ -74,12 +76,12 @@ public:
 		BOOST_CHECK(roi->containPoint());
 		BOOST_CHECK_EQUAL((std::size_t)6, roi->countPoint());  // not 5
 
-		BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-		BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
-		BOOST_CHECK(comparePoints(roi->getPoint(2), pt3));
-		BOOST_CHECK(comparePoints(roi->getPoint(3), pt4));
-		BOOST_CHECK(comparePoints(roi->getPoint(4), pt4));
-		BOOST_CHECK(comparePoints(roi->getPoint(5), pt5));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(2), pt3));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(3), pt4));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(4), pt4));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(5), pt5));
 
 		BOOST_CHECK_THROW(roi->getPoint(6), swl::LogException);
 
@@ -88,9 +90,9 @@ public:
 		roi->removePoint(pt3);
 		BOOST_CHECK_EQUAL((std::size_t)3, roi->countPoint());
 
-		BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-		BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
-		BOOST_CHECK(comparePoints(roi->getPoint(2), pt5));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(2), pt5));
 
 		roi->clearAllPoints();
 		BOOST_CHECK(!roi->containPoint());
@@ -115,25 +117,25 @@ public:
 
 		{
 			BOOST_CHECK(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 0.1f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 2.0f));
-			BOOST_CHECK(!comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
-			BOOST_CHECK(!comparePoints(roi->getPoint(1), pt2 + delta));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
 			BOOST_CHECK(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 0.1f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 2.0f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-			BOOST_CHECK(!comparePoints(roi->getPoint(1), pt2));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 	}
 
@@ -158,12 +160,12 @@ public:
 			roi->addPoint(pt5);
 
 			BOOST_CHECK(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 2.0f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 		}
 
 		{
@@ -175,12 +177,12 @@ public:
 			roi->addPoint(pt5);
 
 			BOOST_CHECK(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 2.0f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
@@ -192,9 +194,9 @@ public:
 			roi->addPoint(pt5);
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			BOOST_CHECK(!comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2));
 		}
 
 		{
@@ -206,9 +208,9 @@ public:
 			roi->addPoint(pt5);
 
 			BOOST_CHECK(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
-			BOOST_CHECK(!comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
 		}
 	}
 
@@ -229,11 +231,11 @@ public:
 		roi->addPoint(pt5);
 
 		roi->moveRegion(delta);
-		BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-		BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + delta));
-		BOOST_CHECK(comparePoints(roi->getPoint(2), pt3 + delta));
-		BOOST_CHECK(comparePoints(roi->getPoint(3), pt4 + delta));
-		BOOST_CHECK(comparePoints(roi->getPoint(4), pt5 + delta));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + delta));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(2), pt3 + delta));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(3), pt4 + delta));
+		BOOST_CHECK(local::comparePoints(roi->getPoint(4), pt5 + delta));
 	}
 
 	void testMoveRegionWithLimit()
@@ -257,8 +259,8 @@ public:
 			const swl::ROIWithVariablePoints::point_type delta(5.0f, 10.0f);
 
 			roi->moveRegion(delta, limitRegion);
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + delta));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
@@ -273,8 +275,8 @@ public:
 			const swl::ROIWithVariablePoints::real_type dx = 10.0f, dy = -8.5f;  // actual displacement
 
 			roi->moveRegion(bigDelta, limitRegion);
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
 		}
 
 		{
@@ -290,10 +292,10 @@ public:
 			const swl::ROIWithVariablePoints::real_type dx2 = 0.0f;  // actual displacement
 
 			roi->moveRegion(delta, limitRegion);
-			BOOST_CHECK(!comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
-			BOOST_CHECK(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
-			BOOST_CHECK(!comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
-			BOOST_CHECK(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+			BOOST_CHECK(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+			BOOST_CHECK(!local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+			BOOST_CHECK(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
 		}
 	}
 
@@ -384,12 +386,12 @@ TEST_F(ROIWithVariablePointsTest, testHandlePoint)
 	EXPECT_TRUE(roi->containPoint());
 	EXPECT_EQ((std::size_t)6, roi->countPoint());  // not 5
 
-	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
-	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt3));
-	EXPECT_TRUE(comparePoints(roi->getPoint(3), pt4));
-	EXPECT_TRUE(comparePoints(roi->getPoint(4), pt4));
-	EXPECT_TRUE(comparePoints(roi->getPoint(5), pt5));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(2), pt3));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(3), pt4));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(4), pt4));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(5), pt5));
 
 	EXPECT_THROW(roi->getPoint(6), swl::LogException);
 
@@ -398,9 +400,9 @@ TEST_F(ROIWithVariablePointsTest, testHandlePoint)
 	roi->removePoint(pt3);
 	EXPECT_EQ((std::size_t)3, roi->countPoint());
 
-	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
-	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt5));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(2), pt5));
 
 	roi->clearAllPoints();
 	EXPECT_FALSE(roi->containPoint());
@@ -423,25 +425,25 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertex)
 
 	{
 		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 0.1f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 2.0f));
-		EXPECT_FALSE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
-		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2 + delta));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(1), pt2 + delta));
 	}
 
 	{
 		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 0.1f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 2.0f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + delta));
 	}
 }
 
@@ -464,12 +466,12 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
 		roi->addPoint(pt5);
 
 		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 2.0f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 	}
 
 	{
@@ -481,12 +483,12 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
 		roi->addPoint(pt5);
 
 		EXPECT_FALSE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 2.0f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + delta));
 	}
 
 	{
@@ -498,9 +500,9 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
 		roi->addPoint(pt5);
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-		EXPECT_FALSE(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2));
 	}
 
 	{
@@ -512,9 +514,9 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
 		roi->addPoint(pt5);
 
 		EXPECT_TRUE(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
-		EXPECT_FALSE(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
 	}
 }
 
@@ -533,11 +535,11 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegion)
 	roi->addPoint(pt5);
 
 	roi->moveRegion(delta);
-	EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-	EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
-	EXPECT_TRUE(comparePoints(roi->getPoint(2), pt3 + delta));
-	EXPECT_TRUE(comparePoints(roi->getPoint(3), pt4 + delta));
-	EXPECT_TRUE(comparePoints(roi->getPoint(4), pt5 + delta));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + delta));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(2), pt3 + delta));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(3), pt4 + delta));
+	EXPECT_TRUE(local::comparePoints(roi->getPoint(4), pt5 + delta));
 }
 
 TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
@@ -559,8 +561,8 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
 		const swl::ROIWithVariablePoints::point_type delta(5.0f, 10.0f);
 
 		roi->moveRegion(delta, limitRegion);
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + delta));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + delta));
 	}
 
 	{
@@ -575,8 +577,8 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
 		const swl::ROIWithVariablePoints::real_type dx = 10.0f, dy = -8.5f;  // actual displacement
 
 		roi->moveRegion(bigDelta, limitRegion);
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
 	}
 
 	{
@@ -592,10 +594,10 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
 		const swl::ROIWithVariablePoints::real_type dx2 = 0.0f;  // actual displacement
 
 		roi->moveRegion(delta, limitRegion);
-		EXPECT_FALSE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
-		EXPECT_TRUE(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
-		EXPECT_FALSE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
-		EXPECT_TRUE(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+		EXPECT_FALSE(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+		EXPECT_TRUE(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
 	}
 }
 
@@ -673,12 +675,12 @@ public:
 		CPPUNIT_ASSERT(roi->containPoint());
 		CPPUNIT_ASSERT_EQUAL((std::size_t)6, roi->countPoint());  // not 5
 
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(2), pt3));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(3), pt4));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(4), pt4));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(5), pt5));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(2), pt3));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(3), pt4));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(4), pt4));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(5), pt5));
 
 		CPPUNIT_ASSERT_THROW(roi->getPoint(6), swl::LogException);
 
@@ -687,9 +689,9 @@ public:
 		roi->removePoint(pt3);
 		CPPUNIT_ASSERT_EQUAL((std::size_t)3, roi->countPoint());
 
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(2), pt5));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(2), pt5));
 
 		roi->clearAllPoints();
 		CPPUNIT_ASSERT(!roi->containPoint());
@@ -712,25 +714,25 @@ public:
 
 		{
 			CPPUNIT_ASSERT(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 0.1f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, 2.0f));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(1), pt2 + delta));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
 			CPPUNIT_ASSERT(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 0.1f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, 2.0f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(1), pt2));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 	}
 
@@ -753,12 +755,12 @@ public:
 			roi->addPoint(pt5);
 
 			CPPUNIT_ASSERT(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 0.1f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), delta, limitRegion, 2.0f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 		}
 
 		{
@@ -770,12 +772,12 @@ public:
 			roi->addPoint(pt5);
 
 			CPPUNIT_ASSERT(!roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 0.1f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), delta, limitRegion, 2.0f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
@@ -787,9 +789,9 @@ public:
 			roi->addPoint(pt5);
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(-21.0f, 10.0f), bigDelta, limitRegion, 2.0f));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2));
 		}
 
 		{
@@ -801,9 +803,9 @@ public:
 			roi->addPoint(pt5);
 
 			CPPUNIT_ASSERT(roi->moveVertex(swl::ROIWithVariablePoints::point_type(39.0f, 26.0f), bigDelta, limitRegion, 2.0f));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(0), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), swl::ROIWithVariablePoints::point_type(limitRegion.right, limitRegion.bottom)));
 		}
 	}
 
@@ -822,11 +824,11 @@ public:
 		roi->addPoint(pt5);
 
 		roi->moveRegion(delta);
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + delta));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(2), pt3 + delta));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(3), pt4 + delta));
-		CPPUNIT_ASSERT(comparePoints(roi->getPoint(4), pt5 + delta));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + delta));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(2), pt3 + delta));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(3), pt4 + delta));
+		CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(4), pt5 + delta));
 	}
 
 	void testMoveRegionWithLimit()
@@ -848,8 +850,8 @@ public:
 			const swl::ROIWithVariablePoints::point_type delta(5.0f, 10.0f);
 
 			roi->moveRegion(delta, limitRegion);
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + delta));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + delta));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + delta));
 		}
 
 		{
@@ -864,8 +866,8 @@ public:
 			const swl::ROIWithVariablePoints::real_type dx = 10.0f, dy = -8.5f;  // actual displacement
 
 			roi->moveRegion(bigDelta, limitRegion);
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-5, 1.5), but (-10, 1.5)
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
 		}
 
 		{
@@ -881,10 +883,10 @@ public:
 			const swl::ROIWithVariablePoints::real_type dx2 = 0.0f;  // actual displacement
 
 			roi->moveRegion(delta, limitRegion);
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
-			CPPUNIT_ASSERT(!comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
-			CPPUNIT_ASSERT(comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx, dy)));  // caution: not (-25, 28), but (-20, 28)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(0), pt1 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
+			CPPUNIT_ASSERT(!local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx, dy)));
+			CPPUNIT_ASSERT(local::comparePoints(roi->getPoint(1), pt2 + swl::ROIWithVariablePoints::point_type(dx2, dy)));
 		}
 	}
 

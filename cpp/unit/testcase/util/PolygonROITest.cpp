@@ -11,12 +11,14 @@
 
 
 namespace {
+namespace local {
 
 swl::PolygonROI::point_type calculatePoint(const swl::PolygonROI::point_type &lhs, const swl::PolygonROI::point_type &rhs, const swl::PolygonROI::real_type &alpha)
 {
 	return swl::PolygonROI::point_type((swl::PolygonROI::real_type(1) - alpha) * lhs.x + alpha * rhs.x, (swl::PolygonROI::real_type(1) - alpha) * lhs.y + alpha * rhs.y);
 }
 
+}  // namespace local
 }  // unnamed namespace
 
 namespace swl {
@@ -68,10 +70,10 @@ public:
 		BOOST_CHECK(roi.include((pt5 + pt1) / swl::PolygonROI::real_type(2), swl::PolygonROI::real_type(0.01)));
 		BOOST_CHECK(roi.include((pt1 + pt2 + pt3 + pt4 + pt5) / swl::PolylineROI::real_type(5), swl::PolylineROI::real_type(0.01)));
 
-		BOOST_CHECK(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
-		BOOST_CHECK(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
-		BOOST_CHECK(!roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
-		BOOST_CHECK(!roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
+		BOOST_CHECK(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
+		BOOST_CHECK(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
+		BOOST_CHECK(!roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
+		BOOST_CHECK(!roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
 	}
 };
 
@@ -129,10 +131,10 @@ TEST_F(PolygonROITest, testInclude)
 	EXPECT_TRUE(roi.include((pt5 + pt1) / swl::PolygonROI::real_type(2), swl::PolygonROI::real_type(0.01)));
 	EXPECT_TRUE(roi.include((pt1 + pt2 + pt3 + pt4 + pt5) / swl::PolylineROI::real_type(5), swl::PolylineROI::real_type(0.01)));
 
-	EXPECT_TRUE(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
-	EXPECT_TRUE(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
-	EXPECT_FALSE(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
-	EXPECT_FALSE(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
+	EXPECT_TRUE(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
+	EXPECT_TRUE(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
+	EXPECT_FALSE(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
+	EXPECT_FALSE(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
 }
 
 //-----------------------------------------------------------------------------
@@ -178,10 +180,10 @@ public:
 		CPPUNIT_ASSERT(roi.include((pt5 + pt1) / swl::PolygonROI::real_type(2), swl::PolygonROI::real_type(0.01)));
 		CPPUNIT_ASSERT(roi.include((pt1 + pt2 + pt3 + pt4 + pt5) / swl::PolylineROI::real_type(5), swl::PolylineROI::real_type(0.01)));
 
-		CPPUNIT_ASSERT(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
-		CPPUNIT_ASSERT(roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
-		CPPUNIT_ASSERT(!roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
-		CPPUNIT_ASSERT(!roi.include(calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
+		CPPUNIT_ASSERT(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.1)), swl::PolygonROI::real_type(0.01)));
+		CPPUNIT_ASSERT(roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(0.83)), swl::PolygonROI::real_type(0.01)));
+		CPPUNIT_ASSERT(!roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(2.1)), swl::PolygonROI::real_type(0.01)));
+		CPPUNIT_ASSERT(!roi.include(local::calculatePoint(pt1, pt2, swl::PolygonROI::real_type(-15.8)), swl::PolygonROI::real_type(0.01)));
 	}
 };
 

@@ -17,7 +17,6 @@
 				</Compiler>
 				<Linker>
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -32,7 +31,6 @@
 				<Linker>
 					<Add option="-s" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
@@ -40,7 +38,12 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="../../inc" />
+			<Add directory="/usr/local/include" />
 		</Compiler>
+		<Linker>
+			<Add directory="../../lib" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

@@ -19,7 +19,6 @@
 					<Add library="swl_glutil_d" />
 					<Add library="swl_util_d" />
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -36,7 +35,6 @@
 					<Add library="swl_glutil" />
 					<Add library="swl_util" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
 				</Linker>
 			</Target>
 		</Build>
@@ -44,7 +42,12 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 			<Add directory="../../inc" />
+			<Add directory="/usr/local/include" />
 		</Compiler>
+		<Linker>
+			<Add directory="../../lib" />
+			<Add directory="/usr/local/lib" />
+		</Linker>
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

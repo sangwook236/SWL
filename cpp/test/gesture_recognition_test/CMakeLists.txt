@@ -15,14 +15,22 @@ if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 		swl_pattern_recognition_d
 		swl_rnd_util_d
 		swl_base_d
-		${OpenCV_LIBS}
+#		${OpenCV_LIBS}
+		opencv_video
+		opencv_imgproc
+		opencv_highgui
+		opencv_core
 	)
 else(CMAKE_BUILD_TYPE MATCHES DEBUG)
 	set(LIBS
 		swl_pattern_recognition
 		swl_rnd_util
 		swl_base
-		${OpenCV_LIBS}
+#		${OpenCV_LIBS}
+		opencv_video
+		opencv_imgproc
+		opencv_highgui
+		opencv_core
 	)
 endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
 

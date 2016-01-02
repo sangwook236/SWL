@@ -109,13 +109,13 @@ WindyGridWorldStateActionPair::State WindyGridWorldStateActionPair::State::takeA
 
 /*static*/ WindyGridWorldStateActionPair::action_type WindyGridWorldStateActionPair::getRandomAction()
 {
-	const double prob = double(std::rand() % (RAND_MAX + 1) + 1) / double(RAND_MAX + 1);
+	const double prob = double(std::rand() % RAND_MAX) / double(RAND_MAX);
 	return prob <= 0.25 ? Up : (prob <= 0.50 ? Down : (prob <= 0.75 ? Right : Left));
 }
 
 /*static*/ WindyGridWorldStateActionPair::action_type WindyGridWorldStateActionPair::getActionFromPolicy(const state_type &state, const std::map<const WindyGridWorldStateActionPair, double> &Q, const policy_type &policy, const double epsilon)
 {
-	const double prob = double(std::rand() % (RAND_MAX + 1) + 1) / double(RAND_MAX + 1);
+	const double prob = double(std::rand() % RAND_MAX) / double(RAND_MAX);
 
 	switch (policy)
 	{
