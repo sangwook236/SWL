@@ -87,27 +87,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="..\..\inc\swl\pattern_recognition\ExportPatternRecognition.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureClassifierByHistogram.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\GestureType.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\IGestureClassifier.h" />
     <ClInclude Include="..\..\inc\swl\pattern_recognition\MotionSegmenter.h" />
     <ClInclude Include="HistogramGenerator.h" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="GestureClassifierByHistogram.cpp" />
     <ClCompile Include="GestureType.cpp" />
     <ClCompile Include="HistogramGenerator.cpp" />
     <ClCompile Include="MotionSegmenter.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

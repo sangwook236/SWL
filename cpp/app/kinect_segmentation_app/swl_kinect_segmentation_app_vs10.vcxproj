@@ -83,9 +83,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="DepthGuidedMap.h" />
     <ClInclude Include="efficient_graph_based_image_segmentation_lib\convolve.h" />
     <ClInclude Include="efficient_graph_based_image_segmentation_lib\disjoint-set.h" />
@@ -104,8 +101,6 @@
     <ClInclude Include="gslic_lib\cudaUtil.h" />
     <ClInclude Include="gslic_lib\FastImgSeg.h" />
     <ClInclude Include="NonMaximaSuppression.hpp" />
-    <ClInclude Include="stdafx.h" />
-    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="EfficientGraphBasedImageSegmentation.cpp" />
@@ -120,10 +115,6 @@
     <ClCompile Include="SegmentationUsingGrabCut.cpp" />
     <ClCompile Include="SegmentationUsingGraphCut.cpp" />
     <ClCompile Include="DepthGuidedMap.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Util.cpp" />
   </ItemGroup>

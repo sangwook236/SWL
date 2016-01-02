@@ -191,6 +191,7 @@ if(USE_GSL)
 endif(USE_GSL)
 if(USE_OPENCV2)
 	# ${SWL_CPP_HOME}/cmake/FindOpenCV2cmake
+	# hints : OpenCV2_ROOT_DIR
 	# variables : OpenCV_FOUND, OpenCV_VERSION_MAJOR, OpenCV_VERSION_MINOR, OpenCV_VERSION_PATCH, OpenCV_INCLUDE_DIRS, OpenCV_LIBS, OpenCV_LIB_DIR
 	find_package(OpenCV2 2.4.0 REQUIRED)
 	include_directories(${OpenCV_INCLUDE_DIRS})

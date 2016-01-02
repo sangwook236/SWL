@@ -93,20 +93,12 @@
   <ItemGroup>
     <ClCompile Include="CliffWalkingSystem.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="stdafx.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="td_learning.cpp" />
     <ClCompile Include="WindyGridWorldSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CliffWalkingSystem.h" />
-    <ClInclude Include="stdafx.h" />
     <ClInclude Include="WindyGridWorldSystem.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\base\swl_base_vs10.vcxproj">
