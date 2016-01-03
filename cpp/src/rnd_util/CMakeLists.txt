@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_rnd_util_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_rnd_util)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_rnd_util)
 
 set(SRCS
 	ArHmmWithMultivariateNormalMixtureObservations.cpp
@@ -45,23 +41,13 @@ set(SRCS
 	UnscentedKalmanFilterWithAdditiveNoise.cpp
 	VonMisesMixtureModel.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math_d
-		swl_base_d
-		${OpenCV_LIBS}
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math
-		swl_base
-		${OpenCV_LIBS}
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_math
+	swl_base
+	${OpenCV2_LIBRARIES}
+	${GSL_LIBRARIES}
+	${LAPACK_LIBRARIES}
+)
 
 add_definitions(-DSWL_RND_UTIL_EXPORT)
 

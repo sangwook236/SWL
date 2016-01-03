@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.4)
 ##
 ## Add path for custom modules.
 ##
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 
 ##
 ## Set package information.
@@ -20,7 +20,7 @@ set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 ##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
 ##
 if(APPLE)
-	message(STATUS "<--- SWL-C++ ---> Platform: Apple")
+	message(STATUS "[-- SWL-C++ --] Platform: Apple")
 
 	if(POLICY CMP0042)
 		cmake_policy(SET CMP0042 NEW)
@@ -31,25 +31,25 @@ if(APPLE)
 	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")  # for Mac OS X.
 	endif()
 elseif(CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: Cygwin")
+	message(STATUS "[-- SWL-C++ --] Platform: Cygwin")
 elseif(MSYS)
-	message(STATUS "<--- SWL-C++ ---> Platform: MSYS")
+	message(STATUS "[-- SWL-C++ --] Platform: MSYS")
 elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: Unix")
+	message(STATUS "[-- SWL-C++ --] Platform: Unix")
 
 	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")  # for Linux.
 	endif()
 elseif(WIN32 AND NOT CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: WIN32")
+	message(STATUS "[-- SWL-C++ --] Platform: WIN32")
 elseif(MINGW)
-	message(STATUS "<--- SWL-C++ ---> Platform: MinGW")
+	message(STATUS "[-- SWL-C++ --] Platform: MinGW")
 elseif(BORLAND)
-	message(STATUS "<--- SWL-C++ ---> Platform: Borland")
+	message(STATUS "[-- SWL-C++ --] Platform: Borland")
 elseif(WATCOM)
-	message(STATUS "<--- SWL-C++ ---> Platform: Watcom")
+	message(STATUS "[-- SWL-C++ --] Platform: Watcom")
 elseif(MSVC)
-	message(STATUS "<--- SWL-C++ ---> Platform: MSVC")
-	
+	message(STATUS "[-- SWL-C++ --] Platform: MSVC")
+
 #	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif()
 
@@ -57,7 +57,7 @@ endif()
 ## Set compiler specific options.
 ##
 if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-	message(STATUS "<--- SWL-C++ ---> Compiler: Clang")
+	message(STATUS "[-- SWL-C++ --] Compiler: Clang")
 
 	## Explicitly specify standard c++ library.
 #	set(CLANG_LINK_FLAGS "-stdlib=libstdc++")
@@ -66,11 +66,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
 	add_definitions(${CLANG_LINK_FLAGS})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-	message(STATUS "<--- SWL-C++ ---> Compiler: GNU")
+	message(STATUS "[-- SWL-C++ --] Compiler: GNU")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES Intel)
-	message(STATUS "<--- SWL-C++ ---> Compiler: Intel")
+	message(STATUS "[-- SWL-C++ --] Compiler: Intel")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-	message(STATUS "<--- SWL-C++ ---> Compiler: MSVC")
+	message(STATUS "[-- SWL-C++ --] Compiler: MSVC")
 
 	set(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
 #	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
@@ -81,6 +81,36 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
 #	set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
 #	set(CMAKE_CXX_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
 #	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
+endif()
+
+##
+## Set build types: None, Debug, Release, MinSizeRel, and RelWithDebInfo
+##	CMAKE_BUILD_TYPE, CMAKE_CONFIGURATION_TYPES
+##
+##	if a command 'cmake -DCMAKE_BUILD_TYPE=Release ..' is executed
+##		CMAKE_BUILD_TYPE=Release
+##	else if a command 'cmake -DCMAKE_BUILD_TYPE=Debug ..' is executed
+##		CMAKE_BUILD_TYPE=Debug
+##	else
+##		CMAKE_BUILD_TYPE=
+##
+message(STATUS "[-- SWL-C++ --] Build: ${CMAKE_BUILD_TYPE}")
+set(CMAKE_DEBUG_POSTFIX _d)  # The CMAKE_DEBUG_POSTFIX variable only affects library targets
+
+##
+## Set binary directories.
+##
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+if("${CMAKE_GENERATOR}" STRGREATER "Visual Studio")
+	foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
+	    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+	    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
+	    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+	    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+	endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
 endif()
 
 ##
@@ -117,6 +147,8 @@ set(USE_EIGEN ON)
 
 #option(USE_GSL "GNU Scientific Library (GSL)" ON)
 set(USE_GSL ON)
+#option(USE_OPENCV "Open Source Computer Vision (OpenCV)" OFF)
+#set(USE_OPENCV OFF)
 #option(USE_OPENCV2 "Open Source Computer Vision (OpenCV) ver 2" ON)
 set(USE_OPENCV2 ON)
 
@@ -124,6 +156,7 @@ set(USE_OPENCV2 ON)
 set(USE_FFTW OFF)
 #option(USE_PCL "Point Cloud Library (PCL)" OFF)
 set(USE_PCL OFF)
+
 option(USE_CUDA  "Compute Unified Device Architecture (CUDA) - a parallel computing platform and programming model invented by NVIDIA" OFF)
 #set(USE_CUDA OFF)
 
@@ -154,14 +187,14 @@ if(USE_THREAD)
 	find_package(Threads REQUIRED)  # target_link_libraries(myexe ${CMAKE_THREAD_LIBS_INIT})
 
 	if(CMAKE_USE_SPROC_INIT)
-		message(STATUS "<--- SWL-C++ ---> Thread: sproc")
+		message(STATUS "[-- SWL-C++ --] Thread: sproc")
 	elseif(CMAKE_USE_WIN32_THREADS_INIT)
-		message(STATUS "<--- SWL-C++ ---> Thread: Win32 Threads")
+		message(STATUS "[-- SWL-C++ --] Thread: Win32 Threads")
 	elseif(CMAKE_USE_PTHREADS_INIT)
-		message(STATUS "<--- SWL-C++ ---> Thread: pthreads")
+		message(STATUS "[-- SWL-C++ --] Thread: pthreads")
 		add_definitions(-D_REENTRANT)
 	elseif(CMAKE_HP_PTHREADS_INIT)
-		message(STATUS "<--- SWL-C++ ---> Thread: HP pthreads")
+		message(STATUS "[-- SWL-C++ --] Thread: HP pthreads")
 	endif()
 endif(USE_THREAD)
 
@@ -282,14 +315,20 @@ if(USE_GSL)
 	find_package(GSL REQUIRED)
 	include_directories(${GSL_INCLUDE_DIRS})
 endif(USE_GSL)
+if(USE_OPENCV)
+	# ${SWL_CPP_HOME}/cmake/FindOpenCVcmake
+	# variables : OpenCV_FOUND, OpenCV_VERSION_MAJOR, OpenCV_VERSION_MINOR, OpenCV_VERSION_PATCH, OpenCV_INCLUDE_DIRS, OpenCV_LIBS, OpenCV_LIB_DIR
+	find_package(OpenCV REQUIRED)
+	include_directories(${OpenCV_INCLUDE_DIRS})
+endif(USE_OPENCV)
 if(USE_OPENCV2)
 	# ${SWL_CPP_HOME}/cmake/FindOpenCV2cmake
 	# hints : OpenCV2_ROOT_DIR
-	# variables : OpenCV_FOUND, OpenCV_VERSION_MAJOR, OpenCV_VERSION_MINOR, OpenCV_VERSION_PATCH, OpenCV_INCLUDE_DIRS, OpenCV_LIBS, OpenCV_LIB_DIR
+	# variables : OpenCV2_FOUND, OpenCV2_INCLUDE_DIRS, OpenCV2_LIBRARIES
 	find_package(OpenCV2 2.4.0 REQUIRED)
-	include_directories(${OpenCV_INCLUDE_DIRS})
+	include_directories(${OpenCV2_INCLUDE_DIRS})
 
-#	message(STATUS "<--- SWL-C++ ---> OpenCV: ${OpenCV_LIBS}")
+#	message(STATUS "[-- SWL-C++ --] OpenCV: ${OpenCV2_LIBRARIES}")
 endif(USE_OPENCV2)
 
 if(USE_FFTW)
@@ -304,10 +343,13 @@ if(USE_PCL)
 	link_directories(${PCL_LIBRARY_DIRS})
 	add_definitions(${PCL_DEFINITIONS})
 endif(USE_PCL)
+
 if(USE_CUDA)
 	# variables : CUDA_FOUND, CUDA_VERSION, CUDA_VERSION_STRING, CUDA_TOOLKIT_ROOT_DIR, CUDA_SDK_ROOT_DIR, CUDA_INCLUDE_DIRS, CUDA_LIBRARIES, CUDA_CUFFT_LIBRARIES, CUDA_CUBLAS_LIBRARIES, CUDA_cupti_LIBRARY, CUDA_curand_LIBRARY, CUDA_cusparse_LIBRARY, CUDA_npp_LIBRARY, CUDA_nppc_LIBRARY, CUDA_nppi_LIBRARY, CUDA_npps_LIBRARY, CUDA_nvcuvenc_LIBRARY, CUDA_nvcuvid_LIBRARY
 	find_package(CUDA)
 	include_directories(${CUDA_INCLUDE_DIRS})
+
+#	message(STATUS "[-- SWL-C++ --] CUDA: ${CUDA_LIBRARIES}")
 endif(USE_CUDA)
 
 if(USE_QT4)
@@ -328,24 +370,6 @@ if(USE_LYX)
 	find_package(LyX)
 	set(LYX_EXECUTABLE lyx)
 endif(USE_LYX)
-
-##
-## Set build mode.
-##
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-#	message(STATUS "<--- SWL-C++ ---> Build: Debug")
-#elseif(CMAKE_BUILD_TYPE MATCHES RELEASE)
-else()
-#	message(STATUS "<--- SWL-C++ ---> Build: Release")
-endif()
-set(CMAKE_DEBUG_POSTFIX _d)
-
-##
-## Set binary directories.
-##
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 ##
 ## Add include and link paths.

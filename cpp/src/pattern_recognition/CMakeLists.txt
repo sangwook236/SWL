@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_pattern_recognition_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_pattern_recognition)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_pattern_recognition)
 
 set(SRCS
 	GestureClassifierByHistogram.cpp
@@ -10,19 +6,11 @@ set(SRCS
 	HistogramGenerator.cpp
 	MotionSegmenter.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_rnd_util_d
-		swl_base_d
-		${OpenCV_LIBS}
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_rnd_util
-		swl_base
-		${OpenCV_LIBS}
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_rnd_util
+	swl_base
+	${OpenCV2_LIBRARIES}
+)
 
 add_definitions(-DSWL_PATTERN_RECOGNITION_EXPORT)
 

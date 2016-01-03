@@ -19,7 +19,7 @@ namespace swl {
 	return 0 == AfxSocketInit();
 }
 
-/*static*/ bool MfcSockClient::initialize()
+/*static*/ bool MfcSockClient::finalize()
 {
 	// do nothing
 	return true;

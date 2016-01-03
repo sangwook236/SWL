@@ -5,6 +5,7 @@
 #include "gslic_lib/FastImgSeg.h"
 #include <boost/smart_ptr.hpp>
 #include <boost/timer/timer.hpp>
+#include <iterator>
 
 
 #if defined(_WIN32) || defined(WIN32)

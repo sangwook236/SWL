@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_rnd_util_test_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_rnd_util_test)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_rnd_util_test)
 
 set(SRCS
 	main.cpp
@@ -30,35 +26,16 @@ set(SRCS
 	UnscentedKalmanFilterWithAdditiveNoiseTest.cpp
 	VonMisesMixtureModelTest.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_rnd_util_d
-		swl_math_d
-		swl_base_d
-#		${OpenCV_LIBS}
-		opencv_imgproc
-		opencv_highgui
-		opencv_core
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-		${Boost_TIMER_LIBRARY}
-		${Boost_SYSTEM_LIBRARY}
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_rnd_util
-		swl_math
-		swl_base
-#		${OpenCV_LIBS}
-		opencv_imgproc
-		opencv_highgui
-		opencv_core
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-		${Boost_TIMER_LIBRARY}
-		${Boost_SYSTEM_LIBRARY}
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_rnd_util
+	swl_math
+	swl_base
+	${OpenCV2_LIBRARIES}
+	${GSL_LIBRARIES}
+	${LAPACK_LIBRARIES}
+	${Boost_TIMER_LIBRARY}
+	${Boost_SYSTEM_LIBRARY}
+)
 
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})

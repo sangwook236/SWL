@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_graphics_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_graphics)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_graphics)
 
 set(SRCS
 	Appearance.cpp
@@ -14,17 +10,10 @@ set(SRCS
 	PickableInterface.cpp
 	Shape.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math_d
-		swl_base_d
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math
-		swl_base
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_math
+	swl_base
+)
 
 add_definitions(-DSWL_GRAPHICS_EXPORT)
 
