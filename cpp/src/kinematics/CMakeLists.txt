@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_kinematics_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_kinematics)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_kinematics)
 
 set(SRCS
 	ArcPathPlanner.cpp
@@ -26,17 +22,10 @@ set(SRCS
 	ScrewAxis.cpp
 	StanfordArmKinematics.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math_d
-		swl_base_d
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_math
-		swl_base
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_math
+	swl_base
+)
 
 add_definitions(-DSWL_KINEMATICS_EXPORT)
 

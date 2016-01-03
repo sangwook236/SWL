@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_cppunit_mfc_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_cppunit_mfc)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_cppunit_mfc)
 
 set(SRCS
 	stdafx.cpp

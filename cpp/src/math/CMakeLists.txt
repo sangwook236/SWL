@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_math_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_math)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_math)
 
 set(SRCS
 	ConvexHull.cpp
@@ -17,19 +13,11 @@ set(SRCS
 	Rotation.cpp
 	Statistic.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_base_d
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_base
-		${GSL_LIBRARIES}
-		${LAPACK_LIBRARIES}
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_base
+	${GSL_LIBRARIES}
+	${LAPACK_LIBRARIES}
+)
 
 add_definitions(-DSWL_MATH_EXPORT)
 

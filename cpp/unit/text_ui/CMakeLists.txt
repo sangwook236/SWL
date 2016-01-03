@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_unit_test_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_unit_test)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_unit_test)
 
 set(SRCS
 	TextUiUnitTestMain.cpp

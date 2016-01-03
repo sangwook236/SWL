@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_base_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_base)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_base)
 
 set(SRCS
 	INotifier.cpp
@@ -11,15 +7,9 @@ set(SRCS
 	ReturnException.cpp
 	String.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		${LOG4CXX_LIBRARIES}
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		${LOG4CXX_LIBRARIES}
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	${LOG4CXX_LIBRARIES}
+)
 
 add_definitions(-DSWL_BASE_EXPORT)
 

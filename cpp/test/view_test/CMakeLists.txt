@@ -1,27 +1,14 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_view_test_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_view_test)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_view_test)
 
 set(SRCS
 	main.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_view_d
-		swl_util_d
-		swl_math_d
-		swl_base_d
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_view
-		swl_util
-		swl_math
-		swl_base
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_view
+	swl_util
+	swl_math
+	swl_base
+)
 
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})

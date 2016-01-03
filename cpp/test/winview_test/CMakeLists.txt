@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_winview_test_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_winview_test)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_winview_test)
 
 set(SRCS
 	ChildFrm.cpp
@@ -15,21 +11,12 @@ set(SRCS
 	WinViewTestDoc.cpp
 	WinViewTestView.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_winview_d
-		swl_view_d
-		swl_base_d
-		gdiplus
-	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_winview
-		swl_view
-		swl_base
-		gdiplus
-	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(LIBS
+	swl_winview
+	swl_view
+	swl_base
+	gdiplus
+)
 
 #add_definitions(-D_AFXDLL)
 

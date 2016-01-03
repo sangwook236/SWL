@@ -1,8 +1,4 @@
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_machine_learning_test_d)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(TARGET swl_machine_learning_test)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+set(TARGET swl_machine_learning_test)
 
 set(SRCS
 	main.cpp
@@ -10,21 +6,24 @@ set(SRCS
 	td_learning.cpp
 	WindyGridWorldSystem.cpp
 )
-if(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_machine_learning_d
-		swl_posixutil_d
-		swl_math_d
-		swl_base_d
+set(PLATFORM_INDEPENDENT_LIBS
+	swl_machine_learning
+	swl_math
+	swl_base
+)
+if(WIN32 AND NOT CYGWIN)
+	set(PLATFORM_DEPENDENT_LIBS
+		swl_winutil
 	)
-else(CMAKE_BUILD_TYPE MATCHES DEBUG)
-	set(LIBS
-		swl_machine_learning
+else(WIN32 AND NOT CYGWIN)
+	set(PLATFORM_DEPENDENT_LIBS
 		swl_posixutil
-		swl_math
-		swl_base
 	)
-endif(CMAKE_BUILD_TYPE MATCHES DEBUG)
+endif(WIN32 AND NOT CYGWIN)
+set(LIBS
+	${PLATFORM_DEPENDENT_LIBS}
+	${PLATFORM_INDEPENDENT_LIBS}
+)
 
 add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})
