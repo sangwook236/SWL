@@ -285,18 +285,18 @@ ViewMatrix3 ViewMatrix3::operator*(const ViewMatrix3& rhs) const
 
 	mat[0] = tmat_[0] * rhs.tmat_[0] + tmat_[1] * rhs.tmat_[4] + tmat_[2] * rhs.tmat_[8];
 	mat[1] = tmat_[0] * rhs.tmat_[1] + tmat_[1] * rhs.tmat_[5] + tmat_[2] * rhs.tmat_[9];
-	mat[3] = tmat_[0] * rhs.tmat_[2] + tmat_[1] * rhs.tmat_[6] + tmat_[2] * rhs.tmat_[10];
-	mat[4] = tmat_[0] * rhs.tmat_[3] + tmat_[1] * rhs.tmat_[7] + tmat_[2] * rhs.tmat_[11] + tmat_[3];
+	mat[2] = tmat_[0] * rhs.tmat_[2] + tmat_[1] * rhs.tmat_[6] + tmat_[2] * rhs.tmat_[10];
+	mat[3] = tmat_[0] * rhs.tmat_[3] + tmat_[1] * rhs.tmat_[7] + tmat_[2] * rhs.tmat_[11] + tmat_[3];
 
-	mat[5] = tmat_[4] * rhs.tmat_[0] + tmat_[5] * rhs.tmat_[4] + tmat_[6] * rhs.tmat_[8];
-	mat[6] = tmat_[4] * rhs.tmat_[1] + tmat_[5] * rhs.tmat_[5] + tmat_[6] * rhs.tmat_[9];
-	mat[7] = tmat_[4] * rhs.tmat_[2] + tmat_[5] * rhs.tmat_[6] + tmat_[6] * rhs.tmat_[10];
-	mat[8] = tmat_[4] * rhs.tmat_[3] + tmat_[5] * rhs.tmat_[7] + tmat_[6] * rhs.tmat_[11] + tmat_[7];
+	mat[4] = tmat_[4] * rhs.tmat_[0] + tmat_[5] * rhs.tmat_[4] + tmat_[6] * rhs.tmat_[8];
+	mat[5] = tmat_[4] * rhs.tmat_[1] + tmat_[5] * rhs.tmat_[5] + tmat_[6] * rhs.tmat_[9];
+	mat[6] = tmat_[4] * rhs.tmat_[2] + tmat_[5] * rhs.tmat_[6] + tmat_[6] * rhs.tmat_[10];
+	mat[7] = tmat_[4] * rhs.tmat_[3] + tmat_[5] * rhs.tmat_[7] + tmat_[6] * rhs.tmat_[11] + tmat_[7];
 
-	mat[9] = tmat_[8] * rhs.tmat_[0] + tmat_[9] * rhs.tmat_[4] + tmat_[10] * rhs.tmat_[8];
-	mat[10] = tmat_[8] * rhs.tmat_[1] + tmat_[9] * rhs.tmat_[5] + tmat_[10] * rhs.tmat_[9];
-	mat[11] = tmat_[8] * rhs.tmat_[2] + tmat_[9] * rhs.tmat_[6] + tmat_[10] * rhs.tmat_[10];
-	mat[12] = tmat_[8] * rhs.tmat_[3] + tmat_[9] * rhs.tmat_[7] + tmat_[10] * rhs.tmat_[11] + tmat_[11];
+	mat[8] = tmat_[8] * rhs.tmat_[0] + tmat_[9] * rhs.tmat_[4] + tmat_[10] * rhs.tmat_[8];
+	mat[9] = tmat_[8] * rhs.tmat_[1] + tmat_[9] * rhs.tmat_[5] + tmat_[10] * rhs.tmat_[9];
+	mat[10] = tmat_[8] * rhs.tmat_[2] + tmat_[9] * rhs.tmat_[6] + tmat_[10] * rhs.tmat_[10];
+	mat[11] = tmat_[8] * rhs.tmat_[3] + tmat_[9] * rhs.tmat_[7] + tmat_[10] * rhs.tmat_[11] + tmat_[11];
 
 	return ViewMatrix3(mat);
 }
