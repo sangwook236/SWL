@@ -48,6 +48,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-fPIC" />
+			<Add option="-fopenmp" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
