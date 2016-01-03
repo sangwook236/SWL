@@ -292,7 +292,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 		assert(Ns[r] > P_);
 
 		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &zetar = zetas[r];
+		//const dmatrix_type &zetar = zetas[r];
 		dmatrix_type &autocovariancer = autocovariances[r];
 
 		// calculate autocovariance functions.
@@ -1004,7 +1004,7 @@ void ArHmmWithUnivariateNormalMixtureObservations::doEstimateObservationDensityP
 		assert(Ns[r] > P_);
 
 		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &zetar = zetas[r];
+		//const dmatrix_type &zetar = zetas[r];
 		dmatrix_type &autocovariancer = autocovariances[r];
 
 		// calculate autocovariance functions.
@@ -1120,7 +1120,7 @@ double ArHmmWithUnivariateNormalMixtureObservations::doEvaluateEmissionMixtureCo
 
 	double M = 0.0;
 
-	const dvector_type &coeff = coeffs_[state][component];
+	//const dvector_type &coeff = coeffs_[state][component];
 	for (size_t p = 0; p < P_; ++p)
 	{
 		// FIXME [check] > is it correct?

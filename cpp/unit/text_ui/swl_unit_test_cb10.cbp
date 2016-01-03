@@ -44,7 +44,6 @@
 			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
-			<Add option="-fpermissive" />
 			<Add option="-D__SWL_UNIT_TEST__USE_GOOGLE_TEST" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />

@@ -162,7 +162,7 @@ void ArHmmWithUnivariateNormalObservations::doEstimateObservationDensityParamete
 		assert(Ns[r] > P_);
 
 		const dmatrix_type &observationr = observationSequences[r];
-		const dmatrix_type &gammar = gammas[r];
+		//const dmatrix_type &gammar = gammas[r];
 		dmatrix_type &autocovariancer = autocovariances[r];
 
 		// calculate autocovariance functions.
@@ -334,7 +334,7 @@ double ArHmmWithUnivariateNormalObservations::doEvaluateEmissionProbability(cons
 
 	double M = 0.0;
 
-	const dvector_type &coeff = coeffs_[state];
+	//const dvector_type &coeff = coeffs_[state];
 	for (size_t p = 0; p < P_; ++p)
 	{
 		// FIXME [check] > is it correct?

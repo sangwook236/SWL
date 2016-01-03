@@ -185,7 +185,7 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 			assert(Ns[r] > P_);
 
 			const dmatrix_type &observationr = observationSequences[r];
-			const dmatrix_type &gammar = gammas[r];
+			//const dmatrix_type &gammar = gammas[r];
 			dmatrix_type &autocovariancer = autocovariances[r];
 
 			const dvector_type &observationr_d = boost::numeric::ublas::matrix_column<const dmatrix_type>(observationr, d);
@@ -374,7 +374,7 @@ double ArHmmWithMultivariateNormalObservations::doEvaluateEmissionProbability(co
 	dvector_type M(D_, 0.0);
 	dmatrix_type S(D_, D_, 0.0);
 
-	const dmatrix_type &coeff = coeffs_[state];
+	//const dmatrix_type &coeff = coeffs_[state];
 	const dvector_type &sigma2 = sigmas_[state];
 	for (size_t d = 0; d < D_; ++d)
 	{

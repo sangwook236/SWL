@@ -765,7 +765,7 @@ size_t GestureClassifierByHistogram::matchHistogramByGestureIdPattern(const boos
 	cv::MatND hist = cv::MatND::zeros(local::gesturePatternHistogramBinNum, 1, CV_32F);
 	float *binPtr = (float *)hist.data;
 	for (boost::circular_buffer<size_t>::const_iterator it = matchedHistogramIndexes.begin(); it != matchedHistogramIndexes.end(); ++it)
-		if (*it != -1) ++(binPtr[*it]);
+		if (*it != (size_t)-1) ++(binPtr[*it]);
 #endif
 
 	// match histogram

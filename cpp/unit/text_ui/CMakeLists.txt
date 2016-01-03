@@ -22,14 +22,12 @@ elseif(GTEST_FOUND)
 else()
 	add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)
 	set(TEST_LIBS
-#		${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
-		boost_unit_test_framework
+		${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}
 	)
 endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 	add_compile_options(-std=c++11)
-	add_compile_options(-fpermissive)
 endif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
 
 add_executable(${TARGET} ${SRCS})

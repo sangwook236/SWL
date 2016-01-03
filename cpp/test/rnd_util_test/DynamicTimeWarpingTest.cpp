@@ -130,7 +130,7 @@ void THoG_example()
 		}
 
 		//
-		const std::size_t gesture_id = std::size_t(data[0][0]);
+		//const std::size_t gesture_id = std::size_t(data[0][0]);
 		const std::size_t num_features = std::size_t(data[1][0]);
 		const std::size_t num_frames = std::size_t(data[1][1]);
 
@@ -173,7 +173,7 @@ void THoG_example()
 			std::vector<cv::Mat> HoG_list2(N, cv::Mat(THoG_list[j].rows, 1, CV_32FC1));
 			for (int k = 0; k < THoG_list[j].cols - int(N); ++k)
 			{
-				for (int l = 0; l < N; ++l)
+				for (std::size_t l = 0; l < N; ++l)
 				{
 					THoG_list[j].col(k + l).copyTo(HoG_list2[l]);
 

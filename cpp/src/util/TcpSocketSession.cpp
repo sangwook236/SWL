@@ -22,7 +22,7 @@ namespace swl {
 
 TcpSocketSession::TcpSocketSession(boost::asio::ip::tcp::socket &socket)
 : socket_(socket), state_(RECEIVING),
-  receiveBuffer_(), sendBuffer_()
+  sendBuffer_(), receiveBuffer_(), sendMsg_(), receiveMsg_()
 {
 }
 

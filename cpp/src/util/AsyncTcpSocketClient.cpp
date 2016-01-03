@@ -27,7 +27,7 @@ AsyncTcpSocketClient::AsyncTcpSocketClient(boost::asio::io_service &ioService, c
 AsyncTcpSocketClient::AsyncTcpSocketClient(boost::asio::io_service &ioService, const std::string &hostName, const std::string &serviceName)
 #endif
 : socket_(ioService), isActive_(false),
-  receiveBuffer_(), sendBuffer_(), sentMsgLength_(0)
+  sendBuffer_(), receiveBuffer_(), sendMsg_(), receiveMsg_(), sentMsgLength_(0)
 {
 	boost::asio::ip::tcp::resolver resolver(socket_.get_io_service());
 #if defined(_UNICODE) || defined(UNICODE)

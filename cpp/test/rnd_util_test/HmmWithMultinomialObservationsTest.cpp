@@ -592,7 +592,7 @@ void ml_learning_by_em()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	const size_t K = ddhmm->getStateDim();
+	//const size_t K = ddhmm->getStateDim();
 
 	// for a single observation sequence.
 	{
@@ -812,7 +812,7 @@ void map_learning_by_em_using_conjugate_prior()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	const size_t K = ddhmm->getStateDim();
+	//const size_t K = ddhmm->getStateDim();
 
 	// for a single observation sequence.
 	{
@@ -1022,7 +1022,7 @@ void map_learning_by_em_using_entropic_prior()
 	else
 		throw std::runtime_error("incorrect initialization mode");
 
-	const size_t K = ddhmm->getStateDim();
+	//const size_t K = ddhmm->getStateDim();
 
 	// for a single observation sequence.
 	{

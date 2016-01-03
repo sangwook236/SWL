@@ -35,8 +35,8 @@ private:
 	static const double R;
 
 public:
-	SimpleLinearSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
+	SimpleLinearSystem(const std::size_t stateDim, const std::size_t inputDim, const std::size_t outputDim)
+	: base_type(stateDim, inputDim, outputDim, (std::size_t)-1, (std::size_t)-1),
 	  Phi_(NULL), C_(NULL), /*W_(NULL), V_(NULL),*/ Qd_(NULL), Rd_(NULL), Bu_(NULL), Du_(NULL), f_eval_(NULL), h_eval_(NULL), y_tilde_(NULL)
 	{
 		// Phi = exp(A * Ts) = [ 1 ]
@@ -107,37 +107,37 @@ private:
 
 public:
 	// the stochastic differential equation: f = f(k, x(k), u(k), w(k)) = Phi(k) * x(k) + Bd(k) * u(k) + W(k) * w(k)
-	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluatePlantEquation(const std::size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Phi = getStateTransitionMatrix(step, state);
 		gsl_vector_memcpy(f_eval_, Bu_);
 		gsl_blas_dgemv(CblasNoTrans, 1.0, Phi, state, 1.0, f_eval_);
 		return f_eval_;
 	}
-	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts) where A(k) = df(k, x(k), u(k), 0)/dx
-	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const std::size_t step, const gsl_vector *state) const  {  return Phi_;  }  // Phi(k) = exp(A(k) * Ts) where A(k) = df(k, x(k), u(k), 0)/dx
+	/*virtual*/ gsl_vector * getControlInput(const std::size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
+	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const std::size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
 	// the observation equation: h = h(k, x(k), u(k), v(k)) = Cd(k) * x(k) + Dd(k) * u(k) + V(k) * v(k)
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const std::size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		const gsl_matrix *Cd = getOutputMatrix(step, state);
 		gsl_vector_memcpy(h_eval_, Du_);
 		gsl_blas_dgemv(CblasNoTrans, 1.0, Cd, state, 1.0, h_eval_);
 		return h_eval_;
 	}
-	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) = dh(k, x(k), u(k), 0)/dx
-	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
+	/*virtual*/ gsl_matrix * getOutputMatrix(const std::size_t step, const gsl_vector *state) const  {  return C_;  }  // Cd(k) = dh(k, x(k), u(k), 0)/dx
+	/*virtual*/ gsl_vector * getMeasurementInput(const std::size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
+	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const std::size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
 
 	// noise covariance matrices
-	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
-	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
+	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const std::size_t step) const  {  return Qd_;  }  // Qd = W * Q * W^T, but not Q
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const std::size_t step) const  {  return Rd_;  }  // Rd = V * R * V^T, but not R
 
 	// actual measurement
-	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
+	gsl_vector * simulateMeasurement(const std::size_t step, const gsl_vector *state) const
 	{
 #if 1  // 1-based time step
 		if (1 == step) gsl_vector_set(y_tilde_, 0, 2.0);
@@ -193,8 +193,8 @@ private:
 	static const double Fd;  // driving force
 
 public:
-	LinearMassStringDamperSystem(const size_t stateDim, const size_t inputDim, const size_t outputDim)
-	: base_type(stateDim, inputDim, outputDim, (size_t)-1, (size_t)-1),
+	LinearMassStringDamperSystem(const std::size_t stateDim, const std::size_t inputDim, const std::size_t outputDim)
+	: base_type(stateDim, inputDim, outputDim, (std::size_t)-1, (std::size_t)-1),
 	  Phi_hat_(NULL), Cd_(NULL), /*W_(NULL), V_(NULL),*/ Qd_hat_(NULL), Rd_hat_(NULL), f_eval_(NULL), h_eval_(NULL), y_tilde_(NULL), driving_force_(NULL),
 	  Phi_true_(NULL), x_true_(NULL)
 	{
@@ -305,7 +305,7 @@ private:
 
 public:
 	// the stochastic differential equation: f = f(k, x(k), u(k), v(k))
-	/*virtual*/ gsl_vector * evaluatePlantEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluatePlantEquation(const std::size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		// update of true state w/o noise
 		gsl_vector *v = gsl_vector_alloc(stateDim_);
@@ -329,9 +329,9 @@ public:
 
 		return f_eval_;
 	}
-	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const size_t step, const gsl_vector *state) const  // Phi(k) = exp(A(k) * Ts) where A(k) = df(k, x(k), u(k), 0)/dx
+	/*virtual*/ gsl_matrix * getStateTransitionMatrix(const std::size_t step, const gsl_vector *state) const  // Phi(k) = exp(A(k) * Ts) where A(k) = df(k, x(k), u(k), 0)/dx
 	{
-		const double &x1 = gsl_vector_get(state, 0);
+		//const double &x1 = gsl_vector_get(state, 0);
 		const double &x2 = gsl_vector_get(state, 1);
 		const double &x3 = gsl_vector_get(state, 2);
 
@@ -345,28 +345,28 @@ public:
 		gsl_matrix_set(Phi_hat_, 2, 2, 1.0);
 		return Phi_hat_;
 	}
-	/*virtual*/ gsl_vector * getControlInput(const size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
+	/*virtual*/ gsl_vector * getControlInput(const std::size_t step, const gsl_vector *state) const  // Bu(k) = Bd(k) * u(k)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
+	///*virtual*/ gsl_matrix * getProcessNoiseCouplingMatrix(const std::size_t step) const  {  return W_;  }  // W(k) = df(k, x(k), u(k), 0)/dw
 
 	// the observation equation: h = h(k, x(k), u(k), v(k))
-	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
+	/*virtual*/ gsl_vector * evaluateMeasurementEquation(const std::size_t step, const gsl_vector *state, const gsl_vector *input, const gsl_vector *noise) const
 	{
 		gsl_vector_set(h_eval_, 0, gsl_vector_get(state, 0));
 		return h_eval_;
 	}
-	/*virtual*/ gsl_matrix * getOutputMatrix(const size_t step, const gsl_vector *state) const  // Cd(k) = dh(k, x(k), u(k), 0)/dx
+	/*virtual*/ gsl_matrix * getOutputMatrix(const std::size_t step, const gsl_vector *state) const  // Cd(k) = dh(k, x(k), u(k), 0)/dx
 	{  return Cd_;  }
-	/*virtual*/ gsl_vector * getMeasurementInput(const size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
+	/*virtual*/ gsl_vector * getMeasurementInput(const std::size_t step, const gsl_vector *state) const  // Du(k) = D(k) * u(k) (D == Dd)
 	{  throw std::runtime_error("this function doesn't have to be called");  }
-	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
+	///*virtual*/ gsl_matrix * getMeasurementNoiseCouplingMatrix(const std::size_t step) const  {  return V_;  }  // V(k) = dh(k, x(k), u(k), 0)/dv
 
 	// noise covariance matrices
-	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const size_t step) const  {  return Qd_hat_;  }  // Qd = W * Q * W^T, but not Q
-	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const size_t step) const  {  return Rd_hat_;  }  // Rd = V * R * V^T, but not R
+	/*virtual*/ gsl_matrix * getProcessNoiseCovarianceMatrix(const std::size_t step) const  {  return Qd_hat_;  }  // Qd = W * Q * W^T, but not Q
+	/*virtual*/ gsl_matrix * getMeasurementNoiseCovarianceMatrix(const std::size_t step) const  {  return Rd_hat_;  }  // Rd = V * R * V^T, but not R
 
 	// actual measurement
-	gsl_vector * simulateMeasurement(const size_t step, const gsl_vector *state) const
+	gsl_vector * simulateMeasurement(const std::size_t step, const gsl_vector *state) const
 	{
 		// true state, but not estimated state
 		gsl_vector_set(y_tilde_, 0, gsl_vector_get(x_true_, 0));  // measurement (no noise)
@@ -405,9 +405,9 @@ private:
 
 void simple_system_extended_kalman_filter()
 {
-	const size_t stateDim = 1;
-	const size_t inputDim = 1;
-	const size_t outputDim = 1;
+	const std::size_t stateDim = 1;
+	const std::size_t inputDim = 1;
+	const std::size_t outputDim = 1;
 
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_matrix *P0 = gsl_matrix_alloc(stateDim, stateDim);
@@ -421,7 +421,7 @@ void simple_system_extended_kalman_filter()
 	gsl_matrix_free(P0);  P0 = NULL;
 
 	//
-	const size_t Nstep = 2;
+	const std::size_t Nstep = 2;
 	std::vector<double> state, gain, errVar;
 	state.reserve(Nstep * 2);
 	gain.reserve(Nstep);
@@ -430,7 +430,7 @@ void simple_system_extended_kalman_filter()
 #if 1
 	// method #1
 	// 1-based time step. 0-th time step is initial
-	size_t step = 0;
+	std::size_t step = 0;
 	while (step < Nstep)
 	{
 		// 0. initial estimates: x(0) & P(0)
@@ -470,7 +470,7 @@ void simple_system_extended_kalman_filter()
 #else
 	// method #2
 	// 0-based time step. 0-th time step is initial
-	size_t step = 0;
+	std::size_t step = 0;
 	while (step < Nstep)
 	{
 		// 0. initial estimates: x-(0) & P-(0)
@@ -523,9 +523,9 @@ void simple_system_extended_kalman_filter()
 
 void linear_mass_spring_damper_system_extended_kalman_filter()
 {
-	const size_t stateDim = 3;
-	const size_t inputDim = 1;
-	const size_t outputDim = 1;
+	const std::size_t stateDim = 3;
+	const std::size_t inputDim = 1;
+	const std::size_t outputDim = 1;
 
 	gsl_vector *x0 = gsl_vector_alloc(stateDim);
 	gsl_vector_set_zero(x0);
@@ -540,7 +540,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 	gsl_matrix_free(P0);  P0 = NULL;
 
 	//
-	const size_t Nstep = 100;
+	const std::size_t Nstep = 100;
 	std::vector<double> pos, vel, damp;
 	std::vector<double> posGain, velGain, dampGain;
 	std::vector<double> posErrVar, velErrVar, dampErrVar;
@@ -557,7 +557,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 #if 1
 	// method #1
 	// 1-based time step. 0-th time step is initial
-	size_t step = 0;
+	std::size_t step = 0;
 	while (step < Nstep)
 	{
 		// 0. initial estimates: x(0) & P(0)
@@ -607,7 +607,7 @@ void linear_mass_spring_damper_system_extended_kalman_filter()
 #else
 	// method #2
 	// 0-based time step. 0-th time step is initial
-	size_t step = 0;
+	std::size_t step = 0;
 	while (step < Nstep)
 	{
 		// 0. initial estimates: x-(0) & P-(0)

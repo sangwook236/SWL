@@ -99,8 +99,11 @@ private:
 		if (session_.isReadyToReceive() && !isReceiving_)
 		{
 			isReceiving_ = true;
-			//boost::shared_ptr<TcpSocketConnectionUsingSession<session_type> > pp = shared_from_this<TcpSocketConnectionUsingSession<session_type> >();
+#if defined(__GNUC__)
+			boost::shared_ptr<TcpSocketConnectionUsingSession<session_type> > pp = this->shared_from_this();
+#else
 			boost::shared_ptr<TcpSocketConnectionUsingSession<session_type> > pp = shared_from_this();
+#endif
 			socket_.async_read_some(
 				boost::asio::null_buffers(),
 				boost::bind(&TcpSocketConnectionUsingSession::completeReceiving, pp, boost::asio::placeholders::error)
@@ -113,7 +116,11 @@ private:
 			isSending_ = true;
 			socket_.async_write_some(
 				boost::asio::null_buffers(),
+#if defined(__GNUC__)
+				boost::bind(&TcpSocketConnectionUsingSession::completeSending, this->shared_from_this(), boost::asio::placeholders::error)
+#else
 				boost::bind(&TcpSocketConnectionUsingSession::completeSending, shared_from_this(), boost::asio::placeholders::error)
+#endif
 			);
 		}
 	}

@@ -26,7 +26,7 @@ namespace swl {
 /*static*/ bool HmmSegmenter::segmentByViterbiAlgorithm(const boost::scoped_ptr<CDHMM> &cdhmm, const dmatrix_type &observations, double &logProbability, std::size_t &startStateIndex, std::size_t &endStateIndex, uivector_type &states)
 {
 	const size_t K = cdhmm->getStateDim();  // the number of hidden states
-	const size_t D = cdhmm->getObservationDim();  // the number of observation symbols
+	//const size_t D = cdhmm->getObservationDim();  // the number of observation symbols
 	//const size_t D = observations.size2();  // the number of observation symbols
 	const size_t N = observations.size1();  // the length of observation sequence
 

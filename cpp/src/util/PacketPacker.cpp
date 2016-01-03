@@ -62,8 +62,8 @@ namespace swl {
 */
 
 PacketPacker::PacketPacker(const size_t packetSize, const bool isLittleEndian)
-: packetSize_(packetSize), isLittleEndian_(isLittleEndian),
-  dataBuf_()
+: isLittleEndian_(isLittleEndian), packetSize_(packetSize),
+  dataBuf_(), itCurr_()
 {
 }
 

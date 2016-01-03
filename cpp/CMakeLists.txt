@@ -16,6 +16,74 @@ set(PACKAGE_WEBSITE "https://github.com/sangwook236/sangwook-library")
 set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 
 ##
+## Set platform specific options.
+##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
+##
+if(APPLE)
+	message(STATUS "<--- SWL-C++ ---> Platform: Apple")
+
+	if(POLICY CMP0042)
+		cmake_policy(SET CMP0042 NEW)
+	endif()
+
+	link_directories(/opt/local/lib)
+
+	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")  # for Mac OS X.
+	endif()
+elseif(CYGWIN)
+	message(STATUS "<--- SWL-C++ ---> Platform: Cygwin")
+elseif(MSYS)
+	message(STATUS "<--- SWL-C++ ---> Platform: MSYS")
+elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
+	message(STATUS "<--- SWL-C++ ---> Platform: Unix")
+
+	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")  # for Linux.
+	endif()
+elseif(WIN32 AND NOT CYGWIN)
+	message(STATUS "<--- SWL-C++ ---> Platform: WIN32")
+elseif(MINGW)
+	message(STATUS "<--- SWL-C++ ---> Platform: MinGW")
+elseif(BORLAND)
+	message(STATUS "<--- SWL-C++ ---> Platform: Borland")
+elseif(WATCOM)
+	message(STATUS "<--- SWL-C++ ---> Platform: Watcom")
+elseif(MSVC)
+	message(STATUS "<--- SWL-C++ ---> Platform: MSVC")
+	
+#	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
+endif()
+
+##
+## Set compiler specific options.
+##
+if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
+	message(STATUS "<--- SWL-C++ ---> Compiler: Clang")
+
+	## Explicitly specify standard c++ library.
+#	set(CLANG_LINK_FLAGS "-stdlib=libstdc++")
+
+	## add_definitions() is needed to remove unknown warnings.
+	add_definitions(${CLANG_LINK_FLAGS})
+	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+	message(STATUS "<--- SWL-C++ ---> Compiler: GNU")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES Intel)
+	message(STATUS "<--- SWL-C++ ---> Compiler: Intel")
+elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
+	message(STATUS "<--- SWL-C++ ---> Compiler: MSVC")
+
+	set(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
+#	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
+#	set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
+#	set(CMAKE_C_FLAGS_f_INIT "/MD /O2 /Ob2 /D NDEBUG")
+#	set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
+#	set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
+#	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
+endif()
+
+##
 ## Set options.
 ##
 option(BUILD_SHARED_LIBS "Build shared libraries" ON)
@@ -115,8 +183,33 @@ if(USE_BOOST)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 
-#	message(STATUS "<--- SWL-C++ ---> Boost: ${Boost_THREAD_FOUND}")
-#	message(STATUS "<--- SWL-C++ ---> Boost: ${Boost_THREAD_LIBRARY}")
+	# FIXME [check] >>
+	if(Boost_FOUND)
+		if(NOT Boost_SYSTEM_FOUND AND "${Boost_SYSTEM_LIBRARY}" STREQUAL "")
+			set(Boost_SYSTEM_FOUND 1)
+			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+				set(Boost_SYSTEM_LIBRARY boost_system)
+			endif()
+		endif()
+		if(NOT Boost_THREAD_FOUND AND "${Boost_THREAD_LIBRARY}" STREQUAL "")
+			set(Boost_THREAD_FOUND 1)
+			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+				set(Boost_THREAD_LIBRARY boost_thread)
+			endif()
+		endif()
+		if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND AND "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}" STREQUAL "")
+			set(Boost_UNIT_TEST_FRAMEWORK_FOUND 1)
+			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+				set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
+			endif()
+		endif()
+		if(NOT Boost_TIMER_FOUND AND "${Boost_TIMER_LIBRARY}" STREQUAL "")
+			set(Boost_TIMER_FOUND 1)
+			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+				set(Boost_TIMER_LIBRARY boost_timer)
+			endif()
+		endif()
+	endif(Boost_FOUND)
 endif(USE_BOOST)
 
 if(USE_LOG4CXX)
@@ -235,74 +328,6 @@ if(USE_LYX)
 	find_package(LyX)
 	set(LYX_EXECUTABLE lyx)
 endif(USE_LYX)
-
-##
-## Set platform specific options.
-##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
-##
-if(APPLE)
-	message(STATUS "<--- SWL-C++ ---> Platform: Apple")
-
-	if(POLICY CMP0042)
-		cmake_policy(SET CMP0042 NEW)
-	endif()
-
-	link_directories(/opt/local/lib)
-
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")  # for Mac OS X.
-	endif()
-elseif(CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: Cygwin")
-elseif(MSYS)
-	message(STATUS "<--- SWL-C++ ---> Platform: MSYS")
-elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: Unix")
-
-	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")  # for Linux.
-	endif()
-elseif(WIN32 AND NOT CYGWIN)
-	message(STATUS "<--- SWL-C++ ---> Platform: WIN32")
-elseif(MINGW)
-	message(STATUS "<--- SWL-C++ ---> Platform: MinGW")
-elseif(BORLAND)
-	message(STATUS "<--- SWL-C++ ---> Platform: Borland")
-elseif(WATCOM)
-	message(STATUS "<--- SWL-C++ ---> Platform: Watcom")
-elseif(MSVC)
-	message(STATUS "<--- SWL-C++ ---> Platform: MSVC")
-	
-#	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
-endif()
-
-##
-## Set compiler specific options.
-##
-if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-	message(STATUS "<--- SWL-C++ ---> Compiler: Clang")
-
-	## Explicitly specify standard c++ library.
-#	set(CLANG_LINK_FLAGS "-stdlib=libstdc++")
-
-	## add_definitions() is needed to remove unknown warnings.
-	add_definitions(${CLANG_LINK_FLAGS})
-	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-	message(STATUS "<--- SWL-C++ ---> Compiler: GNU")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES Intel)
-	message(STATUS "<--- SWL-C++ ---> Compiler: Intel")
-elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-	message(STATUS "<--- SWL-C++ ---> Compiler: MSVC")
-
-	set(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
-#	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
-#	set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
-#	set(CMAKE_C_FLAGS_f_INIT "/MD /O2 /Ob2 /D NDEBUG")
-#	set(CMAKE_C_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
-#	set(CMAKE_CXX_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
-#	set(CMAKE_CXX_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
-#	set(CMAKE_CXX_FLAGS_RELEASE_INIT "/MD /O2 /Ob2 /D NDEBUG")
-#	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT "/MD /Zi /O2 /Ob1 /D NDEBUG")
-endif()
 
 ##
 ## Set build mode.

@@ -484,7 +484,7 @@ bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double>
 				if (0 != gsl_sf_lambert_Wm1_e(x, &Wm1e)) return false;
 				W = Wm1e.val;
 #endif
-				
+
 				// TODO [check] >> when W = 0, omega(k) = 0 ?
 				theta[k] = std::fabs(W) >= eps ? (-omega_pos[k] / W) : 0.0;
 			}
@@ -687,7 +687,7 @@ bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double>
 
 	double oldLambda = lambda;
 	double dLambda = std::numeric_limits<double>::max();
-	double oldLogLikelihood = 0.0, oldDLogLikelihood = 0.0, oldDLambda = 0.0;
+	double oldLogLikelihood = 0.0, oldDLogLikelihood = 0.0;//, oldDLambda = 0.0;
 	double sumTheta = 0.0;
 	std::vector<double> oldTheta(KK, 0.0);
 
@@ -706,7 +706,7 @@ bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double>
 			oldTheta.assign(theta.begin(), theta.end());
 			oldLogLikelihood = logLikelihood;
 			oldDLogLikelihood = dLogLikelihood;
-			oldDLambda = dLambda;
+			//oldDLambda = dLambda;
 
 			// Step theta (inverse fixpoint).
 			if (zIsZero)
@@ -767,7 +767,7 @@ bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double>
 				logLikelihood = oldLogLikelihood;
 				lambda = NPHI * lambda + PHI * oldLambda;
 				dLambda = lambda - oldLambda;
-				oldDLambda = std::numeric_limits<double>::max();
+				//oldDLambda = std::numeric_limits<double>::max();
 			}
 			else
 			{

@@ -22,8 +22,8 @@ namespace swl {
 
 TcpSocketConnection::TcpSocketConnection(boost::asio::io_service &ioService)
 : socket_(ioService),
-  receiveBuffer_(), sendBuffer_(), sentMsgLength_(0),
-  isReceiving_(false), isSending_(false)
+  sendBuffer_(), receiveBuffer_(), sendMsg_(), receiveMsg_(), sentMsgLength_(0),
+  isSending_(false), isReceiving_(false)
 {}
 
 TcpSocketConnection::~TcpSocketConnection()

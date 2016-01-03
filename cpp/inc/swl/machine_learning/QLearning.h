@@ -47,7 +47,7 @@ public:
 		size_t episode = 1;
 		while (true)
 		{
-			const size_t step = runSingleEpisoide(episode, policy, Q);
+			//const size_t step = runSingleEpisoide(episode, policy, Q);
 
 			//std::cout << "episode #" << episode << ": step = " << step << std::endl;
 			//if (0 == episode % 500)

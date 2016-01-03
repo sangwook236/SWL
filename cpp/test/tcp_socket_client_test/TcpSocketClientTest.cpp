@@ -71,7 +71,7 @@ struct tcp_socket_client_worker_thread_functor
 
 						std::vector<unsigned char> receiveMsg(sendingLen, '\0');
 
-						const std::size_t sentLen = client.send(&sendMsg[0], sendingLen);
+						//const std::size_t sentLen = client.send(&sendMsg[0], sendingLen);
 						std::cout << '\t' << boost::this_thread::get_id() << ">>>>> send: "; std::cout.write((char *)&sendMsg[0], (std::streamsize)sendingLen); std::cout << std::endl;
 						//if (sendingLen != sentLen)
 						//	throw std::runtime_error("send error: length mismatch");
@@ -298,7 +298,7 @@ void testAsyncTcpSocketClient()
 
 		std::cout << "start thread for TCP socket client" << std::endl;
 		// step 3
-		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService)); 
+		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService));
 		boost::scoped_ptr<boost::thread> clientWorkerThread(new boost::thread(boost::bind(&boost::asio::io_service::run, &ioService)));
 
 		idx = 0;
@@ -324,7 +324,7 @@ void testAsyncTcpSocketClient()
 				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
 				std::vector<unsigned char> receiveMsg;
 				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
-				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				//const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
 				client.send(sendMsg, sendingLen);
 				idx = 0;
 				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
@@ -354,7 +354,7 @@ void testAsyncTcpSocketClient()
 				const unsigned char sendMsg[] = "9876543210";
 				std::vector<unsigned char> receiveMsg;
 				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
-				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				//const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
 				client.send(sendMsg, sendingLen);
 				idx = 0;
 				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
@@ -415,7 +415,7 @@ void testAsyncTcpSocketClient()
 
 		std::cout << "start thread for TCP socket client" << std::endl;
 		// step 3
-		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService)); 
+		//boost::thread clientWorkerThread(boost::bind(&boost::asio::io_service::run, &ioService));
 		boost::scoped_ptr<boost::thread> clientWorkerThread(new boost::thread(boost::bind(&boost::asio::io_service::run, &ioService)));
 
 		idx = 0;
@@ -441,7 +441,7 @@ void testAsyncTcpSocketClient()
 				const unsigned char sendMsg[] = "abcdefghijklmnopqrstuvwxyz";
 				std::vector<unsigned char> receiveMsg;
 				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
-				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				//const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
 				client.send(sendMsg, sendingLen);
 				idx = 0;
 				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)
@@ -471,7 +471,7 @@ void testAsyncTcpSocketClient()
 				const unsigned char sendMsg[] = "9876543210";
 				std::vector<unsigned char> receiveMsg;
 				const std::size_t sendingLen = std::strlen((char *)sendMsg) * sizeof(sendMsg[0]);
-				const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
+				//const std::size_t maxReceivingLen = sizeof(receiveMsg) * sizeof(receiveMsg[0]);
 				client.send(sendMsg, sendingLen);
 				idx = 0;
 				while (client.getReceiveBufferSize() < sendingLen && idx < MAX_ITER)

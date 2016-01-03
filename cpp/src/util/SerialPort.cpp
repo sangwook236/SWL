@@ -21,7 +21,7 @@ namespace swl {
 
 SerialPort::SerialPort(boost::asio::io_service &ioService)
 : port_(ioService), isActive_(false),
-  receiveBuffer_(), sendBuffer_(), sentMsgLength_(0)
+  sendBuffer_(), receiveBuffer_(), sendMsg_(), receiveMsg_(), sentMsgLength_(0)
 {}
 
 SerialPort::~SerialPort()

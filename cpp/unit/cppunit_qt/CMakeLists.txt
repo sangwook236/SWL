@@ -13,6 +13,10 @@ set(SRCS
 #add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  // deprecated.
 
+if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+	add_compile_options(-std=c++11)
+endif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
+
 add_executable(${TARGET} ${SRCS})
 if(CMAKE_BUILD_TYPE MATCHES DEBUG)
 #	target_link_libraries(${TARGET} ${LIBS} QtTestRunnerd QtGuid4 QtCored4)

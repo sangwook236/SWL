@@ -38,7 +38,7 @@ void ddhmm_segmentation_by_viterbi_algorithm()
 	std::size_t startStateIndex = (std::size_t)-1, endStateIndex = (std::size_t)-1;
 	swl::HmmSegmenter::uivector_type states(N, (unsigned int)-1);
 
-	const bool retval = swl::HmmSegmenter::segmentByViterbiAlgorithm(cdhmm, observations, logProbability, startStateIndex, endStateIndex, states);
+	/*const bool retval = */swl::HmmSegmenter::segmentByViterbiAlgorithm(cdhmm, observations, logProbability, startStateIndex, endStateIndex, states);
 }
 
 void cdhmm_segmentation_by_viterbi_algorithm()
@@ -63,7 +63,7 @@ void cdhmm_segmentation_by_viterbi_algorithm()
 	std::size_t startStateIndex = (std::size_t)-1, endStateIndex = (std::size_t)-1;
 	swl::HmmSegmenter::uivector_type states(N, (unsigned int)-1);
 
-	const bool retval = swl::HmmSegmenter::segmentByViterbiAlgorithm(cdhmm, observations, logProbability, startStateIndex, endStateIndex, states);
+	/*const bool retval = */swl::HmmSegmenter::segmentByViterbiAlgorithm(cdhmm, observations, logProbability, startStateIndex, endStateIndex, states);
 }
 
 }  // namespace local

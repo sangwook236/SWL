@@ -52,7 +52,7 @@ public:
 
 	//
 	void setVisible(const bool isVisible)  {  isVisible_ = isVisible;  }
-	bool isVisible() const  {  return isVisible_; } 
+	bool isVisible() const  {  return isVisible_; }
 
 	void setLineWidth(const real_type &lineWidth)  {  lineWidth_ = lineWidth;  }
 	const real_type & getLineWidth() const  {  return lineWidth_;  }
@@ -98,8 +98,8 @@ protected:
 protected:
 	bool isVisible_;
 	real_type lineWidth_;
-	color_type lineColor_;
 	real_type pointSize_;
+	color_type lineColor_;
 	color_type pointColor_;
 #if defined(UNICODE) || defined(_UNICODE)
 	std::wstring name_;

@@ -56,7 +56,7 @@ void calcOrientationUsingOpticalFlow(const cv::Mat &flow, const bool doesApplyMa
 		orientation.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold);
 		orientation.setTo(cv::Scalar::all(-1), flow_mag > mag_max_threshold);
 #else
-		orientation.setTo(cv::Scalar::all(-1), flow_mag < mag_min_threshold | flow_mag > mag_max_threshold);
+		orientation.setTo(cv::Scalar::all(-1), (flow_mag < mag_min_threshold) | (flow_mag > mag_max_threshold));
 #endif
 	}
 }
@@ -82,14 +82,14 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 		orientation.setTo(cv::Scalar::all(-1), magnitude < mag_min_threshold);
 		orientation.setTo(cv::Scalar::all(-1), magnitude > mag_max_threshold);
 #else
-		orientation.setTo(cv::Scalar::all(-1), magnitude < mag_min_threshold | magnitude > mag_max_threshold);
+		orientation.setTo(cv::Scalar::all(-1), (magnitude < mag_min_threshold) | (magnitude > mag_max_threshold));
 #endif
 
 #if 0
 		magnitude.setTo(cv::Scalar::all(0), magnitude < mag_min_threshold);
 		magnitude.setTo(cv::Scalar::all(0), magnitude > mag_max_threshold);
 #else
-		magnitude.setTo(cv::Scalar::all(0), magnitude < mag_min_threshold | magnitude > mag_max_threshold);
+		magnitude.setTo(cv::Scalar::all(0), (magnitude < mag_min_threshold) | (magnitude > mag_max_threshold));
 #endif
 	}
 }
@@ -101,8 +101,8 @@ namespace swl {
 
 	void gestureRecognitionByHistogram(cv::VideoCapture &capture)
 {
-	const int imageWidth = 640, imageHeight = 480;
-	//const int imageWidth = 320, imageHeight = 240;
+	//const int imageWidth = 640, imageHeight = 480;
+	////const int imageWidth = 320, imageHeight = 240;
 
 #if defined(__USE_IR_SENSOR)
 	videoInput VI;

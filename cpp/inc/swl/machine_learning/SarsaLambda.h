@@ -47,7 +47,7 @@ public:
 		size_t episode = 1;
 		while (true)
 		{
-			const size_t step = runSingleEpisoide(episode, policy, Q, eligibility);
+			//const size_t step = runSingleEpisoide(episode, policy, Q, eligibility);
 
 			//std::cout << "episode #" << episode << ": step = " << step << std::endl;
 			//if (0 == episode % 500)
@@ -92,7 +92,11 @@ private:
 			const double delta = r + base_type::gamma_ * Q[nextSA] - Q[currSA];
 			eligibility[currSA] += 1.0;
 
+#if defined(__GNUC__)
+			base_type::updateQAndEligibility(step, delta, Q, eligibility, NULL);
+#else
 			updateQAndEligibility(step, delta, Q, eligibility, NULL);
+#endif
 
 			// update the current state & action
 			currState = nextState;

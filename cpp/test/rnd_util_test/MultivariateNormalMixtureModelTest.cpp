@@ -30,14 +30,14 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::ContinuousDensityMixtureModel> cdmm;
 
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test2.cdmm");
@@ -72,8 +72,8 @@ void model_reading_and_writing()
 		boost::scoped_ptr<swl::ContinuousDensityMixtureModel> cdmm;
 
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
 			0.25, 0.60, 0.15
@@ -92,8 +92,8 @@ void model_reading_and_writing()
 		//
 		std::ofstream stream("./data/mixture_model/bi_normal_mixture_test1_writing.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		const double arrPi[] = {
 			0.25, 0.60, 0.15
@@ -123,15 +123,15 @@ void model_reading_and_writing()
 		std::vector<double> pi(arrPi, arrPi + K);
 		std::vector<swl::MultivariateNormalMixtureModel::dvector_type> mus(K, swl::MultivariateNormalMixtureModel::dvector_type(D, 0.0));
 		std::vector<swl::MultivariateNormalMixtureModel::dmatrix_type> covs(K, swl::MultivariateNormalMixtureModel::dmatrix_type(D, D, 1.0));
-		size_t mm = 0, cc = 0;
-		for (size_t k = 0; k < K; ++k)
+		std::size_t mm = 0, cc = 0;
+		for (std::size_t k = 0; k < K; ++k)
 		{
 			swl::MultivariateNormalMixtureModel::dvector_type &mu = mus[k];
 			swl::MultivariateNormalMixtureModel::dmatrix_type &cov = covs[k];
-			for (size_t d = 0; d < D; ++d, ++mm)
+			for (std::size_t d = 0; d < D; ++d, ++mm)
 			{
 				mu[d] = arrMu[mm];
-				for (size_t i = 0; i < D; ++i, ++cc)
+				for (std::size_t i = 0; i < D; ++i, ++cc)
 					cov(d, i) = arrCov[cc];
 			}
 		}
@@ -155,14 +155,14 @@ void observation_sequence_generation(const bool outputToFile)
 	// read a model.
 	{
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test2.cdmm");
@@ -208,26 +208,26 @@ void observation_sequence_generation(const bool outputToFile)
 #if __TEST_MIXTURE_MODEL == 1
 
 #if 1
-			const size_t N = 50;
+			const std::size_t N = 50;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test1_50.seq");
 #elif 0
-			const size_t N = 100;
+			const std::size_t N = 100;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test1_100.seq");
 #elif 0
-			const size_t N = 1500;
+			const std::size_t N = 1500;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test1_1500.seq");
 #endif
 
 #elif __TEST_MIXTURE_MODEL == 2
 
 #if 1
-			const size_t N = 50;
+			const std::size_t N = 50;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test2_50.seq");
 #elif 0
-			const size_t N = 100;
+			const std::size_t N = 100;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test2_100.seq");
 #elif 0
-			const size_t N = 1500;
+			const std::size_t N = 1500;
 			std::ofstream stream("./data/mixture_model/bi_normal_mixture_test2_1500.seq");
 #endif
 
@@ -246,7 +246,7 @@ void observation_sequence_generation(const bool outputToFile)
 
 #if 0
 			// output states.
-			for (size_t n = 0; n < N; ++n)
+			for (std::size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
@@ -256,7 +256,7 @@ void observation_sequence_generation(const bool outputToFile)
 		}
 		else
 		{
-			const size_t N = 100;
+			const std::size_t N = 100;
 
 			swl::ContinuousDensityMixtureModel::dmatrix_type observations(N, cdmm->getObservationDim(), 0.0);
 			std::vector<unsigned int> states(N, (unsigned int)-1);
@@ -264,7 +264,7 @@ void observation_sequence_generation(const bool outputToFile)
 
 #if 0
 			// output states.
-			for (size_t n = 0; n < N; ++n)
+			for (std::size_t n = 0; n < N; ++n)
 				std::cout << states[n] << ' ';
 			std::cout << std::endl;
 #endif
@@ -278,7 +278,7 @@ void observation_sequence_generation(const bool outputToFile)
 void observation_sequence_reading_and_writing()
 {
 	swl::ContinuousDensityMixtureModel::dmatrix_type observations;
-	size_t N = 0;  // length of observation sequence, N.
+	std::size_t N = 0;  // length of observation sequence, N.
 
 #if __TEST_MIXTURE_MODEL == 1
 
@@ -314,7 +314,7 @@ void observation_sequence_reading_and_writing()
 	}
 
 	// read a observation sequence.
-	size_t D = 0;
+	std::size_t D = 0;
 	const bool retval = swl::ContinuousDensityMixtureModel::readSequence(stream, N, D, observations);
 	if (!retval)
 	{
@@ -344,14 +344,14 @@ void ml_learning_by_em()
 	if (1 == initialization_mode)
 	{
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test2.cdmm");
@@ -390,18 +390,18 @@ void ml_learning_by_em()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		cdmm.reset(new swl::MultivariateNormalMixtureModel(K, D));
 
 		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * (D + D * D);
+		const std::size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
 		// mean vector & convariance matrix.
-		for (size_t i = 0; i < numParameters; ++i)
+		for (std::size_t i = 0; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(-1000.0);
 			upperBounds.push_back(1000.0);
@@ -415,7 +415,7 @@ void ml_learning_by_em()
 	{
 		// read a observation sequence.
 		swl::ContinuousDensityMixtureModel::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N.
+		std::size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_MIXTURE_MODEL == 1
 
@@ -450,7 +450,7 @@ void ml_learning_by_em()
 				return;
 			}
 
-			size_t D = 0;
+			std::size_t D = 0;
 			const bool retval = swl::ContinuousDensityMixtureModel::readSequence(stream, N, D, observations);
 			if (!retval || cdmm->getObservationDim() != D)
 			{
@@ -464,8 +464,8 @@ void ml_learning_by_em()
 		// EM algorithm.
 		{
 			const double terminationTolerance = 0.001;
-			const size_t maxIteration = 1000;
-			size_t numIteration = (size_t)-1;
+			const std::size_t maxIteration = 1000;
+			std::size_t numIteration = (std::size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			cdmm->trainByML(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
@@ -500,14 +500,14 @@ void map_learning_by_em_using_conjugate_prior()
 	if (1 == initialization_mode)
 	{
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test2.cdmm");
@@ -529,17 +529,17 @@ void map_learning_by_em_using_conjugate_prior()
 		swl::ContinuousDensityMixtureModel::dvector_type *betas_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // beta > 0.
 		std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type> *covs_conj = new std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type>(K, swl::ContinuousDensityMixtureModel::dmatrix_type(D, D, 1.0));
 		swl::ContinuousDensityMixtureModel::dvector_type *nus_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // nu > D - 1.
-		for (size_t k = 0; k < K; ++k)
+		for (std::size_t k = 0; k < K; ++k)
 		{
 			//(*betas_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 10.0;
 			//(*nus_conj)[k] = ???;
 
 			swl::MultivariateNormalMixtureModel::dvector_type &mu_conj = (*mus_conj)[k];
-			swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
-			for (size_t d = 0; d < D; ++d)
+			//swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
+			for (std::size_t d = 0; d < D; ++d)
 			{
 				mu_conj[d] = (std::rand() / RAND_MAX) * 10.0 - 5.0;
-				for (size_t i = 0; i < D; ++i)
+				for (std::size_t i = 0; i < D; ++i)
 				{
 					//cov_conj(d, i) = ???;
 				}
@@ -572,8 +572,8 @@ void map_learning_by_em_using_conjugate_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the conjugate prior.
 		// FIXME [check] >> hyperparameters for multivariate normal mixture distributions.
@@ -582,17 +582,17 @@ void map_learning_by_em_using_conjugate_prior()
 		swl::ContinuousDensityMixtureModel::dvector_type *betas_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // beta > 0.
 		std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type> *covs_conj = new std::vector<swl::ContinuousDensityMixtureModel::dmatrix_type>(K, swl::ContinuousDensityMixtureModel::dmatrix_type(D, D, 1.0));
 		swl::ContinuousDensityMixtureModel::dvector_type *nus_conj = new swl::ContinuousDensityMixtureModel::dvector_type(K, 1.0);  // nu > D - 1.
-		for (size_t k = 0; k < K; ++k)
+		for (std::size_t k = 0; k < K; ++k)
 		{
 			//(*betas_conj)[k] = (std::rand() / RAND_MAX + 1.0) * 10.0;
 			//(*nus_conj)[k] = ???;
 
 			swl::MultivariateNormalMixtureModel::dvector_type &mu_conj = (*mus_conj)[k];
-			swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
-			for (size_t d = 0; d < D; ++d)
+			//swl::MultivariateNormalMixtureModel::dmatrix_type &cov_conj = (*covs_conj)[k];
+			for (std::size_t d = 0; d < D; ++d)
 			{
 				mu_conj[d] = (std::rand() / RAND_MAX) * 10.0 - 5.0;
-				for (size_t i = 0; i < D; ++i)
+				for (std::size_t i = 0; i < D; ++i)
 				{
 					//cov_conj(d, i) = ???;
 				}
@@ -603,11 +603,11 @@ void map_learning_by_em_using_conjugate_prior()
 
 		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * (D + D * D);
+		const std::size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
 		// mean vector & convariance matrix.
-		for (size_t i = 0; i < numParameters; ++i)
+		for (std::size_t i = 0; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(-1000.0);
 			upperBounds.push_back(1000.0);
@@ -621,7 +621,7 @@ void map_learning_by_em_using_conjugate_prior()
 	{
 		// read a observation sequence.
 		swl::ContinuousDensityMixtureModel::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N.
+		std::size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_MIXTURE_MODEL == 1
 
@@ -656,7 +656,7 @@ void map_learning_by_em_using_conjugate_prior()
 				return;
 			}
 
-			size_t D = 0;
+			std::size_t D = 0;
 			const bool retval = swl::ContinuousDensityMixtureModel::readSequence(stream, N, D, observations);
 			if (!retval || cdmm->getObservationDim() != D)
 			{
@@ -670,8 +670,8 @@ void map_learning_by_em_using_conjugate_prior()
 		// EM algorithm.
 		{
 			const double terminationTolerance = 0.001;
-			const size_t maxIteration = 1000;
-			size_t numIteration = (size_t)-1;
+			const std::size_t maxIteration = 1000;
+			std::size_t numIteration = (std::size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			cdmm->trainByMAPUsingConjugatePrior(N, observations, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 
@@ -706,14 +706,14 @@ void map_learning_by_em_using_entropic_prior()
 	if (1 == initialization_mode)
 	{
 #if __TEST_MIXTURE_MODEL == 1
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test1.cdmm");
 #elif __TEST_MIXTURE_MODEL == 2
-		const size_t K = 3;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 3;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		//
 		std::ifstream stream("./data/mixture_model/bi_normal_mixture_test2.cdmm");
@@ -756,8 +756,8 @@ void map_learning_by_em_using_entropic_prior()
 		std::srand(seed);
 		std::cout << "random seed: " << seed << std::endl;
 
-		const size_t K = 30;  // the number of mixture components.
-		const size_t D = 2;  // the dimension of observation symbols.
+		const std::size_t K = 30;  // the number of mixture components.
+		const std::size_t D = 2;  // the dimension of observation symbols.
 
 		// hyperparameters for the entropic prior.
 		//	don't need.
@@ -767,12 +767,12 @@ void map_learning_by_em_using_entropic_prior()
 
 		// the total number of parameters of observation density = K * (D + D * D).
 		std::vector<double> lowerBounds, upperBounds;
-		const size_t numParameters = K * (D + D * D);
+		const std::size_t numParameters = K * (D + D * D);
 		lowerBounds.reserve(numParameters);
 		upperBounds.reserve(numParameters);
 #if 0
 		// mean vector & convariance matrix.
-		for (size_t i = 0; i < numParameters; ++i)
+		for (std::size_t i = 0; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(-1000.0);
 			upperBounds.push_back(1000.0);
@@ -781,13 +781,13 @@ void map_learning_by_em_using_entropic_prior()
 		// for annulus problem.
 
 		// mean vector.
-		for (size_t i = 0; i < K * D; ++i)
+		for (std::size_t i = 0; i < K * D; ++i)
 		{
 			lowerBounds.push_back(-100.0);
 			upperBounds.push_back(100.0);
 		}
 		// convariance matrix.
-		for (size_t i = K * D; i < numParameters; ++i)
+		for (std::size_t i = K * D; i < numParameters; ++i)
 		{
 			lowerBounds.push_back(-10.0);
 			upperBounds.push_back(10.0);
@@ -802,7 +802,7 @@ void map_learning_by_em_using_entropic_prior()
 	{
 		// read a observation sequence.
 		swl::ContinuousDensityMixtureModel::dmatrix_type observations;
-		size_t N = 0;  // length of observation sequence, N.
+		std::size_t N = 0;  // length of observation sequence, N.
 		{
 #if __TEST_MIXTURE_MODEL == 1
 
@@ -845,7 +845,7 @@ void map_learning_by_em_using_entropic_prior()
 				return;
 			}
 
-			size_t D = 0;
+			std::size_t D = 0;
 			const bool retval = swl::ContinuousDensityMixtureModel::readSequence(stream, N, D, observations);
 			if (!retval || cdmm->getObservationDim() != D)
 			{
@@ -866,8 +866,8 @@ void map_learning_by_em_using_entropic_prior()
 			const bool doesTrimParameter = true;
 
 			const double terminationTolerance = 0.001;
-			const size_t maxIteration = 1000;
-			size_t numIteration = (size_t)-1;
+			const std::size_t maxIteration = 1000;
+			std::size_t numIteration = (std::size_t)-1;
 			double initLogProbability = 0.0, finalLogProbability = 0.0;
 			cdmm->trainByMAPUsingEntropicPrior(N, observations, z, doesTrimParameter, terminationTolerance, maxIteration, numIteration, initLogProbability, finalLogProbability);
 

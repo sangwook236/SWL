@@ -126,13 +126,12 @@ bool StanfordArmKinematics::doTMatrixToJointCoords(const TMatrix3<double> &tmatr
 {
 	if (jointCoords.size() < getDOF()) jointCoords.resize(getDOF());
 
-	const double nx = tmatrix.X().x(), ny = tmatrix.X().y(), nz = tmatrix.X().z();
-	const double tx = tmatrix.Y().x(), ty = tmatrix.Y().y(), tz = tmatrix.Y().z();
-	const double bx = tmatrix.Z().x(), by = tmatrix.Z().y(), bz = tmatrix.Z().z();
-	const double px = tmatrix.T().x(), py = tmatrix.T().y(), pz = tmatrix.T().z();
+	//const double nx = tmatrix.X().x(), ny = tmatrix.X().y(), nz = tmatrix.X().z();
+	//const double tx = tmatrix.Y().x(), ty = tmatrix.Y().y(), tz = tmatrix.Y().z();
+	//const double bx = tmatrix.Z().x(), by = tmatrix.Z().y(), bz = tmatrix.Z().z();
+	//const double px = tmatrix.T().x(), py = tmatrix.T().y(), pz = tmatrix.T().z();
 
-	const double d1 = getDHParam(0).getD(), d2 = getDHParam(1).getD(),
-		   d3 = getDHParam(2).getD(), d6 = getDHParam(5).getD();
+	//const double d1 = getDHParam(0).getD(), d2 = getDHParam(1).getD(), d3 = getDHParam(2).getD(), d6 = getDHParam(5).getD();
 
 	if (refJointCoordsPtr)
 	{

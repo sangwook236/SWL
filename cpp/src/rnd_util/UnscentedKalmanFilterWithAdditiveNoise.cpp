@@ -41,14 +41,15 @@ namespace swl {
 //	==> 0-based time step. 0-th time step is initial
 
 UnscentedKalmanFilterWithAdditiveNoise::UnscentedKalmanFilterWithAdditiveNoise(const DiscreteNonlinearStochasticSystem &system, const double alpha, const double beta, const double kappa, const gsl_vector *x0, const gsl_matrix *P0)
-: system_(system), alpha_(alpha), beta_(beta), kappa_(kappa),
-  L_(system_.getStateDim()),
-  lambda_(alpha * alpha * (L_ + kappa) - L_), sigmaDim_(2 * L_ + 1), gamma_(std::sqrt(L_ + lambda_)),
+: system_(system), L_(system_.getStateDim()),
+  alpha_(alpha), beta_(beta), kappa_(kappa),
   x_hat_(NULL), y_hat_(NULL), P_(NULL), K_(NULL),
-  Chi_star_(NULL), Chi_(NULL), Upsilon_(NULL), Pyy_(NULL), Pxy_(NULL),
+  lambda_(alpha * alpha * (L_ + kappa) - L_), gamma_(std::sqrt(L_ + lambda_)), sigmaDim_(2 * L_ + 1),
+  Chi_star_(NULL), Chi_(NULL), Upsilon_(NULL),
   Wm0_(lambda_ / (L_ + lambda_)), Wc0_(1.0 - alpha*alpha + beta + lambda_ / (L_ + lambda_)), Wi_(0.5 / (L_ + lambda_)),
-  x_tmp_(NULL), y_tmp_(NULL), P_tmp_(NULL), Pyy_tmp_(NULL), invPyy_(NULL), KPyy_tmp_(NULL), sqrtQ_(NULL),
-  permutation_(NULL), eigenVal_(NULL), eigenVec_(NULL), eigenWS_(NULL)
+  Pyy_(NULL), Pxy_(NULL),
+  x_tmp_(NULL), y_tmp_(NULL), P_tmp_(NULL), Pyy_tmp_(NULL), invPyy_(NULL), KPyy_tmp_(NULL), sqrtQ_(NULL), permutation_(NULL),
+  eigenVal_(NULL), eigenVec_(NULL), eigenWS_(NULL)
 {
 	const size_t &stateDim = system_.getStateDim();
 	const size_t &inputDim = system_.getInputDim();
