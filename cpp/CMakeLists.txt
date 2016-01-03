@@ -120,6 +120,17 @@ option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_DOCS "Build documents" OFF)
 
+if(BUILD_SHARED_LIBS)
+	set(LIB_TYPE SHARED)
+else(BUILD_SHARED_LIBS)
+	set(LIB_TYPE STATIC)
+endif(BUILD_SHARED_LIBS)
+
+if(BUILD_TESTS)
+	enable_testing()
+	set(USE_UNIT_TESTCASES_ONLY_AS_TESTS ON)
+endif(BUILD_TESTS)
+
 #option(USE_THREAD "Thread-safe build (using pthreads)" ON)
 set(USE_THREAD ON)
 #option(USE_OPENGL "OpenGL" ON)
@@ -167,16 +178,6 @@ option(USE_DOXYGEN "Doxygen - De facto standard tool for generating documentatio
 #set(USE_DOXYGEN ON)
 #option(USE_LYX "LyX - Document Processor" OFF)
 set(USE_LYX OFF)
-
-if(BUILD_SHARED_LIBS)
-	set(LIB_TYPE SHARED)
-else(BUILD_SHARED_LIBS)
-	set(LIB_TYPE STATIC)
-endif(BUILD_SHARED_LIBS)
-
-if(BUILD_TESTS)
-	enable_testing()
-endif(BUILD_TESTS)
 
 ##
 ## Find packages.
