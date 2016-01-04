@@ -1,5 +1,7 @@
 set(TARGET swl_cppunit_qt)
 
+string(REGEX REPLACE "([^;]+)" "../\\1" TESTCASE_SRCS "${TESTCASE_SRCS}")
+
 set(SRCS
 	main.cpp
 	${TESTCASE_SRCS}

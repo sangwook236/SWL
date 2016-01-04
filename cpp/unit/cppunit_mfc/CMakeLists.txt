@@ -1,5 +1,7 @@
 set(TARGET swl_cppunit_mfc)
 
+string(REGEX REPLACE "([^;]+)" "../\\1" TESTCASE_SRCS "${TESTCASE_SRCS}")
+
 set(SRCS
 	stdafx.cpp
 	UnitTestMfc.cpp

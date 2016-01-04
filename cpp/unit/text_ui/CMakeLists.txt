@@ -1,19 +1,21 @@
 set(TARGET swl_unit_test)
 
+string(REGEX REPLACE "([^;]+)" "../\\1" TESTCASE_SRCS "${TESTCASE_SRCS}")
+
 set(SRCS
 	TextUiUnitTestMain.cpp
 	${TESTCASE_SRCS}
 )
 
-if(CPPUNIT_FOUND)
-	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  # deprecated.
-	set(TEST_LIBS
-		$[CPPUNIT_LIBRARIES}
-	)
-elseif(GTEST_FOUND)
+if(GTEST_FOUND)
 	add_definitions(-D__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 	set(TEST_LIBS
 		${GTEST_BOTH_LIBRARIES}
+	)
+elseif(CPPUNIT_FOUND)
+	add_definitions(-D__SWL_UNIT_TEST__USE_CPP_UNIT)  # deprecated.
+	set(TEST_LIBS
+		$[CPPUNIT_LIBRARIES}
 	)
 else()
 	add_definitions(-D__SWL_UNIT_TEST__USE_BOOST_TEST)

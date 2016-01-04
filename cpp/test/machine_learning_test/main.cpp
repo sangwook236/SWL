@@ -33,8 +33,8 @@ int main(int argc, char *argv[])
 		retval = EXIT_FAILURE;
 	}
 
-	std::cout << "press any key to exit ..." << std::endl;
-	std::cin.get();
+	//std::cout << "press any key to exit ..." << std::endl;
+	//std::cin.get();
 
 	return retval;
 }

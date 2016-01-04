@@ -19,9 +19,9 @@ set(PACKAGE_BUGREPORT "sangwook236@gmail.com")
 ## Set platform specific options.
 ##	CMAKE_SYSTEM_NAME, CMAKE_SYSTEM
 ##
+message(STATUS "[-- SWL-C++ --] Generator: ${CMAKE_GENERATOR}")
+message(STATUS "[-- SWL-C++ --] Platform: ${CMAKE_SYSTEM_NAME} (${CMAKE_SYSTEM})")
 if(APPLE)
-	message(STATUS "[-- SWL-C++ --] Platform: Apple")
-
 	if(POLICY CMP0042)
 		cmake_policy(SET CMP0042 NEW)
 	endif()
@@ -31,34 +31,23 @@ if(APPLE)
 	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Darwin")  # for Mac OS X.
 	endif()
 elseif(CYGWIN)
-	message(STATUS "[-- SWL-C++ --] Platform: Cygwin")
 elseif(MSYS)
-	message(STATUS "[-- SWL-C++ --] Platform: MSYS")
 elseif(UNIX AND NOT APPLE AND NOT CYGWIN)
-	message(STATUS "[-- SWL-C++ --] Platform: Unix")
-
 	if("${CMAKE_SYSTEM_NAME}" STREQUAL "Linux")  # for Linux.
 	endif()
 elseif(WIN32 AND NOT CYGWIN)
-	message(STATUS "[-- SWL-C++ --] Platform: WIN32")
 elseif(MINGW)
-	message(STATUS "[-- SWL-C++ --] Platform: MinGW")
 elseif(BORLAND)
-	message(STATUS "[-- SWL-C++ --] Platform: Borland")
 elseif(WATCOM)
-	message(STATUS "[-- SWL-C++ --] Platform: Watcom")
 elseif(MSVC)
-	message(STATUS "[-- SWL-C++ --] Platform: MSVC")
-
 #	add_definitions(-D_CRT_SECURE_NO_DEPRECATE)
 endif()
 
 ##
 ## Set compiler specific options.
 ##
+message(STATUS "[-- SWL-C++ --] Compiler: ${CMAKE_CXX_COMPILER_ID}")
 if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
-	message(STATUS "[-- SWL-C++ --] Compiler: Clang")
-
 	## Explicitly specify standard c++ library.
 #	set(CLANG_LINK_FLAGS "-stdlib=libstdc++")
 
@@ -66,12 +55,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES Clang)
 	add_definitions(${CLANG_LINK_FLAGS})
 	set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${CLANG_LINK_FLAGS}")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-	message(STATUS "[-- SWL-C++ --] Compiler: GNU")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES Intel)
-	message(STATUS "[-- SWL-C++ --] Compiler: Intel")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES MSVC)
-	message(STATUS "[-- SWL-C++ --] Compiler: MSVC")
-
 	set(CMAKE_MFC_FLAG 2)  # Use MFC in a Shared DLL.
 #	set(CMAKE_C_FLAGS_DEBUG_INIT "/D_DEBUG /MDd /Zi /Ob0 /Od /RTC1")
 #	set(CMAKE_C_FLAGS_MINSIZEREL_INIT "/MD /O1 /Ob1 /D NDEBUG")
@@ -95,6 +80,7 @@ endif()
 ##		CMAKE_BUILD_TYPE=
 ##
 message(STATUS "[-- SWL-C++ --] Build: ${CMAKE_BUILD_TYPE}")
+message(STATUS "[-- SWL-C++ --] Build Configuration: ${CMAKE_CONFIGURATION_TYPES}")
 set(CMAKE_DEBUG_POSTFIX _d)  # The CMAKE_DEBUG_POSTFIX variable only affects library targets
 
 ##
@@ -106,11 +92,11 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 if("${CMAKE_GENERATOR}" STRGREATER "Visual Studio")
 	foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
-	    string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
-	    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
-	    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-	    set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-	endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
+		string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
+		set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
+		set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+		set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
+	endforeach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
 endif()
 
 ##
