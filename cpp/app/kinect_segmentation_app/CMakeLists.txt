@@ -47,5 +47,5 @@ list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_30,code=sm_30)
 list(APPEND CUDA_NVCC_FLAGS -gencode arch=compute_35,code=sm_35)
 
 #add_executable(${TARGET} ${SRCS})
-cuda_add_library(${TARGET} ${SRCS})
+cuda_add_executable(${TARGET} ${SRCS})
 target_link_libraries(${TARGET} ${LIBS})
