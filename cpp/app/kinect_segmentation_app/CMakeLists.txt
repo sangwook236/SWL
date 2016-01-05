@@ -1,4 +1,7 @@
-include_directories(./efficient_graph_based_image_segmentation_lib ${MY_USR_LOCAL_INCLUDE}/opengm_external/maxflow)
+include_directories(
+	./efficient_graph_based_image_segmentation_lib
+	${MY_USR_LOCAL_INCLUDE}/opengm_external/maxflow
+)
 
 set(TARGET swl_kinect_segmentation_app)
 
