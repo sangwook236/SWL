@@ -40,23 +40,23 @@ public:
 		Fixture fixture;
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num = MathUtil::dec2bin(432ul);
-		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2bin(432ul));
+		//const std::wstring &num = MathUtil::dec2bin(432l);
+		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2bin(432l));
 #else
-		const std::string &num = MathUtil::dec2bin(432ul);
+		const std::string &num = MathUtil::dec2bin(432l);
 #endif
 		BOOST_CHECK_EQUAL(num, "110110000");
 		BOOST_CHECK_NE(num, "110101111");
 		BOOST_CHECK_NE(num, "110110001");
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num1 = MathUtil::dec2bin(-3796ul);
-		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2bin(-3796ul));
-		//const std::wstring &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+		//const std::wstring &num1 = MathUtil::dec2bin(-3796l);
+		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2bin(-3796l));
+		//const std::wstring &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2bin(-3796ul);
-		const std::string &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2bin(-3796l);
+		const std::string &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		BOOST_CHECK_EQUAL(num1, num2);
 	}
@@ -66,23 +66,23 @@ public:
 		Fixture fixture;
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num = MathUtil::dec2oct(432ul);
-		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2oct(432ul));
+		//const std::wstring &num = MathUtil::dec2oct(432l);
+		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2oct(432l));
 #else
-		const std::string &num = MathUtil::dec2oct(432ul);
+		const std::string &num = MathUtil::dec2oct(432l);
 #endif
 		BOOST_CHECK_EQUAL(num, "660");
 		BOOST_CHECK_NE(num, "657");
 		BOOST_CHECK_NE(num, "661");
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num1 = MathUtil::dec2oct(-3796ul);
-		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2oct(-3796ul));
-		//const std::wstring &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+		//const std::wstring &num1 = MathUtil::dec2oct(-3796l);
+		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2oct(-3796l));
+		//const std::wstring &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2oct(-3796ul);
-		const std::string &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2oct(-3796l);
+		const std::string &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		BOOST_CHECK_EQUAL(num1, num2);
 	}
@@ -92,23 +92,23 @@ public:
 		Fixture fixture;
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num = MathUtil::dec2hex(432ul);
-		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2hex(432ul));
+		//const std::wstring &num = MathUtil::dec2hex(432l);
+		const std::string &num = swl::String::wcs2mbs(MathUtil::dec2hex(432l));
 #else
-		const std::string &num = MathUtil::dec2hex(432ul);
+		const std::string &num = MathUtil::dec2hex(432l);
 #endif
 		BOOST_CHECK_EQUAL(num, "1B0");
 		BOOST_CHECK_NE(num, "1AF");
 		BOOST_CHECK_NE(num, "1B1");
 
 #if defined(UNICODE) || defined(_UNIODE)
-		//const std::wstring &num1 = MathUtil::dec2hex(-3796ul);
-		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2hex(-3796ul));
-		//const std::wstring &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+		//const std::wstring &num1 = MathUtil::dec2hex(-3796l);
+		const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2hex(-3796l));
+		//const std::wstring &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+		const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2hex(-3796ul);
-		const std::string &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2hex(-3796l);
+		const std::string &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		BOOST_CHECK_EQUAL(num1, num2);
 	}
@@ -118,9 +118,9 @@ public:
 		Fixture fixture;
 
 		const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
-		BOOST_CHECK_EQUAL(dec, 432ul);
-		BOOST_CHECK_NE(dec, 431ul);
-		BOOST_CHECK_NE(dec, 433ul);
+		BOOST_CHECK_EQUAL(dec, 432l);
+		BOOST_CHECK_NE(dec, 431l);
+		BOOST_CHECK_NE(dec, 433l);
 	}
 
 	void testOct2Dec()
@@ -128,9 +128,9 @@ public:
 		Fixture fixture;
 
 		const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
-		BOOST_CHECK_EQUAL(dec, 432ul);
-		BOOST_CHECK_NE(dec, 431ul);
-		BOOST_CHECK_NE(dec, 433ul);
+		BOOST_CHECK_EQUAL(dec, 432l);
+		BOOST_CHECK_NE(dec, 431l);
+		BOOST_CHECK_NE(dec, 433l);
 	}
 
 	void testHex2Dec()
@@ -138,9 +138,9 @@ public:
 		Fixture fixture;
 
 		const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
-		BOOST_CHECK_EQUAL(dec, 432ul);
-		BOOST_CHECK_NE(dec, 431ul);
-		BOOST_CHECK_NE(dec, 433ul);
+		BOOST_CHECK_EQUAL(dec, 432l);
+		BOOST_CHECK_NE(dec, 431l);
+		BOOST_CHECK_NE(dec, 433l);
 	}
 };
 
@@ -184,23 +184,23 @@ protected:
 TEST_F(BaseFieldConversionTest, testDec2Bin)
 {
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num = MathUtil::dec2bin(432ul);
-	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2bin(432ul));
+	//const std::wstring &num = MathUtil::dec2bin(432l);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2bin(432l));
 #else
-	const std::string &num = MathUtil::dec2bin(432ul);
+	const std::string &num = MathUtil::dec2bin(432l);
 #endif
 	EXPECT_STREQ(num.c_str(), "110110000");
 	EXPECT_STRNE(num.c_str(), "110101111");
 	EXPECT_STRNE(num.c_str(), "110110001");
 
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num1 = MathUtil::dec2bin(-3796ul);
-	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2bin(-3796ul));
-	//const std::wstring &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+	//const std::wstring &num1 = MathUtil::dec2bin(-3796l);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2bin(-3796l));
+	//const std::wstring &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-	const std::string &num1 = MathUtil::dec2bin(-3796ul);
-	const std::string &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num1 = MathUtil::dec2bin(-3796l);
+	const std::string &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 	EXPECT_STREQ(num1.c_str(), num2.c_str());
 }
@@ -208,23 +208,23 @@ TEST_F(BaseFieldConversionTest, testDec2Bin)
 TEST_F(BaseFieldConversionTest, testDec2Oct)
 {
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num = MathUtil::dec2oct(432ul);
-	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2oct(432ul));
+	//const std::wstring &num = MathUtil::dec2oct(432l);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2oct(432l));
 #else
-	const std::string &num = MathUtil::dec2oct(432ul);
+	const std::string &num = MathUtil::dec2oct(432l);
 #endif
 	EXPECT_STREQ(num.c_str(), "660");
 	EXPECT_STRNE(num.c_str(), "657");
 	EXPECT_STRNE(num.c_str(), "661");
 
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num1 = MathUtil::dec2oct(-3796ul);
-	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2oct(-3796ul));
-	//const std::wstring &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+	//const std::wstring &num1 = MathUtil::dec2oct(-3796l);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2oct(-3796l));
+	//const std::wstring &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-	const std::string &num1 = MathUtil::dec2oct(-3796ul);
-	const std::string &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num1 = MathUtil::dec2oct(-3796l);
+	const std::string &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 	EXPECT_STREQ(num1.c_str(), num2.c_str());
 }
@@ -232,23 +232,23 @@ TEST_F(BaseFieldConversionTest, testDec2Oct)
 TEST_F(BaseFieldConversionTest, testDec2Hex)
 {
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num = MathUtil::dec2hex(432ul);
-	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2hex(432ul));
+	//const std::wstring &num = MathUtil::dec2hex(432l);
+	const std::string &num = swl::String::wcs2mbs(MathUtil::dec2hex(432l));
 #else
-	const std::string &num = MathUtil::dec2hex(432ul);
+	const std::string &num = MathUtil::dec2hex(432l);
 #endif
 	EXPECT_STREQ(num.c_str(), "1B0");
 	EXPECT_STRNE(num.c_str(), "1AF");
 	EXPECT_STRNE(num.c_str(), "1B1");
 
 #if defined(UNICODE) || defined(_UNIODE)
-	//const std::wstring &num1 = MathUtil::dec2hex(-3796ul);
-	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2hex(-3796ul));
-	//const std::wstring &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
-	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul));  // 2's complement of a binary number
+	//const std::wstring &num1 = MathUtil::dec2hex(-3796l);
+	const std::string &num1 = swl::String::wcs2mbs(MathUtil::dec2hex(-3796l));
+	//const std::wstring &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
+	const std::string &num2 = swl::String::wcs2mbs(MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul)));  // 2's complement of a binary number
 #else
-	const std::string &num1 = MathUtil::dec2hex(-3796ul);
-	const std::string &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+	const std::string &num1 = MathUtil::dec2hex(-3796l);
+	const std::string &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 	EXPECT_STREQ(num1.c_str(), num2.c_str());
 }
@@ -256,25 +256,25 @@ TEST_F(BaseFieldConversionTest, testDec2Hex)
 TEST_F(BaseFieldConversionTest, testBin2Dec)
 {
 	const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
-	EXPECT_EQ(dec, 432ul);
-	EXPECT_NE(dec, 431ul);
-	EXPECT_NE(dec, 433ul);
+	EXPECT_EQ(dec, 432l);
+	EXPECT_NE(dec, 431l);
+	EXPECT_NE(dec, 433l);
 }
 
 TEST_F(BaseFieldConversionTest, testOct2Dec)
 {
 	const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
-	EXPECT_EQ(dec, 432ul);
-	EXPECT_NE(dec, 431ul);
-	EXPECT_NE(dec, 433ul);
+	EXPECT_EQ(dec, 432l);
+	EXPECT_NE(dec, 431l);
+	EXPECT_NE(dec, 433l);
 }
 
 TEST_F(BaseFieldConversionTest, testHex2Dec)
 {
 	const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
-	EXPECT_EQ(dec, 432ul);
-	EXPECT_NE(dec, 431ul);
-	EXPECT_NE(dec, 433ul);
+	EXPECT_EQ(dec, 432l);
+	EXPECT_NE(dec, 431l);
+	EXPECT_NE(dec, 433l);
 }
 
 //-----------------------------------------------------------------------------
@@ -306,20 +306,20 @@ public:
 	void testDec2Bin()
 	{
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num = MathUtil::dec2bin(432ul);
+		const std::wstring &num = MathUtil::dec2bin(432l);
 #else
-		const std::string &num = MathUtil::dec2bin(432ul);
+		const std::string &num = MathUtil::dec2bin(432l);
 #endif
 		CPPUNIT_ASSERT(num == SWL_STR("110110000"));
 		CPPUNIT_ASSERT(num != SWL_STR("110101111"));
 		CPPUNIT_ASSERT(num != SWL_STR("110110001"));
 
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num1 = MathUtil::dec2bin(-3796ul);
-		const std::wstring &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::wstring &num1 = MathUtil::dec2bin(-3796l);
+		const std::wstring &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2bin(-3796ul);
-		const std::string &num2 = MathUtil::dec2bin(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2bin(-3796l);
+		const std::string &num2 = MathUtil::dec2bin(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		CPPUNIT_ASSERT(num1 == num2);
 	}
@@ -327,20 +327,20 @@ public:
 	void testDec2Oct()
 	{
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num = MathUtil::dec2oct(432ul);
+		const std::wstring &num = MathUtil::dec2oct(432l);
 #else
-		const std::string &num = MathUtil::dec2oct(432ul);
+		const std::string &num = MathUtil::dec2oct(432l);
 #endif
 		CPPUNIT_ASSERT(num == SWL_STR("660"));
 		CPPUNIT_ASSERT(num != SWL_STR("657"));
 		CPPUNIT_ASSERT(num != SWL_STR("661"));
 
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num1 = MathUtil::dec2oct(-3796ul);
-		const std::wstring &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::wstring &num1 = MathUtil::dec2oct(-3796l);
+		const std::wstring &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2oct(-3796ul);
-		const std::string &num2 = MathUtil::dec2oct(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2oct(-3796l);
+		const std::string &num2 = MathUtil::dec2oct(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		CPPUNIT_ASSERT(num1 == num2);
 	}
@@ -348,20 +348,20 @@ public:
 	void testDec2Hex()
 	{
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num = MathUtil::dec2hex(432ul);
+		const std::wstring &num = MathUtil::dec2hex(432l);
 #else
-		const std::string &num = MathUtil::dec2hex(432ul);
+		const std::string &num = MathUtil::dec2hex(432l);
 #endif
 		CPPUNIT_ASSERT(num == SWL_STR("1B0"));
 		CPPUNIT_ASSERT(num != SWL_STR("1AF"));
 		CPPUNIT_ASSERT(num != SWL_STR("1B1"));
 
 #if defined(UNICODE) || defined(_UNIODE)
-		const std::wstring &num1 = MathUtil::dec2hex(-3796ul);
-		const std::wstring &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::wstring &num1 = MathUtil::dec2hex(-3796l);
+		const std::wstring &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #else
-		const std::string &num1 = MathUtil::dec2hex(-3796ul);
-		const std::string &num2 = MathUtil::dec2hex(0xFFFFFFFFul - 3796ul + 1ul);  // 2's complement of a binary number
+		const std::string &num1 = MathUtil::dec2hex(-3796l);
+		const std::string &num2 = MathUtil::dec2hex(long(std::numeric_limits<unsigned long>::max() - 3796ul + 1ul));  // 2's complement of a binary number
 #endif
 		CPPUNIT_ASSERT(num1 == num2);
 	}
@@ -369,25 +369,25 @@ public:
 	void testBin2Dec()
 	{
 		const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
-		CPPUNIT_ASSERT_EQUAL(dec, 432ul);
-		CPPUNIT_ASSERT(dec != 431ul);
-		CPPUNIT_ASSERT(dec != 433ul);
+		CPPUNIT_ASSERT_EQUAL(dec, 432l);
+		CPPUNIT_ASSERT(dec != 431l);
+		CPPUNIT_ASSERT(dec != 433l);
 	}
 
 	void testOct2Dec()
 	{
 		const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
-		CPPUNIT_ASSERT_EQUAL(dec, 432ul);
-		CPPUNIT_ASSERT(dec != 431ul);
-		CPPUNIT_ASSERT(dec != 433ul);
+		CPPUNIT_ASSERT_EQUAL(dec, 432l);
+		CPPUNIT_ASSERT(dec != 431l);
+		CPPUNIT_ASSERT(dec != 433l);
 	}
 
 	void testHex2Dec()
 	{
 		const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
-		CPPUNIT_ASSERT_EQUAL(dec, 432ul);
-		CPPUNIT_ASSERT(dec != 431ul);
-		CPPUNIT_ASSERT(dec != 433ul);
+		CPPUNIT_ASSERT_EQUAL(dec, 432l);
+		CPPUNIT_ASSERT(dec != 431l);
+		CPPUNIT_ASSERT(dec != 433l);
 	}
 };
 

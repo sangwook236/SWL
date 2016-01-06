@@ -58,21 +58,21 @@ public:
 
 	/// convert base field
 #if defined(_UNICODE) || defined(UNICODE)
-	static std::wstring dec2bin(const unsigned long dec);
-	static std::wstring dec2oct(const unsigned long dec);
-	static std::wstring dec2hex(const unsigned long dec);
+	static std::wstring dec2bin(const long dec);
+	static std::wstring dec2oct(const long dec);
+	static std::wstring dec2hex(const long dec);
 
-	static unsigned long bin2dec(const std::wstring &bin);
-	static unsigned long oct2dec(const std::wstring &oct);
-	static unsigned long hex2dec(const std::wstring &hex);
+	static long bin2dec(const std::wstring &bin);
+	static long oct2dec(const std::wstring &oct);
+	static long hex2dec(const std::wstring &hex);
 #else
-	static std::string dec2bin(const unsigned long dec);
-	static std::string dec2oct(const unsigned long dec);
-	static std::string dec2hex(const unsigned long dec);
+	static std::string dec2bin(const long dec);
+	static std::string dec2oct(const long dec);
+	static std::string dec2hex(const long dec);
 
-	static unsigned long bin2dec(const std::string &bin);
-	static unsigned long oct2dec(const std::string &oct);
-	static unsigned long hex2dec(const std::string &hex);
+	static long bin2dec(const std::string &bin);
+	static long oct2dec(const std::string &oct);
+	static long hex2dec(const std::string &hex);
 #endif
 };
 

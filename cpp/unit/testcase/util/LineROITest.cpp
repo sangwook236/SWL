@@ -369,11 +369,11 @@ TEST_F(LineROITest, testMoveRegionWithLimit)
 	{
 		const swl::LineROI::point_type delta(-5.0f, 100.0f);
 		const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
-		const swl::LineROI::real_type dx2 = 15.0f;  // actual displacement
+		const swl::LineROI::real_type dx2 = 0.0f;  // actual displacement: don't move along the negative x-axis.
 
 		swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 		roi.moveRegion(delta, limitRegion);
-		EXPECT_FALSE(local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+		EXPECT_FALSE(local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  <==  don't move along the negative x-axis because x-value of pt1 is beyond a limit region.
 		EXPECT_TRUE(local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
 		EXPECT_FALSE(local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
 		EXPECT_TRUE(local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx2, dy)));
