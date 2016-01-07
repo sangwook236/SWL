@@ -175,11 +175,11 @@ public:
 		{
 			const swl::LineROI::point_type delta(-5.0f, 100.0f);
 			const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
-			const swl::LineROI::real_type dx2 = 15.0f;  // actual displacement
+			const swl::LineROI::real_type dx2 = 0.0f;  // actual displacement: don't move along the negative x-axis.
 
 			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
-			BOOST_CHECK(!local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+			BOOST_CHECK(!local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  <==  don't move along the negative x-axis because x-value of pt1 is beyond a limit region.
 			BOOST_CHECK(local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
 			BOOST_CHECK(!local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
 			BOOST_CHECK(local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx2, dy)));
@@ -547,11 +547,11 @@ public:
 		{
 			const swl::LineROI::point_type delta(-5.0f, 100.0f);
 			const swl::LineROI::real_type dx = -5.0f, dy = 25.0f;  // computed displacement
-			const swl::LineROI::real_type dx2 = 0.0f;  // actual displacement
+			const swl::LineROI::real_type dx2 = 0.0f;  // actual displacement: don't move along the negative x-axis.
 
 			swl::LineROI roi(pt1, pt2, true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type());
 			roi.moveRegion(delta, limitRegion);
-			CPPUNIT_ASSERT(!local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  ==>  don't move along x-axis because x-value is beyond a limit region & away from its boundary
+			CPPUNIT_ASSERT(!local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx, dy)));  // caution: not (-25, 35), but (-20, 35)  <==  don't move along the negative x-axis because x-value of pt1 is beyond a limit region.
 			CPPUNIT_ASSERT(local::comparePoints(roi.point1(), pt1 + swl::LineROI::point_type(dx2, dy)));
 			CPPUNIT_ASSERT(!local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx, dy)));
 			CPPUNIT_ASSERT(local::comparePoints(roi.point2(), pt2 + swl::LineROI::point_type(dx2, dy)));
