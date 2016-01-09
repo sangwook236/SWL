@@ -56,15 +56,22 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
+		<Unit filename="../../inc/swl/rnd_util/ArHmmWithMultivariateNormalMixtureObservations.h" />
+		<Unit filename="../../inc/swl/rnd_util/ArHmmWithMultivariateNormalObservations.h" />
+		<Unit filename="../../inc/swl/rnd_util/ArHmmWithUnivariateNormalMixtureObservations.h" />
+		<Unit filename="../../inc/swl/rnd_util/ArHmmWithUnivariateNormalObservations.h" />
 		<Unit filename="../../inc/swl/rnd_util/CDHMM.h" />
+		<Unit filename="../../inc/swl/rnd_util/CDHMMWithMixtureObservations.h" />
 		<Unit filename="../../inc/swl/rnd_util/ContinuousDensityMixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/ContinuousLinearStochasticSystem.h" />
 		<Unit filename="../../inc/swl/rnd_util/ContinuousNonlinearStochasticSystem.h" />
 		<Unit filename="../../inc/swl/rnd_util/DDHMM.h" />
 		<Unit filename="../../inc/swl/rnd_util/DiscreteLinearStochasticSystem.h" />
 		<Unit filename="../../inc/swl/rnd_util/DiscreteNonlinearStochasticSystem.h" />
+		<Unit filename="../../inc/swl/rnd_util/DynamicTimeWarping.h" />
 		<Unit filename="../../inc/swl/rnd_util/ExportRndUtil.h" />
 		<Unit filename="../../inc/swl/rnd_util/ExtendedKalmanFilter.h" />
+		<Unit filename="../../inc/swl/rnd_util/GraphTraversal.h" />
 		<Unit filename="../../inc/swl/rnd_util/HMM.h" />
 		<Unit filename="../../inc/swl/rnd_util/HistogramAccumulator.h" />
 		<Unit filename="../../inc/swl/rnd_util/HistogramMatcher.h" />
@@ -82,8 +89,10 @@
 		<Unit filename="../../inc/swl/rnd_util/HmmWithVonMisesObservations.h" />
 		<Unit filename="../../inc/swl/rnd_util/HoughTransform.h" />
 		<Unit filename="../../inc/swl/rnd_util/KalmanFilter.h" />
+		<Unit filename="../../inc/swl/rnd_util/LevenshteinDistance.h" />
 		<Unit filename="../../inc/swl/rnd_util/MetropolisHastingsAlgorithm.h" />
 		<Unit filename="../../inc/swl/rnd_util/MixtureModel.h" />
+		<Unit filename="../../inc/swl/rnd_util/MultivariateNormalMixtureModel.h" />
 		<Unit filename="../../inc/swl/rnd_util/Ransac.h" />
 		<Unit filename="../../inc/swl/rnd_util/RejectionSampling.h" />
 		<Unit filename="../../inc/swl/rnd_util/SamplingImportanceResampling.h" />

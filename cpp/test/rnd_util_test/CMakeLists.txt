@@ -6,6 +6,7 @@ set(SRCS
 	ArHmmWithUnivariateNormalObservationsTest.cpp
 	DynamicTimeWarpingTest.cpp
 	ExtendedKalmanFilterTest.cpp
+	GraphTraversalTest.cpp
 	HmmSegmentationTest.cpp
 	HmmWithMultinomialObservationsTest.cpp
 	HmmWithUnivariateNormalMixtureObservationsTest.cpp

@@ -52,6 +52,7 @@
 		<Compiler>
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-std=c++11" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
@@ -77,6 +78,7 @@
 		<Unit filename="ArHmmWithUnivariateNormalObservationsTest.cpp" />
 		<Unit filename="DynamicTimeWarpingTest.cpp" />
 		<Unit filename="ExtendedKalmanFilterTest.cpp" />
+		<Unit filename="GraphTraversalTest.cpp" />
 		<Unit filename="HmmSegmentationTest.cpp" />
 		<Unit filename="HmmWithMultinomialObservationsTest.cpp" />
 		<Unit filename="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />
