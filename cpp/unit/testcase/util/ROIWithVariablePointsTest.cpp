@@ -17,10 +17,9 @@
 namespace {
 namespace local {
 
-bool comparePoints(const swl::ROIWithVariablePoints::point_type &lhs, const swl::ROIWithVariablePoints::point_type &rhs)
+bool comparePoints(const swl::ROIWithVariablePoints::point_type &lhs, const swl::ROIWithVariablePoints::point_type &rhs, const swl::ROIWithVariablePoints::real_type &eps = swl::ROIWithVariablePoints::real_type(1.0e-15))
 {
-	const swl::ROIWithVariablePoints::real_type eps = swl::ROIWithVariablePoints::real_type(1.0e-15);
-	return std::fabs(lhs.x - rhs.x) <= eps && std::fabs(lhs.y - rhs.y) <= eps;
+	return std::abs(lhs.x - rhs.x) <= eps && std::abs(lhs.y - rhs.y) <= eps;
 }
 
 }  // namespace local

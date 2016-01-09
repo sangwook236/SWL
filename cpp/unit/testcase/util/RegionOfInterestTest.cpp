@@ -16,10 +16,9 @@
 namespace {
 namespace local {
 
-bool compareColors(const swl::RegionOfInterest::color_type &lhs, const swl::RegionOfInterest::color_type &rhs)
+bool compareColors(const swl::RegionOfInterest::color_type &lhs, const swl::RegionOfInterest::color_type &rhs, const swl::RegionOfInterest::real_type &eps = swl::RegionOfInterest::real_type(1.0e-15))
 {
-	const swl::RegionOfInterest::real_type eps = swl::RegionOfInterest::real_type(1.0e-15);
-	return std::fabs(lhs.r - rhs.r) <= eps && std::fabs(lhs.g - rhs.g) <= eps && std::fabs(lhs.b - rhs.b) <= eps && std::fabs(lhs.a - rhs.a) <= eps;
+	return std::abs(lhs.r - rhs.r) <= eps && std::abs(lhs.g - rhs.g) <= eps && std::abs(lhs.b - rhs.b) <= eps && std::abs(lhs.a - rhs.a) <= eps;
 }
 
 }  // namespace local

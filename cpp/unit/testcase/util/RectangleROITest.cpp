@@ -14,10 +14,9 @@
 namespace {
 namespace local {
 
-bool comparePoints(const swl::RectangleROI::point_type &lhs, const swl::RectangleROI::point_type &rhs)
+bool comparePoints(const swl::RectangleROI::point_type &lhs, const swl::RectangleROI::point_type &rhs, const swl::RectangleROI::real_type &eps = swl::RectangleROI::real_type(1.0e-15))
 {
-	const swl::RectangleROI::real_type eps = swl::RectangleROI::real_type(1.0e-15);
-	return std::fabs(lhs.x - rhs.x) <= eps && std::fabs(lhs.y - rhs.y) <= eps;
+	return std::abs(lhs.x - rhs.x) <= eps && std::abs(lhs.y - rhs.y) <= eps;
 }
 
 swl::RectangleROI::point_type calculatePoint(const swl::RectangleROI::point_type &lhs, const swl::RectangleROI::point_type &rhs, const swl::RectangleROI::real_type &alpha)
