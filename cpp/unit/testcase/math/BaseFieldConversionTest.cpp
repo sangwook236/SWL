@@ -117,7 +117,7 @@ public:
 	{
 		Fixture fixture;
 
-		const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
+		const long dec = MathUtil::bin2dec(SWL_STR("110110000"));
 		BOOST_CHECK_EQUAL(dec, 432l);
 		BOOST_CHECK_NE(dec, 431l);
 		BOOST_CHECK_NE(dec, 433l);
@@ -127,7 +127,7 @@ public:
 	{
 		Fixture fixture;
 
-		const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
+		const long dec = MathUtil::oct2dec(SWL_STR("660"));
 		BOOST_CHECK_EQUAL(dec, 432l);
 		BOOST_CHECK_NE(dec, 431l);
 		BOOST_CHECK_NE(dec, 433l);
@@ -137,7 +137,7 @@ public:
 	{
 		Fixture fixture;
 
-		const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
+		const long dec = MathUtil::hex2dec(SWL_STR("1B0"));
 		BOOST_CHECK_EQUAL(dec, 432l);
 		BOOST_CHECK_NE(dec, 431l);
 		BOOST_CHECK_NE(dec, 433l);
@@ -255,7 +255,7 @@ TEST_F(BaseFieldConversionTest, testDec2Hex)
 
 TEST_F(BaseFieldConversionTest, testBin2Dec)
 {
-	const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
+	const long dec = MathUtil::bin2dec(SWL_STR("110110000"));
 	EXPECT_EQ(dec, 432l);
 	EXPECT_NE(dec, 431l);
 	EXPECT_NE(dec, 433l);
@@ -263,7 +263,7 @@ TEST_F(BaseFieldConversionTest, testBin2Dec)
 
 TEST_F(BaseFieldConversionTest, testOct2Dec)
 {
-	const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
+	const long dec = MathUtil::oct2dec(SWL_STR("660"));
 	EXPECT_EQ(dec, 432l);
 	EXPECT_NE(dec, 431l);
 	EXPECT_NE(dec, 433l);
@@ -271,7 +271,7 @@ TEST_F(BaseFieldConversionTest, testOct2Dec)
 
 TEST_F(BaseFieldConversionTest, testHex2Dec)
 {
-	const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
+	const long dec = MathUtil::hex2dec(SWL_STR("1B0"));
 	EXPECT_EQ(dec, 432l);
 	EXPECT_NE(dec, 431l);
 	EXPECT_NE(dec, 433l);
@@ -368,7 +368,7 @@ public:
 
 	void testBin2Dec()
 	{
-		const unsigned long dec = MathUtil::bin2dec(SWL_STR("110110000"));
+		const long dec = MathUtil::bin2dec(SWL_STR("110110000"));
 		CPPUNIT_ASSERT_EQUAL(dec, 432l);
 		CPPUNIT_ASSERT(dec != 431l);
 		CPPUNIT_ASSERT(dec != 433l);
@@ -376,7 +376,7 @@ public:
 
 	void testOct2Dec()
 	{
-		const unsigned long dec = MathUtil::oct2dec(SWL_STR("660"));
+		const long dec = MathUtil::oct2dec(SWL_STR("660"));
 		CPPUNIT_ASSERT_EQUAL(dec, 432l);
 		CPPUNIT_ASSERT(dec != 431l);
 		CPPUNIT_ASSERT(dec != 433l);
@@ -384,7 +384,7 @@ public:
 
 	void testHex2Dec()
 	{
-		const unsigned long dec = MathUtil::hex2dec(SWL_STR("1B0"));
+		const long dec = MathUtil::hex2dec(SWL_STR("1B0"));
 		CPPUNIT_ASSERT_EQUAL(dec, 432l);
 		CPPUNIT_ASSERT(dec != 431l);
 		CPPUNIT_ASSERT(dec != 433l);
