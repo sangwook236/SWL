@@ -103,6 +103,7 @@
     <ClCompile Include="ArHmmWithUnivariateNormalObservationsTest.cpp" />
     <ClCompile Include="DynamicTimeWarpingTest.cpp" />
     <ClCompile Include="ExtendedKalmanFilterTest.cpp" />
+    <ClCompile Include="GraphTraversalTest.cpp" />
     <ClCompile Include="HmmSegmentationTest.cpp" />
     <ClCompile Include="HmmWithMultinomialObservationsTest.cpp" />
     <ClCompile Include="HmmWithUnivariateNormalMixtureObservationsTest.cpp" />

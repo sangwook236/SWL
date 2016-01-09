@@ -39,9 +39,6 @@
     <ClCompile Include="SamplingImportanceResamplingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="UnscentedKalmanFilterTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -90,13 +87,8 @@
     <ClCompile Include="LevenshteinDistanceTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ReadMe.txt" />
+    <ClCompile Include="GraphTraversalTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
