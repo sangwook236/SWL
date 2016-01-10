@@ -1,5 +1,5 @@
-#if !defined(__SWL_RND_UTIL__SORT__H_)
-#define __SWL_RND_UTIL__SORT__H_ 1
+#if !defined(__SWL_RND_UTIL__GRAPH_TRAVERSAL__H_)
+#define __SWL_RND_UTIL__GRAPH_TRAVERSAL__H_ 1
 
 
 #include <queue>
@@ -99,4 +99,4 @@ void BFS(const Graph& g, Vertex* v, Visitor visitor)
 }  // namespace swl
 
 
-#endif  // __SWL_RND_UTIL__SORT__H_
+#endif  // __SWL_RND_UTIL__GRAPH_TRAVERSAL__H_
