@@ -26,6 +26,7 @@ namespace local {
 
 struct VonMisesTargetDistribution: public swl::RejectionSampling::TargetDistribution
 {
+public:
 	typedef swl::RejectionSampling::TargetDistribution base_type;
 	typedef base_type::vector_type vector_type;
 
@@ -46,6 +47,7 @@ private:
 
 struct UnivariateNormalProposalDistribution: public swl::RejectionSampling::ProposalDistribution
 {
+public:
 	typedef swl::RejectionSampling::ProposalDistribution base_type;
 	typedef base_type::vector_type vector_type;
 
@@ -79,6 +81,7 @@ private:
 
 struct UnivariateUniformProposalDistribution: public swl::RejectionSampling::ProposalDistribution
 {
+public:
 	typedef swl::RejectionSampling::ProposalDistribution base_type;
 	typedef base_type::vector_type vector_type;
 
