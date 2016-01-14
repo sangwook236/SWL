@@ -154,7 +154,7 @@ set(USE_FFTW OFF)
 #option(USE_PCL "Point Cloud Library (PCL)" OFF)
 set(USE_PCL OFF)
 
-option(USE_CUDA  "Compute Unified Device Architecture (CUDA) - a parallel computing platform and programming model invented by NVIDIA" OFF)
+option(USE_CUDA "Compute Unified Device Architecture (CUDA) - a parallel computing platform and programming model invented by NVIDIA" OFF)
 #set(USE_CUDA OFF)
 
 #option(USE_QT4 "Qt4 - Coss-platform application framework" OFF)
