@@ -15,13 +15,15 @@ set(SRCS
 	swl_gps_aided_imu_filter_app.cpp
 	swl_gps_aided_imu_filter_app.rc
 	swl_gps_aided_imu_filter_appDlg.cpp
+
+	# AdisUsbz library
+	adisusbz_lib/AdisUsbz.cpp
 )
 set(LIBS
 	swl_winutil
 	swl_rnd_util
 	swl_math
 	nmea
-	adisusbz
 	${GSL_LIBRARIES}
 	${LAPACK_LIBRARIES}
 )

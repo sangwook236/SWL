@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "swl/Config.h"
 #include "Adis16350Interface.h"
-#include "adisusbz/AdisUsbz.h"
+#include "adisusbz_lib/AdisUsbz.h"
 #include <boost/math/constants/constants.hpp>
 #include <boost/thread.hpp>
 #include <fstream>

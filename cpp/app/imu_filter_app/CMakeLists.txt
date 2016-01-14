@@ -12,11 +12,13 @@ set(SRCS
 	ImuSystem.cpp
 	ImuUnscentedKalmanFilterRunner.cpp
 	ImuUnscentedKalmanFilterWithCalibration.cpp
+
+	# AdisUsbz library
+	adisusbz_lib/AdisUsbz.cpp
 )
 set(LIBS
 	swl_rnd_util
 	swl_math
-	adisusbz
 	${GSL_LIBRARIES}
 	${LAPACK_LIBRARIES}
 )

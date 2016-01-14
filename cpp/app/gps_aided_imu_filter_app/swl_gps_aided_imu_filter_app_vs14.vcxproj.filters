@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\adisusbz_lib">
+      <UniqueIdentifier>{64aa06d8-87f7-403d-b2c6-7c0a426a3fcd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Adis16350Interface.cpp">
@@ -44,6 +47,9 @@
     </ClCompile>
     <ClCompile Include="swl_gps_aided_imu_filter_appDlg.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="adisusbz_lib\AdisUsbz.cpp">
+      <Filter>Source Files\adisusbz_lib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +88,9 @@
     </ClInclude>
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="adisusbz_lib\AdisUsbz.h">
+      <Filter>Source Files\adisusbz_lib</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

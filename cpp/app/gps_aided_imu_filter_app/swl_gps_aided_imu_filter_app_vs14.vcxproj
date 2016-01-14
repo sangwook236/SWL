@@ -76,7 +76,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util_d.lib;swl_winutil_d.lib;swl_math_d.lib;nmea_d.lib;adisusbz_d.lib;gsl_d.lib;cblas_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util_d.lib;swl_winutil_d.lib;swl_math_d.lib;nmea_d.lib;gsl_d.lib;cblas_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -108,7 +108,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_winutil.lib;swl_math.lib;nmea.lib;adisusbz.lib;gsl.lib;cblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_winutil.lib;swl_math.lib;nmea.lib;gsl.lib;cblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -120,6 +120,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Adis16350Interface.cpp" />
+    <ClCompile Include="adisusbz_lib\AdisUsbz.cpp" />
     <ClCompile Include="DataDefinition.cpp" />
     <ClCompile Include="FileBasedFilteringDialog.cpp" />
     <ClCompile Include="GpsAidedImuFilterDialog.cpp" />
@@ -135,6 +136,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Adis16350Interface.h" />
+    <ClInclude Include="adisusbz_lib\AdisUsbz.h" />
     <ClInclude Include="DataDefinition.h" />
     <ClInclude Include="FileBasedFilteringDialog.h" />
     <ClInclude Include="GpsAidedImuFilterDialog.h" />

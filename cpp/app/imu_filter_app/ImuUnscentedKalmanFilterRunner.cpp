@@ -3,7 +3,7 @@
 #include "ImuUnscentedKalmanFilterRunner.h"
 #include "swl/rnd_util/UnscentedKalmanFilterWithAdditiveNoise.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
-#include "adisusbz/AdisUsbz.h"
+#include "adisusbz_lib/AdisUsbz.h"
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_statistics.h>

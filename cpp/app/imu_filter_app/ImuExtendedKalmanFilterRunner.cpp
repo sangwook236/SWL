@@ -4,7 +4,7 @@
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
 #if defined(WIN32)
-#include "adisusbz/AdisUsbz.h"
+#include "adisusbz_lib/AdisUsbz.h"
 #endif
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>

@@ -3,7 +3,7 @@
 #include "ImuExtendedKalmanFilterRunner.h"
 #include "swl/rnd_util/ExtendedKalmanFilter.h"
 #include "swl/rnd_util/DiscreteNonlinearStochasticSystem.h"
-#include "adisusbz/AdisUsbz.h"
+#include "adisusbz_lib/AdisUsbz.h"
 #include <gsl/gsl_blas.h>
 #include <iostream>
 #include <cmath>

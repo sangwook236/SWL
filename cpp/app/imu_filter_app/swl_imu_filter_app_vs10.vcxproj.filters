@@ -13,6 +13,9 @@
       <UniqueIdentifier>{e1b951f4-997b-4f05-9d11-8afbaa2316bf}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\adisusbz_lib">
+      <UniqueIdentifier>{5d6fbf2c-b183-41cd-9d1a-6939f282d6e7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImuCalibration.cpp">
@@ -39,6 +42,9 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="adisusbz_lib\AdisUsbz.cpp">
+      <Filter>Source Files\adisusbz_lib</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ImuExtendedKalmanFilterRunner.h">
@@ -49,6 +55,9 @@
     </ClInclude>
     <ClInclude Include="ImuUnscentedKalmanFilterRunner.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="adisusbz_lib\AdisUsbz.h">
+      <Filter>Source Files\adisusbz_lib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
