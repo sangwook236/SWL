@@ -1,6 +1,3 @@
-include_directories(${MY_HW_DEV_EXT_INCLUDE})
-link_directories(${MY_HW_DEV_EXT_LIB})
-
 set(TARGET swl_imu_filter_app)
 
 set(SRCS
