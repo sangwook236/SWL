@@ -28,6 +28,10 @@ namespace local {
 
 struct TransitionDistribution: public swl::SamplingImportanceResampling::TransitionDistribution
 {
+public:
+	typedef swl::SamplingImportanceResampling::TransitionDistribution base_type;
+
+public:
 	TransitionDistribution(const double Ts, const double sigma)
 	: Ts_(Ts), sigma_(sigma)
 	{}
@@ -50,11 +54,15 @@ private:
 
 struct ObservationDistribution: public swl::SamplingImportanceResampling::ObservationDistribution
 {
+public:
+	typedef swl::SamplingImportanceResampling::ObservationDistribution base_type;
+
+public:
 	ObservationDistribution(const double Ts, const double sigma)
 	: Ts_(Ts), sigma_(sigma)
 	{}
 
-	// p(y(k) | x(k))
+	// p(y(k) | x(k)).
 	/*virtual*/ double evaluate(const size_t step, const swl::SamplingImportanceResampling::vector_type &x, const swl::SamplingImportanceResampling::vector_type &y) const
 	{
 		const double &x0 = x[0];
@@ -72,12 +80,16 @@ private:
 
 struct ProposalDistribution: public swl::SamplingImportanceResampling::ProposalDistribution
 {
+public:
+	typedef swl::SamplingImportanceResampling::ProposalDistribution base_type;
+
+public:
 	ProposalDistribution(const double Ts, const double sigma_v, const double sigma_w)
 	: Ts_(Ts), sigma_v_(sigma_v), sigma_w_(sigma_w),
 	  baseGenerator_(static_cast<unsigned int>(std::time(NULL)))
 	{}
 
-	// p(x(k) | x(k-1))
+	// p(x(k) | x(k-1)).
 	/*virtual*/ double evaluate(const size_t step, const swl::SamplingImportanceResampling::vector_type &currX, const swl::SamplingImportanceResampling::vector_type &prevX, const swl::SamplingImportanceResampling::vector_type &y) const
 	{
 		const double &x0 = prevX[0];
@@ -87,12 +99,12 @@ struct ProposalDistribution: public swl::SamplingImportanceResampling::ProposalD
 		const double f = 0.5 * x0 + 25.0 * x0 / (1 + x0*x0) + 8.0 * std::cos(1.2 * Ts_ * step);
 
 #if 0
-		// the prior distribution of a HMM is used as importance function  -->  sub-optimal
-		//	use transition distribution
+		// the prior distribution of a HMM is used as importance function --> sub-optimal.
+		//	use transition distribution.
 		boost::math::normal dist(f, sigma_);
 		return boost::math::pdf(dist, x1);
 #else
-		// an importance function obtained by local linearization
+		// an importance function obtained by local linearization.
 		const double sigma = 1.0 / std::sqrt(1.0 / (sigma_v_ * sigma_v_) + f * f / (100.0 * sigma_w_ * sigma_w_));
 		const double mean = sigma*sigma * (f / (sigma_v_ * sigma_v_) + (f / (10.0 * sigma_w_ * sigma_w_)) * (y0 + f * f / 20.0));
 
@@ -100,11 +112,11 @@ struct ProposalDistribution: public swl::SamplingImportanceResampling::ProposalD
 		return boost::math::pdf(dist, x1);
 #endif
 	}
-	// p(x(k) | x(0:k-1), y(0:k))
+	// p(x(k) | x(0:k-1), y(0:k)).
 	/*virtual*/ double evaluate(const size_t step, const swl::SamplingImportanceResampling::vector_type &currX, const std::vector<swl::SamplingImportanceResampling::vector_type> &prevXs, const std::vector<swl::SamplingImportanceResampling::vector_type> &simulatedYs) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 
-	// x ~ p(x(k) | x(k-1))
+	// x ~ p(x(k) | x(k-1)).
 	/*virtual*/ void sample(const size_t step, const swl::SamplingImportanceResampling::vector_type &x, const swl::SamplingImportanceResampling::vector_type &y, swl::SamplingImportanceResampling::vector_type &sample) const
 	{
 		const double &x0 = x[0];
@@ -113,12 +125,12 @@ struct ProposalDistribution: public swl::SamplingImportanceResampling::ProposalD
 		const double f = 0.5 * x0 + 25.0 * x0 / (1 + x0*x0) + 8.0 * std::cos(1.2 * Ts_ * step);
 
 #if 0
-		// the prior distribution of a HMM is used as importance function  -->  sub-optimal
-		//	use transition distribution
+		// the prior distribution of a HMM is used as importance function --> sub-optimal.
+		//	use transition distribution.
 		generator_type generator(baseGenerator_, boost::normal_distribution<>(f, sigma_v_));
 		sample[0] = generator();
 #else
-		// an importance function obtained by local linearization
+		// an importance function obtained by local linearization.
 		const double sigma = 1.0 / std::sqrt(1.0 / (sigma_v_ * sigma_v_) + f * f / (100.0 * sigma_w_ * sigma_w_));
 		const double mean = sigma*sigma * (f / (sigma_v_ * sigma_v_) + (f / (10.0 * sigma_w_ * sigma_w_)) * (y0 + f * f / 20.0));
 
@@ -126,7 +138,7 @@ struct ProposalDistribution: public swl::SamplingImportanceResampling::ProposalD
 		sample[0] = generator();
 #endif
 	}
-	// x ~ p(x(k) | x(0:k-1), y(0:k))
+	// x ~ p(x(k) | x(0:k-1), y(0:k)).
 	/*virtual*/ void sample(const size_t step, const std::vector<swl::SamplingImportanceResampling::vector_type> &xs, const std::vector<swl::SamplingImportanceResampling::vector_type> &simulatedYs, swl::SamplingImportanceResampling::vector_type &sample) const
 	{  throw std::runtime_error("this function doesn't have to be called");  }
 
@@ -161,12 +173,12 @@ void sampling_importance_resampling()
 	//
 	const size_t Nstep = 50;
 
-	// simulate measurement
+	// simulate measurement.
 	std::vector<double> simulatedXs, simulatedYs;
 	simulatedXs.reserve(Nstep);
 	simulatedYs.reserve(Nstep);
 	{
-		// x ~ p(x(0))
+		// x ~ p(x(0)).
 		typedef boost::minstd_rand base_generator_type;
 		typedef boost::variate_generator<base_generator_type &, boost::normal_distribution<> > generator_type;
 
@@ -188,7 +200,7 @@ void sampling_importance_resampling()
 
 	//
 #if defined(__GNUC__)
-    local::TransitionDistribution transitionDistribution(Ts, sigma_v);
+	local::TransitionDistribution transitionDistribution(Ts, sigma_v);
 	local::ObservationDistribution observationDistribution(Ts, sigma_w);
 	local::ProposalDistribution proposalDistribution(Ts, sigma_v, sigma_w);
 	swl::SamplingImportanceResampling sir(EFFECTIVE_SAMPLE_SIZE, transitionDistribution, observationDistribution, proposalDistribution);
@@ -201,7 +213,7 @@ void sampling_importance_resampling()
 	std::vector<double> weights(PARTICLE_NUM, 1.0 / PARTICLE_NUM);
 	swl::SamplingImportanceResampling::vector_type y(OUTPUT_DIM, 0.0);
 
-	// initialization: step = 0
+	// initialization: step = 0.
 	{
 		// x ~ p(x(0))
 		typedef boost::minstd_rand base_generator_type;
@@ -227,14 +239,14 @@ void sampling_importance_resampling()
 #if 0
 		sir.sample(step, PARTICLE_NUM, xs, y, newXs, weights, &estimatedX);
 
-		// estimated state  ==>  a particle with a maximum weight
+		// estimated state  ==>  a particle with a maximum weight.
 		estimatedXs.push_back(estimatedX[0]);
 #elif 0
 		sir.sample(step, PARTICLE_NUM, xs, y, newXs, weights);
 
-		// estimated state  ==>  the mean of the posterior samples (particles)
+		// estimated state  ==>  the mean of the posterior samples (particles).
 
-		// arithmetic mean
+		// arithmetic mean.
 		double sum = 0.0;
 		for (size_t k = 0; k < PARTICLE_NUM; ++k)
 			sum += newXs[k][0];
@@ -242,9 +254,9 @@ void sampling_importance_resampling()
 #elif 1
 		sir.sample(step, PARTICLE_NUM, xs, y, newXs, weights);
 
-		// estimated state  ==>  the mean of the posterior samples (particles)
+		// estimated state  ==>  the mean of the posterior samples (particles).
 
-		// weighted mean
+		// weighted mean.
 		double mean = 0.0;
 		for (size_t k = 0; k < PARTICLE_NUM; ++k)
 			mean += weights[k] * newXs[k][0];

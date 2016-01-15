@@ -27,7 +27,7 @@ public:
 		std::inplace_merge(first, middle, last);
 	}
 
-	template <typename ForwardIterator>
+	template<typename ForwardIterator>
 	static void quickSort(ForwardIterator first, ForwardIterator last)
 	{
 		if (first == last) return;

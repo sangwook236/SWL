@@ -80,6 +80,20 @@
 			<Option compile="0" />
 			<Option link="0" />
 		</Unit>
+		<Unit filename="gslic_lib/FastImgSeg.cpp">
+			<Option compile="0" />
+			<Option link="0" />
+		</Unit>
+		<Unit filename="gslic_lib/FastImgSeg.h" />
+		<Unit filename="gslic_lib/cudaDefines.h" />
+		<Unit filename="gslic_lib/cudaImgTrans.cu" />
+		<Unit filename="gslic_lib/cudaImgTrans.h" />
+		<Unit filename="gslic_lib/cudaSegEngine.cu" />
+		<Unit filename="gslic_lib/cudaSegEngine.h" />
+		<Unit filename="gslic_lib/cudaSegSLIC.cu" />
+		<Unit filename="gslic_lib/cudaSegSLIC.h" />
+		<Unit filename="gslic_lib/cudaUtil.cu" />
+		<Unit filename="gslic_lib/cudaUtil.h" />
 		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />

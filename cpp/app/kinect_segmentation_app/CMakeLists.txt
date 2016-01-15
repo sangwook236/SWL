@@ -5,19 +5,17 @@ include_directories(
 
 set(TARGET swl_kinect_segmentation_app)
 
-set(EFFICIENT_GRAPH_BASED_IMAGE_SEGMENTATION_LIB_SRCS
+set(SRCS
+	# efficient graph based image segmentation.
 #	./efficient_graph_based_image_segmentation_lib/segment.cpp
-)
-set(GSLIC_LIB_SRCS
-	./gslic_lib/FastImgSeg.cpp
+
+	# gSLIC.
+#	./gslic_lib/FastImgSeg.cpp
 	./gslic_lib/cudaImgTrans.cu
 	./gslic_lib/cudaSegEngine.cu
 	./gslic_lib/cudaSegSLIC.cu
 	./gslic_lib/cudaUtil.cu
-)
-set(SRCS
-	${EFFICIENT_GRAPH_BASED_IMAGE_SEGMENTATION_LIB_SRCS}
-	${GSLIC_LIB_SRCS}
+
 	main.cpp
 	DepthGuidedMap.cpp
 	EfficientGraphBasedImageSegmentation.cpp
