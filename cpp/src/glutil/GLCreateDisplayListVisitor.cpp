@@ -3,7 +3,7 @@
 #include "swl/glutil/GLShapeSceneNode.h"
 #include "swl/graphics/AppearanceSceneNode.h"
 #include "swl/graphics/GeometrySceneNode.h"
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
 #endif
 #include <GL/gl.h>

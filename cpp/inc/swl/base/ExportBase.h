@@ -2,7 +2,7 @@
 #define __SWL_BASE__EXPORT_BASE__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_BASE_EXPORT)
 #		    define SWL_BASE_API __declspec(dllexport)

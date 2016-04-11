@@ -2,7 +2,7 @@
 #define __SWL_KINEMATICS__EXPORT_KINEMATICS__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_KINEMATICS_EXPORT)
 #		    define SWL_KINEMATICS_API __declspec(dllexport)

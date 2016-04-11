@@ -81,13 +81,13 @@ std::string LogException::getFileName() const
 #endif
 {
 #if defined(UNICODE) || defined(_UNICODE)
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	const std::wstring delim(L"\\");
 #else
 	const std::wstring delim(L"/");
 #endif
 #else
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	const std::string delim("\\");
 #else
 	const std::string delim("/");

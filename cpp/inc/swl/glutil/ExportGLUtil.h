@@ -2,7 +2,7 @@
 #define __SWL_GL_UTIL__EXPORT_GL_UTIL__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_GL_UTIL_EXPORT)
 #		    define SWL_GL_UTIL_API __declspec(dllexport)

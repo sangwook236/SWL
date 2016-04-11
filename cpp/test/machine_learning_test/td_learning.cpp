@@ -4,7 +4,7 @@
 #include "swl/machine_learning/QLearning.h"
 #include "swl/machine_learning/SarsaLambda.h"
 #include "swl/machine_learning/QLambda.h"
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include "swl/winutil/WinTimer.h"
 #elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
 #include "swl/posixutil/PosixTimer.h"
@@ -63,7 +63,7 @@ void sarsa(const size_t maxEpisodeCount, const state_action_pair_type::policy_ty
 	}
 
 	{
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 		swl::WinTimer aTimer;
 #elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
 		swl::PosixTimer aTimer;
@@ -105,7 +105,7 @@ void q_learning(const size_t maxEpisodeCount, const state_action_pair_type::poli
 	}
 
 	{
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 		swl::WinTimer aTimer;
 #elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
 		swl::PosixTimer aTimer;
@@ -153,7 +153,7 @@ void sarsa_lambda(const size_t maxEpisodeCount, const state_action_pair_type::po
 	}
 
 	{
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 		swl::WinTimer aTimer;
 #elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
 		swl::PosixTimer aTimer;
@@ -201,7 +201,7 @@ void q_lambda(const size_t maxEpisodeCount, const state_action_pair_type::policy
 	}
 
 	{
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 		swl::WinTimer aTimer;
 #elif defined(__linux) || defined(__linux__) || defined(linux) || defined(__unix) || defined(__unix__) || defined(unix)
 		swl::PosixTimer aTimer;

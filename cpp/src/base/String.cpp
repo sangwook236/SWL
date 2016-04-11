@@ -1,7 +1,7 @@
 #include "swl/Config.h"
 #include "swl/base/String.h"
 #include <boost/smart_ptr.hpp>
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
 #endif
 #include <clocale>
@@ -20,7 +20,7 @@ namespace swl {
 
 /*static*/ std::string String::wcs2mbs(const std::wstring &wcstr)
 {
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	const int len = WideCharToMultiByte(CP_ACP, 0, wcstr.c_str(), -1, NULL, 0, NULL, NULL);
 	boost::scoped_array<char> mbstr(new char [len]);
 	const int len2 = WideCharToMultiByte(CP_ACP, 0, wcstr.c_str(), -1, mbstr.get(), (int)len, NULL, NULL);
@@ -43,7 +43,7 @@ namespace swl {
 
 /*static*/ std::wstring String::mbs2wcs(const std::string &mbstr)
 {
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	const int len = MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), -1, NULL, 0);
 	boost::scoped_array<wchar_t> wcstr(new wchar_t [len]);
 	const int len2 = MultiByteToWideChar(CP_ACP, 0, mbstr.c_str(), -1, wcstr.get(), (int)len);

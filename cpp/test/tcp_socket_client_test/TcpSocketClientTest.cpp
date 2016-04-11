@@ -11,7 +11,7 @@
 #include <ctime>
 #include <cstdlib>
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include <vld/vld.h>
 #endif
 

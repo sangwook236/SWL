@@ -1,7 +1,7 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
 #include "swl/util/SerialPort.h"
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include "swl/winutil/WinSerialPort.h"
 #endif
 #include <boost/thread.hpp>
@@ -40,7 +40,7 @@ private:
 	boost::asio::io_service &ioService_;
 };
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 struct WinSerialPortThreadFunctor
 {
 	WinSerialPortThreadFunctor(swl::WinSerialPort &serialPort, swl::GuardedByteBuffer &recvBuffer)
@@ -135,7 +135,7 @@ void test_boost_serial_port()
 
 void test_windows_serial_port()
 {
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 	swl::WinSerialPort serialPort;
 
 #if defined(_UNICODE) || defined(UNICODE)

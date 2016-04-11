@@ -2,7 +2,7 @@
 #define __SWL_PATTERN_RECOGNITION__EXPORT_PATTERN_RECOGNITION__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_PATTERN_RECOGNITION_EXPORT)
 #		    define SWL_PATTERN_RECOGNITION_API __declspec(dllexport)

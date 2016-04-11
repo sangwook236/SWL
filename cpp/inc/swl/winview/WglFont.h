@@ -7,7 +7,7 @@
 #include "swl/graphics/GraphicsObj.h"
 #include <boost/smart_ptr.hpp>
 #include <string>
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
 #endif
 

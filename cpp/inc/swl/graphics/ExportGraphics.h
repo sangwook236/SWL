@@ -2,7 +2,7 @@
 #define __SWL_GRAPHICS__EXPORT_GRAPHICS__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_GRAPHICS_EXPORT)
 #		    define SWL_GRAPHICS_API __declspec(dllexport)

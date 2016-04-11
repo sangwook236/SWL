@@ -2,7 +2,7 @@
 #define __SWL_MATH__EXPORT_MATH__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_MATH_EXPORT)
 #		    define SWL_MATH_API __declspec(dllexport)

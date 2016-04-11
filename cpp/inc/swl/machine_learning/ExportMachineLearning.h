@@ -2,7 +2,7 @@
 #define __SWL_MACHINE_LEARNING__EXPORT_MACHINE_LEARNING__H_ 1
 
 
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #	if defined(_MSC_VER)
 #		if defined(SWL_MACHINE_LEARNING_EXPORT)
 #		    define SWL_MACHINE_LEARNING_API __declspec(dllexport)

@@ -1,6 +1,6 @@
 #include "swl/Config.h"
 #include "swl/glutil/GLShape.h"
-#if defined(WIN32)
+#if defined(WIN32) || defined(_WIN32)
 #include <windows.h>
 #endif
 #include <GL/gl.h>
