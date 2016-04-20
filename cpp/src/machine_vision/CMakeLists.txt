@@ -4,6 +4,7 @@ set(SRCS
 	ImageRectificationUsingOpenCV.cpp
 	ImageUndistortionUsingOpenCV.cpp
 	KinectSensor.cpp
+	ScaleSpace.cpp
 )
 set(LIBS
 	swl_rnd_util

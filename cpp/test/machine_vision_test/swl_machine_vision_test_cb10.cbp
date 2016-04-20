@@ -49,6 +49,7 @@
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="main.cpp" />
+		<Unit filename="ScaleSpaceTest.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

@@ -63,6 +63,7 @@
 		<Unit filename="ImageRectificationUsingOpenCV.cpp" />
 		<Unit filename="ImageUndistortionUsingOpenCV.cpp" />
 		<Unit filename="KinectSensor.cpp" />
+		<Unit filename="ScaleSpace.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
