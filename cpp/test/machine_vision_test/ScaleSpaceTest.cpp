@@ -434,7 +434,7 @@ void scale_space_test()
 	// Figure 9.3 (p. 250) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/whale_256x256.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize = 7;
 		const double baseScale = 3.0;
@@ -447,7 +447,7 @@ void scale_space_test()
 	// REF [book] >> Figure 9.7 (p. 258) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/whale_256x256.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -469,8 +469,8 @@ void scale_space_test()
 	// REF [book] >> Figure 9.8 (p. 259) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/box_256x256_1.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/box_256x256_2.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_1.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_2.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -485,10 +485,10 @@ void scale_space_test()
 #if 0
 	{
 		std::list<std::string> img_filenames;
-		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/box_256x256_1.png");
-		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/box_256x256_2.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/brain_256x256_1.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/brain_256x256_2.png");
+		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_1.png");
+		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_2.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/brain_256x256_1.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/brain_256x256_2.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -507,7 +507,7 @@ void scale_space_test()
 	// REF [book] >> Figure 9.21 (p. 271) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/rnd_util/whale_256x256.png");
+		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize = 3;
 		const double baseScale = 0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8;
