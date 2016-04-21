@@ -17,11 +17,40 @@ namespace swl {
 class SWL_MACHINE_VISION_API ScaleSpace
 {
 public:
+	// Derivative of Gaussian wrt x- & y-axes.
+	struct DerivativeOfGaussianOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Laplacian of Gaussian (LoG).
+	struct LaplacianOfGaussianOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// The second order derivative of Gaussian wrt the normal vector v: G_vv.
+	struct RidgenessOperator1
+	{
+	public:
+		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// The second-order derivative of Gaussian wrt the normal vector v over the derivative of Gaussian wrt the gradient vector w: G_vv / G_w.
+	struct RidgenessOperator2
+	{
+	public:
+		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+public:
 	explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t kernelSize);
 	//explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const double baseScale);
 	explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t kernelSize, const double baseScale);
 	explicit ScaleSpace(const ScaleSpace& rhs)
-	: firstOctaveIndex_(rhs.firstOctaveIndex_), lastOctaveIndex_(rhs.lastOctaveIndex_), firstSublevelIndex_(rhs.firstSublevelIndex_), lastSublevelIndex_(rhs.lastSublevelIndex_), octaveResolution_(rhs.octaveResolution_), kernelSize_(kernelSize_), baseScale_(rhs.baseScale_)
+		: firstOctaveIndex_(rhs.firstOctaveIndex_), lastOctaveIndex_(rhs.lastOctaveIndex_), firstSublevelIndex_(rhs.firstSublevelIndex_), lastSublevelIndex_(rhs.lastSublevelIndex_), octaveResolution_(rhs.octaveResolution_), kernelSize_(kernelSize_), baseScale_(rhs.baseScale_), useVariableKernelSize_(rhs.useVariableKernelSize_)
 	{}
 
 private:
@@ -53,18 +82,19 @@ public:
 		// FIXME [check] >> which one is correct?
 		//	REF [site] >> Fig 6 in http://darkpgmr.tistory.com/137
 		//	Is there any relationship between reducing a image by half and doubling the sigma of Gaussian filter?
-		//const double sigma(baseScale_ * std::pow(2.0, (double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_));
-		const double sigma(baseScale_ * std::pow(2.0, useScaleSpacePyramid ? ((double)sublevelIndex / (double)octaveResolution_) : ((double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_)));
+		//const double scaleFactor = std::pow(2.0, (double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_);
+		const double scaleFactor = std::pow(2.0, useScaleSpacePyramid ? ((double)sublevelIndex / (double)octaveResolution_) : ((double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_));
 
-		return derivative(resized, kernelSize_, sigma);
+		// FIXME [check] >> when applying a filter, does its kernel size increase as its sigma increases?
+		return derivative(resized, (useVariableKernelSize_ ? (kernelSize_ * scaleFactor) : kernelSize_), baseScale_ * scaleFactor);
 	}
 
 	// Gaussian pyramid.
-	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t baseKernelSize, const long octaveIndex);
-	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t baseKernelSize, const double baseScale, const long octaveIndex);
+	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
+	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
 	// Laplacian pyramid.
-	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t baseKernelSize, const long octaveIndex);
-	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t baseKernelSize, const double baseScale, const long octaveIndex);
+	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
+	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
 
 private:
 	const long firstOctaveIndex_, lastOctaveIndex_;
@@ -72,6 +102,7 @@ private:
 	const std::size_t octaveResolution_;
 	const std::size_t kernelSize_;
 	const double baseScale_;
+	const bool useVariableKernelSize_;
 };
 
 }  // namespace swl
