@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/machine_vision/ScaleSpace.h"
+#include "swl/machine_vision/DerivativesOfGaussian.h"
 #define _USE_MATH_DEFINES
 #include <cmath>
 #include <math.h>

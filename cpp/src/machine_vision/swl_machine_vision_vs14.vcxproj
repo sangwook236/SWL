@@ -99,6 +99,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\inc\swl\machine_vision\DerivativesOfGaussian.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
@@ -120,6 +121,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="DerivativesOfGaussian.cpp" />
     <ClCompile Include="ImageRectificationUsingOpenCV.cpp" />
     <ClCompile Include="ImageUndistortionUsingOpenCV.cpp" />
     <ClCompile Include="KinectSensor.cpp" />

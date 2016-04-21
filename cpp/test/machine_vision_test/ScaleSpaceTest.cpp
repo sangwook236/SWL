@@ -33,7 +33,8 @@ void scale_space(const std::list<std::string>& img_filenames, const std::size_t 
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -46,19 +47,32 @@ void scale_space(const std::list<std::string>& img_filenames, const std::size_t 
 			{
 				std::cout << "scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
 
-				// calculate scale space.
+				// Calculate scale space.
 				std::cout << "\tstart processing scale space..." << std::endl;
 				const cv::Mat scaled(scaleSpace.getScaledImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
 				std::cout << "\tend processing scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
 
-				// show results.
-				cv::imshow(windowName, scaled);
+				// Output result.
+				{
+					// Rescale image.
+					cv::Mat rescaled;
+					{
+						double minVal = 0.0, maxVal = 0.0;
+						cv::minMaxLoc(scaled, &minVal, &maxVal);
+						const double scaleFactor = 1.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					}
 
-				// save results.
-				std::cout << "\tsaving output image..." << std::endl;
-				cv::imwrite(*cit + output_filename_appendix, scaled);
+					// Show image.
+					cv::imshow(windowName, rescaled);
+
+					// Save image.
+					std::cout << "\tsaving output image..." << std::endl;
+					cv::imwrite(*cit + output_filename_appendix, rescaled);
+				}
 
 				const unsigned char key = cv::waitKey(0);
 				if (27 == key)
@@ -85,7 +99,8 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -98,19 +113,32 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 			{
 				std::cout << "gradient scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
 
-				// calculate scale space.
+				// Calculate scale space.
 				std::cout << "\tstart processing gradient scale space..." << std::endl;
 				const cv::Mat scaled(scaleSpace.getScaledGradientImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
 				std::cout << "\tend processing gradient scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
 
-				// show results.
-				cv::imshow(windowName, scaled);
+				// Output result.
+				{
+					// Rescale image.
+					cv::Mat rescaled;
+					{
+						double minVal = 0.0, maxVal = 0.0;
+						cv::minMaxLoc(scaled, &minVal, &maxVal);
+						const double scaleFactor = 1.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					}
 
-				// save results.
-				std::cout << "\tsaving output image..." << std::endl;
-				cv::imwrite(*cit + output_filename_appendix, scaled);
+					// Show image.
+					cv::imshow(windowName, rescaled);
+
+					// Save image.
+					std::cout << "\tsaving output image..." << std::endl;
+					cv::imwrite(*cit + output_filename_appendix, rescaled);
+				}
 
 				const unsigned char key = cv::waitKey(0);
 				if (27 == key)
@@ -137,7 +165,8 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -150,19 +179,32 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 			{
 				std::cout << "Laplacian scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
 
-				// calculate scale space.
+				// Calculate scale space.
 				std::cout << "\tstart processing Laplacian scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledGradientImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
+				const cv::Mat scaled(scaleSpace.getScaledLaplacianImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
 				std::cout << "\tend processing Laplacian scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
 
-				// show results.
-				cv::imshow(windowName, scaled);
+				// Output result.
+				{
+					// Rescale image.
+					cv::Mat rescaled;
+					{
+						double minVal = 0.0, maxVal = 0.0;
+						cv::minMaxLoc(scaled, &minVal, &maxVal);
+						const double scaleFactor = 1.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					}
 
-				// save results.
-				std::cout << "\tsaving output image..." << std::endl;
-				cv::imwrite(*cit + output_filename_appendix, scaled);
+					// Show image.
+					cv::imshow(windowName, rescaled);
+
+					// Save image.
+					std::cout << "\tsaving output image..." << std::endl;
+					cv::imwrite(*cit + output_filename_appendix, rescaled);
+				}
 
 				const unsigned char key = cv::waitKey(0);
 				if (27 == key)
@@ -174,118 +216,13 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 	cv::destroyAllWindows();
 }
 
-void derivative_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+template<class RidgenessOperator>
+void ridgeness_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale, RidgenessOperator ridgenessOperator)
 {
-	const std::string output_filename_appendix(".derivative_scale_space.png");
+	const std::string output_filename_appendix(".ridgeness_scale_space.png");
 
-	const std::string windowName("derivative scale space");
+	const std::string windowName("ridgeness scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
-
-	// callback.
-	auto derivativeOperator = [](const cv::Mat &img, std::size_t kernelSize, const double sigma) -> cv::Mat
-	{
-		// FIXME [check] >> when applying a filter, does its kernel size increase as its sigma increases?
-		//	REF [site] >> cv::getGaussianKernel() in OpenCV.
-		//	kernelSize = round(((sigma - 0.8) / 0.3 + 1.0) * 2.0 + 1.0)
-		//const std::size_t kernelSize = (std::size_t)std::floor(((sigma - 0.8) / 0.3 + 1.0) * 2.0 + 1.5);  // "+ 0.5" for rounding.
-		const int halfKernelSize = (int)kernelSize / 2;
-
-#if 0
-		// Derivative of Gaussian wrt x- & y-axes.
-
-		const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
-		cv::Mat kernelX(kernelSize, kernelSize, CV_64F), kernelY(kernelSize, kernelSize, CV_64F);
-		for (int r = -halfKernelSize, rr = 0; r <= halfKernelSize; ++r, ++rr)
-			for (int c = -halfKernelSize, cc = 0; c <= halfKernelSize; ++c, ++cc)
-			{
-				const double exp = std::exp(-(double(r)*double(r) + double(c)*double(c)) / _2_sigma2);
-				// TODO [check] >> x- & y-axis derivative.
-				kernelX.at<double>(rr, cc) = -double(c) * exp / _2_pi_sigma4;
-				kernelY.at<double>(rr, cc) = -double(r) * exp / _2_pi_sigma4;
-			}
-
-		cv::Mat filteredX, filteredY;
-		cv::filter2D(img, filteredX, CV_64F, kernelX, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, filteredY, CV_64F, kernelY, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-		cv::Mat scaled;
-		cv::magnitude(filteredX, filteredY, scaled);
-#elif 0
-		// Laplacian of Gaussian.
-
-		const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
-		cv::Mat kernelXX(kernelSize, kernelSize, CV_64F), kernelYY(kernelSize, kernelSize, CV_64F);
-		for (int r = -halfKernelSize, rr = 0; r <= halfKernelSize; ++r, ++rr)
-			for (int c = -halfKernelSize, cc = 0; c <= halfKernelSize; ++c, ++cc)
-			{
-				const double r2 = double(r) * double(r), c2 = double(c) * double(c);
-				const double exp = std::exp(-(r2 + c2) / _2_sigma2);
-				// TODO [check] >> x- & y-axis derivative.
-				kernelXX.at<double>(rr, cc) = (c2 / sigma2 - 1.0) * exp / _2_pi_sigma4;
-				kernelYY.at<double>(rr, cc) = (r2 / sigma2 - 1.0) * exp / _2_pi_sigma4;
-			}
-
-		cv::Mat filteredX, filteredY;
-		cv::filter2D(img, filteredX, CV_64F, kernelXX, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, filteredY, CV_64F, kernelYY, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-		cv::Mat scaled;
-		cv::add(filteredX, filteredY, scaled);
-
-		return scaled;
-#elif 0
-		// A local coordinate frame based on the gradient vector w and its right-handed normal vector v.
-		//	REF [book] >> section 9.1.2 (p. 254) in "Digital and Medical Image Processing", 2005.
-		//	REF [book] >> Figure 9.10 & 9.11 (p. 260) in "Digital and Medical Image Processing", 2005.
-
-		// FIXME [implement] >> first we have to find v- & w-axes.
-
-		const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
-		cv::Mat kernelVV(kernelSize, kernelSize, CV_64F), kernelWW(kernelSize, kernelSize, CV_64F);
-		for (int w = -halfKernelSize, ww = 0; w <= halfKernelSize; ++w, ++ww)
-			for (int v = -halfKernelSize, vv = 0; v <= halfKernelSize; ++v, ++vv)
-			{
-				const double w2 = double(w) * double(w), v2 = double(v) * double(v);
-				const double exp = std::exp(-(w2 + v2) / _2_sigma2);
-				// TODO [check] >> v- & w-axis derivative.
-				kernelVV.at<double>(ww, vv) = (v2 / sigma2 - 1.0) * exp / _2_pi_sigma4;
-				kernelWW.at<double>(ww, vv) = (w2 / sigma2 - 1.0) * exp / _2_pi_sigma4;
-			}
-
-		cv::Mat filteredV, filteredW;
-		cv::filter2D(img, filteredV, CV_64F, kernelVV, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		//cv::filter2D(img, filteredW, CV_64F, kernelWW, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-		return filteredV;
-		//return cv::abs(filteredW);
-#elif 1
-		// A local coordinate frame based on the gradient vector w and its right-handed normal vector v.
-		//	REF [book] >> Figure 9.12 (p. 261) in "Digital and Medical Image Processing", 2005.
-
-		// FIXME [implement] >> first we have to find v- & w-axes.
-
-		const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
-		cv::Mat kernelVV(kernelSize, kernelSize, CV_64F), kernelW(kernelSize, kernelSize, CV_64F);
-		for (int w = -halfKernelSize, ww = 0; w <= halfKernelSize; ++w, ++ww)
-			for (int v = -halfKernelSize, vv = 0; v <= halfKernelSize; ++v, ++vv)
-			{
-				const double w2 = double(w) * double(w), v2 = double(v) * double(v);
-				const double exp = std::exp(-(w2 + v2) / _2_sigma2);
-				// TODO [check] >> v- & w-axis derivative.
-				kernelVV.at<double>(ww, vv) = (v2 / sigma2 - 1.0) * exp / _2_pi_sigma4;
-				kernelW.at<double>(ww, vv) = -double(w) * exp / _2_pi_sigma4;
-			}
-
-		cv::Mat filteredV, filteredW;
-		cv::filter2D(img, filteredV, CV_64F, kernelVV, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, filteredW, CV_64F, kernelW, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-		cv::Mat scaled;
-		cv::divide(filteredV, filteredW, scaled, -1.0);
-
-		return scaled;
-#endif
-	};
 
 	const bool useScaleSpacePyramid = false;
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
@@ -295,7 +232,8 @@ void derivative_scale_space(const std::list<std::string>& img_filenames, const s
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -306,21 +244,34 @@ void derivative_scale_space(const std::list<std::string>& img_filenames, const s
 		{
 			for (long sublevelIndex = firstSublevelIndex; sublevelIndex <= lastSublevelIndex; ++sublevelIndex)
 			{
-				std::cout << "derivative scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
+				std::cout << "ridgeness scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
 
-				// calculate scale space.
-				std::cout << "\tstart processing derivative scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledDerivativeImage(img, octaveIndex, sublevelIndex, derivativeOperator, useScaleSpacePyramid));
-				std::cout << "\tend processing derivative scale space..." << std::endl;
+				// Calculate scale space.
+				std::cout << "\tstart processing ridgeness scale space..." << std::endl;
+				const cv::Mat scaled(scaleSpace.getScaledDerivativeImage(img, octaveIndex, sublevelIndex, ridgenessOperator, useScaleSpacePyramid));
+				std::cout << "\tend processing ridgeness scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
 
-				// show results.
-				cv::imshow(windowName, scaled);
+				// Output result.
+				{
+					// Rescale image.
+					cv::Mat rescaled;
+					{
+						double minVal = 0.0, maxVal = 0.0;
+						cv::minMaxLoc(scaled, &minVal, &maxVal);
+						const double scaleFactor = 1.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					}
 
-				// save results.
-				std::cout << "\tsaving output image..." << std::endl;
-				cv::imwrite(*cit + output_filename_appendix, scaled);
+					// Show image.
+					cv::imshow(windowName, rescaled);
+
+					// Save image.
+					std::cout << "\tsaving output image..." << std::endl;
+					cv::imwrite(*cit + output_filename_appendix, rescaled);
+				}
 
 				const unsigned char key = cv::waitKey(0);
 				if (27 == key)
@@ -343,7 +294,8 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -354,19 +306,32 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 		{
 			std::cout << "Gaussian pyramid: " << octaveIndex << "-th octave" << std::endl;
 
-			// calculate scale space.
+			// Calculate scale space.
 			std::cout << "\tstart processing Gaussian pyramid..." << std::endl;
 			const cv::Mat scaled(swl::ScaleSpace::getScaledImageInGaussianPyramid(img, kernelSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Gaussian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
 
-			// show results.
-			cv::imshow(windowName, scaled);
+			// Output result.
+			{
+				// Rescale image.
+				cv::Mat rescaled;
+				{
+					double minVal = 0.0, maxVal = 0.0;
+					cv::minMaxLoc(scaled, &minVal, &maxVal);
+					const double scaleFactor = 1.0 / (maxVal - minVal);
+					scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+					//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+				}
 
-			// save results.
-			std::cout << "\tsaving output image..." << std::endl;
-			cv::imwrite(*cit + output_filename_appendix, scaled);
+				// Show image.
+				cv::imshow(windowName, rescaled);
+
+				// Save image.
+				std::cout << "\tsaving output image..." << std::endl;
+				cv::imwrite(*cit + output_filename_appendix, rescaled);
+			}
 
 			const unsigned char key = cv::waitKey(0);
 			if (27 == key)
@@ -388,7 +353,8 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
-		const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
+		const cv::Mat img(cv::imread(*cit, cv::IMREAD_GRAYSCALE));
+		//const cv::Mat img(cv::imread(*cit, cv::IMREAD_COLOR));
 		if (img.empty())
 		{
 			std::cout << "fail to load image file: " << *cit << std::endl;
@@ -399,19 +365,32 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 		{
 			std::cout << "Laplacian pyramid: " << octaveIndex << "-th octave" << std::endl;
 
-			// calculate scale space.
+			// Calculate scale space.
 			std::cout << "\tstart processing Laplacian pyramid..." << std::endl;
 			const cv::Mat scaled(swl::ScaleSpace::getScaledImageInLaplacianPyramid(img, kernelSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Laplacian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
 
-			// show results.
-			cv::imshow(windowName, scaled);
+			// Output result.
+			{
+				// Rescale image.
+				cv::Mat rescaled;
+				{
+					double minVal = 0.0, maxVal = 0.0;
+					cv::minMaxLoc(scaled, &minVal, &maxVal);
+					const double scaleFactor = 1.0 / (maxVal - minVal);
+					scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
+					//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+				}
 
-			// save results.
-			std::cout << "\tsaving output image..." << std::endl;
-			cv::imwrite(*cit + output_filename_appendix, scaled);
+				// Show image.
+				cv::imshow(windowName, rescaled);
+
+				// Save image.
+				std::cout << "\tsaving output image..." << std::endl;
+				cv::imwrite(*cit + output_filename_appendix, rescaled);
+			}
 
 			const unsigned char key = cv::waitKey(0);
 			if (27 == key)
@@ -455,13 +434,17 @@ void scale_space_test()
 		const double baseScale9 = 0.3 * ((kernelSize9 - 1.0) * 0.5 - 1.0) + 0.8;
 		const std::size_t kernelSize17 = 17;
 		const double baseScale17 = 0.3 * ((kernelSize17 - 1.0) * 0.5 - 1.0) + 0.8;
+		const std::size_t kernelSize33 = 33;
+		const double baseScale33 = 0.3 * ((kernelSize33 - 1.0) * 0.5 - 1.0) + 0.8;
 
 		local::gradient_scale_space(img_filenames, kernelSize3, baseScale3);
 		local::gradient_scale_space(img_filenames, kernelSize9, baseScale9);
 		local::gradient_scale_space(img_filenames, kernelSize17, baseScale17);
+		local::gradient_scale_space(img_filenames, kernelSize33, baseScale33);
 		local::laplacian_scale_space(img_filenames, kernelSize3, baseScale3);
 		local::laplacian_scale_space(img_filenames, kernelSize9, baseScale9);
 		local::laplacian_scale_space(img_filenames, kernelSize17, baseScale17);
+		local::laplacian_scale_space(img_filenames, kernelSize33, baseScale3);
 	}
 #endif
 
@@ -482,7 +465,7 @@ void scale_space_test()
 	}
 #endif
 
-#if 0
+#if 1
 	{
 		std::list<std::string> img_filenames;
 		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_1.png");
@@ -497,9 +480,93 @@ void scale_space_test()
 		const std::size_t kernelSize33 = 33;
 		const double baseScale33 = 0.3 * ((kernelSize33 - 1.0) * 0.5 - 1.0) + 0.8;
 
-		local::derivative_scale_space(img_filenames, kernelSize3, baseScale3);
-		local::derivative_scale_space(img_filenames, kernelSize33, baseScale33);
-		local::derivative_scale_space(img_filenames, kernelSize9, baseScale9);
+		// callback.
+		auto ridgenessOperator1 = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		{
+			// Compute derivatives wrt xy-coordinate system.
+			cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
+			cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
+			DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
+			DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
+
+			// Compute Gvv.
+			// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
+			cv::Mat Gvv;
+			{
+				cv::Mat Gx2, Gy2;
+				cv::multiply(Gx, Gx, Gx2);
+				cv::multiply(Gy, Gy, Gy2);
+
+				cv::Mat num1, num2, num3, num;
+				cv::multiply(Gy2, Gxx, num1);
+				cv::multiply(Gx, Gy, num2);
+				// TODO [check] >> num2 used at two places.
+				cv::multiply(num2, Gxy, num2);
+				cv::multiply(Gx2, Gyy, num3);
+				cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num);
+				// TODO [check] >> num used at two places.
+				cv::add(num, num3, num);
+
+				cv::Mat den;
+				cv::add(Gx2, Gy2, den);
+
+				cv::divide(num, den, Gvv);
+			}
+
+			cv::Mat scaled;
+			cv::filter2D(img, scaled, CV_64F, Gvv, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+
+			return scaled;
+		};
+		auto ridgenessOperator2 = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		{
+			// Compute derivatives wrt xy-coordinate system.
+			cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
+			cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
+			DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
+			DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
+
+			// Compute Gvv and Gw.
+			// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
+			cv::Mat Gvv, Gw;
+			{
+				cv::Mat Gx2, Gy2;
+				cv::multiply(Gx, Gx, Gx2);
+				cv::multiply(Gy, Gy, Gy2);
+
+				cv::Mat num1, num2, num3, num;
+				cv::multiply(Gy2, Gxx, num1);
+				cv::multiply(Gx, Gy, num2);
+				// TODO [check] >> num2 used at two places.
+				cv::multiply(num2, Gxy, num2);
+				cv::multiply(Gx2, Gyy, num3);
+				cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num);
+				// TODO [check] >> num used at two places.
+				cv::add(num, num3, num);
+
+				cv::Mat den;
+				cv::add(Gx2, Gy2, den);
+
+				cv::divide(num, den, Gvv);
+
+				cv::magnitude(Gx, Gy, Gw);
+			}
+
+			cv::Mat Gvv_Gw;
+			cv::divide(Gvv, Gw, Gvv_Gw);
+
+			cv::Mat scaled;
+			cv::filter2D(img, scaled, CV_64F, Gvv_Gw, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+
+			return scaled;
+		};
+
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator1);
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator1);
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator1);
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator2);
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator2);
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator2);
 	}
 #endif
 

@@ -3,6 +3,7 @@ set(TARGET swl_machine_vision)
 set(SRCS
 	ImageRectificationUsingOpenCV.cpp
 	ImageUndistortionUsingOpenCV.cpp
+	DerivativesOfGaussian.cpp
 	KinectSensor.cpp
 	ScaleSpace.cpp
 )
