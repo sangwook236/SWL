@@ -102,6 +102,9 @@
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp">
       <Filter>Source Files\testcase\rnd_util</Filter>
     </ClCompile>
+    <ClCompile Include="..\testcase\math\MathUtilTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\UnitTestConfig.h">

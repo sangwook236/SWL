@@ -108,6 +108,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\testcase\util\LineROITest.cpp" />
+    <ClCompile Include="..\testcase\util\MathUtilTest.cpp" />
     <ClCompile Include="..\testcase\util\PolygonROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolylineROITest.cpp" />
     <ClCompile Include="..\testcase\util\RectangleROITest.cpp" />

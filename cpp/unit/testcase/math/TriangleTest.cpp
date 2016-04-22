@@ -2,6 +2,7 @@
 #include "../../UnitTestConfig.h"
 #include "swl/base/String.h"
 #include "swl/math/Triangle.h"
+#include <stdexcept>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -39,6 +40,7 @@ public:
 	{
 		Fixture fixture;
 
+		throw std::runtime_error("not yet implemented");
 	}
 };
 
@@ -74,9 +76,10 @@ protected:
 	}
 };
 
-TEST_F(TriangleTest, testFoo)
-{
-}
+//TEST_F(TriangleTest, testFoo)
+//{
+//	throw std::runtime_error("not yet implemented");
+//}
 
 //-----------------------------------------------------------------------------
 // CppUnit
@@ -101,6 +104,7 @@ public:
 
 	void testFoo()
 	{
+		throw std::runtime_error("not yet implemented");
 	}
 };
 

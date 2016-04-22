@@ -147,6 +147,7 @@
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp" />
     <ClCompile Include="..\testcase\math\LineSegmentTest.cpp" />
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
+    <ClCompile Include="..\testcase\math\MathUtilTest.cpp" />
     <ClCompile Include="..\testcase\math\PlaneTest.cpp" />
     <ClCompile Include="..\testcase\math\TriangleTest.cpp" />
     <ClCompile Include="..\testcase\base\LoggerTest.cpp" />

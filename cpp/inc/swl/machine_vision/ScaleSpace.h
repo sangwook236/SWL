@@ -18,28 +18,34 @@ class SWL_MACHINE_VISION_API ScaleSpace
 {
 public:
 	// Derivative of Gaussian wrt x- & y-axes.
-	struct DerivativeOfGaussianOperator
+	struct SWL_MACHINE_VISION_API DerivativeOfGaussianOperator
 	{
 	public:
 		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
 	};
 
 	// Laplacian of Gaussian (LoG).
-	struct LaplacianOfGaussianOperator
+	struct SWL_MACHINE_VISION_API LaplacianOfGaussianOperator
 	{
 	public:
 		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// The second order derivative of Gaussian wrt the normal vector v: G_vv.
-	struct RidgenessOperator1
+	// Ridgeness operator.
+	//	The second order derivative of F wrt the normal vector v: F_vv.
+	//	F_vv = G_vv * F is a measure of concavity.
+	//	If F_vv is low, it means ridges. If F_vv is high, it means valleys.
+	struct SWL_MACHINE_VISION_API RidgenessOperator
 	{
 	public:
 		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// The second-order derivative of Gaussian wrt the normal vector v over the derivative of Gaussian wrt the gradient vector w: G_vv / G_w.
-	struct RidgenessOperator2
+	// Isophote curvature operator.
+	//	The second-order derivative of F wrt the normal vector v over the first-order derivative of F wrt the gradient vector w: F_vv / F_w.
+	//	F_vv / F_w is a measure of concavity, where F_vv = G_vv * F and F_w = G_w * F.
+	//	If F_vv / F_w is low, it means ridges. If F_vv / F_w is high, it means valleys.
+	struct SWL_MACHINE_VISION_API IsophoteCurvatureOperator
 	{
 	public:
 		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;

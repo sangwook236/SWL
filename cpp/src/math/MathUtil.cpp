@@ -210,6 +210,26 @@ static long convert_base_field(const std::string &num, const long base)
 	//return !std::numeric_limits<T>::is_integer;
 }
 
+/*static*/ int MathUtil::toPrecedingOdd(const double num)
+{
+	return 2 * (int)std::floor((num + 1) * 0.5) - 1;
+}
+
+/*static*/ int MathUtil::toFollowingOdd(const double num)
+{
+	return 2 * (int)std::ceil((num + 1) * 0.5) - 1;
+}
+
+/*static*/ int MathUtil::toPrecedingEven(const double num)
+{
+	return 2 * (int)std::floor(num * 0.5);
+}
+
+/*static*/ int MathUtil::toFollowingEven(const double num)
+{
+	return 2 * (int)std::ceil(num * 0.5);
+}
+
 #if defined(_UNICODE) || defined(UNICODE)
 /*static*/ std::wstring MathUtil::dec2bin(const long dec)
 #else

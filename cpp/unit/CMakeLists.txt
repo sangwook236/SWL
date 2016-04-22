@@ -6,6 +6,7 @@ set(TESTCASE_SRCS
 	testcase/math/BaseFieldConversionTest.cpp
 	testcase/math/LineSegmentTest.cpp
 	testcase/math/LineTest.cpp
+	testcase/math/MathUtilsTest.cpp
 	testcase/math/PlaneTest.cpp
 	testcase/math/TriangleTest.cpp
 

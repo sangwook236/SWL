@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/machine_vision/ScaleSpace.h"
+#include "swl/machine_vision/DerivativesOfGaussian.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -61,9 +62,9 @@ void scale_space(const std::list<std::string>& img_filenames, const std::size_t 
 					{
 						double minVal = 0.0, maxVal = 0.0;
 						cv::minMaxLoc(scaled, &minVal, &maxVal);
-						const double scaleFactor = 1.0 / (maxVal - minVal);
-						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+						const double scaleFactor = 255.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 					}
 
 					// Show image.
@@ -95,7 +96,7 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -127,9 +128,9 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 					{
 						double minVal = 0.0, maxVal = 0.0;
 						cv::minMaxLoc(scaled, &minVal, &maxVal);
-						const double scaleFactor = 1.0 / (maxVal - minVal);
-						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+						const double scaleFactor = 255.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 					}
 
 					// Show image.
@@ -161,7 +162,7 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -193,9 +194,9 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 					{
 						double minVal = 0.0, maxVal = 0.0;
 						cv::minMaxLoc(scaled, &minVal, &maxVal);
-						const double scaleFactor = 1.0 / (maxVal - minVal);
-						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+						const double scaleFactor = 255.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 					}
 
 					// Show image.
@@ -228,7 +229,7 @@ void ridgeness_scale_space(const std::list<std::string>& img_filenames, const st
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -260,17 +261,26 @@ void ridgeness_scale_space(const std::list<std::string>& img_filenames, const st
 					{
 						double minVal = 0.0, maxVal = 0.0;
 						cv::minMaxLoc(scaled, &minVal, &maxVal);
-						const double scaleFactor = 1.0 / (maxVal - minVal);
-						scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-						//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+						const double scaleFactor = 255.0 / (maxVal - minVal);
+						scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+						//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 					}
 
+#if 1
+					const cv::Mat processed(rescaled);
+#else
+					// If the measure(F_vv or F_vv / F_w) is low, it means ridges. If the measure is high, it means valleys.
+					cv::Mat processed(rescaled.rows, rescaled.cols, CV_8UC1, cv::Scalar::all(128));
+					processed.setTo(cv::Scalar::all(0), rescaled < 0.3);
+					processed.setTo(cv::Scalar::all(255), rescaled > 0.7);
+#endif
+
 					// Show image.
-					cv::imshow(windowName, rescaled);
+					cv::imshow(windowName, processed);
 
 					// Save image.
 					std::cout << "\tsaving output image..." << std::endl;
-					cv::imwrite(*cit + output_filename_appendix, rescaled);
+					cv::imwrite(*cit + output_filename_appendix, processed);
 				}
 
 				const unsigned char key = cv::waitKey(0);
@@ -320,9 +330,9 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 				{
 					double minVal = 0.0, maxVal = 0.0;
 					cv::minMaxLoc(scaled, &minVal, &maxVal);
-					const double scaleFactor = 1.0 / (maxVal - minVal);
-					scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-					//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					const double scaleFactor = 255.0 / (maxVal - minVal);
+					scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+					//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 				}
 
 				// Show image.
@@ -379,9 +389,9 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 				{
 					double minVal = 0.0, maxVal = 0.0;
 					cv::minMaxLoc(scaled, &minVal, &maxVal);
-					const double scaleFactor = 1.0 / (maxVal - minVal);
-					scaled.convertTo(rescaled, CV_64F, scaleFactor, -scaleFactor * minVal);
-					//scaled.convertTo(rescaled, CV_64F, -scaleFactor, scaleFactor * maxVal);  // reversed image.
+					const double scaleFactor = 255.0 / (maxVal - minVal);
+					scaled.convertTo(rescaled, CV_8U, scaleFactor, -scaleFactor * minVal);
+					//scaled.convertTo(rescaled, CV_8U, -scaleFactor, scaleFactor * maxVal);  // reversed image.
 				}
 
 				// Show image.
@@ -413,7 +423,7 @@ void scale_space_test()
 	// Figure 9.3 (p. 250) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
+		img_filenames.push_back("./data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize = 7;
 		const double baseScale = 3.0;
@@ -426,7 +436,7 @@ void scale_space_test()
 	// REF [book] >> Figure 9.7 (p. 258) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
+		img_filenames.push_back("./data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -452,8 +462,8 @@ void scale_space_test()
 	// REF [book] >> Figure 9.8 (p. 259) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_1.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_2.png");
+		img_filenames.push_back("./data/machine_vision/box_256x256_1.png");
+		img_filenames.push_back("./data/machine_vision/box_256x256_2.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -468,10 +478,10 @@ void scale_space_test()
 #if 1
 	{
 		std::list<std::string> img_filenames;
-		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_1.png");
-		//img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/box_256x256_2.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/brain_256x256_1.png");
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/brain_256x256_2.png");
+		//img_filenames.push_back("./data/machine_vision/box_256x256_1.png");
+		//img_filenames.push_back("./data/machine_vision/box_256x256_2.png");
+		img_filenames.push_back("./data/machine_vision/brain_256x256_1.png");
+		img_filenames.push_back("./data/machine_vision/brain_256x256_2.png");
 
 		const std::size_t kernelSize3 = 3;
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
@@ -480,93 +490,33 @@ void scale_space_test()
 		const std::size_t kernelSize33 = 33;
 		const double baseScale33 = 0.3 * ((kernelSize33 - 1.0) * 0.5 - 1.0) + 0.8;
 
+#if 0
 		// callback.
-		auto ridgenessOperator1 = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto ridgenessOperator = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
 		{
-			// Compute derivatives wrt xy-coordinate system.
-			cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
-			cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
-			DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
-			DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
-
-			// Compute Gvv.
-			// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
-			cv::Mat Gvv;
-			{
-				cv::Mat Gx2, Gy2;
-				cv::multiply(Gx, Gx, Gx2);
-				cv::multiply(Gy, Gy, Gy2);
-
-				cv::Mat num1, num2, num3, num;
-				cv::multiply(Gy2, Gxx, num1);
-				cv::multiply(Gx, Gy, num2);
-				// TODO [check] >> num2 used at two places.
-				cv::multiply(num2, Gxy, num2);
-				cv::multiply(Gx2, Gyy, num3);
-				cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num);
-				// TODO [check] >> num used at two places.
-				cv::add(num, num3, num);
-
-				cv::Mat den;
-				cv::add(Gx2, Gy2, den);
-
-				cv::divide(num, den, Gvv);
-			}
-
-			cv::Mat scaled;
-			cv::filter2D(img, scaled, CV_64F, Gvv, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-			return scaled;
+			swl::ScaleSpace::RidgenessOperator ridgeness;
+			return ridgeness(img, kernelSize, sigma);
 		};
-		auto ridgenessOperator2 = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto isophoteCurvatureOperator = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
 		{
-			// Compute derivatives wrt xy-coordinate system.
-			cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
-			cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
-			DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
-			DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
-
-			// Compute Gvv and Gw.
-			// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
-			cv::Mat Gvv, Gw;
-			{
-				cv::Mat Gx2, Gy2;
-				cv::multiply(Gx, Gx, Gx2);
-				cv::multiply(Gy, Gy, Gy2);
-
-				cv::Mat num1, num2, num3, num;
-				cv::multiply(Gy2, Gxx, num1);
-				cv::multiply(Gx, Gy, num2);
-				// TODO [check] >> num2 used at two places.
-				cv::multiply(num2, Gxy, num2);
-				cv::multiply(Gx2, Gyy, num3);
-				cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num);
-				// TODO [check] >> num used at two places.
-				cv::add(num, num3, num);
-
-				cv::Mat den;
-				cv::add(Gx2, Gy2, den);
-
-				cv::divide(num, den, Gvv);
-
-				cv::magnitude(Gx, Gy, Gw);
-			}
-
-			cv::Mat Gvv_Gw;
-			cv::divide(Gvv, Gw, Gvv_Gw);
-
-			cv::Mat scaled;
-			cv::filter2D(img, scaled, CV_64F, Gvv_Gw, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-
-			return scaled;
+			swl::ScaleSpace::IsophoteCurvatureOperator ridgeness;
+			return ridgeness(img, kernelSize, sigma);
 		};
 
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator1);
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator1);
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator1);
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator2);
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator2);
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator2);
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator);
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator);
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator);
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, isophoteCurvatureOperator);
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, isophoteCurvatureOperator);
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, isophoteCurvatureOperator);
+#else
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::RidgenessOperator());
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::RidgenessOperator());
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::RidgenessOperator());
+		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::IsophoteCurvatureOperator());
+#endif
 	}
 #endif
 
@@ -574,7 +524,7 @@ void scale_space_test()
 	// REF [book] >> Figure 9.21 (p. 271) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
-		img_filenames.push_back("D:/work/swl_github/cpp/bin/data/machine_vision/whale_256x256.png");
+		img_filenames.push_back("./data/machine_vision/whale_256x256.png");
 
 		const std::size_t kernelSize = 3;
 		const double baseScale = 0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8;

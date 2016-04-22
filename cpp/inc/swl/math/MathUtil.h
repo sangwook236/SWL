@@ -56,6 +56,13 @@ public:
 	static double toDeg(const double rad)
 	{  return rad * MathConstant::TO_DEG;  }
 
+	/// a number to an odd number.
+	static int toPrecedingOdd(const double num);
+	static int toFollowingOdd(const double num);
+	/// a number to an even number.
+	static int toPrecedingEven(const double num);
+	static int toFollowingEven(const double num);
+
 	/// convert base field
 #if defined(_UNICODE) || defined(UNICODE)
 	static std::wstring dec2bin(const long dec);
