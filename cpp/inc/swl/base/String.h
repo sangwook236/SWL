@@ -11,7 +11,7 @@ namespace swl {
 //--------------------------------------------------------------------------
 // 
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 typedef wchar_t char_t;
 typedef std::wstring string_t;
 #define SWL_STR(str) L##str

@@ -16,7 +16,7 @@ namespace swl {
 //	exception for function's return
 
 ReturnException::ReturnException(const unsigned int level, const std::wstring &message, const std::wstring &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(), message_(message), methodName_(methodName)
 #else
 : level_(level), returnVal_(), message_(String::wcs2mbs(message)), methodName_(String::wcs2mbs(methodName))
@@ -25,7 +25,7 @@ ReturnException::ReturnException(const unsigned int level, const std::wstring &m
 }
 
 ReturnException::ReturnException(const unsigned int level, const std::wstring &message, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(), message_(message), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), returnVal_(), message_(String::wcs2mbs(message)), methodName_(methodName)
@@ -34,7 +34,7 @@ ReturnException::ReturnException(const unsigned int level, const std::wstring &m
 }
 
 ReturnException::ReturnException(const unsigned int level, const std::string &message, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(), message_(String::mbs2wcs(message)), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), returnVal_(), message_(message), methodName_(methodName)
@@ -43,7 +43,7 @@ ReturnException::ReturnException(const unsigned int level, const std::string &me
 }
 
 ReturnException::ReturnException(const unsigned int level, const boost::any &returnVal, const std::wstring &message, const std::wstring &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(returnVal), message_(message), methodName_(methodName)
 #else
 : level_(level), returnVal_(returnVal), message_(String::wcs2mbs(message)), methodName_(String::wcs2mbs(methodName))
@@ -52,7 +52,7 @@ ReturnException::ReturnException(const unsigned int level, const boost::any &ret
 }
 
 ReturnException::ReturnException(const unsigned int level, const boost::any &returnVal, const std::wstring &message, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(returnVal), message_(message), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), returnVal_(returnVal), message_(String::wcs2mbs(message)), methodName_(methodName)
@@ -61,7 +61,7 @@ ReturnException::ReturnException(const unsigned int level, const boost::any &ret
 }
 
 ReturnException::ReturnException(const unsigned int level, const boost::any &returnVal, const std::string &message, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), returnVal_(returnVal), message_(String::mbs2wcs(message)), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), returnVal_(returnVal), message_(message), methodName_(methodName)
@@ -78,13 +78,13 @@ ReturnException::~ReturnException() throw()
 {
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 std::wstring ReturnException::getClassName() const
 #else
 std::string ReturnException::getClassName() const
 #endif
 {
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
 	return (pos == std::wstring::npos) ? std::wstring(L"") : methodName_.substr(0, pos);
 #else
@@ -93,13 +93,13 @@ std::string ReturnException::getClassName() const
 #endif
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 std::wstring ReturnException::getMethodName() const
 #else
 std::string ReturnException::getMethodName() const
 #endif
 {
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
 	return (pos == std::wstring::npos) ? methodName_ : methodName_.substr(pos + 2);
 #else

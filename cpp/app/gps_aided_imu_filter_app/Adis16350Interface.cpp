@@ -75,7 +75,7 @@ private:
 
 Adis16350Interface::Adis16350Interface()
 : adis_(new AdisUsbz()),
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
   deviceName_(L"\\\\.\\Ezusb-0"),
 #else
   deviceName_("\\\\.\\Ezusb-0"),

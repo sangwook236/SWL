@@ -48,7 +48,7 @@ public:
 	typedef typename base_type::node_type node_type;
 
 protected:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	ComponentSceneNode(const std::wstring &name = std::wstring())
 #else
 	ComponentSceneNode(const std::string &name = std::string())
@@ -79,7 +79,7 @@ public:
 
 	/*final*/ /*virtual*/ bool isRoot() const  {  return NULL == parent_.get();  }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	void setName(const std::wstring &name)  {  name_ = name;  }
 	std::wstring & getName()  {  return name_;  }
 	const std::wstring & getName() const  {  return name_;  }
@@ -92,7 +92,7 @@ public:
 private:
 	node_type parent_;
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring name_;
 #else
 	std::string name_;
@@ -111,7 +111,7 @@ public:
 	typedef typename base_type::visitor_type visitor_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	GroupSceneNode(const std::wstring &name = std::wstring())
 #else
 	GroupSceneNode(const std::string &name = std::string())
@@ -184,7 +184,7 @@ public:
 	typedef typename base_type::node_type node_type;
 
 protected:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	LeafSceneNode(const std::wstring &name = std::wstring())
 #else
 	LeafSceneNode(const std::string &name = std::string())

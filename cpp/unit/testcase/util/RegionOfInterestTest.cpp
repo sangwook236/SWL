@@ -134,7 +134,7 @@ public:
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		BOOST_CHECK(roi);
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 		BOOST_CHECK(std::wcscmp(roi->getName().c_str(), L"") == 0);
 		BOOST_CHECK(std::wcscmp(roi->getName().c_str(), std::wstring().c_str()) == 0);
 
@@ -270,7 +270,7 @@ TEST_F(RegionOfInterestTest, testName)
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 	EXPECT_TRUE(roi);
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	EXPECT_STREQ(roi->getName().c_str(), L"");
 	EXPECT_STREQ(roi->getName().c_str(), std::wstring().c_str());
 
@@ -394,7 +394,7 @@ public:
 		boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
 		CPPUNIT_ASSERT(roi);
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 		CPPUNIT_ASSERT(std::wcscmp(roi->getName().c_str(), L"") == 0);
 		CPPUNIT_ASSERT(std::wcscmp(roi->getName().c_str(), std::wstring().c_str()) == 0);
 

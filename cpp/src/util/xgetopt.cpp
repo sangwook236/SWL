@@ -154,12 +154,12 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 //--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 //--E [] 2015/06/05 : Sang-Wook Lee
 #include <tchar.h>
 //--S [] 2015/06/05 : Sang-Wook Lee
 #else
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 #include <cwchar>
 #else
 #include <cstring>
@@ -172,7 +172,7 @@
 #define new DEBUG_NEW
 #endif
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 #define char_t wchar_t
 #define char_str(x) L##x
 #else
@@ -205,7 +205,7 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 		}
 
         //--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 		//--E [] 2015/06/05 : Sang-Wook Lee
 		if (_tcscmp(argv[optind], char_str("--")) == 0)
         //--S [] 2015/06/05 : Sang-Wook Lee
@@ -232,7 +232,7 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 
 	char_t c = *next++;
 	//--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 	//--E [] 2015/06/05 : Sang-Wook Lee
 	char_t *cp = _tcschr(optstring, c);
 	//--S [] 2015/06/05 : Sang-Wook Lee

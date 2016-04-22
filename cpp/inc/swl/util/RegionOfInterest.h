@@ -25,7 +25,7 @@ public:
 	typedef Color4<real_type> color_type;
 
 protected:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit RegionOfInterest(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else
 	explicit RegionOfInterest(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name = std::string());
@@ -66,7 +66,7 @@ public:
 	void setPointColor(const color_type &color)  {  pointColor_ = color;  }
 	const color_type & getPointColor() const  {  return pointColor_;  }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	void setName(const std::wstring &name)  {  name_ = name;  }
 	std::wstring getName() const  {  return name_;  }
 #else
@@ -101,7 +101,7 @@ protected:
 	real_type pointSize_;
 	color_type lineColor_;
 	color_type pointColor_;
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring name_;
 #else
 	std::string name_;
@@ -117,7 +117,7 @@ public:
 	typedef RegionOfInterest base_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else
 	explicit LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name = std::string());
@@ -158,7 +158,7 @@ public:
 	typedef RegionOfInterest base_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else
 	explicit RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name = std::string());
@@ -199,7 +199,7 @@ public:
 	typedef RegionOfInterest base_type;
 
 protected:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit ROIWithVariablePoints(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 	explicit ROIWithVariablePoints(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else
@@ -242,7 +242,7 @@ public:
 	typedef ROIWithVariablePoints base_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit PolylineROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 	explicit PolylineROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else
@@ -272,7 +272,7 @@ public:
 	typedef ROIWithVariablePoints base_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	explicit PolygonROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 	explicit PolygonROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name = std::wstring());
 #else

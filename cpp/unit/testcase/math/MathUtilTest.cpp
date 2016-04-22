@@ -36,11 +36,52 @@ private:
 	};
 
 public:
-	void testFoo()
+	void testToPrecedingOdd()
 	{
 		Fixture fixture;
 
-		throw std::runtime_error("not yet implemented");
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1,  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -11, -9, -9, -7, -7, -5, -5, -3, -3, -1, -1, 1, 1, 3, 3, 5, 5, 7, 7, 9,  9 };
+
+		int i = 0;
+		for (auto num : inputs)
+			BOOST_CHECK_EQUAL(truths[i++], swl::MathUtil::toPrecedingOdd(num));
+	}
+
+	void testToFollowingOdd()
+	{
+		Fixture fixture;
+
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -9, -9, -7, -7, -5, -5, -3, -3, -1, -1, 1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11 };
+
+		int i = 0;
+		for (auto num : inputs)
+			BOOST_CHECK_EQUAL(truths[i++], swl::MathUtil::toFollowingOdd(num));
+	}
+
+	void testToPrecedingEven()
+	{
+		Fixture fixture;
+
+		const int inputs[] = { -10,  -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -10, -10, -8, -8, -6, -6, -4, -4, -2, -2, 0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10 };
+
+		int i = 0;
+		for (auto num : inputs)
+			BOOST_CHECK_EQUAL(truths[i++], swl::MathUtil::toPrecedingEven(num));
+	}
+
+	void testToFollowingEven()
+	{
+		Fixture fixture;
+
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10 };
+		const int truths[] = { -10, -8, -8, -6, -6, -4, -4, -2, -2,  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10 };
+
+		int i = 0;
+		for (auto num : inputs)
+			BOOST_CHECK_EQUAL(truths[i++], swl::MathUtil::toFollowingEven(num));
 	}
 };
 
@@ -83,9 +124,7 @@ TEST_F(MathUtilTest, testToPrecedingOdd)
 
 	int i = 0;
 	for (auto num : inputs)
-	{
 		EXPECT_EQ(truths[i++], swl::MathUtil::toPrecedingOdd(num));
-	}
 }
 
 TEST_F(MathUtilTest, testToFollowingOdd)
@@ -95,9 +134,7 @@ TEST_F(MathUtilTest, testToFollowingOdd)
 
 	int i = 0;
 	for (auto num : inputs)
-	{
 		EXPECT_EQ(truths[i++], swl::MathUtil::toFollowingOdd(num));
-	}
 }
 
 TEST_F(MathUtilTest, testToPrecedingEven)
@@ -107,9 +144,7 @@ TEST_F(MathUtilTest, testToPrecedingEven)
 
 	int i = 0;
 	for (auto num : inputs)
-	{
 		EXPECT_EQ(truths[i++], swl::MathUtil::toPrecedingEven(num));
-	}
 }
 
 TEST_F(MathUtilTest, testToFollowingEven)
@@ -119,9 +154,7 @@ TEST_F(MathUtilTest, testToFollowingEven)
 
 	int i = 0;
 	for (auto num : inputs)
-	{
 		EXPECT_EQ(truths[i++], swl::MathUtil::toFollowingEven(num));
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -145,9 +178,44 @@ public:
 	{
 	}
 
-	void testFoo()
+	void testToPrecedingOdd()
 	{
-		throw std::runtime_error("not yet implemented");
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1,  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -11, -9, -9, -7, -7, -5, -5, -3, -3, -1, -1, 1, 1, 3, 3, 5, 5, 7, 7, 9,  9 };
+
+		int i = 0;
+		for (auto num : inputs)
+			CPPUNIT_ASSERT_EQUAL(truths[i++], swl::MathUtil::toPrecedingOdd(num));
+	}
+
+	void testToFollowingOdd()
+	{
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -9, -9, -7, -7, -5, -5, -3, -3, -1, -1, 1, 1, 3, 3, 5, 5, 7, 7, 9, 9, 11 };
+
+		int i = 0;
+		for (auto num : inputs)
+			CPPUNIT_ASSERT_EQUAL(truths[i++], swl::MathUtil::toFollowingOdd(num));
+	}
+
+	void testToPrecedingEven()
+	{
+		const int inputs[] = { -10,  -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+		const int truths[] = { -10, -10, -8, -8, -6, -6, -4, -4, -2, -2, 0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10 };
+
+		int i = 0;
+		for (auto num : inputs)
+			CPPUNIT_ASSERT_EQUAL(truths[i++], swl::MathUtil::toPrecedingEven(num));
+	}
+
+	void testToFollowingEven()
+	{
+		const int inputs[] = { -10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7, 8,  9, 10 };
+		const int truths[] = { -10, -8, -8, -6, -6, -4, -4, -2, -2,  0, 0, 2, 2, 4, 4, 6, 6, 8, 8, 10, 10 };
+
+		int i = 0;
+		for (auto num : inputs)
+			CPPUNIT_ASSERT_EQUAL(truths[i++], swl::MathUtil::toFollowingEven(num));
 	}
 };
 

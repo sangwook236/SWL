@@ -217,12 +217,12 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 	cv::destroyAllWindows();
 }
 
-template<class RidgenessOperator>
-void ridgeness_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale, RidgenessOperator ridgenessOperator)
+template<class DifferentialOperator>
+void differential_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale, DifferentialOperator differentialOperator)
 {
-	const std::string output_filename_appendix(".ridgeness_scale_space.png");
+	const std::string output_filename_appendix(".differential_scale_space.png");
 
-	const std::string windowName("ridgeness scale space");
+	const std::string windowName("differential scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
 	const bool useScaleSpacePyramid = false;
@@ -245,12 +245,12 @@ void ridgeness_scale_space(const std::list<std::string>& img_filenames, const st
 		{
 			for (long sublevelIndex = firstSublevelIndex; sublevelIndex <= lastSublevelIndex; ++sublevelIndex)
 			{
-				std::cout << "ridgeness scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
+				std::cout << "differential scale space: " << octaveIndex << "-th octave, " << sublevelIndex << "-th sublevel" << std::endl;
 
 				// Calculate scale space.
-				std::cout << "\tstart processing ridgeness scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledDerivativeImage(img, octaveIndex, sublevelIndex, ridgenessOperator, useScaleSpacePyramid));
-				std::cout << "\tend processing ridgeness scale space..." << std::endl;
+				std::cout << "\tstart processing differential scale space..." << std::endl;
+				const cv::Mat scaled(scaleSpace.getImageInScaleSpace(img, octaveIndex, sublevelIndex, differentialOperator, useScaleSpacePyramid));
+				std::cout << "\tend processing differential scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
 
@@ -318,7 +318,7 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 
 			// Calculate scale space.
 			std::cout << "\tstart processing Gaussian pyramid..." << std::endl;
-			const cv::Mat scaled(swl::ScaleSpace::getScaledImageInGaussianPyramid(img, kernelSize, baseScale, octaveIndex));
+			const cv::Mat scaled(swl::ScaleSpace::getImageInGaussianPyramid(img, kernelSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Gaussian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
@@ -377,7 +377,7 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 
 			// Calculate scale space.
 			std::cout << "\tstart processing Laplacian pyramid..." << std::endl;
-			const cv::Mat scaled(swl::ScaleSpace::getScaledImageInLaplacianPyramid(img, kernelSize, baseScale, octaveIndex));
+			const cv::Mat scaled(swl::ScaleSpace::getImageInLaplacianPyramid(img, kernelSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Laplacian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
@@ -487,35 +487,63 @@ void scale_space_test()
 		const double baseScale3 = 0.3 * ((kernelSize3 - 1.0) * 0.5 - 1.0) + 0.8;
 		const std::size_t kernelSize9 = 9;
 		const double baseScale9 = 0.3 * ((kernelSize9 - 1.0) * 0.5 - 1.0) + 0.8;
+		const std::size_t kernelSize17 = 17;
+		const double baseScale17 = 0.3 * ((kernelSize17 - 1.0) * 0.5 - 1.0) + 0.8;
 		const std::size_t kernelSize33 = 33;
 		const double baseScale33 = 0.3 * ((kernelSize33 - 1.0) * 0.5 - 1.0) + 0.8;
 
 #if 0
 		// callback.
-		auto ridgenessOperator = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto ridgenessOperator = [](const cv::Mat& img, const std::size_t kernelSize, const double sigma) -> cv::Mat
 		{
 			swl::ScaleSpace::RidgenessOperator ridgeness;
 			return ridgeness(img, kernelSize, sigma);
 		};
-		auto isophoteCurvatureOperator = [](const cv::Mat &img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto isophoteCurvatureOperator = [](const cv::Mat& img, const std::size_t kernelSize, const double sigma) -> cv::Mat
 		{
 			swl::ScaleSpace::IsophoteCurvatureOperator ridgeness;
 			return ridgeness(img, kernelSize, sigma);
 		};
 
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator);
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator);
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator);
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, isophoteCurvatureOperator);
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, isophoteCurvatureOperator);
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, isophoteCurvatureOperator);
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator);
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, ridgenessOperator);
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, ridgenessOperator);
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, ridgenessOperator);
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, isophoteCurvatureOperator);
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, isophoteCurvatureOperator);
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, isophoteCurvatureOperator);
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, isophoteCurvatureOperator);
 #else
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::RidgenessOperator());
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::RidgenessOperator());
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::RidgenessOperator());
-		local::ridgeness_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::IsophoteCurvatureOperator());
-		local::ridgeness_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::IsophoteCurvatureOperator());
-		local::ridgeness_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::RidgenessOperator());
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::CornernessOperator());
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::IsophoteCurvatureOperator());
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::FlowlineCurvatureOperator());
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::UnflatnessOperator());
+
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::UmbilicityOperator());
 #endif
 	}
 #endif

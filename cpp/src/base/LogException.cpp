@@ -15,7 +15,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------
 //	exception for log
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 /*static*/ std::wostream * LogException::logStream_ = NULL;
 #else
 /*static*/ std::ostream * LogException::logStream_ = NULL;
@@ -23,7 +23,7 @@ namespace swl {
 
 /*
 LogException::LogException(const unsigned int level, const std::wstring &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
 #else
 : level_(level), message_(String::wcs2mbs(message)), filePath_(String::wcs2mbs(filePath)), lineNo_(lineNo), methodName_(String::wcs2mbs(methodName))
@@ -34,7 +34,7 @@ LogException::LogException(const unsigned int level, const std::wstring &message
 */
 
 LogException::LogException(const unsigned int level, const std::wstring &message, const std::string &filePath, const long lineNo, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), message_(message), filePath_(String::mbs2wcs(filePath)), lineNo_(lineNo), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), message_(String::wcs2mbs(message)), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
@@ -45,7 +45,7 @@ LogException::LogException(const unsigned int level, const std::wstring &message
 
 /*
 LogException::LogException(const unsigned int level, const std::string &message, const std::wstring &filePath, const long lineNo, const std::wstring &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), message_(String::mbs2wcs(message)), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
 #else
 : level_(level), message_(message), filePath_(String::wcs2mbs(filePath)), lineNo_(lineNo), methodName_(String::wcs2mbs(methodName))
@@ -56,7 +56,7 @@ LogException::LogException(const unsigned int level, const std::string &message,
 */
 
 LogException::LogException(const unsigned int level, const std::string &message, const std::string &filePath, const long lineNo, const std::string &methodName)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 : level_(level), message_(String::mbs2wcs(message)), filePath_(String::mbs2wcs(filePath)), lineNo_(lineNo), methodName_(String::mbs2wcs(methodName))
 #else
 : level_(level), message_(message), filePath_(filePath), lineNo_(lineNo), methodName_(methodName)
@@ -74,20 +74,20 @@ LogException::~LogException() throw()
 {
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 std::wstring LogException::getFileName() const
 #else
 std::string LogException::getFileName() const
 #endif
 {
-#if defined(UNICODE) || defined(_UNICODE)
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_UNICODE) || defined(UNICODE)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 	const std::wstring delim(L"\\");
 #else
 	const std::wstring delim(L"/");
 #endif
 #else
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 	const std::string delim("\\");
 #else
 	const std::string delim("/");
@@ -97,13 +97,13 @@ std::string LogException::getFileName() const
 	return filePath_.substr(filePath_.find_last_of(delim) + 1);
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 std::wstring LogException::getClassName() const
 #else
 std::string LogException::getClassName() const
 #endif
 {
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
 	return (pos == std::wstring::npos) ? std::wstring(L"") : methodName_.substr(0, pos);
 #else
@@ -112,13 +112,13 @@ std::string LogException::getClassName() const
 #endif
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 std::wstring LogException::getMethodName() const
 #else
 std::string LogException::getMethodName() const
 #endif
 {
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring::size_type pos = methodName_.find_first_of(std::wstring(L"::"));
 	return (pos == std::wstring::npos) ? methodName_ : methodName_.substr(pos + 2);
 #else
@@ -133,7 +133,7 @@ void LogException::report() const
 	{
 		if (getClassName().empty())
 		{
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 			*logStream_ << L"level: " << level_ <<
 				L", message: " << message_ <<
 				L", method name: " << getMethodName() <<
@@ -151,7 +151,7 @@ void LogException::report() const
 		}
 		else
 		{
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 			*logStream_ << L"level: " << level_ <<
 				L", message: " << message_ <<
 				L", class name: " << getClassName() <<

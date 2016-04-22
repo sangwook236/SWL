@@ -17,38 +17,71 @@ namespace swl {
 class SWL_MACHINE_VISION_API ScaleSpace
 {
 public:
-	// Derivative of Gaussian wrt x- & y-axes.
+	// Gaussian oeprator.
+	struct SWL_MACHINE_VISION_API GaussianOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Derivative-of-Gaussian (gradient) oeprator.
 	struct SWL_MACHINE_VISION_API DerivativeOfGaussianOperator
 	{
 	public:
-		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// Laplacian of Gaussian (LoG).
+	// Laplacian-of-Gaussian (LoG) operator.
 	struct SWL_MACHINE_VISION_API LaplacianOfGaussianOperator
 	{
 	public:
-		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// Ridgeness operator.
-	//	The second order derivative of F wrt the normal vector v: F_vv.
+	// Ridgeness operator: F_vv.
 	//	F_vv = G_vv * F is a measure of concavity.
 	//	If F_vv is low, it means ridges. If F_vv is high, it means valleys.
 	struct SWL_MACHINE_VISION_API RidgenessOperator
 	{
 	public:
-		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// Isophote curvature operator.
-	//	The second-order derivative of F wrt the normal vector v over the first-order derivative of F wrt the gradient vector w: F_vv / F_w.
-	//	F_vv / F_w is a measure of concavity, where F_vv = G_vv * F and F_w = G_w * F.
-	//	If F_vv / F_w is low, it means ridges. If F_vv / F_w is high, it means valleys.
+	// Cornerness operator: Fvv * Fw^2.
+	struct SWL_MACHINE_VISION_API CornernessOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Isophote curvature operator: -F_vv / F_w.
+	//	-F_vv / F_w is a measure of concavity, where F_vv = G_vv * F and F_w = G_w * F.
+	//	If -F_vv / F_w is low, it means ridges. If -F_vv / F_w is high, it means valleys.
 	struct SWL_MACHINE_VISION_API IsophoteCurvatureOperator
 	{
 	public:
-		cv::Mat operator()(const cv::Mat &img, const std::size_t kernelSize, const double sigma) const;
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Flowline curvature operator: -F_vw / F_w.
+	struct SWL_MACHINE_VISION_API FlowlineCurvatureOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Unflatness operator.
+	struct SWL_MACHINE_VISION_API UnflatnessOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
+	};
+
+	// Umbilicity operator.
+	struct SWL_MACHINE_VISION_API UmbilicityOperator
+	{
+	public:
+		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
 	};
 
 public:
@@ -56,22 +89,15 @@ public:
 	//explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const double baseScale);
 	explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t kernelSize, const double baseScale);
 	explicit ScaleSpace(const ScaleSpace& rhs)
-		: firstOctaveIndex_(rhs.firstOctaveIndex_), lastOctaveIndex_(rhs.lastOctaveIndex_), firstSublevelIndex_(rhs.firstSublevelIndex_), lastSublevelIndex_(rhs.lastSublevelIndex_), octaveResolution_(rhs.octaveResolution_), kernelSize_(kernelSize_), baseScale_(rhs.baseScale_), useVariableKernelSize_(rhs.useVariableKernelSize_)
+	: firstOctaveIndex_(rhs.firstOctaveIndex_), lastOctaveIndex_(rhs.lastOctaveIndex_), firstSublevelIndex_(rhs.firstSublevelIndex_), lastSublevelIndex_(rhs.lastSublevelIndex_), octaveResolution_(rhs.octaveResolution_), kernelSize_(kernelSize_), baseScale_(rhs.baseScale_), useVariableKernelSize_(rhs.useVariableKernelSize_)
 	{}
 
 private:
 	ScaleSpace & operator=(const ScaleSpace& rhs);  // Not implemeted.
 
 public:
-	//
-	cv::Mat getScaledImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const;
-	// the norm of gradient at a level.
-	cv::Mat getScaledGradientImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const;
-	// the Laplacian at a level.
-	cv::Mat getScaledLaplacianImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const;
-
-	template<class DerivativeOperation>
-	cv::Mat getScaledDerivativeImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, DerivativeOperation derivative, const bool useScaleSpacePyramid = false) const
+	template<class FilterOperation>
+	cv::Mat getImageInScaleSpace(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, FilterOperation operation, const bool useScaleSpacePyramid = false) const
 	{
 		if (octaveIndex < firstOctaveIndex_ || octaveIndex > lastOctaveIndex_ || sublevelIndex < firstSublevelIndex_ || sublevelIndex > lastSublevelIndex_)
 			return cv::Mat();
@@ -92,15 +118,35 @@ public:
 		const double scaleFactor = std::pow(2.0, useScaleSpacePyramid ? ((double)sublevelIndex / (double)octaveResolution_) : ((double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_));
 
 		// FIXME [check] >> when applying a filter, does its kernel size increase as its sigma increases?
-		return derivative(resized, (useVariableKernelSize_ ? (kernelSize_ * scaleFactor) : kernelSize_), baseScale_ * scaleFactor);
+		return operation(resized, (useVariableKernelSize_ ? (kernelSize_ * scaleFactor) : kernelSize_), baseScale_ * scaleFactor);
 	}
 
+	//
+	cv::Mat getScaledImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const
+	{
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, GaussianOperator(), useScaleSpacePyramid);
+	}
+	// the norm of gradient at a level.
+	cv::Mat getScaledGradientImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const
+	{
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, DerivativeOfGaussianOperator(), useScaleSpacePyramid);
+	}
+	// the Laplacian at a level.
+	cv::Mat getScaledLaplacianImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid = false) const
+	{
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, LaplacianOfGaussianOperator(), useScaleSpacePyramid);
+	}
+
+public:
 	// Gaussian pyramid.
-	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
-	static cv::Mat getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
+	static cv::Mat getImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
+	static cv::Mat getImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
 	// Laplacian pyramid.
-	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
-	static cv::Mat getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
+	static cv::Mat getImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex);
+	static cv::Mat getImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex);
+
+private:
+	static void computeDerivativesOfImage(const cv::Mat& img, const std::size_t kernelSize, const double sigma, cv::Mat& Fx, cv::Mat& Fy, cv::Mat& Fxx, cv::Mat& Fyy, cv::Mat& Fxy);
 
 private:
 	const long firstOctaveIndex_, lastOctaveIndex_;

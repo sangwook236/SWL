@@ -22,7 +22,7 @@ AdisUsbz::~AdisUsbz()
     }
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 bool AdisUsbz::Initialize( const wchar_t * aDeviceName )
 #else
 bool AdisUsbz::Initialize( const char * aDeviceName )

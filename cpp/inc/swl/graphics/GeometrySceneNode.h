@@ -23,7 +23,7 @@ public:
 	typedef typename base_type::visitor_type visitor_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	GeometrySceneNode(const geometry_id_type &geometryId, const std::wstring &name = std::wstring())
 #else
 	GeometrySceneNode(const geometry_id_type &geometryId, const std::string &name = std::string())

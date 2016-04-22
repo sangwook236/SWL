@@ -9,7 +9,7 @@
 
 
 #if !defined(__FUNCTION__)
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 #define __FUNCTION__ L""
 #else
 #define __FUNCTION__ ""
@@ -117,7 +117,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring & getMessage() const  {  return message_;  }
 #else
 	const std::string & getMessage() const  {  return message_;  }
@@ -129,7 +129,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getClassName() const;
 #else
 	std::string getClassName() const;
@@ -141,7 +141,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getMethodName() const;
 #else
 	std::string getMethodName() const;
@@ -152,12 +152,12 @@ private:
 
 	boost::any returnVal_;
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring message_;
 #else
 	const std::string message_;
 #endif
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring methodName_;
 #else
 	const std::string methodName_;

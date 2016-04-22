@@ -1,4 +1,4 @@
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #include <vld/vld.h>
 #endif
 #include "swl/Config.h"

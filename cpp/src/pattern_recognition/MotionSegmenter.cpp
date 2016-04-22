@@ -1,8 +1,7 @@
 #include "swl/pattern_recognition/MotionSegmenter.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/video/tracking.hpp>
+//#include <opencv2/optflow/motempl.hpp>
+#include <opencv2/opencv.hpp>
 #include <iostream>
 
 namespace swl {
@@ -32,7 +31,17 @@ namespace swl {
 #endif
 	}
 
-	cv::updateMotionHistory(silh, mhi, timestamp, mhiTimeDuration);  // update MHI
+	//--S [] 2016/04/22 : Sang-Wook Lee
+	//cv::updateMotionHistory(silh, mhi, timestamp, mhiTimeDuration);  // update MHI
+	IplImage *mhi_ipl = cvCreateImage(cvSize(silh.cols, silh.rows), IPL_DEPTH_32F, 1);  // motion segmentation map
+#if defined(__GNUC__)
+	IplImage silh_ipl = (IplImage)silh;
+	cvUpdateMotionHistory(&silh_ipl, mhi_ipl, timestamp, mhiTimeDuration);  // update MHI
+#else
+	cvUpdateMotionHistory(&(IplImage)silh, mhi_ipl, timestamp, mhiTimeDuration);  // update MHI
+#endif
+	mhi = cv::cvarrToMat(mhi_ipl);
+	//--E [] 2016/04/22 : Sang-Wook Lee
 
 	//
 	{
@@ -69,8 +78,16 @@ namespace swl {
 	CvSeq *seq = cvSegmentMotion(&(IplImage)processed_mhi, segmask, storage, timestamp, motion_segmentation_threshold);
 #endif
 
-	//cv::Mat(segmask, false).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
-	cv::Mat(segmask, false).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
+	{
+		//--S [] 2016/04/22 : Sang-Wook Lee
+/*
+		//cv::Mat(segmask, false).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
+		cv::Mat(segmask, false).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
+*/
+		//cv::cvarrToMat(segmask).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
+		cv::cvarrToMat(segmask).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
+		//--E [] 2016/04/22 : Sang-Wook Lee
+	}
 
 	// iterate through the motion components
 	component_rects.reserve(seq->total);

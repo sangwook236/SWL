@@ -22,7 +22,7 @@ public:
 	typedef typename base_type::visitor_type visitor_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	GLShapeSceneNode(shape_type &shape, const std::wstring &name = std::wstring())
 #else
 	GLShapeSceneNode(shape_type &shape, const std::string &name = std::string())

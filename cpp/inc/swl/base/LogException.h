@@ -9,7 +9,7 @@
 
 
 #if !defined(__FUNCTION__)
-//#if defined(UNICODE) || defined(_UNICODE)
+//#if defined(_UNICODE) || defined(UNICODE)
 //#define __FUNCTION__ (L"")
 //#else
 #define __FUNCTION__ ("")
@@ -110,7 +110,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring & getMessage() const  {  return message_;  }
 #else
 	const std::string & getMessage() const  {  return message_;  }
@@ -122,7 +122,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getFilePath() const  {  return filePath_;  }
 #else
 	std::string getFilePath() const  {  return filePath_;  }
@@ -134,7 +134,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getFileName() const;
 #else
 	std::string getFileName() const;
@@ -152,7 +152,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getClassName() const;
 #else
 	std::string getClassName() const;
@@ -164,7 +164,7 @@ public:
 	 *
 	 *	unicode를 사용하는 경우 std::wstring형을, 그렇지 않은 경우 std::string 객체를 반환한다.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getMethodName() const;
 #else
 	std::string getMethodName() const;
@@ -181,7 +181,7 @@ public:
 	 *		-# log stream 객체는 open된 상태이어야 한다.
 	 *
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	static void setLogStream(std::wostream &logStream)
 #else
 	static void setLogStream(std::ostream &logStream)
@@ -201,25 +201,25 @@ private:
 private:
 	const unsigned int level_;
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring message_;
 #else
 	const std::string message_;
 #endif
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring filePath_;
 #else
 	const std::string filePath_;
 #endif
 	const long lineNo_;
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	const std::wstring methodName_;
 #else
 	const std::string methodName_;
 #endif
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	static std::wostream *logStream_;
 #else
 	static std::ostream *logStream_;

@@ -27,7 +27,7 @@
 #include <gtest/gtest.h>
 
 // Automatic linking.
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #	if defined(_DEBUG)
 #		pragma comment(lib, "gtest_d.lib")
 #		pragma comment(lib, "gtest_main_d.lib")
@@ -45,7 +45,7 @@
 #include <cppunit/extensions/HelperMacros.h>
 
 // Automatic linking.
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #	if defined(_DEBUG)
 #		pragma comment(lib, "cppunitd_dll.lib")
 #		if defined(_UNICODE) || defined(UNICODE)

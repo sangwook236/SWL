@@ -11,7 +11,7 @@ public:
     AdisUsbz();
     virtual ~AdisUsbz();
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
     bool Initialize( const wchar_t * aDeviceName );
 #else
 	bool Initialize( const char * aDeviceName );

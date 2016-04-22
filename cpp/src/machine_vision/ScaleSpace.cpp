@@ -15,7 +15,16 @@
 
 namespace swl {
 
-// Derivative of Gaussian wrt x- & y-axes.
+// Gaussian oeprator.
+cv::Mat ScaleSpace::GaussianOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
+{
+	cv::Mat scaled;
+	cv::GaussianBlur(img, scaled, cv::Size(kernelSize, kernelSize), sigma, sigma, cv::BORDER_DEFAULT);
+
+	return scaled;
+}
+
+// Derivative-of-Gaussian (gradient) oeprator.
 cv::Mat ScaleSpace::DerivativeOfGaussianOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	const int halfKernelSize = (int)kernelSize / 2;
@@ -75,7 +84,7 @@ cv::Mat ScaleSpace::DerivativeOfGaussianOperator::operator()(const cv::Mat& img,
 	return gradient;
 }
 
-// Laplacian of Gaussian (LoG).
+// Laplacian-of-Gaussian (LoG) operator.
 cv::Mat ScaleSpace::LaplacianOfGaussianOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	const int halfKernelSize = (int)kernelSize / 2;
@@ -105,120 +114,84 @@ cv::Mat ScaleSpace::LaplacianOfGaussianOperator::operator()(const cv::Mat& img, 
 	return deltaF;
 }
 
-// The second order derivative of Gaussian wrt the normal vector v: F_vv.
-//	A local coordinate frame based on the gradient vector w and its right-handed normal vector v.
+// Ridgeness operator: F_vv.
 //	REF [book] >> section 9.1.2 (p. 254) in "Digital and Medical Image Processing", 2005.
 //	REF [book] >> Figure 9.10 & 9.11 (p. 260) in "Digital and Medical Image Processing", 2005.
 cv::Mat ScaleSpace::RidgenessOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
-	{
-		// Compute derivatives wrt xy-coordinate system.
-		cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
-		cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
-		DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
-		DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
-
-		// Make sure that the sum (or average) of all elements of the kernel has to be zero (similar to the Laplace kernel) so that the convolution result of a homogeneous regions is always zero.
-		//	REF [site] >> http://fourier.eng.hmc.edu/e161/lectures/gradient/node8.html
-		const double kernelArea = (double)kernelSize * (double)kernelSize;
-		Gx -= cv::sum(Gx) / kernelArea;
-		Gy -= cv::sum(Gy) / kernelArea;
-		Gxx -= cv::sum(Gxx) / kernelArea;
-		Gyy -= cv::sum(Gyy) / kernelArea;
-		Gxy -= cv::sum(Gxy) / kernelArea;
-
-		// Compute Fx, Fy, Fxx, Fyy, Fxy.
-		cv::filter2D(img, Fx, CV_64F, Gx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fy, CV_64F, Gy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fxx, CV_64F, Gxx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fyy, CV_64F, Gyy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fxy, CV_64F, Gxy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-	}
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
 
 	// Compute Fvv.
 	// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
-	cv::Mat Fvv;
-	{
-		cv::Mat Fx2, Fy2;
-		cv::multiply(Fx, Fx, Fx2);
-		cv::multiply(Fy, Fy, Fy2);
-
-		cv::Mat num1, num2, num3, num;
-		cv::multiply(Fy2, Fxx, num1);
-		cv::multiply(Fx, Fy, num2);
-		cv::multiply(num2, Fxy, num2);
-		cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num2);
-		cv::multiply(Fx2, Fyy, num3);
-		cv::add(num2, num3, num);
-
-		cv::Mat den;
-		cv::add(Fx2, Fy2, den);
-
-		cv::divide(num, den, Fvv);
-	}
-
-	return Fvv;
+	const cv::Mat Fx2(Fx.mul(Fx)), Fy2(Fy.mul(Fy));
+	return (Fy2.mul(Fxx) - 2 * Fx.mul(Fy).mul(Fxy) + Fx2.mul(Fyy)) / (Fx2 + Fy2);
 }
 
-// The second-order derivative of Gaussian wrt the normal vector v over the derivative of Gaussian wrt the gradient vector w: F_vv / F_w.
-//	A local coordinate frame based on the gradient vector w and its right-handed normal vector v.
+// Cornerness operator: Fvv * Fw^2.
+//	REF [book] >> Table 9.1 (p. 262) in "Digital and Medical Image Processing", 2005.
+cv::Mat ScaleSpace::CornernessOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
+{
+	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
+
+	// Compute Fvv * Fw^2.
+	return Fy.mul(Fy).mul(Fxx) - 2 * Fx.mul(Fy).mul(Fxy) + Fx.mul(Fx).mul(Fyy);
+}
+
+// Isophote curvature operator: -F_vv / F_w.
 //	REF [book] >> Figure 9.12 (p. 261) in "Digital and Medical Image Processing", 2005.
 cv::Mat ScaleSpace::IsophoteCurvatureOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
-	{
-		// Compute derivatives wrt xy-coordinate system.
-		cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
-		cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
-		DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
-		DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
-
-		// Make sure that the sum (or average) of all elements of the kernel has to be zero (similar to the Laplace kernel) so that the convolution result of a homogeneous regions is always zero.
-		//	REF [site] >> http://fourier.eng.hmc.edu/e161/lectures/gradient/node8.html
-		const double kernelArea = (double)kernelSize * (double)kernelSize;
-		Gx -= cv::sum(Gx) / kernelArea;
-		Gy -= cv::sum(Gy) / kernelArea;
-		Gxx -= cv::sum(Gxx) / kernelArea;
-		Gyy -= cv::sum(Gyy) / kernelArea;
-		Gxy -= cv::sum(Gxy) / kernelArea;
-
-		// Compute Fx, Fy, Fxx, Fyy, Fxy.
-		cv::filter2D(img, Fx, CV_64F, Gx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fy, CV_64F, Gy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fxx, CV_64F, Gxx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fyy, CV_64F, Gyy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-		cv::filter2D(img, Fxy, CV_64F, Gxy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
-	}
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
 
 	// Compute FvvFw.
 	// REF [book] >> p. 255 ~ 256 in "Digital and Medical Image Processing", 2005.
-	cv::Mat FvvFw;
-	{
-		cv::Mat Fx2, Fy2;
-		cv::multiply(Fx, Fx, Fx2);
-		cv::multiply(Fy, Fy, Fy2);
+	const cv::Mat Fx2(Fx.mul(Fx)), Fy2(Fy.mul(Fy));
+	cv::Mat den;
+	cv::pow(Fx2 + Fy2, 1.5, den);
+	return -(Fy2.mul(Fxx) - 2 * Fx.mul(Fy).mul(Fxy) + Fx2.mul(Fyy)) / den;
+}
 
-		cv::Mat num1, num2, num3, num;
-		cv::multiply(Fy2, Fxx, num1);
-		cv::multiply(Fx, Fy, num2);
-		cv::multiply(num2, Fxy, num2);
-		cv::addWeighted(num1, 1.0, num2, -2.0, 0.0, num2);
-		cv::multiply(Fx2, Fyy, num3);
-		cv::add(num2, num3, num);
+// Flowline curvature operator: -F_vw / F_w.
+//	REF [book] >> Table 9.1 (p. 262) in "Digital and Medical Image Processing", 2005.
+cv::Mat ScaleSpace::FlowlineCurvatureOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
+{
+	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
 
-		cv::Mat den;
-		cv::add(Fx2, Fy2, den);
-		cv::pow(den, 1.5, den);
+	// Compute FvwFw.
+	const cv::Mat Fx2(Fx.mul(Fx)), Fy2(Fy.mul(Fy));
+	cv::Mat den;
+	cv::pow(Fx2 + Fy2, 1.5, den);
+	return (Fx.mul(Fy).mul(Fyy - Fxx) + Fxy.mul(Fx2 - Fy2)) / den;
+}
 
-		cv::divide(-num, den, FvvFw);
-	}
+// Unflatness operator.
+//	REF [book] >> Table 9.1 (p. 262) in "Digital and Medical Image Processing", 2005.
+cv::Mat ScaleSpace::UnflatnessOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
+{
+	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
 
-	return FvvFw;
+	return Fxx.mul(Fxx) + 2 * Fxy.mul(Fxy) + Fyy.mul(Fyy);
+}
+
+// Umbilicity operator.
+//	REF [book] >> Table 9.1 (p. 262) in "Digital and Medical Image Processing", 2005.
+//	Umbilics or umbilical points are points on a surface that are locally spherical.
+//		REF [site] >> https://en.wikipedia.org/wiki/Umbilical_point
+cv::Mat ScaleSpace::UmbilicityOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
+{
+	cv::Mat Fx, Fy, Fxx, Fyy, Fxy;
+	ScaleSpace::computeDerivativesOfImage(img, kernelSize, sigma, Fx, Fy, Fxx, Fyy, Fxy);
+
+	return 2 * (Fxx.mul(Fyy) - Fxy.mul(Fxy)) / (Fxx.mul(Fxx) + 2 * Fxy.mul(Fxy) + Fyy.mul(Fyy));
 }
 
 /*explicit*/ ScaleSpace::ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t kernelSize)
-	: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(kernelSize), baseScale_(0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8), useVariableKernelSize_(false)
+: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(kernelSize), baseScale_(0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8), useVariableKernelSize_(false)
 {
 	// REF [site] >> cv::getGaussianKernel() in OpenCV.
 	//	sigma = 0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8
@@ -232,7 +205,7 @@ cv::Mat ScaleSpace::IsophoteCurvatureOperator::operator()(const cv::Mat& img, co
 
 #if 0
 /*explicit*/ ScaleSpace::ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const double baseScale)
-	: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(2 * (int)std::ceil(((((baseScale - 0.8) / 0.3 + 1.0) * 2.0 + 1.0) + 1.0) / 2.0) - 1), baseScale_(baseScale), useVariableKernelSize_(false)
+: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(2 * (int)std::ceil(((((baseScale - 0.8) / 0.3 + 1.0) * 2.0 + 1.0) + 1.0) / 2.0) - 1), baseScale_(baseScale), useVariableKernelSize_(false)
 {
 	// REF [site] >> cv::getGaussianKernel() in OpenCV.
 	//	kernelSize = round(((sigma - 0.8) / 0.3 + 1.0) * 2.0 + 1.0)
@@ -246,7 +219,7 @@ cv::Mat ScaleSpace::IsophoteCurvatureOperator::operator()(const cv::Mat& img, co
 #endif
 
 /*explicit*/ ScaleSpace::ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t kernelSize, const double baseScale)
-	: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(kernelSize), baseScale_(baseScale), useVariableKernelSize_(false)
+: firstOctaveIndex_(firstOctaveIndex), lastOctaveIndex_(lastOctaveIndex), firstSublevelIndex_(firstSublevelIndex), lastSublevelIndex_(lastSublevelIndex), octaveResolution_(octaveResolution), kernelSize_(kernelSize), baseScale_(baseScale), useVariableKernelSize_(false)
 {
 	assert(firstOctaveIndex_ <= lastOctaveIndex);
 	assert(firstSublevelIndex_ <= lastSublevelIndex_);
@@ -255,69 +228,53 @@ cv::Mat ScaleSpace::IsophoteCurvatureOperator::operator()(const cv::Mat& img, co
 	assert(baseScale_ > 0.0);
 }
 
-cv::Mat ScaleSpace::getScaledImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid /*= false*/) const
-{
-	if (octaveIndex < firstOctaveIndex_ || octaveIndex > lastOctaveIndex_ || sublevelIndex < firstSublevelIndex_ || sublevelIndex > lastSublevelIndex_)
-		return cv::Mat();
-
-	cv::Mat resized;
-	if (!useScaleSpacePyramid || 0 == octaveIndex)
-		img.copyTo(resized);
-	else
-	{
-		const double ratio = std::pow(2.0, -octaveIndex);
-		cv::resize(img, resized, cv::Size(), ratio, ratio, cv::INTER_LINEAR);
-	}
-
-	// FIXME [check] >> which one is correct?
-	//	REF [site] >> Fig 6 in http://darkpgmr.tistory.com/137
-	//	Is there any relationship between reducing a image by half and doubling the sigma of Gaussian filter?
-	//const double scaleFactor = std::pow(2.0, (double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_);
-	const double scaleFactor = std::pow(2.0, useScaleSpacePyramid ? ((double)sublevelIndex / (double)octaveResolution_) : ((double)octaveIndex + (double)sublevelIndex / (double)octaveResolution_));
-
-	const double sigma(baseScale_ * scaleFactor);
-
-	// FIXME [check] >> when applying Gaussian filter, does its kernel size increase as its sigma increases?
-	const std::size_t kernelSize = useVariableKernelSize_ ? (kernelSize_ * scaleFactor) : kernelSize_;
-
-	cv::Mat scaled;
-	cv::GaussianBlur(resized, scaled, cv::Size(kernelSize, kernelSize), sigma, sigma, cv::BORDER_DEFAULT);
-
-	return scaled;
-}
-
-cv::Mat ScaleSpace::getScaledGradientImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid /*= false*/) const
-{
-	return getScaledDerivativeImage(img, octaveIndex, sublevelIndex, DerivativeOfGaussianOperator(), useScaleSpacePyramid);
-}
-
-cv::Mat ScaleSpace::getScaledLaplacianImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useScaleSpacePyramid /*= false*/) const
-{
-	return getScaledDerivativeImage(img, octaveIndex, sublevelIndex, LaplacianOfGaussianOperator(), useScaleSpacePyramid);
-}
-
-/*static*/ cv::Mat ScaleSpace::getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex)
+/*static*/ cv::Mat ScaleSpace::getImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex)
 {
 	// FIXME [check] >> is this implementation correct?
 	return ScaleSpace(octaveIndex, octaveIndex, 0, 0, 1, kernelSize).getScaledImage(img, octaveIndex, 0, true);
 }
 
-/*static*/ cv::Mat ScaleSpace::getScaledImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex)
+/*static*/ cv::Mat ScaleSpace::getImageInGaussianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex)
 {
 	// FIXME [check] >> is this implementation correct?
 	return ScaleSpace(octaveIndex, octaveIndex, 0, 0, 1, kernelSize, baseScale).getScaledImage(img, octaveIndex, 0, true);
 }
 
-/*static*/ cv::Mat ScaleSpace::getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex)
+/*static*/ cv::Mat ScaleSpace::getImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const long octaveIndex)
 {
 	// FIXME [check] >> is this implementation correct?
 	return ScaleSpace(octaveIndex, octaveIndex, 0, 0, 1, kernelSize).getScaledLaplacianImage(img, octaveIndex, 0, true);
 }
 
-/*static*/ cv::Mat ScaleSpace::getScaledImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex)
+/*static*/ cv::Mat ScaleSpace::getImageInLaplacianPyramid(const cv::Mat& img, const std::size_t kernelSize, const double baseScale, const long octaveIndex)
 {
 	// FIXME [check] >> is this implementation correct?
 	return ScaleSpace(octaveIndex, octaveIndex, 0, 0, 1, kernelSize, baseScale).getScaledLaplacianImage(img, octaveIndex, 0, true);
+}
+
+/*static*/ void ScaleSpace::computeDerivativesOfImage(const cv::Mat& img, const std::size_t kernelSize, const double sigma, cv::Mat& Fx, cv::Mat& Fy, cv::Mat& Fxx, cv::Mat& Fyy, cv::Mat& Fxy)
+{
+	// Compute derivatives wrt xy-coordinate system.
+	cv::Mat Gx(kernelSize, kernelSize, CV_64F), Gy(kernelSize, kernelSize, CV_64F);
+	cv::Mat Gxx(kernelSize, kernelSize, CV_64F), Gyy(kernelSize, kernelSize, CV_64F), Gxy(kernelSize, kernelSize, CV_64F);
+	DerivativesOfGaussian::getFirstOrderDerivatives(kernelSize, sigma, Gx, Gy);
+	DerivativesOfGaussian::getSecondOrderDerivatives(kernelSize, sigma, Gxx, Gyy, Gxy);
+
+	// Make sure that the sum (or average) of all elements of the kernel has to be zero (similar to the Laplace kernel) so that the convolution result of a homogeneous regions is always zero.
+	//	REF [site] >> http://fourier.eng.hmc.edu/e161/lectures/gradient/node8.html
+	const double kernelArea = (double)kernelSize * (double)kernelSize;
+	Gx -= cv::sum(Gx) / kernelArea;
+	Gy -= cv::sum(Gy) / kernelArea;
+	Gxx -= cv::sum(Gxx) / kernelArea;
+	Gyy -= cv::sum(Gyy) / kernelArea;
+	Gxy -= cv::sum(Gxy) / kernelArea;
+
+	// Compute Fx, Fy, Fxx, Fyy, Fxy.
+	cv::filter2D(img, Fx, CV_64F, Gx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+	cv::filter2D(img, Fy, CV_64F, Gy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+	cv::filter2D(img, Fxx, CV_64F, Gxx, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+	cv::filter2D(img, Fyy, CV_64F, Gyy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
+	cv::filter2D(img, Fxy, CV_64F, Gxy, cv::Point(-1, -1), 0, cv::BORDER_DEFAULT);
 }
 
 }  // namespace swl

@@ -696,7 +696,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	bgShape->setBottomColor(bottomGradientBackgroundColor_[0], bottomGradientBackgroundColor_[1], bottomGradientBackgroundColor_[2], bottomGradientBackgroundColor_[3]);
 
 	boost::shared_ptr<swl::GLShape> backgroundShape(bgShape);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> backgroundNode(new swl::GLShapeSceneNode<visitor_type>(backgroundShape, L"background"));
 #else
 	boost::shared_ptr<scene_node_type> backgroundNode(new swl::GLShapeSceneNode<visitor_type>(backgroundShape, "background"));
@@ -706,7 +706,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	// floor
 	boost::shared_ptr<swl::GLShape> floorShape(new FloorShape(*this));
 	floorShape->setColor(floorColor_[0], floorColor_[1], floorColor_[2], floorColor_[3]);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> floorNode(new swl::GLShapeSceneNode<visitor_type>(floorShape, L"floor"));
 #else
 	boost::shared_ptr<scene_node_type> floorNode(new swl::GLShapeSceneNode<visitor_type>(floorShape, "floor"));
@@ -720,7 +720,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	//
 	boost::shared_ptr<swl::GLShape> coloredMeshShape(new ColoredMeshShape());
 	coloredMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> coloredMeshNode(new swl::GLShapeSceneNode<visitor_type>(coloredMeshShape, L"colored mesh object"));
 #else
 	boost::shared_ptr<scene_node_type> coloredMeshNode(new swl::GLShapeSceneNode<visitor_type>(coloredMeshShape, "colored mesh object"));
@@ -732,7 +732,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	//
 	boost::shared_ptr<swl::GLShape> texturedMeshShape(new TexturedMeshShape());
 	texturedMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> texturedMeshNode(new swl::GLShapeSceneNode<visitor_type>(texturedMeshShape, L"textured mesh object"));
 #else
 	boost::shared_ptr<scene_node_type> texturedMeshNode(new swl::GLShapeSceneNode<visitor_type>(texturedMeshShape, "textured mesh object"));
@@ -744,7 +744,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	//
 	boost::shared_ptr<swl::GLShape> trimmedSphereShape(new TrimmedSphereShape());
 	trimmedSphereShape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> trimmedSphereNode(new swl::GLShapeSceneNode<visitor_type>(trimmedSphereShape, L"trimmed sphere"));
 #else
 	boost::shared_ptr<scene_node_type> trimmedSphereNode(new swl::GLShapeSceneNode<visitor_type>(trimmedSphereShape, "trimmed sphere"));
@@ -756,7 +756,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	//
 	boost::shared_ptr<swl::GLShape> simpleCubeShape(new SimpleCubeShape());
 	simpleCubeShape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> simpleCubeNode(new swl::GLShapeSceneNode<visitor_type>(simpleCubeShape, L"simple cube"));
 #else
 	boost::shared_ptr<scene_node_type> simpleCubeNode(new swl::GLShapeSceneNode<visitor_type>(simpleCubeShape, "simple cube"));
@@ -766,7 +766,7 @@ void CWglSceneGraphView::constructSceneGraph()
 
 	// color bar
 	boost::shared_ptr<swl::GLShape> colorBarShape(new ColorBarShape());
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> colorBarNode(new swl::GLShapeSceneNode<visitor_type>(colorBarShape, L"color bar"));
 #else
 	boost::shared_ptr<scene_node_type> colorBarNode(new swl::GLShapeSceneNode<visitor_type>(colorBarShape, "color bar"));
@@ -775,7 +775,7 @@ void CWglSceneGraphView::constructSceneGraph()
 
 	// coordinate frame
 	boost::shared_ptr<swl::GLShape> coordinateFrameShape(new CoordinateFrameShape(*this));
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> coordinateFrameNode(new swl::GLShapeSceneNode<visitor_type>(coordinateFrameShape, L"coordinate frame"));
 #else
 	boost::shared_ptr<scene_node_type> coordinateFrameNode(new swl::GLShapeSceneNode<visitor_type>(coordinateFrameShape, "coordinate frame"));

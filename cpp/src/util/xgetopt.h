@@ -19,7 +19,7 @@
 
 extern SWL_UTIL_API int optind, opterr;
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 extern SWL_UTIL_API wchar_t *optarg;
 
 SWL_UTIL_API int getopt(int argc, wchar_t *argv[], wchar_t *optstring);

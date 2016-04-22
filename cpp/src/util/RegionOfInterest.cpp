@@ -24,7 +24,7 @@ bool RegionOfInterest::PrComparePoints::operator()(const point_type &rhs) const
 	return std::fabs(point_.x - rhs.x) <= eps && std::fabs(point_.y - rhs.y) <= eps;
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 RegionOfInterest::RegionOfInterest(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 RegionOfInterest::RegionOfInterest(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -93,7 +93,7 @@ RegionOfInterest & RegionOfInterest::operator=(const RegionOfInterest &rhs)
 //-----------------------------------------------------------------------------------------
 //
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 LineROI::LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 LineROI::LineROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -212,7 +212,7 @@ bool LineROI::include(const point_type &pt, const real_type &tol) const
 //-----------------------------------------------------------------------------------------
 //
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 RectangleROI::RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 RectangleROI::RectangleROI(const point_type &pt1, const point_type &pt2, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -365,7 +365,7 @@ bool RectangleROI::include(const point_type &pt, const real_type &tol) const
 //-----------------------------------------------------------------------------------------
 //
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 ROIWithVariablePoints::ROIWithVariablePoints(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 ROIWithVariablePoints::ROIWithVariablePoints(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -374,7 +374,7 @@ ROIWithVariablePoints::ROIWithVariablePoints(const bool isVisible, const real_ty
 {
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 ROIWithVariablePoints::ROIWithVariablePoints(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 ROIWithVariablePoints::ROIWithVariablePoints(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -493,7 +493,7 @@ bool ROIWithVariablePoints::isVertex(const point_type &pt, const real_type &vert
 //-----------------------------------------------------------------------------------------
 //
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 PolylineROI::PolylineROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 PolylineROI::PolylineROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -502,7 +502,7 @@ PolylineROI::PolylineROI(const bool isVisible, const real_type &lineWidth, const
 {
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 PolylineROI::PolylineROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 PolylineROI::PolylineROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -556,7 +556,7 @@ bool PolylineROI::include(const point_type &pt, const real_type &tol) const
 //-----------------------------------------------------------------------------------------
 //
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 PolygonROI::PolygonROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 PolygonROI::PolygonROI(const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)
@@ -565,7 +565,7 @@ PolygonROI::PolygonROI(const bool isVisible, const real_type &lineWidth, const r
 {
 }
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 PolygonROI::PolygonROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::wstring &name /*= std::wstring()*/)
 #else
 PolygonROI::PolygonROI(const points_type &points, const bool isVisible, const real_type &lineWidth, const real_type &pointSize, const color_type &lineColor, const color_type &pointColor, const std::string &name /*= std::string()*/)

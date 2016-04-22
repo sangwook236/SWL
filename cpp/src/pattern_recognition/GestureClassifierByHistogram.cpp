@@ -3,9 +3,8 @@
 #include "swl/rnd_util/HistogramMatcher.h"
 #include "swl/rnd_util/HistogramUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/video/tracking.hpp>
+#include <opencv2/opencv.hpp>
+#include <map>
 
 
 namespace swl {

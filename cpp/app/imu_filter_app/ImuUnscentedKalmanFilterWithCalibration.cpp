@@ -471,7 +471,7 @@ void imu_unscented_Kalman_filter_with_calibration()
 #if defined(__USE_RECEIVED_DATA_FROM_ADISUSBZ)
 	AdisUsbz adis;
 
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	if (!adis.Initialize(L"\\\\.\\Ezusb-0"))
 #else
 	if (!adis.Initialize("\\\\.\\Ezusb-0"))

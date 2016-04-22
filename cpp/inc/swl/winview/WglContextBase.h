@@ -4,7 +4,7 @@
 
 #include "swl/winview/ExportWinView.h"
 #include "swl/view/ViewContext.h"
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #include <windows.h>
 #endif
 #include <GL/gl.h>

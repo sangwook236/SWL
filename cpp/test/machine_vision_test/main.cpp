@@ -1,10 +1,10 @@
 //#include "stdafx.h"
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #include <vld/vld.h>
 #endif
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/core/core.hpp>
-#include <opencv2/gpu/gpu.hpp>
+//#include <opencv2/gpu/gpu.hpp>
 #include <iostream>
 #include <cstdlib>
 
@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 		bool canUseGPU = false;
 		cv::theRNG();
 
-#if 1
+#if 0
 		if (cv::gpu::getCudaEnabledDeviceCount() > 0)
 		{
 			canUseGPU = true;

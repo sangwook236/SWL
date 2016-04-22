@@ -20,7 +20,7 @@ public:
 	typedef typename base_type::visitor_type visitor_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	AppearanceSceneNode(appearance_type &appearance, const std::wstring &name = std::wstring())
 #else
 	AppearanceSceneNode(appearance_type &appearance, const std::string &name = std::string())

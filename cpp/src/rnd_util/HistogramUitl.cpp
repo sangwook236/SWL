@@ -1,7 +1,6 @@
 #include "swl/rnd_util/HistogramUtil.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
-#include <opencv2/core/core.hpp>
-#include <opencv2/core/core_c.h>
+#include <opencv2/opencv.hpp>
 
 
 namespace swl {
@@ -35,8 +34,8 @@ namespace swl {
 		cv::rectangle(
 			histImg,
 			cv::Point(i*binWidth, maxHeight), cv::Point((i+1)*binWidth - 1, maxHeight - binHeight),
-			binVal > maxVal ? CV_RGB(255, 0, 0) : CV_RGB(255, 255, 255),
-			CV_FILLED
+			binVal > maxVal ? cv::Scalar(0, 0, 255) : cv::Scalar(255, 255, 255),
+			cv::FILLED
 		);
 	}
 #else
@@ -47,8 +46,8 @@ namespace swl {
 		cv::rectangle(
 			histImg,
 			cv::Point(i*binWidth, maxHeight), cv::Point((i+1)*binWidth - 1, maxHeight - binHeight),
-			*binPtr > maxVal ? CV_RGB(255, 0, 0) : CV_RGB(255, 255, 255),
-			CV_FILLED
+			*binPtr > maxVal ? cv::Scalar(0, 0, 0) : cv::Scalar(255, 255, 255),
+			cv::FILLED
 		);
 	}
 #endif

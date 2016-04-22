@@ -2,7 +2,7 @@
 #define __SWL_WIN_VIEW__EXPORT_WIN_VIEW_H_ 1
 
 
-#if defined(WIN32) || defined(_WIN32)
+#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #	if defined(_MSC_VER)
 #		if defined(SWL_WIN_VIEW_EXPORT)
 #		    define SWL_WIN_VIEW_API __declspec(dllexport)

@@ -21,7 +21,7 @@ public:
 	typedef Shape::appearance_type		appearance_type;
 
 public:
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	ShapeSceneNode(shape_type &shape, const std::wstring &name = std::wstring())
 #else
 	ShapeSceneNode(shape_type &shape, const std::string &name = std::string())

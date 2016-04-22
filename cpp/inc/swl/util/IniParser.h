@@ -28,7 +28,7 @@ public:
 	 *
 	 *	This ctor reads some data from a loadable ini file.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	IniParser(const std::wstring &iniFilePath);
 #else
 	IniParser(const std::string &iniFilePath);
@@ -73,7 +73,7 @@ public:
 	 *
 	 *	This function returns NULL in case of error.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getSectionName(int n) const;
 #else
 	std::string getSectionName(int n) const;
@@ -116,7 +116,7 @@ public:
 	 *  previous versions of iniparser. It is recommended to use
 	 *  iniparser_getstring() instead.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getStr(const std::wstring &key) const;
 #else
 	std::string getStr(const std::string &key) const;
@@ -134,7 +134,7 @@ public:
 	 *  The returned char pointer is pointing to a string allocated in
 	 *  the dictionary, do not free or modify it.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	std::wstring getString(const std::wstring &key, const std::wstring &notfound) const;
 #else
 	std::string getString(const std::string &key, const std::string &notfound) const;
@@ -164,7 +164,7 @@ public:
 	 *
 	 *  Credits: Thanks to A. Becker for suggesting strtol()
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	int getInt(const std::wstring &key, const int notfound) const;
 #else
 	int getInt(const std::string &key, const int notfound) const;
@@ -180,7 +180,7 @@ public:
 	 *  ini file is given as "section:key". If the key cannot be found,
 	 *  the notfound value is returned.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	double getDouble(const std::wstring &key, const double notfound) const;
 #else
 	double getDouble(const std::string &key, const double notfound) const;
@@ -215,7 +215,7 @@ public:
 	 *  The notfound value returned if no boolean is identified, does not
 	 *  necessarily have to be 0 or 1.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	bool getBool(const std::wstring &key, const bool notfound) const;
 #else
 	bool getBool(const std::string &key, const bool notfound) const;
@@ -231,7 +231,7 @@ public:
 	 *  contain the provided value. If it cannot be found, false is returned.
 	 *  It is Ok to set val to NULL.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	bool setStr(const std::wstring &entry, const std::wstring &val) const;
 #else
 	bool setStr(const std::string &entry, const std::string &val) const;
@@ -244,7 +244,7 @@ public:
 	 *
 	 *  If the given entry can be found, it is deleted from the dictionary.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	void unset(const std::wstring &entry) const;
 #else
 	void unset(const std::string &entry) const;
@@ -259,7 +259,7 @@ public:
 	 *  are stored as keys with NULL associated values, this is the only way
 	 *  of querying for the presence of sections in a dictionary.
 	 */
-#if defined(UNICODE) || defined(_UNICODE)
+#if defined(_UNICODE) || defined(UNICODE)
 	bool findEntry(const std::wstring &entry) const;
 #else
 	bool findEntry(const std::string &entry) const;
