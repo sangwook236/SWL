@@ -1,8 +1,9 @@
 #include "swl/pattern_recognition/MotionSegmenter.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
-//#include <opencv2/optflow/motempl.hpp>
+#include <opencv2/optflow/motempl.hpp>
 #include <opencv2/opencv.hpp>
 #include <iostream>
+
 
 namespace swl {
 
@@ -31,17 +32,7 @@ namespace swl {
 #endif
 	}
 
-	//--S [] 2016/04/22 : Sang-Wook Lee
-	//cv::updateMotionHistory(silh, mhi, timestamp, mhiTimeDuration);  // update MHI
-	IplImage *mhi_ipl = cvCreateImage(cvSize(silh.cols, silh.rows), IPL_DEPTH_32F, 1);  // motion segmentation map
-#if defined(__GNUC__)
-	IplImage silh_ipl = (IplImage)silh;
-	cvUpdateMotionHistory(&silh_ipl, mhi_ipl, timestamp, mhiTimeDuration);  // update MHI
-#else
-	cvUpdateMotionHistory(&(IplImage)silh, mhi_ipl, timestamp, mhiTimeDuration);  // update MHI
-#endif
-	mhi = cv::cvarrToMat(mhi_ipl);
-	//--E [] 2016/04/22 : Sang-Wook Lee
+	cv::motempl::updateMotionHistory(silh, mhi, timestamp, mhiTimeDuration);  // update MHI
 
 	//
 	{
@@ -64,43 +55,15 @@ namespace swl {
 #endif
 	}
 
-	//
-	CvMemStorage *storage = cvCreateMemStorage(0);  // temporary storage
-
 	// segment motion: get sequence of motion components.
 	const double motion_segmentation_threshold = 0.5;  // recommended to be equal to the interval between motion history "steps" or greater.
 	// segmask is marked motion components map. it is not used further.
-	IplImage *segmask = cvCreateImage(cvSize(curr_gray_img.cols, curr_gray_img.rows), IPL_DEPTH_32F, 1);  // motion segmentation map
-#if defined(__GNUC__)
-    IplImage processed_mhi_ipl = (IplImage)processed_mhi;
-	CvSeq *seq = cvSegmentMotion(&processed_mhi_ipl, segmask, storage, timestamp, motion_segmentation_threshold);
-#else
-	CvSeq *seq = cvSegmentMotion(&(IplImage)processed_mhi, segmask, storage, timestamp, motion_segmentation_threshold);
-#endif
+	cv::Mat segmask;
+	// TODO [check] >> have to diff revision before 2016/04/27.
+	cv::motempl::segmentMotion(processed_mhi, segmask, component_rects, timestamp, motion_segmentation_threshold);
 
-	{
-		//--S [] 2016/04/22 : Sang-Wook Lee
-/*
-		//cv::Mat(segmask, false).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
-		cv::Mat(segmask, false).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
-*/
-		//cv::cvarrToMat(segmask).convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
-		cv::cvarrToMat(segmask).convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
-		//--E [] 2016/04/22 : Sang-Wook Lee
-	}
-
-	// iterate through the motion components
-	component_rects.reserve(seq->total);
-	for (int i = 0; i < seq->total; ++i)
-	{
-		const CvConnectedComp *comp = (CvConnectedComp *)cvGetSeqElem(seq, i);
-		component_rects.push_back(cv::Rect(comp->rect));
-	}
-
-	cvReleaseImage(&segmask);
-
-	//cvClearMemStorage(storage);
-	cvReleaseMemStorage(&storage);
+	//segmask.convertTo(component_label_map, CV_8SC1, 1.0, 0.0);  // Oops !!! error
+	segmask.convertTo(component_label_map, CV_8UC1, 1.0, 0.0);
 }
 
 }  // namespace swl

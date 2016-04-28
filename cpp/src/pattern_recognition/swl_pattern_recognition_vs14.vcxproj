@@ -61,7 +61,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>swl_rnd_util_d.lib;swl_base_d.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util_d.lib;swl_base_d.lib;opencv_optflow310.lib;opencv_video310d.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
     </Link>
@@ -81,7 +81,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_base.lib;opencv_imgproc310.lib;opencv_highgui310.lib;opencv_core310.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_base.lib;opencv_optflow310.lib;opencv_video310.lib;opencv_imgproc310.lib;opencv_highgui310.lib;opencv_core310.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
     </Link>
