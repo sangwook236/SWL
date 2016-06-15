@@ -64,7 +64,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_math_d.lib;swl_base_d.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;gsl_d.lib;cblas_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math_d.lib;swl_base_d.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;gsld.lib;cblasd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>

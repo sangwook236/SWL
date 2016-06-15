@@ -79,7 +79,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_math_d.lib;swl_rnd_util_d.lib;gsl_d.lib;cblas_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_math_d.lib;swl_rnd_util_d.lib;gsld.lib;cblasd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

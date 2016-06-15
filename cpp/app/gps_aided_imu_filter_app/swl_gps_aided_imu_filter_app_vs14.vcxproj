@@ -76,7 +76,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util_d.lib;swl_winutil_d.lib;swl_math_d.lib;nmea_d.lib;gsl_d.lib;cblas_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util_d.lib;swl_winutil_d.lib;swl_math_d.lib;nmea_d.lib;gsld.lib;cblasd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>

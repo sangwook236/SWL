@@ -29,8 +29,8 @@
 // Automatic linking.
 #if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
 #	if defined(_DEBUG)
-#		pragma comment(lib, "gtest_d.lib")
-#		pragma comment(lib, "gtest_main_d.lib")
+#		pragma comment(lib, "gtestd.lib")
+#		pragma comment(lib, "gtest_maind.lib")
 #	else
 #		pragma comment(lib, "gtest.lib")
 #		pragma comment(lib, "gtest_main.lib")
