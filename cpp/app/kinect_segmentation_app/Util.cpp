@@ -1,8 +1,6 @@
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include "swl/machine_vision/KinectSensor.h"
 #include <opencv2/opencv.hpp>
-#include <opencv2/legacy/compat.hpp>
-#include <opencv2/legacy/legacy.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <algorithm>
@@ -12,14 +10,13 @@
 namespace {
 namespace local {
 
-// [ref] load_kinect_sensor_parameters_from_IR_to_RGB() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
+// REF [file] >> load_kinect_sensor_parameters_from_IR_to_RGB() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
 void load_kinect_sensor_parameters_from_IR_to_RGB(
 	cv::Mat &K_ir, cv::Mat &distCoeffs_ir, cv::Mat &K_rgb, cv::Mat &distCoeffs_rgb,
 	cv::Mat &R_ir_to_rgb, cv::Mat &T_ir_to_rgb
 )
 {
-	// [ref]
-	//	Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
+	// REF [site] >> Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
 	//	http://docs.opencv.org/doc/tutorials/calib3d/camera_calibration/camera_calibration.html
 
 	// Caution:
@@ -86,14 +83,13 @@ void load_kinect_sensor_parameters_from_IR_to_RGB(
 	cv::Mat(3, 1, CV_64FC1, (void *)transVec).copyTo(T_ir_to_rgb);
 }
 
-// [ref] load_kinect_sensor_parameters_from_RGB_to_IR() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
+// REF [file] >> load_kinect_sensor_parameters_from_RGB_to_IR() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
 void load_kinect_sensor_parameters_from_RGB_to_IR(
 	cv::Mat &K_rgb, cv::Mat &distCoeffs_rgb, cv::Mat &K_ir, cv::Mat &distCoeffs_ir,
 	cv::Mat &R_rgb_to_ir, cv::Mat &T_rgb_to_ir
 )
 {
-	// [ref]
-	//	Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
+	// REF [site] >> Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
 	//	http://docs.opencv.org/doc/tutorials/calib3d/camera_calibration/camera_calibration.html
 
 	// Caution:
@@ -424,7 +420,7 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 	delete [] mags;
 }
 
-// [ref] snake() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
+// REF [file] >> snake() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
 void snake(IplImage *srcImage, IplImage *grayImage)
 {
 	const int NUMBER_OF_SNAKE_POINTS = 50;
@@ -510,7 +506,7 @@ void snake(IplImage *srcImage, IplImage *grayImage)
 	cvReleaseImage(&img);
 }
 
-// [ref] fit_contour_by_snake() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
+// REF [file] >> fit_contour_by_snake() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
 void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> &contour, const size_t numSnakePoints, const float alpha, const float beta, const float gamma, const bool use_gradient, const CvSize &win, std::vector<cv::Point> &snake_contour)
 {
 	snake_contour.clear();
@@ -572,7 +568,7 @@ void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> 
 	}
 }
 
-// [ref] zhang_suen_thinning_algorithm() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_skeletonization_and_thinning.cpp
+// REF [file] >> zhang_suen_thinning_algorithm() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_skeletonization_and_thinning.cpp
 void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst)
 {
 	dst = src.clone();
@@ -592,7 +588,7 @@ void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst)
 	dst *= 255;
 }
 
-// [ref] guo_hall_thinning_algorithm() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_skeletonization_and_thinning.cpp
+// REF [file] >> guo_hall_thinning_algorithm() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_skeletonization_and_thinning.cpp
 void guo_hall_thinning_algorithm(cv::Mat &im)
 {
 	im /= 255;
@@ -611,7 +607,7 @@ void guo_hall_thinning_algorithm(cv::Mat &im)
 	im *= 255;
 }
 
-// [ref] simple_convex_hull() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
+// REF [file] >> simple_convex_hull() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
 bool simple_convex_hull(const cv::Mat &img, const cv::Rect &roi, const int pixVal, std::vector<cv::Point> &convexHull)
 {
 	const cv::Mat &roi_img = roi.width == 0 || roi.height == 0 ? img : img(roi);
@@ -684,7 +680,7 @@ void smooth_image(const cv::Mat &in, cv::Mat &out)
 #endif
 }
 
-// [ref] canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
+// REF [file] >> canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
 void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdgeThreshold, const bool useL2, cv::Mat &edge)
 {
 	// smoothing.
@@ -801,7 +797,7 @@ void construct_valid_depth_image(const cv::Mat &depth_input_image, cv::Mat &dept
 	}
 }
 
-// [ref] normalize_histogram() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
+// REF [file] >> normalize_histogram() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
 void normalize_histogram(cv::MatND &hist, const double factor)
 {
 #if 0
@@ -819,7 +815,7 @@ void normalize_histogram(cv::MatND &hist, const double factor)
 #endif
 }
 
-// [ref] structure_tensor_2d() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
+// REF [file] >> structure_tensor_2d() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
 void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const double blur_sigma, cv::Mat &eval1, cv::Mat &eval2, cv::Mat &evec1, cv::Mat &evec2)
 {
 	const double sigma2 = deriv_sigma * deriv_sigma;
@@ -914,7 +910,7 @@ void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const dou
 		}
 }
 
-// [ref] compute_valid_region_using_coherence() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
+// REF [file] >> compute_valid_region_using_coherence() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
 void compute_valid_region_using_coherence(const cv::Mat &eval1, const cv::Mat &eval2, const cv::Mat &valid_eval_region_mask, const cv::Mat &constant_region_mask, cv::Mat &valid_region)
 {
 	// coherence = 1 when the gradient is totally aligned, and coherence = 0 (lambda1 = lambda2) when it has no predominant direction.
@@ -939,7 +935,7 @@ void compute_valid_region_using_coherence(const cv::Mat &eval1, const cv::Mat &e
 	valid_region.setTo(cv::Scalar::all(0), constant_region_mask);
 }
 
-// [ref] compute_valid_region_using_ev_ratio() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
+// REF [file] >> compute_valid_region_using_ev_ratio() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
 void compute_valid_region_using_ev_ratio(const cv::Mat &eval1, const cv::Mat &eval2, const cv::Mat &valid_eval_region_mask, const cv::Mat &constant_region_mask, cv::Mat &valid_region)
 {
 	cv::Mat eval_ratio(valid_eval_region_mask.size(), CV_8UC1, cv::Scalar::all(0));
@@ -991,7 +987,7 @@ void construct_depth_variation_mask_using_structure_tensor(const cv::Mat &depth_
 	cv::Mat valid_region;
 #if 1
 	// METHOD #1; using coherence.
-	//	[ref] http://en.wikipedia.org/wiki/Structure_tensor
+	//	REF [site] >> http://en.wikipedia.org/wiki/Structure_tensor
 	compute_valid_region_using_coherence(eval1, eval2, valid_eval_region_mask, constant_region_mask, depth_variation_mask);
 #else
 	// METHOD #2: using the ratio of eigenvales.
