@@ -15,7 +15,7 @@
 
 namespace swl {
 
-// Gaussian oeprator.
+// Gaussian operator.
 cv::Mat ScaleSpace::GaussianOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	cv::Mat scaled;
@@ -24,7 +24,7 @@ cv::Mat ScaleSpace::GaussianOperator::operator()(const cv::Mat& img, const std::
 	return scaled;
 }
 
-// Derivative-of-Gaussian (gradient) oeprator.
+// Derivative-of-Gaussian (gradient) operator.
 cv::Mat ScaleSpace::DerivativeOfGaussianOperator::operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const
 {
 	const int halfKernelSize = (int)kernelSize / 2;

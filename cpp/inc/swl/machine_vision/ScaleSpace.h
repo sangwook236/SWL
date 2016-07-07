@@ -17,14 +17,14 @@ namespace swl {
 class SWL_MACHINE_VISION_API ScaleSpace
 {
 public:
-	// Gaussian oeprator.
+	// Gaussian operator.
 	struct SWL_MACHINE_VISION_API GaussianOperator
 	{
 	public:
 		cv::Mat operator()(const cv::Mat& img, const std::size_t kernelSize, const double sigma) const;
 	};
 
-	// Derivative-of-Gaussian (gradient) oeprator.
+	// Derivative-of-Gaussian (gradient) operator.
 	struct SWL_MACHINE_VISION_API DerivativeOfGaussianOperator
 	{
 	public:
