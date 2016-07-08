@@ -16,15 +16,15 @@
 namespace swl {
 
 // Compute first-order derivatives of Gaussian.
-/*static*/ void DerivativesOfGaussian::getFirstOrderDerivatives(const size_t kernelSize, const double sigma, cv::Mat& Gx, cv::Mat& Gy)
+/*static*/ void DerivativesOfGaussian::getFirstOrderDerivatives(const size_t apertureSize, const double sigma, cv::Mat& Gx, cv::Mat& Gy)
 {
-	const int halfKernelSize = (int)kernelSize / 2;
+	const int halfApertureSize = (int)apertureSize / 2;
 
 #if 0
 	const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
 	//const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2;
-	for (int y = -halfKernelSize, yy = 0; y <= halfKernelSize; ++y, ++yy)
-		for (int x = -halfKernelSize, xx = 0; x <= halfKernelSize; ++x, ++xx)
+	for (int y = -halfApertureSize, yy = 0; y <= halfApertureSize; ++y, ++yy)
+		for (int x = -halfApertureSize, xx = 0; x <= halfApertureSize; ++x, ++xx)
 		{
 			const double factor = std::exp(-(double(x)*double(x) + double(y)*double(y)) / _2_sigma2) / _2_pi_sigma4;
 			//const double factor = std::exp(-(double(x)*double(x) + double(y)*double(y)) / _2_sigma2);
@@ -37,8 +37,8 @@ namespace swl {
 
 	const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma4 = M_PI * _2_sigma2 * sigma2;
 	//const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2;
-	for (int y = -halfKernelSize, yy = 0; y <= halfKernelSize; ++y, ++yy)
-		for (int x = -halfKernelSize, xx = 0; x <= halfKernelSize; ++x, ++xx)
+	for (int y = -halfApertureSize, yy = 0; y <= halfApertureSize; ++y, ++yy)
+		for (int x = -halfApertureSize, xx = 0; x <= halfApertureSize; ++x, ++xx)
 		{
 			Gx.at<double>(yy, xx) = -double(x) * std::exp(-(double(x)*double(x) + double(y)*double(y)) / _2_sigma2) / _2_pi_sigma4;
 			//Gx.at<double>(yy, xx) = -double(x) * std::exp(-(double(x)*double(x) + double(y)*double(y)) / _2_sigma2);
@@ -49,14 +49,14 @@ namespace swl {
 }
 
 // Compute second-order derivatives of Gaussian.
-/*static*/ void DerivativesOfGaussian::getSecondOrderDerivatives(const size_t kernelSize, const double sigma, cv::Mat& Gxx, cv::Mat& Gyy, cv::Mat& Gxy)
+/*static*/ void DerivativesOfGaussian::getSecondOrderDerivatives(const size_t apertureSize, const double sigma, cv::Mat& Gxx, cv::Mat& Gyy, cv::Mat& Gxy)
 {
-	const int halfKernelSize = (int)kernelSize / 2;
+	const int halfApertureSize = (int)apertureSize / 2;
 
 	const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2, _2_pi_sigma6 = M_PI * _2_sigma2 * sigma2 * sigma2;
 	//const double sigma2 = sigma * sigma, _2_sigma2 = 2.0 * sigma2;
-	for (int y = -halfKernelSize, yy = 0; y <= halfKernelSize; ++y, ++yy)
-		for (int x = -halfKernelSize, xx = 0; x <= halfKernelSize; ++x, ++xx)
+	for (int y = -halfApertureSize, yy = 0; y <= halfApertureSize; ++y, ++yy)
+		for (int x = -halfApertureSize, xx = 0; x <= halfApertureSize; ++x, ++xx)
 		{
 			const double x2 = double(x) * double(x), y2 = double(y) * double(y);
 			const double factor = std::exp(-(x2 + y2) / _2_sigma2) / _2_pi_sigma6;

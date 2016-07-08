@@ -23,10 +23,10 @@ struct SWL_MACHINE_VISION_API DerivativesOfGaussian
 {
 public:
 	// Compute first-order derivatives of Gaussian.
-	static void getFirstOrderDerivatives(const size_t kernelSize, const double sigma, cv::Mat& Gx, cv::Mat& Gy);
+	static void getFirstOrderDerivatives(const size_t apertureSize, const double sigma, cv::Mat& Gx, cv::Mat& Gy);
 
 	// Compute second-order derivatives of Gaussian.
-	static void getSecondOrderDerivatives(const size_t kernelSize, const double sigma, cv::Mat& Gxx, cv::Mat& Gyy, cv::Mat& Gxy);
+	static void getSecondOrderDerivatives(const size_t apertureSize, const double sigma, cv::Mat& Gxx, cv::Mat& Gyy, cv::Mat& Gxy);
 };
 
 }  // namespace swl

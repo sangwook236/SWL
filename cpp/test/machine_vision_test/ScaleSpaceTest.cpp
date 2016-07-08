@@ -19,18 +19,18 @@
 namespace {
 namespace local {
 
-void scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+void scale_space(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale)
 {
 	const std::string output_filename_appendix(".scale_space.png");
 
 	const std::string windowName("scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-	const bool useScaleSpacePyramid = false;
+	const bool useImagePyramid = false;
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, apertureSize);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -50,7 +50,7 @@ void scale_space(const std::list<std::string>& img_filenames, const std::size_t 
 
 				// Calculate scale space.
 				std::cout << "\tstart processing scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
+				const cv::Mat scaled(scaleSpace.getScaledImage(img, octaveIndex, sublevelIndex, useImagePyramid));
 				std::cout << "\tend processing scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
@@ -85,18 +85,18 @@ void scale_space(const std::list<std::string>& img_filenames, const std::size_t 
 	cv::destroyAllWindows();
 }
 
-void gradient_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+void gradient_scale_space(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale)
 {
 	const std::string output_filename_appendix(".gradient_scale_space.png");
 
 	const std::string windowName("gradient scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-	const bool useScaleSpacePyramid = false;
+	const bool useImagePyramid = false;
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, apertureSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -116,7 +116,7 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 
 				// Calculate scale space.
 				std::cout << "\tstart processing gradient scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledGradientImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
+				const cv::Mat scaled(scaleSpace.getScaledGradientImage(img, octaveIndex, sublevelIndex, useImagePyramid));
 				std::cout << "\tend processing gradient scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
@@ -151,18 +151,18 @@ void gradient_scale_space(const std::list<std::string>& img_filenames, const std
 	cv::destroyAllWindows();
 }
 
-void laplacian_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+void laplacian_scale_space(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale)
 {
 	const std::string output_filename_appendix(".laplacian_scale_space.png");
 
 	const std::string windowName("Laplacian scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-	const bool useScaleSpacePyramid = false;
+	const bool useImagePyramid = false;
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, apertureSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -182,7 +182,7 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 
 				// Calculate scale space.
 				std::cout << "\tstart processing Laplacian scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getScaledLaplacianImage(img, octaveIndex, sublevelIndex, useScaleSpacePyramid));
+				const cv::Mat scaled(scaleSpace.getScaledLaplacianImage(img, octaveIndex, sublevelIndex, useImagePyramid));
 				std::cout << "\tend processing Laplacian scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
@@ -218,18 +218,18 @@ void laplacian_scale_space(const std::list<std::string>& img_filenames, const st
 }
 
 template<class DifferentialOperator>
-void differential_scale_space(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale, DifferentialOperator differentialOperator)
+void differential_scale_space(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale, DifferentialOperator differentialOperator)
 {
 	const std::string output_filename_appendix(".differential_scale_space.png");
 
 	const std::string windowName("differential scale space");
 	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
 
-	const bool useScaleSpacePyramid = false;
+	const bool useImagePyramid = false;
 	const long firstOctaveIndex = 0, lastOctaveIndex = 5;
 	const std::size_t octaveResolution = 2;
 	const long firstSublevelIndex = 0, lastSublevelIndex = octaveResolution - 1;
-	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, kernelSize, baseScale);
+	swl::ScaleSpace scaleSpace(firstOctaveIndex, lastOctaveIndex, firstSublevelIndex, lastSublevelIndex, octaveResolution, apertureSize, baseScale);
 	for (std::list<std::string>::const_iterator cit = img_filenames.begin(); cit != img_filenames.end(); ++cit)
 	{
 		std::cout << "loading input image..." << std::endl;
@@ -249,7 +249,7 @@ void differential_scale_space(const std::list<std::string>& img_filenames, const
 
 				// Calculate scale space.
 				std::cout << "\tstart processing differential scale space..." << std::endl;
-				const cv::Mat scaled(scaleSpace.getImageInScaleSpace(img, octaveIndex, sublevelIndex, differentialOperator, useScaleSpacePyramid));
+				const cv::Mat scaled(scaleSpace.getImageInScaleSpace(img, octaveIndex, sublevelIndex, differentialOperator, useImagePyramid));
 				std::cout << "\tend processing differential scale space..." << std::endl;
 
 				if (scaled.empty()) continue;
@@ -293,7 +293,7 @@ void differential_scale_space(const std::list<std::string>& img_filenames, const
 	cv::destroyAllWindows();
 }
 
-void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale)
 {
 	const std::string output_filename_appendix(".gaussian_pyramid.png");
 
@@ -318,7 +318,7 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 
 			// Calculate scale space.
 			std::cout << "\tstart processing Gaussian pyramid..." << std::endl;
-			const cv::Mat scaled(swl::ScaleSpace::getImageInGaussianPyramid(img, kernelSize, baseScale, octaveIndex));
+			const cv::Mat scaled(swl::ScaleSpace::getImageInGaussianPyramid(img, apertureSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Gaussian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
@@ -352,7 +352,7 @@ void gaussian_pyramid(const std::list<std::string>& img_filenames, const std::si
 	cv::destroyAllWindows();
 }
 
-void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::size_t kernelSize, const double baseScale)
+void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::size_t apertureSize, const double baseScale)
 {
 	const std::string output_filename_appendix(".laplacian_pyramid.png");
 
@@ -377,7 +377,7 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 
 			// Calculate scale space.
 			std::cout << "\tstart processing Laplacian pyramid..." << std::endl;
-			const cv::Mat scaled(swl::ScaleSpace::getImageInLaplacianPyramid(img, kernelSize, baseScale, octaveIndex));
+			const cv::Mat scaled(swl::ScaleSpace::getImageInLaplacianPyramid(img, apertureSize, baseScale, octaveIndex));
 			std::cout << "\tend processing Laplacian pyramid..." << std::endl;
 
 			if (scaled.empty()) continue;
@@ -417,7 +417,7 @@ void laplacian_pyramid(const std::list<std::string>& img_filenames, const std::s
 void scale_space_test()
 {
 	// REF [site] >> cv::getGaussianKernel() in OpenCV.
-	//	sigma = 0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8
+	//	sigma = 0.3 * ((apertureSize - 1.0) * 0.5 - 1.0) + 0.8
 
 #if 1
 	// Figure 9.3 (p. 250) in "Digital and Medical Image Processing", 2005.
@@ -425,14 +425,14 @@ void scale_space_test()
 		std::list<std::string> img_filenames;
 		img_filenames.push_back("./data/machine_vision/whale_256x256.png");
 
-		const std::size_t kernelSize = 7;
+		const std::size_t apertureSize = 7;
 		const double baseScale = 3.0;
 
-		local::scale_space(img_filenames, kernelSize, baseScale);
+		local::scale_space(img_filenames, apertureSize, baseScale);
 	}
 #endif
 
-#if 0
+#if 1
 	// REF [book] >> Figure 9.7 (p. 258) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
@@ -449,16 +449,16 @@ void scale_space_test()
 
 		local::gradient_scale_space(img_filenames, kernelSize3, baseScale3);
 		local::gradient_scale_space(img_filenames, kernelSize9, baseScale9);
-		local::gradient_scale_space(img_filenames, kernelSize17, baseScale17);
-		local::gradient_scale_space(img_filenames, kernelSize33, baseScale33);
+		//local::gradient_scale_space(img_filenames, kernelSize17, baseScale17);
+		//local::gradient_scale_space(img_filenames, kernelSize33, baseScale33);
 		local::laplacian_scale_space(img_filenames, kernelSize3, baseScale3);
 		local::laplacian_scale_space(img_filenames, kernelSize9, baseScale9);
-		local::laplacian_scale_space(img_filenames, kernelSize17, baseScale17);
-		local::laplacian_scale_space(img_filenames, kernelSize33, baseScale3);
+		//local::laplacian_scale_space(img_filenames, kernelSize17, baseScale17);
+		//local::laplacian_scale_space(img_filenames, kernelSize33, baseScale3);
 	}
 #endif
 
-#if 0
+#if 1
 	// REF [book] >> Figure 9.8 (p. 259) in "Digital and Medical Image Processing", 2005.
 	{
 		std::list<std::string> img_filenames;
@@ -494,15 +494,15 @@ void scale_space_test()
 
 #if 0
 		// callback.
-		auto ridgenessOperator = [](const cv::Mat& img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto ridgenessOperator = [](const cv::Mat& img, const std::size_t apertureSize, const double sigma) -> cv::Mat
 		{
 			swl::ScaleSpace::RidgenessOperator ridgeness;
-			return ridgeness(img, kernelSize, sigma);
+			return ridgeness(img, apertureSize, sigma);
 		};
-		auto isophoteCurvatureOperator = [](const cv::Mat& img, const std::size_t kernelSize, const double sigma) -> cv::Mat
+		auto isophoteCurvatureOperator = [](const cv::Mat& img, const std::size_t apertureSize, const double sigma) -> cv::Mat
 		{
 			swl::ScaleSpace::IsophoteCurvatureOperator ridgeness;
-			return ridgeness(img, kernelSize, sigma);
+			return ridgeness(img, apertureSize, sigma);
 		};
 
 		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, ridgenessOperator);
@@ -554,11 +554,11 @@ void scale_space_test()
 		std::list<std::string> img_filenames;
 		img_filenames.push_back("./data/machine_vision/whale_256x256.png");
 
-		const std::size_t kernelSize = 3;
-		const double baseScale = 0.3 * ((kernelSize - 1.0) * 0.5 - 1.0) + 0.8;
+		const std::size_t apertureSize = 3;
+		const double baseScale = 0.3 * ((apertureSize - 1.0) * 0.5 - 1.0) + 0.8;
 
-		local::gaussian_pyramid(img_filenames, kernelSize, baseScale);
-		local::laplacian_pyramid(img_filenames, kernelSize, baseScale);
+		local::gaussian_pyramid(img_filenames, apertureSize, baseScale);
+		local::laplacian_pyramid(img_filenames, apertureSize, baseScale);
 	}
 #endif
 }
