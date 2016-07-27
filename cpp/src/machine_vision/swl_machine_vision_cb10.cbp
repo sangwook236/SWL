@@ -60,7 +60,14 @@
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
+		<Unit filename="../../inc/swl/machine_vision/DerivativesOfGaussian.h" />
+		<Unit filename="../../inc/swl/machine_vision/ImageFilter.h" />
+		<Unit filename="../../inc/swl/machine_vision/ImageRectificationUsingOpenCV.h" />
+		<Unit filename="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />
+		<Unit filename="../../inc/swl/machine_vision/KinectSensor.h" />
+		<Unit filename="../../inc/swl/machine_vision/ScaleSpace.h" />
 		<Unit filename="DerivativesOfGaussian.cpp" />
+		<Unit filename="ImageFilter.cpp" />
 		<Unit filename="ImageRectificationUsingOpenCV.cpp" />
 		<Unit filename="ImageUndistortionUsingOpenCV.cpp" />
 		<Unit filename="KinectSensor.cpp" />

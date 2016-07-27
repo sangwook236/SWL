@@ -1,9 +1,10 @@
 set(TARGET swl_machine_vision)
 
 set(SRCS
+	DerivativesOfGaussian.cpp
+	ImageFilter.cpp
 	ImageRectificationUsingOpenCV.cpp
 	ImageUndistortionUsingOpenCV.cpp
-	DerivativesOfGaussian.cpp
 	KinectSensor.cpp
 	ScaleSpace.cpp
 )

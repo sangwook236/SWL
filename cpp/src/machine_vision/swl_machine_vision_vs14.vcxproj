@@ -101,6 +101,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\machine_vision\DerivativesOfGaussian.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\ImageFilter.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h" />
@@ -122,6 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DerivativesOfGaussian.cpp" />
+    <ClCompile Include="ImageFilter.cpp" />
     <ClCompile Include="ImageRectificationUsingOpenCV.cpp" />
     <ClCompile Include="ImageUndistortionUsingOpenCV.cpp" />
     <ClCompile Include="KinectSensor.cpp" />

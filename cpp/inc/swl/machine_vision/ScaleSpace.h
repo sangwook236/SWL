@@ -4,9 +4,7 @@
 #define __SWL_MACHINE_VISION__SCALE_SPACE__H_ 1
 
 
-#include "swl/machine_vision/ExportMachineVision.h"
-#define CV_NO_BACKWARD_COMPATIBILITY
-#include <opencv2/opencv.hpp>
+#include "swl/machine_vision/ImageFilter.h"
 
 
 namespace swl {
@@ -16,73 +14,6 @@ namespace swl {
 
 class SWL_MACHINE_VISION_API ScaleSpace
 {
-public:
-	// Gaussian operator.
-	struct SWL_MACHINE_VISION_API GaussianOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Derivative-of-Gaussian (gradient) operator.
-	struct SWL_MACHINE_VISION_API DerivativeOfGaussianOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Laplacian-of-Gaussian (LoG) operator.
-	struct SWL_MACHINE_VISION_API LaplacianOfGaussianOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Ridgeness operator: F_vv.
-	//	F_vv = G_vv * F is a measure of concavity.
-	//	If F_vv is low, it means ridges. If F_vv is high, it means valleys.
-	struct SWL_MACHINE_VISION_API RidgenessOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Cornerness operator: Fvv * Fw^2.
-	struct SWL_MACHINE_VISION_API CornernessOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Isophote curvature operator: -F_vv / F_w.
-	//	-F_vv / F_w is a measure of concavity, where F_vv = G_vv * F and F_w = G_w * F.
-	//	If -F_vv / F_w is low, it means ridges. If -F_vv / F_w is high, it means valleys.
-	struct SWL_MACHINE_VISION_API IsophoteCurvatureOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Flowline curvature operator: -F_vw / F_w.
-	struct SWL_MACHINE_VISION_API FlowlineCurvatureOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Unflatness operator.
-	struct SWL_MACHINE_VISION_API UnflatnessOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
-
-	// Umbilicity operator.
-	struct SWL_MACHINE_VISION_API UmbilicityOperator
-	{
-	public:
-		cv::Mat operator()(const cv::Mat& img, const std::size_t apertureSize, const double sigma) const;
-	};
 
 public:
 	explicit ScaleSpace(const long firstOctaveIndex, const long lastOctaveIndex, const long firstSublevelIndex, const long lastSublevelIndex, const std::size_t octaveResolution, const std::size_t baseApertureSize);
@@ -127,17 +58,17 @@ public:
 	// Gaussain-blurred image at a level.
 	cv::Mat getScaledImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useImagePyramid = false) const
 	{
-		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, GaussianOperator(), useImagePyramid);
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, ImageFilter::GaussianOperator(), useImagePyramid);
 	}
 	// The norm of gradient at a level.
 	cv::Mat getScaledGradientImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useImagePyramid = false) const
 	{
-		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, DerivativeOfGaussianOperator(), useImagePyramid);
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, ImageFilter::DerivativeOfGaussianOperator(), useImagePyramid);
 	}
 	// The Laplacian at a level.
 	cv::Mat getScaledLaplacianImage(const cv::Mat& img, const long octaveIndex, const long sublevelIndex, const bool useImagePyramid = false) const
 	{
-		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, LaplacianOfGaussianOperator(), useImagePyramid);
+		return getImageInScaleSpace(img, octaveIndex, sublevelIndex, ImageFilter::LaplacianOfGaussianOperator(), useImagePyramid);
 	}
 
 	double getScaleFactor(const long octaveIndex, const long sublevelIndex, const bool useImagePyramid = false) const;

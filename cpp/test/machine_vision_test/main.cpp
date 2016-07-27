@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[])
 {
+	void image_filter_test();
 	void scale_space_test();
 	
 	int retval = EXIT_SUCCESS;
@@ -30,8 +31,11 @@ int main(int argc, char *argv[])
 			std::cout << "GPU not found ..." << std::endl;
 #endif
 		
+		// Image filter ---------------------------------------------
+		image_filter_test();
+
 		// Scale space representation -------------------------------
-		scale_space_test();
+		//scale_space_test();
 	}
 	catch (const cv::Exception &e)
 	{

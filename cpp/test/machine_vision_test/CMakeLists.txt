@@ -2,6 +2,7 @@ set(TARGET swl_machine_vision_test)
 
 set(SRCS
 	main.cpp
+	ImageFilterTest.cpp
 	ScaleSpaceTest.cpp
 )
 set(LIBS

@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/machine_vision/ScaleSpace.h"
+#include "swl/machine_vision/ImageFilter.h"
 #include "swl/machine_vision/DerivativesOfGaussian.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
@@ -515,35 +516,35 @@ void scale_space_test()
 		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, isophoteCurvatureOperator);
 		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, isophoteCurvatureOperator);
 #else
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::RidgenessOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::RidgenessOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::RidgenessOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::RidgenessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::RidgenessOperator());
 
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::CornernessOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::CornernessOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::CornernessOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::CornernessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::CornernessOperator());
 
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::IsophoteCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::IsophoteCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::IsophoteCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::IsophoteCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::IsophoteCurvatureOperator());
 
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::FlowlineCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::FlowlineCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::FlowlineCurvatureOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::FlowlineCurvatureOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::FlowlineCurvatureOperator());
 
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::UnflatnessOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::UnflatnessOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::UnflatnessOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::UnflatnessOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::UnflatnessOperator());
 
-		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ScaleSpace::UmbilicityOperator());
-		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ScaleSpace::UmbilicityOperator());
-		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ScaleSpace::UmbilicityOperator());
-		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ScaleSpace::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize3, baseScale3, swl::ImageFilter::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize9, baseScale9, swl::ImageFilter::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize17, baseScale17, swl::ImageFilter::UmbilicityOperator());
+		local::differential_scale_space(img_filenames, kernelSize33, baseScale33, swl::ImageFilter::UmbilicityOperator());
 #endif
 	}
 #endif

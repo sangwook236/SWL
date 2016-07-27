@@ -97,6 +97,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ImageFilterTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ScaleSpaceTest.cpp" />
   </ItemGroup>
