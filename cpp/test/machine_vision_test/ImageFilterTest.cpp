@@ -26,7 +26,6 @@ void very_simple_example()
 	//const std::string img_filename("./data/machine_vision/box_256x256_2.png");
 
 	// Load an image.
-	std::cout << "Loading input image..." << std::endl;
 	const cv::Mat img(cv::imread(img_filename, cv::IMREAD_GRAYSCALE));
 	//const cv::Mat img(cv::imread(img_filename, cv::IMREAD_COLOR));
 	if (img.empty())
@@ -37,6 +36,7 @@ void very_simple_example()
 
 	cv::Mat img_double;
 	img.convertTo(img_double, CV_64FC1);
+	cv::normalize(img_double, img_double, 0.0, 1.0, cv::NORM_MINMAX);
 
 	// Filter the image.
 	const size_t apertureSize = 3;
