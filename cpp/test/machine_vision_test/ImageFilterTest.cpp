@@ -39,19 +39,19 @@ void very_simple_example()
 	img.convertTo(img_double, CV_64FC1);
 
 	// Filter the image.
-	const double apertureSize = 3.0;
-	const double baseScale = 0.3 * ((apertureSize - 1.0) * 0.5 - 1.0) + 0.8;
+	const size_t apertureSize = 3;
+	const double baseScale = 0.3 * ((double(apertureSize) - 1.0) * 0.5 - 1.0) + 0.8;
 
 	//swl::ImageFilter::GaussianOperator operation;
 	//swl::ImageFilter::DerivativeOfGaussianOperator operation;
-	//swl::ImageFilter::LaplacianOfGaussianOperator operation;
-	swl::ImageFilter::RidgenessOperator operation;
+	swl::ImageFilter::LaplacianOfGaussianOperator operation;
+	//swl::ImageFilter::RidgenessOperator operation;
 	//swl::ImageFilter::CornernessOperator operation;
 	//swl::ImageFilter::IsophoteCurvatureOperator operation;
 	//swl::ImageFilter::FlowlineCurvatureOperator operation;
 	//swl::ImageFilter::UnflatnessOperator operation;
 	//swl::ImageFilter::UmbilicityOperator operation;
-	const cv::Mat ridge = operation(img_double, apertureSize, baseScale);
+	const cv::Mat& ridge = operation(img_double, apertureSize, baseScale);
 
 	// Show the result.
 	const std::string windowName("Image Filtering");
