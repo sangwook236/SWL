@@ -38,28 +38,90 @@ void very_simple_example()
 	img.convertTo(img_double, CV_64FC1);
 	cv::normalize(img_double, img_double, 0.0, 1.0, cv::NORM_MINMAX);
 
-	// Filter the image.
-	const size_t apertureSize = 3;
-	const double baseScale = 0.3 * ((double(apertureSize) - 1.0) * 0.5 - 1.0) + 0.8;
+	cv::imshow("Image", img_double);
 
+	//
 	//swl::ImageFilter::GaussianOperator operation;
 	//swl::ImageFilter::DerivativeOfGaussianOperator operation;
-	swl::ImageFilter::LaplacianOfGaussianOperator operation;
-	//swl::ImageFilter::RidgenessOperator operation;
+	//swl::ImageFilter::LaplacianOfGaussianOperator operation;
+	swl::ImageFilter::RidgenessOperator operation;  // Ridge and valley.
 	//swl::ImageFilter::CornernessOperator operation;
 	//swl::ImageFilter::IsophoteCurvatureOperator operation;
 	//swl::ImageFilter::FlowlineCurvatureOperator operation;
 	//swl::ImageFilter::UnflatnessOperator operation;
 	//swl::ImageFilter::UmbilicityOperator operation;
-	const cv::Mat& ridge = operation(img_double, apertureSize, baseScale);
 
-	// Show the result.
-	const std::string windowName("Image Filtering");
-	cv::namedWindow(windowName, cv::WINDOW_AUTOSIZE);
+	//const size_t apertureSize = 3;
+	for (auto apertureSize : { 3, 7, 11, 15, 19, 23, 27, 31, 35, 39 })
+	{
+		const double sigma = 0.3 * ((double(apertureSize) - 1.0) * 0.5 - 1.0) + 0.8;
+		//for (auto sigma : { 1.0, 3.0, 5.0, 7.0, 9.0 })
+		{
+			std::cout << "Aperture size = " << apertureSize << ", sigma = " << sigma << std::endl;
 
-	cv::imshow(windowName, ridge);
+			// Filter the image.
+			cv::Mat& filtered = operation(img_double, apertureSize, sigma);
 
-	cv::waitKey(0);
+			// Show the result.
+			cv::normalize(filtered, filtered, 0.0, 1.0, cv::NORM_MINMAX);
+			cv::imshow("Filtered image", filtered);
+
+			cv::waitKey(0);
+		}
+	}
+
+	cv::destroyAllWindows();
+}
+
+void simple_example()
+{
+	const int IMG_WIDTH = 400, IMG_HEIGHT = 400;
+	cv::Mat img = cv::Mat::zeros(IMG_HEIGHT, IMG_WIDTH, CV_8UC1);
+
+	// Create an image.
+	cv::rectangle(img, cv::Point(IMG_WIDTH / 2 - 50, 0), cv::Point(IMG_WIDTH / 2 + 50, IMG_HEIGHT), cv::Scalar::all(255), cv::FILLED, cv::LINE_8);
+	cv::rectangle(img, cv::Point(0, IMG_HEIGHT / 2 - 50), cv::Point(IMG_WIDTH, IMG_HEIGHT / 2 + 50), cv::Scalar::all(255), cv::FILLED, cv::LINE_8);
+
+	//
+	cv::Mat dist;
+	cv::distanceTransform(img, dist, cv::DIST_L2, 3);
+
+	cv::Mat dist_double;
+	dist.convertTo(dist_double, CV_64FC1);
+	cv::normalize(dist_double, dist_double, 0.0, 1.0, cv::NORM_MINMAX);
+
+	cv::imshow("Distance transform", dist_double);
+
+	//
+	//swl::ImageFilter::GaussianOperator operation;
+	//swl::ImageFilter::DerivativeOfGaussianOperator operation;
+	//swl::ImageFilter::LaplacianOfGaussianOperator operation;
+	swl::ImageFilter::RidgenessOperator operation;  // Ridge and valley.
+	//swl::ImageFilter::CornernessOperator operation;
+	//swl::ImageFilter::IsophoteCurvatureOperator operation;
+	//swl::ImageFilter::FlowlineCurvatureOperator operation;
+	//swl::ImageFilter::UnflatnessOperator operation;
+	//swl::ImageFilter::UmbilicityOperator operation;
+
+	//const size_t apertureSize = 3;
+	for (auto apertureSize : { 3, 7, 11, 15, 19, 23, 27, 31, 35, 39 })
+	{
+		const double sigma = 0.3 * ((double(apertureSize) - 1.0) * 0.5 - 1.0) + 0.8;
+		//for (auto sigma : { 1.0, 3.0, 5.0, 7.0, 9.0 })
+		{
+			std::cout << "Aperture size = " << apertureSize << ", sigma = " << sigma << std::endl;
+
+			// Filter the image.
+			cv::Mat& filtered = operation(dist_double, apertureSize, sigma);
+
+			// Show the result.
+			cv::normalize(filtered, filtered, 0.0, 1.0, cv::NORM_MINMAX);
+			cv::imshow("Filtered image", filtered);
+
+			cv::waitKey(0);
+		}
+	}
+
 	cv::destroyAllWindows();
 }
 
@@ -68,5 +130,6 @@ void very_simple_example()
 
 void image_filter_test()
 {
-	local::very_simple_example();
+	//local::very_simple_example();
+	local::simple_example();
 }
