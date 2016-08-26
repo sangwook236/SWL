@@ -33,7 +33,7 @@ void displayPaths(const std::list<std::list<VertexDescriptor> >& paths)
 
 void graph_algorithm()
 {
-	//typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS, VertexProperty, EdgeProperty> graph_type;
+	//typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> graph_type;
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS> graph_type;
 
 	// Construct a graph.
@@ -53,7 +53,7 @@ void graph_algorithm()
 
 	std::cout << "#vertices = " << boost::num_vertices(graph) << ", #edges = " << boost::num_edges(graph) << std::endl;
 
-	// Find all candidate leaf paths.
+	// Find all candidate paths.
 	std::list<std::list<graph_type::vertex_descriptor> > paths;
 	swl::findAllPaths(graph, v2, v3, paths);
 
