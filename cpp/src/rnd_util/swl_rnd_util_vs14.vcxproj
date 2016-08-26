@@ -157,6 +157,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\DynamicTimeWarping.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ExportRndUtil.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\ExtendedKalmanFilter.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\GraphAlgorithm.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\GraphTraversal.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramAccumulator.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\HistogramMatcher.h" />

@@ -71,6 +71,7 @@
 		<Unit filename="../../inc/swl/rnd_util/DynamicTimeWarping.h" />
 		<Unit filename="../../inc/swl/rnd_util/ExportRndUtil.h" />
 		<Unit filename="../../inc/swl/rnd_util/ExtendedKalmanFilter.h" />
+		<Unit filename="../../inc/swl/rnd_util/GraphAlgorithm.h" />
 		<Unit filename="../../inc/swl/rnd_util/GraphTraversal.h" />
 		<Unit filename="../../inc/swl/rnd_util/HMM.h" />
 		<Unit filename="../../inc/swl/rnd_util/HistogramAccumulator.h" />

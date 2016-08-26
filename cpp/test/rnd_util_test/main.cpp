@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
 {
 	void tree_traversal();
 	void graph_traversal();
+	void graph_algorithm();
 
 	void levenshtein_distance();
 	void dynamic_time_warping();
@@ -48,14 +49,17 @@ int main(int argc, char *argv[])
 	try
 	{
 		// tree traversal -------------------------------------------
-		tree_traversal();
+		//tree_traversal();
 
 		// graph traversal ------------------------------------------
-		graph_traversal();
+		//graph_traversal();
+
+		// graph algorithm ------------------------------------------
+		graph_algorithm();
 
 		// distance measure -----------------------------------------
 		//levenshtein_distance();  // Levenshtein / edit distance.
-		dynamic_time_warping();  // dynamic time warping (DTW).
+		//dynamic_time_warping();  // dynamic time warping (DTW).
 
 		// estimation -----------------------------------------------
 		//hough_transform();
