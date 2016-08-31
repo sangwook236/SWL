@@ -58,6 +58,9 @@ void graph_algorithm()
 	swl::findAllPaths(graph, v2, v3, paths);
 
 	// Output.
-	std::cout << "start vertex ID: " << v2 << ", target vertex ID: " << v3 << std::endl;
-	local::displayPaths(paths);
+	//if (!paths.empty())
+	{
+		std::cout << "start vertex " << v2 << " --> target vertex " << v3 << std::endl;
+		local::displayPaths(paths);
+	}
 }
