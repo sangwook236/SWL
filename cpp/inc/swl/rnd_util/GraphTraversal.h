@@ -88,11 +88,11 @@ void BFS(const Graph& g, Vertex* v, Visitor visitor)
         {
             u->setVisited();
             visitor(*u);
-        }
 
-		const std::list<Vertex*>& adjacents = g.getAdjacents(u);
-		for (auto w : adjacents)
-			if (!w->isVisited()) que.push(w);
+			const std::list<Vertex*>& adjacents = g.getAdjacents(u);
+			for (auto w : adjacents)
+				if (!w->isVisited()) que.push(w);
+		}
 	}
 }
 
