@@ -31,6 +31,7 @@ void findAllPaths(const Graph& graph, const typename Graph::vertex_descriptor& s
 	{
 		// Recur for all the vertices adjacent to current vertex.
 #if 1
+		// For directed graphs.
 		typename boost::graph_traits<Graph>::out_edge_iterator out_i, out_end;
 		for (boost::tie(out_i, out_end) = boost::out_edges(start, graph); out_i != out_end; ++out_i)
 		{
@@ -39,6 +40,7 @@ void findAllPaths(const Graph& graph, const typename Graph::vertex_descriptor& s
 				findAllPaths(graph, targ, target, visited, path, paths);
 		}
 #else
+		// For undirected graphs.
 		typename boost::graph_traits<Graph>::adjacency_iterator ai, ai_end;
 		for (boost::tie(ai, ai_end) = boost::adjacent_vertices(start, graph); ai != ai_end; ++ai)
 		{
