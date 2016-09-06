@@ -50,7 +50,7 @@ void findAllPaths(const Graph& graph, const typename Graph::vertex_descriptor& s
 #endif
 	}
 
-	// Remove current vertex from path and mark it as unvisited.
+	// Remove the current vertex from path and mark it as unvisited.
 	path.pop_back();
 	visited[start] = false;
 }
