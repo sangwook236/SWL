@@ -24,7 +24,7 @@ public:
 	{}
 
 private:
-	ScaleSpace & operator=(const ScaleSpace& rhs);  // Not implemeted.
+	ScaleSpace & operator=(const ScaleSpace& rhs);  // Not implemented on purpose.
 
 public:
 	template<class Operation>

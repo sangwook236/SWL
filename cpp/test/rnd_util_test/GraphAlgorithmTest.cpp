@@ -32,10 +32,7 @@ void displayPaths(const std::list<std::list<VertexDescriptor> >& paths, const bo
 	}
 }
 
-}  // namespace local
-}  // unnamed namespace
-
-void graph_algorithm()
+void path_finding_in_directed_graph_example()
 {
 	//typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::directedS> graph_type;
 	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS> graph_type;
@@ -59,12 +56,54 @@ void graph_algorithm()
 
 	// Find all candidate paths.
 	std::list<std::list<graph_type::vertex_descriptor> > paths;
-	swl::findAllPaths(graph, v2, v3, paths);
+	swl::findAllPathsInDirectedGraph(graph, v2, v3, paths);
 
 	// Output.
 	//if (!paths.empty())
 	{
 		std::cout << "start vertex " << v2 << " --> target vertex " << v3 << std::endl;
-		local::displayPaths(paths);
+		displayPaths(paths);
 	}
+}
+
+void path_finding_in_undirected_graph_example()
+{
+	typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> graph_type;
+
+	// Construct a graph.
+	// REF [site] >> http://www.geeksforgeeks.org/find-paths-given-source-destination/
+	graph_type graph;
+	graph_type::vertex_descriptor v0 = boost::add_vertex(graph);
+	graph_type::vertex_descriptor v1 = boost::add_vertex(graph);
+	graph_type::vertex_descriptor v2 = boost::add_vertex(graph);
+	graph_type::vertex_descriptor v3 = boost::add_vertex(graph);
+
+	boost::add_edge(v0, v2, graph);
+	boost::add_edge(v2, v0, graph);
+	boost::add_edge(v2, v1, graph);
+	boost::add_edge(v0, v1, graph);
+	boost::add_edge(v0, v3, graph);
+	boost::add_edge(v1, v3, graph);
+
+	std::cout << "#vertices = " << boost::num_vertices(graph) << ", #edges = " << boost::num_edges(graph) << std::endl;
+
+	// Find all candidate paths.
+	std::list<std::list<graph_type::vertex_descriptor> > paths;
+	swl::findAllPathsInUndirectedGraph(graph, v2, v3, paths);
+
+	// Output.
+	//if (!paths.empty())
+	{
+		std::cout << "start vertex " << v2 << " --> target vertex " << v3 << std::endl;
+		displayPaths(paths);
+	}
+}
+
+}  // namespace local
+}  // unnamed namespace
+
+void graph_algorithm()
+{
+	local::path_finding_in_directed_graph_example();
+	local::path_finding_in_undirected_graph_example();
 }
