@@ -106,6 +106,7 @@
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ScaleSpace.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\SkeletonAlgorithm.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\base\swl_base_vs14.vcxproj">
@@ -128,6 +129,7 @@
     <ClCompile Include="ImageUndistortionUsingOpenCV.cpp" />
     <ClCompile Include="KinectSensor.cpp" />
     <ClCompile Include="ScaleSpace.cpp" />
+    <ClCompile Include="SkeletonAlgorithm.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

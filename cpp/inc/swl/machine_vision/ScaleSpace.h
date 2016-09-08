@@ -10,7 +10,7 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// Scale Space Representation
+// Scale Space Representation.
 
 class SWL_MACHINE_VISION_API ScaleSpace
 {

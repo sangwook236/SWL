@@ -1,3 +1,5 @@
+#pragma once
+
 #if !defined(__SWL_RND_UTIL__GRAPH_TRAVERSAL__H_)
 #define __SWL_RND_UTIL__GRAPH_TRAVERSAL__H_ 1
 

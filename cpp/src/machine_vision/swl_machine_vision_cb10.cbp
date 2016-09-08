@@ -66,12 +66,14 @@
 		<Unit filename="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />
 		<Unit filename="../../inc/swl/machine_vision/KinectSensor.h" />
 		<Unit filename="../../inc/swl/machine_vision/ScaleSpace.h" />
+		<Unit filename="../../inc/swl/machine_vision/SkeletonAlgorithm.h" />
 		<Unit filename="DerivativesOfGaussian.cpp" />
 		<Unit filename="ImageFilter.cpp" />
 		<Unit filename="ImageRectificationUsingOpenCV.cpp" />
 		<Unit filename="ImageUndistortionUsingOpenCV.cpp" />
 		<Unit filename="KinectSensor.cpp" />
 		<Unit filename="ScaleSpace.cpp" />
+		<Unit filename="SkeletonAlgorithm.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

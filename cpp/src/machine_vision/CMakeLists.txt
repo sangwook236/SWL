@@ -7,6 +7,7 @@ set(SRCS
 	ImageUndistortionUsingOpenCV.cpp
 	KinectSensor.cpp
 	ScaleSpace.cpp
+	SkeletonAlgorithm.cpp
 )
 set(LIBS
 	swl_rnd_util
