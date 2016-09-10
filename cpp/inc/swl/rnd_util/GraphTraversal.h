@@ -66,6 +66,8 @@ void BFS(TreeNode& n, Visitor visitor)
 template<typename Graph, typename Vertex, class Visitor>
 void DFS(const Graph& g, Vertex* v, Visitor visitor)
 {
+	if (v->isVisited()) return;
+
 	v->setVisited();
 	visitor(*v);
 
@@ -86,15 +88,14 @@ void BFS(const Graph& g, Vertex* v, Visitor visitor)
 		Vertex* u = que.front();
 		que.pop();
 
-        if (!u->isVisited())
-        {
-            u->setVisited();
-            visitor(*u);
+		if (u->isVisited()) continue;
 
-			const std::list<Vertex*>& adjacents = g.getAdjacents(u);
-			for (auto w : adjacents)
-				if (!w->isVisited()) que.push(w);
-		}
+		u->setVisited();
+        visitor(*u);
+
+		const std::list<Vertex*>& adjacents = g.getAdjacents(u);
+		for (auto w : adjacents)
+			if (!w->isVisited()) que.push(w);
 	}
 }
 
