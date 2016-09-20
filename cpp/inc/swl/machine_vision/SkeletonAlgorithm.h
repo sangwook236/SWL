@@ -75,6 +75,8 @@ public:
 	static bool findSkeletalPathBetweenTwoVertices(const cv::Mat& skeleton_bw, const cv::Point& start, const cv::Point& end, std::list<cv::Point>& path);
 
 	//
+	static void getNeareastNeighborsInEachNeighborGroup(const cv::Mat& bw, const cv::Point& center, std::list<cv::Point>& nearestNeighborsInEachNeighborGroup);
+
 	static void computeNeighborGroups(const cv::Mat& skeleton_bw, cv::Mat& neighborGroupCounts, std::map<int, std::vector<int> >* neighborGroupsOfInternalVertices = NULL);
 	static void findVerticesByNeighborGroup(const cv::Mat& neighborGroupCounts, std::list<Vertex>& vertices, int startId = 0);
 	static bool getNeareastVertexByNeighborGroup(const cv::Mat& neighborGroupCounts, const std::map<int, std::vector<int> >& neighborGroupsOfInternalVertices, const cv::Point& curr, cv::Point& nearest);
@@ -100,7 +102,6 @@ private:
 	static void findEdgesByNeighborGroup(const cv::Mat& neighborGroupCounts, const std::map<int, std::vector<int> >& neighborGroupsOfInternalVertices, const cv::Point& curr, std::set<int>& visited, const std::list<Vertex>& vertices, std::list<std::pair<const int, const int> >& edges);
 	static void findVerticesAndEdgesByNeighborGroup(const cv::Mat& skeleton_bw, const Vertex& curr, std::set<int>& visited, int& vertexId, std::list<Vertex>& vertices, std::list<std::pair<const int, const int> >& edges);
 
-	static void getNeareastNeighborsInEachNeighborGroup(const cv::Mat& bw, const cv::Point& center, std::list<cv::Point>& nearestNeighborsInEachNeighborGroup);
 	static void getNeareastNeighborIndicesInEachNeighborGroup(const std::vector<int>& neighborGroupIds, std::vector<int>& nearestIndicesInEachNeighborGroup);
 
 	static size_t countNeighborGroups(const cv::Mat& skeleton_bw, const cv::Point& center);
