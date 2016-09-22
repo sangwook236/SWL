@@ -1542,7 +1542,9 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 
 	// Get contours.
 	std::vector<std::vector<cv::Point> > contours;
-	cv::findContours(skeleton_bw, contours, cv::noArray(), cv::RETR_LIST, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
+	cv::Mat skel;
+	skeleton_bw.copyTo(skel);
+	cv::findContours(skel, contours, cv::noArray(), cv::RETR_LIST, cv::CHAIN_APPROX_NONE, cv::Point(0, 0));
 
 	// Find edges.
 	findEdgesByFollowingSkeleton(contours, neighborGroupCounts, vertices, edges);
@@ -1605,7 +1607,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 		return false;
 
 	std::set<int> visited;
-	findSkeletalPathBetweenTwoVerticesImpl(skeleton_bw, start, end, visited, path);
+	return findSkeletalPathBetweenTwoVerticesImpl(skeleton_bw, start, end, visited, path);
 }
 
 /*static*/ void SkeletonAlgorithm::findLineSegmentsInRow(const cv::Mat& skeleton_bw, const int row, const int colStart, const int colEnd, std::map<SkeletonAlgorithm::LineSegment, int>& lineSegments)
