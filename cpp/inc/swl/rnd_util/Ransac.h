@@ -19,12 +19,10 @@ public:
 protected:
 	Ransac(const std::size_t sampleCount, const std::size_t minimalSampleSetSize)
 	: totalSampleCount_(sampleCount), minimalSampleSetSize_(minimalSampleSetSize), scores_(0L), sortedIndices_(), inlierFlags_(), iteration_(0)
-	{
-	}
+	{}
 	Ransac(const std::size_t sampleCount, const std::size_t minimalSampleSetSize, const std::vector<double> &scores)
 	: totalSampleCount_(sampleCount), minimalSampleSetSize_(minimalSampleSetSize), scores_(&scores), sortedIndices_(), inlierFlags_(), iteration_(0)
-	{
-	}
+	{}
 public:
 	virtual ~Ransac();
 
@@ -55,7 +53,9 @@ private:
 	struct CompareByScore
 	{
 	public:
-		CompareByScore(const std::vector<double> &scores) : scores_(scores) {}
+		CompareByScore(const std::vector<double> &scores)
+		: scores_(scores)
+		{}
 
 		bool operator()(const int lhs, const int rhs) const
 		{  return scores_[lhs] > scores_[rhs];  }
