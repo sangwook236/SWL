@@ -18,7 +18,10 @@ int main(int argc, char *argv[])
 	void dynamic_time_warping();
 
 	void hough_transform();
+	void line2d_estimation_using_ransac();
+	void circle2d_estimation_using_ransac();
 	void plane3d_estimation_using_ransac();
+	void quadratic2d_estimation_using_ransac();
 
 	void rejection_sampling();
 	void sampling_importance_resampling();
@@ -48,26 +51,34 @@ int main(int argc, char *argv[])
 	int retval = EXIT_SUCCESS;
 	try
 	{
-		// tree traversal -------------------------------------------
+		// Tree traversal -------------------------------------------
 		//tree_traversal();
 
-		// graph traversal ------------------------------------------
+		// Graph traversal ------------------------------------------
 		//graph_traversal();
 
-		// graph algorithm ------------------------------------------
-		graph_algorithm();
+		// Graph algorithm ------------------------------------------
+		//graph_algorithm();
 
-		// distance measure -----------------------------------------
+		// Distance measure -----------------------------------------
 		//levenshtein_distance();  // Levenshtein / edit distance.
-		//dynamic_time_warping();  // dynamic time warping (DTW).
+		//dynamic_time_warping();  // Dynamic time warping (DTW).
 
-		// estimation -----------------------------------------------
+		// Estimation -----------------------------------------------
 		//hough_transform();
+
+		// Robust estimation ----------------------------------------
+		line2d_estimation_using_ransac();
+		circle2d_estimation_using_ransac();
 		//plane3d_estimation_using_ransac();
 
-		// sampling / resampling ------------------------------------
+		// Verify an estimated model based on anchor points: REF [function] >> Quadratic2RansacEstimator::verifyModel().
+		// Refine an estimated model using inliers: REF [function] >> Quadratic2RansacEstimator::estimateModelFromInliers().
+		quadratic2d_estimation_using_ransac();
+
+		// Sampling / Resampling ------------------------------------
 		//rejection_sampling();
-		//sampling_importance_resampling();  // sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter.
+		//sampling_importance_resampling();  // Sequential importance sampling (SIS), sampling importance resampling (SIR), particle filter, bootstrap filter.
 		//metropolis_hastings_algorithm();  // Markov chain Monte Carlo (MCMC).
 
 		// Bayesian filtering ---------------------------------------
@@ -76,28 +87,28 @@ int main(int argc, char *argv[])
 		//unscented_kalman_filter();
 		//unscented_kalman_filter_with_additive_noise();
 
-		// mixture model (MM) ---------------------------------------
+		// Mixture model (MM) ---------------------------------------
 		//univariate_normal_mixture_model();
 		//multivariate_normal_mixture_model();
 		//von_mises_mixture_model();
 
-		// hidden Markov model (HMM) --------------------------------
+		// Hidden Markov model (HMM) --------------------------------
 		//hmm_with_multinomial_observation_densities();
 		//hmm_with_univariate_normal_observation_densities();
 		//hmm_with_univariate_normal_mixture_observation_densities();
 		//hmm_with_von_mises_observation_densities();
 		//hmm_with_von_mises_mixture_observation_densities();
 
-		// autoregressive hidden Markov model (AR HMM) --------------
+		// Autoregressive hidden Markov model (AR HMM) --------------
 		//ar_hmm_with_univariate_normal_observation_densities();
 		//ar_hmm_with_univariate_normal_mixture_observation_densities();
 
 		//-----------------------------------------------------------
-		// application
+		// Application
 
 		// HMM segmentation -----------------------------------------
-		//hmm_segmentation();  // not yet implemented.
-		//crf_segmentation();  // not yet implemented.
+		//hmm_segmentation();  // Not yet implemented.
+		//crf_segmentation();  // Not yet implemented.
 	}
     catch (const std::bad_alloc &e)
 	{

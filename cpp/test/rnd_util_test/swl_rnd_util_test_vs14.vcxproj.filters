@@ -33,9 +33,6 @@
     <ClCompile Include="ParticleFilterTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RansacTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SamplingImportanceResamplingTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -91,6 +88,15 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GraphAlgorithmTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RansacCurveEstimationTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RansacLineEstimationTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RansacPlaneEstimationTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
