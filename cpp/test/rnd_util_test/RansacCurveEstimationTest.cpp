@@ -659,11 +659,11 @@ void quadratic2d_estimation_using_ransac()
 
 	// RANSAC.
 	const size_t minimalSampleSize = 3;
-	const size_t usedSampleSize = 10;
+	const size_t usedSampleSize = 10;  // Important.
 	local::Quadratic2RansacEstimator ransac(samples, minimalSampleSize, usedSampleSize, nullptr, anchorPoints);
 
 	const size_t maxIterationCount = 1000;
-	const size_t minInlierCount = 50;
+	const size_t minInlierCount = 50; //25;
 	const double alarmRatio = 0.5;
 	const bool isProsacSampling = true;
 

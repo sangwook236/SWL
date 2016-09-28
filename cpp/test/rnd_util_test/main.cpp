@@ -68,12 +68,17 @@ int main(int argc, char *argv[])
 		//hough_transform();
 
 		// Robust estimation ----------------------------------------
-		line2d_estimation_using_ransac();
-		circle2d_estimation_using_ransac();
+		//line2d_estimation_using_ransac();
+		//circle2d_estimation_using_ransac();
 		//plane3d_estimation_using_ransac();
 
-		// Verify an estimated model based on anchor points: REF [function] >> Quadratic2RansacEstimator::verifyModel().
-		// Refine an estimated model using inliers: REF [function] >> Quadratic2RansacEstimator::estimateModelFromInliers().
+		//	- Use more samples(10) than the minimal size(3) required to estimate model parameters.
+		//		Apply least squares method to estimated model parameters.
+		//		REF [function] >> Quadratic2RansacEstimator::estimateModel().
+		//	- Verify an estimated model based on anchor points.
+		//		REF [function] >> Quadratic2RansacEstimator::verifyModel().
+		//	- Refine an estimated model using inliers.
+		//		REF [function] >> Quadratic2RansacEstimator::estimateModelFromInliers().
 		quadratic2d_estimation_using_ransac();
 
 		// Sampling / Resampling ------------------------------------
