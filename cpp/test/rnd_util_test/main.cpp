@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
 		//hough_transform();
 
 		// Robust estimation ----------------------------------------
-		//line2d_estimation_using_ransac();
-		//circle2d_estimation_using_ransac();
-		//plane3d_estimation_using_ransac();
+		line2d_estimation_using_ransac();
+		circle2d_estimation_using_ransac();
+		plane3d_estimation_using_ransac();
 
 		//	- Use more samples(10) than the minimal size(3) required to estimate model parameters.
 		//		Apply least squares method to estimated model parameters.

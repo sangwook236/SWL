@@ -552,7 +552,7 @@ void circle2d_estimation_using_ransac()
 	std::cout << "********* MLESAC of Circle2" << std::endl;
 	{
 		const double inlierSquaredStandardDeviation = 0.001;  // Inliers' squared standard deviation. Assume that inliers follow normal distribution.
-		const double inlierThresholdProbability = 0.1;  // Inliers' threshold probability. Assume that outliers follow uniform distribution.
+		const double inlierThresholdProbability = 0.2;  // Inliers' threshold probability. Assume that outliers follow uniform distribution.
 		const size_t maxEMIterationCount = 50;
 
 		const size_t inlierCount = ransac.runMLESAC(maxIterationCount, minInlierCount, alarmRatio, isProsacSampling, inlierSquaredStandardDeviation, inlierThresholdProbability, maxEMIterationCount);
@@ -720,7 +720,7 @@ void quadratic2d_estimation_using_ransac()
 	std::cout << "********* MLESAC of Quadratic2" << std::endl;
 	{
 		const double inlierSquaredStandardDeviation = 0.001;  // Inliers' squared standard deviation. Assume that inliers follow normal distribution.
-		const double inlierThresholdProbability = 0.1;  // Inliers' threshold probability. Assume that outliers follow uniform distribution.
+		const double inlierThresholdProbability = 0.2;  // Inliers' threshold probability. Assume that outliers follow uniform distribution.
 		const size_t maxEMIterationCount = 50;
 
 		const size_t inlierCount = ransac.runMLESAC(maxIterationCount, minInlierCount, alarmRatio, isProsacSampling, inlierSquaredStandardDeviation, inlierThresholdProbability, maxEMIterationCount);
