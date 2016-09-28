@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
 		//		Apply least squares method to estimated model parameters.
 		//		REF [function] >> Quadratic2RansacEstimator::estimateModel().
 		//	- Verify an estimated model based on anchor points.
+		//		Can make use of anchor points to estimate a model itself.
 		//		REF [function] >> Quadratic2RansacEstimator::verifyModel().
 		//	- Refine an estimated model using inliers.
 		//		REF [function] >> Quadratic2RansacEstimator::estimateModelFromInliers().

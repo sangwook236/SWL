@@ -211,6 +211,8 @@ private:
 
 bool Quadratic2RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
+	// TODO [imporve] >> Can make use of anchor points to estimate a model itself.
+
 	const size_t sampleSize = indices.size();
 	if (sampleSize < minimalSampleSize_) return false;
 	else if (minimalSampleSize_ == sampleSize)
@@ -265,7 +267,7 @@ bool Quadratic2RansacEstimator::estimateModelFromInliers()
 		if (flag) indices.push_back(k);
 		++k;
 	}
-	
+
 	return estimateModelUsingLeastSqaures(inlierCount, indices);
 }
 
