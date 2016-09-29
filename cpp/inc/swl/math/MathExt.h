@@ -8,7 +8,7 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct MathExt
+// struct MathExt.
 
 struct SWL_MATH_API MathExt
 {
@@ -30,11 +30,11 @@ public:
 	/// -1 < x < 1
 	static double atanh(const double x);
 
-	/// GCD: greatest common divisor
+	/// GCD: greatest common divisor.
 	static unsigned long gcd(const unsigned long lhs, const unsigned long rhs);
 	static double gcd(const double lhs, const double rhs, const double tol = MathConstant::EPS);
 
-	/// LCM: least common multiplier
+	/// LCM: least common multiplier.
 	static unsigned long lcm(const unsigned long lhs, const unsigned long rhs);
 	static double lcm(const double lhs, const double rhs, const double tol = MathConstant::EPS);
 

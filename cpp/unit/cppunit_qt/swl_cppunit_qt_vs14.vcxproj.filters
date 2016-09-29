@@ -113,5 +113,14 @@
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp">
       <Filter>Source Files\testcase\rnd_util</Filter>
     </ClCompile>
+    <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testcase\math\StatisticTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testcase\math\MathUtilTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

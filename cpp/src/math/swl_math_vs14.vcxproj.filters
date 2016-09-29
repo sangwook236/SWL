@@ -36,10 +36,19 @@
     <ClCompile Include="Rational.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RootFinder.cpp">
+    <ClCompile Include="Rotation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Rotation.cpp">
+    <ClCompile Include="CurveFitting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RootFinding.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DataNormalization.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Statistic.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -95,9 +104,6 @@
     <ClInclude Include="..\..\inc\swl\math\RMatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\swl\math\RootFinder.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\swl\math\Rotation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -111,6 +117,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\math\Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\math\CurveFitting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\math\RootFinding.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\math\DataNormalization.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\math\Statistic.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

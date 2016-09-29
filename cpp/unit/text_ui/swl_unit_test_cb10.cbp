@@ -60,9 +60,11 @@
 		</Linker>
 		<Unit filename="../testcase/base/LoggerTest.cpp" />
 		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
+		<Unit filename="../testcase/math/DataNormalizationTest.cpp" />
 		<Unit filename="../testcase/math/LineSegmentTest.cpp" />
 		<Unit filename="../testcase/math/LineTest.cpp" />
 		<Unit filename="../testcase/math/PlaneTest.cpp" />
+		<Unit filename="../testcase/math/StatisticTest.cpp" />
 		<Unit filename="../testcase/math/TriangleTest.cpp" />
 		<Unit filename="../testcase/rnd_util/SortTest.cpp" />
 		<Unit filename="../testcase/util/EchoTcpSocketConnection.cpp" />

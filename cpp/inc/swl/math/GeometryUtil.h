@@ -10,7 +10,7 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct GeometryUtil
+// struct GeometryUtil.
 
 struct SWL_MATH_API GeometryUtil
 {

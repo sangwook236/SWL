@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
 		//hough_transform();
 
 		// Robust estimation ----------------------------------------
-		line2d_estimation_using_ransac();
-		circle2d_estimation_using_ransac();
-		plane3d_estimation_using_ransac();
+		//line2d_estimation_using_ransac();
+		//circle2d_estimation_using_ransac();
+		//plane3d_estimation_using_ransac();
 
 		//	- Use more samples(10) than the minimal size(3) required to estimate model parameters.
 		//		Apply least squares method to estimated model parameters.
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
 		//ar_hmm_with_univariate_normal_mixture_observation_densities();
 
 		//-----------------------------------------------------------
-		// Application
+		// Application.
 
 		// HMM segmentation -----------------------------------------
 		//hmm_segmentation();  // Not yet implemented.

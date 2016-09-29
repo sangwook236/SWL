@@ -9,7 +9,7 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct Statistic
+// Statistic.
 
 struct SWL_MATH_API Statistic
 {

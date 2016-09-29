@@ -8,7 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
-#if defined(PI)  // for djgpp
+#if defined(PI)  // For djgpp.
 #	undef PI
 #endif
 
@@ -16,27 +16,27 @@
 namespace swl {
 
 /*static*/ bool DataNormalization::normalizeDataByCentering(Eigen::MatrixXd &D)
-// goal : mean of each row = 0.
-// row : the dimension of data.
-// col : the number of data.
+// goal : Mean of each row = 0.
+// row : The dimension of data.
+// col : The number of data.
 {
-	// centered data.
+	// Centered data.
 	D.colwise() -= D.rowwise().mean();
 	return true;
 }
 
 /*static*/ bool DataNormalization::normalizeDataByAverageDistance(Eigen::MatrixXd &D, const double averageDistance, const double tol /*= MathConstant::EPS*/)
 // goal : 2-norm of each row = averageDistance.
-// row : the dimension of data.
-// col : the number of data.
+// row : The dimension of data.
+// col : The number of data.
 {
 	const std::size_t rows = D.rows();
 
 	const Eigen::VectorXd normVec(D.rowwise().norm());  // 2-norm.
 #if 0
 	D.array() *= averageDistance;
-	D.colwise() /= normVec;  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
-	//D.colwise() *= normVec.cwiseInverse();  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	D.colwise() /= normVec;  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	//D.colwise() *= normVec.cwiseInverse();  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
 #else
 	for (std::size_t i = 0; i < rows; ++i)
 	{
@@ -50,9 +50,9 @@ namespace swl {
 }
 
 /*static*/ bool DataNormalization::normalizeDataByRange(Eigen::MatrixXd &D, const double minBound, const double maxBound, const double tol /*= MathConstant::EPS*/)
-// goal : min & max of each row = [minBound, maxBound].
-// row : the dimension of data.
-// col : the number of data.
+// goal : Min & max of each row = [minBound, maxBound].
+// row : The dimension of data.
+// col : The number of data.
 {
 	const std::size_t rows = D.rows();
 	const std::size_t cols = D.cols();
@@ -61,14 +61,14 @@ namespace swl {
 	const Eigen::VectorXd maxVec(D.rowwise().maxCoeff());
 
 #if 0
-	// FIXME [modify] >> have to consider the case that the max. and min. values are equal.
+	// FIXME [modify] >> Have to consider the case that the max. and min. values are equal.
 	const Eigen::VectorXd factor((maxVec - minVec) / (maxBound - minBound));
-	D = ((D.colwise() - minVec).colwise() / factor).array() + minBound;  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	D = ((D.colwise() - minVec).colwise() / factor).array() + minBound;  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
 #elif 0
-	// FIXME [modify] >> have to consider the case that the max. and min. values are equal.
+	// FIXME [modify] >> Have to consider the case that the max. and min. values are equal.
 	const Eigen::VectorXd factor((maxVec - minVec) / (maxBound - minBound));
 	D.colwise() -= minVec;
-	D.colwise() /= factor;  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	D.colwise() /= factor;  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
 	D.array() += minBound;
 #elif 1
 	for (std::size_t i = 0; i < rows; ++i)
@@ -108,8 +108,8 @@ namespace swl {
 
 /*static*/ bool DataNormalization::normalizeDataByLinearTransformation(Eigen::MatrixXd &D, const Eigen::MatrixXd &T)
 // goal : D = T * D where T = row * row.
-// row : the dimension of data.
-// col : the number of data.
+// row : The dimension of data.
+// col : The number of data.
 {
 	const std::size_t rows = D.rows();
 	if (T.rows() != rows || T.cols() != rows)
@@ -122,15 +122,15 @@ namespace swl {
 
 /*static*/ bool DataNormalization::normalizeDataByHomogeneousTransformation(Eigen::MatrixXd &D, const Eigen::MatrixXd &H)
 // goal : D = H * D where H = row * (row + 1).
-// row : the dimension of data.
-// col : the number of data.
+// row : The dimension of data.
+// col : The number of data.
 {
 	const std::size_t rows = D.rows();
 	if (H.rows() != rows || H.cols() != (rows + 1))
 		return false;
 
 #if 0
-	D = (H.leftCols(rows) * D).colwise() + H.rightCols(1);  // error : YOU_TRIED_CALLING_A_VECTOR_METHOD_ON_A_MATRIX.
+	D = (H.leftCols(rows) * D).colwise() + H.rightCols(1);  // Error : YOU_TRIED_CALLING_A_VECTOR_METHOD_ON_A_MATRIX.
 #else
 	D = (H.leftCols(rows) * D).colwise() + Eigen::VectorXd(H.rightCols(1));
 #endif
@@ -140,8 +140,8 @@ namespace swl {
 
 /*static*/ bool DataNormalization::normalizeDataByZScore(Eigen::MatrixXd &D, const double sigma)
 // goal : z = (x - sample-mean) / sigma for each row.
-// row : the dimension of data.
-// col : the number of data.
+// row : The dimension of data.
+// col : The number of data.
 {
 #if 1
 	D = (D.colwise() - D.rowwise().mean()).array() / sigma;
@@ -156,13 +156,13 @@ namespace swl {
 
 /*static*/ bool DataNormalization::normalizeDataByTStatistic(Eigen::MatrixXd &D, const double tol /*= MathConstant::EPS*/)
 // goal : t = (x - sample-mean) / sqrt(sample-variance / N) for each row.
-// row : the dimension of data.
-// col : the number of data.
+// row : The dimension of data.
+// col : The number of data.
 {
 	const std::size_t rows = D.rows();
 	const std::size_t cols = D.cols();
 
-	// centered data.
+	// Centered data.
 	D.colwise() -= D.rowwise().mean();
 
 	// sqrt(sample variance) = sample standard deviation.
@@ -170,8 +170,8 @@ namespace swl {
 
 	stdDev.array() /= std::sqrt((double)cols);
 #if 0
-	D.colwise() /= stdDev;  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
-	//D.colwise() *= stdDev.cwiseInverse();  // error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	D.colwise() /= stdDev;  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
+	//D.colwise() *= stdDev.cwiseInverse();  // Error : THIS_METHOD_IS_ONLY_FOR_ARRAYS_NOT_MATRICES.
 #else
 	for (std::size_t i = 0; i < rows; ++i)
 	{

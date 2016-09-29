@@ -53,7 +53,9 @@
 		</Linker>
 		<Unit filename="../../inc/swl/math/Complex.h" />
 		<Unit filename="../../inc/swl/math/Coordinates.h" />
+		<Unit filename="../../inc/swl/math/CurveFitting.h" />
 		<Unit filename="../../inc/swl/math/Duplex.h" />
+		<Unit filename="../../inc/swl/math/DataNormalization.h" />
 		<Unit filename="../../inc/swl/math/ExportMath.h" />
 		<Unit filename="../../inc/swl/math/GeometryUtil.h" />
 		<Unit filename="../../inc/swl/math/Line.h" />
@@ -67,21 +69,25 @@
 		<Unit filename="../../inc/swl/math/Quaternion.h" />
 		<Unit filename="../../inc/swl/math/RMatrix.h" />
 		<Unit filename="../../inc/swl/math/Rational.h" />
-		<Unit filename="../../inc/swl/math/RootFinder.h" />
+		<Unit filename="../../inc/swl/math/RootFinding.h" />
 		<Unit filename="../../inc/swl/math/Rotation.h" />
+		<Unit filename="../../inc/swl/math/Statistic.h" />
 		<Unit filename="../../inc/swl/math/TMatrix.h" />
 		<Unit filename="../../inc/swl/math/Triangle.h" />
 		<Unit filename="../../inc/swl/math/Vector.h" />
 		<Unit filename="ConvexHull.cpp" />
 		<Unit filename="ConvexHull.h" />
 		<Unit filename="Coordinates.cpp" />
+		<Unit filename="CurveFitting.cpp" />
+		<Unit filename="DataNormalization.cpp" />
 		<Unit filename="GeometryUtil.cpp" />
 		<Unit filename="MathConstant.cpp" />
 		<Unit filename="MathExt.cpp" />
 		<Unit filename="MathUtil.cpp" />
 		<Unit filename="Rational.cpp" />
-		<Unit filename="RootFinder.cpp" />
+		<Unit filename="RootFinding.cpp" />
 		<Unit filename="Rotation.cpp" />
+		<Unit filename="Statistic.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

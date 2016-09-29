@@ -1,7 +1,7 @@
 #include "swl/Config.h"
 #include "swl/math/MathUtil.h"
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 
@@ -10,7 +10,7 @@
 #define new DEBUG_NEW
 #endif
 
-#if defined(PI)  // for djgpp
+#if defined(PI)  // For djgpp.
 #	undef PI
 #endif
 

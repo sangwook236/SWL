@@ -9,7 +9,7 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct DataNormalization
+// Data Normalization.
 
 struct SWL_MATH_API DataNormalization
 {

@@ -8,7 +8,7 @@
 #define new DEBUG_NEW
 #endif
 
-#if defined(PI)  // for djgpp
+#if defined(PI)  // For djgpp.
 #	undef PI
 #endif
 
@@ -16,35 +16,35 @@
 namespace swl {
 
 /*static*/ double Statistic::sampleVariance(const Eigen::VectorXd &D)
-// sample variance.
+// Sample variance.
 {
 	if (D.size() <= 1) return 0.0;
 
-	// centered data.
+	// Centered data.
 	const Eigen::VectorXd centered(D.array() - D.mean());
 	return centered.dot(centered) / (D.size() - 1);
 }
 
 /*static*/ Eigen::VectorXd Statistic::sampleVariance(const Eigen::MatrixXd &D)
-// sample variances of each row.
-// row : the dimension of data.
-// col : the number of data.
+// Sample variances of each row.
+// row : The dimension of data.
+// col : The number of data.
 {
 	if (D.cols() <= 1) return Eigen::VectorXd::Zero(D.rows());
 
-	// centered data.
+	// Centered data.
 	const Eigen::MatrixXd centered(D.colwise() - D.rowwise().mean());
 	return Eigen::VectorXd(centered.cwiseProduct(centered).rowwise().sum().array() / double(D.cols() - 1));
 }
 
 /*static*/ Eigen::MatrixXd Statistic::sampleCovarianceMatrix(const Eigen::MatrixXd &D)
-// sample covariance matrix.
-// row : the dimension of data.
-// col : the number of data.
+// Sample covariance matrix.
+// row : The dimension of data.
+// col : The number of data.
 {
 	if (D.cols() <= 1) return Eigen::MatrixXd::Zero(D.rows(), D.rows());
 
-	// centered data.
+	// Centered data.
 	const Eigen::MatrixXd centered(D.colwise() - D.rowwise().mean());
 	return (centered * centered.adjoint()) / double(D.cols() - 1);
 }

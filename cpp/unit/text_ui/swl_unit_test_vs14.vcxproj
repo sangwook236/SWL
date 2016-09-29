@@ -97,7 +97,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />
     <ClCompile Include="..\testcase\math\MathUtilTest.cpp" />
+    <ClCompile Include="..\testcase\math\StatisticTest.cpp" />
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp" />
     <ClCompile Include="TextUiUnitTestMain.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp" />

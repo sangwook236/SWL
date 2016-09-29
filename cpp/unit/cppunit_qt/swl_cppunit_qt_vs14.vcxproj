@@ -56,7 +56,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;__SWL_UNIT_TEST__USE_CPP_UNIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;$(MY_USR_LOCAL_INCLUDE)/../Qt-4.7.4/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;$(MY_USR_LOCAL_INCLUDE)/../Qt-4.8.6/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -73,7 +73,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;__SWL_UNIT_TEST__USE_CPP_UNIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;$(MY_USR_LOCAL_INCLUDE)/../Qt-4.7.4/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/eigen3;$(MY_USR_LOCAL_INCLUDE)/../Qt-4.8.6/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -92,9 +92,12 @@
   <ItemGroup>
     <ClCompile Include="..\testcase\base\LoggerTest.cpp" />
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp" />
+    <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />
     <ClCompile Include="..\testcase\math\LineSegmentTest.cpp" />
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
+    <ClCompile Include="..\testcase\math\MathUtilTest.cpp" />
     <ClCompile Include="..\testcase\math\PlaneTest.cpp" />
+    <ClCompile Include="..\testcase\math\StatisticTest.cpp" />
     <ClCompile Include="..\testcase\math\TriangleTest.cpp" />
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp" />
     <ClCompile Include="..\testcase\util\EchoTcpSocketConnection.cpp" />
@@ -108,7 +111,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\testcase\util\LineROITest.cpp" />
-    <ClCompile Include="..\testcase\util\MathUtilTest.cpp" />
     <ClCompile Include="..\testcase\util\PolygonROITest.cpp" />
     <ClCompile Include="..\testcase\util\PolylineROITest.cpp" />
     <ClCompile Include="..\testcase\util\RectangleROITest.cpp" />

@@ -1,5 +1,5 @@
 #include "swl/Config.h"
-#include "swl/math/RootFinder.h"
+#include "swl/math/RootFinding.h"
 #include "swl/math/MathUtil.h"
 #include "swl/base/LogException.h"
 
@@ -13,9 +13,9 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct RootFinder
+// Root Finding.
 
-double RootFinder::secant(double init, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
+double RootFinding::secant(double init, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
 {
 	double delta, final;
 	double front, rear;
@@ -50,7 +50,7 @@ double RootFinder::secant(double init, double (*func)(double), double tolerance 
 	return final;
 }
 
-double RootFinder::bisection(double left, double right, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
+double RootFinding::bisection(double left, double right, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -93,7 +93,7 @@ double RootFinder::bisection(double left, double right, double (*func)(double), 
 	return mid;
 }
 
-double RootFinder::falsePosition(double left, double right, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
+double RootFinding::falsePosition(double left, double right, double (*func)(double), double tolerance /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -135,7 +135,7 @@ double RootFinder::falsePosition(double left, double right, double (*func)(doubl
 	return inter;
 }
 
-bool RootFinder::quadratic(const double coeffArr[3], Complex<double> rootArr[2], double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::quadratic(const double coeffArr[3], Complex<double> rootArr[2], double tolerance /*= MathConstant::EPS*/)
 // 2nd order polynomial
 // coefficients are arranged by a descending order
 {
@@ -176,7 +176,7 @@ bool RootFinder::quadratic(const double coeffArr[3], Complex<double> rootArr[2],
 	return true;
 }
 
-bool RootFinder::quadratic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::quadratic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
 // 2nd order polynomial
 // coefficients are arranged by a descending order
 {
@@ -228,7 +228,7 @@ bool RootFinder::quadratic(const std::vector<double>& coeffCtr, std::vector<Comp
 	return true;
 }
 
-bool RootFinder::cubic(const double coeffArr[4], Complex<double> rootArr[3], double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::cubic(const double coeffArr[4], Complex<double> rootArr[3], double tolerance /*= MathConstant::EPS*/)
 // 3rd order polynomial
 // coefficients are arranged by a descending order
 {
@@ -284,7 +284,7 @@ bool RootFinder::cubic(const double coeffArr[4], Complex<double> rootArr[3], dou
 	return true;
 }
 
-bool RootFinder::cubic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::cubic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
 // 3rd order polynomial
 // coefficients are arranged by a descending order
 {
@@ -355,7 +355,7 @@ bool RootFinder::cubic(const std::vector<double>& coeffCtr, std::vector<Complex<
 	return true;
 }
 
-bool RootFinder::quartic(const double coeffArr[5], Complex<double> rootArr[4], double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::quartic(const double coeffArr[5], Complex<double> rootArr[4], double tolerance /*= MathConstant::EPS*/)
 // 4th order polynomial
 // coefficients are arranged by a descending order
 {
@@ -406,7 +406,7 @@ bool RootFinder::quartic(const double coeffArr[5], Complex<double> rootArr[4], d
 	return true;
 }
 
-bool RootFinder::quartic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::quartic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
 // 4th order polynomial
 // coefficients are arranged by a descending order
 {
@@ -516,7 +516,7 @@ static void solveQuadraticForBairstowMethod(double u, double v, std::vector<Comp
 	}
 }
 
-bool RootFinder::bairstow(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
+bool RootFinding::bairstow(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance /*= MathConstant::EPS*/)
 // n-th order polynomial
 // coeffCtr are arranged by a descending order
 {

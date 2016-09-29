@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_base", "..\src\base\swl_base_vs14.vcxproj", "{33FEEA51-49EA-483E-BBAE-C889DC0D5991}"
 EndProject
@@ -100,6 +100,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{04D775F0-BE18-4D21-BC71-FAC99941C32C}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "unit-test", "unit-test", "{22C32379-63BA-43B7-BC4F-1112FFB11594}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "swl_cppunit_qt", "..\unit\cppunit_qt\swl_cppunit_qt_vs14.vcxproj", "{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -229,6 +231,10 @@ Global
 		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Debug|Win32.Build.0 = Debug|Win32
 		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Release|Win32.ActiveCfg = Release|Win32
 		{5E3E3B86-FD45-450D-8BDA-7447AB51F371}.Release|Win32.Build.0 = Release|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Debug|Win32.Build.0 = Debug|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.ActiveCfg = Release|Win32
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -270,5 +276,6 @@ Global
 		{F0E11330-18C5-43B1-9C8D-5DB7B4293C4A} = {04D775F0-BE18-4D21-BC71-FAC99941C32C}
 		{38E116CD-0D2C-4459-98BF-EDAAF8637547} = {04D775F0-BE18-4D21-BC71-FAC99941C32C}
 		{5E3E3B86-FD45-450D-8BDA-7447AB51F371} = {C68808D1-A478-48FA-9BB8-8E3BF8F0AD83}
+		{CF21DB86-50A0-4987-AF6F-21FCEB72BAC5} = {22C32379-63BA-43B7-BC4F-1112FFB11594}
 	EndGlobalSection
 EndGlobal

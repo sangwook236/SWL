@@ -199,7 +199,7 @@ private:
 	/*virtual*/ size_t lookForInliers(std::vector<bool> &inlierFlags, const std::vector<double> &inlierProbs, const double inlierThresholdProbability) const override;
 
 	double computeSquaredMinDistanceFromModel(const double x0, const double y0) const;
-	bool estimateModelUsingLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices);
+	bool estimateQuadraticByLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices);
 
 private:
 	const std::vector<Point2> &samples_;
@@ -233,7 +233,7 @@ bool Quadratic2RansacEstimator::estimateModel(const std::vector<size_t> &indices
 		return true;
 	}
 	else  // When #sample >= 4.
-		return estimateModelUsingLeastSqaures(sampleSize, indices);
+		return estimateQuadraticByLeastSqaures(sampleSize, indices);
 }
 
 bool Quadratic2RansacEstimator::verifyModel() const
@@ -268,7 +268,7 @@ bool Quadratic2RansacEstimator::estimateModelFromInliers()
 		++k;
 	}
 
-	return estimateModelUsingLeastSqaures(inlierCount, indices);
+	return estimateQuadraticByLeastSqaures(inlierCount, indices);
 }
 
 size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, const double threshold) const
@@ -315,9 +315,9 @@ double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const doubl
 	const double eps = 1.0e-10;
 
 	// Compute distance from a point to a model.
-	const double c_2 = c_ * c_;
-	assert(c_2 > eps);
-	const double aa = 4.0*a_*a_ / c_2, bb = 6.0*a_*b_ / c_2, cc = 2.0*(b_*b_ / c_2 + 2.0*a_*(d_ + c_ * y0) / c_2 + 1.0), dd = 2.0*(b_*(d_ + c_ * y0) / c_2 - x0);
+	const double c2 = c_ * c_;
+	assert(c2 > eps);
+	const double aa = 4.0*a_*a_ / c2, bb = 6.0*a_*b_ / c2, cc = 2.0*(b_*b_ / c2 + 2.0*a_*(d_ + c_ * y0) / c2 + 1.0), dd = 2.0*(b_*(d_ + c_ * y0) / c2 - x0);
 	assert(aa > eps);
 
 	double minDist2 = std::numeric_limits<double>::max();
@@ -347,26 +347,25 @@ double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const doubl
 	return minDist2;
 }
 
-bool Quadratic2RansacEstimator::estimateModelUsingLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices)
+bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices)
 {
 #if 0
-	// Using SVD for linear least squares.
-
 	const size_t dim = 4;
-	Eigen::MatrixXd m(sampleSize, dim);
+	Eigen::MatrixXd AA(sampleSize, dim);
 	{
 		size_t k = 0;
 		for (const auto& idx : indices)
 		{
 			const Point2& pt = samples_[idx];
-			m(k, 0) = pt.x * pt.x; m(k, 1) = pt.x; m(k, 2) = pt.y; m(k, 3) = 1.0;
+			AA(k, 0) = pt.x * pt.x; AA(k, 1) = pt.x; AA(k, 2) = pt.y; AA(k, 3) = 1.0;
 			++k;
 		}
 	}
 
+	// Use SVD for linear least squares.
 	// MxN matrix, K=min(M,N), M>=N.
-	//const Eigen::SVD<Eigen::MatrixXd> svd(m);
-	const Eigen::JacobiSVD<Eigen::MatrixXd> svd = m.jacobiSvd(Eigen::ComputeThinV);
+	//const Eigen::SVD<Eigen::MatrixXd> svd(AA);
+	const Eigen::JacobiSVD<Eigen::MatrixXd> svd = AA.jacobiSvd(Eigen::ComputeThinV);
 	// Right singular vectors: KxN matrix.
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
@@ -377,50 +376,31 @@ bool Quadratic2RansacEstimator::estimateModelUsingLeastSqaures(const size_t samp
 	c_ = V(last, 2);
 	d_ = V(last, 3);
 #elif 1
-	// Using SVD for linear least squares.
-
 	const size_t dim = 3;
-	Eigen::MatrixXd m(sampleSize, dim);
-	Eigen::VectorXd b(sampleSize);
+	Eigen::MatrixXd AA(sampleSize, dim);
+	Eigen::VectorXd bb(sampleSize);
 	{
 		size_t k = 0;
 		for (const auto& idx : indices)
 		{
 			const Point2& pt = samples_[idx];
-			m(k, 0) = pt.x * pt.x; m(k, 1) = pt.x; m(k, 2) = 1.0;
-			b(k) = pt.y;
+			AA(k, 0) = pt.x * pt.x; AA(k, 1) = pt.x; AA(k, 2) = 1.0;
+			bb(k) = pt.y;
 			++k;
 		}
 	}
 
-	const Eigen::VectorXd& sol = m.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(b);
-	assert(dim == sol.size());
-
-	a_ = sol(0);
-	b_ = sol(1);
-	c_ = -1.0;
-	d_ = sol(2);
+#if 1
+	// Use SVD for linear least squares.
+	const Eigen::VectorXd& sol = AA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(bb);
 #else
-	// Using traditional linear least squares.
-
-	const size_t dim = 3;
-	Eigen::MatrixXd m(sampleSize, dim);
-	Eigen::VectorXd b(sampleSize);
-	{
-		size_t k = 0;
-		for (const auto& idx : indices)
-		{
-			const Point2& pt = samples_[idx];
-			m(k, 0) = pt.x * pt.x; m(k, 1) = pt.x; m(k, 2) = 1.0;
-			b(k) = pt.y;
-			++k;
-		}
-	}
-
-	//const Eigen::VectorXd& sol = (m.transpose() * m).inverse() * m.transpose() * b;  // Slow.
-	const Eigen::VectorXd& sol = (m.transpose() * m).ldlt().solve(m.transpose() * b);
+	// Use normal matrix for linear least squares.
+	//const Eigen::VectorXd& sol = (AA.transpose() * AA).inverse() * AA.transpose() * bb;  // Slow.
+	const Eigen::VectorXd& sol = (AA.transpose() * AA).ldlt().solve(AA.transpose() * bb);
+#endif
 	assert(dim == sol.size());
 
+	// NOTICE [caution] >> How to handle the case where c = 0.
 	a_ = sol(0);
 	b_ = sol(1);
 	c_ = -1.0;

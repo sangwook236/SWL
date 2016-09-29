@@ -3,13 +3,14 @@ set(TARGET swl_math)
 set(SRCS
 	ConvexHull.cpp
 	Coordinates.cpp
+	CurveFitting.cpp
 	DataNormalization.cpp
 	GeometryUtil.cpp
 	MathConstant.cpp
 	MathExt.cpp
 	MathUtil.cpp
 	Rational.cpp
-	RootFinder.cpp
+	RootFinding.cpp
 	Rotation.cpp
 	Statistic.cpp
 )

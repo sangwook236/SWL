@@ -120,6 +120,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />
+    <ClCompile Include="..\testcase\math\StatisticTest.cpp" />
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

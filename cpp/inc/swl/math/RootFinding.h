@@ -1,5 +1,5 @@
-#if !defined(__SWL_MATH__ROOT_FINDER__H_)
-#define __SWL_MATH__ROOT_FINDER__H_ 1
+#if !defined(__SWL_MATH__ROOT_FINDING__H_)
+#define __SWL_MATH__ROOT_FINDING__H_ 1
 
 
 #include "swl/math/MathConstant.h"
@@ -10,12 +10,12 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct RootFinder
+// Root Finding.
 
-struct SWL_MATH_API RootFinder
+struct SWL_MATH_API RootFinding
 {
 public:
-	/// solve f(x) = 0
+	/// Solve f(x) = 0.
 	static double secant(double init, double (*func)(double), double tolerance = MathConstant::EPS);
 	//template<class FO> static double secant(double init, FO foFunc, double tolerance = MathConstant::EPS);
 	static double bisection(double left, double right, double (*func)(double), double tolerance = MathConstant::EPS);
@@ -23,7 +23,7 @@ public:
 	static double falsePosition(double left, double right, double (*func)(double), double tolerance = MathConstant::EPS);
 	//template<class FO> static double falsePosition(double left, double right, FO foFunc, double tolerance = MathConstant::EPS);
 
-	/// solve polynomial
+	/// Solve polynomial.
 	static bool quadratic(const double coeffArr[3], Complex<double> rootArr[2], double tolerance = MathConstant::EPS);
 	static bool quadratic(const std::vector<double>& coeffCtr, std::vector<Complex<double> >& rootCtr, double tolerance = MathConstant::EPS);
 	static bool cubic(const double coeffArr[4], Complex<double> rootArr[3], double tolerance = MathConstant::EPS);
@@ -37,4 +37,4 @@ public:
 }  // namespace swl
 
 
-#endif  // __SWL_MATH__ROOT_FINDER__H_
+#endif  // __SWL_MATH__ROOT_FINDING__H_
