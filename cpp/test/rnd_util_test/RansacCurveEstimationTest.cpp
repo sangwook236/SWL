@@ -365,7 +365,7 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 	// Use SVD for linear least squares.
 	// MxN matrix, K=min(M,N), M>=N.
 	//const Eigen::SVD<Eigen::MatrixXd> svd(AA);
-	const Eigen::JacobiSVD<Eigen::MatrixXd> svd = AA.jacobiSvd(Eigen::ComputeThinV);
+	const Eigen::JacobiSVD<Eigen::MatrixXd>& svd = AA.jacobiSvd(Eigen::ComputeThinV);
 	// Right singular vectors: KxN matrix.
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
