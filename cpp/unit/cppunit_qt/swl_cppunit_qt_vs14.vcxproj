@@ -62,7 +62,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;$(MY_USR_LOCAL_LIB)/../Qt-4.7.4/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;QtTestRunnerd.lib;QtGuid4.lib;QtCored4.lib;log4cxx_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;QtTestRunnerd.lib;QtGuid4.lib;QtCored4.lib;log4cxxd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -92,7 +92,9 @@
   <ItemGroup>
     <ClCompile Include="..\testcase\base\LoggerTest.cpp" />
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp" />
+    <ClCompile Include="..\testcase\math\CurveFittingTest.cpp" />
     <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />
+    <ClCompile Include="..\testcase\math\GeometryUtilTest.cpp" />
     <ClCompile Include="..\testcase\math\LineSegmentTest.cpp" />
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
     <ClCompile Include="..\testcase\math\MathUtilTest.cpp" />

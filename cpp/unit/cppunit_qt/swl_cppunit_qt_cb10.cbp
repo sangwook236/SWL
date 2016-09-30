@@ -68,9 +68,12 @@
 		<Unit filename="../UnitTestConfig.h" />
 		<Unit filename="../testcase/base/LoggerTest.cpp" />
 		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
+		<Unit filename="../testcase/math/CurveFittingTest.cpp" />
 		<Unit filename="../testcase/math/DataNormalizationTest.cpp" />
+		<Unit filename="../testcase/math/GeometryUtilTest.cpp" />
 		<Unit filename="../testcase/math/LineSegmentTest.cpp" />
 		<Unit filename="../testcase/math/LineTest.cpp" />
+		<Unit filename="../testcase/math/MathUtilTest.cpp" />
 		<Unit filename="../testcase/math/PlaneTest.cpp" />
 		<Unit filename="../testcase/math/StatisticTest.cpp" />
 		<Unit filename="../testcase/math/TriangleTest.cpp" />

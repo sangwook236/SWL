@@ -10,11 +10,19 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct GeometryUtil.
+// Geometry Util.
 
 struct SWL_MATH_API GeometryUtil
 {
 public:
+	// Compute the nearest point.
+	/// Line equation: a * x + b * y + c = 0.
+	static bool computeNearestPointWithLine(const double x0, const double y0, const double a, const double b, const double c, double& nearestX, double& nearestY);
+	/// Plane equation: a * x + b * y + c * z + d = 0.
+	static bool computeNearestPointWithPlane(const double x0, const double y0, const double z0, const double a, const double b, const double c, const double d, double& nearestX, double& nearestY, double& nearestZ);
+	/// Quadratic equation: a * x^2 + b * x + c * y + d = 0.
+	static bool computeNearestPointWithQuadratic(const double x0, const double y0, const double a, const double b, const double c, const double d, double& nearestX, double& nearestY);
+
 	//
 	static void getConvexHull(const std::list<Point2<float> > &points, std::list<Point2<float> > &convexHull);
 	static bool within(const Point2<float> &pt, const std::list<Point2<float> > &points, const float tol);

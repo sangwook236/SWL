@@ -276,22 +276,22 @@ bool ContinuousExtendedKalmanFilter::updateTime(const double time, const gsl_vec
 #endif
 	if (!A || !Qd || !f_eval) return false;
 
-	// 1. propagate time
+	// 1. Propagate time.
 	// dx(t)/dt = f(t, x(t), u(t), 0)
 	// dP(t)/dt = A(t) * P(t) + P(t) * A(t)^T + Qd(t) where A(t) = df(t, x(t), u(t), 0)/dx, Qd(t) = W(t) * Q(t) * W(t)^T, W(t) = df(t, x(t), u(t), 0)/dw
 
-	// preserve symmetry of P
+	// Preserve symmetry of P.
 	gsl_matrix_transpose_memcpy(M_, P_);
 	gsl_matrix_add(P_, M_);
 	gsl_matrix_scale(P_, 0.5);
 
 	return true;
 #else
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 #endif
 }
 
-// measurement update (correction)
+// Measurement update (correction).
 bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const gsl_vector *actualMeasurement, const gsl_vector *input)
 {
 #if 0
@@ -321,7 +321,7 @@ bool ContinuousExtendedKalmanFilter::updateMeasurement(const double time, const 
 
 	return true;
 #else
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 #endif
 }
 

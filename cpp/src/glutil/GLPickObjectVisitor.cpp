@@ -23,12 +23,12 @@ namespace swl {
 
 void GLPickObjectVisitor::visit(const appearance_node_type &node) const
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void GLPickObjectVisitor::visit(const geometry_node_type &node) const
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void GLPickObjectVisitor::visit(const shape_node_type &node) const

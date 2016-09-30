@@ -44,12 +44,12 @@ public:
 protected:
 	void updateQAndEligibility(const size_t iterationStep, const double delta, std::map<const state_action_pair_type, double> &Q, std::map<const state_action_pair_type, double> &eligibility, const bool *isGreedyAction) const
 	{
-		if (isReplacingTrace_)  // use an replacing trace
+		if (isReplacingTrace_)  // Use an replacing trace.
 		{
 			// FIXME [add] >>
-			throw std::logic_error("not yet implemented");
+			throw std::logic_error("Not yet implemented");
 		}
-		else  // use an accumulating trace
+		else  // Use an accumulating trace.
 		{
 			for (typename std::map<const state_action_pair_type, double>::iterator it = Q.begin(); it != Q.end(); ++it)
 			{

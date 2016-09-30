@@ -69,7 +69,7 @@ WindyGridWorldStateActionPair::State WindyGridWorldStateActionPair::State::takeA
 */
 
 	// FIXME [add] >>
-	throw std::logic_error("not yet implemented");
+	throw std::logic_error("Not yet implemented");
 }
 
 /*static*/ WindyGridWorldStateActionPair::action_type WindyGridWorldStateActionPair::getGreedyAction(const state_type &state, const std::map<const WindyGridWorldStateActionPair, double> &Q)

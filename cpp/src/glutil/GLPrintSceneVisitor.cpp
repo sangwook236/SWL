@@ -24,12 +24,12 @@ namespace swl {
 
 void GLPrintSceneVisitor::visit(const appearance_node_type &node) const
 {
-	std::runtime_error("not yet implemented");
+	std::runtime_error("Not yet implemented");
 }
 
 void GLPrintSceneVisitor::visit(const geometry_node_type &node) const
 {
-	std::runtime_error("not yet implemented");
+	std::runtime_error("Not yet implemented");
 }
 
 void GLPrintSceneVisitor::visit(const shape_node_type &node) const

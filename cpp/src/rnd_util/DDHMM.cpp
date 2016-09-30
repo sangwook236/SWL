@@ -902,13 +902,13 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const size_t N, const uivector_type &ob
 			// trim transition probabilities.
 			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
-				throw std::runtime_error("not yet implemented");
+				throw std::runtime_error("Not yet implemented");
 			}
 
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
-			// reestimate observation(emission) distribution in each state.
+			// Reestimate observation(emission) distribution in each state.
 #if 0
 			double denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
@@ -1143,13 +1143,13 @@ bool DDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			// trim transition probabilities.
 			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
-				throw std::runtime_error("not yet implemented");
+				throw std::runtime_error("Not yet implemented");
 			}
 
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
-			// reestimate observation(emission) distribution in each state.
+			// Reestimate observation(emission) distribution in each state.
 #if 0
 			double denominatorA = 0.0;
 			for (r = 0; r < R; ++r)

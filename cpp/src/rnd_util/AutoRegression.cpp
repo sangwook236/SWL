@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
 	free(data);
 	data = NULL;
 
-	std::cout << "press any key to exit ..." << std::endl;
+	std::cout << "Press any key to exit ..." << std::endl;
 	std::cin.get();
 
 	return EXIT_SUCCESS;

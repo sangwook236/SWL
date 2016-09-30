@@ -36,22 +36,22 @@ HmmWithVonMisesFisherObservations::~HmmWithVonMisesFisherObservations()
 
 void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByML(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByML(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersByMAPUsingEntropicPrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double /*z*/, const bool /*doesTrimParameter*/, const double /*terminationTolerance*/, const size_t /*maxIteration*/, const double denominatorA)
@@ -66,29 +66,29 @@ void HmmWithVonMisesFisherObservations::doEstimateObservationDensityParametersBy
 
 double HmmWithVonMisesFisherObservations::doEvaluateEmissionProbability(const unsigned int state, const dvector_type &observation) const
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void HmmWithVonMisesFisherObservations::doGenerateObservationsSymbol(const unsigned int state, const size_t n, dmatrix_type &observations) const
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 bool HmmWithVonMisesFisherObservations::doReadObservationDensity(std::istream &stream)
 {
-	std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 	return false;
 }
 
 bool HmmWithVonMisesFisherObservations::doWriteObservationDensity(std::ostream &stream) const
 {
-	std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 	return false;
 }
 
 void HmmWithVonMisesFisherObservations::doInitializeObservationDensity(const std::vector<double> &lowerBoundsOfObservationDensity, const std::vector<double> &upperBoundsOfObservationDensity)
 {
-	std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 }  // namespace swl

@@ -155,18 +155,18 @@ void HmmWithMultinomialObservations::doEstimateObservationDensityParametersByMAP
 	// trim parameters.
 	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 
 	for (d = 0; d < D_; ++d)
 		B_(state, d) = theta[d];
 #else
-	// trim transition probabilities.
-	//	only trim if we are in the min. entropy setting (z = 1).
-	//	if z << 0, we would trim everything.
+	// Trim transition probabilities.
+	//	Only trim if we are in the min. Entropy setting (z = 1).
+	//	If z << 0, we would trim everything.
 	if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 	{
-		if (!isObservationsTrimmed[state])  // not yet trimmed.
+		if (!isObservationsTrimmed[state])  // Not yet trimmed.
 		{
 			double grad;
 			for (size_t d = 0; d < D_; ++d)

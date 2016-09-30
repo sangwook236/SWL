@@ -311,7 +311,7 @@ bool ViewCamera3::rotateScene(const double dDeltaX, const double dDeltaY)
 bool ViewCamera3::rotateViewAboutAxis(const EAxis eAxis, const int iX1, const int iY1, const int iX2, const int iY2)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 bool ViewCamera3::translateEye(const ViewCamera3::EAxis eAxis, const double dDelta)

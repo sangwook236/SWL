@@ -1,6 +1,7 @@
 #define __USE_OPENCV 1
 #include "swl/Config.h"
 #include "swl/rnd_util/Ransac.h"
+#include "swl/math/MathConstant.h"
 #if defined(__USE_OPENCV)
 #include <opencv2/opencv.hpp>
 #endif
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <map>
 #include <list>
+#include <array>
 #include <limits>
 #include <cmath>
 #include <random>
@@ -26,39 +28,13 @@
 namespace {
 namespace local {
 
-const double PI = 4.0 * std::atan(1.0);
-
-struct Point2
-{
-	Point2(const double _x, const double _y)
-	: x(_x), y(_y)
-	{}
-	Point2(const Point2 &rhs)
-	: x(rhs.x), y(rhs.y)
-	{}
-
-	double x, y;
-};
-
-struct Point3
-{
-	Point3(const double _x, const double _y, const double _z)
-	: x(_x), y(_y), z(_z)
-	{}
-	Point3(const Point3 &rhs)
-	: x(rhs.x), y(rhs.y), z(rhs.z)
-	{}
-
-	double x, y, z;
-};
-
 class Line2RansacEstimator : public swl::Ransac
 {
 public:
 	typedef swl::Ransac base_type;
 
 public:
-	Line2RansacEstimator(const std::vector<Point2> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
+	Line2RansacEstimator(const std::vector<std::array<double, 2>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
 	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples)
 	{}
 
@@ -79,7 +55,7 @@ private:
 	/*virtual*/ size_t lookForInliers(std::vector<bool> &inlierFlags, const std::vector<double> &inlierProbs, const double inlierThresholdProbability) const override;
 
 private:
-	const std::vector<Point2> &samples_;
+	const std::vector<std::array<double, 2>> &samples_;
 
 	// Line equation: a * x + b * y + c = 0.
 	double a_, b_, c_;
@@ -89,12 +65,12 @@ bool Line2RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
 	if (indices.size() < minimalSampleSize_) return false;
 
-	const Point2 &pt1 = samples_[indices[0]];
-	const Point2 &pt2 = samples_[indices[1]];
+	const std::array<double, 2> &pt1 = samples_[indices[0]];
+	const std::array<double, 2> &pt2 = samples_[indices[1]];
 
-	a_ = pt2.y - pt1.y;
-	b_ = pt1.x - pt2.x;
-	c_ = -a_ * pt1.x - b_ * pt1.y;
+	a_ = pt2[1] - pt1[1];
+	b_ = pt1[0] - pt2[0];
+	c_ = -a_ * pt1[0] - b_ * pt1[1];
 
 	return true;
 }
@@ -116,10 +92,10 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 	const double denom = std::sqrt(a_*a_ + b_*b_);
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<Point2>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		// Compute distance from a model to a point.
-		const double dist = std::abs(a_ * it->x + b_ * it->y + c_) / denom;
+		const double dist = std::abs(a_ * (*cit)[0] + b_ * (*cit)[1] + c_) / denom;
 
 		inlierFlags[k] = dist < threshold;
 		if (inlierFlags[k]) ++inlierCount;
@@ -132,13 +108,13 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 void Line2RansacEstimator::computeInlierProbabilities(std::vector<double> &inlierProbs, const double inlierSquaredStandardDeviation) const
 {
 	const double denom = std::sqrt(a_*a_ + b_*b_);
-	const double factor = 1.0 / std::sqrt(2.0 * PI * inlierSquaredStandardDeviation);
+	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<Point2>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
-		const double dist = (a_ * it->x + b_ * it->y + c_) / denom;
+		const double dist = (a_ * (*cit)[0] + b_ * (*cit)[1] + c_) / denom;
 
 		// Compute inliers' probabilities.
 		inlierProbs[k] = factor * std::exp(-0.5 * dist * dist / inlierSquaredStandardDeviation);
@@ -149,7 +125,8 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 {
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<Point2>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	// TODO [enhance] >> cit is not used.
+	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -169,7 +146,7 @@ void line2d_estimation_using_ransac()
 	const double eps = 1.0e-10;
 
 	// Generate random points.
-	std::vector<local::Point2> samples;
+	std::vector<std::array<double, 2>> samples;
 	samples.reserve(NUM_LINE + NUM_NOISE);
 	{
 		std::random_device seedDevice;
@@ -182,12 +159,12 @@ void line2d_estimation_using_ransac()
 		for (size_t i = 0; i < NUM_LINE; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = -(LINE_EQN[0] * x + LINE_EQN[2]) / LINE_EQN[1];
-			samples.push_back(local::Point2(x + noiseDist(RNG), y + noiseDist(RNG)));
+			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
 		for (size_t i = 0; i < NUM_NOISE; ++i)
-			samples.push_back(local::Point2(unifDistOutlier(RNG), unifDistOutlier(RNG)));
+			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
 		std::random_shuffle(samples.begin(), samples.end());
 	}
@@ -220,8 +197,8 @@ void line2d_estimation_using_ransac()
 			const std::vector<bool> &inlierFlags = ransac.getInlierFlags();
 			std::cout << "\tIndices of inliers: ";
 			size_t idx = 0;
-			for (std::vector<bool>::const_iterator it = inlierFlags.begin(); it != inlierFlags.end(); ++it, ++idx)
-				if (*it) std::cout << idx << ", ";
+			for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
+				if (*cit) std::cout << idx << ", ";
 			std::cout << std::endl;
 
 #if defined(__USE_OPENCV)
@@ -234,7 +211,7 @@ void line2d_estimation_using_ransac()
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx].x * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx].y * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double xe0 = -3.0, ye0 = -(ransac.getA() * xe0 + ransac.getC()) / ransac.getB();
@@ -274,8 +251,8 @@ void line2d_estimation_using_ransac()
 			const std::vector<bool> &inlierFlags = ransac.getInlierFlags();
 			std::cout << "\tIndices of inliers: ";
 			size_t idx = 0;
-			for (std::vector<bool>::const_iterator it = inlierFlags.begin(); it != inlierFlags.end(); ++it, ++idx)
-				if (*it) std::cout << idx << ", ";
+			for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
+				if (*cit) std::cout << idx << ", ";
 			std::cout << std::endl;
 
 #if defined(__USE_OPENCV)
@@ -288,7 +265,7 @@ void line2d_estimation_using_ransac()
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx].x * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx].y * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double xe0 = -3.0, ye0 = -(ransac.getA() * xe0 + ransac.getC()) / ransac.getB();

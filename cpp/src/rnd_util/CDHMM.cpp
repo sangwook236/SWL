@@ -914,14 +914,14 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const size_t N, const dmatrix_type &obs
 			// trim transition probabilities.
 			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
-				throw std::runtime_error("not yet implemented");
+				throw std::runtime_error("Not yet implemented");
 			}
 
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
-			// reestimate observation(emission) distribution in each state.
-			// run E-step & M-step as well.
+			// Reestimate observation(emission) distribution in each state.
+			// Run E-step & M-step as well.
 			denominatorA = 0.0;
 			for (n = 0; n < N - 1; ++n)
 				denominatorA += gamma(n, k);
@@ -1156,14 +1156,14 @@ bool CDHMM::trainByMAPUsingEntropicPrior(const std::vector<size_t> &Ns, const st
 			// trim transition probabilities.
 			if (doesTrimParameter && std::fabs(z - 1.0) <= eps)
 			{
-				throw std::runtime_error("not yet implemented");
+				throw std::runtime_error("Not yet implemented");
 			}
 
 			for (i = 0; i < K_; ++i)
 				A_(k, i) = theta[i];
 
-			// reestimate observation(emission) distribution in each state.
-			// run E-step & M-step as well.
+			// Reestimate observation(emission) distribution in each state.
+			// Run E-step & M-step as well.
 			denominatorA = 0.0;
 			for (r = 0; r < R; ++r)
 				for (n = 0; n < Ns[r] - 1; ++n)

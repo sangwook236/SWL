@@ -22,8 +22,8 @@ GeneralizedHoughTransform::~GeneralizedHoughTransform()
 bool GeneralizedHoughTransform::run()
 {
 	// FIXME [add] >>
-	//	ref: rnd_util_test/HoughTransformTest.cpp
-	throw std::runtime_error("not yet implemented");
+	//	REF [file] >> rnd_util_test/HoughTransformTest.cpp
+	throw std::runtime_error("Not yet implemented");
 }
 
 }  // namespace swl

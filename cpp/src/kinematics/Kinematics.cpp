@@ -49,7 +49,7 @@ Kinematics::~Kinematics()
 JointParam & Kinematics::getJointParam(const size_t jointId) const
 {
 	// FIXME [add] >>
-	throw std::logic_error("not yet implemented");
+	throw std::logic_error("Not yet implemented");
 }
 
 void Kinematics::addScrewAxis(const ScrewAxis &screwAxis)

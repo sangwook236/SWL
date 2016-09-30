@@ -296,7 +296,7 @@ bool ContinuousKalmanFilter::updateTime(const double time, const gsl_vector *Bu)
 
 	return true;
 #else
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 #endif
 }
 
@@ -331,7 +331,7 @@ bool ContinuousKalmanFilter::updateMeasurement(const double time, const gsl_vect
 
 	return true;
 #else
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 #endif
 }
 

@@ -194,11 +194,11 @@ void KinectSensor::rectifyImagePairUsingDepth(const cv::Mat &ir_input_image, con
 			imageSize_rgb_, imageSize_ir_,
 			K_rgb_, K_ir_, R_, T_,
 			IC_homo_rgb_
-		);  // not yet implemented
+		);  // Not yet implemented.
 }
 
-// [ref] rectify_kinect_images_from_IR_to_RGB_using_depth() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
-// IR (left) to RGB (right)
+// REF [function] >> rectify_kinect_images_from_IR_to_RGB_using_depth() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
+// IR (left) to RGB (right).
 void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
 	const cv::Mat &input_image_left, const cv::Mat &input_image_right, cv::Mat &output_image_left, cv::Mat &output_image_right,
 	const cv::Size &imageSize_left, const cv::Size &imageSize_right,
@@ -206,21 +206,21 @@ void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
 	const cv::Mat &IC_homo_left
 ) const
 {
-	// homogeneous normalized camera coordinates (left)
+	// Homogeneous normalized camera coordinates (left).
 	const cv::Mat CC_norm_left(K_left.inv() * IC_homo_left);
 
-	// camera coordinates (left)
+	// Camera coordinates (left).
 	cv::Mat CC_left;
 	{
 		cv::Mat tmp;
 #if 0
-		// 0 0 0 ...   0 1 1 1 ...   1 ... 639 639 639 ... 639
-		// 0 1 2 ... 479 0 1 2 ... 479 ...   0   1   2 ... 479
+		// 0 0 0 ...   0 1 1 1 ...   1 ... 639 639 639 ... 639.
+		// 0 1 2 ... 479 0 1 2 ... 479 ...   0   1   2 ... 479.
 
 		((cv::Mat)input_image_left.t()).convertTo(tmp, CV_64FC1, 1.0, 0.0);
 #else
-		// 0 1 2 ... 639 0 1 2 ... 639 ...   0   1   2 ... 639
-		// 0 0 0 ...   0 1 1 1 ...   1 ... 479 479 479 ... 479
+		// 0 1 2 ... 639 0 1 2 ... 639 ...   0   1   2 ... 639.
+		// 0 0 0 ...   0 1 1 1 ...   1 ... 479 479 479 ... 479.
 
 		input_image_left.convertTo(tmp, CV_64FC1, 1.0, 0.0);
 #endif
@@ -228,7 +228,7 @@ void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
 		CC_left = CC_left.mul(CC_norm_left);
 	}
 
-	// camera coordinates (right)
+	// Camera coordinates (right).
 	cv::Mat CC_right;
 #if 0
 	cv::repeat(T, 1, imageSize_left.width*imageSize_left.height, CC_right);
@@ -238,15 +238,15 @@ void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
 	CC_right = R * CC_left + CC_right;
 #endif
 
-	// homogeneous normalized camera coordinates (right)
+	// Homogeneous normalized camera coordinates (right).
 	cv::Mat CC_norm_right;
 	cv::repeat(CC_right(cv::Range(2, 3), cv::Range::all()), 3, 1, CC_norm_right);
 	CC_norm_right = CC_right / CC_norm_right;
 
-	// homogeneous image coordinates (right)
-	const cv::Mat IC_homo_right(K_right * CC_norm_right);  // zero-based coordinates
+	// Homogeneous image coordinates (right).
+	const cv::Mat IC_homo_right(K_right * CC_norm_right);  // Zero-based coordinates.
 
-	// the left image is mapped onto the right image.
+	// The left image is mapped onto the right image.
 	cv::Mat(input_image_right.size(), input_image_left.type(), cv::Scalar::all(0)).copyTo(output_image_left);
 	//output_image_left = cv::Mat::zeros(input_image_right.size(), input_image_left.type());
 #pragma omp parallel
@@ -267,8 +267,8 @@ void KinectSensor::rectifyImagePairFromIRToRGBUsingDepth(
 	input_image_right.copyTo(output_image_right);
 }
 
-// [ref] rectify_kinect_images_from_RGB_to_IR_using_depth() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
-// RGB (left) to IR (right)
+// REF [function] >> rectify_kinect_images_from_RGB_to_IR_using_depth() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
+// RGB (left) to IR (right).
 void KinectSensor::rectifyImagePairFromRGBToIRUsingDepth(
 	const cv::Mat &input_image_left, const cv::Mat &input_image_right, cv::Mat &output_image_left, cv::Mat &output_image_right,
 	const cv::Size &imageSize_left, const cv::Size &imageSize_right,
@@ -276,7 +276,7 @@ void KinectSensor::rectifyImagePairFromRGBToIRUsingDepth(
 	const cv::Mat &IC_homo_left
 ) const
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 }  // namespace swl

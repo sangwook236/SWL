@@ -5,7 +5,7 @@
 #include "../UnitTestConfig.h"
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
@@ -14,7 +14,7 @@
 #include <fstream>
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -42,15 +42,15 @@
 
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 namespace local {
 
-//	runtime configration: command line arguments
-//		--show_progress=yes --log_level=message --run_test=*
+// Runtime configration: command line arguments
+//	--show_progress=yes --log_level=message --run_test=*
 
 struct BoostUnitGlobalFixture
 {
@@ -88,7 +88,7 @@ boost::unit_test_framework::test_suite * init_unit_test_suite(int, char *[])
 #endif
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 	{
 #if 0
 		testing::InitGoogleMock(&argc, argv);
-		//testing::InitGoogleTest(&argc, argv);  // do not need to be called.
+		//testing::InitGoogleTest(&argc, argv);  // Do not need to be called.
 #else
 		testing::InitGoogleTest(&argc, argv);
 #endif
@@ -117,18 +117,18 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		std::cout << "unknown exception caught" << std::endl;
+		std::cout << "Unknown exception caught" << std::endl;
 		retval = EXIT_FAILURE;
 	}
 
-	//std::cout << "press any key to exit ..." << std::endl;
-	//std::cin.get();
+	std::cout << "Press any key to exit ..." << std::endl;
+	std::cin.get();
 
 	return retval;
 }
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -155,12 +155,12 @@ int main(int argc, char *argv[])
 	}
 	catch (...)
 	{
-		std::cout << "unknown exception caught" << std::endl;
+		std::cout << "Unknown exception caught" << std::endl;
 		retval = EXIT_FAILURE;
 	}
 
-	//std::cout << "press any key to exit ..." << std::endl;
-	//std::cin.get();
+	std::cout << "Press any key to exit ..." << std::endl;
+	std::cin.get();
 
 	return retval;
 }

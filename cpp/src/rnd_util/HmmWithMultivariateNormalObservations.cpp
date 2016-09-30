@@ -257,9 +257,9 @@ void HmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const u
 	}
 	else
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 
-		// [ref] "Gaussian Process for Machine Learning", C. E. Rasmussen and C. K. I. Williams, pp. 201, The MIT Press, 2006
+		// REF [paper] >> "Gaussian Process for Machine Learning", C. E. Rasmussen and C. K. I. Williams, pp. 201, The MIT Press, 2006.
 	}
 }
 
@@ -267,7 +267,7 @@ void HmmWithMultivariateNormalObservations::doInitializeRandomSampleGeneration(c
 {
 	if ((unsigned int)-1 != seed)
 	{
-		// random number generator algorithms.
+		// Random number generator algorithms.
 		gsl_rng_default = gsl_rng_mt19937;
 		//gsl_rng_default = gsl_rng_taus;
 		gsl_rng_default_seed = seed;

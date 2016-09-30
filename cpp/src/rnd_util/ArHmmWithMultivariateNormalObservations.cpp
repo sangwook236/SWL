@@ -49,7 +49,7 @@ ArHmmWithMultivariateNormalObservations::ArHmmWithMultivariateNormalObservations
   r_(NULL)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	assert(P_ > 0);
 }
@@ -63,7 +63,7 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 	assert(N > P_);
 
 	// M-step.
-	// reestimate observation(emission) distribution in each state.
+	// Reestimate observation(emission) distribution in each state.
 
 	const double eps = 1e-50;
 	size_t n, p, j;
@@ -268,7 +268,7 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	// M-step.
@@ -307,7 +307,7 @@ void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParame
 void ArHmmWithMultivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	// M-step.
@@ -457,7 +457,7 @@ void ArHmmWithMultivariateNormalObservations::doGenerateObservationsSymbol(const
 	}
 	else
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 }
 

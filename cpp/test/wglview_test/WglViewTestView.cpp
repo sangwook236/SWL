@@ -1481,14 +1481,14 @@ unsigned int CWglViewTestView::processHits(const int hitCount, const unsigned in
 		ptr += nameCount;
 	}
 
-	TRACE("=====> the picked object: %d\n", selectedObj);
+	TRACE("=====> The picked object: %d\n", selectedObj);
 	return selectedObj;
 }
 
 void CWglViewTestView::dragObject(const int x1, const int y1, const int x2, const int y2)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void CWglViewTestView::setPerspective(const bool isPerspective)
@@ -2555,7 +2555,7 @@ void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi()
 		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
 #endif
 		if (!swl::captureWglViewUsingGdi(filePathName, *this, GetSafeHwnd()))
-			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
+			AfxMessageBox(_T("Fail to capture a view"), MB_OK | MB_ICONSTOP);
 
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
@@ -2564,7 +2564,7 @@ void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdi()
 void CWglViewTestView::OnPrintandcaptureCaptureviewusinggdiplus()
 {
 	// FIXME [add] >>
-	AfxMessageBox(_T("not yet implemented"), MB_OK | MB_ICONSTOP);
+	AfxMessageBox(_T("Not yet implemented"), MB_OK | MB_ICONSTOP);
 }
 
 void CWglViewTestView::OnPrintandcaptureCopytoclipboard()

@@ -73,6 +73,6 @@ void hmm_segmentation()
 {
 	std::cout << "HMM segmentation ----------------------------------------------------" << std::endl;
 
-	local::ddhmm_segmentation_by_viterbi_algorithm();  // not yet implemented.
-	local::cdhmm_segmentation_by_viterbi_algorithm();  // not yet implemented.
+	local::ddhmm_segmentation_by_viterbi_algorithm();  // Not yet implemented.
+	local::cdhmm_segmentation_by_viterbi_algorithm();  // Not yet implemented.
 }

@@ -43,7 +43,7 @@ ArHmmWithUnivariateNormalObservations::ArHmmWithUnivariateNormalObservations(con
   baseGenerator_()
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	assert(P_ > 0);
 }
@@ -239,7 +239,7 @@ void ArHmmWithUnivariateNormalObservations::doEstimateObservationDensityParamete
 void ArHmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	// M-step.
@@ -273,7 +273,7 @@ void ArHmmWithUnivariateNormalObservations::doEstimateObservationDensityParamete
 void ArHmmWithUnivariateNormalObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	// M-step.

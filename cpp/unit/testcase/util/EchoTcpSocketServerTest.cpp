@@ -30,23 +30,23 @@ struct echo_tcp_socket_server_worker_thread_functor
 		swl::TcpSocketServer<swl::TcpSocketConnectionUsingSession<swl::EchoTcpSocketSession> > sessionServer(ioService, portNum_withSession);
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
-		BOOST_TEST_MESSAGE("start TCP socket servers: w/o & w/ session");
+		BOOST_TEST_MESSAGE("Start TCP socket servers: w/o & w/ session");
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
-		// FIXME [fix] >> change SCOPED_TRACE to message output function.
-		SCOPED_TRACE("start TCP socket servers: w/o & w/ session");
+		// FIXME [fix] >> Change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("Start TCP socket servers: w/o & w/ session");
 #endif
 		ioService.run();
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
-		BOOST_TEST_MESSAGE("finish TCP socket servers: w/o & w/ session");
+		BOOST_TEST_MESSAGE("Finish TCP socket servers: w/o & w/ session");
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
-		// FIXME [fix] >> change SCOPED_TRACE to message output function.
-		SCOPED_TRACE("finish TCP socket servers: w/o & w/ session");
+		// FIXME [fix] >> Change SCOPED_TRACE to message output function.
+		SCOPED_TRACE("Finish TCP socket servers: w/o & w/ session");
 #endif
 	}
 };
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
@@ -57,11 +57,11 @@ struct EchoTcpSocketServerTest
 private:
 	struct Fixture
 	{
-		Fixture()  // set up
+		Fixture()  // Set up.
 		{
 		}
 
-		~Fixture()  // tear down
+		~Fixture()  // Tear down.
 		{
 		}
 	};
@@ -96,7 +96,7 @@ struct TcpSocketServerTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
@@ -123,7 +123,7 @@ TEST_F(EchoTcpSocketServerTest, testServerRun)
 }
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -135,11 +135,11 @@ private:
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp()  // set up
+	void setUp()  // Set up.
 	{
 	}
 
-	void tearDown()  // tear down
+	void tearDown()  // Tear down.
 	{
 	}
 

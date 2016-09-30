@@ -15,7 +15,7 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
@@ -26,21 +26,21 @@ struct Plane3Test
 private:
 	struct Fixture
 	{
-		Fixture()  // set up
+		Fixture()  // Set up.
 		{
 		}
 
-		~Fixture()  // tear down
+		~Fixture()  // Tear down.
 		{
 		}
 	};
 
 public:
-	void testFoo()
+	void testGetIntersectionPoint()
 	{
 		Fixture fixture;
 
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 };
 
@@ -51,7 +51,7 @@ struct PlaneTestSuite: public boost::unit_test_framework::test_suite
 	{
 		boost::shared_ptr<Plane3Test> test(new Plane3Test());
 
-		add(BOOST_CLASS_TEST_CASE(&Plane3Test::testFoo, test), 0);
+		//add(BOOST_CLASS_TEST_CASE(&Plane3Test::testGetIntersectionPoint, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);
 	}
@@ -60,7 +60,7 @@ struct PlaneTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
@@ -76,13 +76,13 @@ protected:
 	}
 };
 
-//TEST_F(Plane3Test, testFoo)
+//TEST_F(Plane3Test, testGetIntersectionPoint)
 //{
-//	throw std::runtime_error("not yet implemented");
+//	throw std::runtime_error("Not yet implemented");
 //}
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -90,21 +90,21 @@ struct Plane3Test: public CppUnit::TestFixture
 {
 private:
 	CPPUNIT_TEST_SUITE(Plane3Test);
-	CPPUNIT_TEST(testFoo);
+	//CPPUNIT_TEST(testGetIntersectionPoint);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp()  // set up
+	void setUp()  // Set up.
 	{
 	}
 
-	void tearDown()  // tear down
+	void tearDown()  // Tear down.
 	{
 	}
 
-	void testFoo()
+	void testGetIntersectionPoint()
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 };
 

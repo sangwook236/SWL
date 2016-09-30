@@ -117,6 +117,12 @@
     <ClCompile Include="..\testcase\math\StatisticTest.cpp">
       <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
+    <ClCompile Include="..\testcase\math\GeometryUtilTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
+    <ClCompile Include="..\testcase\math\CurveFittingTest.cpp">
+      <Filter>Source Files\testcase\math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h">

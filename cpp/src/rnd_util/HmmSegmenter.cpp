@@ -18,7 +18,7 @@ namespace swl {
 
 /*static*/ bool HmmSegmenter::segmentByViterbiAlgorithm(const boost::scoped_ptr<DDHMM> &ddhmm, const uivector_type &observations, double &logProbability, std::size_t &startStateIndex, std::size_t &endStateIndex, uivector_type &states)
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	return false;
 }
@@ -34,7 +34,7 @@ namespace swl {
 	swl::CDHMM::uimatrix_type psi(N, K, (unsigned int)-1);
 	cdhmm->runViterbiAlgorithm(N, observations, delta, psi, states, logProbability, true);
 
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	return false;
 }

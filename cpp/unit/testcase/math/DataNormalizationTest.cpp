@@ -26,11 +26,11 @@ struct DataNormalizationTest
 private:
 	struct Fixture
 	{
-		Fixture()  // set up
+		Fixture()  // Set up.
 		{
 		}
 
-		~Fixture()  // tear down
+		~Fixture()  // Tear down.
 		{
 		}
 	};
@@ -270,11 +270,11 @@ private:
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp()  // set up
+	void setUp()  // Set up.
 	{
 	}
 
-	void tearDown()  // tear down
+	void tearDown()  // Tear down.
 	{
 	}
 

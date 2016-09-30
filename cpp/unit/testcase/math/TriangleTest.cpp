@@ -15,32 +15,32 @@ namespace swl {
 namespace unit_test {
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
 namespace {
 
-struct TriangleTest
+struct Triangle3Test
 {
 private:
 	struct Fixture
 	{
-		Fixture()  // set up
+		Fixture()  // Set up.
 		{
 		}
 
-		~Fixture()  // tear down
+		~Fixture()  // Tear down.
 		{
 		}
 	};
 
 public:
-	void testFoo()
+	void testGetPerpendicularDistance()
 	{
 		Fixture fixture;
 
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 };
 
@@ -49,9 +49,9 @@ struct TriangleTestSuite: public boost::unit_test_framework::test_suite
 	TriangleTestSuite()
 	: boost::unit_test_framework::test_suite("SWL.Math.Triangle")
 	{
-		boost::shared_ptr<TriangleTest> test(new TriangleTest());
+		boost::shared_ptr<Triangle3Test> test(new Triangle3Test());
 
-		add(BOOST_CLASS_TEST_CASE(&TriangleTest::testFoo, test), 0);
+		//add(BOOST_CLASS_TEST_CASE(&Triangle3Test::testGetPerpendicularDistance, test), 0);
 
 		boost::unit_test::framework::master_test_suite().add(this);
 	}
@@ -60,11 +60,11 @@ struct TriangleTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
-class TriangleTest : public testing::Test
+class Triangle3Test : public testing::Test
 {
 protected:
 	/*virtual*/ void SetUp()
@@ -76,35 +76,35 @@ protected:
 	}
 };
 
-//TEST_F(TriangleTest, testFoo)
+//TEST_F(Triangle3Test, testGetPerpendicularDistance)
 //{
-//	throw std::runtime_error("not yet implemented");
+//	throw std::runtime_error("Not yet implemented");
 //}
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
-struct TriangleTest: public CppUnit::TestFixture
+struct Triangle3Test: public CppUnit::TestFixture
 {
 private:
-	CPPUNIT_TEST_SUITE(TriangleTest);
-	CPPUNIT_TEST(testFoo);
+	CPPUNIT_TEST_SUITE(Triangle3Test);
+	//CPPUNIT_TEST(testGetPerpendicularDistance);
 	CPPUNIT_TEST_SUITE_END();
 
 public:
-	void setUp()  // set up
+	void setUp()  // Set up.
 	{
 	}
 
-	void tearDown()  // tear down
+	void tearDown()  // Tear down.
 	{
 	}
 
-	void testFoo()
+	void testGetPerpendicularDistance()
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 };
 
@@ -114,7 +114,7 @@ public:
 }  // namespace swl
 
 #if defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
-//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::TriangleTest);
+//CPPUNIT_TEST_SUITE_REGISTRATION(swl::unit_test::Triangle3Test);
 CPPUNIT_REGISTRY_ADD_TO_DEFAULT("SWL.Math");
-CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::TriangleTest, "SWL.Math");
+CPPUNIT_TEST_SUITE_NAMED_REGISTRATION(swl::unit_test::Triangle3Test, "SWL.Math");
 #endif

@@ -55,7 +55,7 @@ ArHmmWithMultivariateNormalMixtureObservations::ArHmmWithMultivariateNormalMixtu
   r_(NULL)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	assert(P_ > 0);
 
@@ -413,14 +413,14 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const size_t N, const unsigned int state, const dmatrix_type &observations, const dmatrix_type &gamma, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	const double eps = 1e-50;
 	size_t c, n;
 
 	// E-step: evaluate zeta.
-	// TODO [check] >> frequent memory reallocation may make trouble.
+	// TODO [check] >> Frequent memory reallocation may make trouble.
 	dmatrix_type zeta(N, C_, 0.0);
 	{
 		double denominator;
@@ -511,14 +511,14 @@ void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensit
 void ArHmmWithMultivariateNormalMixtureObservations::doEstimateObservationDensityParametersByMAPUsingConjugatePrior(const std::vector<size_t> &Ns, const unsigned int state, const std::vector<dmatrix_type> &observationSequences, const std::vector<dmatrix_type> &gammas, const size_t R, const double denominatorA)
 {
 	// FIXME [modify] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 #if 0
 	const double eps = 1e-50;
 	size_t c, n, r;
 
 	// E-step: evaluate zeta.
-	// TODO [check] >> frequent memory reallocation may make trouble.
+	// TODO [check] >> Frequent memory reallocation may make trouble.
 	std::vector<dmatrix_type> zetas;
 	zetas.reserve(R);
 	for (r = 0; r < R; ++r)
@@ -1297,7 +1297,7 @@ void ArHmmWithMultivariateNormalMixtureObservations::doGenerateObservationsSymbo
 	}
 	else
 	{
-		throw std::runtime_error("not yet implemented");
+		throw std::runtime_error("Not yet implemented");
 	}
 }
 
@@ -1305,7 +1305,7 @@ void ArHmmWithMultivariateNormalMixtureObservations::doInitializeRandomSampleGen
 {
 	if ((unsigned int)-1 != seed)
 	{
-		// random number generator algorithms.
+		// Random number generator algorithms.
 		gsl_rng_default = gsl_rng_mt19937;
 		//gsl_rng_default = gsl_rng_taus;
 		gsl_rng_default_seed = seed;

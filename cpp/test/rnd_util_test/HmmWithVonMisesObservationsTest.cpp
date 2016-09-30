@@ -434,14 +434,14 @@ void forward_algorithm()
 
 		//
 		std::cout << "------------------------------------" << std::endl;
-		std::cout << "forward algorithm with scaling" << std::endl;
+		std::cout << "Forward algorithm with scaling" << std::endl;
 		std::cout << "\tlog prob(observations | model) = " << std::scientific << logLikelihood << std::endl;
 	}
 }
 
 void backward_algorithm()
 {
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void viterbi_algorithm()
@@ -1365,13 +1365,13 @@ void hmm_with_von_mises_observation_densities()
 	//local::observation_sequence_reading_and_writing();
 
 	//local::forward_algorithm();
-	//local::backward_algorithm();  // not yet implemented.
+	//local::backward_algorithm();  // Not yet implemented.
 	//local::viterbi_algorithm();
 
-	std::cout << "\ntrain by ML ---------------------------------------------------------" << std::endl;
+	std::cout << "\nTrain by ML ---------------------------------------------------------" << std::endl;
 	local::ml_learning_by_em();
-	std::cout << "\ntrain by MAP using conjugate prior ----------------------------------" << std::endl;
+	std::cout << "\nTrain by MAP using conjugate prior ----------------------------------" << std::endl;
 	//local::map_learning_by_em_using_conjugate_prior();
-	std::cout << "\ntrain by MAP using entropic prior -----------------------------------" << std::endl;
+	std::cout << "\nTrain by MAP using entropic prior -----------------------------------" << std::endl;
 	local::map_learning_by_em_using_entropic_prior();
 }

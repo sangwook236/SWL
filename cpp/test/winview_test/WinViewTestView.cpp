@@ -34,12 +34,12 @@
 #endif
 
 
-// CWinViewTestView
+// CWinViewTestView.
 
 IMPLEMENT_DYNCREATE(CWinViewTestView, CView)
 
 BEGIN_MESSAGE_MAP(CWinViewTestView, CView)
-	// Standard printing commands
+	// Standard printing commands.
 	ON_COMMAND(ID_FILE_PRINT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_DIRECT, &CView::OnFilePrint)
 	ON_COMMAND(ID_FILE_PRINT_PREVIEW, &CView::OnFilePrintPreview)
@@ -111,7 +111,7 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 		return;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
 	if (pDC && pDC->IsPrinting())
 	{
@@ -152,7 +152,7 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 		const boost::shared_ptr<camera_type> &camera = topCamera();
 		if (!camera) return;
 
-		// using a locally-created context
+		// Using a locally-created context.
 		if (useLocallyCreatedContext_)
 		{
 			CRect rect;
@@ -185,11 +185,11 @@ void CWinViewTestView::OnDraw(CDC* pDC)
 }
 
 
-// CWinViewTestView printing
+// CWinViewTestView printing..
 
 BOOL CWinViewTestView::OnPreparePrinting(CPrintInfo* pInfo)
 {
-	// default preparation
+	// Default preparation.
 	return DoPreparePrinting(pInfo);
 }
 
@@ -250,7 +250,7 @@ void CWinViewTestView::OnInitialUpdate()
 	GetClientRect(&rect);
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 /*
 	viewController_.addMousePressHandler(swl::MousePressHandler());
 	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
@@ -263,9 +263,9 @@ void CWinViewTestView::OnInitialUpdate()
 	viewController_.addKeyHitHandler(swl::KeyHitHandler());
 */
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 	
-	// create a context
+	// Create a context.
 	if (1 == drawMode_)
 		pushContext(boost::shared_ptr<context_type>(new swl::GdiContext(GetSafeHwnd(), false)));
 	else if (2 == drawMode_)
@@ -275,14 +275,14 @@ void CWinViewTestView::OnInitialUpdate()
 	else if (4 == drawMode_)
 		pushContext(boost::shared_ptr<context_type>(new swl::GdiplusBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
-	// create a camera
+	// Create a camera.
 	pushCamera(boost::shared_ptr<camera_type>(new swl::ViewCamera2()));
 
 	const boost::shared_ptr<context_type> &viewContext = topContext();
 	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 
 	if (!useLocallyCreatedContext_ && NULL == viewStateFsm_.get() && viewContext.get() && viewCamera.get())
 	{
@@ -291,23 +291,23 @@ void CWinViewTestView::OnInitialUpdate()
 	}
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
-	// initialize a view
+	// Initialize a view.
 	if (viewContext.get())
 	{
-		// guard the context
+		// Guard the context.
 		context_type::guard_type guard(*viewContext);
 
-		// set the view
+		// Set the view.
 		initializeView();
 
-		// set the camera
+		// Set the camera.
 		if (viewCamera.get())
 		{
-			// set the size of viewing volume
-			//	(left, bottom, right, top) is set wrt a eye coordinates frame
-			//	(near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
+			// Set the size of viewing volume.
+			//	(left, bottom, right, top) is set wrt a eye coordinates frame.
+			//	(near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume.
 			//viewCamera->setViewBound(-500, -500, 1500, 1500);
 			viewCamera->setViewBound(0, 0, rect.Width(), rect.Height());
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
@@ -316,7 +316,7 @@ void CWinViewTestView::OnInitialUpdate()
 		raiseDrawEvent(true);
 	}
 
-	// using a locally-created context
+	// Using a locally-created context.
 	if (useLocallyCreatedContext_)
 		popContext();
 }
@@ -326,7 +326,7 @@ void CWinViewTestView::OnDestroy()
 	CView::OnDestroy();
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
 	popContext();
 	popCamera();
@@ -334,12 +334,12 @@ void CWinViewTestView::OnDestroy()
 
 void CWinViewTestView::OnPaint()
 {
-	CPaintDC dc(this); // device context for painting
+	CPaintDC dc(this);  // Device context for painting.
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
-	// using a locally-created context
+	// Using a locally-created context.
 	if (useLocallyCreatedContext_)
 		raiseDrawEvent(true);
 	else
@@ -356,7 +356,7 @@ void CWinViewTestView::OnPaint()
 		}
 	}
 
-	// Do not call CView::OnPaint() for painting messages
+	// Do not call CView::OnPaint() for painting messages.
 }
 
 void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
@@ -364,7 +364,7 @@ void CWinViewTestView::OnSize(UINT nType, int cx, int cy)
 	CView::OnSize(nType, cx, cy);
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
 	if (cx <= 0 || cy <= 0) return;
 	resizeView(0, 0, cx, cy);
@@ -384,7 +384,7 @@ void CWinViewTestView::OnTimer(UINT_PTR nIDEvent)
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 {
@@ -404,7 +404,7 @@ bool CWinViewTestView::raiseDrawEvent(const bool isContextActivated)
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::initializeView()
 {
@@ -412,7 +412,7 @@ bool CWinViewTestView::initializeView()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
@@ -431,11 +431,11 @@ bool CWinViewTestView::resizeView(const int x1, const int y1, const int x2, cons
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::doPrepareRendering(const context_type &context, const camera_type &camera)
 {
-	// clear the background
+	// Clear the background.
 	try
 	{
 		const HDC *dc = boost::any_cast<HDC *>(context.getNativeContext());
@@ -473,7 +473,7 @@ bool CWinViewTestView::doPrepareRendering(const context_type &context, const cam
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::doRenderStockScene(const context_type &context, const camera_type &camera)
 {
@@ -481,7 +481,7 @@ bool CWinViewTestView::doRenderStockScene(const context_type &context, const cam
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WinView: basic routine
+// This code is required for SWL.WinView: basic routine.
 
 bool CWinViewTestView::doRenderScene(const context_type &context, const camera_type &camera)
 {
@@ -498,7 +498,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
 
-				// draw contents
+				// Draw contents.
 				{
 					CPen pen(PS_SOLID, lineWidth1, RGB(255, 0, 255));
 					CPen *oldPen = pDC->SelectObject(&pen);
@@ -559,7 +559,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
 			if (graphics)
 			{
-				// draw contents
+				// Draw contents.
 				{
 					Gdiplus::Pen pen(Gdiplus::Color(255, 255, 0, 255), (Gdiplus::REAL)lineWidth1);
 					Gdiplus::SolidBrush brush(Gdiplus::Color(255, 240, 240, 240));
@@ -608,7 +608,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			{
 				CDC *pDC = CDC::FromHandle(*dc);
 
-				// draw contents
+				// Draw contents.
 				int vx, vy;
 
 				{
@@ -672,7 +672,7 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 			Gdiplus::Graphics *graphics = boost::any_cast<Gdiplus::Graphics *>(context.getNativeContext());
 			if (graphics)
 			{
-				// draw contents
+				// Draw contents.
 				int vx1, vy1, vx2, vy2;
 
 				{
@@ -728,25 +728,25 @@ bool CWinViewTestView::doRenderScene(const context_type &context, const camera_t
 void CWinViewTestView::pickObject(const int x, const int y, const bool isTemporary /*= false*/)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void CWinViewTestView::pickObject(const int x1, const int y1, const int x2, const int y2, const bool isTemporary /*= false*/)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void CWinViewTestView::dragObject(const int x1, const int y1, const int x2, const int y2)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -762,7 +762,7 @@ void CWinViewTestView::OnLButtonDown(UINT nFlags, CPoint point)
 void CWinViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -778,7 +778,7 @@ void CWinViewTestView::OnLButtonUp(UINT nFlags, CPoint point)
 void CWinViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -792,7 +792,7 @@ void CWinViewTestView::OnLButtonDblClk(UINT nFlags, CPoint point)
 void CWinViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -808,7 +808,7 @@ void CWinViewTestView::OnMButtonDown(UINT nFlags, CPoint point)
 void CWinViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -824,7 +824,7 @@ void CWinViewTestView::OnMButtonUp(UINT nFlags, CPoint point)
 void CWinViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -838,7 +838,7 @@ void CWinViewTestView::OnMButtonDblClk(UINT nFlags, CPoint point)
 void CWinViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -854,7 +854,7 @@ void CWinViewTestView::OnRButtonDown(UINT nFlags, CPoint point)
 void CWinViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -870,7 +870,7 @@ void CWinViewTestView::OnRButtonUp(UINT nFlags, CPoint point)
 void CWinViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -884,7 +884,7 @@ void CWinViewTestView::OnRButtonDblClk(UINT nFlags, CPoint point)
 void CWinViewTestView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
 		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
 		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
@@ -903,7 +903,7 @@ void CWinViewTestView::OnMouseMove(UINT nFlags, CPoint point)
 BOOL CWinViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
 		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
 		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
@@ -922,7 +922,7 @@ BOOL CWinViewTestView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 void CWinViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	//viewController_.pressKey(swl::KeyEvent(nChar, nRepCnt));
 	if (viewStateFsm_.get()) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
 
@@ -932,7 +932,7 @@ void CWinViewTestView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWinViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt));
 	if (viewStateFsm_.get()) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
 
@@ -942,7 +942,7 @@ void CWinViewTestView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWinViewTestView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: event handling
+	// This code is required for SWL.WinView: event handling.
 	// TODO [check] >>
 	const swl::KeyEvent::EControlKey ckey = ((nFlags >> 28) & 0x01) == 0x01 ? swl::KeyEvent::CK_ALT : swl::KeyEvent::CK_NONE;
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
@@ -954,42 +954,42 @@ void CWinViewTestView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWinViewTestView::OnViewhandlingPan()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPan());
 }
 
 void CWinViewTestView::OnViewhandlingRotate()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
 void CWinViewTestView::OnViewhandlingZoomregion()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
 void CWinViewTestView::OnViewhandlingZoomall()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomAll());
 }
 
 void CWinViewTestView::OnViewhandlingZoomin()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
 void CWinViewTestView::OnViewhandlingZoomout()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
@@ -998,7 +998,7 @@ void CWinViewTestView::OnViewhandlingPickobject()
 	const bool isRedrawn = swl::ObjectPickerMgr::getInstance().containPickedObject();
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get()) viewStateFsm_->process_event(swl::EvtPickObject());
 	//if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickAndDragObject());
 
@@ -1008,7 +1008,7 @@ void CWinViewTestView::OnViewhandlingPickobject()
 void CWinViewTestView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PanState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1028,7 +1028,7 @@ void CWinViewTestView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 void CWinViewTestView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomRegionState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1037,7 +1037,7 @@ void CWinViewTestView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 void CWinViewTestView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomAllState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1046,7 +1046,7 @@ void CWinViewTestView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 void CWinViewTestView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_.get())
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomInState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1064,7 +1064,7 @@ void CWinViewTestView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 void CWinViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	pCmdUI->Enable(FALSE);
 
 	if (viewStateFsm_.get())
@@ -1075,7 +1075,7 @@ void CWinViewTestView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 
 void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 {
-	// initialize a PRINTDLG structure
+	// Initialize a PRINTDLG structure.
 	PRINTDLG pd;
 	memset(&pd, 0, sizeof(pd));
 	pd.lStructSize = sizeof(pd);
@@ -1088,7 +1088,7 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 	//
 	const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
 
-	// each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
+	// Each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
 	SetMapMode(pd.hDC, MM_TEXT);
 
 	DOCINFO di;
@@ -1096,7 +1096,7 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 	di.lpszDocName = _T("GDI Print");
 	di.lpszOutput = NULL;
 
-	// start the print job
+	// Start the print job.
 	StartDoc(pd.hDC, &di);
 	StartPage(pd.hDC);
 
@@ -1113,7 +1113,7 @@ void CWinViewTestView::OnPrintandcapturePrintviewusinggdi()
 	}
 #endif
 
-	// end the print job
+	// End the print job.
 	EndPage(pd.hDC);
 	EndDoc(pd.hDC);
 	DeleteDC(pd.hDC);
@@ -1180,7 +1180,7 @@ void CWinViewTestView::OnPrintandcaptureCopytoclipboard()
 	CBitmap *oldBitmap = memDC.SelectObject(&bitmap);
 	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, 0, 0, SRCCOPY);
 
-	// clipboard
+	// Clipboard.
 	if (OpenClipboard())
 	{
 		EmptyClipboard();

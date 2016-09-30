@@ -54,7 +54,7 @@ struct echo_tcp_socket_server_worker_thread_functor
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-// Boost Test
+// Boost Test.
 
 #if defined(__SWL_UNIT_TEST__USE_BOOST_TEST)
 
@@ -65,16 +65,16 @@ struct EchoTcpSocketTest
 private:
 	struct Fixture
 	{
-		Fixture()  // set up
+		Fixture()  // Set up.
 		{
-			BOOST_TEST_MESSAGE("start thread for TCP socket servers");
+			BOOST_TEST_MESSAGE("Start thread for TCP socket servers");
 			thrd_.reset(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
 		}
 
-		~Fixture()  // tear down
+		~Fixture()  // Tear down.
 		{
 			thrd_.reset();
-			BOOST_TEST_MESSAGE("terminate thread for TCP socket servers");
+			BOOST_TEST_MESSAGE("Terminate thread for TCP socket servers");
 		}
 
 		boost::scoped_ptr<boost::thread> thrd_;
@@ -421,7 +421,7 @@ struct TcpSocketClientTestSuite: public boost::unit_test_framework::test_suite
 }  // unnamed namespace
 
 //-----------------------------------------------------------------------------
-// Google Test
+// Google Test.
 
 #elif defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST)
 
@@ -431,7 +431,7 @@ protected:
 	/*virtual*/ void SetUp()
 	{
 		// FIXME [fix] >> change SCOPED_TRACE to message output function.
-		SCOPED_TRACE("start thread for TCP socket servers");
+		SCOPED_TRACE("Start thread for TCP socket servers");
 		thrd_.reset(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
 	}
 
@@ -439,7 +439,7 @@ protected:
 	{
 		thrd_.reset();
 		// FIXME [fix] >> change SCOPED_TRACE to message output function.
-		SCOPED_TRACE("terminate thread for TCP socket servers");
+		SCOPED_TRACE("Terminate thread for TCP socket servers");
 	}
 
 private:
@@ -773,7 +773,7 @@ TEST_F(EchoTcpSocketTest, testAsyncClient)
 }
 
 //-----------------------------------------------------------------------------
-// CppUnit
+// CppUnit.
 
 #elif defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 
@@ -789,16 +789,16 @@ private:
 	boost::scoped_ptr<boost::thread> thrd_;
 
 public:
-	void setUp()  // set up
+	void setUp()  // Set up.
 	{
-		//CPPUNIT_MESSAGE("start thread for TCP socket servers");
+		//CPPUNIT_MESSAGE("Start thread for TCP socket servers");
 		thrd_.reset(new boost::thread(echo_tcp_socket_server_worker_thread_functor()));
 	}
 
-	void tearDown()  // tear down
+	void tearDown()  // Tear down.
 	{
 		thrd_.reset();
-		//CPPUNIT_MESSAGE("terminate thread for TCP socket servers");
+		//CPPUNIT_MESSAGE("Terminate thread for TCP socket servers");
 	}
 
 	void testSyncClient()

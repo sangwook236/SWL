@@ -1,11 +1,12 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-#include "swl/math/MathConstant.h"
 #include "swl/rnd_util/Ransac.h"
+#include "swl/math/MathConstant.h"
 #include <iostream>
 #include <algorithm>
 #include <map>
 #include <list>
+#include <array>
 #include <limits>
 #include <cmath>
 #include <random>
@@ -24,37 +25,13 @@
 namespace {
 namespace local {
 
-struct Point2
-{
-	Point2(const double _x, const double _y)
-	: x(_x), y(_y)
-	{}
-	Point2(const Point2 &rhs)
-	: x(rhs.x), y(rhs.y)
-	{}
-
-	double x, y;
-};
-
-struct Point3
-{
-	Point3(const double _x, const double _y, const double _z)
-	: x(_x), y(_y), z(_z)
-	{}
-	Point3(const Point3 &rhs)
-	: x(rhs.x), y(rhs.y), z(rhs.z)
-	{}
-
-	double x, y, z;
-};
-
 class Plane3RansacEstimator: public swl::Ransac
 {
 public:
 	typedef swl::Ransac base_type;
 
 public:
-	Plane3RansacEstimator(const std::vector<Point3> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
+	Plane3RansacEstimator(const std::vector<std::array<double, 3>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
 	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples)
 	{}
 
@@ -92,7 +69,7 @@ private:
 	}
 
 private:
-	const std::vector<Point3> &samples_;
+	const std::vector<std::array<double, 3>> &samples_;
 
 	// Plane equation: a * x + b * y + c * z + d = 0.
 	double a_, b_, c_, d_;
@@ -102,13 +79,13 @@ bool Plane3RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
 	if (indices.size() < minimalSampleSize_) return false;
 
-	const Point3 &pt1 = samples_[indices[0]];
-	const Point3 &pt2 = samples_[indices[1]];
-	const Point3 &pt3 = samples_[indices[2]];
+	const std::array<double, 3> &pt1 = samples_[indices[0]];
+	const std::array<double, 3> &pt2 = samples_[indices[1]];
+	const std::array<double, 3> &pt3 = samples_[indices[2]];
 
-	if (calculateNormal(pt2.x - pt1.x, pt2.y - pt1.y, pt2.z - pt1.z, pt3.x - pt1.x, pt3.y - pt1.y, pt3.z - pt1.z, a_, b_, c_))
+	if (calculateNormal(pt2[0] - pt1[0], pt2[1] - pt1[1], pt2[2] - pt1[2], pt3[0] - pt1[0], pt3[1] - pt1[1], pt3[2] - pt1[2], a_, b_, c_))
 	{
-		d_ = -(a_ * pt1.x + b_ * pt1.y + c_ * pt1.z);
+		d_ = -(a_ * pt1[0] + b_ * pt1[1] + c_ * pt1[2]);
 		return true;
 	}
 	else return false;
@@ -131,10 +108,10 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, con
 	const double denom = std::sqrt(a_*a_ + b_*b_ + c_*c_);
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<Point3>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
-		const double dist = std::abs(a_ * it->x + b_ * it->y + c_ * it->z + d_) / denom;
+		const double dist = std::abs(a_ * (*cit)[0] + b_ * (*cit)[1] + c_ * (*cit)[2] + d_) / denom;
 
 		inlierFlags[k] = dist < threshold;
 		if (inlierFlags[k]) ++inlierCount;
@@ -150,10 +127,10 @@ void Plane3RansacEstimator::computeInlierProbabilities(std::vector<double> &inli
 	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<Point3>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
-		const double dist = (a_ * it->x + b_ * it->y + c_ * it->z + d_) / denom;
+		const double dist = (a_ * (*cit)[0] + b_ * (*cit)[1] + c_ * (*cit)[2] + d_) / denom;
 
 		// Compute inliers' probabilities.
 		inlierProbs[k] = factor * std::exp(-0.5 * dist * dist / inlierSquaredStandardDeviation);
@@ -164,7 +141,8 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, con
 {
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<Point3>::const_iterator it = samples_.begin(); it != samples_.end(); ++it, ++k)
+	// TODO [enhance] >> cit is not used.
+	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -185,7 +163,7 @@ void plane3d_estimation_using_ransac()
 	const double eps = 1.0e-10;
 
 	// Generate random points.
-	std::vector<local::Point3> samples;
+	std::vector<std::array<double, 3>> samples;
 	samples.reserve(NUM_PLANE + NUM_NOISE);
 	{
 		std::random_device seedDevice;
@@ -198,12 +176,12 @@ void plane3d_estimation_using_ransac()
 		for (size_t i = 0; i < NUM_PLANE; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = unifDistInlier(RNG), z = -(PLANE_EQN[0] * x + PLANE_EQN[1] * y + PLANE_EQN[3]) / PLANE_EQN[2];
-			samples.push_back(local::Point3(x + noiseDist(RNG), y + noiseDist(RNG), z + noiseDist(RNG)));
+			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG), z + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
 		for (size_t i = 0; i < NUM_NOISE; ++i)
-			samples.push_back(local::Point3(unifDistOutlier(RNG), unifDistOutlier(RNG), unifDistOutlier(RNG)));
+			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
 		std::random_shuffle(samples.begin(), samples.end());
 	}
@@ -236,8 +214,8 @@ void plane3d_estimation_using_ransac()
 			const std::vector<bool> &inlierFlags = ransac.getInlierFlags();
 			std::cout << "\tIndices of inliers: ";
 			size_t idx = 0;
-			for (std::vector<bool>::const_iterator it = inlierFlags.begin(); it != inlierFlags.end(); ++it, ++idx)
-				if (*it) std::cout << idx << ", ";
+			for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
+				if (*cit) std::cout << idx << ", ";
 			std::cout << std::endl;
 		}
 		else
@@ -265,8 +243,8 @@ void plane3d_estimation_using_ransac()
 			const std::vector<bool> &inlierFlags = ransac.getInlierFlags();
 			std::cout << "\tIndices of inliers: ";
 			size_t idx = 0;
-			for (std::vector<bool>::const_iterator it = inlierFlags.begin(); it != inlierFlags.end(); ++it, ++idx)
-				if (*it) std::cout << idx << ", ";
+			for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
+				if (*cit) std::cout << idx << ", ";
 			std::cout << std::endl;
 		}
 		else

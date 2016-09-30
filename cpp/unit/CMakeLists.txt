@@ -4,10 +4,12 @@ set(TESTCASE_SRCS
 
 	# testcase/math
 	testcase/math/BaseFieldConversionTest.cpp
+	testcase/math/CurveFittingTest.cpp
 	testcase/math/DataNormalizationTest.cpp
+	testcase/math/GeometryUtilTest.cpp
 	testcase/math/LineSegmentTest.cpp
 	testcase/math/LineTest.cpp
-	testcase/math/MathUtilsTest.cpp
+	testcase/math/MathUtilTest.cpp
 	testcase/math/PlaneTest.cpp
 	testcase/math/StatisticTest.cpp
 	testcase/math/TriangleTest.cpp

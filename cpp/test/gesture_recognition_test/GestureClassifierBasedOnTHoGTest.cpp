@@ -242,7 +242,7 @@ bool computeTemporalOrientationHistogram(cv::MatND &temporalOrientationHist)
 bool classifyGesture(const cv::MatND &temporalOrientationHist)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 
 	return false;
 }
@@ -392,7 +392,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 					*streamNoMotion << frame_no << std::endl;  // 0-based index.
 				}
 
-				// for display.
+				// For display.
 				const int fontFace = cv::FONT_HERSHEY_COMPLEX;
 				const double fontScale = 0.5;
 				cv::putText(img, "No motion", cv::Point(5, 20), fontFace, fontScale, CV_RGB(255, 0, 255), 1, 8, false);
@@ -400,15 +400,15 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 
 			if (local::computeTemporalOrientationHistogram(temporalOrientationHist))
 			{
-				// draw THoG.
+				// Draw THoG.
 				local::drawTemporalOrientationHistogram(temporalOrientationHist, windowName2);
 
-				//if (local::classifyGesture(temporalOrientationHist))  // not yet implemented.
+				//if (local::classifyGesture(temporalOrientationHist))  // Not yet implemented.
 				{
 					// FIXME [implement] >>
 				}
 
-				// save THoG.
+				// Save THoG.
 				if (NULL != streamTHoG)
 				{
 					for (int col = 0; col < temporalOrientationHist.cols; ++col)

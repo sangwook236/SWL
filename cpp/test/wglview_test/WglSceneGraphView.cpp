@@ -147,13 +147,13 @@ CWglSceneGraphView::~CWglSceneGraphView()
 
 BOOL CWglSceneGraphView::PreCreateWindow(CREATESTRUCT& cs)
 {
-	// TODO: Modify the Window class or styles here by modifying
-	//  the CREATESTRUCT cs
+	// TODO: Modify the Window class or styles here by modifying.
+	//  the CREATESTRUCT cs.
 
 	return CView::PreCreateWindow(cs);
 }
 
-// CWglSceneGraphView drawing
+// CWglSceneGraphView drawing.
 
 void CWglSceneGraphView::OnDraw(CDC* pDC)
 {
@@ -163,7 +163,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 		return;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: basic routine
+	// This code is required for SWL.WglView: basic routine.
 
 	if (pDC && pDC->IsPrinting())
 	{
@@ -201,7 +201,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 		{
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 			const bool doesRecreateDisplayListUsed = !isDisplayListShared && isDisplayListUsed();
-			// generate a new name base of OpenGL display list
+			// Generate a new name base of OpenGL display list.
 			if (doesRecreateDisplayListUsed) generateDisplayListName(true);
 #endif
 
@@ -210,19 +210,19 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 			printCamera->setViewport(0, 0, w0, h0);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-			// re-create a OpenGL display list
+			// Re-create a OpenGL display list.
 			if (doesRecreateDisplayListUsed) createDisplayList(true);
 #endif
 
 			renderScene(printContext, *printCamera);
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-			// delete a new name base of OpenGL display list
+			// Delete a new name base of OpenGL display list.
 			if (doesRecreateDisplayListUsed) deleteDisplayListName(true);
 #endif
 		}
 
-		// restore view's states
+		// Rrestore view's states.
 		if (!isPrinting) isPrinting_ = false;
 
 		pDC->SetMapMode(oldMapMode);
@@ -233,7 +233,7 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 		const boost::shared_ptr<camera_type> &camera = topCamera();
 		if (!camera) return;
 
-		// using a locally-created context
+		// Using a locally-created context.
 		if (useLocallyCreatedContext_)
 		{
 			CRect rect;
@@ -262,26 +262,26 @@ void CWglSceneGraphView::OnDraw(CDC* pDC)
 }
 
 
-// CWglSceneGraphView printing
+// CWglSceneGraphView printing.
 
 BOOL CWglSceneGraphView::OnPreparePrinting(CPrintInfo* pInfo)
 {
-	// default preparation
+	// Default preparation.
 	return DoPreparePrinting(pInfo);
 }
 
 void CWglSceneGraphView::OnBeginPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
 {
-	// TODO: add extra initialization before printing
+	// TODO: Add extra initialization before printing.
 }
 
 void CWglSceneGraphView::OnEndPrinting(CDC* /*pDC*/, CPrintInfo* /*pInfo*/)
 {
-	// TODO: add cleanup after printing
+	// TODO: Add cleanup after printing.
 }
 
 
-// CWglSceneGraphView diagnostics
+// CWglSceneGraphView diagnostics.
 
 #ifdef _DEBUG
 void CWglSceneGraphView::AssertValid() const
@@ -294,7 +294,7 @@ void CWglSceneGraphView::Dump(CDumpContext& dc) const
 	CView::Dump(dc);
 }
 
-CWglViewTestDoc* CWglSceneGraphView::GetDocument() const // non-debug version is inline
+CWglViewTestDoc* CWglSceneGraphView::GetDocument() const  // Non-debug version is inline.
 {
 	ASSERT(m_pDocument->IsKindOf(RUNTIME_CLASS(CWglViewTestDoc)));
 	return (CWglViewTestDoc*)m_pDocument;
@@ -302,7 +302,7 @@ CWglViewTestDoc* CWglSceneGraphView::GetDocument() const // non-debug version is
 #endif //_DEBUG
 
 
-// CWglSceneGraphView message handlers
+// CWglSceneGraphView message handlers.
 
 void CWglSceneGraphView::OnInitialUpdate()
 {
@@ -316,7 +316,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 	useLocallyCreatedContext_ = false;
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 /*
 	viewController_.addMousePressHandler(swl::MousePressHandler());
 	viewController_.addMouseReleaseHandler(swl::MouseReleaseHandler());
@@ -329,23 +329,23 @@ void CWglSceneGraphView::OnInitialUpdate()
 	viewController_.addKeyHitHandler(swl::KeyHitHandler());
 */
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: basic routine
+	// This code is required for SWL.WglView: basic routine.
 
-	// create a context
+	// Create a context.
 	if (1 == drawMode_)
-		// it is not working with clipboard in Windows.
+		// It is not working with clipboard in Windows.
 		pushContext(boost::shared_ptr<context_type>(new swl::WglDoubleBufferedContext(GetSafeHwnd(), rect, false)));
 	else if (2 == drawMode_)
 		pushContext(boost::shared_ptr<context_type>(new swl::WglBitmapBufferedContext(GetSafeHwnd(), rect, false)));
 
-	// create a camera
+	// Create a camera.
 	pushCamera(boost::shared_ptr<camera_type>(new swl::GLCamera()));
 
 	const boost::shared_ptr<context_type> &viewContext = topContext();
 	const boost::shared_ptr<camera_type> &viewCamera = topCamera();
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 
 	if (!useLocallyCreatedContext_ && !viewStateFsm_ && viewContext && viewCamera)
 	{
@@ -354,30 +354,30 @@ void CWglSceneGraphView::OnInitialUpdate()
 	}
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
-	// initialize a view
+	// Initialize a view.
 	if (viewContext)
 	{
-		// guard the context
+		// Guard the context.
 		context_type::guard_type guard(*viewContext);
 
-		// construct scene graph
+		// Construct scene graph.
 		constructSceneGraph();
 
-		// generate a new name base of OpenGL display list
+		// Generate a new name base of OpenGL display list.
 #if defined(__USE_OPENGL_DISPLAY_LIST)
 		generateDisplayListName(true);
 #endif
 
-		// set the view
+		// Set the view.
 		initializeView();
 
-		// set the camera
+		// Set the camera.
 		if (viewCamera)
 		{
 #if 0
-			// set the size of viewing volume
+			// Set the size of viewing volume.
 			viewCamera->setObjectPosition(0.0, 0.0, 0.0, false);
 			//viewCamera->setObjectPosition(110.0, 110.0, 150.0, false);
 			viewCamera->setEyePose(0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, false);
@@ -385,8 +385,8 @@ void CWglSceneGraphView::OnInitialUpdate()
 			viewCamera->setEyeDistance(8000.0, false);
 			//viewCamera->setEyeDistance(1000.0, false);
 
-			// (left, bottom, right, top) is set wrt a eye coordinates frame
-			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
+			// (left, bottom, right, top) is set wrt a eye coordinates frame.
+			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume.
 			//viewCamera->setViewBound(-1600.0, -1100.0, 2400.0, 2900.0, 1.0, 20000.0);
 			viewCamera->setViewBound(-1000.0, -1000.0, 1000.0, 1000.0, 4000.0, 12000.0);
 			//viewCamera->setViewBound(-50.0, -50.0, 50.0, 50.0, 1.0, 2000.0);
@@ -396,13 +396,13 @@ void CWglSceneGraphView::OnInitialUpdate()
 			const double eyeDistance = radius * 8.0;
 			const double nearPlane = eyeDistance - radius * 1.5, farPlane = eyeDistance + radius * 1.5;
 
-			// set the size of viewing volume
+			// Set the size of viewing volume.
 			viewCamera->setObjectPosition(160.0, 120.0, 36, false);
 			viewCamera->setEyePose(0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f, false);
 			viewCamera->setEyeDistance(eyeDistance, false);
 
-			// (left, bottom, right, top) is set wrt a eye coordinates frame
-			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume
+			// (left, bottom, right, top) is set wrt a eye coordinates frame.
+			// (near, far) is the distances from the eye point(viewpoint) to the near & far clipping planes of viewing volume.
 			viewCamera->setViewBound(-radius, -radius, radius, radius, nearPlane, farPlane);
 #endif
 			viewCamera->setViewport(0, 0, rect.Width(), rect.Height());
@@ -417,7 +417,7 @@ void CWglSceneGraphView::OnInitialUpdate()
 		raiseDrawEvent(true);
 	}
 
-	// using a locally-created context
+	// Using a locally-created context.
 	if (useLocallyCreatedContext_)
 		popContext();
 }
@@ -427,12 +427,12 @@ void CWglSceneGraphView::OnDestroy()
 	CView::OnDestroy();
 
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	// delete a new name base of OpenGL display list
+	// Delete a new name base of OpenGL display list.
 	deleteDisplayListName(false);
 #endif
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: basic routine
+	// This code is required for SWL.WinView: basic routine.
 
 	popContext();
 	popCamera();
@@ -440,12 +440,12 @@ void CWglSceneGraphView::OnDestroy()
 
 void CWglSceneGraphView::OnPaint()
 {
-	CPaintDC dc(this); // device context for painting
+	CPaintDC dc(this);  // Device context for painting.
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: basic routine
+	// This code is required for SWL.WglView: basic routine.
 
-	// using a locally-created context
+	// Using a locally-created context.
 	if (useLocallyCreatedContext_)
 		raiseDrawEvent(true);
 	else
@@ -462,7 +462,7 @@ void CWglSceneGraphView::OnPaint()
 		}
 	}
 
-	// Do not call CView::OnPaint() for painting messages
+	// Do not call CView::OnPaint() for painting messages.
 }
 
 void CWglSceneGraphView::OnSize(UINT nType, int cx, int cy)
@@ -470,14 +470,14 @@ void CWglSceneGraphView::OnSize(UINT nType, int cx, int cy)
 	CView::OnSize(nType, cx, cy);
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: basic routine
+	// This code is required for SWL.WglView: basic routine.
 
 	if (cx <= 0 || cy <= 0) return;
 	resizeView(0, 0, cx, cy);
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::raiseDrawEvent(const bool isContextActivated)
 {
@@ -497,23 +497,23 @@ bool CWglSceneGraphView::raiseDrawEvent(const bool isContextActivated)
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::initializeView()
 {
-	// can we put this in the constructor?
-	// specify black(0.0f, 0.0f, 0.0f, 0.0f) or white(1.0f, 1.0f, 1.0f, 1.0f) as clear color
+	// Can we put this in the constructor?
+	// Specify black(0.0f, 0.0f, 0.0f, 0.0f) or white(1.0f, 1.0f, 1.0f, 1.0f) as clear color.
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	// specify the back of the buffer as clear depth
+	// Specify the back of the buffer as clear depth.
     glClearDepth(1.0f);
-	// enable depth testing
+	// Enable depth testing.
     glEnable(GL_DEPTH_TEST);
-	// the type of depth testing
+	// The type of depth testing.
 	glDepthFunc(GL_LESS);
 
-	// enable stencil testing
+	// Enable stencil testing.
 	//glEnable(GL_STENCIL_TEST);
-	// the type of stencil testing
+	// The type of stencil testing.
 	//glStencilFunc(GL_ALWAYS, 0, 1);
 	//
 	//glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -538,22 +538,22 @@ bool CWglSceneGraphView::initializeView()
 	//glEnable(GL_POLYGON_SMOOTH);
 	//glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
-	// really nice perspective calculations
+	// Really nice perspective calculations.
 	//glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 
-	// lighting
+	// Lighting.
 	glEnable(GL_LIGHTING);
 	glEnable(GL_LIGHT0);
 	glEnable(GL_LIGHT1);
 
-	// create light components
+	// Create light components.
 	const GLfloat ambientLight[] = { 0.1f, 0.1f, 0.1f, 1.0f };
 	const GLfloat diffuseLight[] = { 0.5f, 0.5f, 0.5f, 1.0f };
 	const GLfloat specularLight[] = { 0.0f, 0.0f, 0.0f, 1.0f };
 	const GLfloat position0[] = { 0.2f, 0.2f, 1.0f, 0.0f };
 	const GLfloat position1[] = { 0.2f, 0.2f, -1.0f, 0.0f };
 
-	// assign created components to GL_LIGHT0
+	// Assign created components to GL_LIGHT0.
 	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
 	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
@@ -563,25 +563,25 @@ bool CWglSceneGraphView::initializeView()
 	glLightfv(GL_LIGHT1, GL_SPECULAR, specularLight);
 	glLightfv(GL_LIGHT1, GL_POSITION, position1);
 
-	// polygon winding
+	// Polygon winding.
 	glFrontFace(GL_CCW);
 	glCullFace(GL_BACK);
 	//glEnable(GL_CULL_FACE);
 
-	// surface normal
+	// Surface normal.
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_AUTO_NORMAL);
 
-	// shading model
+	// Shading model.
 	//glShadeModel(GL_FLAT);
 	glShadeModel(GL_SMOOTH);
 
-	// color tracking
+	// Color tracking.
 	glEnable(GL_COLOR_MATERIAL);
-	// set material properties which will be assigned by glColor
+	// Set material properties which will be assigned by glColor.
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
-	// clipping
+	// Clipping.
 	//int maxClipPlanes = 0;
 	//glGetIntegerv(GL_MAX_CLIP_PLANES, &maxClipPlanes);
 
@@ -591,12 +591,12 @@ bool CWglSceneGraphView::initializeView()
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, const int y2)
 {
 #if defined(__USE_OPENGL_DISPLAY_LIST)
-	// delete a new name base of OpenGL display list
+	// Delete a new name base of OpenGL display list.
 	deleteDisplayListName(false);
 #endif
 
@@ -627,7 +627,7 @@ bool CWglSceneGraphView::resizeView(const int x1, const int y1, const int x2, co
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::doPrepareRendering(const context_type & /*context*/, const camera_type & /*camera*/)
 {
@@ -638,11 +638,11 @@ bool CWglSceneGraphView::doPrepareRendering(const context_type & /*context*/, co
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::doRenderStockScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
-	// traverse a scene graph
+	// Traverse a scene graph.
 	if (stockSceneNode_)
 	{
 		const bool isPickingState = swl::ObjectPickerMgr::getInstance().isPicking();
@@ -662,11 +662,11 @@ bool CWglSceneGraphView::doRenderStockScene(const context_type & /*context*/, co
 }
 
 //-------------------------------------------------------------------------
-// This code is required for SWL.WglView: basic routine
+// This code is required for SWL.WglView: basic routine.
 
 bool CWglSceneGraphView::doRenderScene(const context_type & /*context*/, const camera_type & /*camera*/)
 {
-	// traverse a scene graph
+	// Traverse a scene graph.
 	if (rootSceneNode_)
 	{
 		const bool isPickingState = swl::ObjectPickerMgr::getInstance().isPicking();
@@ -690,7 +690,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	stockSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 	rootSceneNode_.reset(new swl::GroupSceneNode<visitor_type>());
 
-	// background
+	// Background.
 	GradientBackgroundShape *bgShape = new GradientBackgroundShape();
 	bgShape->setTopColor(topGradientBackgroundColor_[0], topGradientBackgroundColor_[1], topGradientBackgroundColor_[2], topGradientBackgroundColor_[3]);
 	bgShape->setBottomColor(bottomGradientBackgroundColor_[0], bottomGradientBackgroundColor_[1], bottomGradientBackgroundColor_[2], bottomGradientBackgroundColor_[3]);
@@ -703,7 +703,7 @@ void CWglSceneGraphView::constructSceneGraph()
 #endif
 	stockSceneNode_->addChild(backgroundNode);
 
-	// floor
+	// Floor.
 	boost::shared_ptr<swl::GLShape> floorShape(new FloorShape(*this));
 	floorShape->setColor(floorColor_[0], floorColor_[1], floorColor_[2], floorColor_[3]);
 #if defined(_UNICODE) || defined(UNICODE)
@@ -713,10 +713,10 @@ void CWglSceneGraphView::constructSceneGraph()
 #endif
 	stockSceneNode_->addChild(floorNode);
 
-	// main contents
+	// Main contents.
 #if 0
 	//
-	// a colored mesh
+	// A colored mesh.
 	//
 	boost::shared_ptr<swl::GLShape> coloredMeshShape(new ColoredMeshShape());
 	coloredMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -728,7 +728,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	rootSceneNode_->addChild(coloredMeshNode);
 #elif 1
 	//
-	// a textured mesh
+	// A textured mesh.
 	//
 	boost::shared_ptr<swl::GLShape> texturedMeshShape(new TexturedMeshShape());
 	texturedMeshShape->setColor(0.5f, 0.5f, 0.5f, 1.0f);
@@ -740,7 +740,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	rootSceneNode_->addChild(texturedMeshNode);
 #else
 	//
-	// a trimmed sphere
+	// A trimmed sphere.
 	//
 	boost::shared_ptr<swl::GLShape> trimmedSphereShape(new TrimmedSphereShape());
 	trimmedSphereShape->setColor(1.0f, 0.0f, 0.0f, 1.0f);
@@ -752,7 +752,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	rootSceneNode_->addChild(trimmedSphereNode);
 
 	//
-	// a simple cube
+	// A simple cube.
 	//
 	boost::shared_ptr<swl::GLShape> simpleCubeShape(new SimpleCubeShape());
 	simpleCubeShape->setColor(0.5f, 0.5f, 1.0f, 1.0f);
@@ -764,7 +764,7 @@ void CWglSceneGraphView::constructSceneGraph()
 	rootSceneNode_->addChild(simpleCubeNode);
 #endif
 
-	// color bar
+	// Color bar.
 	boost::shared_ptr<swl::GLShape> colorBarShape(new ColorBarShape());
 #if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> colorBarNode(new swl::GLShapeSceneNode<visitor_type>(colorBarShape, L"color bar"));
@@ -773,7 +773,7 @@ void CWglSceneGraphView::constructSceneGraph()
 #endif
 	rootSceneNode_->addChild(colorBarNode);
 
-	// coordinate frame
+	// Coordinate frame.
 	boost::shared_ptr<swl::GLShape> coordinateFrameShape(new CoordinateFrameShape(*this));
 #if defined(_UNICODE) || defined(UNICODE)
 	boost::shared_ptr<scene_node_type> coordinateFrameNode(new swl::GLShapeSceneNode<visitor_type>(coordinateFrameShape, L"coordinate frame"));
@@ -904,29 +904,29 @@ void CWglSceneGraphView::processToPickObject(const int x, const int y, const int
 
 	context_type::guard_type guard(*context);
 
-	// save states
+	// Save states.
 	GLint oldMatrixMode;
 	glGetIntegerv(GL_MATRIX_MODE, &oldMatrixMode);
 	glPushAttrib(GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT);
 
-	// set attributes
+	// Set attributes.
 	glDisable(GL_LIGHTING);
 	glDepthFunc(GL_LEQUAL);
 
-	// set selection buffer
+	// Set selection buffer.
 	const GLsizei SELECT_BUFFER_SIZE = 64;
 	GLuint selectBuffer[SELECT_BUFFER_SIZE] = { 0, };
 	glSelectBuffer(SELECT_BUFFER_SIZE, selectBuffer);
 
-	// change rendering mode
+	// Change rendering mode.
 	glRenderMode(GL_SELECT);
 
-	// initialize name stack
+	// Initialize name stack.
 	glInitNames();
 	//glPushName(0u);
 
 	{
-		// set attributes
+		// Set attributes.
 		glEnable(GL_DEPTH_TEST);
 		//glDepthRange(0.0, 1.0);
 
@@ -937,41 +937,41 @@ void CWglSceneGraphView::processToPickObject(const int x, const int y, const int
 		glGetDoublev(GL_PROJECTION_MATRIX, projectionMatrix);
 		glGetIntegerv(GL_VIEWPORT, viewport);
 
-		// set projection matrix
+		// Set projection matrix.
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
 		gluPickMatrix(x, viewport[3] - y, width, height, viewport);
 
-		// need to load current projection matrix
+		// Need to load current projection matrix.
 		glMultMatrixd(projectionMatrix);
 
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 			glLoadIdentity();
-			// 1. need to load current modelview matrix
+			// 1. Need to load current modelview matrix.
 			//   e.g.) glLoadMatrixd(modelviewMatrix);
-			// 2. need to be thought of viewing transformation
+			// 2. Need to be thought of viewing transformation.
 			//   e.g.) camera->lookAt();
 			camera->lookAt();
 
 			rootSceneNode_->accept(swl::GLPickObjectVisitor(x, y, width, height));
 		glPopMatrix();
 
-		// pop projection matrix
+		// Pop projection matrix.
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
 	}
 
-	// gather hit records
+	// Gather hit records.
 	const GLint hitCount = glRenderMode(GL_RENDER);
 
-	// pop original attributes
+	// Pop original attributes.
 	glPopAttrib();  // GL_LIGHTING_BIT | GL_DEPTH_BUFFER_BIT
 
 	glMatrixMode(oldMatrixMode);
 
-	// process hits
+	// Process hits.
 	const unsigned int pickedObj = hitCount > 0 ? processHits(hitCount, selectBuffer) : 0u;
 	if (isTemporary)
 	{
@@ -1019,27 +1019,27 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 	unsigned int minZ = 0xffffffff;
 	for (int i = 0; i < hitCount; ++i)
 	{
-		// number of names for each hit.
+		// Number of names for each hit.
 		const GLuint nameCount = *ptr;
 		++ptr;
-		// min. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit.
+		// Min. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit.
 		////const float mnZ = float(*ptr) / 0x7fffffff;
-		//const float mnZ = float(*ptr) / 0xffffffff;  // 2^32 - 1
+		//const float mnZ = float(*ptr) / 0xffffffff;  // 2^32 - 1.
 		const unsigned int mnZ = *ptr;
 		++ptr;
-		// max. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit
+		// Max. window-coordinate z values of all vertices of the primitives that intersectd the viewing volume since the last recorded hit
 		////const float mxZ = float(*ptr) / 0x7fffffff;
-		//const float mxZ = float(*ptr) / 0xffffffff;  // 2^32 - 1
+		//const float mxZ = float(*ptr) / 0xffffffff;  // 2^32 - 1.
 		const unsigned int mxZ = *ptr;
 		++ptr;
 
 		if (0 == nameCount) continue;
 
-		// TODO [check] >> it's a dedicated implementation.
-		const GLuint currObj = *(ptr + nameCount - 1);  // the last object
+		// TODO [check] >> It's a dedicated implementation.
+		const GLuint currObj = *(ptr + nameCount - 1);  // The last object.
 		if (isCoordinateFramePicked)
 		{
-			if (nameCount > 1)  // coordinate frame is picked
+			if (nameCount > 1)  // Coordinate frame is picked.
 			{
 				if (mnZ < minZ)
 				{
@@ -1050,7 +1050,7 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 		}
 		else
 		{
-			if (nameCount > 1)  // coordinate frame is picked
+			if (nameCount > 1)  // Coordinate frame is picked.
 			{
 				minZ = mnZ;
 				selectedObj = currObj;
@@ -1067,10 +1067,10 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 		}
 
 		const GLuint *ptr2 = ptr;
-		//TRACE("***** the number of names for each hit: %d, min z: %f, max z: %f\n", nameCount, mnZ, mxZ);
-		TRACE("***** the number of names for each hit: %d, min z: %d, max z: %d\n", nameCount, mnZ, mxZ);
+		//TRACE("***** The number of names for each hit: %d, min z: %f, max z: %f\n", nameCount, mnZ, mxZ);
+		TRACE("***** The number of names for each hit: %d, min z: %d, max z: %d\n", nameCount, mnZ, mxZ);
 		// the contents of the name stack
-		TRACE("\tthe contents of the name stack: %d", *ptr2);
+		TRACE("\tThe contents of the name stack: %d", *ptr2);
 		++ptr2;
 		for (GLuint j = 1; j < nameCount; ++j)
 		{
@@ -1083,14 +1083,14 @@ unsigned int CWglSceneGraphView::processHits(const int hitCount, const unsigned 
 		ptr += nameCount;
 	}
 
-	TRACE("=====> the picked object: %d\n", selectedObj);
+	TRACE("=====> The picked object: %d\n", selectedObj);
 	return selectedObj;
 }
 
 void CWglSceneGraphView::dragObject(const int x1, const int y1, const int x2, const int y2)
 {
 	// FIXME [implement] >>
-	throw std::runtime_error("not yet implemented");
+	throw std::runtime_error("Not yet implemented");
 }
 
 void CWglSceneGraphView::setPerspective(const bool isPerspective)
@@ -1126,7 +1126,7 @@ void CWglSceneGraphView::setWireFrame(const bool isWireFrame)
 void CWglSceneGraphView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1142,7 +1142,7 @@ void CWglSceneGraphView::OnLButtonDown(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1158,7 +1158,7 @@ void CWglSceneGraphView::OnLButtonUp(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -1172,7 +1172,7 @@ void CWglSceneGraphView::OnLButtonDblClk(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1188,7 +1188,7 @@ void CWglSceneGraphView::OnMButtonDown(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1204,7 +1204,7 @@ void CWglSceneGraphView::OnMButtonUp(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnMButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -1218,7 +1218,7 @@ void CWglSceneGraphView::OnMButtonDblClk(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	SetCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1234,7 +1234,7 @@ void CWglSceneGraphView::OnRButtonDown(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	ReleaseCapture();
 
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
@@ -1250,7 +1250,7 @@ void CWglSceneGraphView::OnRButtonUp(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnRButtonDblClk(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::MouseEvent::EControlKey ckey = (swl::MouseEvent::EControlKey)(
 		((nFlags & MK_CONTROL) == MK_CONTROL ? swl::MouseEvent::CK_CTRL : swl::MouseEvent::CK_NONE) |
 		((nFlags & MK_SHIFT) == MK_SHIFT ? swl::MouseEvent::CK_SHIFT : swl::MouseEvent::CK_NONE)
@@ -1264,7 +1264,7 @@ void CWglSceneGraphView::OnRButtonDblClk(UINT nFlags, CPoint point)
 void CWglSceneGraphView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
 		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
 		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
@@ -1283,7 +1283,7 @@ void CWglSceneGraphView::OnMouseMove(UINT nFlags, CPoint point)
 BOOL CWglSceneGraphView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::MouseEvent::EButton btn = (swl::MouseEvent::EButton)(
 		((nFlags & MK_LBUTTON) == MK_LBUTTON ? swl::MouseEvent::BT_LEFT : swl::MouseEvent::BT_NONE) |
 		((nFlags & MK_MBUTTON) == MK_MBUTTON ? swl::MouseEvent::BT_MIDDLE : swl::MouseEvent::BT_NONE) |
@@ -1302,7 +1302,7 @@ BOOL CWglSceneGraphView::OnMouseWheel(UINT nFlags, short zDelta, CPoint point)
 void CWglSceneGraphView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	//viewController_.pressKey(swl::KeyEvent(nChar, nRepCnt));
 	if (viewStateFsm_) viewStateFsm_->pressKey(swl::KeyEvent(nChar, nRepCnt));
 
@@ -1312,7 +1312,7 @@ void CWglSceneGraphView::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWglSceneGraphView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt));
 	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt));
 
@@ -1322,7 +1322,7 @@ void CWglSceneGraphView::OnKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWglSceneGraphView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: event handling
+	// This code is required for SWL.WglView: event handling.
 	const swl::KeyEvent::EControlKey ckey = ((nFlags >> 28) & 0x01) == 0x01 ? swl::KeyEvent::CK_ALT : swl::KeyEvent::CK_NONE;
 	//viewController_.releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
 	if (viewStateFsm_) viewStateFsm_->releaseKey(swl::KeyEvent(nChar, nRepCnt, ckey));
@@ -1333,42 +1333,42 @@ void CWglSceneGraphView::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 void CWglSceneGraphView::OnViewhandlingPan()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPan());
 }
 
 void CWglSceneGraphView::OnViewhandlingRotate()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtRotate());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomregion()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomRegion());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomall()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomAll());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomin()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomIn());
 }
 
 void CWglSceneGraphView::OnViewhandlingZoomout()
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtZoomOut());
 }
 
@@ -1377,7 +1377,7 @@ void CWglSceneGraphView::OnViewhandlingPickobject()
 	const bool isRedrawn = swl::ObjectPickerMgr::getInstance().containPickedObject();
 
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WglView: view state
+	// This code is required for SWL.WglView: view state.
 	if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickObject());
 	//if (viewStateFsm_) viewStateFsm_->process_event(swl::EvtPickAndDragObject());
 
@@ -1387,7 +1387,7 @@ void CWglSceneGraphView::OnViewhandlingPickobject()
 void CWglSceneGraphView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PanState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1396,7 +1396,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingPan(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::RotateState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1405,7 +1405,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingRotate(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomRegionState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1414,7 +1414,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomregion(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomAllState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1423,7 +1423,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomall(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomInState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1432,7 +1432,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomin(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::ZoomOutState *>() ? 1 : 0);
 	else pCmdUI->SetCheck(0);
@@ -1441,7 +1441,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingZoomout(CCmdUI *pCmdUI)
 void CWglSceneGraphView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 {
 	//-------------------------------------------------------------------------
-	// This code is required for SWL.WinView: view state
+	// This code is required for SWL.WinView: view state.
 	if (viewStateFsm_)
 		pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickObjectState *>() ? 1 : 0);
 		//pCmdUI->SetCheck(viewStateFsm_->state_cast<const swl::PickAndDragObjectState *>() ? 1 : 0);
@@ -1450,7 +1450,7 @@ void CWglSceneGraphView::OnUpdateViewhandlingPickobject(CCmdUI *pCmdUI)
 
 void CWglSceneGraphView::OnPrintandcapturePrintviewusinggdi()
 {
-	// initialize a PRINTDLG structure
+	// Initialize a PRINTDLG structure.
 	PRINTDLG pd;
 	memset(&pd, 0, sizeof(pd));
 	pd.lStructSize = sizeof(pd);
@@ -1463,7 +1463,7 @@ void CWglSceneGraphView::OnPrintandcapturePrintviewusinggdi()
 	//
 	const HCURSOR oldCursor = SetCursor(LoadCursor(0L, IDC_WAIT));
 
-	// each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
+	// Each logical unit is mapped to one device pixel. Positive x is to the right. positive y is down.
 	SetMapMode(pd.hDC, MM_TEXT);
 
 	DOCINFO di;
@@ -1471,20 +1471,20 @@ void CWglSceneGraphView::OnPrintandcapturePrintviewusinggdi()
 	di.lpszDocName = _T("OpenGL Print");
 	di.lpszOutput = NULL;
 
-	// start the print job
+	// Start the print job.
 	StartDoc(pd.hDC, &di);
 	StartPage(pd.hDC);
 
 	//
 #if 0
-	// save view's states
+	// Save view's states.
 	const bool isPrinting = isPrinting_;
 	if (!isPrinting) isPrinting_ = true;
 
 	if (!swl::printWglViewUsingGdi(*this, pd.hDC))
 		AfxMessageBox(_T("fail to print a view"), MB_OK | MB_ICONSTOP);
 
-	// restore view's states
+	// Restore view's states.
 	if (!isPrinting) isPrinting_ = false;
 #else
 	CDC *pDC = CDC::FromHandle(pd.hDC);
@@ -1495,7 +1495,7 @@ void CWglSceneGraphView::OnPrintandcapturePrintviewusinggdi()
 	}
 #endif
 
-	// end the print job
+	// End the print job.
 	EndPage(pd.hDC);
 	EndDoc(pd.hDC);
 	DeleteDC(pd.hDC);
@@ -1517,7 +1517,7 @@ void CWglSceneGraphView::OnPrintandcaptureCaptureviewusinggdi()
 		const std::string filePathName((char *)(LPCTSTR)dlg.GetPathName());
 #endif
 		if (!swl::captureWglViewUsingGdi(filePathName, *this, GetSafeHwnd()))
-			AfxMessageBox(_T("fail to capture a view"), MB_OK | MB_ICONSTOP);
+			AfxMessageBox(_T("Fail to capture a view"), MB_OK | MB_ICONSTOP);
 
 		DeleteObject(SetCursor(oldCursor ? oldCursor : LoadCursor(0L, IDC_ARROW)));
 	}
@@ -1526,7 +1526,7 @@ void CWglSceneGraphView::OnPrintandcaptureCaptureviewusinggdi()
 void CWglSceneGraphView::OnPrintandcaptureCaptureviewusinggdiplus()
 {
 	// FIXME [add] >>
-	AfxMessageBox(_T("not yet implemented"), MB_OK | MB_ICONSTOP);
+	AfxMessageBox(_T("Not yet implemented"), MB_OK | MB_ICONSTOP);
 }
 
 void CWglSceneGraphView::OnPrintandcaptureCopytoclipboard()
@@ -1545,7 +1545,7 @@ void CWglSceneGraphView::OnPrintandcaptureCopytoclipboard()
 	CBitmap *oldBitmap = memDC.SelectObject(&bitmap);
 	memDC.BitBlt(0, 0, rect.Width(), rect.Height(), &dc, 0, 0, SRCCOPY);
 
-	// clipboard
+	// Clipboard.
 	if (OpenClipboard())
 	{
 		EmptyClipboard();
