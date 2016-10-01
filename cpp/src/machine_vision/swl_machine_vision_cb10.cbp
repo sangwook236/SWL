@@ -65,6 +65,7 @@
 		<Unit filename="../../inc/swl/machine_vision/ImageRectificationUsingOpenCV.h" />
 		<Unit filename="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />
 		<Unit filename="../../inc/swl/machine_vision/KinectSensor.h" />
+		<Unit filename="../../inc/swl/machine_vision/NonMaximaSuppression.h" />
 		<Unit filename="../../inc/swl/machine_vision/ScaleSpace.h" />
 		<Unit filename="../../inc/swl/machine_vision/SkeletonAlgorithm.h" />
 		<Unit filename="DerivativesOfGaussian.cpp" />

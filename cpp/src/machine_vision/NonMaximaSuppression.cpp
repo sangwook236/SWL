@@ -42,7 +42,11 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 //#include "nms.hpp"
-#include "NonMaximaSuppression.hpp"
+#include "swl/machine_vision/NonMaximumSuppression.h"
+//#include "NonMaximaSuppression.hpp"
+
+namespace swl {
+
 using namespace std;
 using namespace cv;
 
@@ -67,53 +71,55 @@ using namespace cv;
  *
  * Example:
  * \code
- * 	// create a random test image
+ * 	// Create a random test image.
  * 	Mat random(Size(2000,2000), DataType<float>::type);
  * 	randn(random, 1, 1);
  *
- * 	// only look for local maxima above the value of 1
+ * 	// Only look for local maxima above the value of 1.
  * 	Mat mask = (random > 1);
  *
- * 	// find the local maxima with a window of 50
+ * 	// Find the local maxima with a window of 50.
  * 	Mat maxima;
  * 	nonMaximaSuppression(random, 50, maxima, mask);
  *
- * 	// optionally set all non-maxima to zero
+ * 	// Optionally set all non-maxima to zero.
  * 	random.setTo(0, maxima == 0);
  * \endcode
  *
- * @param src the input image/matrix, of any valid cv type
- * @param sz the size of the window
- * @param dst the mask of type CV_8U, where non-zero elements correspond to
- * local maxima of the src
- * @param mask an input mask to skip particular elements
+ * @param src The input image/matrix, of any valid cv type.
+ * @param sz The size of the window.
+ * @param dst The mask of type CV_8U, where non-zero elements correspond to local maxima of the src.
+ * @param mask An input mask to skip particular elements.
  */
-void nonMaximaSuppression(const Mat& src, const int sz, Mat& dst, const Mat mask)
+/*static*/ void NonMaximumSuppression::computeNonMaximumSuppression(const cv::Mat& src, const int sz, cv::Mat& dst, const cv::Mat mask)
+//void nonMaximaSuppression(const Mat& src, const int sz, Mat& dst, const Mat mask)
 {
-	// initialise the block mask and destination
+	// Initialise the block mask and destination.
 	const int M = src.rows;
 	const int N = src.cols;
 	const bool masked = !mask.empty();
 	Mat block = 255*Mat::ones(Size(2*sz+1,2*sz+1), CV_8UC1);
 	dst = Mat::zeros(src.size(), CV_8UC1);
 
-	// iterate over image blocks
-	for (int m = 0; m < M; m+=sz+1) {
-		for (int n = 0; n < N; n+=sz+1) {
+	// Iterate over image blocks.
+	for (int m = 0; m < M; m += sz + 1)
+	{
+		for (int n = 0; n < N; n += sz + 1)
+		{
 			Point  ijmax;
 			double vcmax, vnmax;
 
-			// get the maximal candidate within the block
+			// Get the maximal candidate within the block.
 			Range ic(m, min(m+sz+1,M));
 			Range jc(n, min(n+sz+1,N));
 			minMaxLoc(src(ic,jc), NULL, &vcmax, NULL, &ijmax, masked ? mask(ic,jc) : noArray());
 			Point cc = ijmax + Point(jc.start,ic.start);
 
-			// search the neighbours centered around the candidate for the true maxima
+			// Search the neighbours centered around the candidate for the true maxima.
 			Range in(max(cc.y-sz,0), min(cc.y+sz+1,M));
 			Range jn(max(cc.x-sz,0), min(cc.x+sz+1,N));
 
-			// mask out the block whose maxima we already know
+			// Mask out the block whose maxima we already know.
 			Mat blockmask;
 			block(Range(0,in.size()), Range(0,jn.size())).copyTo(blockmask);
 			Range iis(ic.start-in.start, min(ic.start-in.start+sz+1, in.size()));
@@ -123,10 +129,13 @@ void nonMaximaSuppression(const Mat& src, const int sz, Mat& dst, const Mat mask
 			minMaxLoc(src(in,jn), NULL, &vnmax, NULL, &ijmax, masked ? mask(in,jn).mul(blockmask) : blockmask);
 			Point cn = ijmax + Point(jn.start, in.start);
 
-			// if the block centre is also the neighbour centre, then it's a local maxima
-			if (vcmax > vnmax) {
+			// If the block centre is also the neighbour centre, then it's a local maxima.
+			if (vcmax > vnmax)
+			{
 				dst.at<unsigned char>(cc.y, cc.x) = 255;
 			}
 		}
 	}
 }
+
+}  // namespace swl

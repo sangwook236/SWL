@@ -105,6 +105,7 @@
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageRectificationUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageUndistortionUsingOpenCV.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\KinectSensor.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\NonMaximumSuppression.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ScaleSpace.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\SkeletonAlgorithm.h" />
   </ItemGroup>
@@ -128,6 +129,8 @@
     <ClCompile Include="ImageRectificationUsingOpenCV.cpp" />
     <ClCompile Include="ImageUndistortionUsingOpenCV.cpp" />
     <ClCompile Include="KinectSensor.cpp" />
+    <ClCompile Include="NonMaximaSuppression.cpp" />
+    <ClCompile Include="NonMaximumSuppression.cpp" />
     <ClCompile Include="ScaleSpace.cpp" />
     <ClCompile Include="SkeletonAlgorithm.cpp" />
   </ItemGroup>

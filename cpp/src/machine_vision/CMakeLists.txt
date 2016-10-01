@@ -7,6 +7,7 @@ set(SRCS
 	ImageUndistortionUsingOpenCV.cpp
 	KinectSensor.cpp
 	ScaleSpace.cpp
+	NonMaximaSuppression.cpp
 	SkeletonAlgorithm.cpp
 )
 set(LIBS

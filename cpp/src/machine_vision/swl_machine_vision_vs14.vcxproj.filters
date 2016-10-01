@@ -39,6 +39,9 @@
     <ClInclude Include="..\..\inc\swl\machine_vision\SkeletonAlgorithm.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\swl\machine_vision\NonMaximumSuppression.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImageRectificationUsingOpenCV.cpp">
@@ -60,6 +63,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SkeletonAlgorithm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonMaximaSuppression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="NonMaximumSuppression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

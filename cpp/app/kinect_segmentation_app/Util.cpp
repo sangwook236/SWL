@@ -1,5 +1,5 @@
-#define CV_NO_BACKWARD_COMPATIBILITY
 #include "swl/machine_vision/KinectSensor.h"
+#define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -19,45 +19,45 @@ void load_kinect_sensor_parameters_from_IR_to_RGB(
 	// REF [site] >> Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
 	//	http://docs.opencv.org/doc/tutorials/calib3d/camera_calibration/camera_calibration.html
 
-	// Caution:
+	// NOTICE [caution] >>
 	//	In order to use the calibration results from Camera Calibration Toolbox for Matlab in OpenCV,
 	//	a parameter for radial distrtortion, kc(5) has to be active, est_dist(5) = 1.
 
-	// IR (left) to RGB (right)
+	// IR (left) to RGB (right).
 #if 1
-	// the 5th distortion parameter, kc(5) is activated.
+	// The 5th distortion parameter, kc(5) is activated.
 
-	const double fc_ir[] = { 5.865281297534211e+02, 5.866623900166177e+02 };  // [pixel]
-	const double cc_ir[] = { 3.371860463542209e+02, 2.485298169373497e+02 };  // [pixel]
+	const double fc_ir[] = { 5.865281297534211e+02, 5.866623900166177e+02 };  // [pixel].
+	const double cc_ir[] = { 3.371860463542209e+02, 2.485298169373497e+02 };  // [pixel].
 	const double alpha_c_ir = 0.0;
-	//const double kc_ir[] = { -1.227084070414958e-01, 5.027511830344261e-01, -2.562850607972214e-03, 6.916249031489476e-03, -5.507709925923052e-01 };  // 5x1 vector
-	const double kc_ir[] = { -1.227084070414958e-01, 5.027511830344261e-01, -2.562850607972214e-03, 6.916249031489476e-03, -5.507709925923052e-01, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_ir[] = { -1.227084070414958e-01, 5.027511830344261e-01, -2.562850607972214e-03, 6.916249031489476e-03, -5.507709925923052e-01 };  // 5x1 vector.
+	const double kc_ir[] = { -1.227084070414958e-01, 5.027511830344261e-01, -2.562850607972214e-03, 6.916249031489476e-03, -5.507709925923052e-01, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
-	const double fc_rgb[] = { 5.248648751941851e+02, 5.268281060449414e+02 };  // [pixel]
-	const double cc_rgb[] = { 3.267484107269922e+02, 2.618261807606497e+02 };  // [pixel]
+	const double fc_rgb[] = { 5.248648751941851e+02, 5.268281060449414e+02 };  // [pixel].
+	const double cc_rgb[] = { 3.267484107269922e+02, 2.618261807606497e+02 };  // [pixel].
 	const double alpha_c_rgb = 0.0;
-	//const double kc_rgb[] = { 2.796770514235670e-01, -1.112507253647945e+00, 9.265501548915561e-04, 2.428229310663184e-03, 1.744019737212440e+00 };  // 5x1 vector
-	const double kc_rgb[] = { 2.796770514235670e-01, -1.112507253647945e+00, 9.265501548915561e-04, 2.428229310663184e-03, 1.744019737212440e+00, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_rgb[] = { 2.796770514235670e-01, -1.112507253647945e+00, 9.265501548915561e-04, 2.428229310663184e-03, 1.744019737212440e+00 };  // 5x1 vector.
+	const double kc_rgb[] = { 2.796770514235670e-01, -1.112507253647945e+00, 9.265501548915561e-04, 2.428229310663184e-03, 1.744019737212440e+00, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
 	const double rotVec[] = { -1.936270295074452e-03, 1.331596538715070e-02, 3.404073398703758e-03 };
-	const double transVec[] = { 2.515260082139980e+01, 4.059127243511693e+00, -5.588303932036697e+00 };  // [mm]
+	const double transVec[] = { 2.515260082139980e+01, 4.059127243511693e+00, -5.588303932036697e+00 };  // [mm].
 #else
-	// the 5th distortion parameter, kc(5) is deactivated.
+	// The 5th distortion parameter, kc(5) is deactivated.
 
-	const double fc_ir[] = { 5.864902565580264e+02, 5.867305900503998e+02 };  // [pixel]
-	const double cc_ir[] = { 3.376088045224677e+02, 2.480083390372575e+02 };  // [pixel]
+	const double fc_ir[] = { 5.864902565580264e+02, 5.867305900503998e+02 };  // [pixel].
+	const double cc_ir[] = { 3.376088045224677e+02, 2.480083390372575e+02 };  // [pixel].
 	const double alpha_c_ir = 0.0;
-	//const double kc_ir[] = { -1.123867977947529e-01, 3.552017514491446e-01, -2.823972305243438e-03, 7.246763414437084e-03, 0.0 };  // 5x1 vector
-	const double kc_ir[] = { -1.123867977947529e-01, 3.552017514491446e-01, -2.823972305243438e-03, 7.246763414437084e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_ir[] = { -1.123867977947529e-01, 3.552017514491446e-01, -2.823972305243438e-03, 7.246763414437084e-03, 0.0 };  // 5x1 vector.
+	const double kc_ir[] = { -1.123867977947529e-01, 3.552017514491446e-01, -2.823972305243438e-03, 7.246763414437084e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
-	const double fc_rgb[] = { 5.256215953836251e+02, 5.278165866956751e+02 };  // [pixel]
-	const double cc_rgb[] = { 3.260532981578608e+02, 2.630788286947369e+02 };  // [pixel]
+	const double fc_rgb[] = { 5.256215953836251e+02, 5.278165866956751e+02 };  // [pixel].
+	const double cc_rgb[] = { 3.260532981578608e+02, 2.630788286947369e+02 };  // [pixel].
 	const double alpha_c_rgb = 0.0;
-	//const double kc_rgb[] = { 2.394862387380747e-01, -5.840355691714197e-01, 2.567740590187774e-03, 2.044179978023951e-03, 0.0 };  // 5x1 vector
-	const double kc_rgb[] = { 2.394862387380747e-01, -5.840355691714197e-01, 2.567740590187774e-03, 2.044179978023951e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_rgb[] = { 2.394862387380747e-01, -5.840355691714197e-01, 2.567740590187774e-03, 2.044179978023951e-03, 0.0 };  // 5x1 vector.
+	const double kc_rgb[] = { 2.394862387380747e-01, -5.840355691714197e-01, 2.567740590187774e-03, 2.044179978023951e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
 	const double rotVec[] = { 1.121432126402549e-03, 1.535221550916760e-02, 3.701648572107407e-03 };
-	const double transVec[] = { 2.512732389978993e+01, 3.724869927389498e+00, -4.534758982979088e+00 };  // [mm]
+	const double transVec[] = { 2.512732389978993e+01, 3.724869927389498e+00, -4.534758982979088e+00 };  // [mm].
 #endif
 
 	//
@@ -92,45 +92,45 @@ void load_kinect_sensor_parameters_from_RGB_to_IR(
 	// REF [site] >> Camera Calibration Toolbox for Matlab: http://www.vision.caltech.edu/bouguetj/calib_doc/
 	//	http://docs.opencv.org/doc/tutorials/calib3d/camera_calibration/camera_calibration.html
 
-	// Caution:
+	// NOTICE [caution] >>
 	//	In order to use the calibration results from Camera Calibration Toolbox for Matlab in OpenCV,
 	//	a parameter for radial distrtortion, kc(5) has to be active, est_dist(5) = 1.
 
-	// RGB (left) to IR (right)
+	// RGB (left) to IR (right).
 #if 1
-	// the 5th distortion parameter, kc(5) is activated.
+	// The 5th distortion parameter, kc(5) is activated.
 
-	const double fc_rgb[] = { 5.248648079874888e+02, 5.268280486062615e+02 };  // [pixel]
-	const double cc_rgb[] = { 3.267487100838014e+02, 2.618261169946102e+02 };  // [pixel]
+	const double fc_rgb[] = { 5.248648079874888e+02, 5.268280486062615e+02 };  // [pixel].
+	const double cc_rgb[] = { 3.267487100838014e+02, 2.618261169946102e+02 };  // [pixel].
 	const double alpha_c_rgb = 0.0;
-	//const double kc_rgb[] = { 2.796764337988712e-01, -1.112497355183840e+00, 9.264749543097661e-04, 2.428507887293728e-03, 1.743975665436613e+00 };  // 5x1 vector
-	const double kc_rgb[] = { 2.796764337988712e-01, -1.112497355183840e+00, 9.264749543097661e-04, 2.428507887293728e-03, 1.743975665436613e+00, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_rgb[] = { 2.796764337988712e-01, -1.112497355183840e+00, 9.264749543097661e-04, 2.428507887293728e-03, 1.743975665436613e+00 };  // 5x1 vector.
+	const double kc_rgb[] = { 2.796764337988712e-01, -1.112497355183840e+00, 9.264749543097661e-04, 2.428507887293728e-03, 1.743975665436613e+00, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
-	const double fc_ir[] = { 5.865282023957649e+02, 5.866624209441105e+02 };  // [pixel]
-	const double cc_ir[] = { 3.371875014947813e+02, 2.485295493095561e+02 };  // [pixel]
+	const double fc_ir[] = { 5.865282023957649e+02, 5.866624209441105e+02 };  // [pixel].
+	const double cc_ir[] = { 3.371875014947813e+02, 2.485295493095561e+02 };  // [pixel].
 	const double alpha_c_ir = 0.0;
-	//const double kc_ir[] = { -1.227176734054719e-01, 5.028746725848668e-01, -2.563029340202278e-03, 6.916996280663117e-03, -5.512162545452755e-01 };  // 5x1 vector
-	const double kc_ir[] = { -1.227176734054719e-01, 5.028746725848668e-01, -2.563029340202278e-03, 6.916996280663117e-03, -5.512162545452755e-01, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_ir[] = { -1.227176734054719e-01, 5.028746725848668e-01, -2.563029340202278e-03, 6.916996280663117e-03, -5.512162545452755e-01 };  // 5x1 vector.
+	const double kc_ir[] = { -1.227176734054719e-01, 5.028746725848668e-01, -2.563029340202278e-03, 6.916996280663117e-03, -5.512162545452755e-01, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
 	const double rotVec[] = { 1.935939237060295e-03, -1.331788958930441e-02, -3.404128236480992e-03 };
-	const double transVec[] = { -2.515262012891160e+01, -4.059118899373607e+00, 5.588237589014362e+00 };  // [mm]
+	const double transVec[] = { -2.515262012891160e+01, -4.059118899373607e+00, 5.588237589014362e+00 };  // [mm].
 #else
-	// the 5th distortion parameter, kc(5) is deactivated.
+	// The 5th distortion parameter, kc(5) is deactivated.
 
-	const double fc_rgb[] = { 5.256217798767822e+02, 5.278167798992870e+02 };  // [pixel]
-	const double cc_rgb[] = { 3.260534767468189e+02, 2.630800669346188e+02 };  // [pixel]
+	const double fc_rgb[] = { 5.256217798767822e+02, 5.278167798992870e+02 };  // [pixel].
+	const double cc_rgb[] = { 3.260534767468189e+02, 2.630800669346188e+02 };  // [pixel].
 	const double alpha_c_rgb = 0.0;
-	//const double kc_rgb[] = { 2.394861400525463e-01, -5.840298777969020e-01, 2.568959896208732e-03, 2.044336479083819e-03, 0.0 };  // 5x1 vector
-	const double kc_rgb[] = { 2.394861400525463e-01, -5.840298777969020e-01, 2.568959896208732e-03, 2.044336479083819e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_rgb[] = { 2.394861400525463e-01, -5.840298777969020e-01, 2.568959896208732e-03, 2.044336479083819e-03, 0.0 };  // 5x1 vector.
+	const double kc_rgb[] = { 2.394861400525463e-01, -5.840298777969020e-01, 2.568959896208732e-03, 2.044336479083819e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
-	const double fc_ir[] = { 5.864904832545356e+02, 5.867308191567271e+02 };  // [pixel]
-	const double cc_ir[] = { 3.376079004969836e+02, 2.480098376453992e+02 };  // [pixel]
+	const double fc_ir[] = { 5.864904832545356e+02, 5.867308191567271e+02 };  // [pixel].
+	const double cc_ir[] = { 3.376079004969836e+02, 2.480098376453992e+02 };  // [pixel].
 	const double alpha_c_ir = 0.0;
-	//const double kc_ir[] = { -1.123902857373373e-01, 3.552211727724343e-01, -2.823183218548772e-03, 7.246270574438420e-03, 0.0 };  // 5x1 vector
-	const double kc_ir[] = { -1.123902857373373e-01, 3.552211727724343e-01, -2.823183218548772e-03, 7.246270574438420e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector
+	//const double kc_ir[] = { -1.123902857373373e-01, 3.552211727724343e-01, -2.823183218548772e-03, 7.246270574438420e-03, 0.0 };  // 5x1 vector.
+	const double kc_ir[] = { -1.123902857373373e-01, 3.552211727724343e-01, -2.823183218548772e-03, 7.246270574438420e-03, 0.0, 0.0, 0.0, 0.0 };  // 8x1 vector.
 
 	const double rotVec[] = { -1.121214964017936e-03, -1.535031632771925e-02, -3.701579055761772e-03 };
-	const double transVec[] = { -2.512730902761022e+01, -3.724884753207001e+00, 4.534776794502955e+00 };  // [mm]
+	const double transVec[] = { -2.512730902761022e+01, -3.724884753207001e+00, 4.534776794502955e+00 };  // [mm].
 #endif
 
 	//
@@ -161,8 +161,8 @@ void load_kinect_sensor_parameters_from_RGB_to_IR(
  * Normally you wouldn't call this function directly from your code.
  *
  * Parameters:
- * 		im    Binary image with range = [0,1]
- * 		iter  0=even, 1=odd
+ * 		im    Binary image with range = [0,1].
+ * 		iter  0=even, 1=odd.
  */
 void thinningZhangSuenIteration(cv::Mat& img, int iter)
 {
@@ -181,13 +181,13 @@ void thinningZhangSuenIteration(cv::Mat& img, int iter)
 		nRows = 1;
 	}
 
-	uchar *nw, *no, *ne;    // north (pAbove)
+	uchar *nw, *no, *ne;  // North (pAbove).
 	uchar *we, *me, *ea;
-	uchar *sw, *so, *se;    // south (pBelow)
+	uchar *sw, *so, *se;  // South (pBelow).
 
 	uchar *pDst;
 
-	// initialize row pointers
+	// Initialize row pointers.
 	uchar *pAbove = NULL;
 	uchar *pCurr  = img.ptr<uchar>(0);
 	uchar *pBelow = img.ptr<uchar>(1);
@@ -195,14 +195,14 @@ void thinningZhangSuenIteration(cv::Mat& img, int iter)
 	int x, y;
 	for (y = 1; y < img.rows - 1; ++y)
 	{
-		// shift the rows up by one
+		// Shift the rows up by one.
 		pAbove = pCurr;
 		pCurr  = pBelow;
 		pBelow = img.ptr<uchar>(y+1);
 
 		pDst = marker.ptr<uchar>(y);
 
-		// initialize col pointers
+		// Initialize col pointers.
 		no = &(pAbove[0]);
 		ne = &(pAbove[1]);
 		me = &(pCurr[0]);
@@ -212,7 +212,7 @@ void thinningZhangSuenIteration(cv::Mat& img, int iter)
 
 		for (x = 1; x < img.cols - 1; ++x)
 		{
-			// shift col pointers left by one (scan left to right)
+			// Shift col pointers left by one (scan left to right).
 			nw = no;
 			no = ne;
 			ne = &(pAbove[x+1]);
@@ -243,8 +243,8 @@ void thinningZhangSuenIteration(cv::Mat& img, int iter)
 * Perform one thinning iteration.
 * Normally you wouldn't call this function directly from your code.
 *
-* @param  im    Binary image with range = 0-1
-* @param  iter  0=even, 1=odd
+* @param  im    Binary image with range = 0-1.
+* @param  iter  0=even, 1=odd.
 */
 void thinningGuoHallIteration(cv::Mat &im, const int iter)
 {
@@ -306,7 +306,7 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 	const int num_pixels = (2*radius + 1) * (2*radius + 1) - 1;
 	int num;
 
-	// FIXME [enhance] >> speed up.
+	// FIXME [enhance] >> Speed up.
 	//cv::Mat phase(height, width, CV_32FC1, cv::Scalar::all(0)), mag(height, width, CV_32FC1, cv::Scalar::all(0));
 	float *phases = new float [num_pixels], *mags = new float [num_pixels];
 	float *ptr_phase, *ptr_mag;
@@ -315,7 +315,7 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 		for (int x = 0; x < width; ++x)
 		{
 			dep0 = depth_map.at<unsigned short>(y, x);
-			if (0 == dep0) continue;  // invalid depth.
+			if (0 == dep0) continue;  // Invalid depth.
 
 			memset(phases, 0, num_pixels * sizeof(float));
 			memset(mags, 0, num_pixels * sizeof(float));
@@ -334,13 +334,13 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 
 				if (y - r == lowery)
 				{
-					// upper horizontal pixels (rightward)
+					// Upper horizontal pixels (rightward).
 					for (i = lowerx; i <= upperx; ++i)
 					{
 						dep = depth_map.at<unsigned short>(lowery, i);
-						// FIXME [check] >> does we consider the case of dep0 == dep?
-						//if (0 == dep) continue;  // invalid depth.
-						if (0 == dep || dep0 == dep) continue;  // invalid depth.
+						// FIXME [check] >> Does we consider the case of dep0 == dep?
+						//if (0 == dep) continue;  // Invalid depth.
+						if (0 == dep || dep0 == dep) continue;  // Invalid depth.
 
 						*ptr_phase++ = (dep >= dep0) ? std::atan2(float(y - lowery), float(i - x)) : std::atan2(float(lowery - y), float(x - i));
 						//*ptr_phase++ = (dep >= dep0) ? std::atan2(float(lowery - y), float(i - x)) : std::atan2(float(y - lowery), float(x - i));
@@ -350,13 +350,13 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 				}
 				if (x + r == upperx)
 				{
-					// right vertical pixels (downward)
+					// Right vertical pixels (downward).
 					for (j = lowery2; j <= uppery2; ++j)
 					{
 						dep = depth_map.at<unsigned short>(j, upperx);
-						// FIXME [check] >> does we consider the case of dep0 == dep?
-						//if (0 == dep) continue;  // invalid depth.
-						if (0 == dep || dep0 == dep) continue;  // invalid depth.
+						// FIXME [check] >> Does we consider the case of dep0 == dep?
+						//if (0 == dep) continue;  // Invalid depth.
+						if (0 == dep || dep0 == dep) continue;  // Invalid depth.
 
 						*ptr_phase++ = (dep >= dep0) ? std::atan2(float(y - j), float(upperx - x)) : std::atan2(float(j - y), float(x - upperx));
 						//*ptr_phase++ = (dep >= dep0) ? std::atan2(float(j - y), float(upperx - x)) : std::atan2(float(y - j), float(x - upperx));
@@ -366,13 +366,13 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 				}
 				if (y + r == uppery)
 				{
-					// lower horizontal pixels (leftward)
+					// Lower horizontal pixels (leftward).
 					for (i = upperx; i >= lowerx; --i)
 					{
 						dep = depth_map.at<unsigned short>(uppery, i);
-						// FIXME [check] >> does we consider the case of dep0 == dep?
-						//if (0 == dep) continue;  // invalid depth.
-						if (0 == dep || dep0 == dep) continue;  // invalid depth.
+						// FIXME [check] >> Does we consider the case of dep0 == dep?
+						//if (0 == dep) continue;  // Invalid depth.
+						if (0 == dep || dep0 == dep) continue;  // Invalid depth.
 
 						*ptr_phase++ = (dep >= dep0) ? std::atan2(float(y - uppery), float(i - x)) : std::atan2(float(uppery - y), float(x - i));
 						//*ptr_phase++ = (dep >= dep0) ? std::atan2(float(uppery - y), float(i - x)) : std::atan2(float(y - uppery), float(x - i));
@@ -386,9 +386,9 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 					for (j = uppery2; j >= lowery2; --j)
 					{
 						dep = depth_map.at<unsigned short>(j, lowerx);
-						// FIXME [check] >> does we consider the case of dep0 == dep?
-						//if (0 == dep) continue;  // invalid depth.
-						if (0 == dep || dep0 == dep) continue;  // invalid depth.
+						// FIXME [check] >> Does we consider the case of dep0 == dep?
+						//if (0 == dep) continue;  // Invalid depth.
+						if (0 == dep || dep0 == dep) continue;  // Invalid depth.
 
 						*ptr_phase++ = (dep >= dep0) ? std::atan2(float(y - j), float(lowerx - x)) : std::atan2(float(j - y), float(x - lowerx));
 						//*ptr_phase++ = (dep >= dep0) ? std::atan2(float(j - y), float(lowerx - x)) : std::atan2(float(y - j), float(x - lowerx));
@@ -399,16 +399,16 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 			}
 
 #if 0
-			// for checking.
-			std::cout << "phases (" << y << ", " << x << ") = " << std::endl;
+			// For checking.
+			std::cout << "Phases (" << y << ", " << x << ") = " << std::endl;
 			for (int ii = 0; ii < num_pixels; ++ii)
 				std::cout << (phases[ii] * 180.0f / boost::math::constants::pi<float>()) << ", ";
 			std::cout << std::endl;
-			std::cout << "magnitude (" << y << ", " << x << ") = " << std::endl;
+			std::cout << "Magnitude (" << y << ", " << x << ") = " << std::endl;
 			for (int ii = 0; ii < num_pixels; ++ii)
 				std::cout << mags[ii] << ", ";
 			std::cout << std::endl;
-			std::cout << "num (" << y << ", " << x << ") = " << num << std::endl;
+			std::cout << "Num (" << y << ", " << x << ") = " << num << std::endl;
 #endif
 		}
 	}
@@ -420,6 +420,7 @@ void compute_phase_distribution_from_neighborhood(const cv::Mat &depth_map, cons
 	delete [] mags;
 }
 
+#if 0
 // REF [file] >> snake() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_util.cpp
 void snake(IplImage *srcImage, IplImage *grayImage)
 {
@@ -438,27 +439,27 @@ void snake(IplImage *srcImage, IplImage *grayImage)
 	{
 		IplImage *tmp_img = cvCloneImage(grayImage);
 
-		// make a average filtering.
+		// Make a average filtering.
 		cvSmooth(tmp_img, img, CV_BLUR, 31, 15);
-		//iplBlur(tmp_img, img, 31, 31, 15, 15);  // don't use IPL.
+		//iplBlur(tmp_img, img, 31, 31, 15, 15);  // Don't use IPL.
 
-		// do a threshold.
+		// Do a threshold.
 		cvThreshold(img, tmp_img, threshold, 255, CV_THRESH_BINARY);
-		//iplThreshold(img, tmp_img, threshold);  // don't use IPL.
+		//iplThreshold(img, tmp_img, threshold);  // Don't use IPL.
 
-		// expand the thresholded image of ones - smoothing the edge.
-		// move start position of snake out since there are no balloon force.
+		// Expand the thresholded image of ones - smoothing the edge.
+		// Move start position of snake out since there are no balloon force.
 		cvDilate(tmp_img, img, NULL, 3);
 
 		cvReleaseImage(&tmp_img);
 	}
 
-	// find the contours.
+	// Find the contours.
 	CvMemStorage *storage = cvCreateMemStorage(0);
 	CvSeq *contour = NULL;
 	cvFindContours(img, storage, &contour, sizeof(CvContour), CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
-	// run through the found coutours.
+	// Run through the found coutours.
 	std::vector<CvPoint> points(NUMBER_OF_SNAKE_POINTS, cvPoint(0, 0));
 	while (contour)
 	{
@@ -467,11 +468,11 @@ void snake(IplImage *srcImage, IplImage *grayImage)
 			//memset(points, 0, NUMBER_OF_SNAKE_POINTS * sizeof(CvPoint));
 
 			cvSmooth(grayImage, img, CV_BLUR, 7, 3);
-			//iplBlur(grayImage, img, 7, 7, 3, 3);  // don't use IPL.
+			//iplBlur(grayImage, img, 7, 7, 3, 3);  // Don't use IPL.
 
 #if 0
 			std::vecto<CvPoint> pts(contour->total);
-			cvCvtSeqToArray(contour, &pts[0], CV_WHOLE_SEQ);  // copy the contour to an array.
+			cvCvtSeqToArray(contour, &pts[0], CV_WHOLE_SEQ);  // Copy the contour to an array.
 
 			// number of jumps between the desired points (downsample only!).
 			const int stride = int(contour->total / NUMBER_OF_SNAKE_POINTS);
@@ -490,15 +491,15 @@ void snake(IplImage *srcImage, IplImage *grayImage)
 			}
 #endif
 
-			// iterate snake.
+			// Iterate snake.
 			cvSnakeImage(img, &points[0], NUMBER_OF_SNAKE_POINTS, &alpha, &beta, &gamma, CV_VALUE, win, term_criteria, use_gradient);
 
-			// draw snake on image.
+			// Draw snake on image.
 			CvPoint *points_ptr = (CvPoint *)&points[0];
 			cvPolyLine(srcImage, (CvPoint **)points_ptr, &NUMBER_OF_SNAKE_POINTS, 1, 1, CV_RGB(255, 0, 0), 3, 8, 0);
 		}
 
-		// get next contours.
+		// Get next contours.
 		contour = contour->h_next;
 	}
 
@@ -520,14 +521,14 @@ void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> 
 
 		cv::Mat binary_img;
 
-		// make a average filtering.
+		// Make a average filtering.
 		cv::blur(gray_img, binary_img, cv::Size(31, 15));
 
-		// thresholding
+		// Thresholding
 		cv::threshold(binary_img, binary_img, threshold, 255, cv::THRESH_BINARY);
 
-		// expand the thressholded image of ones - smoothing the edge.
-		// move start position of snake out since there are no ballon force.
+		// Expand the thressholded image of ones - smoothing the edge.
+		// Move start position of snake out since there are no ballon force.
 		{
 			const cv::Mat &selement = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3), cv::Point(-1, -1));
 			cv::dilate(binary_img, binary_img, selement, cv::Point(-1, -1), 3);
@@ -539,7 +540,7 @@ void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> 
 
 	const CvTermCriteria term_criteria = cvTermCriteria(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 100, 1.0);
 
-	// run through the found coutours.
+	// Run through the found coutours.
 	const size_t &numPts = contour.size();
 	const size_t numSnakePts = 0 == numSnakePoints ? numPts : numSnakePoints;
 	if (numPts >= numSnakePts)
@@ -556,7 +557,7 @@ void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> 
 			points[i] = cvPoint(pt.x, pt.y);
 		}
 
-		// iterate snake.
+		// Iterate snake.
 #if defined(__GNUC__)
         IplImage blurred_img_ipl = (IplImage)blurred_img;
 		cvSnakeImage(&blurred_img_ipl, &points[0], numSnakePts, (float *)&alpha, (float *)&beta, (float *)&gamma, CV_VALUE, win, term_criteria, use_gradient ? 1 : 0);
@@ -567,12 +568,13 @@ void fit_contour_by_snake(const cv::Mat &gray_img, const std::vector<cv::Point> 
 		snake_contour.assign(points.begin(), points.end());
 	}
 }
+#endif
 
 // REF [file] >> zhang_suen_thinning_algorithm() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_skeletonization_and_thinning.cpp
 void zhang_suen_thinning_algorithm(const cv::Mat &src, cv::Mat &dst)
 {
 	dst = src.clone();
-	dst /= 255;  // convert to binary image
+	dst /= 255;  // Convert to binary image.
 
 	cv::Mat prev = cv::Mat::zeros(dst.size(), CV_8UC1);
 	cv::Mat diff;
@@ -626,7 +628,7 @@ bool simple_convex_hull(const cv::Mat &img, const cv::Rect &roi, const int pixVa
 	if (convexHull.empty()) return false;
 
 #if 1
-    // comment this out if you do not want approximation
+    // Comment this out if you do not want approximation.
 	cv::approxPolyDP(convexHull, convexHull, 3.0, true);
 #endif
 
@@ -656,8 +658,8 @@ void smooth_image(const cv::Mat &in, cv::Mat &out)
 	// METHOD #3: box filtering.
 
 	{
-		// FIXME [adjust] >> adjust parameters.
-		const int ddepth = -1;  // the output image depth. -1 to use src.depth().
+		// FIXME [adjust] >> Adjust parameters.
+		const int ddepth = -1;  // The output image depth. -1 to use src.depth().
 		const int kernelSize = 5;
 		const bool normalize = true;
 		cv::boxFilter(in, out, ddepth, cv::Size(kernelSize, kernelSize), cv::Point(-1, -1), normalize, cv::BORDER_DEFAULT);
@@ -667,10 +669,10 @@ void smooth_image(const cv::Mat &in, cv::Mat &out)
 	// METHOD #4: bilateral filtering.
 
 	{
-		// FIXME [adjust] >> adjust parameters.
-		const int diameter = -1;  // diameter of each pixel neighborhood that is used during filtering. if it is non-positive, it is computed from sigmaSpace.
-		const double sigmaColor = 3.0;  // for range filter.
-		const double sigmaSpace = 50.0;  // for space filter.
+		// FIXME [adjust] >> Adjust parameters.
+		const int diameter = -1;  // Diameter of each pixel neighborhood that is used during filtering. if it is non-positive, it is computed from sigmaSpace.
+		const double sigmaColor = 3.0;  // For range filter.
+		const double sigmaSpace = 50.0;  // For space filter.
 		cv::bilateralFilter(in, out, diameter, sigmaColor, sigmaSpace, cv::BORDER_DEFAULT);
 	}
 #else
@@ -683,10 +685,10 @@ void smooth_image(const cv::Mat &in, cv::Mat &out)
 // REF [file] >> canny() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_edge_detection.cpp
 void canny(const cv::Mat &gray, const int lowerEdgeThreshold, const int upperEdgeThreshold, const bool useL2, cv::Mat &edge)
 {
-	// smoothing.
+	// Smoothing.
 	smooth_image(gray, edge);
 
-	// run the edge detector on grayscale.
+	// Run the edge detector on grayscale.
 	cv::Canny(edge, edge, lowerEdgeThreshold, upperEdgeThreshold, 3, useL2);
 }
 
@@ -705,7 +707,7 @@ bool load_kinect_images(const std::string &rgb_input_filename, const std::string
 		return false;
 	}
 
-	// rectify Kinect images.
+	// Rectify Kinect images.
 	if (useRectifiedImages)
 	{
 		boost::scoped_ptr<swl::KinectSensor> kinect;
@@ -715,7 +717,7 @@ bool load_kinect_images(const std::string &rgb_input_filename, const std::string
 			cv::Mat distCoeffs_ir, distCoeffs_rgb;
 			cv::Mat R, T;
 
-			// load the camera parameters of a Kinect sensor.
+			// Load the camera parameters of a Kinect sensor.
 			if (useIRtoRGB)
 				local::load_kinect_sensor_parameters_from_IR_to_RGB(K_ir, distCoeffs_ir, K_rgb, distCoeffs_rgb, R, T);
 			else
@@ -742,14 +744,14 @@ bool load_kinect_images(const std::string &rgb_input_filename, const std::string
 
 #if 1
 	{
-		// show input images
-		cv::imshow("input RGB image", rgb_input_image);
+		// Show input images.
+		cv::imshow("Input RGB image", rgb_input_image);
 
 		cv::Mat tmp_image;
 		double minVal, maxVal;
 		cv::minMaxLoc(depth_input_image, &minVal, &maxVal);
 		depth_input_image.convertTo(tmp_image, CV_32FC1, 1.0 / maxVal, 0.0);
-		cv::imshow("input depth image", tmp_image);
+		cv::imshow("Input depth image", tmp_image);
 	}
 #endif
 
@@ -771,7 +773,7 @@ bool load_structure_tensor_mask(const std::string &filename, cv::Mat &structure_
 	structure_tensor_mask = cv::imread(filename, CV_LOAD_IMAGE_UNCHANGED);
 	if (structure_tensor_mask.empty())
 	{
-		std::cout << "structure tensor mask file not found: " << filename << std::endl;
+		std::cout << "Structure tensor mask file not found: " << filename << std::endl;
 		return false;
 	}
 
@@ -784,13 +786,13 @@ void construct_valid_depth_image(const cv::Mat &depth_input_image, cv::Mat &dept
 	const cv::Mat &selement5 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5), cv::Point(-1, -1));
 	const cv::Mat &selement7 = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7, 7), cv::Point(-1, -1));
 
-	// make depth validity mask.
+	// Make depth validity mask.
 	{
 		cv::erode(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
 		cv::dilate(depth_validity_mask, depth_validity_mask, selement3, cv::Point(-1, -1), 3);
 	}
 
-	// construct valid depth image.
+	// Construct valid depth image.
 	{
 		valid_depth_image.setTo(cv::Scalar::all(0));
 		depth_input_image.copyTo(valid_depth_image, depth_validity_mask);
@@ -826,7 +828,7 @@ void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const dou
 	const int deriv_kernel_size = 2 * (int)std::ceil(deriv_sigma) + 1;
 	cv::Mat kernelX(1, deriv_kernel_size, CV_64FC1), kernelY(deriv_kernel_size, 1, CV_64FC1);
 
-	// construct derivative kernels.
+	// Construct derivative kernels.
 	for (int i = 0, k = -deriv_kernel_size/2; k <= deriv_kernel_size/2; ++i, ++k)
 	{
 		const double val = k * std::exp(-k*k / _2sigma2) / den;
@@ -834,26 +836,26 @@ void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const dou
 		kernelY.at<double>(i, 0) = val;
 	}
 
-	// compute x- & y-gradients.
+	// Compute x- & y-gradients.
 	cv::Mat Ix, Iy;
 	cv::filter2D(img, Ix, -1, kernelX, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
 	cv::filter2D(img, Iy, -1, kernelY, cv::Point(-1, -1), 0.0, cv::BORDER_DEFAULT);
 
-	// solve eigensystem.
+	// Solve eigensystem.
 
-	const cv::Mat Ix2 = Ix.mul(Ix);  // Ix^2 = Ix * Ix
-	const cv::Mat Iy2 = Iy.mul(Iy);  // Iy^2 = Iy * Iy
-	const cv::Mat IxIy = Ix.mul(Iy);  // Ix * Iy
+	const cv::Mat Ix2 = Ix.mul(Ix);  // Ix^2 = Ix * Ix.
+	const cv::Mat Iy2 = Iy.mul(Iy);  // Iy^2 = Iy * Iy.
+	const cv::Mat IxIy = Ix.mul(Iy);  // Ix * Iy.
 
 #if 1
-	// TODO [add] >> if Gaussian blur is required, blurring is applied to Ix2, Iy2, & IxIy.
+	// TODO [add] >> If Gaussian blur is required, blurring is applied to Ix2, Iy2, & IxIy.
 	const int blur_kernel_size = 2 * (int)std::ceil(blur_sigma) + 1;
 	cv::GaussianBlur(Ix2, Ix2, cv::Size(blur_kernel_size, blur_kernel_size), blur_sigma, blur_sigma, cv::BORDER_DEFAULT);
 	cv::GaussianBlur(Iy2, Iy2, cv::Size(blur_kernel_size, blur_kernel_size), blur_sigma, blur_sigma, cv::BORDER_DEFAULT);
 	cv::GaussianBlur(IxIy, IxIy, cv::Size(blur_kernel_size, blur_kernel_size), blur_sigma, blur_sigma, cv::BORDER_DEFAULT);
 #endif
 
-	// structure tensor at point (i, j), S = [ Ix2(i, j) IxIy(i, j) ; IxIy(i, j) Iy2(i, j) ];
+	// Structure tensor at point (i, j), S = [ Ix2(i, j) IxIy(i, j) ; IxIy(i, j) Iy2(i, j) ].
 	const cv::Mat detS = Ix2.mul(Iy2) - IxIy.mul(IxIy);
 	const cv::Mat S11_plus_S22 = Ix2 + Iy2;
 #if 0
@@ -888,10 +890,10 @@ void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const dou
 	cv::sqrt(sqrtDiscriminant, sqrtDiscriminant);
 #endif
 
-	// eigenvalues
+	// Eigenvalues.
 	eval1 = (S11_plus_S22 + sqrtDiscriminant) * 0.5;
 	eval2 = (S11_plus_S22 - sqrtDiscriminant) * 0.5;
-	// eigenvectors
+	// Eigenvectors.
 	evec1 = cv::Mat::zeros(img.size(), CV_64FC2);
 	evec2 = cv::Mat::zeros(img.size(), CV_64FC2);
 
@@ -910,10 +912,10 @@ void structure_tensor_2d(const cv::Mat &img, const double deriv_sigma, const dou
 		}
 }
 
-// REF [file] >> compute_valid_region_using_coherence() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
+// REF [function] >> compute_valid_region_using_coherence() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
 void compute_valid_region_using_coherence(const cv::Mat &eval1, const cv::Mat &eval2, const cv::Mat &valid_eval_region_mask, const cv::Mat &constant_region_mask, cv::Mat &valid_region)
 {
-	// coherence = 1 when the gradient is totally aligned, and coherence = 0 (lambda1 = lambda2) when it has no predominant direction.
+	// Coherence = 1 when the gradient is totally aligned, and coherence = 0 (lambda1 = lambda2) when it has no predominant direction.
 	cv::Mat coherence((eval1 - eval2) / (eval1 + eval2));  // if eigenvalue2 > 0.
 	coherence = coherence.mul(coherence);
 
@@ -935,7 +937,7 @@ void compute_valid_region_using_coherence(const cv::Mat &eval1, const cv::Mat &e
 	valid_region.setTo(cv::Scalar::all(0), constant_region_mask);
 }
 
-// REF [file] >> compute_valid_region_using_ev_ratio() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
+// REF [function] >> compute_valid_region_using_ev_ratio() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_structure_tensor.cpp
 void compute_valid_region_using_ev_ratio(const cv::Mat &eval1, const cv::Mat &eval2, const cv::Mat &valid_eval_region_mask, const cv::Mat &constant_region_mask, cv::Mat &valid_region)
 {
 	cv::Mat eval_ratio(valid_eval_region_mask.size(), CV_8UC1, cv::Scalar::all(0));
@@ -947,7 +949,7 @@ void compute_valid_region_using_ev_ratio(const cv::Mat &eval1, const cv::Mat &ev
 
 #if 0
 	const double threshold = 0.5;
-	valid_region = cv::abs(eval_ratio - 1.0f) <= threshold;  // if lambda1 = lambda2, the gradient in the window has no predominant direction.
+	valid_region = cv::abs(eval_ratio - 1.0f) <= threshold;  // If lambda1 = lambda2, the gradient in the window has no predominant direction.
 #else
 	const double threshold1 = 1.0, threshold2 = 5.0;
 	valid_region = threshold1 <= eval_ratio & eval_ratio <= threshold2;
@@ -969,24 +971,24 @@ void construct_depth_variation_mask_using_structure_tensor(const cv::Mat &depth_
 	cv::Mat eval1, eval2, evec1, evec2;
 	structure_tensor_2d(img_double, deriv_sigma, blur_sigma, eval1, eval2, evec1, evec2);
 
-	// post-processing.
+	// Post-processing.
 	eval1 = cv::abs(eval1);
 	eval2 = cv::abs(eval2);
 
 #if 0
 	cv::minMaxLoc(eval1, &minVal, &maxVal);
-	std::cout << "max eigenvalue: " << minVal << ", " << maxVal << std::endl;
+	std::cout << "Max eigenvalue: " << minVal << ", " << maxVal << std::endl;
 	cv::minMaxLoc(eval2, &minVal, &maxVal);
-	std::cout << "min eigenvalue: " << minVal << ", " << maxVal << std::endl;
+	std::cout << "Min eigenvalue: " << minVal << ", " << maxVal << std::endl;
 #endif
 
 	const double tol = 1.0e-10;
 	const cv::Mat valid_eval_region_mask(eval2 >= tol);
-	const cv::Mat constant_region_mask(eval1 < tol & eval2 < tol);  // if lambda1 = lambda2 = 0, the image within the window is constant.
+	const cv::Mat constant_region_mask(eval1 < tol & eval2 < tol);  // If lambda1 = lambda2 = 0, the image within the window is constant.
 
 	cv::Mat valid_region;
 #if 1
-	// METHOD #1; using coherence.
+	// METHOD #1: using coherence.
 	//	REF [site] >> http://en.wikipedia.org/wiki/Structure_tensor
 	compute_valid_region_using_coherence(eval1, eval2, valid_eval_region_mask, constant_region_mask, depth_variation_mask);
 #else
@@ -997,135 +999,9 @@ void construct_depth_variation_mask_using_structure_tensor(const cv::Mat &depth_
 
 void construct_depth_variation_mask_using_depth_changing(const cv::Mat &depth_image, cv::Mat &depth_variation_mask)
 {
-	// compute phase distribution from neighborhood
+	// Compute phase distribution from neighborhood.
 	const int radius = 2;
 	compute_phase_distribution_from_neighborhood(depth_image, radius, depth_variation_mask);
-}
-
-void non_maximum_suppression(const cv::Mat &in_float, cv::Mat &out_uint8)
-{
-	// non-maxima suppression
-	out_uint8 = cv::Mat::zeros(in_float.size(), CV_8UC1);
-
-	const int &rows = in_float.rows;
-	const int &cols = in_float.cols;
-	for (int r = 0; r < rows; ++r)
-	{
-		for (int c = 0; c < cols; ++c)
-		{
-			const float &pix = in_float.at<float>(r, c);
-
-			if (r - 1 >= 0)  // (r - 1, c)
-			{
-				const float &pix2 = in_float.at<float>(r - 1, c);
-				if (pix <= pix2) continue;
-			}
-			if (c + 1 > cols)  // (r, c + 1)
-			{
-				const float &pix2 = in_float.at<float>(r, c + 1);
-				if (pix <= pix2) continue;
-			}
-			if (r + 1 > rows)  // (r + 1, c)
-			{
-				const float &pix2 = in_float.at<float>(r + 1, c);
-				if (pix <= pix2) continue;
-			}
-			if (c - 1 >= 0)  // (r, c - 1)
-			{
-				const float &pix2 = in_float.at<float>(r, c - 1);
-				if (pix <= pix2) continue;
-			}
-
-			if (r - 1 >= 0 && c + 1 < cols)  // (r - 1, c + 1)
-			{
-				const float &pix2 = in_float.at<float>(r - 1, c + 1);
-				if (pix <= pix2) continue;
-			}
-			if (r + 1 < rows && c + 1 < cols)  // (r + 1, c + 1)
-			{
-				const float &pix2 = in_float.at<float>(r + 1, c + 1);
-				if (pix <= pix2) continue;
-			}
-			if (r + 1 < rows && c - 1 >= 0)  // (r + 1, c - 1)
-			{
-				const float &pix2 = in_float.at<float>(r + 1, c - 1);
-				if (pix <= pix2) continue;
-			}
-			if (r - 1 >= 0 && c - 1 >= 0)  // (r - 1, c - 1)
-			{
-				const float &pix2 = in_float.at<float>(r - 1, c - 1);
-				if (pix <= pix2) continue;
-			}
-
-			out_uint8.at<unsigned char>(r, c) = 255;
-		}
-	}
-}
-
-// FiXME [fix] >> not correctly working.
-void check_mountain_peak(const int ridx, const int cidx, const int rows, const int cols, const cv::Mat &in_float, cv::Mat &peak_flag, cv::Mat &visit_flag, const bool start_flag)
-{
-/*
-	const int r1 = ridx - 1 < 0 ? 0 : ridx - 1;
-	const int r2 = ridx + 1 >= rows ? rows - 1 : ridx + 1;
-	const int c1 = cidx - 1 < 0 ? 0 : cidx - 1;
-	const int c2 = cidx + 1 >= cols ? cols - 1 : cidx + 1;
-*/
-	const int r1 = ridx - 1 < 0 ? ridx : ridx - 1;
-	const int r2 = ridx + 1 >= rows ? ridx : ridx + 1;
-	const int c1 = cidx - 1 < 0 ? cidx : cidx - 1;
-	const int c2 = cidx + 1 >= cols ? cidx : cidx + 1;
-	assert(r1 <= r2 && c1 <= c2);
-
-	visit_flag.at<unsigned char>(ridx, cidx) = 255;
-
-	const float &pix = in_float.at<float>(ridx, cidx);
-	bool near_peak_flag = false;
-	if (!start_flag)
-	{
-		for (int r = r1; r <= r2; ++r)
-		{
-			for (int c = c1; c <= c2; ++c)
-			{
-				if (ridx == r && cidx == c) continue;
-				if (255 == peak_flag.at<unsigned char>(r, c))
-				{
-					near_peak_flag = true;
-					continue;
-				}
-
-				if (in_float.at<float>(r, c) > pix) return;
-			}
-		}
-	}
-
-	if (start_flag || near_peak_flag)
-	{
-		peak_flag.at<unsigned char>(ridx, cidx) = 255;
-		for (int r = r1; r <= r2; ++r)
-			for (int c = c1; c <= c2; ++c)
-				if ((ridx != r || cidx != c) && 255 != peak_flag.at<unsigned char>(r, c) && 0 == visit_flag.at<unsigned char>(r, c))
-					check_mountain_peak(r, c, rows, cols, in_float, peak_flag, visit_flag, false);
-	}
-}
-
-// FiXME [fix] >> not correctly working.
-void find_mountain_chain(const cv::Mat &in_float, cv::Mat &out_uint8)
-{
-	const int &rows = in_float.rows;
-	const int &cols = in_float.cols;
-
-	cv::Mat visit_flag(in_float.size(), CV_8UC1, cv::Scalar::all(0));
-	for (int r = 0; r < rows; ++r)
-	{
-		for (int c = 0; c < cols; ++c)
-		{
-			if (255 == out_uint8.at<unsigned char>(r, c))
-			{
-				check_mountain_peak(r, c, rows, cols, in_float, out_uint8, visit_flag, true);
-			}
-		}
-	}
 }
 
 }  // namespace swl

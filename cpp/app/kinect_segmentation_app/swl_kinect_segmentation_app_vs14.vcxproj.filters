@@ -72,9 +72,6 @@
     <ClInclude Include="DepthGuidedMap.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NonMaximaSuppression.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -102,9 +99,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DepthGuidedMap.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonMaximaSuppression.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
