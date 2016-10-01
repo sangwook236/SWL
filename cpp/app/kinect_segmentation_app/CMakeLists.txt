@@ -20,7 +20,6 @@ set(SRCS
 	DepthGuidedMap.cpp
 	EfficientGraphBasedImageSegmentation.cpp
 	gSLIC.cpp
-	NonMaximaSuppression.cpp
 	SegmentationUsingGrabCut.cpp
 	SegmentationUsingGraphCut.cpp
 	Util.cpp
