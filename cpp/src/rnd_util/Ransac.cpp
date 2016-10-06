@@ -61,7 +61,8 @@ size_t Ransac::runRANSAC(const size_t maxIterationCount, const size_t minInlierC
 	std::vector<size_t> indices(availableSampleSetSize, -1);
 
 	// TODO [check] >>
-	size_t prosacSampleCount = 10;
+	//size_t prosacSampleCount = 10;
+	size_t prosacSampleCount = availableSampleSetSize + 10;
 	iteration_ = 0;
 	while (iteration_ < maxIteration && inlierCount < minInlierCount)
 	{
@@ -132,7 +133,8 @@ size_t Ransac::runMLESAC(const size_t maxIterationCount, const size_t minInlierC
 	std::vector<size_t> indices(availableSampleSetSize, -1);
 
 	// TODO [check] >>
-	size_t prosacSampleCount = 10;
+	//size_t prosacSampleCount = 10;
+	size_t prosacSampleCount = availableSampleSetSize + 10;
 	iteration_ = 0;
 	const double eps = 1.0e-10;
 	while (iteration_ < maxIteration && inlierCount < minInlierCount)

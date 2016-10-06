@@ -141,13 +141,13 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 void line2d_estimation_using_ransac()
 {
 	const double LINE_EQN[3] = { 2, 3, -1 };  // 2 * x + 3 * y - 1 = 0.
-	const size_t NUM_LINE = 100;
-	const size_t NUM_NOISE = 500;
-	const double eps = 1.0e-10;
+	const size_t NUM_INLIERS = 100;
+	const size_t NUM_OUTLIERS = 500;
+	const double eps = 1.0e-20;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_LINE + NUM_NOISE);
+	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -156,14 +156,14 @@ void line2d_estimation_using_ransac()
 		const double sigma = 0.1;
 		//const double sigma = 0.2;  // Much harder.
 		std::normal_distribution<double> noiseDist(0.0, sigma);
-		for (size_t i = 0; i < NUM_LINE; ++i)
+		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = -(LINE_EQN[0] * x + LINE_EQN[2]) / LINE_EQN[1];
 			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
-		for (size_t i = 0; i < NUM_NOISE; ++i)
+		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
 			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
 		std::random_shuffle(samples.begin(), samples.end());

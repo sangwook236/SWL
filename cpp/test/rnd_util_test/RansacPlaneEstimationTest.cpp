@@ -158,13 +158,13 @@ void plane3d_estimation_using_ransac()
 {
 	//const double PLANE_EQN[4] = { 0.5774, -0.5774, 0.5774, -1.1547 };  // x - y + z - 2 = 0.
 	const double PLANE_EQN[4] = { 1, -1, 1, -2 };  // x - y + z - 2 = 0.
-	const size_t NUM_PLANE = 100;
-	const size_t NUM_NOISE = 500;
-	const double eps = 1.0e-10;
+	const size_t NUM_INLIERS = 100;
+	const size_t NUM_OUTLIERS = 500;
+	const double eps = 1.0e-20;
 
 	// Generate random points.
 	std::vector<std::array<double, 3>> samples;
-	samples.reserve(NUM_PLANE + NUM_NOISE);
+	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -173,14 +173,14 @@ void plane3d_estimation_using_ransac()
 		const double sigma = 0.1;
 		//const double sigma = 0.2;  // Much harder.
 		std::normal_distribution<double> noiseDist(0.0, sigma);
-		for (size_t i = 0; i < NUM_PLANE; ++i)
+		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = unifDistInlier(RNG), z = -(PLANE_EQN[0] * x + PLANE_EQN[1] * y + PLANE_EQN[3]) / PLANE_EQN[2];
 			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG), z + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
-		for (size_t i = 0; i < NUM_NOISE; ++i)
+		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
 			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
 		std::random_shuffle(samples.begin(), samples.end());

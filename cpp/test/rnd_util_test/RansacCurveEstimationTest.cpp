@@ -292,7 +292,7 @@ size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags,
 // REF [function] >> GeometryUtil::computeNearestPointWithQuadratic().
 double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const double x0, const double y0) const
 {
-	const double eps = 1.0e-10;
+	const double eps = 1.0e-20;
 
 	// Compute distance from a point to a model.
 	const double c2 = c_ * c_;
@@ -330,6 +330,7 @@ double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const doubl
 // REF [function] >> CurveFitting::estimateQuadraticByLeastSquares().
 bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices)
 {
+#if 0
 	const size_t dim = 4;
 	Eigen::MatrixXd AA(sampleSize, dim);
 	{
@@ -350,11 +351,44 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	const size_t last = V.rows() - 1;
-	a_ = V(last, 0);
-	b_ = V(last, 1);
-	c_ = V(last, 2);
-	d_ = V(last, 3);
+	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	a_ = V(dim - 1, 0);
+	b_ = V(dim - 1, 1);
+	c_ = V(dim - 1, 2);
+	d_ = V(dim - 1, 3);
+#else
+	const size_t dim = 3;
+	if (sampleSize < dim) return false;
+
+	Eigen::MatrixXd AA(sampleSize, dim);
+	Eigen::VectorXd bb(sampleSize);
+	{
+		size_t k = 0;
+		for (const auto& idx : indices)
+		{
+			const std::array<double, 2>& pt = samples_[idx];
+			AA(k, 0) = pt[0] * pt[0]; AA(k, 1) = pt[0]; AA(k, 2) = 1.0;
+			bb(k) = pt[1];
+			++k;
+		}
+	}
+
+#if 1
+	// Use SVD for linear least squares.
+	const Eigen::VectorXd& sol = AA.jacobiSvd(Eigen::ComputeThinU | Eigen::ComputeThinV).solve(bb);
+#else
+	// Use normal matrix for linear least squares.
+	//const Eigen::VectorXd& sol = (AA.transpose() * AA).inverse() * AA.transpose() * bb;  // Slow.
+	const Eigen::VectorXd& sol = (AA.transpose() * AA).ldlt().solve(AA.transpose() * bb);
+#endif
+	assert(dim == sol.size());
+
+	// NOTICE [caution] >> How to deal with the case where c = 0.
+	a_ = sol(0);
+	b_ = sol(1);
+	c_ = -1.0;
+	d_ = sol(2);
+#endif
 
 	return true;
 }
@@ -369,7 +403,10 @@ void drawQuadratic(cv::Mat& rgb, const double a, const double b, const double c,
 	{
 		const double x1 = x0 + inc;
 		const double y0 = a * x0*x0 + b * x0 + c, y1 = a * x1*x1 + b * x1 + c;
-		cv::line(rgb, cv::Point((int)std::floor(x0 * scale + sx + 0.5), rgb.cols - (int)std::floor(y0 * scale + sy + 0.5)), cv::Point((int)std::floor(x1 * scale + sx + 0.5), rgb.cols - (int)std::floor(y1 * scale + sy + 0.5)), color, thickness, cv::LINE_AA);
+		// When y-axis is upward.
+		cv::line(rgb, cv::Point((int)std::floor(x0 * scale + sx + 0.5), rgb.rows - (int)std::floor(y0 * scale + sy + 0.5)), cv::Point((int)std::floor(x1 * scale + sx + 0.5), rgb.rows - (int)std::floor(y1 * scale + sy + 0.5)), color, thickness, cv::LINE_AA);
+		// When y-axis is downward.
+		//cv::line(rgb, cv::Point((int)std::floor(x0 * scale + sx + 0.5), (int)std::floor(y0 * scale + sy + 0.5)), cv::Point((int)std::floor(x1 * scale + sx + 0.5), (int)std::floor(y1 * scale + sy + 0.5)), color, thickness, cv::LINE_AA);
 
 		x0 = x1;
 	} while (x0 <= xmax);
@@ -382,13 +419,13 @@ void drawQuadratic(cv::Mat& rgb, const double a, const double b, const double c,
 void circle2d_estimation_using_ransac()
 {
 	const double CIRCLE_EQN[4] = { 1, -2, 4, -4 };  // (x - 1)^2 + (y + 2)^2 = 3^2 <=> x^2 + y^2 - 2 * x + 4 * y - 4 = 0.
-	const size_t NUM_CIRCLE = 100;
-	const size_t NUM_NOISE = 500;
-	const double eps = 1.0e-10;
+	const size_t NUM_INLIERS = 100;
+	const size_t NUM_OUTLIERS = 500;
+	const double eps = 1.0e-20;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_CIRCLE + NUM_NOISE);
+	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		const double b = CIRCLE_EQN[1] / CIRCLE_EQN[0], c = CIRCLE_EQN[2] / CIRCLE_EQN[0], d = CIRCLE_EQN[3] / CIRCLE_EQN[0];
 
@@ -399,7 +436,7 @@ void circle2d_estimation_using_ransac()
 		const double sigma = 0.1;
 		//const double sigma = 0.2;  // Much harder.
 		std::normal_distribution<double> noiseDist(0.0, sigma);
-		for (size_t i = 0; i < NUM_CIRCLE; ++i)
+		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG);
 			const double y = (std::rand() % 2) ? (std::sqrt(0.25*c*c - x*x - b*x - d) - 0.5*c) : (-std::sqrt(0.25*c*c - x*x - b*x - d) - 0.5*c);
@@ -409,7 +446,7 @@ void circle2d_estimation_using_ransac()
 		std::uniform_real_distribution<double> unifDistOutlier(-6, 6);  // [-6, 6].
 		//std::uniform_real_distribution<double> unifDistOutlier1(-4, 6);  // [-4, 6].
 		//std::uniform_real_distribution<double> unifDistOutlier2(-7, 3);  // [-7, 3].
-		for (size_t i = 0; i < NUM_NOISE; ++i)
+		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
 		{
 			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
 			//samples.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
@@ -541,13 +578,13 @@ void circle2d_estimation_using_ransac()
 void quadratic2d_estimation_using_ransac()
 {
 	const double QUADRATIC_EQN[4] = { 1, -1, 1, -2 };  // x^2 - x + y - 2 = 0.
-	const size_t NUM_QUADRATIC = 100;
-	const size_t NUM_NOISE = 500;
-	const double eps = 1.0e-10;
+	const size_t NUM_INLIERS = 100;
+	const size_t NUM_OUTLIERS = 500;
+	const double eps = 1.0e-20;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_QUADRATIC + NUM_NOISE);
+	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -556,7 +593,7 @@ void quadratic2d_estimation_using_ransac()
 		const double sigma = 0.1;
 		//const double sigma = 0.2;  // Much harder.
 		std::normal_distribution<double> noiseDist(0.0, sigma);
-		for (size_t i = 0; i < NUM_QUADRATIC; ++i)
+		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG);
 			const double y = -(QUADRATIC_EQN[0] * x * x + QUADRATIC_EQN[1] * x + QUADRATIC_EQN[3]) / QUADRATIC_EQN[2];
@@ -565,7 +602,7 @@ void quadratic2d_estimation_using_ransac()
 
 		std::uniform_real_distribution<double> unifDistOutlier1(-4, 4);  // [-4, 4].
 		std::uniform_real_distribution<double> unifDistOutlier2(-20, 5);  // [-20, 5].
-		for (size_t i = 0; i < NUM_NOISE; ++i)
+		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
 			samples.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
 
 		std::random_shuffle(samples.begin(), samples.end());

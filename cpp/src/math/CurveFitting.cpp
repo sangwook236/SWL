@@ -17,7 +17,7 @@ namespace swl {
 {
 	const size_t numPoints = points.size();
 
-#if 1
+#if 0
 	const size_t dim = 3;
 	Eigen::MatrixXd AA(numPoints, dim);
 	{
@@ -37,10 +37,10 @@ namespace swl {
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	const size_t last = V.rows() - 1;
-	a = V(last, 0);
-	b = V(last, 1);
-	c = V(last, 2);
+	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	a = V(dim - 1, 0);
+	b = V(dim - 1, 1);
+	c = V(dim - 1, 2);
 #else
 	const size_t dim = 2;
 	if (numPoints < dim) return false;
@@ -67,7 +67,8 @@ namespace swl {
 #endif
 	assert(dim == sol.size());
 
-	// NOTICE [caution] >> How to handle a case where a line is nearly vertical (b ~= 0, infinite slope).
+	// NOTICE [caution] >> How to deal with a case where a line is nearly vertical (b ~= 0, infinite slope).
+	//	- Can do something for exceptional cases in most cases.
 	a = sol(0);
 	b = -1.0;
 	c = sol(1);
@@ -82,7 +83,7 @@ namespace swl {
 {
 	const size_t numPoints = points.size();
 
-#if 1
+#if 0
 	const size_t dim = 4;
 	Eigen::MatrixXd AA(numPoints, dim);
 	{
@@ -102,11 +103,11 @@ namespace swl {
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	const size_t last = V.rows() - 1;
-	a = V(last, 0);
-	b = V(last, 1);
-	c = V(last, 2);
-	d = V(last, 3);
+	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	a = V(dim - 1, 0);
+	b = V(dim - 1, 1);
+	c = V(dim - 1, 2);
+	d = V(dim - 1, 3);
 #else
 	const size_t dim = 3;
 	if (numPoints < dim) return false;
@@ -133,7 +134,8 @@ namespace swl {
 #endif
 	assert(dim == sol.size());
 
-	// NOTICE [caution] >> How to handle the case where c = 0.
+	// NOTICE [caution] >> How to deal with the case where c = 0.
+	//	- Can do something for exceptional cases in most cases.
 	a = sol(0);
 	b = sol(1);
 	c = -1.0;
