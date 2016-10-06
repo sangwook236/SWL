@@ -37,7 +37,8 @@ namespace swl {
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	// NOTICE [caution] >> Might compute incorrect results.
+	//	- Data normalization might be effective.
 	a = V(dim - 1, 0);
 	b = V(dim - 1, 1);
 	c = V(dim - 1, 2);
@@ -103,7 +104,8 @@ namespace swl {
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	// NOTICE [caution] >> Might compute incorrect results.
+	//	- Data normalization might be effective.
 	a = V(dim - 1, 0);
 	b = V(dim - 1, 1);
 	c = V(dim - 1, 2);

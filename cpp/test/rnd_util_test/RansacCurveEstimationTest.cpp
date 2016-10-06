@@ -351,7 +351,8 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 	const Eigen::JacobiSVD<Eigen::MatrixXd>::MatrixVType& V = svd.matrixV();
 	assert(dim == V.rows());
 
-	// NOTICE [caution] >> Might compute incorrect results. I think that data normalization might be effective.
+	// NOTICE [caution] >> Might compute incorrect results.
+	//	- Data normalization might be effective.
 	a_ = V(dim - 1, 0);
 	b_ = V(dim - 1, 1);
 	c_ = V(dim - 1, 2);
@@ -384,6 +385,7 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 	assert(dim == sol.size());
 
 	// NOTICE [caution] >> How to deal with the case where c = 0.
+	//	- Can do something for exceptional cases in most cases.
 	a_ = sol(0);
 	b_ = sol(1);
 	c_ = -1.0;
