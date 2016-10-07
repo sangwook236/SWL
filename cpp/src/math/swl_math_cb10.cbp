@@ -43,9 +43,11 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-fPIC" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
+			<Add directory="/usr/include/eigen3" />
 		</Compiler>
 		<Linker>
 			<Add directory="../../lib" />
@@ -54,8 +56,8 @@
 		<Unit filename="../../inc/swl/math/Complex.h" />
 		<Unit filename="../../inc/swl/math/Coordinates.h" />
 		<Unit filename="../../inc/swl/math/CurveFitting.h" />
-		<Unit filename="../../inc/swl/math/Duplex.h" />
 		<Unit filename="../../inc/swl/math/DataNormalization.h" />
+		<Unit filename="../../inc/swl/math/Duplex.h" />
 		<Unit filename="../../inc/swl/math/ExportMath.h" />
 		<Unit filename="../../inc/swl/math/GeometryUtil.h" />
 		<Unit filename="../../inc/swl/math/Line.h" />
