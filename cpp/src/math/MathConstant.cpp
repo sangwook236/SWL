@@ -18,12 +18,12 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct MathConstant
+// Math Constant.
 
-///*static*/ const double MathConstant::INF = std::numeric_limits<double>::max();  // 1.79769e+308
-/*static*/ const double MathConstant::INF = std::numeric_limits<double>::infinity();  // 1.#INF
-/*static*/ const double MathConstant::NaN = std::numeric_limits<double>::quiet_NaN();  // -1.#IND
-///*static*/ const double MathConstant::NaN = std::numeric_limits<double>::signaling_NaN();  // -1.#INF
+///*static*/ const double MathConstant::INF = std::numeric_limits<double>::max();  // 1.79769e+308.
+/*static*/ const double MathConstant::INF = std::numeric_limits<double>::infinity();  // 1.#INF.
+/*static*/ const double MathConstant::NaN = std::numeric_limits<double>::quiet_NaN();  // -1.#IND.
+///*static*/ const double MathConstant::NaN = std::numeric_limits<double>::signaling_NaN();  // -1.#INF.
 
 ///*static*/ const double MathConstant::E = std::exp(1.0);
 /*static*/ const double MathConstant::E = boost::math::constants::e<double>();
@@ -66,7 +66,7 @@ namespace swl {
 /*static*/ const double MathConstant::TOL_10 = 1.0e-10;
 
 ///*static*/ double MathConstant::EPS = MathConstant::TOL_5;
-/*static*/ double MathConstant::EPS = std::numeric_limits<double>::epsilon();  // 2.22045e-016
+/*static*/ double MathConstant::EPS = std::numeric_limits<double>::epsilon();  // 2.22045e-016.
 
 /*static*/ int MathConstant::ITERATION_LIMIT = 1000;
 		

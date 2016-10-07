@@ -31,8 +31,8 @@ public:
 	typedef swl::Ransac base_type;
 
 public:
-	Plane3RansacEstimator(const std::vector<std::array<double, 3>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
-	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples)
+	Plane3RansacEstimator(const std::vector<std::array<double, 3>> &sample, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
+	: base_type(sample.size(), 3, usedSampleSize, scores), sample_(sample)
 	{}
 
 public:
@@ -54,12 +54,13 @@ private:
 
 	bool calculateNormal(const double vx1, const double vy1, const double vz1, const double vx2, const double vy2, const double vz2, double &nx, double &ny, double &nz) const
 	{
+		const double eps = swl::MathConstant::EPS;
+
 		nx = vy1 * vz2 - vz1 * vy2;
 		ny = vz1 * vx2 - vx1 * vz2;
 		nz = vx1 * vy2 - vy1 * vx2;
 
 		const double norm = std::sqrt(nx*nx + ny*ny + nz*nz);
-		const double eps = 1.0e-20;
 		if (norm < eps) return false;
 
 		nx /= norm;
@@ -69,7 +70,7 @@ private:
 	}
 
 private:
-	const std::vector<std::array<double, 3>> &samples_;
+	const std::vector<std::array<double, 3>> &sample_;
 
 	// Plane equation: a * x + b * y + c * z + d = 0.
 	double a_, b_, c_, d_;
@@ -79,9 +80,10 @@ bool Plane3RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
 	if (indices.size() < minimalSampleSize_) return false;
 
-	const std::array<double, 3> &pt1 = samples_[indices[0]];
-	const std::array<double, 3> &pt2 = samples_[indices[1]];
-	const std::array<double, 3> &pt3 = samples_[indices[2]];
+	// When sample size == 3.
+	const std::array<double, 3> &pt1 = sample_[indices[0]];
+	const std::array<double, 3> &pt2 = sample_[indices[1]];
+	const std::array<double, 3> &pt3 = sample_[indices[2]];
 
 	if (calculateNormal(pt2[0] - pt1[0], pt2[1] - pt1[1], pt2[2] - pt1[2], pt3[0] - pt1[0], pt3[1] - pt1[1], pt3[2] - pt1[2], a_, b_, c_))
 	{
@@ -108,7 +110,7 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, con
 	const double denom = std::sqrt(a_*a_ + b_*b_ + c_*c_);
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 3>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
 		const double dist = std::abs(a_ * (*cit)[0] + b_ * (*cit)[1] + c_ * (*cit)[2] + d_) / denom;
@@ -127,7 +129,7 @@ void Plane3RansacEstimator::computeInlierProbabilities(std::vector<double> &inli
 	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 3>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
 		const double dist = (a_ * (*cit)[0] + b_ * (*cit)[1] + c_ * (*cit)[2] + d_) / denom;
@@ -142,7 +144,7 @@ size_t Plane3RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, con
 	size_t inlierCount = 0;
 	int k = 0;
 	// TODO [enhance] >> cit is not used.
-	for (std::vector<std::array<double, 3>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 3>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -160,11 +162,11 @@ void plane3d_estimation_using_ransac()
 	const double PLANE_EQN[4] = { 1, -1, 1, -2 };  // x - y + z - 2 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = 1.0e-20;
+	const double eps = swl::MathConstant::EPS;
 
 	// Generate random points.
-	std::vector<std::array<double, 3>> samples;
-	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
+	std::vector<std::array<double, 3>> sample;
+	sample.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -176,19 +178,19 @@ void plane3d_estimation_using_ransac()
 		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = unifDistInlier(RNG), z = -(PLANE_EQN[0] * x + PLANE_EQN[1] * y + PLANE_EQN[3]) / PLANE_EQN[2];
-			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG), z + noiseDist(RNG) });
+			sample.push_back({ x + noiseDist(RNG), y + noiseDist(RNG), z + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
 		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
-			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG), unifDistOutlier(RNG) });
+			sample.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
-		std::random_shuffle(samples.begin(), samples.end());
+		std::random_shuffle(sample.begin(), sample.end());
 	}
 
 	// RANSAC.
-	const size_t minimalSampleSize = 3;
-	local::Plane3RansacEstimator ransac(samples, minimalSampleSize);
+	//const size_t minimalSampleSize = 3;
+	local::Plane3RansacEstimator ransac(sample);
 
 	const size_t maxIterationCount = 500;
 	const size_t minInlierCount = 50;

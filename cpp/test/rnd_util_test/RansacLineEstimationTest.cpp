@@ -34,8 +34,8 @@ public:
 	typedef swl::Ransac base_type;
 
 public:
-	Line2RansacEstimator(const std::vector<std::array<double, 2>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
-	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples)
+	Line2RansacEstimator(const std::vector<std::array<double, 2>> &sample, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
+	: base_type(sample.size(), 2, usedSampleSize, scores), sample_(sample)
 	{}
 
 public:
@@ -55,7 +55,7 @@ private:
 	/*virtual*/ size_t lookForInliers(std::vector<bool> &inlierFlags, const std::vector<double> &inlierProbs, const double inlierThresholdProbability) const override;
 
 private:
-	const std::vector<std::array<double, 2>> &samples_;
+	const std::vector<std::array<double, 2>> &sample_;
 
 	// Line equation: a * x + b * y + c = 0.
 	double a_, b_, c_;
@@ -65,8 +65,9 @@ bool Line2RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
 	if (indices.size() < minimalSampleSize_) return false;
 
-	const std::array<double, 2> &pt1 = samples_[indices[0]];
-	const std::array<double, 2> &pt2 = samples_[indices[1]];
+	// When sample size == 2.
+	const std::array<double, 2> &pt1 = sample_[indices[0]];
+	const std::array<double, 2> &pt2 = sample_[indices[1]];
 
 	a_ = pt2[1] - pt1[1];
 	b_ = pt1[0] - pt2[0];
@@ -92,7 +93,7 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 	const double denom = std::sqrt(a_*a_ + b_*b_);
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a model to a point.
 		const double dist = std::abs(a_ * (*cit)[0] + b_ * (*cit)[1] + c_) / denom;
@@ -111,7 +112,7 @@ void Line2RansacEstimator::computeInlierProbabilities(std::vector<double> &inlie
 	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
 		const double dist = (a_ * (*cit)[0] + b_ * (*cit)[1] + c_) / denom;
@@ -126,7 +127,7 @@ size_t Line2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, cons
 	size_t inlierCount = 0;
 	int k = 0;
 	// TODO [enhance] >> cit is not used.
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -143,11 +144,11 @@ void line2d_estimation_using_ransac()
 	const double LINE_EQN[3] = { 2, 3, -1 };  // 2 * x + 3 * y - 1 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = 1.0e-20;
+	const double eps = swl::MathConstant::EPS;
 
 	// Generate random points.
-	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
+	std::vector<std::array<double, 2>> sample;
+	sample.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -159,19 +160,19 @@ void line2d_estimation_using_ransac()
 		for (size_t i = 0; i < NUM_INLIERS; ++i)
 		{
 			const double x = unifDistInlier(RNG), y = -(LINE_EQN[0] * x + LINE_EQN[2]) / LINE_EQN[1];
-			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
+			sample.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-5, 5);  // [-5, 5].
 		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
-			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
+			sample.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
 
-		std::random_shuffle(samples.begin(), samples.end());
+		std::random_shuffle(sample.begin(), sample.end());
 	}
 
 	// RANSAC.
-	const size_t minimalSampleSize = 2;
-	local::Line2RansacEstimator ransac(samples, minimalSampleSize);
+	//const size_t minimalSampleSize = 2;
+	local::Line2RansacEstimator ransac(sample);
 
 	const size_t maxIterationCount = 500;
 	const size_t minInlierCount = 50;
@@ -204,14 +205,14 @@ void line2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 600;
 				const double sx = 300.0, sy = 300.0, scale = 100.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double xe0 = -3.0, ye0 = -(ransac.getA() * xe0 + ransac.getC()) / ransac.getB();
@@ -258,14 +259,14 @@ void line2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 600;
 				const double sx = 300.0, sy = 300.0, scale = 100.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double xe0 = -3.0, ye0 = -(ransac.getA() * xe0 + ransac.getC()) / ransac.getB();

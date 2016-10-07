@@ -39,8 +39,8 @@ public:
 	typedef swl::Ransac base_type;
 
 public:
-	Circle2RansacEstimator(const std::vector<std::array<double, 2>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
-	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples)
+	Circle2RansacEstimator(const std::vector<std::array<double, 2>> &sample, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr)
+	: base_type(sample.size(), 3, usedSampleSize, scores), sample_(sample)
 	{}
 
 public:
@@ -61,7 +61,7 @@ private:
 	/*virtual*/ size_t lookForInliers(std::vector<bool> &inlierFlags, const std::vector<double> &inlierProbs, const double inlierThresholdProbability) const override;
 
 private:
-	const std::vector<std::array<double, 2>> &samples_;
+	const std::vector<std::array<double, 2>> &sample_;
 
 	// Circle equation: a * x^2 + a * y^2 + b * x + c * y + d = 0.
 	double a_, b_, c_, d_;
@@ -71,9 +71,10 @@ bool Circle2RansacEstimator::estimateModel(const std::vector<size_t> &indices)
 {
 	if (indices.size() < minimalSampleSize_) return false;
 
-	const std::array<double, 2> &pt1 = samples_[indices[0]];
-	const std::array<double, 2> &pt2 = samples_[indices[1]];
-	const std::array<double, 2> &pt3 = samples_[indices[2]];
+	// When sample size == 3.
+	const std::array<double, 2> &pt1 = sample_[indices[0]];
+	const std::array<double, 2> &pt2 = sample_[indices[1]];
+	const std::array<double, 2> &pt3 = sample_[indices[2]];
 
 	const double x1 = pt1[0], y1 = pt1[1], x1_2 = x1 * x1, y1_2 = y1 * y1;
 	const double x2 = pt2[0], y2 = pt2[1], x2_2 = x2 * x2, y2_2 = y2 * y2;
@@ -105,7 +106,7 @@ size_t Circle2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, co
 	const double radius = std::sqrt(0.25 * (b_*b_ + c_*c_) / (a_*a_) - d_ / a_);
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
 		const double dist = std::abs(std::sqrt(((*cit)[0] - cx)*((*cit)[0] - cx) + ((*cit)[1] - cy)*((*cit)[1] - cy)) - radius);
@@ -125,7 +126,7 @@ void Circle2RansacEstimator::computeInlierProbabilities(std::vector<double> &inl
 	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute distance from a point to a model.
 		const double dist = std::sqrt(((*cit)[0] - cx)*((*cit)[0] - cx) + ((*cit)[1] - cy)*((*cit)[1] - cy)) - radius;
@@ -140,7 +141,7 @@ size_t Circle2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags, co
 	size_t inlierCount = 0;
 	int k = 0;
 	// TODO [enhance] >> cit is not used.
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -155,8 +156,8 @@ public:
 	typedef swl::Ransac base_type;
 
 public:
-	Quadratic2RansacEstimator(const std::vector<std::array<double, 2>> &samples, const size_t minimalSampleSize, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr, const std::shared_ptr<std::vector<std::array<double, 2>>> &anchorPoints = nullptr)
-	: base_type(samples.size(), minimalSampleSize, usedSampleSize, scores), samples_(samples), anchorPoints_(anchorPoints)
+	Quadratic2RansacEstimator(const std::vector<std::array<double, 2>> &sample, const size_t usedSampleSize = 0, const std::shared_ptr<std::vector<double>> &scores = nullptr, const std::shared_ptr<std::vector<std::array<double, 2>>> &anchorPoints = nullptr)
+	: base_type(sample.size(), 3, usedSampleSize, scores), sample_(sample), anchorPoints_(anchorPoints)
 	{}
 
 public:
@@ -180,7 +181,7 @@ private:
 	bool estimateQuadraticByLeastSqaures(const size_t sampleSize, const std::vector<size_t> &indices);
 
 private:
-	const std::vector<std::array<double, 2>> &samples_;
+	const std::vector<std::array<double, 2>> &sample_;
 	const std::shared_ptr<std::vector<std::array<double, 2>>> anchorPoints_;
 
 	// Quadratic curve equation: a * x^2 + b * x + c * y + d = 0.
@@ -193,11 +194,11 @@ bool Quadratic2RansacEstimator::estimateModel(const std::vector<size_t> &indices
 
 	const size_t sampleSize = indices.size();
 	if (sampleSize < minimalSampleSize_) return false;
-	else if (minimalSampleSize_ == sampleSize)
+	else if (minimalSampleSize_ == sampleSize)  // When sample size == 3.
 	{
-		const std::array<double, 2> &pt1 = samples_[indices[0]];
-		const std::array<double, 2> &pt2 = samples_[indices[1]];
-		const std::array<double, 2> &pt3 = samples_[indices[2]];
+		const std::array<double, 2> &pt1 = sample_[indices[0]];
+		const std::array<double, 2> &pt2 = sample_[indices[1]];
+		const std::array<double, 2> &pt3 = sample_[indices[2]];
 
 		const double x1 = pt1[0], y1 = pt1[1], x1_2 = x1 * x1;
 		const double x2 = pt2[0], y2 = pt2[1], x2_2 = x2 * x2;
@@ -210,7 +211,7 @@ bool Quadratic2RansacEstimator::estimateModel(const std::vector<size_t> &indices
 
 		return true;
 	}
-	else  // When #sample >= 4.
+	else  // When sample size >= 4.
 		return estimateQuadraticByLeastSqaures(sampleSize, indices);
 }
 
@@ -253,7 +254,7 @@ size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags,
 {
 	size_t inlierCount = 0;
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = std::sqrt(computeSquaredMinDistanceFromModel((*cit)[0], (*cit)[1])) < threshold;
 		if (inlierFlags[k]) ++inlierCount;
@@ -268,7 +269,7 @@ void Quadratic2RansacEstimator::computeInlierProbabilities(std::vector<double> &
 	const double factor = 1.0 / std::sqrt(2.0 * swl::MathConstant::PI * inlierSquaredStandardDeviation);
 
 	int k = 0;
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		// Compute inliers' probabilities.
 		inlierProbs[k] = factor * std::exp(-0.5 * computeSquaredMinDistanceFromModel((*cit)[0], (*cit)[1]) / inlierSquaredStandardDeviation);
@@ -280,7 +281,7 @@ size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags,
 	size_t inlierCount = 0;
 	int k = 0;
 	// TODO [enhance] >> cit is not used.
-	for (std::vector<std::array<double, 2>>::const_iterator cit = samples_.begin(); cit != samples_.end(); ++cit, ++k)
+	for (std::vector<std::array<double, 2>>::const_iterator cit = sample_.begin(); cit != sample_.end(); ++cit, ++k)
 	{
 		inlierFlags[k] = inlierProbs[k] >= inlierThresholdProbability;
 		if (inlierFlags[k]) ++inlierCount;
@@ -292,7 +293,7 @@ size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags,
 // REF [function] >> GeometryUtil::computeNearestPointWithQuadratic().
 double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const double x0, const double y0) const
 {
-	const double eps = 1.0e-20;
+	const double eps = swl::MathConstant::EPS;
 
 	// Compute distance from a point to a model.
 	const double c2 = c_ * c_;
@@ -337,7 +338,7 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 		size_t k = 0;
 		for (const auto& idx : indices)
 		{
-			const std::array<double, 2>& pt = samples_[idx];
+			const std::array<double, 2>& pt = sample_[idx];
 			AA(k, 0) = pt[0] * pt[0]; AA(k, 1) = pt[0]; AA(k, 2) = pt[1]; AA(k, 3) = 1.0;
 			++k;
 		}
@@ -367,7 +368,7 @@ bool Quadratic2RansacEstimator::estimateQuadraticByLeastSqaures(const size_t sam
 		size_t k = 0;
 		for (const auto& idx : indices)
 		{
-			const std::array<double, 2>& pt = samples_[idx];
+			const std::array<double, 2>& pt = sample_[idx];
 			AA(k, 0) = pt[0] * pt[0]; AA(k, 1) = pt[0]; AA(k, 2) = 1.0;
 			bb(k) = pt[1];
 			++k;
@@ -423,11 +424,11 @@ void circle2d_estimation_using_ransac()
 	const double CIRCLE_EQN[4] = { 1, -2, 4, -4 };  // (x - 1)^2 + (y + 2)^2 = 3^2 <=> x^2 + y^2 - 2 * x + 4 * y - 4 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = 1.0e-20;
+	const double eps = swl::MathConstant::EPS;
 
 	// Generate random points.
-	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
+	std::vector<std::array<double, 2>> sample;
+	sample.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		const double b = CIRCLE_EQN[1] / CIRCLE_EQN[0], c = CIRCLE_EQN[2] / CIRCLE_EQN[0], d = CIRCLE_EQN[3] / CIRCLE_EQN[0];
 
@@ -442,7 +443,7 @@ void circle2d_estimation_using_ransac()
 		{
 			const double x = unifDistInlier(RNG);
 			const double y = (std::rand() % 2) ? (std::sqrt(0.25*c*c - x*x - b*x - d) - 0.5*c) : (-std::sqrt(0.25*c*c - x*x - b*x - d) - 0.5*c);
-			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
+			sample.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier(-6, 6);  // [-6, 6].
@@ -450,16 +451,16 @@ void circle2d_estimation_using_ransac()
 		//std::uniform_real_distribution<double> unifDistOutlier2(-7, 3);  // [-7, 3].
 		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
 		{
-			samples.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
-			//samples.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
+			sample.push_back({ unifDistOutlier(RNG), unifDistOutlier(RNG) });
+			//sample.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
 		}
 
-		std::random_shuffle(samples.begin(), samples.end());
+		std::random_shuffle(sample.begin(), sample.end());
 	}
 
 	// RANSAC.
-	const size_t minimalSampleSize = 3;
-	local::Circle2RansacEstimator ransac(samples, minimalSampleSize);
+	//const size_t minimalSampleSize = 3;
+	local::Circle2RansacEstimator ransac(sample);
 
 	const size_t maxIterationCount = 1000;
 	const size_t minInlierCount = 50;
@@ -492,14 +493,14 @@ void circle2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 600;
 				const double sx = 300.0, sy = 300.0, scale = 50.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double b = ransac.getB() / ransac.getA(), c = ransac.getC() / ransac.getA(), d = ransac.getD() / ransac.getA();
@@ -545,14 +546,14 @@ void circle2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 600;
 				const double sx = 300.0, sy = 300.0, scale = 50.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				const double b = ransac.getB() / ransac.getA(), c = ransac.getC() / ransac.getA(), d = ransac.getD() / ransac.getA();
@@ -582,11 +583,11 @@ void quadratic2d_estimation_using_ransac()
 	const double QUADRATIC_EQN[4] = { 1, -1, 1, -2 };  // x^2 - x + y - 2 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = 1.0e-20;
+	const double eps = swl::MathConstant::EPS;
 
 	// Generate random points.
-	std::vector<std::array<double, 2>> samples;
-	samples.reserve(NUM_INLIERS + NUM_OUTLIERS);
+	std::vector<std::array<double, 2>> sample;
+	sample.reserve(NUM_INLIERS + NUM_OUTLIERS);
 	{
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -599,15 +600,15 @@ void quadratic2d_estimation_using_ransac()
 		{
 			const double x = unifDistInlier(RNG);
 			const double y = -(QUADRATIC_EQN[0] * x * x + QUADRATIC_EQN[1] * x + QUADRATIC_EQN[3]) / QUADRATIC_EQN[2];
-			samples.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
+			sample.push_back({ x + noiseDist(RNG), y + noiseDist(RNG) });
 		}
 
 		std::uniform_real_distribution<double> unifDistOutlier1(-4, 4);  // [-4, 4].
 		std::uniform_real_distribution<double> unifDistOutlier2(-20, 5);  // [-20, 5].
 		for (size_t i = 0; i < NUM_OUTLIERS; ++i)
-			samples.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
+			sample.push_back({ unifDistOutlier1(RNG), unifDistOutlier2(RNG) });
 
-		std::random_shuffle(samples.begin(), samples.end());
+		std::random_shuffle(sample.begin(), sample.end());
 	}
 
 	// Anchor points.
@@ -628,9 +629,9 @@ void quadratic2d_estimation_using_ransac()
 	}
 
 	// RANSAC.
-	const size_t minimalSampleSize = 3;
+	//const size_t minimalSampleSize = 3;
 	const size_t usedSampleSize = 10;  // Important.
-	local::Quadratic2RansacEstimator ransac(samples, minimalSampleSize, usedSampleSize, nullptr, anchorPoints);
+	local::Quadratic2RansacEstimator ransac(sample, usedSampleSize, nullptr, anchorPoints);
 
 	const size_t maxIterationCount = 1000;
 	const size_t minInlierCount = 50; //25;
@@ -663,14 +664,14 @@ void quadratic2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 800;
 				const double sx = 400.0, sy = 600.0, scale = 20.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				local::drawQuadratic(rgb, -ransac.getA() / ransac.getC(), -ransac.getB() / ransac.getC(), -ransac.getD() / ransac.getC(), -5.0, 5.0, sx, sy, scale, cv::Scalar(255, 0, 0), 1);
@@ -713,14 +714,14 @@ void quadratic2d_estimation_using_ransac()
 #if defined(__USE_OPENCV)
 			// For visualization.
 			{
-				// Draw samples and inliners.
+				// Draw sample and inliners.
 				const int IMG_SIZE = 800;
 				const double sx = 400.0, sy = 600.0, scale = 20.0;
 				cv::Mat rgb(IMG_SIZE, IMG_SIZE, CV_8UC3);
 				rgb.setTo(cv::Scalar::all(255));
 				size_t idx = 0;
 				for (std::vector<bool>::const_iterator cit = inlierFlags.begin(); cit != inlierFlags.end(); ++cit, ++idx)
-					cv::circle(rgb, cv::Point((int)std::floor(samples[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(samples[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
+					cv::circle(rgb, cv::Point((int)std::floor(sample[idx][0] * scale + sx + 0.5), IMG_SIZE - (int)std::floor(sample[idx][1] * scale + sy + 0.5)), 2, *cit ? cv::Scalar(0, 255, 0) : cv::Scalar(0, 0, 0), cv::FILLED, cv::LINE_8);
 
 				// Draw the estimated model.
 				local::drawQuadratic(rgb, -ransac.getA() / ransac.getC(), -ransac.getB() / ransac.getC(), -ransac.getD() / ransac.getC(), -5.0, 5.0, sx, sy, scale, cv::Scalar(255, 0, 0), 1);
