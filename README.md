@@ -40,7 +40,7 @@ SWL supports Code::Blocks and Visual Studio.
 
 #### Using a build script 
 * Download sources from the SWL's repository. 
-* Cange the directory to SWL. 
+* Change the directory to SWL. 
 * Change the direcotry to the build directory. 
 	* e.g.) cd build 
 * Run a build script. 
