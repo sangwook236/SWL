@@ -15,9 +15,9 @@ System platforms supported by SWL are as follows:
 * Windows
 * Mac OS
 
-## Installation#
+## Installation
 
-#### Using CMake. 
+#### Using CMake
 * Download sources from the SWL's repository. 
 * Change the directory to SWL. 
 * Make a build directory. 
@@ -38,7 +38,7 @@ SWL supports Code::Blocks and Visual Studio.
 * Use Visual Studio in Windows:
 	* Use build/*.sln
 
-#### Using a build script. 
+#### Using a build script 
 * Download sources from the SWL's repository. 
 * Cange the directory to SWL. 
 * Change the direcotry to the build directory. 
