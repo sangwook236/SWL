@@ -1,6 +1,6 @@
 # Sang-Wook's Library (SWL)
 
-### Introduction
+## Introduction
 
 The goal of SWL is to develop a general-purpose library/framework for a variety of scientific and engineering problems.
 
@@ -15,9 +15,9 @@ System platforms supported by SWL are as follows:
 * Windows
 * Mac OS
 
-# Installation#
+## Installation#
 
-### Using CMake. 
+#### Using CMake. 
 * Download sources from the SWL's repository. 
 * Change the directory to SWL. 
 * Make a build directory. 
@@ -30,7 +30,7 @@ System platforms supported by SWL are as follows:
 	* make test 
 	* make doc 
 
-### Using a build script. 
+#### Using a build script. 
 * Download sources from the SWL's repository. 
 * Cange the directory to SWL. 
 * Change the direcotry to the build directory. 
