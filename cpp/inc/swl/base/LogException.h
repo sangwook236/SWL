@@ -20,10 +20,10 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------
-//	exception for log
+// Exception for log.
 
 /**
- *	@brief  application 내에서 발생하는 exception을 위한 class.
+ *	@brief  Application 내에서 발생하는 log를 위한 exception class.
  *
  *	본 class는 C++ 표준 exception class인 std::exception으로부터 상속되었으며
  *	catch 구문을 이용하여 exception handler를 작성하면 된다.
@@ -37,16 +37,16 @@ namespace swl {
  *		- class 이름
  *		- 함수 이름
  *
- *	exception level의 경우 기본적으로 7가지 수준으로 나뉘어진다.
+ *	Exception level의 경우 기본적으로 7가지 수준으로 나뉘어진다.
  *
- *	exception이 발생한 경우 해당 내용을 log stream을 통해 외부로 출력할 수 있다.
+ *	Exception이 발생한 경우 해당 내용을 log stream을 통해 외부로 출력할 수 있다.
  *	setLogStream() 함수와 resetLogStream() 함수를 사용하여 log를 출력할 stream을 설정 또는 해제할 수 있다.
  */
 class SWL_BASE_API LogException: public std::exception
 {
 public:
 	/**
-	 *	@brief  base class의 type definition.
+	 *	@brief  Base class의 type definition.
 	 */
 	typedef std::exception base_type;
 
