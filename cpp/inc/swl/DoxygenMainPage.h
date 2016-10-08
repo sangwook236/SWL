@@ -23,9 +23,9 @@
  *	\section RepositorySection Repository
  *		- https://github.com/sangwook236/sangwook-library
  *
- *	\section InstallationSection Installation
+ *	\section BuildingLibrarySection Builing Library
  *
- *	\subsection UsingCMake Using CMake.
+ *	\subsection UsingCMake Using CMake
  *		- Download sources from the SWL's repository.
  *		- Change the directory to SWL.
  *		- Make a build directory.
@@ -39,7 +39,14 @@
  *			- make test
  *			- make doc
  *
- *	\subsection UsingBuildScript Using a build script.
+ *	\subsection UsingIDE Using IDE
+ *	SWL supports Code::Blocks and Visual Studio.
+ *		- Use Code::Blocks in the Unix-like systems:
+ *			- Use build/ *.workspace
+ *		- Use Visual Studio in Windows:
+ *			- Use build/ *.sln
+ *
+ *	\subsection UsingBuildScript Using a build script
  *		- Download sources from the SWL's repository.
  *		- Change the directory to SWL.
  *		- Change the direcotry to the build directory.
