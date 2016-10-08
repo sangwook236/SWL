@@ -18,11 +18,12 @@
 ### Using IDE
 SWL supports Code::Blocks and Visual Studio.
 * Change the directory to SWL.
-* Open IDE.
-	* Use Code::Blocks in the Unix-like systems:
-		* build/*.workspace
-	* Use Visual Studio in Windows:
-		* build/*.sln
+* Run IDE.
+	* Use Code::Blocks in the Unix-like systems.
+	* Use Visual Studio in Windows.
+* Open a file.
+	* Open build/*.workspace in Code::Blocks.
+	* Open build/*.sln in Visual Studio.
 
 ### Using a build script
 * Change the directory to SWL.
