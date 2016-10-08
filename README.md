@@ -35,9 +35,9 @@ SWL supports Code::Blocks and Visual Studio.
 * Change the directory to SWL.
 * Open IDE.
 	* Use Code::Blocks in the Unix-like systems:
-		* Use build/*.workspace
+		* build/*.workspace
 	* Use Visual Studio in Windows:
-		* Use build/*.sln
+		* build/*.sln
 
 ### Using a build script
 * Change the directory to SWL.
