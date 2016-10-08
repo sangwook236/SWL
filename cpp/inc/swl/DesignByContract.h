@@ -107,17 +107,17 @@
         {
             const char *input_file_name = argv[1];
 
-            // read input image
+            // Read input image.
             swl::ImageImportInfo info(input_file_name);
 
-            // fail if input image is not grayscale
+            // Fail if input image is not grayscale.
             SWL_PRECONDITION(info.isGrayscale(), "Input image must be grayscale");
 
-            ...// process image
+            ...// Process image.
         }
-        catch (std::exception &e)
+        catch (const std::exception& ex)
         {
-            std::cerr << e.what() << std::endl;  // print message
+            std::cerr << e.what() << std::endl;  // Print message.
             return 1;
         }
 
