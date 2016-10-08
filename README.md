@@ -23,6 +23,7 @@ System platforms supported by SWL are as follows:
 * Make a build directory. 
 	* e.g.) mkdir my_build_dir 
 * Change the direcotry to the build directory. 
+	* e.g.) cd my_build_dir 
 * Run CMake. 
 * Configure and generate in CMake. 
 * Run make. 
