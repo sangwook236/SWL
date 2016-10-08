@@ -18,33 +18,33 @@ System platforms supported by SWL are as follows:
 ## Building C/C++ Library
 
 ### Using CMake
-* Download sources from the SWL's repository. 
-* Change the directory to SWL. 
-* Make a build directory. 
-	* e.g.) mkdir my_build_dir 
-* Change the directory to the build directory. 
-	* e.g.) cd my_build_dir 
-* Run CMake. 
-* Configure and generate in CMake. 
-* Run make. 
-	* make 
-	* make test 
-	* make doc 
+* Change the directory to SWL.
+* Make a build directory.
+	* e.g.) mkdir my_build_dir
+* Change the directory to the build directory.
+	* e.g.) cd my_build_dir
+* Run CMake.
+* Configure and generate in CMake.
+* Run make.
+	* make
+	* make test
+	* make doc
 
 ### Using IDE
 SWL supports Code::Blocks and Visual Studio.
-* Use Code::Blocks in the Unix-like systems:
-	* Use build/*.workspace
-* Use Visual Studio in Windows:
-	* Use build/*.sln
+* Change the directory to SWL.
+* Open IDE.
+	* Use Code::Blocks in the Unix-like systems:
+		* Use build/*.workspace
+	* Use Visual Studio in Windows:
+		* Use build/*.sln
 
 ### Using a build script
-* Download sources from the SWL's repository. 
-* Change the directory to SWL. 
-* Change the directory to build. 
-	* e.g.) cd build 
-* Run a build script. 
-	* In the Unix-like systems: 
-		* ./build_all.sh 
-	* In Windows: 
-		* build_all.bat 
+* Change the directory to SWL.
+* Change the directory to build.
+	* e.g.) cd build
+* Run a build script.
+	* In the Unix-like systems:
+		* ./build_all.sh
+	* In Windows:
+		* build_all.bat
