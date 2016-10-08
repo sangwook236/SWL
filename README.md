@@ -15,7 +15,7 @@ System platforms supported by SWL are as follows:
 * Windows
 * Mac OS
 
-## Building Library
+## Building C++ Library
 
 ### Using CMake
 * Download sources from the SWL's repository. 
