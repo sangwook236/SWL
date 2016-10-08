@@ -31,7 +31,6 @@ System platforms supported by SWL are as follows:
 	* make test 
 	* make doc 
 
-
 #### Using IDE
 SWL supports Code::Blocks and Visual Studio.
 * Use Code::Blocks in the Unix-like systems:
