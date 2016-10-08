@@ -12,6 +12,48 @@
 #endif
 
 
+namespace {
+namespace local {
+
+// Solve x^2 + u*x + v = 0.
+void solveQuadraticForBairstowMethod(double u, double v, std::vector<std::complex<double> >& roots)
+{
+	const double dDet = u * u - 4.0 * v;
+
+	std::complex<double> aRoot;
+	if (dDet >= 0.0)  // Two roots are real.
+	{
+		aRoot.imag(0.0);
+		if (u >= 0.0)
+		{
+			const double val = u + std::sqrt(dDet);
+			aRoot.real(-2.0*v / val);
+			roots.push_back(aRoot);
+			aRoot.real(-val / 2.0);
+			roots.push_back(aRoot);
+		}
+		else
+		{
+			const double val = -u + std::sqrt(dDet);
+			aRoot.real(val * 0.5);
+			roots.push_back(aRoot);
+			aRoot.real(2.0*v / val);
+			roots.push_back(aRoot);
+		}
+	}
+	else  // Two roots are imaginary.
+	{
+		aRoot.real(-u * 0.5);
+		aRoot.imag(std::sqrt(-dDet) * 0.5);
+		roots.push_back(aRoot);
+		aRoot.imag(-aRoot.imag());
+		roots.push_back(aRoot);
+	}
+}
+
+}  // namespace local
+}  // unnamed namespace
+
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
@@ -138,8 +180,6 @@ double RootFinding::falsePosition(double left, double right, double (*func)(doub
 }
 
 bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std::complex<double>, 2>& roots, const double tol /*= MathConstant::EPS*/)
-// 2nd order polynomial.
-// Coefficients are arranged by a descending order.
 {
 	if (MathUtil::isZero(coeffs[0], tol))
 	{
@@ -184,8 +224,6 @@ bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std:
 }
 
 bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::complex<double>, 3>& roots, const double tol /*= MathConstant::EPS*/)
-// 3rd order polynomial.
-// Coefficients are arranged by a descending order.
 {
 	if (-tol <= coeffs[0] && coeffs[0] <= tol)
 	{
@@ -247,8 +285,6 @@ bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::com
 }
 
 bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::complex<double>, 4>& roots, const double tol /*= MathConstant::EPS*/)
-// 4th order polynomial.
-// Coefficients are arranged by a descending order.
 {
 	if (MathUtil::isZero(coeffs[0], tol))
 	{
@@ -302,45 +338,7 @@ bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::c
 	return true;
 }
 
-static void solveQuadraticForBairstowMethod(double u, double v, std::vector<std::complex<double> >& roots)
-// Solve x^2 + u*x + v = 0.
-{
-	const double dDet = u * u - 4.0 * v;
-	
-	std::complex<double> aRoot;
-	if (dDet >= 0.0)  // Two roots are real.
-	{
-		aRoot.imag(0.0);
-		if (u >= 0.0)
-		{
-			const double val = u + std::sqrt(dDet);
-			aRoot.real(-2.0*v / val);
-			roots.push_back(aRoot);
-			aRoot.real(-val / 2.0);
-			roots.push_back(aRoot);
-		}
-		else
-		{
-			const double val = -u + std::sqrt(dDet);
-			aRoot.real(val * 0.5);
-			roots.push_back(aRoot);
-			aRoot.real(2.0*v / val);
-			roots.push_back(aRoot);
-		}
-	}
-	else  // Two roots are imaginary.
-	{
-		aRoot.real(-u * 0.5);
-		aRoot.imag(std::sqrt(-dDet) * 0.5);
-		roots.push_back(aRoot);
-		aRoot.imag(-aRoot.imag());
-		roots.push_back(aRoot);
-	}
-}
-
 bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::complex<double> >& roots, const double tol /*= MathConstant::EPS*/)
-// n-th order polynomial.
-// Coeffs are arranged by a descending order.
 {
 	std::vector<double>::size_type nOrder = coeffs.size() - 1;
 	if (nOrder < 1)
@@ -416,14 +414,14 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 			}
 		} while ((std::abs(du) + std::abs(dv)) > tol);
 		
-		solveQuadraticForBairstowMethod(u, v, roots);
+		local::solveQuadraticForBairstowMethod(u, v, roots);
 		
 		for (i = 0 ; i <= j - 2 ; ++i) vtrCoeffA[i] = vtrCoeffB[i];
 		j -= 2;
 	}
 	
 	if (2 == j)  
-		solveQuadraticForBairstowMethod(vtrCoeffA[1], vtrCoeffA[2], roots);
+		local::solveQuadraticForBairstowMethod(vtrCoeffA[1], vtrCoeffA[2], roots);
 	else
 		roots.push_back(std::complex<double>(-vtrCoeffA[1], 0.0));
 
@@ -453,7 +451,7 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 		return (size_t)-1;
 	}
 
-	// It is important that the ratios between coefficients, but not their differences, are the same.
+	// It is important that the ratios between corresponding coefficients, but not their differences, are the same.
 	//	e.g.) a1 / a2 = b1 / b2 = c1 / c2 = d1 / d2 = ?
 
 	if (std::abs(coeffs1[2]) > eps && std::abs(coeffs2[2]) > eps)

@@ -24,6 +24,7 @@ SWL supports Code::Blocks and Visual Studio.
 * Open a file.
 	* Open build/*.workspace in Code::Blocks.
 	* Open build/*.sln in Visual Studio.
+* Build.
 
 ### Using a build script
 * Change the directory to SWL.
