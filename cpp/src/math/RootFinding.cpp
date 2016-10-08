@@ -3,6 +3,7 @@
 #include "swl/math/MathUtil.h"
 #include "swl/base/LogException.h"
 #include <gsl/gsl_poly.h>
+#include <numeric>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -16,7 +17,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // Root Finding.
 
-double RootFinding::secant(double init, double (*func)(double), double tol /*= MathConstant::EPS*/)
+double RootFinding::secant(double init, double (*func)(double), const double tol /*= MathConstant::EPS*/)
 {
 	double delta, final;
 	double front, rear;
@@ -51,7 +52,7 @@ double RootFinding::secant(double init, double (*func)(double), double tol /*= M
 	return final;
 }
 
-double RootFinding::bisection(double left, double right, double (*func)(double), double tol /*= MathConstant::EPS*/)
+double RootFinding::bisection(double left, double right, double (*func)(double), const double tol /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -94,7 +95,7 @@ double RootFinding::bisection(double left, double right, double (*func)(double),
 	return mid;
 }
 
-double RootFinding::falsePosition(double left, double right, double (*func)(double), double tol /*= MathConstant::EPS*/)
+double RootFinding::falsePosition(double left, double right, double (*func)(double), const double tol /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -136,7 +137,7 @@ double RootFinding::falsePosition(double left, double right, double (*func)(doub
 	return inter;
 }
 
-bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std::complex<double>, 2>& roots, double tol /*= MathConstant::EPS*/)
+bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std::complex<double>, 2>& roots, const double tol /*= MathConstant::EPS*/)
 // 2nd order polynomial.
 // Coefficients are arranged by a descending order.
 {
@@ -182,7 +183,7 @@ bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std:
 	return true;
 }
 
-bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::complex<double>, 3>& roots, double tol /*= MathConstant::EPS*/)
+bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::complex<double>, 3>& roots, const double tol /*= MathConstant::EPS*/)
 // 3rd order polynomial.
 // Coefficients are arranged by a descending order.
 {
@@ -245,7 +246,7 @@ bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::com
 	return true;
 }
 
-bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::complex<double>, 4>& roots, double tol /*= MathConstant::EPS*/)
+bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::complex<double>, 4>& roots, const double tol /*= MathConstant::EPS*/)
 // 4th order polynomial.
 // Coefficients are arranged by a descending order.
 {
@@ -337,7 +338,7 @@ static void solveQuadraticForBairstowMethod(double u, double v, std::vector<std:
 	}
 }
 
-bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::complex<double> >& roots, double tol /*= MathConstant::EPS*/)
+bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::complex<double> >& roots, const double tol /*= MathConstant::EPS*/)
 // n-th order polynomial.
 // Coeffs are arranged by a descending order.
 {
@@ -429,15 +430,78 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 	return true;
 }
 
-/*static*/ size_t RootFinding::solveSystemOfQuadraticEquations(const double a1, const double b1, const double c1, const double d1, const double a2, const double b2, const double c2, const double d2, double &x0, double& x1, double tol /*= MathConstant::TOL_5*/)
+/*static*/ size_t RootFinding::solveSystemOfQuadraticEquations(const std::array<double, 4>& coeffs1, const std::array<double, 4>& coeffs2, std::array<double, 2>& roots, const double tol /*= MathConstant::TOL_5*/)
 {
 	const double eps = std::numeric_limits<double>::epsilon();
 
 #if 1
-	const double a = a1 - a2;
-	const double b = b1 - b2;
-	const double c = c1 - c2;
-	const double d = d1 - d2;
+	// L1 norm.
+	const double norm1 = std::accumulate(coeffs1.begin(), coeffs1.end(), 0.0, [](const double sum, const double elem) { return sum + std::abs(elem); });
+	const double norm2 = std::accumulate(coeffs2.begin(), coeffs2.end(), 0.0, [](const double sum, const double elem) { return sum + std::abs(elem); });
+	// L2 norm.
+	//const double norm1 = std::sqrt(std::accumulate(coeffs1.begin(), coeffs1.end(), 0.0, [](const double sum, const double elem) { return sum + elem*elem; }));
+	//const double norm2 = std::sqrt(std::accumulate(coeffs2.begin(), coeffs2.end(), 0.0, [](const double sum, const double elem) { return sum + elem*elem; }));
+	// Squared L2 norm => (cannot use).
+	//const double norm1 = std::accumulate(coeffs1.begin(), coeffs1.end(), 0.0, [](const double sum, const double elem) { return sum + elem*elem; });
+	//const double norm2 = std::accumulate(coeffs2.begin(), coeffs2.end(), 0.0, [](const double sum, const double elem) { return sum + elem*elem; });
+	// L-inf norm.
+	//const double norm1 = std::sqrt(std::accumulate(coeffs1.begin(), coeffs1.end(), 0.0, [](const double maxElem, const double elem) { return std::max(maxElem, std::abs(elem)); }));
+	//const double norm2 = std::sqrt(std::accumulate(coeffs2.begin(), coeffs2.end(), 0.0, [](const double maxElem, const double elem) { return std::max(maxElem, std::abs(elem)); }));
+	if (norm1 <= eps || norm2 <= eps)
+	{
+		throw std::runtime_error("All the coefficients are nearly zero");
+		return (size_t)-1;
+	}
+
+	// It is important that the ratios between coefficients, but not their differences, are the same.
+	//	e.g.) a1 / a2 = b1 / b2 = c1 / c2 = d1 / d2 = ?
+
+	if (std::abs(coeffs1[2]) > eps && std::abs(coeffs2[2]) > eps)
+	{
+		const double a = coeffs1[0] / coeffs1[2] - coeffs2[0] / coeffs2[2];
+		const double b = coeffs1[1] / coeffs1[2] - coeffs2[1] / coeffs2[2];
+		const double c = 0.0; //coeffs1[2] / coeffs1[2] - coeffs2[2] / coeffs2[2];
+		const double d = coeffs1[3] / coeffs1[2] - coeffs2[3] / coeffs2[2];
+		if (std::abs(a) <= eps && std::abs(b) <= 0 && std::abs(c) <= eps)
+		{
+			// Infinitely many real solutions.
+			//	- Two identical quadratic equations.
+			//	- Two identical linear equations.
+			//		Two identical vertical lines.
+			if (std::abs(d) <= eps) return (size_t)-1;
+			// No real solution (when they never intersect).
+			//	- Two (parallel) quadratic equations: y = x^2 - 3*x + 2, y = x^2 - 3*x + 3.
+			//	- A quadratic equation and a linear equation: y = x^2 + 1, y = x.
+			//	- Two parallel linear equations: vertical, horizontal, inclined lines.
+			else return 0;
+		}
+	}
+	// When coeffs1[2] or coeffs2[2] is zero, y in the equation can be arbitrary.
+	else if (std::abs(coeffs1[2]) <= eps)
+	{
+		// Infinitely many real solutions.
+		//	- Solutions are one vertical line: x = roots[0] when a = 0.
+		//	- Solutions are two vertical lines: x = roots[0] and x = roots[1] when a != 0.
+		gsl_poly_solve_quadratic(a, b, d, &roots[0], &roots[1]);
+		return (size_t)-1;
+	}
+	else
+	{
+		// One real solution.
+		//	- Two quadratic curves touch each other.
+		//	- A linear equation just touches a quadratic equation.
+		//	- Two lines intersect at a point.
+		// Two real solutions.
+		//	- A quadratic equation and a linear equation.
+		//	- Two quadratic equations.
+		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
+	}
+#elif 0
+	const double a = coeffs1[0] - coeffs2[0];
+	const double b = coeffs1[1] - coeffs2[1];
+	const double c = coeffs1[2] - coeffs2[2];
+	const double d = coeffs1[3] - coeffs2[3];
+	// The ratios between coefficients are important, but not their differences.
 	if (std::abs(a) <= eps && std::abs(b) <= 0 && std::abs(c) <= eps)
 	{
 		// Infinitely many real solutions.
@@ -451,12 +515,13 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 		//	- Two parallel linear equations: vertical, horizontal, inclined lines.
 		else return 0;
 	}
-	else if (std::abs(c) <= eps)  // y can have arbitrary values.
+	// When coeffs1[2] or coeffs2[2] is zero, y in the equation can be arbitrary.
+	else if (std::abs(c) <= eps)
 	{
 		// Infinitely many real solutions.
-		//	- Solutions are one vertical line: x = x0 when a = 0.
-		//	- Solutions are two vertical lines: x = x0 and x = x1 when a != 0.
-		gsl_poly_solve_quadratic(a, b, d, &x0, &x1);
+		//	- Solutions are one vertical line: x = roots[0] when a = 0.
+		//	- Solutions are two vertical lines: x = roots[0] and x = roots[1] when a != 0.
+		gsl_poly_solve_quadratic(a, b, d, &roots[0], &roots[1]);
 		return (size_t)-1;
 	}
 	else
@@ -468,20 +533,20 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 		// Two real solutions.
 		//	- A quadratic equation and a linear equation.
 		//	- Two quadratic equations.
-		return gsl_poly_solve_quadratic(a1 * c2 - a2 * c1, b1 * c2 - b2 * c1, d1 * c2 - d2 * c1, &x0, &x1);
+		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
 	}
 #else
-	if (std::abs(c1) > eps && std::abs(c2) > eps)
-		return gsl_poly_solve_quadratic(a1 * c2 - a2 * c1, b1 * c2 - b2 * c1, d1 * c2 - d2 * c1, &x0, &x1);
-	else if (std::abs(c1) > eps)  // c2 is nearly zero.
-		return gsl_poly_solve_quadratic(a2, b2, d2, &x0, &x1);
-	else if (std::abs(c2) > eps)  // c1 is nearly zero.
-		return gsl_poly_solve_quadratic(a1, b1, d1, &x0, &x1);
-	else  // Both c1 and c2 are nearly zero.
+	if (std::abs(coeffs1[2]) > eps && std::abs(coeffs2[2]) > eps)
+		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
+	else if (std::abs(coeffs1[2]) > eps)  // coeffs2[2] is nearly zero.
+		return gsl_poly_solve_quadratic(coeffs2[0], coeffs2[1], coeffs2[3], &roots[0], &roots[1]);
+	else if (std::abs(coeffs2[2]) > eps)  // coeffs1[2] is nearly zero.
+		return gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &roots[0], &roots[1]);
+	else  // Both coeffs1[2] and coeffs2[2] are nearly zero.
 	{
 		double s0 = 0.0, s1 = 0.0, t0 = 0.0, t1 = 0.0;
-		const int num1 = gsl_poly_solve_quadratic(a1, b1, d1, &s0, &s1);
-		const int num2 = gsl_poly_solve_quadratic(a2, b2, d2, &t0, &t1);
+		const int num1 = gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &s0, &s1);
+		const int num2 = gsl_poly_solve_quadratic(coeffs2[0], coeffs2[1], coeffs2[3], &t0, &t1);
 
 		if (num1 <= 0 || num2 <= 0) return 0;
 		else if (1 == num1)
@@ -490,7 +555,7 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 			{
 				if (std::abs(s0 - t0) <= tol)
 				{
-					x0 = 0.5 * (s0 + t0);
+					roots[0] = 0.5 * (s0 + t0);
 					return 1;
 				}
 				else return 0;
@@ -499,12 +564,12 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 			{
 				if (std::abs(s0 - t0) <= tol)
 				{
-					x0 = 0.5 * (s0 + t0);
+					roots[0] = 0.5 * (s0 + t0);
 					return 1;
 				}
 				else if (std::abs(s0 - t1) <= tol)
 				{
-					x0 = 0.5 * (s0 + t1);
+					roots[0] = 0.5 * (s0 + t1);
 					return 1;
 				}
 				else return 0;
@@ -517,12 +582,12 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 			{
 				if (std::abs(s0 - t0) <= tol)
 				{
-					x0 = 0.5 * (s0 + t0);
+					roots[0] = 0.5 * (s0 + t0);
 					return 1;
 				}
 				else if (std::abs(s1 - t0) <= tol)
 				{
-					x0 = 0.5 * (s1 + t0);
+					roots[0] = 0.5 * (s1 + t0);
 					return 1;
 				}
 				else return 0;
@@ -538,34 +603,34 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 					switch (minIdx)
 					{
 					case 0:
-						x0 = 0.5 * (s0 + t0);
+						roots[0] = 0.5 * (s0 + t0);
 						if (dists[3] <= tol)
 						{
-							x1 = 0.5 * (s1 + t1);
+							roots[1] = 0.5 * (s1 + t1);
 							return 2;
 						}
 						else return 1;
 					case 1:
-						x0 = 0.5 * (s0 + t1);
+						roots[0] = 0.5 * (s0 + t1);
 						if (dists[2] <= tol)
 						{
-							x1 = 0.5 * (s1 + t0);
+							roots[1] = 0.5 * (s1 + t0);
 							return 2;
 						}
 						else return 1;
 					case 2:
-						x0 = 0.5 * (s1 + t0);
+						roots[0] = 0.5 * (s1 + t0);
 						if (dists[1] <= tol)
 						{
-							x1 = 0.5 * (s0 + t1);
+							roots[1] = 0.5 * (s0 + t1);
 							return 2;
 						}
 						else return 1;
 					case 3:
-						x0 = 0.5 * (s1 + t1);
+						roots[0] = 0.5 * (s1 + t1);
 						if (dists[0] <= tol)
 						{
-							x1 = 0.5 * (s0 + t0);
+							roots[1] = 0.5 * (s0 + t0);
 							return 2;
 						}
 						else return 1;
