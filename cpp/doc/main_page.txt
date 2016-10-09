@@ -25,7 +25,7 @@
  *			- e.g.) mkdir my_build_dir
  *		- Change the directory to the build directory.
  *			- e.g.) cd my_build_dir
- *		- Run CMake.
+ *		- Run <a href="https://cmake.org/documentation/">CMake</a>.
  *		- Configure and generate in CMake.
  *		- Run make.
  *			- make
@@ -33,7 +33,7 @@
  *			- make doc
  *
  *	@subsection UsingIDESubsection Using IDE
- *	SWL supports Code::Blocks and Visual Studio.
+ *	SWL supports <a href="http://www.codeblocks.org/">Code::Blocks</a> and <a href="https://www.visualstudio.com/">Visual Studio</a>.
  *		- Change the directory to SWL.
  *		- Run IDE.
  *			- Use Code::Blocks in the Unix-like systems.
@@ -52,4 +52,15 @@
  *				- ./build_all.sh
  *			- In Windows:
  *				- build_all.bat
+ *
+ *	@section DocumentSection Document
+ *	Use the SWL's doxygen configuation file, doc/swl.doxy.
+ *		- Change the directory to SWL.
+ *		- Change the directory to doc.
+ *			- cd doc
+ *		- Run <a href="https://www.stack.nl/~dimitri/doxygen/manual/">Doxygen</a> command.
+ *			- doxygen swl.doxy
+ *		- Open an HTML page or a RTF file.
+ *			- Open doc/html/index.html.
+ *			- Open doc/rtf/refman.rtf.
  */
