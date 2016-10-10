@@ -72,8 +72,8 @@ namespace swl {
 
 /*static*/ double MathExt::logb(const double base, const double x)
 {
-	const double dTol = MathConstant::EPS;
-	if (base <= 0.0 || (-dTol <= base - 1.0 && base - 1.0 <= dTol))
+	const double tol = MathConstant::EPS;
+	if (base <= 0.0 || (-tol <= base - 1.0 && base - 1.0 <= tol))
 	{
 		//std::ostringstream stream;
 		//stream << "swl::MathExt::logb() at " << __LINE__ << " in " << __FILE__;
@@ -137,7 +137,7 @@ namespace swl {
 	} 
 }
 
-/*static*/ double MathExt::gcd(const double lhs, const double rhs, const double dTol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::gcd(const double lhs, const double rhs, const double& tol /*= MathConstant::EPS*/)
 // GCD: greatest common divisor
 // use Euclidean algorithm
 // if return value is one(1), GCD does not exist
@@ -149,10 +149,10 @@ namespace swl {
 	{
 		//lhs2 = std::fmod(lhs2, rhs2);
 		lhs2 = round(std::fmod(lhs2, rhs2));
-		if (-dTol <= lhs2 && lhs2 <= dTol) return rhs2;
+		if (-tol <= lhs2 && lhs2 <= tol) return rhs2;
 		//rhs2 = std::fmod(rhs2, lhs2);
 		rhs2 = round(std::fmod(rhs2, lhs2));
-		if (-dTol <= rhs2 && rhs2 <= dTol) return lhs2;
+		if (-tol <= rhs2 && rhs2 <= tol) return lhs2;
 	}
 }
 
@@ -160,9 +160,9 @@ namespace swl {
 // LCM: least common multiplier
 {  return lhs * rhs / gcd(lhs, rhs);  }
 
-/*static*/ double MathExt::lcm(const double lhs, const double rhs, const double dTol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::lcm(const double lhs, const double rhs, const double& tol /*= MathConstant::EPS*/)
 // LCM: least common multiplier
-{  return lhs * rhs / gcd(lhs, rhs, dTol);  }
+{  return lhs * rhs / gcd(lhs, rhs, tol);  }
 
 /*static*/ unsigned long MathExt::factorial(const unsigned long n)
 {
@@ -183,11 +183,11 @@ namespace swl {
 	return ulFactorial;
 }
 
-/*static*/ double MathExt::factorial(const double n, const double dTol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::factorial(const double n, const double& tol /*= MathConstant::EPS*/)
 {
 	double dFactorial = 1.0;
 	
-	if ((-dTol <= n && n <= dTol) || (-dTol <= n - 1.0 && n - 1.0 <= dTol)) return 1.0;
+	if ((-tol <= n && n <= tol) || (-tol <= n - 1.0 && n - 1.0 <= tol)) return 1.0;
 	for (unsigned long k = (unsigned long)round(n); k > 1ul; --k)
 	{
 		if (std::numeric_limits<double>::max() / dFactorial < k)
@@ -214,7 +214,7 @@ namespace swl {
 	return factorial(lhs) / factorial(lhs - rhs); 
 }
 
-/*static*/ double MathExt::permutation(const double lhs, const double rhs, const double dTol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::permutation(const double lhs, const double rhs, const double& tol /*= MathConstant::EPS*/)
 {
 	if (lhs < rhs)
 	{
@@ -223,7 +223,7 @@ namespace swl {
 		//throw std::invalid_argument(stream.str().c_str());
 		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
-	return factorial(lhs, dTol) / factorial(lhs - rhs, dTol); 
+	return factorial(lhs, tol) / factorial(lhs - rhs, tol); 
 }
 
 /*static*/ unsigned long MathExt::binomial(const unsigned long lhs, const unsigned long rhs)
@@ -239,7 +239,7 @@ namespace swl {
 }
 
 // combination or binomial
-/*static*/ double MathExt::binomial(const double lhs, const double rhs, const double dTol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::binomial(const double lhs, const double rhs, const double& tol /*= MathConstant::EPS*/)
 {
 	if (lhs < rhs)
 	{
@@ -248,7 +248,7 @@ namespace swl {
 		//throw std::invalid_argument(stream.str().c_str());
 		throw LogException(LogException::L_ERROR, "invalid argument", __FILE__, __LINE__, __FUNCTION__);
 	}
-	return factorial(lhs, dTol) / (factorial(lhs - rhs, dTol) * factorial(rhs, dTol));
+	return factorial(lhs, tol) / (factorial(lhs - rhs, tol) * factorial(rhs, tol));
 }
 
 /*static*/ double MathExt::det(const double a, const double b, const double c, const double d)
@@ -262,7 +262,7 @@ namespace swl {
 }
 
 
-/*static*/ double MathExt::centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double tol /*= MathConstant::EPS*/)
+/*static*/ double MathExt::centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double& tol /*= MathConstant::EPS*/)
 {
     const double sin_phi1 = std::sin(latitude1), cos_phi1 = std::cos(latitude1);
     const double sin_phi2 = std::sin(latitude2), cos_phi2 = std::cos(latitude2);

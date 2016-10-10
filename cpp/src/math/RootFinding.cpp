@@ -4,6 +4,9 @@
 #include "swl/base/LogException.h"
 #include <gsl/gsl_poly.h>
 #include <numeric>
+#include <algorithm>
+#include <cmath>
+#include <cassert>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -59,7 +62,7 @@ namespace swl {
 //-----------------------------------------------------------------------------------------
 // Root Finding.
 
-double RootFinding::secant(double init, double (*func)(double), const double tol /*= MathConstant::EPS*/)
+double RootFinding::secant(double init, double (*func)(double), const double& tol /*= MathConstant::EPS*/)
 {
 	double delta, final;
 	double front, rear;
@@ -94,7 +97,7 @@ double RootFinding::secant(double init, double (*func)(double), const double tol
 	return final;
 }
 
-double RootFinding::bisection(double left, double right, double (*func)(double), const double tol /*= MathConstant::EPS*/)
+double RootFinding::bisection(double left, double right, double (*func)(double), const double& tol /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -137,7 +140,7 @@ double RootFinding::bisection(double left, double right, double (*func)(double),
 	return mid;
 }
 
-double RootFinding::falsePosition(double left, double right, double (*func)(double), const double tol /*= MathConstant::EPS*/)
+double RootFinding::falsePosition(double left, double right, double (*func)(double), const double& tol /*= MathConstant::EPS*/)
 {
 	double front, rear;
 	front = (*func)(left);
@@ -179,7 +182,7 @@ double RootFinding::falsePosition(double left, double right, double (*func)(doub
 	return inter;
 }
 
-bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std::complex<double>, 2>& roots, const double tol /*= MathConstant::EPS*/)
+bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std::complex<double>, 2>& roots, const double& tol /*= MathConstant::EPS*/)
 {
 	if (MathUtil::isZero(coeffs[0], tol))
 	{
@@ -223,7 +226,7 @@ bool RootFinding::quadratic(const std::array<double, 3>& coeffs, std::array<std:
 	return true;
 }
 
-bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::complex<double>, 3>& roots, const double tol /*= MathConstant::EPS*/)
+bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::complex<double>, 3>& roots, const double& tol /*= MathConstant::EPS*/)
 {
 	if (-tol <= coeffs[0] && coeffs[0] <= tol)
 	{
@@ -284,7 +287,7 @@ bool RootFinding::cubic(const std::array<double, 4>& coeffs, std::array<std::com
 	return true;
 }
 
-bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::complex<double>, 4>& roots, const double tol /*= MathConstant::EPS*/)
+bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::complex<double>, 4>& roots, const double& tol /*= MathConstant::EPS*/)
 {
 	if (MathUtil::isZero(coeffs[0], tol))
 	{
@@ -338,12 +341,12 @@ bool RootFinding::quartic(const std::array<double, 5>& coeffs, std::array<std::c
 	return true;
 }
 
-bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::complex<double> >& roots, const double tol /*= MathConstant::EPS*/)
+bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::complex<double> >& roots, const double& tol /*= MathConstant::EPS*/)
 {
 	std::vector<double>::size_type nOrder = coeffs.size() - 1;
 	if (nOrder < 1)
 	{
-		throw LogException(LogException::L_ERROR, "illegal dimension", __FILE__, __LINE__, __FUNCTION__);
+		throw LogException(LogException::L_ERROR, "Illegal dimension", __FILE__, __LINE__, __FUNCTION__);
 		//return false;
 	}
 	else if (MathUtil::isZero(coeffs[0], tol))
@@ -428,11 +431,20 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 	return true;
 }
 
-/*static*/ size_t RootFinding::solveSystemOfQuadraticEquations(const std::array<double, 4>& coeffs1, const std::array<double, 4>& coeffs2, std::array<double, 2>& roots, const double tol /*= MathConstant::TOL_5*/)
+/*static*/ size_t RootFinding::solveSystemOfQuadraticEquations(const std::array<double, 4>& coeffs1, const std::array<double, 4>& coeffs2, std::array<double, 2>& roots, const double& eps /*= MathConstant::EPS*/)
 {
-	const double eps = std::numeric_limits<double>::epsilon();
+	const bool isVertical1 = std::abs(coeffs1[2]) <= eps;
+	const bool isVertical2 = std::abs(coeffs2[2]) <= eps;
 
 #if 1
+	// It is important whether the ratios between corresponding coefficients, but not their differences, are the same or not.
+	//	e.g.) a1 / a2 = b1 / b2 = c1 / c2 = d1 / d2 = ?
+#if 0
+	const double a = coeffs1[0] - coeffs2[0];
+	const double b = coeffs1[1] - coeffs2[1];
+	const double c = coeffs1[2] - coeffs2[2];
+	const double d = coeffs1[3] - coeffs2[3];
+#else
 	// L1 norm.
 	const double norm1 = std::accumulate(coeffs1.begin(), coeffs1.end(), 0.0, [](const double sum, const double elem) { return sum + std::abs(elem); });
 	const double norm2 = std::accumulate(coeffs2.begin(), coeffs2.end(), 0.0, [](const double sum, const double elem) { return sum + std::abs(elem); });
@@ -451,196 +463,137 @@ bool RootFinding::bairstow(const std::vector<double>& coeffs, std::vector<std::c
 		return (size_t)-1;
 	}
 
-	// It is important that the ratios between corresponding coefficients, but not their differences, are the same.
-	//	e.g.) a1 / a2 = b1 / b2 = c1 / c2 = d1 / d2 = ?
+	std::array<double, 4> coeffs;
+	std::transform(coeffs1.begin(), coeffs1.end(), coeffs2.begin(), coeffs.begin(), [&norm1, &norm2](const double coeff1, const double coeff2) { return coeff1 / norm1 - coeff2 / norm2; });
 
-	if (std::abs(coeffs1[2]) > eps && std::abs(coeffs2[2]) > eps)
-	{
-		const double a = coeffs1[0] / coeffs1[2] - coeffs2[0] / coeffs2[2];
-		const double b = coeffs1[1] / coeffs1[2] - coeffs2[1] / coeffs2[2];
-		const double c = 0.0; //coeffs1[2] / coeffs1[2] - coeffs2[2] / coeffs2[2];
-		const double d = coeffs1[3] / coeffs1[2] - coeffs2[3] / coeffs2[2];
-		if (std::abs(a) <= eps && std::abs(b) <= 0 && std::abs(c) <= eps)
-		{
-			// Infinitely many real solutions.
-			//	- Two identical quadratic equations.
-			//	- Two identical linear equations.
-			//		Two identical vertical lines.
-			if (std::abs(d) <= eps) return (size_t)-1;
-			// No real solution (when they never intersect).
-			//	- Two (parallel) quadratic equations: y = x^2 - 3*x + 2, y = x^2 - 3*x + 3.
-			//	- A quadratic equation and a linear equation: y = x^2 + 1, y = x.
-			//	- Two parallel linear equations: vertical, horizontal, inclined lines.
-			else return 0;
-		}
-	}
-	// When coeffs1[2] or coeffs2[2] is zero, y in the equation can be arbitrary.
-	else if (std::abs(coeffs1[2]) <= eps)
-	{
-		// Infinitely many real solutions.
-		//	- Solutions are one vertical line: x = roots[0] when a = 0.
-		//	- Solutions are two vertical lines: x = roots[0] and x = roots[1] when a != 0.
-		gsl_poly_solve_quadratic(a, b, d, &roots[0], &roots[1]);
-		return (size_t)-1;
-	}
-	else
-	{
-		// One real solution.
-		//	- Two quadratic curves touch each other.
-		//	- A linear equation just touches a quadratic equation.
-		//	- Two lines intersect at a point.
-		// Two real solutions.
-		//	- A quadratic equation and a linear equation.
-		//	- Two quadratic equations.
-		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
-	}
-#elif 0
-	const double a = coeffs1[0] - coeffs2[0];
-	const double b = coeffs1[1] - coeffs2[1];
-	const double c = coeffs1[2] - coeffs2[2];
-	const double d = coeffs1[3] - coeffs2[3];
-	// The ratios between coefficients are important, but not their differences.
+	const double& a = coeffs[0];
+	const double& b = coeffs[1];
+	const double& c = coeffs[2];
+	const double& d = coeffs[3];
+#endif
+
 	if (std::abs(a) <= eps && std::abs(b) <= 0 && std::abs(c) <= eps)
 	{
-		// Infinitely many real solutions.
+		// If d == 0, infinitely many real solutions exist.
 		//	- Two identical quadratic equations.
 		//	- Two identical linear equations.
 		//		Two identical vertical lines.
-		if (std::abs(d) <= eps) return (size_t)-1;
-		// No real solution (when they never intersect).
+		// Otherwise, no real solution (when they never intersect) exists.
 		//	- Two (parallel) quadratic equations: y = x^2 - 3*x + 2, y = x^2 - 3*x + 3.
 		//	- A quadratic equation and a linear equation: y = x^2 + 1, y = x.
 		//	- Two parallel linear equations: vertical, horizontal, inclined lines.
-		else return 0;
+		return std::abs(d) <= eps ? (size_t)-1 : 0;
 	}
-	// When coeffs1[2] or coeffs2[2] is zero, y in the equation can be arbitrary.
-	else if (std::abs(c) <= eps)
+	// When either coeffs1[2] or coeffs2[2] is zero, y in the corresponding equation can be 'arbitrary' and x has one (when a = 0) or two (when a != 0) values.
+	//	- This case is different from when c = 0, which means a case that y values are the same.
+	else if (isVertical1 && isVertical2)
 	{
-		// Infinitely many real solutions.
+		// We may have up to 4 vertical lines, where two of them are from the 1st equation and the other two are from the 2nd one.
+		double x0 = 0.0, x1 = 0.0;
+		switch (gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &x0, &x1))
+		{
+		case 0:
+			return 0;
+		case 1:
+			// Check if a vertical line is identical.
+			if ((coeffs2[0] * x0 * x0 + coeffs2[1] * x0 + coeffs2[3]) <= eps)
+			{
+				roots[0] = x0;
+				return (size_t)-1;
+			}
+			else return 0;
+		case 2:
+		{
+			// Check if two vertical lines are identical.
+			int numRoots = 0;
+			if ((coeffs2[0] * x0 * x0 + coeffs2[1] * x0 + coeffs2[3]) <= eps)
+			{
+				roots[0] = x0;
+				++numRoots;
+			}
+			if ((coeffs2[0] * x1 * x1 + coeffs2[1] * x1 + coeffs2[3]) <= eps)
+			{
+				if (numRoots > 0) roots[1] = x1;
+				else roots[0] = x1;
+				++numRoots;
+			}
+			return numRoots > 0 ? (size_t)-1 : 0;
+		}
+		default:
+			assert(false);
+			return 0;
+		}
+	}
+	else if (isVertical1)
+	{
+		// The 1st equation has infinitely many real solutions.
 		//	- Solutions are one vertical line: x = roots[0] when a = 0.
 		//	- Solutions are two vertical lines: x = roots[0] and x = roots[1] when a != 0.
-		gsl_poly_solve_quadratic(a, b, d, &roots[0], &roots[1]);
-		return (size_t)-1;
+		// The final solutions are intersections of the 2nd equation with these vertical lines, so x values are decided by the 1st equation.
+		return gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &roots[0], &roots[1]);
+	}
+	else if (isVertical2)
+	{
+		// The 2nd equation has infinitely many real solutions.
+		//	- Solutions are one vertical line: x = roots[0] when a = 0.
+		//	- Solutions are two vertical lines: x = roots[0] and x = roots[1] when a != 0.
+		// The final solutions are intersections of the 1st equation with these vertical lines, so x values are decided by the 2nd equation.
+		return gsl_poly_solve_quadratic(coeffs2[0], coeffs2[1], coeffs2[3], &roots[0], &roots[1]);
 	}
 	else
 	{
-		// One real solution.
+		// One real solution exists.
 		//	- Two quadratic curves touch each other.
 		//	- A linear equation just touches a quadratic equation.
 		//	- Two lines intersect at a point.
-		// Two real solutions.
+		// Two real solutions exist.
 		//	- A quadratic equation and a linear equation.
 		//	- Two quadratic equations.
 		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
 	}
 #else
-	if (std::abs(coeffs1[2]) > eps && std::abs(coeffs2[2]) > eps)
+	if (!isVertical1 && !isVertical2)
 		return gsl_poly_solve_quadratic(coeffs1[0] * coeffs2[2] - coeffs2[0] * coeffs1[2], coeffs1[1] * coeffs2[2] - coeffs2[1] * coeffs1[2], coeffs1[3] * coeffs2[2] - coeffs2[3] * coeffs1[2], &roots[0], &roots[1]);
-	else if (std::abs(coeffs1[2]) > eps)  // coeffs2[2] is nearly zero.
+	else if (!isVertical1)  // coeffs2[2] is nearly zero.
 		return gsl_poly_solve_quadratic(coeffs2[0], coeffs2[1], coeffs2[3], &roots[0], &roots[1]);
-	else if (std::abs(coeffs2[2]) > eps)  // coeffs1[2] is nearly zero.
+	else if (!isVertical2)  // coeffs1[2] is nearly zero.
 		return gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &roots[0], &roots[1]);
 	else  // Both coeffs1[2] and coeffs2[2] are nearly zero.
 	{
-		double s0 = 0.0, s1 = 0.0, t0 = 0.0, t1 = 0.0;
-		const int num1 = gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &s0, &s1);
-		const int num2 = gsl_poly_solve_quadratic(coeffs2[0], coeffs2[1], coeffs2[3], &t0, &t1);
-
-		if (num1 <= 0 || num2 <= 0) return 0;
-		else if (1 == num1)
+		double x0 = 0.0, x1 = 0.0;
+		switch (gsl_poly_solve_quadratic(coeffs1[0], coeffs1[1], coeffs1[3], &x0, &x1))
 		{
-			if (1 == num2)
+		case 0:
+			return 0;
+		case 1:
+			// Check if a vertical line is identical.
+			if ((coeffs2[0] * x0 * x0 + coeffs2[1] * x0 + coeffs2[3]) <= eps)
 			{
-				if (std::abs(s0 - t0) <= tol)
-				{
-					roots[0] = 0.5 * (s0 + t0);
-					return 1;
-				}
-				else return 0;
+				roots[0] = x0;
+				return (size_t)-1;
 			}
-			else if (2 == num2)
-			{
-				if (std::abs(s0 - t0) <= tol)
-				{
-					roots[0] = 0.5 * (s0 + t0);
-					return 1;
-				}
-				else if (std::abs(s0 - t1) <= tol)
-				{
-					roots[0] = 0.5 * (s0 + t1);
-					return 1;
-				}
-				else return 0;
-			}
-			else assert(false);
-		}
-		else if (2 == num1)
+			else return 0;
+		case 2:
 		{
-			if (1 == num2)
+			// Check if two vertical lines are identical.
+			int numRoots = 0;
+			if ((coeffs2[0] * x0 * x0 + coeffs2[1] * x0 + coeffs2[3]) <= eps)
 			{
-				if (std::abs(s0 - t0) <= tol)
-				{
-					roots[0] = 0.5 * (s0 + t0);
-					return 1;
-				}
-				else if (std::abs(s1 - t0) <= tol)
-				{
-					roots[0] = 0.5 * (s1 + t0);
-					return 1;
-				}
-				else return 0;
+				roots[0] = x0;
+				++numRoots;
 			}
-			else if (2 == num2)
+			if ((coeffs2[0] * x1 * x1 + coeffs2[1] * x1 + coeffs2[3]) <= eps)
 			{
-				const std::vector<double> dists({ std::abs(s0 - t0), std::abs(s0 - t1), std::abs(s1 - t0), std::abs(s1 - t1) });
-				const auto minIt = std::min_element(dists.begin(), dists.end());
-				const auto minIdx = std::distance(dists.begin(), minIt);
-				if (*minIt > tol) return 0;
-				else
-				{
-					switch (minIdx)
-					{
-					case 0:
-						roots[0] = 0.5 * (s0 + t0);
-						if (dists[3] <= tol)
-						{
-							roots[1] = 0.5 * (s1 + t1);
-							return 2;
-						}
-						else return 1;
-					case 1:
-						roots[0] = 0.5 * (s0 + t1);
-						if (dists[2] <= tol)
-						{
-							roots[1] = 0.5 * (s1 + t0);
-							return 2;
-						}
-						else return 1;
-					case 2:
-						roots[0] = 0.5 * (s1 + t0);
-						if (dists[1] <= tol)
-						{
-							roots[1] = 0.5 * (s0 + t1);
-							return 2;
-						}
-						else return 1;
-					case 3:
-						roots[0] = 0.5 * (s1 + t1);
-						if (dists[0] <= tol)
-						{
-							roots[1] = 0.5 * (s0 + t0);
-							return 2;
-						}
-						else return 1;
-					default:
-						assert(false);
-						break;
-					}
-				}
+				if (numRoots > 0) roots[1] = x1;
+				else roots[0] = x1;
+				++numRoots;
 			}
-			else assert(false);
+			return numRoots > 0 ? (size_t)-1 : 0;
 		}
-		else assert(false);
+		default:
+			assert(false);
+			return 0;
+		}
 	}
 #endif
 }

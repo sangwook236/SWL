@@ -293,7 +293,7 @@ size_t Quadratic2RansacEstimator::lookForInliers(std::vector<bool> &inlierFlags,
 // REF [function] >> GeometryUtil::computeNearestPointWithQuadratic().
 double Quadratic2RansacEstimator::computeSquaredMinDistanceFromModel(const double x0, const double y0) const
 {
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 
 	// Compute distance from a point to a model.
 	const double c2 = c_ * c_;
@@ -424,7 +424,7 @@ void circle2d_estimation_using_ransac()
 	const double CIRCLE_EQN[4] = { 1, -2, 4, -4 };  // (x - 1)^2 + (y + 2)^2 = 3^2 <=> x^2 + y^2 - 2 * x + 4 * y - 4 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> sample;
@@ -583,7 +583,7 @@ void quadratic2d_estimation_using_ransac()
 	const double QUADRATIC_EQN[4] = { 1, -1, 1, -2 };  // x^2 - x + y - 2 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> sample;

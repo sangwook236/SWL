@@ -25,7 +25,7 @@ namespace swl {
 	return true;
 }
 
-/*static*/ bool DataNormalization::normalizeDataByAverageDistance(Eigen::MatrixXd &D, const double averageDistance, const double tol /*= MathConstant::EPS*/)
+/*static*/ bool DataNormalization::normalizeDataByAverageDistance(Eigen::MatrixXd &D, const double averageDistance, const double& tol /*= MathConstant::EPS*/)
 // goal : 2-norm of each row = averageDistance.
 // row : The dimension of data.
 // col : The number of data.
@@ -49,7 +49,7 @@ namespace swl {
 	return true;
 }
 
-/*static*/ bool DataNormalization::normalizeDataByRange(Eigen::MatrixXd &D, const double minBound, const double maxBound, const double tol /*= MathConstant::EPS*/)
+/*static*/ bool DataNormalization::normalizeDataByRange(Eigen::MatrixXd &D, const double minBound, const double maxBound, const double& tol /*= MathConstant::EPS*/)
 // goal : Min & max of each row = [minBound, maxBound].
 // row : The dimension of data.
 // col : The number of data.
@@ -154,7 +154,7 @@ namespace swl {
 	return true;
 }
 
-/*static*/ bool DataNormalization::normalizeDataByTStatistic(Eigen::MatrixXd &D, const double tol /*= MathConstant::EPS*/)
+/*static*/ bool DataNormalization::normalizeDataByTStatistic(Eigen::MatrixXd &D, const double& tol /*= MathConstant::EPS*/)
 // goal : t = (x - sample-mean) / sqrt(sample-variance / N) for each row.
 // row : The dimension of data.
 // col : The number of data.

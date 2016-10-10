@@ -181,7 +181,7 @@ static long convert_base_field(const std::string &num, const long base)
 //   13.3 | 2.3 = 13.3 - 11.0   |         1.3         3.7          -1.1          -3.5
 //   13.4 | 0.0 = 13.4 - 13.4   |        -1.0         1.4          -3.4          -5.8
 //   13.5 | 0.1 = 13.5 - 13.4   |        -0.9         1.5          -3.3          -5.7
-/*static*/ double MathUtil::wrap(const double x, const double lower, const double upper, const double tol /*= MathConstant::EPS*/)
+/*static*/ double MathUtil::wrap(const double x, const double lower, const double upper, const double& tol /*= MathConstant::EPS*/)
 {
 	const double span = upper - lower;
 	const double y = x - lower;
@@ -194,7 +194,7 @@ static long convert_base_field(const std::string &num, const long base)
 		return x - ((fractpart < -tol) ? (intpart - 1.0) : intpart) * span;
 }
 
-/*static*/ bool MathUtil::isInteger(const double x, const double tol /*= MathConstant::EPS*/)
+/*static*/ bool MathUtil::isInteger(const double x, const double& tol /*= MathConstant::EPS*/)
 {
 	double integer;
 	const double frac = std::modf(x, &integer);
@@ -202,7 +202,7 @@ static long convert_base_field(const std::string &num, const long base)
 	//return std::numeric_limits<T>::is_integer;
 }
 
-/*static*/ bool MathUtil::isReal(const double x, const double tol /*= MathConstant::EPS*/)
+/*static*/ bool MathUtil::isReal(const double x, const double& tol /*= MathConstant::EPS*/)
 {
 	double integer;
 	const double frac = std::modf(x, &integer);

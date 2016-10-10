@@ -144,7 +144,7 @@ void line2d_estimation_using_ransac()
 	const double LINE_EQN[3] = { 2, 3, -1 };  // 2 * x + 3 * y - 1 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 
 	// Generate random points.
 	std::vector<std::array<double, 2>> sample;

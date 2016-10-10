@@ -9,46 +9,46 @@
 namespace swl {
 
 //-----------------------------------------------------------------------------------------
-// struct MathUtil.
+// Math Util.
 
 struct SWL_MATH_API MathUtil
 {
 public:
 	///
-	static bool isZero(const double x, const double tol = MathConstant::EPS)
+	static bool isZero(const double x, const double& tol = MathConstant::EPS)
 	{  return -tol <= x && x <= tol;  }
-	static bool isNotZero(const double x, const double tol = MathConstant::EPS)
+	static bool isNotZero(const double x, const double& tol = MathConstant::EPS)
 	{  return x < -tol || x > tol;  }
 
-	static bool isEqual(const double x, const double y, const double tol = MathConstant::EPS)
+	static bool isEqual(const double x, const double y, const double& tol = MathConstant::EPS)
 	{  return isZero(x - y, tol);  }
 
 	static int sign(const double x)
 	{  return isZero(x) ? 0 : (x > 0.0 ? 1 : -1);  }
-	static bool isPositive(const double x, const double tol = MathConstant::EPS)
+	static bool isPositive(const double x, const double& tol = MathConstant::EPS)
 	{  return x > tol;  }
-	static bool isNegative(const double x, const double tol = MathConstant::EPS)
+	static bool isNegative(const double x, const double& tol = MathConstant::EPS)
 	{  return x < -tol;  }
 
 	/// Check if a value is bouned in the interval (lower, upper).
-	static bool isBounded_oo(const double x, const double lower, const double upper, const double tol = MathConstant::EPS)
+	static bool isBounded_oo(const double x, const double lower, const double upper, const double& tol = MathConstant::EPS)
 	{  return lower - tol < x && x < upper + tol;  }
 	/// Check if a value is bouned in the interval [lower, upper].
-	static bool isBounded_cc(const double x, const double lower, const double upper, const double tol = MathConstant::EPS)
+	static bool isBounded_cc(const double x, const double lower, const double upper, const double& tol = MathConstant::EPS)
 	{  return lower - tol <= x && x <= upper + tol;  }
 	/// Check if a value is bouned in the interval (lower, upper].
-	static bool isBounded_oc(const double x, const double lower, const double upper, const double tol = MathConstant::EPS)
+	static bool isBounded_oc(const double x, const double lower, const double upper, const double& tol = MathConstant::EPS)
 	{  return lower - tol < x && x <= upper + tol;  }
 	/// Check if a value is bouned in the interval [lower, upper).
-	static bool isBounded_co(const double x, const double lower, const double upper, const double tol = MathConstant::EPS)
+	static bool isBounded_co(const double x, const double lower, const double upper, const double& tol = MathConstant::EPS)
 	{  return lower - tol <= x && x < upper + tol;  }
 
 	/// Wraps a value, x in the interval [lower, upper).
-	static double wrap(const double x, const double lower, const double upper, const double tol = MathConstant::EPS);
+	static double wrap(const double x, const double lower, const double upper, const double& tol = MathConstant::EPS);
 
 	///
-	static bool isInteger(const double x, const double tol = MathConstant::EPS);
-	static bool isReal(const double x, const double tol = MathConstant::EPS);
+	static bool isInteger(const double x, const double& tol = MathConstant::EPS);
+	static bool isReal(const double x, const double& tol = MathConstant::EPS);
 
 	///
 	static double toRad(const double deg)

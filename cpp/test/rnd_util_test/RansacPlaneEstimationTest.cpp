@@ -54,7 +54,7 @@ private:
 
 	bool calculateNormal(const double vx1, const double vy1, const double vz1, const double vx2, const double vy2, const double vz2, double &nx, double &ny, double &nz) const
 	{
-		const double eps = swl::MathConstant::EPS;
+		const double& eps = swl::MathConstant::EPS;
 
 		nx = vy1 * vz2 - vz1 * vy2;
 		ny = vz1 * vx2 - vx1 * vz2;
@@ -162,7 +162,7 @@ void plane3d_estimation_using_ransac()
 	const double PLANE_EQN[4] = { 1, -1, 1, -2 };  // x - y + z - 2 = 0.
 	const size_t NUM_INLIERS = 100;
 	const size_t NUM_OUTLIERS = 500;
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 
 	// Generate random points.
 	std::vector<std::array<double, 3>> sample;

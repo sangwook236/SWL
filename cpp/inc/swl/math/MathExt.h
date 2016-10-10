@@ -32,19 +32,19 @@ public:
 
 	/// GCD: greatest common divisor.
 	static unsigned long gcd(const unsigned long lhs, const unsigned long rhs);
-	static double gcd(const double lhs, const double rhs, const double tol = MathConstant::EPS);
+	static double gcd(const double lhs, const double rhs, const double& tol = MathConstant::EPS);
 
 	/// LCM: least common multiplier.
 	static unsigned long lcm(const unsigned long lhs, const unsigned long rhs);
-	static double lcm(const double lhs, const double rhs, const double tol = MathConstant::EPS);
+	static double lcm(const double lhs, const double rhs, const double& tol = MathConstant::EPS);
 
 	///
 	static unsigned long factorial(const unsigned long n);
-	static double factorial(const double n, const double tol = MathConstant::EPS);
+	static double factorial(const double n, const double& tol = MathConstant::EPS);
 	static unsigned long permutation(const unsigned long lhs, const unsigned long rhs);
-	static double permutation(const double lhs, const double rhs, const double tol = MathConstant::EPS);
+	static double permutation(const double lhs, const double rhs, const double& tol = MathConstant::EPS);
 	static unsigned long binomial(const unsigned long lhs, const unsigned long rhs);
-	static double binomial(const double lhs, const double rhs, const double tol = MathConstant::EPS);
+	static double binomial(const double lhs, const double rhs, const double& tol = MathConstant::EPS);
 
 	// [  a  b  ]
 	// [  c  d  ]
@@ -66,7 +66,7 @@ public:
      *
      * @see http://en.wikipedia.org/wiki/Great-circle_distance
      */
-    static double centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double tol = MathConstant::EPS);
+    static double centralAngle(const double longitude1, const double latitude1, const double longitude2, const double latitude2, const double& tol = MathConstant::EPS);
 };
 
 }  // namespace swl

@@ -137,7 +137,7 @@ size_t Ransac::runMLESAC(const size_t maxIterationCount, const size_t minInlierC
 	//size_t prosacSampleCount = 10;
 	size_t prosacSampleCount = availableSampleSetSize + 10;
 	iteration_ = 0;
-	const double eps = swl::MathConstant::EPS;
+	const double& eps = swl::MathConstant::EPS;
 	while (iteration_ < maxIteration && inlierCount < minInlierCount)
 	{
 		// Draw a sample.
