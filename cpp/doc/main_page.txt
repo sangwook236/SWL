@@ -15,7 +15,7 @@
  *		- Mac OS
  *
  *	@section RepositorySection Repository
- *		- <a href="https://github.com/sangwook236/sangwook-library">SWL's repository</a>
+ *		- <a href="https://github.com/sangwook236/SWL">SWL's repository</a>
  *		- <a href="https://github.com/sangwook236">Sang-Wook's GitHub</a>
  *
  *	@section BuildingLibrarySection Building Library
