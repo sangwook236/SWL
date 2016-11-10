@@ -12,9 +12,9 @@
 namespace swl {
 
 //--------------------------------------------------------------------------
-// von Mises target distribution
+// von Mises target distribution.
 
-// [ref] "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2
+// REF [book] >> "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2.
 
 struct VonMisesTargetDistribution: public swl::RejectionSampling::TargetDistribution
 {
@@ -23,8 +23,7 @@ struct VonMisesTargetDistribution: public swl::RejectionSampling::TargetDistribu
 
 	VonMisesTargetDistribution()
 	: base_type(), mean_direction_(0.0), kappa_(0.0)
-	{
-	}
+	{}
 
 	/*virtual*/ double evaluate(const vector_type &x) const;
 
@@ -35,14 +34,14 @@ struct VonMisesTargetDistribution: public swl::RejectionSampling::TargetDistribu
 	}
 
 private:
-	double mean_direction_;  // the mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
-	double kappa_;  // the concentration parameters of the von Mises distribution. kappa >= 0.
+	double mean_direction_;  // The mean directions of the von Mises distribution. 0 <= mu < 2 * pi. [rad].
+	double kappa_;  // The concentration parameters of the von Mises distribution. kappa >= 0.
 };
 
 //--------------------------------------------------------------------------
-// univariate normal proposal distribution
+// Univariate normal proposal distribution.
 
-// [ref] "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2
+// REF [book] >> "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2.
 
 struct UnivariateNormalProposalDistribution: public swl::RejectionSampling::ProposalDistribution
 {
@@ -51,7 +50,7 @@ struct UnivariateNormalProposalDistribution: public swl::RejectionSampling::Prop
 
 	UnivariateNormalProposalDistribution();
 
-	// evaluate k * proposal_distribution(x)
+	// Evaluate k * proposal_distribution(x).
 	/*virtual*/ double evaluate(const vector_type &x) const;
 	/*virtual*/ void sample(vector_type &sample) const;
 
@@ -63,17 +62,17 @@ private:
 	typedef boost::variate_generator<base_generator_type &, boost::normal_distribution<> > generator_type;
 
 private:
-	double mean_;  // the mean of the univariate normal distribution
-	double sigma_;  // the standard deviation of the univariate normal distribution
+	double mean_;  // The mean of the univariate normal distribution.
+	double sigma_;  // The standard deviation of the univariate normal distribution.
 
 	base_generator_type baseGenerator_;
 	mutable generator_type generator_;
 };
 
 //--------------------------------------------------------------------------
-// univariate uniform proposal distribution
+// Univariate uniform proposal distribution.
 
-// [ref] "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2
+// REF [book] >> "Pattern Recognition and Machine Learning" by Christopher M. Bishop, ch. 11.1.2.
 
 struct UnivariateUniformProposalDistribution: public swl::RejectionSampling::ProposalDistribution
 {
@@ -82,7 +81,7 @@ struct UnivariateUniformProposalDistribution: public swl::RejectionSampling::Pro
 
 	UnivariateUniformProposalDistribution();
 
-	// evaluate k * proposal_distribution(x)
+	// Evaluate k * proposal_distribution(x).
 	/*virtual*/ double evaluate(const vector_type &x) const;
 	/*virtual*/ void sample(vector_type &sample) const;
 
@@ -90,14 +89,14 @@ struct UnivariateUniformProposalDistribution: public swl::RejectionSampling::Pro
 	void setSeed(const unsigned int seed);
 
 private:
-	double lower_, upper_;  // the lower & upper bound of the univariate uniform distribution
+	double lower_, upper_;  // The lower & upper bound of the univariate uniform distribution.
 };
 
 //--------------------------------------------------------------------------
-// find MAP estimate of multinomial using entropic prior.
+// Find MAP estimate of multinomial using entropic prior.
 
-// [ref] "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
-// [ref] "Pattern discovery via entropy minimization", M. Brand, AISTATS, 1999.
+// REF [paper] >> "Structure Learning in Conditional Probability Models via an Entropic Prior and Parameter Extinction", M. Brand, Neural Computation, 1999.
+// REF [paper] >> "Pattern discovery via entropy minimization", M. Brand, AISTATS, 1999.
 
 bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const std::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst = true);
 bool computeMAPEstimateOfMultinomialUsingEntropicPrior(const boost::numeric::ublas::vector<double> &omega, const double &z, std::vector<double> &theta, double &logLikelihood, const double terminationTolerance, const std::size_t maxIteration, const bool doesInitializeLambdaFirst = true);
