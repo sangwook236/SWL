@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="swl_kinect_segmentation_app">
+  <Description/>
+  <Dependencies/>
+  <Settings Type="Executable">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-g -Wall -fexceptions " C_Options="-g -Wall -fexceptions " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="./efficient_graph_based_image_segmentation_lib"/>
+        <IncludePath Value="../../inc"/>
+        <IncludePath Value="/usr/local/include/opengm_external/MaxFlow"/>
+        <IncludePath Value="/usr/local/cuda/include"/>
+        <IncludePath Value="/usr/local/include"/>
+      </Compiler>
+      <Linker Options="-O0" Required="yes">
+        <LibraryPath Value="../../lib"/>
+        <LibraryPath Value="/usr/local/cuda/lib64"/>
+        <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="swl_machine_vision_d"/>
+        <Library Value="external-library-maxflow"/>
+        <Library Value="opencv_legacy"/>
+        <Library Value="opencv_calib3d"/>
+        <Library Value="opencv_imgproc"/>
+        <Library Value="opencv_highgui"/>
+        <Library Value="opencv_core"/>
+        <Library Value="cudart"/>
+        <Library Value="boost_timer"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="../../bin/swl_kinect_segmentation_app_d" IntermediateDirectory="./Debug" Command="./swl_kinect_segmentation_app_d" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Workspace Settings&gt;" DbgSetName="&lt;Use Global Settings&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2 -Wall -fexceptions " C_Options="-O2 -Wall -fexceptions " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="./efficient_graph_based_image_segmentation_lib"/>
+        <IncludePath Value="../../inc"/>
+        <IncludePath Value="/usr/local/include/opengm_external/MaxFlow"/>
+        <IncludePath Value="/usr/local/cuda/include"/>
+        <IncludePath Value="/usr/local/include"/>
+      </Compiler>
+      <Linker Options="-s " Required="yes">
+        <LibraryPath Value="../../lib"/>
+        <LibraryPath Value="/usr/local/cuda/lib64"/>
+        <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="swl_machine_vision"/>
+        <Library Value="external-library-maxflow"/>
+        <Library Value="opencv_legacy"/>
+        <Library Value="opencv_calib3d"/>
+        <Library Value="opencv_imgproc"/>
+        <Library Value="opencv_highgui"/>
+        <Library Value="opencv_core"/>
+        <Library Value="cudart"/>
+        <Library Value="boost_timer"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="../../bin/swl_kinect_segmentation_app" IntermediateDirectory="./Debug" Command="./swl_kinect_segmentation_app" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Workspace Settings&gt;" DbgSetName="&lt;Use Global Settings&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+  <VirtualDirectory Name="src">
+    <File Name="DepthGuidedMap.cpp"/>
+    <File Name="EfficientGraphBasedImageSegmentation.cpp"/>
+    <File Name="SegmentationUsingGrabCut.cpp"/>
+    <File Name="SegmentationUsingGraphCut.cpp"/>
+    <File Name="Util.cpp"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/segment.cpp"/>
+    <File Name="gSLIC.cpp"/>
+    <File Name="gslic_lib/FastImgSeg.cpp"/>
+    <File Name="main.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="include">
+    <File Name="DepthGuidedMap.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/convolve.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/disjoint-set.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/filter.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/image.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/imconv.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/imutil.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/misc.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/pnmfile.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/segment-graph.h"/>
+    <File Name="efficient_graph_based_image_segmentation_lib/segment-image.h"/>
+    <File Name="gslic_lib/FastImgSeg.h"/>
+    <File Name="gslic_lib/cudaDefines.h"/>
+    <File Name="gslic_lib/cudaImgTrans.h"/>
+    <File Name="gslic_lib/cudaSegEngine.h"/>
+    <File Name="gslic_lib/cudaSegSLIC.h"/>
+    <File Name="gslic_lib/cudaUtil.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="resource">
+    <File Name="gslic_lib/cudaImgTrans.cu"/>
+    <File Name="gslic_lib/cudaSegEngine.cu"/>
+    <File Name="gslic_lib/cudaSegSLIC.cu"/>
+    <File Name="gslic_lib/cudaUtil.cu"/>
+  </VirtualDirectory>
+  <Dependencies Name="Debug">
+    <Project Name="swl_base"/>
+    <Project Name="swl_machine_vision"/>
+  </Dependencies>
+  <Dependencies Name="Release">
+    <Project Name="swl_base"/>
+    <Project Name="swl_machine_vision"/>
+  </Dependencies>
+</CodeLite_Project>

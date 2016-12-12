@@ -138,7 +138,7 @@
     <ClCompile Include="..\testcase\math\LineTest.cpp" />
     <ClCompile Include="..\testcase\math\PlaneTest.cpp" />
     <ClCompile Include="..\testcase\math\TriangleTest.cpp" />
-    <ClCompile Include="..\testcase\base\LoggerTest.cpp" />
+    <ClCompile Include="..\testcase\base\LogTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Resource.h" />

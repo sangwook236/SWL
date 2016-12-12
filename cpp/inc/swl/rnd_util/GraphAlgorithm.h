@@ -15,8 +15,8 @@ namespace swl {
 // Graph Algorithm.
 
 // REF [site] >> http://www.geeksforgeeks.org/find-paths-given-source-destination/
-template <typename Graph, typename Vertex = Graph::vertex_descriptor>
-void findAllPathsInDirectedGraph(const Graph& graph, const typename Vertex& start, const typename Vertex& target, std::map<Vertex, bool>& visited, std::list<Vertex>& path, std::list<std::list<Vertex> >& paths)
+template <typename Graph, typename Vertex = typename Graph::vertex_descriptor>
+void findAllPathsInDirectedGraph(const Graph& graph, const Vertex& start, const Vertex& target, std::map<Vertex, bool>& visited, std::list<Vertex>& path, std::list<std::list<Vertex> >& paths)
 {
 	// Mark the current node and store it in path.
 	visited[start] = true;
@@ -44,8 +44,8 @@ void findAllPathsInDirectedGraph(const Graph& graph, const typename Vertex& star
 }
 
 // REF [site] >> http://www.geeksforgeeks.org/find-paths-given-source-destination/
-template <typename Graph, typename Vertex = Graph::vertex_descriptor>
-void findAllPathsInUndirectedGraph(const Graph& graph, const typename Vertex& start, const typename Vertex& target, std::map<Vertex, bool>& visited, std::list<Vertex>& path, std::list<std::list<Vertex> >& paths)
+template <typename Graph, typename Vertex = typename Graph::vertex_descriptor>
+void findAllPathsInUndirectedGraph(const Graph& graph, const Vertex& start, const Vertex& target, std::map<Vertex, bool>& visited, std::list<Vertex>& path, std::list<std::list<Vertex> >& paths)
 {
 	// Mark the current node and store it in path.
 	visited[start] = true;
@@ -69,7 +69,7 @@ void findAllPathsInUndirectedGraph(const Graph& graph, const typename Vertex& st
 	visited[start] = false;
 }
 
-template <typename Graph, typename Vertex = Graph::vertex_descriptor>
+template <typename Graph, typename Vertex = typename Graph::vertex_descriptor>
 void findAllPathsInDirectedGraph(const Graph& graph, const Vertex& start, const Vertex& target, std::list<std::list<Vertex> >& paths)
 {
 	std::map<Vertex, bool> visited;
@@ -83,7 +83,7 @@ void findAllPathsInDirectedGraph(const Graph& graph, const Vertex& start, const 
 	findAllPathsInDirectedGraph(graph, start, target, visited, path, paths);
 }
 
-template <typename Graph, typename Vertex = Graph::vertex_descriptor>
+template <typename Graph, typename Vertex = typename Graph::vertex_descriptor>
 void findAllPathsInUndirectedGraph(const Graph& graph, const Vertex& start, const Vertex& target, std::list<std::list<Vertex> >& paths)
 {
 	std::map<Vertex, bool> visited;

@@ -1,6 +1,6 @@
 set(TESTCASE_SRCS
 	# testcase/base
-	testcase/base/LoggerTest.cpp
+	testcase/base/LogTest.cpp
 
 	# testcase/math
 	testcase/math/BaseFieldConversionTest.cpp

@@ -58,7 +58,8 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../testcase/base/LoggerTest.cpp" />
+		<Unit filename="../UnitTestConfig.h" />
+		<Unit filename="../testcase/base/LogTest.cpp" />
 		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
 		<Unit filename="../testcase/math/CurveFittingTest.cpp" />
 		<Unit filename="../testcase/math/DataNormalizationTest.cpp" />

@@ -47,6 +47,7 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-fPIC" />
 			<Add option="-fopenmp" />
 			<Add directory="../../inc" />
@@ -56,11 +57,12 @@
 			<Add library="opencv_imgproc" />
 			<Add library="opencv_highgui" />
 			<Add library="opencv_core" />
+			<Add library="gomp" />
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
 		<Unit filename="../../inc/swl/machine_vision/DerivativesOfGaussian.h" />
+		<Unit filename="../../inc/swl/machine_vision/ExportMachineVision.h" />
 		<Unit filename="../../inc/swl/machine_vision/ImageFilter.h" />
 		<Unit filename="../../inc/swl/machine_vision/ImageRectificationUsingOpenCV.h" />
 		<Unit filename="../../inc/swl/machine_vision/ImageUndistortionUsingOpenCV.h" />

@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="swl_kinematics">
+  <Description/>
+  <Dependencies/>
+  <VirtualDirectory Name="include">
+    <File Name="../../inc/swl/kinematics/ArcPathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/ArticulatedKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/CartesianKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/CartesianPathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/CurvePathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/DHParam.h"/>
+    <File Name="../../inc/swl/kinematics/ExportKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/Joint.h"/>
+    <File Name="../../inc/swl/kinematics/JointParam.h"/>
+    <File Name="../../inc/swl/kinematics/JointPathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/Kinematics.h"/>
+    <File Name="../../inc/swl/kinematics/LinePathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/Link.h"/>
+    <File Name="../../inc/swl/kinematics/ParallelogramLinkKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/PathBlender.h"/>
+    <File Name="../../inc/swl/kinematics/PathPlanner.h"/>
+    <File Name="../../inc/swl/kinematics/PumaKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/RobotKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/ScaraKinematics.h"/>
+    <File Name="../../inc/swl/kinematics/ScrewAxis.h"/>
+    <File Name="../../inc/swl/kinematics/StanfordArmKinematics.h"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="src">
+    <File Name="ArcPathPlanner.cpp"/>
+    <File Name="ArticulatedKinematics.cpp"/>
+    <File Name="CartesianKinematics.cpp"/>
+    <File Name="CartesianPathPlanner.cpp"/>
+    <File Name="CurvePathPlanner.cpp"/>
+    <File Name="DHParam.cpp"/>
+    <File Name="Joint.cpp"/>
+    <File Name="JointParam.cpp"/>
+    <File Name="JointPathPlanner.cpp"/>
+    <File Name="Kinematics.cpp"/>
+    <File Name="LinePathPlanner.cpp"/>
+    <File Name="Link.cpp"/>
+    <File Name="ParallelogramLinkKinematics.cpp"/>
+    <File Name="PathBlender.cpp"/>
+    <File Name="PathPlanner.cpp"/>
+    <File Name="PumaKinematics.cpp"/>
+    <File Name="RobotKinematics.cpp"/>
+    <File Name="ScaraKinematics.cpp"/>
+    <File Name="ScrewAxis.cpp"/>
+    <File Name="StanfordArmKinematics.cpp"/>
+  </VirtualDirectory>
+  <Settings Type="Dynamic Library">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-Wall -g -DBUILD_DLL -fPIC " C_Options="-Wall -g -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="/usr/local/include"/>
+        <IncludePath Value="../../inc"/>
+      </Compiler>
+      <Linker Options="-O0" Required="yes">
+        <LibraryPath Value="../../lib"/>
+        <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="swl_math_d"/>
+        <Library Value="swl_base_d"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="../../lib/libswl_kinematics_d.so" IntermediateDirectory="./Debug" Command="./swl_kinematics_d" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="GCC" DebuggerType="GNU gdb debugger" Type="Dynamic Library" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2 -Wall -DBUILD_DLL -fPIC " C_Options="-O2 -Wall -DBUILD_DLL -fPIC " Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="0">
+        <IncludePath Value="/usr/local/include"/>
+        <IncludePath Value="../../inc"/>
+      </Compiler>
+      <Linker Options="-s " Required="yes">
+        <LibraryPath Value="../../lib"/>
+        <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="swl_math"/>
+        <Library Value="swl_base"/>
+      </Linker>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="../../lib/libswl_kinematics.so" IntermediateDirectory="./Debug" Command="./swl_kinematics" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="no" IsGUIProgram="no" IsEnabled="yes"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName/>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+  <Dependencies Name="Debug">
+    <Project Name="swl_base"/>
+  </Dependencies>
+  <Dependencies Name="Release">
+    <Project Name="swl_base"/>
+  </Dependencies>
+</CodeLite_Project>

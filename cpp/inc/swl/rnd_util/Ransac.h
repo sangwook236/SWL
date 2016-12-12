@@ -7,6 +7,7 @@
 #include "swl/rnd_util/ExportRndUtil.h"
 #include <vector>
 #include <memory>
+#include <stddef.h>
 
 
 namespace swl {

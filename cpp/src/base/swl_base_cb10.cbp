@@ -52,8 +52,8 @@
 		<Unit filename="../../inc/swl/base/IObserver.h" />
 		<Unit filename="../../inc/swl/base/IPrintable.h" />
 		<Unit filename="../../inc/swl/base/IVisitable.h" />
+		<Unit filename="../../inc/swl/base/Log.h" />
 		<Unit filename="../../inc/swl/base/LogException.h" />
-		<Unit filename="../../inc/swl/base/Logger.h" />
 		<Unit filename="../../inc/swl/base/MvcController.h" />
 		<Unit filename="../../inc/swl/base/MvcModel.h" />
 		<Unit filename="../../inc/swl/base/MvcModelUpdateController.h" />

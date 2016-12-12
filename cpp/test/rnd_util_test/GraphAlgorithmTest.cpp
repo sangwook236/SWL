@@ -19,14 +19,14 @@ namespace local {
 template <typename VertexDescriptor>
 void displayPaths(const std::list<std::list<VertexDescriptor> >& paths, const bool reverse = false)
 {
-	for (std::list<std::list<VertexDescriptor> >::const_iterator itPath = paths.begin(); itPath != paths.end(); ++itPath)
+	for (typename std::list<std::list<VertexDescriptor> >::const_iterator itPath = paths.begin(); itPath != paths.end(); ++itPath)
 	{
 		std::cout << "\t";
 		if (reverse)
-			for (std::list<VertexDescriptor>::const_reverse_iterator rit = itPath->rbegin(); rit != itPath->rend(); ++rit)
+			for (typename std::list<VertexDescriptor>::const_reverse_iterator rit = itPath->rbegin(); rit != itPath->rend(); ++rit)
 				std::cout << *rit << " ";
 		else
-			for (std::list<VertexDescriptor>::const_iterator it = itPath->begin(); it != itPath->end(); ++it)
+			for (typename std::list<VertexDescriptor>::const_iterator it = itPath->begin(); it != itPath->end(); ++it)
 				std::cout << *it << " ";
 		std::cout << std::endl;
 	}

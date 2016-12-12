@@ -16,7 +16,7 @@ namespace {
 namespace local {
 
 const size_t NUM_NEIGHBORS = 8;
-const size_t NEIGHBOR_INDICES[] = { 3, 2, 1, 4, -1, 0, 5, 6, 7 };
+const size_t NEIGHBOR_INDICES[] = { 3, 2, 1, 4, (size_t)-1, 0, 5, 6, 7 };
 const cv::Point NEIGHBOR_COORDINATES[] = { cv::Point(1, 0), cv::Point(1, -1), cv::Point(0, -1), cv::Point(-1, -1), cv::Point(-1, 0), cv::Point(-1, 1), cv::Point(0, 1), cv::Point(1, 1) };
 const size_t NEIGHBORHOOD_SIZE = 3;  // 3x3 kernel.
 const cv::Mat NEIGHBORHOOD_KERNEL = (cv::Mat_<short>(NEIGHBORHOOD_SIZE, NEIGHBORHOOD_SIZE) <<
@@ -432,7 +432,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 		if (firstVal == lastVal)
 		{
 			for (std::vector<int>::iterator it = neighborGroupIds.begin(); it != neighborGroupIds.end(); ++it)
-				if (*it == numNeighborGroups) *it = 1;  // Change into the first neighbor group.
+				if ((size_t)*it == numNeighborGroups) *it = 1;  // Change into the first neighbor group.
 			--numNeighborGroups;
 		}
 	}
@@ -457,7 +457,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 // REF [function] >> getNeighborGroups().
 /*static*/ bool SkeletonAlgorithm::isSurroundedBySingleNeighborGroup(const std::vector<int>& neighborGroupIds)
 {
-	int id = -1;
+	//int id = -1;
 	for (std::vector<int>::const_iterator cit = neighborGroupIds.begin(); cit != neighborGroupIds.end(); ++cit)
 		if (0 == *cit) return false;
 	//else if (*cit > 0)
@@ -562,7 +562,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 			}
 		}
 
-		if (neighborGroupIds[0] > 0 & neighborGroupIds[local::NUM_NEIGHBORS - 1] > 0)
+		if (neighborGroupIds[0] > 0 && neighborGroupIds[local::NUM_NEIGHBORS - 1] > 0)
 			for (int i = (int)local::NUM_NEIGHBORS - 1; i >= 0; --i)
 				if (neighborGroupIds[i] > 0)
 				{
@@ -1377,7 +1377,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 
 	const int nextId = (int)local::getNeighborId(next, curr);
 	int startIdx = -1, endIdx = -1, idx = nextId;
-	for (int i = 1; i < local::NUM_NEIGHBORS; ++i)
+	for (int i = 1; i < (int)local::NUM_NEIGHBORS; ++i)
 	{
 		--idx;
 		if (idx < 0) idx = local::NUM_NEIGHBORS - 1;
@@ -1385,15 +1385,15 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 		if (!neighborFlags[idx])
 		{
 			startIdx = idx + 1;
-			if (startIdx >= local::NUM_NEIGHBORS) startIdx = 0;
+			if (startIdx >= (int)local::NUM_NEIGHBORS) startIdx = 0;
 			break;
 		}
 	}
 	idx = nextId;
-	for (int i = 1; i < local::NUM_NEIGHBORS; ++i)
+	for (int i = 1; i < (int)local::NUM_NEIGHBORS; ++i)
 	{
 		++idx;
-		if (idx >= local::NUM_NEIGHBORS) idx = 0;
+		if (idx >= (int)local::NUM_NEIGHBORS) idx = 0;
 
 		if (!neighborFlags[idx])
 		{
@@ -1412,7 +1412,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 
 	idx = startIdx;
 	bool found = false;
-	for (int i = 0; i < local::NUM_NEIGHBORS; ++i)
+	for (int i = 0; i < (int)local::NUM_NEIGHBORS; ++i)
 	{
 		const cv::Point& pt = curr + local::NEIGHBOR_COORDINATES[idx];
 		const int& numNeighborGroups = (int)neighborGroupCounts.at<unsigned char>(pt.y, pt.x);
@@ -1426,7 +1426,7 @@ bool SkeletonAlgorithm::LineSegment::isContained(const cv::Point& pt) const
 		else if (0 == idx % 2 && found)  // Even index has a nearest pixel.
 			return true;
 
-		if (++idx >= local::NUM_NEIGHBORS) idx = 0;
+		if (++idx >= (int)local::NUM_NEIGHBORS) idx = 0;
 	}
 
 	return false;

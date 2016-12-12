@@ -66,7 +66,7 @@
 			<Add directory="/usr/lib" />
 		</Linker>
 		<Unit filename="../UnitTestConfig.h" />
-		<Unit filename="../testcase/base/LoggerTest.cpp" />
+		<Unit filename="../testcase/base/LogTest.cpp" />
 		<Unit filename="../testcase/math/BaseFieldConversionTest.cpp" />
 		<Unit filename="../testcase/math/CurveFittingTest.cpp" />
 		<Unit filename="../testcase/math/DataNormalizationTest.cpp" />

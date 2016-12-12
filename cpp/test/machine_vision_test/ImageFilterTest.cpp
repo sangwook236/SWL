@@ -60,7 +60,7 @@ void very_simple_example()
 			std::cout << "Aperture size = " << apertureSize << ", sigma = " << sigma << std::endl;
 
 			// Filter the image.
-			cv::Mat& filtered = operation(img_double, apertureSize, sigma);
+			cv::Mat filtered(operation(img_double, apertureSize, sigma));
 
 			// Show the result.
 			cv::normalize(filtered, filtered, 0.0, 1.0, cv::NORM_MINMAX);
@@ -112,7 +112,7 @@ void simple_example()
 			std::cout << "Aperture size = " << apertureSize << ", sigma = " << sigma << std::endl;
 
 			// Filter the image.
-			cv::Mat& filtered = operation(dist_double, apertureSize, sigma);
+			cv::Mat filtered(operation(dist_double, apertureSize, sigma));
 
 			// Show the result.
 			cv::normalize(filtered, filtered, 0.0, 1.0, cv::NORM_MINMAX);

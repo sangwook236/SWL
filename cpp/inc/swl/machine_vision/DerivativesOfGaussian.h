@@ -5,6 +5,7 @@
 
 
 #include "swl/machine_vision/ExportMachineVision.h"
+#include <stddef.h>
 
 
 namespace cv {

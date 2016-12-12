@@ -104,8 +104,8 @@
     <ClInclude Include="..\..\inc\swl\base\IObserver.h" />
     <ClInclude Include="..\..\inc\swl\base\IPrintable.h" />
     <ClInclude Include="..\..\inc\swl\base\IVisitable.h" />
+    <ClInclude Include="..\..\inc\swl\base\Log.h" />
     <ClInclude Include="..\..\inc\swl\base\LogException.h" />
-    <ClInclude Include="..\..\inc\swl\base\Logger.h" />
     <ClInclude Include="..\..\inc\swl\base\MvcController.h" />
     <ClInclude Include="..\..\inc\swl\base\MvcModel.h" />
     <ClInclude Include="..\..\inc\swl\base\MvcModelUpdateController.h" />

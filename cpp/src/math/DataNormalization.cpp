@@ -55,7 +55,7 @@ namespace swl {
 // col : The number of data.
 {
 	const std::size_t rows = D.rows();
-	const std::size_t cols = D.cols();
+	//const std::size_t cols = D.cols();
 
 	const Eigen::VectorXd minVec(D.rowwise().minCoeff());
 	const Eigen::VectorXd maxVec(D.rowwise().maxCoeff());
@@ -111,7 +111,7 @@ namespace swl {
 // row : The dimension of data.
 // col : The number of data.
 {
-	const std::size_t rows = D.rows();
+	const Eigen::Index rows = D.rows();
 	if (T.rows() != rows || T.cols() != rows)
 		return false;
 
@@ -125,7 +125,7 @@ namespace swl {
 // row : The dimension of data.
 // col : The number of data.
 {
-	const std::size_t rows = D.rows();
+	const Eigen::Index rows = D.rows();
 	if (H.rows() != rows || H.cols() != (rows + 1))
 		return false;
 

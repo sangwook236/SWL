@@ -39,18 +39,26 @@
 			</Target>
 		</Build>
 		<Compiler>
+			<Add option="-std=c++11" />
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
+			<Add option="-fopenmp" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
+			<Add library="opencv_calib3d" />
+			<Add library="opencv_imgcodecs" />
+			<Add library="opencv_imgproc" />
+			<Add library="opencv_highgui" />
+			<Add library="opencv_core" />
+			<Add library="gomp" />
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
-		<Unit filename="main.cpp" />
 		<Unit filename="ImageFilterTest.cpp" />
 		<Unit filename="ScaleSpaceTest.cpp" />
+		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

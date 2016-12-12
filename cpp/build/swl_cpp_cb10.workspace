@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
 <CodeBlocks_workspace_file>
-	<Workspace title="Workspace">
+	<Workspace title="SWL-C++ Workspace">
 		<Project filename="../src/base/swl_base_cb10.cbp" />
 		<Project filename="../test/base_test/swl_base_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
+		</Project>
+		<Project filename="../unit/cppunit_qt/swl_cppunit_qt_cb10.cbp">
+			<Depends filename="../src/base/swl_base_cb10.cbp" />
+			<Depends filename="../src/glutil/swl_glutil_cb10.cbp" />
+			<Depends filename="../src/graphics/swl_graphics_cb10.cbp" />
+			<Depends filename="../src/kinematics/swl_kinematics_cb10.cbp" />
+			<Depends filename="../src/machine_learning/swl_machine_learning_cb10.cbp" />
+			<Depends filename="../src/machine_vision/swl_machine_vision_cb10.cbp" />
+			<Depends filename="../src/math/swl_math_cb10.cbp" />
+			<Depends filename="../src/pattern_recognition/swl_pattern_recognition_cb10.cbp" />
+			<Depends filename="../src/posixutil/swl_posixutil_cb10.cbp" />
+			<Depends filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
+			<Depends filename="../src/util/swl_util_cb10.cbp" />
+			<Depends filename="../src/view/swl_view_cb10.cbp" />
 		</Project>
 		<Project filename="../test/gesture_recognition_test/swl_gesture_recognition_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />

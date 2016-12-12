@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Workspace Name="SWL-C++ Workspace" Database="">
+  <Project Name="swl_kinect_segmentation_app" Path="../app/kinect_segmentation_app/swl_kinect_segmentation_app_cl9.project" Active="No"/>
+  <Project Name="swl_base" Path="../src/base/swl_base_cl9.project" Active="No"/>
+  <Project Name="swl_base_test" Path="../test/base_test/swl_base_test_cl9.project" Active="No"/>
+  <Project Name="swl_glutil" Path="../src/glutil/swl_glutil_cl9.project" Active="No"/>
+  <Project Name="swl_graphics" Path="../src/graphics/swl_graphics_cl9.project" Active="No"/>
+  <Project Name="swl_kinematics" Path="../src/kinematics/swl_kinematics_cl9.project" Active="No"/>
+  <Project Name="swl_machine_learning" Path="../src/machine_learning/swl_machine_learning_cl9.project" Active="No"/>
+  <Project Name="swl_machine_vision" Path="../src/machine_vision/swl_machine_vision_cl9.project" Active="No"/>
+  <Project Name="swl_math" Path="../src/math/swl_math_cl9.project" Active="No"/>
+  <Project Name="swl_pattern_recognition" Path="../src/pattern_recognition/swl_pattern_recognition_cl9.project" Active="No"/>
+  <Project Name="swl_posixutil" Path="../src/posixutil/swl_posixutil_cl9.project" Active="No"/>
+  <Project Name="swl_rnd_util" Path="../src/rnd_util/swl_rnd_util_cl9.project" Active="No"/>
+  <Project Name="swl_util" Path="../src/util/swl_util_cl9.project" Active="No"/>
+  <Project Name="swl_view" Path="../src/view/swl_view_cl9.project" Active="No"/>
+  <Project Name="swl_gesture_recognition_test" Path="../test/gesture_recognition_test/swl_gesture_recognition_test_cl9.project" Active="No"/>
+  <Project Name="swl_glutil_test" Path="../test/glutil_test/swl_glutil_test_cl9.project" Active="No"/>
+  <Project Name="swl_graphics_test" Path="../test/graphics_test/swl_graphics_test_cl9.project" Active="No"/>
+  <Project Name="swl_kinematics_test" Path="../test/kinematics_test/swl_kinematics_test_cl9.project" Active="No"/>
+  <Project Name="swl_machine_learning_test" Path="../test/machine_learning_test/swl_machine_learning_test_cl9.project" Active="No"/>
+  <Project Name="swl_machine_vision_test" Path="../test/machine_vision_test/swl_machine_vision_test_cl9.project" Active="No"/>
+  <Project Name="swl_math_test" Path="../test/math_test/swl_math_test_cl9.project" Active="No"/>
+  <Project Name="swl_pattern_recognition_test" Path="../test/pattern_recognition_test/swl_pattern_recognition_test_cl9.project" Active="No"/>
+  <Project Name="swl_posixutil_test" Path="../test/posixutil_test/swl_posixutil_test_cl9.project" Active="No"/>
+  <Project Name="swl_rnd_util_test" Path="../test/rnd_util_test/swl_rnd_util_test_cl9.project" Active="No"/>
+  <Project Name="swl_tcp_socket_client_test" Path="../test/tcp_socket_client_test/swl_tcp_socket_client_test_cl9.project" Active="No"/>
+  <Project Name="swl_tcp_socket_server_test" Path="../test/tcp_socket_server_test/swl_tcp_socket_server_test_cl9.project" Active="No"/>
+  <Project Name="swl_util_test" Path="../test/util_test/swl_util_test_cl9.project" Active="No"/>
+  <Project Name="swl_view_test" Path="../test/view_test/swl_view_test_cl9.project" Active="No"/>
+  <Project Name="swl_unit_test" Path="../unit/text_ui/swl_unit_test_cl9.project" Active="No"/>
+  <Project Name="swl_cppunit_qt_cl9" Path="../unit/cppunit_qt/swl_cppunit_qt_cl9.project" Active="No"/>
+  <BuildMatrix>
+    <WorkspaceConfiguration Name="Debug" Selected="yes">
+      <Environment/>
+      <Project Name="swl_base" ConfigName="Debug"/>
+      <Project Name="swl_base_test" ConfigName="Debug"/>
+      <Project Name="swl_gesture_recognition_test" ConfigName="Debug"/>
+      <Project Name="swl_glutil" ConfigName="Debug"/>
+      <Project Name="swl_glutil_test" ConfigName="Debug"/>
+      <Project Name="swl_graphics" ConfigName="Debug"/>
+      <Project Name="swl_graphics_test" ConfigName="Debug"/>
+      <Project Name="swl_kinect_segmentation_app" ConfigName="Debug"/>
+      <Project Name="swl_kinematics" ConfigName="Debug"/>
+      <Project Name="swl_kinematics_test" ConfigName="Debug"/>
+      <Project Name="swl_machine_learning" ConfigName="Debug"/>
+      <Project Name="swl_machine_learning_test" ConfigName="Debug"/>
+      <Project Name="swl_machine_vision" ConfigName="Debug"/>
+      <Project Name="swl_machine_vision_test" ConfigName="Debug"/>
+      <Project Name="swl_math" ConfigName="Debug"/>
+      <Project Name="swl_math_test" ConfigName="Debug"/>
+      <Project Name="swl_pattern_recognition" ConfigName="Debug"/>
+      <Project Name="swl_pattern_recognition_test" ConfigName="Debug"/>
+      <Project Name="swl_posixutil" ConfigName="Debug"/>
+      <Project Name="swl_posixutil_test" ConfigName="Debug"/>
+      <Project Name="swl_rnd_util" ConfigName="Debug"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Debug"/>
+      <Project Name="swl_tcp_socket_client_test" ConfigName="Debug"/>
+      <Project Name="swl_tcp_socket_server_test" ConfigName="Debug"/>
+      <Project Name="swl_unit_test" ConfigName="Debug"/>
+      <Project Name="swl_util" ConfigName="Debug"/>
+      <Project Name="swl_util_test" ConfigName="Debug"/>
+      <Project Name="swl_view" ConfigName="Debug"/>
+      <Project Name="swl_view_test" ConfigName="Debug"/>
+      <Project Name="swl_base" ConfigName="Debug"/>
+      <Project Name="swl_base_test" ConfigName="Debug"/>
+      <Project Name="swl_glutil" ConfigName="Debug"/>
+      <Project Name="swl_graphics" ConfigName="Debug"/>
+      <Project Name="swl_kinematics" ConfigName="Debug"/>
+      <Project Name="swl_machine_learning" ConfigName="Debug"/>
+      <Project Name="swl_machine_vision" ConfigName="Debug"/>
+      <Project Name="swl_math" ConfigName="Debug"/>
+      <Project Name="swl_pattern_recognition" ConfigName="Debug"/>
+      <Project Name="swl_posixutil" ConfigName="Debug"/>
+      <Project Name="swl_rnd_util" ConfigName="Debug"/>
+      <Project Name="swl_util" ConfigName="Debug"/>
+      <Project Name="swl_view" ConfigName="Debug"/>
+      <Project Name="swl_gesture_recognition_test" ConfigName="Debug"/>
+      <Project Name="swl_glutil_test" ConfigName="Debug"/>
+      <Project Name="swl_graphics_test" ConfigName="Debug"/>
+      <Project Name="swl_kinematics_test" ConfigName="Debug"/>
+      <Project Name="swl_machine_learning_test" ConfigName="Debug"/>
+      <Project Name="swl_machine_vision_test" ConfigName="Debug"/>
+      <Project Name="swl_math_test" ConfigName="Debug"/>
+      <Project Name="swl_pattern_recognition_test" ConfigName="Debug"/>
+      <Project Name="swl_posixutil_test" ConfigName="Debug"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Debug"/>
+      <Project Name="swl_tcp_socket_client_test" ConfigName="Debug"/>
+      <Project Name="swl_tcp_socket_server_test" ConfigName="Debug"/>
+      <Project Name="swl_util_test" ConfigName="Debug"/>
+      <Project Name="swl_view_test" ConfigName="Debug"/>
+      <Project Name="swl_unit_test" ConfigName="Debug"/>
+      <Project Name="swl_cppunit_qt" ConfigName="Debug"/>
+    </WorkspaceConfiguration>
+    <WorkspaceConfiguration Name="Release" Selected="yes">
+      <Environment/>
+      <Project Name="swl_view_test" ConfigName="Release"/>
+      <Project Name="swl_view" ConfigName="Release"/>
+      <Project Name="swl_util_test" ConfigName="Release"/>
+      <Project Name="swl_util" ConfigName="Release"/>
+      <Project Name="swl_unit_test" ConfigName="Release"/>
+      <Project Name="swl_tcp_socket_server_test" ConfigName="Release"/>
+      <Project Name="swl_tcp_socket_client_test" ConfigName="Release"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Release"/>
+      <Project Name="swl_rnd_util" ConfigName="Release"/>
+      <Project Name="swl_posixutil_test" ConfigName="Release"/>
+      <Project Name="swl_posixutil" ConfigName="Release"/>
+      <Project Name="swl_pattern_recognition_test" ConfigName="Release"/>
+      <Project Name="swl_pattern_recognition" ConfigName="Release"/>
+      <Project Name="swl_math_test" ConfigName="Release"/>
+      <Project Name="swl_math" ConfigName="Release"/>
+      <Project Name="swl_machine_vision_test" ConfigName="Release"/>
+      <Project Name="swl_machine_vision" ConfigName="Release"/>
+      <Project Name="swl_machine_learning_test" ConfigName="Release"/>
+      <Project Name="swl_machine_learning" ConfigName="Release"/>
+      <Project Name="swl_kinematics_test" ConfigName="Release"/>
+      <Project Name="swl_kinematics" ConfigName="Release"/>
+      <Project Name="swl_kinect_segmentation_app" ConfigName="Release"/>
+      <Project Name="swl_graphics_test" ConfigName="Release"/>
+      <Project Name="swl_graphics" ConfigName="Release"/>
+      <Project Name="swl_glutil_test" ConfigName="Release"/>
+      <Project Name="swl_glutil" ConfigName="Release"/>
+      <Project Name="swl_gesture_recognition_test" ConfigName="Release"/>
+      <Project Name="swl_base_test" ConfigName="Release"/>
+      <Project Name="swl_base" ConfigName="Release"/>
+      <Project Name="swl_base" ConfigName="Release"/>
+      <Project Name="swl_base_test" ConfigName="Release"/>
+      <Project Name="swl_glutil" ConfigName="Release"/>
+      <Project Name="swl_graphics" ConfigName="Release"/>
+      <Project Name="swl_kinematics" ConfigName="Release"/>
+      <Project Name="swl_machine_learning" ConfigName="Release"/>
+      <Project Name="swl_machine_vision" ConfigName="Release"/>
+      <Project Name="swl_math" ConfigName="Release"/>
+      <Project Name="swl_pattern_recognition" ConfigName="Release"/>
+      <Project Name="swl_posixutil" ConfigName="Release"/>
+      <Project Name="swl_rnd_util" ConfigName="Release"/>
+      <Project Name="swl_util" ConfigName="Release"/>
+      <Project Name="swl_view" ConfigName="Release"/>
+      <Project Name="swl_gesture_recognition_test" ConfigName="Release"/>
+      <Project Name="swl_glutil_test" ConfigName="Release"/>
+      <Project Name="swl_graphics_test" ConfigName="Release"/>
+      <Project Name="swl_kinematics_test" ConfigName="Release"/>
+      <Project Name="swl_machine_learning_test" ConfigName="Release"/>
+      <Project Name="swl_machine_vision_test" ConfigName="Release"/>
+      <Project Name="swl_math_test" ConfigName="Release"/>
+      <Project Name="swl_pattern_recognition_test" ConfigName="Release"/>
+      <Project Name="swl_posixutil_test" ConfigName="Release"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Release"/>
+      <Project Name="swl_tcp_socket_client_test" ConfigName="Release"/>
+      <Project Name="swl_tcp_socket_server_test" ConfigName="Release"/>
+      <Project Name="swl_util_test" ConfigName="Release"/>
+      <Project Name="swl_view_test" ConfigName="Release"/>
+      <Project Name="swl_unit_test" ConfigName="Release"/>
+      <Project Name="swl_cppunit_qt" ConfigName="Release"/>
+    </WorkspaceConfiguration>
+  </BuildMatrix>
+</CodeLite_Workspace>
