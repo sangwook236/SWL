@@ -35,14 +35,14 @@ public:
 	static void log(const int level, const std::wstring &message);
 
 private:
-	class Initializer
+	class StaticInitializer
 	{
 	public:
-		Initializer();
+		StaticInitializer();
 	};
 
 private:
-	static Initializer initializer_;
+	static StaticInitializer initializer_;
 };
 
 }  // namespace swl

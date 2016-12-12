@@ -10,6 +10,9 @@
     <ClCompile Include="IObserver.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="LogException.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

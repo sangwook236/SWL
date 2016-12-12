@@ -94,6 +94,7 @@
   <ItemGroup>
     <ClCompile Include="INotifier.cpp" />
     <ClCompile Include="IObserver.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogException.cpp" />
     <ClCompile Include="ReturnException.cpp" />
     <ClCompile Include="String.cpp" />

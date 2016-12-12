@@ -25,6 +25,7 @@
   <VirtualDirectory Name="src">
     <File Name="INotifier.cpp"/>
     <File Name="IObserver.cpp"/>
+    <File Name="Log.cpp"/>
     <File Name="LogException.cpp"/>
     <File Name="ReturnException.cpp"/>
     <File Name="String.cpp"/>

@@ -67,6 +67,7 @@
 		<Unit filename="../../inc/swl/base/Tuple.h" />
 		<Unit filename="INotifier.cpp" />
 		<Unit filename="IObserver.cpp" />
+		<Unit filename="Log.cpp" />
 		<Unit filename="LogException.cpp" />
 		<Unit filename="ReturnException.cpp" />
 		<Unit filename="String.cpp" />
