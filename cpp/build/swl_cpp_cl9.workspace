@@ -23,13 +23,13 @@
   <Project Name="swl_math_test" Path="../test/math_test/swl_math_test_cl9.project" Active="No"/>
   <Project Name="swl_pattern_recognition_test" Path="../test/pattern_recognition_test/swl_pattern_recognition_test_cl9.project" Active="No"/>
   <Project Name="swl_posixutil_test" Path="../test/posixutil_test/swl_posixutil_test_cl9.project" Active="No"/>
-  <Project Name="swl_rnd_util_test" Path="../test/rnd_util_test/swl_rnd_util_test_cl9.project" Active="No"/>
   <Project Name="swl_tcp_socket_client_test" Path="../test/tcp_socket_client_test/swl_tcp_socket_client_test_cl9.project" Active="No"/>
   <Project Name="swl_tcp_socket_server_test" Path="../test/tcp_socket_server_test/swl_tcp_socket_server_test_cl9.project" Active="No"/>
   <Project Name="swl_util_test" Path="../test/util_test/swl_util_test_cl9.project" Active="No"/>
   <Project Name="swl_view_test" Path="../test/view_test/swl_view_test_cl9.project" Active="No"/>
-  <Project Name="swl_unit_test" Path="../unit/text_ui/swl_unit_test_cl9.project" Active="No"/>
   <Project Name="swl_cppunit_qt_cl9" Path="../unit/cppunit_qt/swl_cppunit_qt_cl9.project" Active="No"/>
+  <Project Name="swl_rnd_util_test_cl9" Path="../test/rnd_util_test/swl_rnd_util_test_cl9.project" Active="No"/>
+  <Project Name="swl_unit_test_cl9" Path="../unit/text_ui/swl_unit_test_cl9.project" Active="No"/>
   <BuildMatrix>
     <WorkspaceConfiguration Name="Debug" Selected="yes">
       <Environment/>
@@ -54,10 +54,8 @@
       <Project Name="swl_posixutil" ConfigName="Debug"/>
       <Project Name="swl_posixutil_test" ConfigName="Debug"/>
       <Project Name="swl_rnd_util" ConfigName="Debug"/>
-      <Project Name="swl_rnd_util_test" ConfigName="Debug"/>
       <Project Name="swl_tcp_socket_client_test" ConfigName="Debug"/>
       <Project Name="swl_tcp_socket_server_test" ConfigName="Debug"/>
-      <Project Name="swl_unit_test" ConfigName="Debug"/>
       <Project Name="swl_util" ConfigName="Debug"/>
       <Project Name="swl_util_test" ConfigName="Debug"/>
       <Project Name="swl_view" ConfigName="Debug"/>
@@ -91,6 +89,8 @@
       <Project Name="swl_view_test" ConfigName="Debug"/>
       <Project Name="swl_unit_test" ConfigName="Debug"/>
       <Project Name="swl_cppunit_qt" ConfigName="Debug"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Debug"/>
+      <Project Name="swl_unit_test" ConfigName="Debug"/>
     </WorkspaceConfiguration>
     <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
@@ -98,10 +98,8 @@
       <Project Name="swl_view" ConfigName="Release"/>
       <Project Name="swl_util_test" ConfigName="Release"/>
       <Project Name="swl_util" ConfigName="Release"/>
-      <Project Name="swl_unit_test" ConfigName="Release"/>
       <Project Name="swl_tcp_socket_server_test" ConfigName="Release"/>
       <Project Name="swl_tcp_socket_client_test" ConfigName="Release"/>
-      <Project Name="swl_rnd_util_test" ConfigName="Release"/>
       <Project Name="swl_rnd_util" ConfigName="Release"/>
       <Project Name="swl_posixutil_test" ConfigName="Release"/>
       <Project Name="swl_posixutil" ConfigName="Release"/>
@@ -152,6 +150,8 @@
       <Project Name="swl_view_test" ConfigName="Release"/>
       <Project Name="swl_unit_test" ConfigName="Release"/>
       <Project Name="swl_cppunit_qt" ConfigName="Release"/>
+      <Project Name="swl_rnd_util_test" ConfigName="Release"/>
+      <Project Name="swl_unit_test" ConfigName="Release"/>
     </WorkspaceConfiguration>
   </BuildMatrix>
 </CodeLite_Workspace>

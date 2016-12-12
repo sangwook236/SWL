@@ -1,6 +1,10 @@
-#if !defined(__SWL_BASE__LOGGER__H_)
-#define __SWL_BASE__LOGGER__H_ 1
+#if !defined(__SWL_BASE__LOG__H_)
+#define __SWL_BASE__LOG__H_ 1
 
+
+//#define __SWL__DISABLE_LOG_ 1
+
+#if !defined(__SWL__DISABLE_LOG_)
 
 #include <log4cxx/logger.h>
 #include <log4cxx/level.h>
@@ -8,10 +12,7 @@
 #include <log4cxx/propertyconfigurator.h>
 #include <log4cxx/xml/domconfigurator.h>
 
-
-//#define __SWL__DISABLE_LOGGER_ 1
-
-#if defined(__SWL__DISABLE_LOGGER_)
+#else
 
 #undef LOG4CXX_LOG
 #undef LOG4CXX_LOGLS
@@ -48,4 +49,4 @@
 #endif
 
 
-#endif  // __SWL_BASE__LOGGER__H_
+#endif  // __SWL_BASE__LOG__H_
