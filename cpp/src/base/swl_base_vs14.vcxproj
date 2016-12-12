@@ -73,6 +73,7 @@
       </DataExecutionPrevention>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>boost_log_setup-vc140-mt-gd-1_61.lib;boost_log-vc140-mt-gd-1_61.lib;libboost_regex-vc140-mt-gd-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -95,11 +96,13 @@
       </DataExecutionPrevention>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>libboost_log_setup-vc140-mt-1_61.lib;libboost_log-vc140-mt-1_61.lib;libboost_regex-vc140-mt-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="INotifier.cpp" />
     <ClCompile Include="IObserver.cpp" />
+    <ClCompile Include="Log.cpp" />
     <ClCompile Include="LogException.cpp" />
     <ClCompile Include="ReturnException.cpp" />
     <ClCompile Include="String.cpp" />

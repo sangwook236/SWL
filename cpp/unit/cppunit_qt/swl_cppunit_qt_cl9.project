@@ -74,7 +74,6 @@
         <Library Value="swl_base_d"/>
         <Library Value="qxrunnerd"/>
         <Library Value="cppunit"/>
-        <Library Value="log4cxx"/>
         <Library Value="QtGui"/>
         <Library Value="QtCore"/>
         <Library Value="boost_thread"/>
@@ -130,7 +129,6 @@
         <Library Value="swl_base"/>
         <Library Value="qxrunnerd"/>
         <Library Value="cppunit"/>
-        <Library Value="log4cxx"/>
         <Library Value="QtGui"/>
         <Library Value="QtCore"/>
         <Library Value="boost_thread"/>

@@ -51,7 +51,6 @@
 		<Linker>
 			<Add library="gtest_main" />
 			<Add library="gtest" />
-			<Add library="log4cxx" />
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
 			<Add library="pthread" />

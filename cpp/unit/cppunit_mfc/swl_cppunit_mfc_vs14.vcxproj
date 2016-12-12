@@ -76,7 +76,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;log4cxxd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -107,7 +107,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>swl_winview.lib;swl_winutil.lib;swl_glutil.lib;swl_view.lib;swl_util.lib;swl_math.lib;swl_base.lib;log4cxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_winview.lib;swl_winutil.lib;swl_glutil.lib;swl_view.lib;swl_util.lib;swl_math.lib;swl_base.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>

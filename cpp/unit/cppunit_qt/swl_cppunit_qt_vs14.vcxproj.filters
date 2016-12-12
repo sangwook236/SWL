@@ -107,7 +107,7 @@
     <ClCompile Include="..\testcase\math\TriangleTest.cpp">
       <Filter>Source Files\testcase\math</Filter>
     </ClCompile>
-    <ClCompile Include="..\testcase\base\LoggerTest.cpp">
+    <ClCompile Include="..\testcase\base\LogTest.cpp">
       <Filter>Source Files\testcase\base</Filter>
     </ClCompile>
     <ClCompile Include="..\testcase\rnd_util\SortTest.cpp">

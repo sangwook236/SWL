@@ -62,7 +62,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;$(MY_USR_LOCAL_LIB)/../Qt-4.7.4/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;QtTestRunnerd.lib;QtGuid4.lib;QtCored4.lib;log4cxxd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_winview_d.lib;swl_winutil_d.lib;swl_glutil_d.lib;swl_view_d.lib;swl_util_d.lib;swl_math_d.lib;swl_base_d.lib;QtTestRunnerd.lib;QtGuid4.lib;QtCored4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -81,7 +81,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../../lib;$(MY_USR_LOCAL_LIB)/../Qt-4.7.4/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_winview.lib;swl_winutil.lib;swl_glutil.lib;swl_view.lib;swl_util.lib;swl_math.lib;swl_base.lib;QtTestRunner.lib;QtGui4.lib;QtCore4.lib;log4cxx.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_winview.lib;swl_winutil.lib;swl_glutil.lib;swl_view.lib;swl_util.lib;swl_math.lib;swl_base.lib;QtTestRunner.lib;QtGui4.lib;QtCore4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -90,7 +90,7 @@
     <ClInclude Include="..\UnitTestConfig.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\testcase\base\LoggerTest.cpp" />
+    <ClCompile Include="..\testcase\base\LogTest.cpp" />
     <ClCompile Include="..\testcase\math\BaseFieldConversionTest.cpp" />
     <ClCompile Include="..\testcase\math\CurveFittingTest.cpp" />
     <ClCompile Include="..\testcase\math\DataNormalizationTest.cpp" />

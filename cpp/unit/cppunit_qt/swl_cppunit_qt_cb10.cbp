@@ -57,7 +57,6 @@
 		<Linker>
 			<Add library="qxrunnerd" />
 			<Add library="cppunit" />
-			<Add library="log4cxx" />
 			<Add library="QtGui" />
 			<Add library="QtCore" />
 			<Add library="boost_thread" />
