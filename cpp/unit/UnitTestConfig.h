@@ -5,7 +5,7 @@
 #if !defined(__SWL_UNIT_TEST__USE_BOOST_TEST) && !defined(__SWL_UNIT_TEST__USE_GOOGLE_TEST) && !defined(__SWL_UNIT_TEST__USE_CPP_UNIT)
 //#define __SWL_UNIT_TEST__USE_BOOST_TEST 1
 #define __SWL_UNIT_TEST__USE_GOOGLE_TEST 1
-//#define __SWL_UNIT_TEST__USE_CPP_UNIT 1  // deprecated
+//#define __SWL_UNIT_TEST__USE_CPP_UNIT 1  // Deprecated.
 #endif
 
 
@@ -68,7 +68,7 @@
 
 #else
 
-#error configurations in SWL.UnitTest are incorrect. refer to "${swl_root}/unit/UnitTestConfig.h".
+#error Configurations in SWL.UnitTest are incorrect. refer to "${SWL_C++_HOME}/unit/UnitTestConfig.h".
 
 #endif
 
