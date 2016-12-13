@@ -38,7 +38,7 @@
     <File Name="iniparser_impl.cpp"/>
     <File Name="strlib.cpp"/>
     <File Name="xgetopt.cpp"/>
-    <File Name="xgetopt_example.cpp" ExcludeProjConfig="Debug"/>
+    <File Name="xgetopt_example.cpp" ExcludeProjConfig="Debug;Release"/>
   </VirtualDirectory>
   <Settings Type="Dynamic Library">
     <GlobalSettings>

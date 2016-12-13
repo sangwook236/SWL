@@ -1,6 +1,6 @@
 #include "swl/Config.h"
 #include "swl/base/Log.h"
-//#define BOOST_LOG_DYN_LINK 1
+#define BOOST_LOG_DYN_LINK 1
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_file_backend.hpp>

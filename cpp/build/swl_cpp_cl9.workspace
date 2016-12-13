@@ -92,7 +92,7 @@
       <Project Name="swl_rnd_util_test" ConfigName="Debug"/>
       <Project Name="swl_unit_test" ConfigName="Debug"/>
     </WorkspaceConfiguration>
-    <WorkspaceConfiguration Name="Release" Selected="yes">
+    <WorkspaceConfiguration Name="Release" Selected="no">
       <Environment/>
       <Project Name="swl_view_test" ConfigName="Release"/>
       <Project Name="swl_view" ConfigName="Release"/>

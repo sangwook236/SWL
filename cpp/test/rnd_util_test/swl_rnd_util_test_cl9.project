@@ -20,7 +20,7 @@
     <File Name="LevenshteinDistanceTest.cpp"/>
     <File Name="MetropolisHastingsAlgorithmTest.cpp"/>
     <File Name="MultivariateNormalMixtureModelTest.cpp"/>
-    <File Name="ParticleFilterTest.cpp" ExcludeProjConfig="Debug"/>
+    <File Name="ParticleFilterTest.cpp" ExcludeProjConfig="Debug;Release"/>
     <File Name="RejectionSamplingTest.cpp"/>
     <File Name="SamplingImportanceResamplingTest.cpp"/>
     <File Name="UnivariateNormalMixtureModelTest.cpp"/>

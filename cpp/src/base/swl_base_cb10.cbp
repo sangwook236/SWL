@@ -44,6 +44,8 @@
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
+			<Add library="boost_log_setup" />
+			<Add library="boost_log" />
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>

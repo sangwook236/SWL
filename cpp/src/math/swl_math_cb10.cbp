@@ -50,6 +50,8 @@
 			<Add directory="/usr/include/eigen3" />
 		</Compiler>
 		<Linker>
+			<Add library="gsl" />
+			<Add library="gslcblas" />
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>

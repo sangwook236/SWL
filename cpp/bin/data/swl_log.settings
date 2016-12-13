@@ -31,4 +31,6 @@ FileName="logs/swl_log_%Y%m%d_%H%M%S_%5N.log"
 AutoFlush=true
 RotationSize=1048576  # 1M [byte].
 MaxSize=104857600  # 100M [byte].
-Format="%RecordID% <%Severity%> [%TimeStamp%]: %Tag%: %Message%"
+Format="%RecordID% <%Severity%> [%TimeStamp%]: %Message%"
+#Format="%RecordID% <%Severity%> [%TimeStamp%]: %Tag%: %Message%"
+

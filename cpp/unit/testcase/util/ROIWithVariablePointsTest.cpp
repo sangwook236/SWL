@@ -366,7 +366,7 @@ protected:
 TEST_F(ROIWithVariablePointsTest, testHandlePoint)
 {
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_FALSE(roi->containPoint());
 
@@ -414,7 +414,7 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertex)
 	const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
 
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	roi->addPoint(pt1);
 	roi->addPoint(pt2);
@@ -454,7 +454,7 @@ TEST_F(ROIWithVariablePointsTest, testMoveVertexWithLimit)
 	const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
 
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	{
 		roi->clearAllPoints();
@@ -525,7 +525,7 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegion)
 	const swl::ROIWithVariablePoints::point_type delta(3.0f, -7.0f);
 
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	roi->addPoint(pt1);
 	roi->addPoint(pt2);
@@ -547,7 +547,7 @@ TEST_F(ROIWithVariablePointsTest, testMoveRegionWithLimit)
 	const swl::ROIWithVariablePoints::region_type limitRegion(swl::ROIWithVariablePoints::point_type(-5.0f, -5.0f), swl::ROIWithVariablePoints::point_type(50.0f, 50.0f));
 
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	{
 		roi->clearAllPoints();
@@ -605,7 +605,7 @@ TEST_F(ROIWithVariablePointsTest, testIsVertex)
 	const swl::ROIWithVariablePoints::point_type pt1(-20.0f, 10.0f), pt2(40.0f, 25.0f), pt3(10.0f, 30.0f), pt4(21.0f, 25.0f), pt5(28.0f, 3.5f);
 
 	boost::scoped_ptr<swl::ROIWithVariablePoints> roi(new swl::PolylineROI(true, swl::PolylineROI::real_type(1), swl::PolylineROI::real_type(1), swl::PolylineROI::color_type(), swl::PolylineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	roi->addPoint(pt1);
 	roi->addPoint(pt2);

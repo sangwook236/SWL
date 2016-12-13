@@ -45,7 +45,7 @@ public:
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
 		const double tol = 1.0e-3;
-		const double eps = 1.0e-20;
+		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -89,7 +89,7 @@ public:
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
 		const double tol = 1.0e-3;
-		const double eps = 1.0e-20;
+		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -171,7 +171,7 @@ TEST_F(CurveFittingTest, testEstimateLineByLeastSquares)
 	const size_t NUM_TESTS = 100;
 	const size_t NUM_POINTS = 1000;
 	const double tol = 1.0e-3;
-	const double eps = 1.0e-20;
+	const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 	std::random_device seedDevice;
 	std::mt19937 RNG = std::mt19937(seedDevice());
@@ -213,7 +213,7 @@ TEST_F(CurveFittingTest, testEstimateQuadraticByLeastSquares)
 	const size_t NUM_TESTS = 100;
 	const size_t NUM_POINTS = 1000;
 	const double tol = 1.0e-3;
-	const double eps = 1.0e-20;
+	const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 	std::random_device seedDevice;
 	std::mt19937 RNG = std::mt19937(seedDevice());
@@ -283,7 +283,7 @@ public:
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
 		const double tol = 1.0e-3;
-		const double eps = 1.0e-20;
+		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());
@@ -325,7 +325,7 @@ public:
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
 		const double tol = 1.0e-3;
-		const double eps = 1.0e-20;
+		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
 		std::mt19937 RNG = std::mt19937(seedDevice());

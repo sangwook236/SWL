@@ -37,7 +37,7 @@ private:
 
 public:
 	DataNormalizationTest()
-	: eps_(1.0e-5)
+	: tol_(1.0e-5)
 	{}
 
 public:
@@ -54,7 +54,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << -1, 0, 1,  0, 0, 0,  -1.66667, -0.666667, 2.33333;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after centering = " << std::endl << data << std::endl;
@@ -82,7 +82,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << 0.377964, 0.755929, 1.13389,  0.816497, 0.816497, 0.816497,  -0.447214, 0, 1.34164;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by average distance = " << std::endl << data << std::endl;
@@ -109,7 +109,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << 0, 0.5, 1,  0.5, 0.5, 0.5,  0, 0.25, 1;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by range = " << std::endl << data << std::endl;
@@ -141,7 +141,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << 2, 2, 0,  10, 6, -4,  -11, -4,  9;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by linear transformation = " << std::endl << data << std::endl;
@@ -169,7 +169,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << -1, -1, -3,  8, 4, -6,  -12, -5,  8;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by homogeneous transformation = " << std::endl << data << std::endl;
@@ -195,7 +195,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << -1, 0, 1,  0, 0, 0,  -1.66667, -0.666667, 2.33333;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by Z-score = " << std::endl << data << std::endl;
@@ -220,7 +220,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << -1.73205, 0, 1.73205,  0, 0, 0,  -1.38675, -0.5547, 1.94145;
 
-		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((data - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "data after normalization by t-statistic = " << std::endl << data << std::endl;
@@ -233,7 +233,7 @@ public:
 	}
 
 private:
-	const double eps_;
+	const double tol_;
 };
 
 struct DataNormalizationTestSuite: public boost::unit_test_framework::test_suite

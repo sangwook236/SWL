@@ -50,6 +50,8 @@
 			<Add directory="/usr/local/include" />
 		</Compiler>
 		<Linker>
+			<Add library="opencv_optflow" />
+			<Add library="opencv_videoio" />
 			<Add library="opencv_video" />
 			<Add library="opencv_imgproc" />
 			<Add library="opencv_highgui" />

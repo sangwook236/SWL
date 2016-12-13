@@ -30,6 +30,8 @@
     <File Name="ReturnException.cpp"/>
     <File Name="String.cpp"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
   <Settings Type="Dynamic Library">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
@@ -48,6 +50,8 @@
       <Linker Options="-O0" Required="yes">
         <LibraryPath Value="../../lib"/>
         <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="boost_log_setup"/>
+        <Library Value="boost_log"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="../../lib/libswl_base_d.so" IntermediateDirectory="./Debug" Command="./swl_base_d" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
@@ -90,6 +94,8 @@
       <Linker Options="-s " Required="yes">
         <LibraryPath Value="../../lib"/>
         <LibraryPath Value="/usr/local/lib"/>
+        <Library Value="boost_log_setup"/>
+        <Library Value="boost_log"/>
       </Linker>
       <ResourceCompiler Options="" Required="no"/>
       <General OutputFile="../../lib/libswl_base.so" IntermediateDirectory="./Debug" Command="./swl_base" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="../../bin/" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
@@ -125,6 +131,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <Dependencies Name="Debug"/>
-  <Dependencies Name="Release"/>
 </CodeLite_Project>

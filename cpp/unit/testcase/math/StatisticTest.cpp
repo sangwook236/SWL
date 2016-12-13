@@ -37,7 +37,7 @@ private:
 
 public:
 	StatisticTest()
-	: eps_(1.0e-5)
+	: tol_(1.0e-5)
 	{}
 
 public:
@@ -53,7 +53,7 @@ public:
 
 		const double truth = 2.0;
 
-		BOOST_CHECK_CLOSE(mean, truth, eps_);
+		BOOST_CHECK_CLOSE(mean, truth, tol_);
 
 		// display.
 		//std::cout << "sample mean = " << mean << std::endl;
@@ -72,7 +72,7 @@ public:
 
 		const double truth = 1.0;
 
-		BOOST_CHECK_CLOSE(var, truth, eps_);
+		BOOST_CHECK_CLOSE(var, truth, tol_);
 
 		// display.
 		//std::cout << "sample variance = " << var << std::endl;
@@ -92,7 +92,7 @@ public:
 		Eigen::VectorXd truth(3);
 		truth << 2, 4, 0.666667;
 
-		BOOST_CHECK(((mean - truth).array().abs() < Eigen::VectorXd::Constant(3, eps_).array()).all());
+		BOOST_CHECK(((mean - truth).array().abs() < Eigen::VectorXd::Constant(3, tol_).array()).all());
 
 		// display.
 		//std::cout << "sample means = " << mean.transpose() << std::endl;
@@ -112,7 +112,7 @@ public:
 		Eigen::VectorXd truth(3);
 		truth << 1, 0, 4.33333;
 
-		BOOST_CHECK(((vars - truth).array().abs() < Eigen::VectorXd::Constant(3, eps_).array()).all());
+		BOOST_CHECK(((vars - truth).array().abs() < Eigen::VectorXd::Constant(3, tol_).array()).all());
 
 		// display.
 		//std::cout << "sample variances = " << vars.transpose() << std::endl;
@@ -132,7 +132,7 @@ public:
 		Eigen::MatrixXd truth(3, 3);
 		truth << 1, 0, 2,  0, 0, 0,  2, 0, 4.33333;
 
-		BOOST_CHECK(((cov - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, eps_).array()).all());
+		BOOST_CHECK(((cov - truth).array().abs() < Eigen::MatrixXd::Constant(3, 3, tol_).array()).all());
 
 		// display.
 		//std::cout << "sample covariance matrix = " << std::endl << cov << std::endl;
@@ -145,7 +145,7 @@ public:
 	}
 
 private:
-	const double eps_;
+	const double tol_;
 };
 
 struct StatisticTestSuite: public boost::unit_test_framework::test_suite

@@ -200,7 +200,7 @@ protected:
 TEST_F(RegionOfInterestTest, testVisible)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_TRUE(roi->isVisible());
 
@@ -214,7 +214,7 @@ TEST_F(RegionOfInterestTest, testVisible)
 TEST_F(RegionOfInterestTest, testLineColor)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_TRUE(local::compareColors(roi->getLineColor(), swl::RegionOfInterest::color_type()));
 
@@ -230,7 +230,7 @@ TEST_F(RegionOfInterestTest, testLineColor)
 TEST_F(RegionOfInterestTest, testLineWidth)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_EQ(swl::RegionOfInterest::real_type(1), roi->getLineWidth());
 
@@ -241,7 +241,7 @@ TEST_F(RegionOfInterestTest, testLineWidth)
 TEST_F(RegionOfInterestTest, testPointSize)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_EQ(swl::RegionOfInterest::real_type(1), roi->getPointSize());
 
@@ -252,7 +252,7 @@ TEST_F(RegionOfInterestTest, testPointSize)
 TEST_F(RegionOfInterestTest, testPointColor)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 	EXPECT_TRUE(local::compareColors(roi->getPointColor(), swl::RegionOfInterest::color_type()));
 
@@ -268,7 +268,7 @@ TEST_F(RegionOfInterestTest, testPointColor)
 TEST_F(RegionOfInterestTest, testName)
 {
 	boost::scoped_ptr<swl::RegionOfInterest> roi(new swl::LineROI(swl::LineROI::point_type(), swl::LineROI::point_type(), true, swl::LineROI::real_type(1), swl::LineROI::real_type(1), swl::LineROI::color_type(), swl::LineROI::color_type()));
-	EXPECT_TRUE(roi);
+	EXPECT_TRUE(!!roi);
 
 #if defined(_UNICODE) || defined(UNICODE)
 	EXPECT_STREQ(roi->getName().c_str(), L"");

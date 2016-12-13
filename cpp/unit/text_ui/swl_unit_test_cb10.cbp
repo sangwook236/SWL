@@ -47,6 +47,7 @@
 			<Add option="-D__SWL_UNIT_TEST__USE_GOOGLE_TEST" />
 			<Add directory="../../inc" />
 			<Add directory="/usr/local/include" />
+			<Add directory="/usr/include/eigen3" />
 		</Compiler>
 		<Linker>
 			<Add library="gtest_main" />
