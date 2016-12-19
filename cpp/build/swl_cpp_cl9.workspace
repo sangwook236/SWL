@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CodeLite_Workspace Name="SWL-C++ Workspace" Database="">
   <Project Name="swl_kinect_segmentation_app" Path="../app/kinect_segmentation_app/swl_kinect_segmentation_app_cl9.project" Active="No"/>
-  <Project Name="swl_base" Path="../src/base/swl_base_cl9.project" Active="No"/>
+  <Project Name="swl_base" Path="../src/base/swl_base_cl9.project" Active="Yes"/>
   <Project Name="swl_base_test" Path="../test/base_test/swl_base_test_cl9.project" Active="No"/>
   <Project Name="swl_glutil" Path="../src/glutil/swl_glutil_cl9.project" Active="No"/>
   <Project Name="swl_graphics" Path="../src/graphics/swl_graphics_cl9.project" Active="No"/>

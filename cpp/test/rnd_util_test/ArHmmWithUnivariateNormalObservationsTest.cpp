@@ -838,7 +838,7 @@ void map_learning_by_em_using_conjugate_prior()
 /*
 	you can initialize the hmm model three ways:
 		1) with a model, which also sets the number of states N and number of symbols M.
-		2) with a random model by just specifyin N and M.
+		2) with a random model by just specifying N and M.
 		3) with a specific random model by specifying N, M and seed.
 */
 
