@@ -170,7 +170,7 @@ TEST_F(CurveFittingTest, testEstimateLineByLeastSquares)
 {
 	const size_t NUM_TESTS = 100;
 	const size_t NUM_POINTS = 1000;
-	const double tol = 1.0e-3;
+	//const double tol = 1.0e-3;
 	const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 	std::random_device seedDevice;
@@ -199,7 +199,7 @@ TEST_F(CurveFittingTest, testEstimateLineByLeastSquares)
 		double ae = 0.0, be = 0.0, ce = 0.0;
 		EXPECT_TRUE(CurveFitting::estimateLineByLeastSquares(points, ae, be, ce));
 
-		const double denom = std::sqrt(a*a + b*b + c*c);
+		//const double denom = std::sqrt(a*a + b*b + c*c);
 		//EXPECT_NEAR(a / denom, ae, tol);
 		//EXPECT_NEAR(b / denom, be, tol);
 		//EXPECT_NEAR(c / denom, ce, tol);
@@ -212,7 +212,7 @@ TEST_F(CurveFittingTest, testEstimateQuadraticByLeastSquares)
 {
 	const size_t NUM_TESTS = 100;
 	const size_t NUM_POINTS = 1000;
-	const double tol = 1.0e-3;
+	//const double tol = 1.0e-3;
 	const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 	std::random_device seedDevice;
@@ -235,7 +235,7 @@ TEST_F(CurveFittingTest, testEstimateQuadraticByLeastSquares)
 				points.push_back({ val + noiseDist(RNG), (a * val * val + b * val + d) / -c + noiseDist(RNG) });
 			else if (std::abs(a) > eps)
 			{
-				const double val2 = std::sqrt(0.25*b*b / a - c*val - d) / a;
+				//const double val2 = std::sqrt(0.25*b*b / a - c*val - d) / a;
 				const double xx = -0.5 * b / a + (evenOddDist(RNG) % 2 ? val : -val);
 				points.push_back({ xx + noiseDist(RNG), val + noiseDist(RNG) });
 			}
@@ -246,7 +246,7 @@ TEST_F(CurveFittingTest, testEstimateQuadraticByLeastSquares)
 		double ae = 0.0, be = 0.0, ce = 0.0, de = 0.0;
 		EXPECT_TRUE(CurveFitting::estimateQuadraticByLeastSquares(points, ae, be, ce, de));
 
-		const double denom = std::sqrt(a*a + b*b + c*c + d*d);
+		//const double denom = std::sqrt(a*a + b*b + c*c + d*d);
 		//EXPECT_NEAR(a / denom, ae, tol);
 		//EXPECT_NEAR(b / denom, be, tol);
 		//EXPECT_NEAR(c / denom, ce, tol);
@@ -282,7 +282,7 @@ public:
 	{
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
-		const double tol = 1.0e-3;
+		//const double tol = 1.0e-3;
 		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
@@ -311,7 +311,7 @@ public:
 			double ae = 0.0, be = 0.0, ce = 0.0;
 			CPPUNIT_ASSERT(CurveFitting::estimateLineByLeastSquares(points, ae, be, ce));
 
-			const double denom = std::sqrt(a*a + b*b + c*c);
+			//const double denom = std::sqrt(a*a + b*b + c*c);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(a / denom, ae, tol);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(b / denom, be, tol);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(c / denom, ce, tol);
@@ -324,7 +324,7 @@ public:
 	{
 		const size_t NUM_TESTS = 100;
 		const size_t NUM_POINTS = 1000;
-		const double tol = 1.0e-3;
+		//const double tol = 1.0e-3;
 		const double eps = std::numeric_limits<double>::epsilon() * 100;
 
 		std::random_device seedDevice;
@@ -347,7 +347,7 @@ public:
 					points.push_back({ val + noiseDist(RNG), (a * val * val + b * val + d) / -c + noiseDist(RNG) });
 				else if (std::abs(a) > eps)
 				{
-					const double val2 = std::sqrt(0.25*b*b / a - c*val - d) / a;
+					//const double val2 = std::sqrt(0.25*b*b / a - c*val - d) / a;
 					const double xx = -0.5 * b / a + (evenOddDist(RNG) % 2 ? val : -val);
 					points.push_back({ xx + noiseDist(RNG), val + noiseDist(RNG) });
 			}
@@ -358,7 +358,7 @@ public:
 			double ae = 0.0, be = 0.0, ce = 0.0, de = 0.0;
 			CPPUNIT_ASSERT(CurveFitting::estimateQuadraticByLeastSquares(points, ae, be, ce, de));
 
-			const double denom = std::sqrt(a*a + b*b + c*c + d*d);
+			//const double denom = std::sqrt(a*a + b*b + c*c + d*d);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(a / denom, ae, tol);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(b / denom, be, tol);
 			//CPPUNIT_ASSERT_DOUBLES_EQUAL(c / denom, ce, tol);

@@ -41,8 +41,8 @@
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11" />
 			<Add option="-Wall" />
+			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
 			<Add option="-D__SWL_UNIT_TEST__USE_GOOGLE_TEST" />
 			<Add directory="../../inc" />
@@ -50,7 +50,6 @@
 			<Add directory="/usr/include/eigen3" />
 		</Compiler>
 		<Linker>
-			<Add library="gtest_main" />
 			<Add library="gtest" />
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
@@ -90,10 +89,35 @@
 		<Unit filename="../testcase/util/RectangleROITest.cpp" />
 		<Unit filename="../testcase/util/RegionOfInterestMgrTest.cpp" />
 		<Unit filename="../testcase/util/RegionOfInterestTest.cpp" />
+		<Unit filename="Debug/TextUiUnitTestMain.cpp.o.d" />
+		<Unit filename="Debug/base_LogTest.cpp.o.d" />
+		<Unit filename="Debug/math_BaseFieldConversionTest.cpp.o.d" />
+		<Unit filename="Debug/math_CurveFittingTest.cpp.o.d" />
+		<Unit filename="Debug/math_DataNormalizationTest.cpp.o.d" />
+		<Unit filename="Debug/math_GeometryUtilTest.cpp.o.d" />
+		<Unit filename="Debug/math_LineSegmentTest.cpp.o.d" />
+		<Unit filename="Debug/math_LineTest.cpp.o.d" />
+		<Unit filename="Debug/math_MathUtilTest.cpp.o.d" />
+		<Unit filename="Debug/math_PlaneTest.cpp.o.d" />
+		<Unit filename="Debug/math_StatisticTest.cpp.o.d" />
+		<Unit filename="Debug/math_TriangleTest.cpp.o.d" />
+		<Unit filename="Debug/rnd_util_SortTest.cpp.o.d" />
+		<Unit filename="Debug/util_EchoTcpSocketConnection.cpp.o.d" />
+		<Unit filename="Debug/util_EchoTcpSocketServerTest.cpp.o.d" />
+		<Unit filename="Debug/util_EchoTcpSocketSession.cpp.o.d" />
+		<Unit filename="Debug/util_EchoTcpSocketTest.cpp.o.d" />
+		<Unit filename="Debug/util_LineROITest.cpp.o.d" />
+		<Unit filename="Debug/util_PolygonROITest.cpp.o.d" />
+		<Unit filename="Debug/util_PolylineROITest.cpp.o.d" />
+		<Unit filename="Debug/util_ROIWithVariablePointsTest.cpp.o.d" />
+		<Unit filename="Debug/util_RectangleROITest.cpp.o.d" />
+		<Unit filename="Debug/util_RegionOfInterestMgrTest.cpp.o.d" />
+		<Unit filename="Debug/util_RegionOfInterestTest.cpp.o.d" />
 		<Unit filename="TextUiUnitTestMain.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

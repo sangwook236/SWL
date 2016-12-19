@@ -20,8 +20,6 @@
 					<Add library="swl_util_d" />
 					<Add library="swl_math_d" />
 					<Add library="swl_base_d" />
-					<Add directory="../../bin" />
-					<Add directory="/usr/lib/debug/usr/lib/x86_64-linux-gnu" />
 				</Linker>
 			</Target>
 			<Target title="Release">
@@ -39,20 +37,19 @@
 					<Add library="swl_util" />
 					<Add library="swl_math" />
 					<Add library="swl_base" />
-					<Add directory="../../bin" />
-					<Add directory="usr/lib/x86_64-linux-gnu" />
 				</Linker>
 			</Target>
 		</Build>
 		<Compiler>
-			<Add option="-std=c++11" />
 			<Add option="-Wall" />
+			<Add option="-std=c++11" />
 			<Add option="-fexceptions" />
 			<Add option="-fpermissive" />
 			<Add option="-D__SWL_UNIT_TEST__USE_CPP_UNIT" />
 			<Add directory="../../inc" />
-			<Add directory="/usr/include/qt4" />
 			<Add directory="/usr/local/include" />
+			<Add directory="/usr/include/qt4" />
+			<Add directory="/usr/include/eigen3" />
 		</Compiler>
 		<Linker>
 			<Add library="qxrunnerd" />
@@ -61,8 +58,8 @@
 			<Add library="QtCore" />
 			<Add library="boost_thread" />
 			<Add library="boost_system" />
+			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
-			<Add directory="/usr/lib" />
 		</Linker>
 		<Unit filename="../UnitTestConfig.h" />
 		<Unit filename="../testcase/base/LogTest.cpp" />
@@ -94,6 +91,7 @@
 		<Extensions>
 			<code_completion />
 			<debugger />
+			<envvars />
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

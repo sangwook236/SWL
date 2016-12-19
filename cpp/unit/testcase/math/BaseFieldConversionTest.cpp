@@ -2,6 +2,7 @@
 #include "../../UnitTestConfig.h"
 #include "swl/base/String.h"
 #include "swl/math/MathUtil.h"
+#include <limits>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
