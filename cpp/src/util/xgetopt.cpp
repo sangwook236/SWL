@@ -154,7 +154,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 //--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 //--E [] 2015/06/05 : Sang-Wook Lee
 #include <tchar.h>
 //--S [] 2015/06/05 : Sang-Wook Lee
@@ -205,7 +205,7 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 		}
 
         //--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 		//--E [] 2015/06/05 : Sang-Wook Lee
 		if (_tcscmp(argv[optind], char_str("--")) == 0)
         //--S [] 2015/06/05 : Sang-Wook Lee
@@ -232,7 +232,7 @@ int getopt(int argc, char_t *argv[], char_t *optstring)
 
 	char_t c = *next++;
 	//--S [] 2015/06/05 : Sang-Wook Lee
-#if defined(_WIN32) || defined(WIN32) || defined(_WIN64) || defined(WIN64)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 	//--E [] 2015/06/05 : Sang-Wook Lee
 	char_t *cp = _tcschr(optstring, c);
 	//--S [] 2015/06/05 : Sang-Wook Lee

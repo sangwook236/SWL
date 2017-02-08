@@ -8,7 +8,7 @@
 #include <iterator>
 
 
-#if defined(_WIN32) || defined(WIN32)
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #define __USE_gSLIC 1
 #else
 #undef __USE_gSLIC

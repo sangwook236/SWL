@@ -74,9 +74,9 @@ private:
 	void doParse(const unsigned char *buf, const size_t len, double &latitude, double &longitude, double &altitude, double &speed, int &hour, int &min, int &sec, int &hsec)
 	{
 		nmeaINFO info;
-		nmea_zero_INFO(&info);  // initialization
+		nmea_zero_INFO(&info);  // Initialization.
 
-		nmea_parse(&parser_, (const char *)buf, len, &info);
+		nmea_parse(&parser_, (const char *)buf, (int)len, &info);
 		nmeaPOS dpos;
 		nmea_info2pos(&info, &dpos);
 
@@ -207,7 +207,7 @@ struct WinSerialPortThreadFunctor
 public:
 	void operator()()
 	{
-		std::cout << "win serial port worker thread is started" << std::endl;
+		std::cout << "Win serial port worker thread is started." << std::endl;
 
 		NmeaParserImpl nmeaParser;
 
@@ -278,7 +278,7 @@ public:
 			boost::this_thread::yield();
 		}
 
-		std::cout << "win serial port worker thread is terminated" << std::endl;
+		std::cout << "Win serial port worker thread is terminated." << std::endl;
 	}
 
 private:
@@ -307,7 +307,7 @@ GpsInterface::GpsInterface(const std::string &portName, const unsigned int baudR
 		workerThread_.reset(new boost::thread(WinSerialPortThreadFunctor(serialPort_, recvBuffer_)));
 	}
 	else
-		throw std::runtime_error("fail to connect a serial port for GPS");
+		throw std::runtime_error("Fail to connect a serial port for GPS");
 }
 
 GpsInterface::~GpsInterface()
