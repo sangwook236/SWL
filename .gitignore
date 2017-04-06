@@ -30,10 +30,12 @@ Release
 Profile
 cpp/app/gps_aided_imu_filter_app/Template
 cpp/bin
+cpp/bin64
 cpp/dist
 cpp/doc/html
 cpp/doc/rtf
 cpp/lib
+cpp/lib64
 cpp/test/wglview_test/Template
 csharp/bin
 csharp/dist
