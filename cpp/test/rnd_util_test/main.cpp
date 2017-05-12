@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
 		//graph_traversal();
 
 		// Graph algorithm ------------------------------------------
-		//graph_algorithm();
+		graph_algorithm();
 
 		// Distance measure -----------------------------------------
 		//levenshtein_distance();  // Levenshtein / edit distance.
@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 		//		REF [function] >> Quadratic2RansacEstimator::verifyModel().
 		//	- Refine an estimated model using inliers.
 		//		REF [function] >> Quadratic2RansacEstimator::estimateModelFromInliers().
-		quadratic2d_estimation_using_ransac();
+		//quadratic2d_estimation_using_ransac();
 
 		// Sampling / Resampling ------------------------------------
 		//rejection_sampling();
