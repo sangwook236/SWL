@@ -34,8 +34,9 @@ mesh(gridDp, gridAr, distDpAr);
 % Metric = orthogonal distance divided by projection length.
 % dist = Dp / cos(Ar).
 %
-% Result: ???.
+% Result: Good, but go to infinity around pi / 2.
 
+% REF [file] >> ${SWL_HOME}/matlab/src/topology/line_segment_metric.m.
 distAr = abs(Dp(100) ./ cos(gridAr));
 figure;
 plot(Ar, distAr);
