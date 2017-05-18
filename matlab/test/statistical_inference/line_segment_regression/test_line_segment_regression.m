@@ -1,5 +1,5 @@
 %addpath('D:/lib_repo/matlab/rnd/circstat-matlab_github');
-%addpath('../../../src/statistical_inference/line_segment_regression');
+%addpath('../../../src/topology');
 
 % Infinite line: a * x + b * y + c = 0.
 %a = 1;

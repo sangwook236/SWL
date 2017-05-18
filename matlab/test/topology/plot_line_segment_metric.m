@@ -1,3 +1,5 @@
+%addpath('../../../src/topology');
+
 % Metrics between an infinite line and a finite line segment.
 
 Ls = 5;  % The length of line segments
