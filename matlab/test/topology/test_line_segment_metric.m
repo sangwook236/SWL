@@ -1,4 +1,4 @@
-%addpath('../../../src/topology');
+%addpath('../../src/topology');
 
 % Metrics between an infinite line and a finite line segment.
 
@@ -7,7 +7,8 @@ Ls = 5;  % The length of line segments
 % Dp: the perpendicular distance of the center of the line segment onto the line.
 Dp = linspace(0, 100, 1001);
 % Ar: the angle between the line segment and the line.
-Ar = linspace(0, pi, 1001);
+%Ar = linspace(-pi/2, pi/2, 1001);
+Ar = linspace(-pi, pi, 1001);
 [gridDp, gridAr] = meshgrid(Dp, Ar);
 
 %-----------------------------------------------------------
@@ -31,12 +32,13 @@ figure;
 mesh(gridDp, gridAr, distDpAr);
 
 %-----------------------------------------------------------
-% Metric = orthogonal distance divided by projection length.
-% dist = Dp / cos(Ar).
+% A weighted distance between a finite line segment and an infinite line.
+%	distnace = a perpendicular distance weighted by projection length.
+%	dist = Dp / cos(Ar).
 %
 % Result: Good, but go to infinity around pi / 2.
-
 % REF [file] >> ${SWL_HOME}/matlab/src/topology/line_segment_metric.m.
+
 distAr = abs(Dp(100) ./ cos(gridAr));
 figure;
 plot(Ar, distAr);
@@ -48,4 +50,27 @@ dist = abs(gridDp ./ cos(gridAr));
 figure;
 mesh(gridDp, gridAr, dist);
 ax = axis;
-axis([ax(1), ax(2), ax(3), ax(4), ax(5), 2000]);
+%axis([ax(1), ax(2), ax(3), ax(4), ax(5), 2000]);
+
+%-----------------------------------------------------------
+
+% A weighted distance between a finite line segment and an infinite line.
+%	dist = perpendicular_dist / abs(weight).
+%
+% Result: Good, finite and differentiable around pi / 2.
+% REF [file] >> ${SWL_HOME}/matlab/src/topology/line_segment_metric.m.
+
+% Weight function.
+%weight = inline('cos(x)', 'x');
+weight_fun = inline('scale * cos(x*2) - scale + 1', 'x', 'scale');  % 0 < scale <= 0.5.
+weight_scale = 0.5 * 0.99;
+
+%ezplot(@(x) weight_fun(x, weight_scale))
+
+dist = abs(gridDp ./ weight_fun(gridAr, weight_scale));
+
+figure;
+mesh(gridDp, gridAr, dist);
+%surf(gridDp, gridAr, dist);
+ax = axis;
+%axis([ax(1), ax(2), ax(3), ax(4), ax(5), 2000]);
