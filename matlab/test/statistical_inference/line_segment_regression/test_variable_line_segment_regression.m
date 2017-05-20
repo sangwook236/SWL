@@ -1,6 +1,7 @@
 % Tests for line segment regression with variable lengths.
 
 %addpath('D:/lib_repo/matlab/rnd/circstat-matlab_github');
+%addpath('../../../src/statistical_inference/line_segment_regression');
 %addpath('../../../src/topology');
 
 % An infinite line: a * x + b * y + c = 0.

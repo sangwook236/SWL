@@ -1,3 +1,7 @@
+% Tests for subsegment generation from a finite line segment.
+
+%addpath('../../../src/statistical_inference/line_segment_regression');
+
 % Line segment.
 x_range = [-100 ; 100];
 y_range = [-100 ; 100];
