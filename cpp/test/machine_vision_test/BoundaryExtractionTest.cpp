@@ -17,7 +17,7 @@ namespace local {
 
 void generate_test_label(cv::Mat &label, cv::Mat &boundary)
 {
-	const int WIDTH = 300, HEIGHT = 300;
+	const int WIDTH = 300, HEIGHT = 200;
 	label = cv::Mat::zeros(HEIGHT, WIDTH, CV_16UC1);
 	boundary = cv::Mat::zeros(HEIGHT, WIDTH, CV_16UC1);
 
@@ -73,15 +73,48 @@ void boundary_extraction()
 		extractor.extractBoundary(label, boundary);
 	}
 
-	// Show the result.
+#if 1
+	// Compute boundary weight.
+	cv::Mat boundaryWeight_filtered(cv::Mat::zeros(boundary.size(), CV_16UC1));
+	{
+		// Distance transform.
+		cv::Mat dist;
+		{
+			cv::Mat binary(cv::Mat::ones(boundary.size(), CV_8UC1));
+			binary.setTo(cv::Scalar::all(0), boundary > 0);
+			cv::distanceTransform(binary, dist, cv::DIST_L2, cv::DIST_MASK_3);
+		}
+
+		// Gaussian weighting.
+		const double sigma2 = 1.0;  // sigma^2.
+		cv::Mat boundaryWeight_float;
+		cv::multiply(dist, dist, dist);
+		cv::exp(-dist / (2.0 * sigma2), boundaryWeight_float);
+
+		// NOTICE [info] >> Cannot save images of 32-bit (signed/unsigned) integer or float.
+
+		//double minVal = 0.0, maxVal = 0.0;
+		//cv::minMaxLoc(boundaryWeight_float, &minVal, &maxVal);
+		cv::Mat boundaryWeight_int;
+		boundaryWeight_float.convertTo(boundaryWeight_int, boundaryWeight_filtered.type(), std::numeric_limits<unsigned short>::max(), 0.0);
+
+		//boundaryWeight_filtered = boundaryWeight_int;  // Do not filter out.
+		boundaryWeight_int.copyTo(boundaryWeight_filtered, boundary > 0 | 0 == label);  // On boundaries or outside of objects.
+	}
+#endif
+
+	// Output the result.
+#if 1
 	cv::imshow("Boundary extraction - Label", label);
 	cv::imshow("Boundary extraction - True boundary", boundary_true);
 	cv::imshow("Boundary extraction - Extracted boundary", boundary);
-
-	//cv::imwrite("./data/machine_vision/label.png", label);
-	//cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
-	//cv::imwrite("./data/machine_vision/label_extracted_boundary.png", boundary);
-
+	cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_filtered);
+#else
+	cv::imwrite("./data/machine_vision/label.png", label);
+	cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
+	cv::imwrite("./data/machine_vision/label_extracted_boundary.png", boundary);
+	cv::imwrite("./data/machine_vision/label_boundary_weight.png", boundaryWeight_filtered);
+#endif
 	cv::waitKey(0);
 
 	cv::destroyAllWindows();

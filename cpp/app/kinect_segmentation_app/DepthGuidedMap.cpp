@@ -364,12 +364,12 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		// METHOD #2: using distance transform for foreground and dilation for background.
 
 		cv::Mat dist32f;
-		//const int distanceType = CV_DIST_C;  // C/Inf metric.
-		const int distanceType = CV_DIST_L1;  // L1 metric.
-		//const int distanceType = CV_DIST_L2;  // L2 metric.
-		//const int maskSize = CV_DIST_MASK_3;
-		const int maskSize = CV_DIST_MASK_5;
-		//const int maskSize = CV_DIST_MASK_PRECISE;
+		//const int distanceType = cv::DIST_C;  // C/Inf metric.
+		const int distanceType = cv::DIST_L1;  // L1 metric.
+		//const int distanceType = cv::DIST_L2;  // L2 metric.
+		//const int maskSize = cv::DIST_MASK_3;
+		const int maskSize = cv::DIST_MASK_5;
+		//const int maskSize = cv::DIST_MASK_PRECISE;
 		cv::distanceTransform(filtered_depth_variation_mask, dist32f, distanceType, maskSize);
 
 #if 0
@@ -410,12 +410,12 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		// METHOD #3: using distance transform for foreground and convex hull for background.
 
 		cv::Mat dist32f;
-		const int distanceType = CV_DIST_C;  // C/Inf metric
-		//const int distanceType = CV_DIST_L1;  // L1 metric
-		//const int distanceType = CV_DIST_L2;  // L2 metric
-		//const int maskSize = CV_DIST_MASK_3;
-		//const int maskSize = CV_DIST_MASK_5;
-		const int maskSize = CV_DIST_MASK_PRECISE;
+		const int distanceType = cv::_DIST_C;  // C/Inf metric.
+		//const int distanceType = cv::DIST_L1;  // L1 metric.
+		//const int distanceType = cv::DIST_L2;  // L2 metric.
+		//const int maskSize = cv::DIST_MASK_3;
+		//const int maskSize = cv::DIST_MASK_5;
+		const int maskSize = cv::DIST_MASK_PRECISE;
 		cv::distanceTransform(filtered_depth_variation_mask, dist32f, distanceType, maskSize);
 
 		{

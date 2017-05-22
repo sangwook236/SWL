@@ -448,12 +448,12 @@ void extract_foreground_based_on_depth_guided_map()
 
 /*
 		{
-			//const int distanceType = CV_DIST_C;  // C/Inf metric.
-			//const int distanceType = CV_DIST_L1;  // L1 metric.
-			const int distanceType = CV_DIST_L2;  // L2 metric.
-			//const int maskSize = CV_DIST_MASK_3;
-			//const int maskSize = CV_DIST_MASK_5;
-			const int maskSize = CV_DIST_MASK_PRECISE;
+			//const int distanceType = cv::DIST_C;  // C/Inf metric.
+			//const int distanceType = cv::DIST_L1;  // L1 metric.
+			const int distanceType = cv::DIST_L2;  // L2 metric.
+			//const int maskSize = cv::DIST_MASK_3;
+			//const int maskSize = cv::DIST_MASK_5;
+			const int maskSize = cv::DIST_MASK_PRECISE;
 			//const int labelType = cv::DIST_LABEL_CCOMP;
 			const int labelType = cv::DIST_LABEL_PIXEL;
 

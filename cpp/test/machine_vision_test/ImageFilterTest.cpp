@@ -84,7 +84,7 @@ void simple_example()
 
 	//
 	cv::Mat dist;
-	cv::distanceTransform(img, dist, cv::DIST_L2, 3);
+	cv::distanceTransform(img, dist, cv::DIST_L2, cv::DIST_MASK_3);
 
 	cv::Mat dist_double;
 	dist.convertTo(dist_double, CV_64FC1);
