@@ -228,7 +228,7 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		truncated_depth_variation_mask.copyTo(contour_image);
 
 		std::vector<std::vector<cv::Point> > contours2;
-		cv::findContours(contour_image, contours2, hierarchy, CV_RETR_CCOMP, CV_CHAIN_APPROX_SIMPLE);
+		cv::findContours(contour_image, contours2, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
 
 #if 0
 		// Comment this out if you do not want approximation.
@@ -256,11 +256,11 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 			if (cv::contourArea(cv::Mat(contours[idx])) < MIN_CONTOUR_AREA) continue;
 
 			if (use_color_processed_depth_variation_mask)
-				//cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), CV_FILLED, 8, hierarchy, 0, cv::Point());
-				cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				//cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), cv::FILLED, cv::LINE_8, hierarchy, 0, cv::Point());
+				cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar(std::rand() & 255, std::rand() & 255, std::rand() & 255), cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
 			else
-				//cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar::all(255), CV_FILLED, 8, hierarchy, 0, cv::Point());
-				cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar::all(255), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				//cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar::all(255), cv::FILLED, cv::LINE_8, hierarchy, 0, cv::Point());
+				cv::drawContours(processed_depth_variation_mask, contours, idx, cv::Scalar::all(255), cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
 		}
 #elif 1
 		// Find a contour with max area.
@@ -434,7 +434,7 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
 		std::vector<std::vector<cv::Point> > contours;
 		contours.push_back(convexHull);
-		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
+		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), cv::FILLED, cv::LINE_8);
 
 		cv::Mat background_info_mask;
 		cv::erode(background_mask, background_mask, selement5, cv::Point(-1, -1), 3);
@@ -485,7 +485,7 @@ void construct_depth_guided_map_using_depth_variation(const cv::Mat &depth_varia
 		background_mask = cv::Mat::ones(background_mask.size(), background_mask.type()) * 255;
 		std::vector<std::vector<cv::Point> > contours;
 		contours.push_back(convexHull);
-		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), CV_FILLED, 8);
+		cv::drawContours(background_mask, contours, 0, cv::Scalar(0), cv::FILLED, cv::LINE_8);
 
 		// Construct depth-guided map.
 		depth_guided_map.setTo(cv::Scalar::all(SWL_PR_FGD));  // Depth boundary region.

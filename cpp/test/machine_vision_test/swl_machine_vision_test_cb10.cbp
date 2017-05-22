@@ -58,9 +58,10 @@
 			<Add directory="../../lib" />
 			<Add directory="/usr/local/lib" />
 		</Linker>
+		<Unit filename="main.cpp" />
+		<Unit filename="BoundaryExtractionTest.cpp" />
 		<Unit filename="ImageFilterTest.cpp" />
 		<Unit filename="ScaleSpaceTest.cpp" />
-		<Unit filename="main.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

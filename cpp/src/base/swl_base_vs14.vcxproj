@@ -106,7 +106,7 @@
       </DataExecutionPrevention>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>boost_log_setup-vc140-mt-gd-1_61.lib;boost_log-vc140-mt-gd-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_log_setup-vc140-mt-gd-1_64.lib;boost_log-vc140-mt-gd-1_64.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -128,7 +128,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>../../lib64/$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>boost_log_setup-vc140-mt-gd-1_61.lib;boost_log-vc140-mt-gd-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_log_setup-vc140-mt-gd-1_64.lib;boost_log-vc140-mt-gd-1_64.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -151,7 +151,7 @@
       </DataExecutionPrevention>
       <ImportLibrary>../../lib/$(TargetName).lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalDependencies>boost_log_setup-vc140-mt-1_61.lib;boost_log-vc140-mt-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_log_setup-vc140-mt-1_64.lib;boost_log-vc140-mt-1_64.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -173,7 +173,7 @@
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <ImportLibrary>../../lib64/$(TargetName).lib</ImportLibrary>
-      <AdditionalDependencies>boost_log_setup-vc140-mt-1_61.lib;boost_log-vc140-mt-1_61.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>boost_log_setup-vc140-mt-1_64.lib;boost_log-vc140-mt-1_64.lib;psapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

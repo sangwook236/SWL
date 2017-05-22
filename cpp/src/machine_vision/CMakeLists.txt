@@ -1,6 +1,7 @@
 set(TARGET swl_machine_vision)
 
 set(SRCS
+	BoundaryExtraction.cpp
 	DerivativesOfGaussian.cpp
 	ImageFilter.cpp
 	ImageRectificationUsingOpenCV.cpp

@@ -1,5 +1,5 @@
 //#include "stdafx.h"
-#include "HistogramGenerator.h"  // FIXME [solve] >> these files are duplicates of ${SWL_ROOT}/src/swl_pattern_recognition/HistogramGenerator.h & .cpp
+#include "HistogramGenerator.h"  // FIXME [solve] >> These files are duplicates of ${SWL_ROOT}/src/swl_pattern_recognition/HistogramGenerator.h & .cpp.
 #include "swl/pattern_recognition/MotionSegmenter.h"
 #include "swl/rnd_util/HistogramAccumulator.h"
 #include "swl/rnd_util/HistogramUtil.h"
@@ -25,15 +25,15 @@ void filterMotionRegionByCCL(cv::Mat &detected_motion, const std::size_t minMoti
 		{
 			const double &area = std::fabs(cv::contourArea(cv::Mat(*it)));
 #if 1
-			if (minMotionAreaThreshold < area && area < maxMotionAreaThreshold)  // reject too large & small motion regions
+			if (minMotionAreaThreshold < area && area < maxMotionAreaThreshold)  // Reject too large & small motion regions.
 				selectedContours.push_back(*it);
 #else
-			if (area > maxMotionAreaThreshold)  // reject too large motion regions
+			if (area > maxMotionAreaThreshold)  // Reject too large motion regions.
 			{
 				selectedContours.clear();
 				break;
 			}
-			else if (area > minMotionAreaThreshold)  // reject small motion regions
+			else if (area > minMotionAreaThreshold)  // Reject small motion regions.
 				selectedContours.push_back(*it);
 #endif
 		}
@@ -45,8 +45,8 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 	std::vector<cv::Mat> flows;
 	cv::split(flow, flows);
 
-	cv::phase(flows[0], flows[1], orientation, true);  // return type: CV_32F
-	cv::magnitude(flows[0], flows[1], magnitude);  // return type: CV_32F
+	cv::phase(flows[0], flows[1], orientation, true);  // Return type: CV_32F.
+	cv::magnitude(flows[0], flows[1], magnitude);  // Return type: CV_32F.
 
 	// filter by magnitude
 	if (doesApplyMagnitudeFiltering)
@@ -56,7 +56,7 @@ void calcOrientationAndMagnitudeUsingOpticalFlow(const cv::Mat &flow, const bool
 		const double mag_min_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMinThresholdRatio;
 		const double mag_max_threshold = minVal + (maxVal - minVal) * magnitudeFilteringMaxThresholdRatio;
 
-		// TODO [check] >> magic number, -1 is correct ?
+		// TODO [check] >> Magic number, -1 is correct ?
 #if 0
 		orientation.setTo(cv::Scalar::all(-1), magnitude < mag_min_threshold);
 		orientation.setTo(cv::Scalar::all(-1), magnitude > mag_max_threshold);
@@ -102,26 +102,26 @@ const double histDistThresholdForClass3Gesture = 0.5;
 
 const double histDistThresholdForGestureIdPattern = 0.8;
 
-const std::size_t matchedIndexCountThresholdForClass1Gesture = maxMatchedHistogramNum / 2;  // currently not used
-const std::size_t matchedIndexCountThresholdForClass2Gesture = maxMatchedHistogramNum / 2;  // currently not used
-const std::size_t matchedIndexCountThresholdForClass3Gesture = maxMatchedHistogramNum / 2;  // currently not used
+const std::size_t matchedIndexCountThresholdForClass1Gesture = maxMatchedHistogramNum / 2;  // Currently not used.
+const std::size_t matchedIndexCountThresholdForClass2Gesture = maxMatchedHistogramNum / 2;  // Currently not used.
+const std::size_t matchedIndexCountThresholdForClass3Gesture = maxMatchedHistogramNum / 2;  // Currently not used.
 
 const bool doesApplyMagnitudeFiltering = true;
 const double magnitudeFilteringMinThresholdRatio = 0.3;
 const double magnitudeFilteringMaxThresholdRatio = 1.0;
 const bool doesApplyTimeWeighting = true;
-const bool doesApplyMagnitudeWeighting = false;  // FIXME [implement] >> not yet supported
+const bool doesApplyMagnitudeWeighting = false;  // FIXME [implement] >> Not yet supported.
 
-// histograms' parameters
+// Histograms' parameters.
 const int histDims = 1;
 
-const int phaseHistBins = 360;  // for 1 degree.
-//const int phaseHistBins = 36;  // for 10 degree. error: not working.
+const int phaseHistBins = 360;  // For 1 degree.
+//const int phaseHistBins = 36;  // For 10 degree. error: not working.
 const int phaseHistSize[] = { phaseHistBins };
-// phase varies from 0 to 359
+// Phase varies from 0 to 359.
 const float phaseHistRange1[] = { 0, phaseHistBins };
 const float *phaseHistRanges[] = { phaseHistRange1 };
-// we compute the histogram from the 0-th channel
+// Compute the histogram from the 0-th channel.
 const int phaseHistChannels[] = { 0 };
 const int phaseHistBinWidth = 1, phaseHistMaxHeight = 100;
 
@@ -144,14 +144,14 @@ boost::shared_ptr<swl::HistogramAccumulator> orientationHistogramAccumulator(doe
 
 void accumulateOrientationHistogram(const cv::Mat &orientation, std::ostream *stream)
 {
-	// calculate phase histogram
+	// Calculate phase histogram.
 	cv::MatND hist;
 	cv::calcHist(&orientation, 1, phaseHistChannels, cv::Mat(), hist, histDims, phaseHistSize, phaseHistRanges, true, false);
 
 	//
 	orientationHistogramAccumulator->addHistogram(hist);
 
-	// save HoG
+	// Save HoG.
 	if (NULL != stream)
 	{
 		swl::HistogramUtil::normalizeHistogram(hist, std::floor(refHistogramNormalizationFactor / accumulatedOrientationHistogramNum + 0.5));
@@ -183,7 +183,7 @@ void drawTemporalOrientationHistogram(const cv::MatND &temporalHist, const std::
 
 void createReferenceFullPhaseHistograms()
 {
-	// create reference histograms
+	// Create reference histograms.
 	swl::ReferenceFullPhaseHistogramGenerator refHistogramGenerator(refFullPhaseHistogramSigma);
 	refHistogramGenerator.createHistograms(phaseHistBins, refHistogramNormalizationFactor);
 	const std::vector<cv::MatND> &refHistograms = refHistogramGenerator.getHistograms();
@@ -192,7 +192,7 @@ void createReferenceFullPhaseHistograms()
 
 #if 0
 	// FIXME [delete] >>
-	// draw reference histograms
+	// Draw reference histograms.
 	for (std::vector<cv::MatND>::const_iterator it = refHistograms_.begin(); it != refHistograms_.end(); ++it)
 	{
 #if 0
@@ -202,7 +202,7 @@ void createReferenceFullPhaseHistograms()
 		const double maxVal = refHistogramNormalizationFactor * 0.05;
 #endif
 
-		// draw 1-D histogram
+		// Draw 1-D histogram.
 		cv::Mat histImg(cv::Mat::zeros(local::phaseHistMaxHeight, local::phaseHistBins*local::phaseHistBinWidth, CV_8UC3));
 		HistogramUtil::drawHistogram1D(*it, local::phaseHistBins, maxVal, local::phaseHistBinWidth, local::phaseHistMaxHeight, histImg);
 
@@ -214,21 +214,21 @@ void createReferenceFullPhaseHistograms()
 
 bool computeTemporalOrientationHistogram(cv::MatND &temporalOrientationHist)
 {
-	// classify gesture
+	// Classify gesture.
 	if (orientationHistogramAccumulator->isFull())
 	{
-		// create accumulated phase histograms
+		// Create accumulated phase histograms.
 		cv::MatND accumulatedHist(orientationHistogramAccumulator->createAccumulatedHistogram());
-		// normalize histogram
+		// Normalize histogram.
 		swl::HistogramUtil::normalizeHistogram(accumulatedHist, refHistogramNormalizationFactor);
 
-		// FIXME [restore] >> have to decide which one is used
+		// FIXME [restore] >> Have to decide which one is used.
 #if 1
 		temporalOrientationHist = orientationHistogramAccumulator->createTemporalHistogram();
 #else
 		temporalOrientationHist = orientationHistogramAccumulator->createTemporalHistogram(refFullPhaseHistograms, histDistThresholdForTemporalOrientationHistogram);
 #endif
-		// normalize histogram
+		// Normalize histogram.
 		swl::HistogramUtil::normalizeHistogram(temporalOrientationHist, refHistogramNormalizationFactor);
 
 		return true;
@@ -250,7 +250,7 @@ bool classifyGesture(const cv::MatND &temporalOrientationHist)
 
 namespace swl {
 
-// temporal HoG (THoG) or temporal orientation histogram (TOH).
+// Temporal HoG (THoG) or temporal orientation histogram (TOH).
 //void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG)
 void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO_MOION, const bool IMAGE_DOWNSIZING, const double MHI_TIME_DURATION, const std::size_t MIN_MOTION_AREA_THRESHOLD, const std::size_t MAX_MOTION_AREA_THRESHOLD, std::ostream *streamTHoG, std::ostream *streamHoG, std::ostream *streamNoMotion = NULL)
 {
@@ -309,9 +309,9 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 
 		//if (blurred.empty()) blurred = gray.clone();
 
-		// smoothing.
+		// Smoothing.
 #if 0
-		// down-scale and up-scale the image to filter out the noise.
+		// Down-scale and up-scale the image to filter out the noise.
 		cv::pyrDown(gray, blurred);
 		cv::pyrUp(blurred, gray);
 #elif 0
@@ -349,9 +349,9 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 				std::size_t idx = 0;
 				for (std::vector<std::vector<cv::Point> >::iterator it = selectedContours.begin(); it != selectedContours.end(); ++it, ++idx)
 				{
-					cv::drawContours(contour_mask, selectedContours, idx, cv::Scalar::all(255), CV_FILLED, 8);
+					cv::drawContours(contour_mask, selectedContours, idx, cv::Scalar::all(255), cv::FILLED, cv::LINE_8);
 
-					cv::drawContours(img, selectedContours, idx, CV_RGB(0, 0, 255), 2, 8);  // for display
+					cv::drawContours(img, selectedContours, idx, CV_RGB(0, 0, 255), 2, cv::LINE_8);  // For display.
 				}
 			}
 
@@ -361,7 +361,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 				prevgray.copyTo(prev_img_for_flow, contour_mask);
 				gray.copyTo(curr_img_for_flow, contour_mask);
 
-				// calculate optical flow.
+				// Calculate optical flow.
 				cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.5, 3, 15, 3, 5, 1.1, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
 				//cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.5, 7, 15, 3, 7, 1.5, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
 				//cv::calcOpticalFlowFarneback(prev_img_for_flow, curr_img_for_flow, flow, 0.25, 7, 15, 3, 7, 1.5, cv::OPTFLOW_FARNEBACK_GAUSSIAN);
@@ -384,7 +384,7 @@ void recognizeGestureBasedOnTHoG(cv::VideoCapture &capture, const bool IGNORE_NO
 					local::accumulateOrientationHistogram(no_flow_phase, streamHoG);
 				}
 
-				// save no-motion.
+				// Save no-motion.
 				if (NULL != streamNoMotion)
 				{
 					*streamNoMotion << frame_no << std::endl;  // 0-based index.

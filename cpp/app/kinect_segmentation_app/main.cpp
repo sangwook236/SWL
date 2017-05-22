@@ -390,8 +390,8 @@ void extract_foreground_based_on_depth_guided_map()
 			// show results of fitting using Snake.
 			//rgb_input_image.copyTo(tmp_image);
 
-			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
-			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), 1, 8, cv::noArray(), 0, cv::Point());
+			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
+			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), 1, cv::LINE_8, cv::noArray(), 0, cv::Point());
 			int idx = 0;
 			for (std::vector<std::vector<cv::Point> >::const_iterator cit = snake_contours.begin(); cit != snake_contours.end(); ++cit, ++idx)
 			{
@@ -404,13 +404,13 @@ void extract_foreground_based_on_depth_guided_map()
 
 				//const cv::Scalar color1(std::rand() & 255, std::rand() & 255, std::rand() & 255);
 				const cv::Scalar color1(0, 255, 0);
-				//cv::drawContours(tmp_image, contours, idx, color1, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
-				cv::drawContours(tmp_image, contours, idx, color1, 2, 8, cv::noArray(), 0, cv::Point());
+				//cv::drawContours(tmp_image, contours, idx, color1, cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
+				cv::drawContours(tmp_image, contours, idx, color1, 2, cv::LINE_8, cv::noArray(), 0, cv::Point());
 
 				//const cv::Scalar color2(std::rand() & 255, std::rand() & 255, std::rand() & 255);
 				const cv::Scalar color2(0, 0, 255);
-				//cv::drawContours(tmp_image, snake_contours, idx, color2, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
-				cv::drawContours(tmp_image, snake_contours, idx, color2, 2, 8, cv::noArray(), 0, cv::Point());
+				//cv::drawContours(tmp_image, snake_contours, idx, color2, cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
+				cv::drawContours(tmp_image, snake_contours, idx, color2, 2, cv::LINE_8, cv::noArray(), 0, cv::Point());
 
 				cv::imshow("results of fitting using Snake", tmp_image);
 
@@ -844,15 +844,15 @@ void segment_foreground_based_on_structure_tensor()
 			// show results of fitting using Snake.
 			rgb_input_image.copyTo(tmp_image);
 
-			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), CV_FILLED, 8, cv::noArray(), 0, cv::Point());
-			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), 1, 8, cv::noArray(), 0, cv::Point());
+			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
+			//cv::drawContours(tmp_image, snake_contours, -1, CV_RGB(255, 0, 0), 1, cv::LINE_8, cv::noArray(), 0, cv::Point());
 			int idx = 0;
 			for (std::vector<std::vector<cv::Point> >::const_iterator cit = snake_contours.begin(); cit != snake_contours.end(); ++cit, ++idx)
 			{
 				if (cit->empty() || cv::contourArea(cv::Mat(*cit)) < MIN_CONTOUR_AREA) continue;
 
 				const cv::Scalar color(std::rand() & 255, std::rand() & 255, std::rand() & 255);
-				cv::drawContours(tmp_image, snake_contours, idx, color, CV_FILLED, 8, cv::noArray(), 0, cv::Point());
+				cv::drawContours(tmp_image, snake_contours, idx, color, cv::FILLED, cv::LINE_8, cv::noArray(), 0, cv::Point());
 			}
 
 			cv::imshow("results of fitting using Snake", tmp_image);

@@ -13,7 +13,9 @@ int main(int argc, char *argv[])
 {
 	void image_filter_test();
 	void scale_space_test();
-	
+
+	void boundary_extraction();
+
 	int retval = EXIT_SUCCESS;
 	try
 	{
@@ -31,32 +33,39 @@ int main(int argc, char *argv[])
 			std::cout << "GPU not found ..." << std::endl;
 #endif
 		
-		// Image filter ---------------------------------------------
-		image_filter_test();
+		//-----------------------------------------------------------
+		// Image filter.
+		//image_filter_test();
 
-		// Scale space representation -------------------------------
+		//-----------------------------------------------------------
+		// Scale space representation.
 		//scale_space_test();
+
+		//-----------------------------------------------------------
+		// Application.
+
+		boundary_extraction();
 	}
-	catch (const cv::Exception &e)
+	catch (const cv::Exception &ex)
 	{
-		//std::cout << "OpenCV exception caught: " << e.what() << std::endl;
-		//std::cout << "OpenCV exception caught: " << cvErrorStr(e.code) << std::endl;
+		//std::cout << "OpenCV exception caught: " << ex.what() << std::endl;
+		//std::cout << "OpenCV exception caught: " << cvErrorStr(ex.code) << std::endl;
 		std::cout << "OpenCV exception caught:" << std::endl
-			<< "\tdescription: " << e.err << std::endl
-			<< "\tline:        " << e.line << std::endl
-			<< "\tfunction:    " << e.func << std::endl
-			<< "\tfile:        " << e.file << std::endl;
+			<< "\tDescription: " << ex.err << std::endl
+			<< "\tLline:        " << ex.line << std::endl
+			<< "\tFunction:    " << ex.func << std::endl
+			<< "\tFile:        " << ex.file << std::endl;
 
 		retval = EXIT_FAILURE;
 	}
-	catch (const std::bad_alloc &e)
+	catch (const std::bad_alloc &ex)
 	{
-		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		std::cout << "std::bad_alloc caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
-	catch (const std::exception &e)
+	catch (const std::exception &ex)
 	{
-		std::cout << "std::exception caught: " << e.what() << std::endl;
+		std::cout << "std::exception caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
 	catch (...)

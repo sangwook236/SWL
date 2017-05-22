@@ -84,7 +84,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.1.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.2.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -94,7 +94,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;gsld.lib;cblasd.lib;boost_timer-vc140-mt-gd-1_61.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;opencv_imgproc320d.lib;opencv_highgui320d.lib;opencv_core320d.lib;gsld.lib;cblasd.lib;boost_timer-vc140-mt-gd-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -108,7 +108,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.1.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.2.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -117,7 +117,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;opencv_imgproc310d.lib;opencv_highgui310d.lib;opencv_core310d.lib;gsld.lib;cblasd.lib;boost_timer-vc140-mt-gd-1_61.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;opencv_imgproc320d.lib;opencv_highgui320d.lib;opencv_core320d.lib;gsld.lib;cblasd.lib;boost_timer-vc140-mt-gd-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMTD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -129,7 +129,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.1.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.2.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -137,7 +137,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;opencv_imgproc310.lib;opencv_highgui310.lib;opencv_core310.lib;gsl.lib;cblas.lib;boost_timer-vc140-mt-1_61.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;opencv_imgproc320.lib;opencv_highgui320.lib;opencv_core320.lib;gsl.lib;cblas.lib;boost_timer-vc140-mt-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -152,7 +152,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.1.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-3.2.0;$(MY_USR_LOCAL_INCLUDE)/eigen3;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -160,7 +160,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;opencv_imgproc310.lib;opencv_highgui310.lib;opencv_core310.lib;gsl.lib;cblas.lib;boost_timer-vc140-mt-1_61.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;opencv_imgproc320.lib;opencv_highgui320.lib;opencv_core320.lib;gsl.lib;cblas.lib;boost_timer-vc140-mt-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <IgnoreSpecificDefaultLibraries>LIBCMT.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <GenerateDebugInformation>true</GenerateDebugInformation>
