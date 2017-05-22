@@ -43,8 +43,8 @@ NaiveBoundaryExtraction::NaiveBoundaryExtraction(const bool use8connectivity /*=
 	}
 	else
 	{
-		neighbors.reserve(4);
 		// 4-connectivity.
+		neighbors.reserve(4);
 		neighbors.push_back(cv::Point(1, 0));
 		neighbors.push_back(cv::Point(0, -1));
 		neighbors.push_back(cv::Point(-1, 0));
@@ -81,10 +81,14 @@ ContourBoundaryExtraction::ContourBoundaryExtraction()
 	cv::minMaxLoc(label, &minVal, &maxVal);
 	const unsigned short minLabel = (unsigned short)std::floor(minVal + 0.5), maxLabel = (unsigned short)std::floor(maxVal + 0.5);
 
+#if 1
+	cv::Mat binary(cv::Mat::zeros(label.size(), CV_8UC1));
 	for (unsigned short lbl = minLabel; lbl <= maxLabel; ++lbl)
 	{
-		cv::Mat binary(cv::Mat::zeros(label.size(), CV_8UC1));
+		binary.setTo(cv::Scalar::all(0));
 		binary.setTo(cv::Scalar::all(255), label == lbl);
+
+		if (0 == cv::countNonZero(binary)) continue;
 
 		// Find contours.
 		std::vector<std::vector<cv::Point> > contours;
@@ -94,6 +98,21 @@ ContourBoundaryExtraction::ContourBoundaryExtraction()
 
 		cv::drawContours(boundary, contours, -1, cv::Scalar::all(lbl), 1, cv::LINE_8, hierarchy, INT_MAX, cv::Point());
 	}
+#else
+	cv::Mat binary(cv::Mat::zeros(label.size(), CV_8UC1));
+	for (unsigned short lbl = minLabel; lbl <= maxLabel; ++lbl)
+		binary.setTo(cv::Scalar::all(lbl), label == lbl);
+
+	// Find contours.
+	std::vector<std::vector<cv::Point> > contours;
+	std::vector<cv::Vec4i> hierarchy;
+	cv::findContours(binary, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
+	//cv::findContours(binary, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
+
+	int idx = 0;
+	for (; idx >= 0; idx = hierarchy[idx][0])
+		cv::drawContours(boundary, contours, idx, cv::Scalar::all(idx + 1), 1, cv::LINE_8, hierarchy, INT_MAX, cv::Point());
+#endif
 }
 	
 }  // namespace swl

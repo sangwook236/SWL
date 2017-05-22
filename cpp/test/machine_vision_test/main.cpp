@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 		//std::cout << "OpenCV exception caught: " << cvErrorStr(ex.code) << std::endl;
 		std::cout << "OpenCV exception caught:" << std::endl
 			<< "\tDescription: " << ex.err << std::endl
-			<< "\tLline:        " << ex.line << std::endl
+			<< "\tLine:        " << ex.line << std::endl
 			<< "\tFunction:    " << ex.func << std::endl
 			<< "\tFile:        " << ex.file << std::endl;
 

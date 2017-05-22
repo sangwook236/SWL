@@ -55,10 +55,13 @@ void generate_test_label(cv::Mat &label, cv::Mat &boundary)
 	cv::rectangle(boundary, cv::Rect(170, 100, 50, 30), cv::Scalar::all(label_id), 1, cv::LINE_8);
 }
 
-void naive_boundary_extraction()
+}  // namespace local
+}  // unnamed namespace
+
+void boundary_extraction()
 {
 	cv::Mat label, boundary_true;
-	generate_test_label(label, boundary_true);
+	local::generate_test_label(label, boundary_true);
 
 	// Create a boundary extractor.
 	//std::unique_ptr<swl::IBoundaryExtraction> extractor(new swl::NaiveBoundaryExtraction(true));
@@ -72,23 +75,15 @@ void naive_boundary_extraction()
 	}
 
 	// Show the result.
-	//cv::imshow("Boundary extraction - Label", label);
-	//cv::imshow("Boundary extraction - True boundary", boundary_true);
-	//cv::imshow("Boundary extraction - Extracted boundary", boundary);
+	cv::imshow("Boundary extraction - Label", label);
+	cv::imshow("Boundary extraction - True boundary", boundary_true);
+	cv::imshow("Boundary extraction - Extracted boundary", boundary);
 
-	cv::imwrite("./data/machine_vision/label.png", label);
-	cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
-	cv::imwrite("./data/machine_vision/label_estimated_boundary.png", boundary);
+	//cv::imwrite("./data/machine_vision/label.png", label);
+	//cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
+	//cv::imwrite("./data/machine_vision/label_extracted_boundary.png", boundary);
 
 	cv::waitKey(0);
 
 	cv::destroyAllWindows();
-}
-
-}  // namespace local
-}  // unnamed namespace
-
-void boundary_extraction()
-{
-	local::naive_boundary_extraction();
 }
