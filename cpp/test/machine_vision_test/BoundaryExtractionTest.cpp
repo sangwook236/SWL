@@ -5,7 +5,6 @@
 #include <boost/timer/timer.hpp>
 #include <string>
 #include <list>
-#include <memory>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -64,14 +63,14 @@ void boundary_extraction()
 	local::generate_test_label(label, boundary_true);
 
 	// Create a boundary extractor.
-	//std::unique_ptr<swl::IBoundaryExtraction> extractor(new swl::NaiveBoundaryExtraction(true));
-	std::unique_ptr<swl::IBoundaryExtraction> extractor(new swl::ContourBoundaryExtraction());
+	//swl::IBoundaryExtraction &extractor = swl::NaiveBoundaryExtraction(true);
+	swl::IBoundaryExtraction &extractor = swl::ContourBoundaryExtraction();
 
 	// Extract boundaries.
 	cv::Mat boundary(cv::Mat::zeros(label.size(), label.type()));
 	{
 		boost::timer::auto_cpu_timer timer;
-		extractor->extractBoundary(label, boundary);
+		extractor.extractBoundary(label, boundary);
 	}
 
 	// Show the result.
