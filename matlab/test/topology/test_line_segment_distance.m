@@ -1,6 +1,6 @@
 %addpath('../../src/topology');
 
-% Metrics between an infinite line and a finite line segment.
+% Distances between an infinite line and a finite line segment.
 
 Ls = 5;  % The length of line segments
 
@@ -12,7 +12,7 @@ Ar = linspace(-pi, pi, 1001);
 [gridDp, gridAr] = meshgrid(Dp, Ar);
 
 %-----------------------------------------------------------
-% Metric = midpoint distance.
+% Distance = midpoint distance.
 % REF [paper] >> "Evaluation of Established Line Segment Distance Functions", PRIA 2016.
 %
 % Result: Bad.
@@ -37,7 +37,7 @@ mesh(gridDp, gridAr, distDpAr);
 %	dist = Dp / cos(Ar).
 %
 % Result: Good, but go to infinity around pi / 2.
-% REF [file] >> ${SWL_HOME}/matlab/src/topology/line_segment_metric.m.
+% REF [file] >> ${SWL_HOME}/matlab/src/topology/distance_between_line_segment_and_infinite_line.m.
 
 distAr = abs(Dp(100) ./ cos(gridAr));
 figure;
@@ -58,7 +58,7 @@ ax = axis;
 %	dist = perpendicular_dist / abs(weight).
 %
 % Result: Good, finite and differentiable around pi / 2.
-% REF [file] >> ${SWL_HOME}/matlab/src/topology/line_segment_metric.m.
+% REF [file] >> ${SWL_HOME}/matlab/src/topology/distance_between_line_segment_and_infinite_line.m.
 
 % Weight function.
 %weight = inline('cos(x)', 'x');

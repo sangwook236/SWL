@@ -23,20 +23,22 @@ line_y_intercept = -c / b;
 line_segment_length = 1;
 
 % Sample.
-num_instances = 1000;
+%num_instances = 1000;
+num_instances = 10;
 sigma = 2;
 kappa = 1;
 x_range = [-100 ; 100];
 
 line_segment_angle = circ_vmrnd(line_slope, kappa, [num_instances, 1]);
 y_offset = normrnd(0, sigma, [num_instances, 1]);
-x_c = x_range(1) + (x_range(2) - x_range(1)) .* rand([num_instances, 1]);
-y_c = (-a / b) * x_c - (c / b) + y_offset;
 
-x1 = x_c - line_segment_length * cos(line_segment_angle) / 2;
-y1 = y_c - line_segment_length * sin(line_segment_angle) / 2;
-x2 = x_c + line_segment_length * cos(line_segment_angle) / 2;
-y2 = y_c + line_segment_length * sin(line_segment_angle) / 2;
+xc = x_range(1) + (x_range(2) - x_range(1)) .* rand([num_instances, 1]);
+yc = (-a / b) * xc - (c / b) + y_offset;
+
+x1 = xc - line_segment_length * cos(line_segment_angle) / 2;
+y1 = yc - line_segment_length * sin(line_segment_angle) / 2;
+x2 = xc + line_segment_length * cos(line_segment_angle) / 2;
+y2 = yc + line_segment_length * sin(line_segment_angle) / 2;
 
 % Plot.
 figure;

@@ -16,13 +16,13 @@ b = b_range(1) + (b_range(2) - b_range(1)) * rand();
 c = c_range(1) + (c_range(2) - c_range(1)) * rand();
 
 % Sample.
+%num_instances = 100;
 num_instances = 100;
 sigma_x = 20;
 sigma_y = 5;
 x_range = [-100 ; 100];
 
 % Line segments: (x1, y1) - (x2, y2).
-y_offset = normrnd(0, sigma, [num_instances, 1]);
 x1 = x_range(1) + (x_range(2) - x_range(1)) .* rand([num_instances, 1]);
 %x2 = x_range(1) + (x_range(2) - x_range(1)) .* rand([num_instances, 1]);
 x2 = x1 + normrnd(0, sigma_x, [num_instances, 1]);
