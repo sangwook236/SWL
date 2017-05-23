@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <boost/timer/timer.hpp>
 #include <string>
+#include <set>
 #include <list>
 
 
@@ -14,6 +15,23 @@
 
 namespace {
 namespace local {
+
+template<typename T>
+std::set<T> get_unique_pixel_values(const cv::Mat &img)
+{
+	if (1 != img.channels())
+	{
+		std::cerr << "The input image has to be a single channel." << std::endl;
+		return std::set<T>();
+	}
+
+	std::set<T> pix;
+	for (int r = 0; r < img.rows; ++r)
+		for (int c = 0; c < img.cols; ++c)
+			pix.insert(img.at<T>(r, c));
+
+	return pix;
+}
 
 void generate_test_label(cv::Mat &label, cv::Mat &boundary)
 {
@@ -59,12 +77,25 @@ void generate_test_label(cv::Mat &label, cv::Mat &boundary)
 
 void boundary_extraction()
 {
+#if 1
 	cv::Mat label, boundary_true;
 	local::generate_test_label(label, boundary_true);
+#else
+	const std::string label_filepath("");
+	cv::Mat label(cv::imread(label_filepath, cv::IMREAD_UNCHANGED));
+	if (label.empty())
+	{
+		std::cerr << "File not found: " << label_filepath << std::endl;
+		return;
+	}
+#endif
+
+	if (label.type() != CV_16UC1)
+		std::cerr << "WARNING: Invalid type of the label image: " << label.type() << std::endl;
 
 	// Create a boundary extractor.
 	//swl::IBoundaryExtraction &extractor = swl::NaiveBoundaryExtraction(true);
-	swl::IBoundaryExtraction &extractor = swl::ContourBoundaryExtraction();
+	swl::IBoundaryExtraction &extractor = swl::ContourBoundaryExtraction();  // Slower.
 
 	// Extract boundaries.
 	cv::Mat boundary(cv::Mat::zeros(label.size(), label.type()));
@@ -73,9 +104,19 @@ void boundary_extraction()
 		extractor.extractBoundary(label, boundary);
 	}
 
-#if 1
+#if 0
+	// Re-arrange labels: pixel values -> {0, 1, ..., #labels}.
+	const std::set<unsigned short> pixes(local::get_unique_pixel_values<unsigned short>(label));
+	int idx = 0;
+	for (const auto &pix : pixes)
+	{
+		boundary.setTo(cv::Scalar::all(idx), pix == boundary);
+		++idx;
+	}
+#endif
+
+#if 0
 	// Compute boundary weight.
-	cv::Mat boundaryWeight_filtered(cv::Mat::zeros(boundary.size(), CV_16UC1));
 	{
 		// Distance transform.
 		cv::Mat dist;
@@ -91,15 +132,20 @@ void boundary_extraction()
 		cv::multiply(dist, dist, dist);
 		cv::exp(-dist / (2.0 * sigma2), boundaryWeight_float);
 
-		// NOTICE [info] >> Cannot save images of 32-bit (signed/unsigned) integer or float.
+		// NOTICE [info] >> Cannot save images of 32-bit (signed/unsigned) integer or float in OpenCV.
 
+		cv::Mat boundaryWeight_filtered(cv::Mat::zeros(boundary.size(), CV_16UC1));
 		//double minVal = 0.0, maxVal = 0.0;
 		//cv::minMaxLoc(boundaryWeight_float, &minVal, &maxVal);
-		cv::Mat boundaryWeight_int;
-		boundaryWeight_float.convertTo(boundaryWeight_int, boundaryWeight_filtered.type(), std::numeric_limits<unsigned short>::max(), 0.0);
+		cv::Mat boundaryWeight_ushort;
+		boundaryWeight_float.convertTo(boundaryWeight_ushort, boundaryWeight_filtered.type(), std::numeric_limits<unsigned short>::max(), 0.0);
 
-		//boundaryWeight_filtered = boundaryWeight_int;  // Do not filter out.
-		boundaryWeight_int.copyTo(boundaryWeight_filtered, boundary > 0 | 0 == label);  // On boundaries or outside of objects.
+		//boundaryWeight_filtered = boundaryWeight_ushort;  // Do not filter out.
+		boundaryWeight_ushort.copyTo(boundaryWeight_filtered, boundary > 0 | 0 == label);  // On boundaries or outside of objects.
+
+		// Output the result.
+		cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_filtered);
+		//cv::imwrite("./data/machine_vision/label_boundary_weight.png", boundaryWeight_filtered);
 	}
 #endif
 
@@ -108,12 +154,10 @@ void boundary_extraction()
 	cv::imshow("Boundary extraction - Label", label);
 	cv::imshow("Boundary extraction - True boundary", boundary_true);
 	cv::imshow("Boundary extraction - Extracted boundary", boundary);
-	cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_filtered);
 #else
 	cv::imwrite("./data/machine_vision/label.png", label);
 	cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
 	cv::imwrite("./data/machine_vision/label_extracted_boundary.png", boundary);
-	cv::imwrite("./data/machine_vision/label_boundary_weight.png", boundaryWeight_filtered);
 #endif
 	cv::waitKey(0);
 
