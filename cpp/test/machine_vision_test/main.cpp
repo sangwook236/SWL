@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
 		//-----------------------------------------------------------
 		// Application.
 
+		// Boundary extraction and weighting.
 		boundary_extraction();
 	}
 	catch (const cv::Exception &ex)

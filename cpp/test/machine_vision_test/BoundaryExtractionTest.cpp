@@ -115,50 +115,85 @@ void boundary_extraction()
 	}
 #endif
 
-#if 0
-	// Compute boundary weight.
-	{
-		// Distance transform.
-		cv::Mat dist;
-		{
-			cv::Mat binary(cv::Mat::ones(boundary.size(), CV_8UC1));
-			binary.setTo(cv::Scalar::all(0), boundary > 0);
-			cv::distanceTransform(binary, dist, cv::DIST_L2, cv::DIST_MASK_3);
-		}
-
-		// Gaussian weighting.
-		const double sigma2 = 1.0;  // sigma^2.
-		cv::Mat boundaryWeight_float;
-		cv::multiply(dist, dist, dist);
-		cv::exp(-dist / (2.0 * sigma2), boundaryWeight_float);
-
-		// NOTICE [info] >> Cannot save images of 32-bit (signed/unsigned) integer or float in OpenCV.
-
-		cv::Mat boundaryWeight_filtered(cv::Mat::zeros(boundary.size(), CV_16UC1));
-		//double minVal = 0.0, maxVal = 0.0;
-		//cv::minMaxLoc(boundaryWeight_float, &minVal, &maxVal);
-		cv::Mat boundaryWeight_ushort;
-		boundaryWeight_float.convertTo(boundaryWeight_ushort, boundaryWeight_filtered.type(), std::numeric_limits<unsigned short>::max(), 0.0);
-
-		//boundaryWeight_filtered = boundaryWeight_ushort;  // Do not filter out.
-		boundaryWeight_ushort.copyTo(boundaryWeight_filtered, boundary > 0 | 0 == label);  // On boundaries or outside of objects.
-
-		// Output the result.
-		cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_filtered);
-		//cv::imwrite("./data/machine_vision/label_boundary_weight.png", boundaryWeight_filtered);
-	}
-#endif
-
 	// Output the result.
-#if 1
+#if 0
 	cv::imshow("Boundary extraction - Label", label);
 	cv::imshow("Boundary extraction - True boundary", boundary_true);
 	cv::imshow("Boundary extraction - Extracted boundary", boundary);
-#else
+#elif 0
 	cv::imwrite("./data/machine_vision/label.png", label);
 	cv::imwrite("./data/machine_vision/label_true_boundary.png", boundary_true);
 	cv::imwrite("./data/machine_vision/label_extracted_boundary.png", boundary);
 #endif
+
+#if 1
+	// Compute boundary weight.
+	{
+		cv::Mat boundaryWeight_float;
+		double minVal = 0.0, maxVal = 0.0;
+		{
+			// Distance transform.
+			cv::Mat dist;
+			cv::Mat binary(cv::Mat::ones(boundary.size(), CV_8UC1));
+			binary.setTo(cv::Scalar::all(0), boundary > 0);
+			//cv::distanceTransform(binary, dist, cv::DIST_L2, cv::DIST_MASK_3);
+			cv::distanceTransform(binary, dist, cv::DIST_L2, cv::DIST_MASK_PRECISE);
+
+			// Show the result.
+			{
+				cv::minMaxLoc(dist, &minVal, &maxVal);
+				cv::Mat dist_uchar;
+				dist.convertTo(dist_uchar, CV_8UC1, 255.0 / maxVal, 0.0);
+				cv::imshow("Boundary extraction - Distance transform", dist_uchar);
+			}
+
+#if 1
+			// Gaussian weighting.
+			const double sigma2 = 20.0;  // sigma^2.
+			cv::multiply(dist, dist, dist);
+			cv::exp(-dist / (2.0 * sigma2), boundaryWeight_float);
+#else
+			// Linear weighting.
+			cv::minMaxLoc(dist, NULL, &maxVal);
+			boundaryWeight_float = maxVal - dist;
+#endif
+
+			// Show the result.
+			{
+				cv::minMaxLoc(boundaryWeight_float, NULL, &maxVal);
+				cv::Mat boundaryWeight_uchar;
+				boundaryWeight_float.convertTo(boundaryWeight_uchar, CV_8UC1, 255.0 / maxVal, 0.0);
+				cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_uchar);
+				//cv::imshow("Boundary extraction - Boundary weight", boundaryWeight_float);
+			}
+		}
+
+		cv::Mat boundaryWeight_filtered(cv::Mat::zeros(boundaryWeight_float.size(), boundaryWeight_float.type()));
+		//boundaryWeight_filtered = boundaryWeight_float;  // Do not filter out.
+		boundaryWeight_float.copyTo(boundaryWeight_filtered, boundary > 0 | 0 == label);  // On boundaries or outside of objects.
+		//boundaryWeight_float.copyTo(boundaryWeight_filtered, boundary > 0 | 0 != label);  // On boundaries or inside of objects.
+
+		// Output the result.
+		{
+			cv::minMaxLoc(boundaryWeight_filtered, &minVal, &maxVal);
+			cv::Mat boundaryWeight_uchar;
+			boundaryWeight_filtered.convertTo(boundaryWeight_uchar, CV_8UC1, 255.0 / maxVal, 0.0);
+			cv::imshow("Boundary extraction - Filtered boundary weight", boundaryWeight_uchar);
+			//cv::imshow("Boundary extraction - Filtered boundary weight", boundaryWeight_filtered);
+		}
+
+#if 0
+		// NOTICE [info] >> Cannot save images of 32-bit (signed/unsigned) integer or float in OpenCV.
+		{
+			cv::Mat boundaryWeight_ushort;
+			cv::minMaxLoc(boundaryWeight_filtered, NULL, &maxVal);
+			boundaryWeight_filtered.convertTo(boundaryWeight_ushort, CV_16UC1, std::numeric_limits<unsigned short>::max() / maxVal, 0.0);
+			cv::imwrite("./data/machine_vision/label_boundary_weight.png", boundaryWeight_ushort);
+		}
+#endif
+	}
+#endif
+
 	cv::waitKey(0);
 
 	cv::destroyAllWindows();
