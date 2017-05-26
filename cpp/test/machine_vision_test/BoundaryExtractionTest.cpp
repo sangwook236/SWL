@@ -104,7 +104,7 @@ void boundary_extraction()
 		extractor.extractBoundary(label, boundary);
 	}
 
-#if 0
+#if 1
 	// Re-arrange labels: pixel values -> {0, 1, ..., #labels}.
 	const std::set<unsigned short> pixes(local::get_unique_pixel_values<unsigned short>(label));
 	int idx = 0;
