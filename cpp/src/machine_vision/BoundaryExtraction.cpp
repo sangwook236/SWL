@@ -26,6 +26,7 @@ NaiveBoundaryExtraction::NaiveBoundaryExtraction(const bool use8connectivity /*=
 {}
 
 /*virtual*/ void NaiveBoundaryExtraction::extractBoundary(const cv::Mat &label, cv::Mat &boundary) const /*override*/
+// If label == 0, a pixel is background.
 {
 	std::vector<cv::Point> neighbors;
 	if (use8connectivity_)
@@ -76,6 +77,7 @@ ContourBoundaryExtraction::ContourBoundaryExtraction()
 {}
 
 /*virtual*/ void ContourBoundaryExtraction::extractBoundary(const cv::Mat &label, cv::Mat &boundary) const /*override*/
+// If label == 0, a pixel is background.
 {
 	double minVal = 0.0, maxVal = 0.0;
 	cv::minMaxLoc(label, &minVal, &maxVal);
@@ -114,5 +116,58 @@ ContourBoundaryExtraction::ContourBoundaryExtraction()
 		cv::drawContours(boundary, contours, idx, cv::Scalar::all(idx + 1), 1, cv::LINE_8, hierarchy, INT_MAX, cv::Point());
 #endif
 }
-	
+
+//--------------------------------------------------------------------------
+// Naive Occlusion Border Extraction.
+
+NaiveOcclusionBorderExtraction::NaiveOcclusionBorderExtraction(const bool use8connectivity /*= true*/)
+: use8connectivity_(use8connectivity)
+{}
+
+/*virtual*/ void NaiveOcclusionBorderExtraction::extractBoundary(const cv::Mat &label, cv::Mat &boundary) const /*override*/
+// If label == 0, a pixel is background.
+{
+	std::vector<cv::Point> neighbors;
+	if (use8connectivity_)
+	{
+		// 8-connectivity.
+		neighbors.reserve(8);
+		neighbors.push_back(cv::Point(1, 0));
+		neighbors.push_back(cv::Point(1, -1));
+		neighbors.push_back(cv::Point(0, -1));
+		neighbors.push_back(cv::Point(-1, -1));
+		neighbors.push_back(cv::Point(-1, 0));
+		neighbors.push_back(cv::Point(-1, 1));
+		neighbors.push_back(cv::Point(0, 1));
+		neighbors.push_back(cv::Point(1, 1));
+	}
+	else
+	{
+		// 4-connectivity.
+		neighbors.reserve(4);
+		neighbors.push_back(cv::Point(1, 0));
+		neighbors.push_back(cv::Point(0, -1));
+		neighbors.push_back(cv::Point(-1, 0));
+		neighbors.push_back(cv::Point(0, 1));
+	}
+
+	const cv::Rect rct(0, 0, label.cols, label.rows);
+	unsigned short lbl = 0;
+	for (int r = 0; r < label.rows; ++r)
+	{
+		for (int c = 0; c < label.cols; ++c)
+		{
+			std::set<unsigned short> neighborLabels;
+			for (const auto &neighbor : neighbors)
+			{
+				const cv::Point pt(c + neighbor.x, r + neighbor.y);
+				if (rct.contains(pt) && (0 != (lbl = label.at<unsigned short>(pt.y, pt.x))))
+					neighborLabels.insert(lbl);
+			}
+			if (neighborLabels.size() > 1)
+				boundary.at<unsigned short>(r, c) = label.at<unsigned short>(r, c);
+		}
+	}
+}
+
 }  // namespace swl

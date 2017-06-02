@@ -56,6 +56,24 @@ public:
 	/*virtual*/ void extractBoundary(const cv::Mat &label, cv::Mat &boundary) const override;
 };
 
+//--------------------------------------------------------------------------
+// Naive Occlusion Border Extraction.
+
+class SWL_MACHINE_VISION_API NaiveOcclusionBorderExtraction final : public IBoundaryExtraction
+{
+public:
+	typedef IBoundaryExtraction base_type;
+
+public:
+	NaiveOcclusionBorderExtraction(const bool use8connectivity = true);
+
+public:
+	/*virtual*/ void extractBoundary(const cv::Mat &label, cv::Mat &boundary) const override;
+
+private:
+	const bool use8connectivity_;
+};
+
 }  // namespace swl
 
 
