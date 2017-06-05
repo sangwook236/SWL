@@ -19,6 +19,11 @@
 			<Depends filename="../src/util/swl_util_cb10.cbp" />
 			<Depends filename="../src/view/swl_view_cb10.cbp" />
 		</Project>
+		<Project filename="../app/data_analysis_tool/swl_data_analysis_tool_cb10.cbp">
+			<Depends filename="../src/machine_learning/swl_machine_learning_cb10.cbp" />
+			<Depends filename="../src/machine_vision/swl_machine_vision_cb10.cbp" />
+			<Depends filename="../src/rnd_util/swl_rnd_util_cb10.cbp" />
+		</Project>
 		<Project filename="../test/gesture_recognition_test/swl_gesture_recognition_test_cb10.cbp">
 			<Depends filename="../src/base/swl_base_cb10.cbp" />
 			<Depends filename="../src/math/swl_math_cb10.cbp" />

@@ -87,10 +87,12 @@ ContourBoundaryExtraction::ContourBoundaryExtraction()
 	cv::Mat binary(cv::Mat::zeros(label.size(), CV_8UC1));
 	for (unsigned short lbl = minLabel; lbl <= maxLabel; ++lbl)
 	{
+		if (0 == cv::countNonZero(label == lbl)) continue;
+
 		binary.setTo(cv::Scalar::all(0));
 		binary.setTo(cv::Scalar::all(255), label == lbl);
 
-		if (0 == cv::countNonZero(binary)) continue;
+		//if (0 == cv::countNonZero(binary)) continue;
 
 		// Find contours.
 		std::vector<std::vector<cv::Point> > contours;
