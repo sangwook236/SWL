@@ -483,6 +483,45 @@ void extract_occlusion_border_from_label_image(const std::string &src_dataset_di
 	}
 }
 
+void basic_util(const std::string &dataset_home_dir)
+{
+	const std::string src_dir_path_name(dataset_home_dir + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1");
+	const std::string src_file_prefix("");
+	const std::string src_file_suffix("_rgb.png");
+	const std::string dst_dir_path_name(dataset_home_dir + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1/unet_fg");
+	const std::string dst_file_suffix("_rgb_unet_fg.png");
+
+	if (!local::create_directory(dst_dir_path_name))
+	{
+		std::cerr << "Failed to create a directory: " << dst_dir_path_name << std::endl;
+		return;
+	}
+
+#if 0
+	if (!local::copy_files(src_dir_path_name, dst_dir_path_name, src_file_prefix, src_file_suffix, dst_file_suffix))
+	{
+		std::cerr << "Failed to copy files from " << src_dir_path_name << " to " << dst_dir_path_name << std::endl;
+		return;
+	}
+#endif
+
+#if 0
+	if (!local::rename_files(src_dir_path_name, dst_dir_path_name, src_file_prefix, src_file_suffix, dst_file_suffix))
+	{
+		std::cerr << "Failed to rename files from " << src_dir_path_name << " to " << dst_dir_path_name << std::endl;
+		return;
+	}
+#endif
+
+#if 0
+	if (!local::remove_files(src_dir_path_name, src_file_prefix, src_file_suffix))
+	{
+		std::cerr << "Failed to remove files from " << src_dir_path_name << std::endl;
+		return;
+	}
+#endif
+}
+
 void cvppp_2017(const std::string &dataset_home_dir)
 {
 #if 1
@@ -684,44 +723,8 @@ int main()
 		const std::string dataset_home_dir("/dataset");
 #endif
 
-#if 0
 		// Basic utility.
-		{
-			const std::string src_dir_path_name(dataset_home_dir + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1");
-			const std::string src_file_prefix("");
-			const std::string src_file_suffix("_rgb.png");
-			const std::string dst_dir_path_name(dataset_home_dir + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1/unet_fg");
-			const std::string dst_file_suffix("_rgb_unet_fg.png");
-
-			if (!local::create_directory(dst_dir_path_name))
-			{
-				std::cerr << "Failed to create a directory: " << dst_dir_path_name << std::endl;
-				return EXIT_FAILURE;
-			}
-
-#if 0
-			if (!local::copy_files(src_dir_path_name, dst_dir_path_name, src_file_prefix, src_file_suffix, dst_file_suffix))
-			{
-				std::cerr << "Failed to copy files from " << src_dir_path_name << " to " << dst_dir_path_name << std::endl;
-				return EXIT_FAILURE;
-			}
-#endif
-#if 0
-			if (!local::rename_files(src_dir_path_name, dst_dir_path_name, src_file_prefix, src_file_suffix, dst_file_suffix))
-			{
-				std::cerr << "Failed to rename files from " << src_dir_path_name << " to " << dst_dir_path_name << std::endl;
-				return EXIT_FAILURE;
-			}
-#endif
-#if 0
-			if (!local::remove_files(src_dir_path_name, src_file_prefix, src_file_suffix))
-			{
-				std::cerr << "Failed to remove files from " << src_dir_path_name << std::endl;
-				return EXIT_FAILURE;
-			}
-#endif
-		}
-#endif
+		local::basic_util(dataset_home_dir);
 
 		// Phenotyping.
 		//local::cvppp_2017(dataset_home_dir);
