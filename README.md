@@ -9,6 +9,7 @@ Programming languages supported by SWL are as follows:
 * C#
 * Java
 * Matlab
+* Python
 
 System platforms supported by SWL are as follows:
 * Linux/Unix
