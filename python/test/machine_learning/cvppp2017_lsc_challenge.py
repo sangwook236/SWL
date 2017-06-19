@@ -3,6 +3,9 @@
 
 #%%------------------------------------------------------------------
 
+import os
+os.chdir('D:/work/swl_github/python/test/machine_learning')
+
 import sys
 sys.path.insert(0, '../../src/machine_learning')
 
@@ -12,7 +15,8 @@ from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator
 from loss import dice_coeff, dice_coeff_loss
 from cvppp_image_loader import CvpppImageLoader
-from unet_model import UNet
+from unet import UNet
+from deconvnet import DeconvNet
 
 #%%------------------------------------------------------------------
 
@@ -33,7 +37,8 @@ dataset_home_dir_path = "D:/dataset"
 
 dataset_dir_path = dataset_home_dir_path + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1"
 
-image_loader = CvpppImageLoader()
+#image_loader = CvpppImageLoader()
+image_loader = CvpppImageLoader(224, 224)
 train_images, train_labels = image_loader.load(dataset_dir_path, img_suffix = '_rgb', img_extension = 'png', label_suffix = '_label', label_extension = 'png')
 
 # Change the dimension of labels.
@@ -52,6 +57,7 @@ for train_label in train_labels:
 
 assert train_images.shape[0] == train_labels.shape[0] and train_images.shape[1] == train_labels.shape[1] and train_images.shape[2] == train_labels.shape[2], "ERROR: Image and label size mismatched."
 
+num_classes = 2
 batch_size = 32
 steps_per_epoch = 2000
 num_epoch = 50
@@ -74,19 +80,22 @@ data_generator = ImageDataGenerator(
 
 data_generator.fit(train_images)
 
-#%%------------------------------------------------------------------
-# Create a U-Net model.
-
-# REF [site] >> https://github.com/zizhaozhang/unet-tensorflow-keras
-# REF [file] >> https://github.com/zizhaozhang/unet-tensorflow-keras/blob/master/train.py
-
 train_image_shape = (None,) + train_images.shape[1:]
 train_label_shape = (None,) + train_labels.shape[1:]
 train_images_tf = tf.placeholder(tf.float32, shape=train_image_shape)
 train_labels_tf = tf.placeholder(tf.float32, shape=train_label_shape)
 
+#%%------------------------------------------------------------------
+# Create a U-Net model.
+
 with tf.name_scope('unet'):
-    unet_model = UNet().create_model(train_image_shape, backend='tf', tf_input=train_images_tf)
+    unet_model = UNet().create_model(num_classes, backend='tf', input_shape=train_image_shape, tf_input=train_images_tf)
+
+#%%------------------------------------------------------------------
+# Create a DeconvNet model.
+
+with tf.name_scope('deconvnet'):
+    deconv_model = DeconvNet().create_model(num_classes, backend='tf', input_shape=train_image_shape, tf_input=train_images_tf)
 
 #%%------------------------------------------------------------------
 # Train the U-Net model.
