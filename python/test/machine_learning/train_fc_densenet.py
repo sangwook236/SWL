@@ -56,18 +56,16 @@ mnist_data = input_data.read_data_sets('MNIST_data', one_hot=True)
 fc_densenet_model = dc.DenseNetFCN((32, 32, 3), nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
 fc_densenet_model.summary()
 
-#%%------------------------------------------------------------------
-
-images = tf.placeholder(tf.float32, shape=(None, 32, 32, 3))
-labels = tf.placeholder(tf.float32, shape=(None, num_classes))
-output = fc_densenet_model(images)
+image_input = tf.placeholder(tf.float32, shape=(None, 32, 32, 3))
+label_input = tf.placeholder(tf.float32, shape=(None, num_classes))
+output = fc_densenet_model(image_input)
 
 #%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
 
 # REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
 
-loss = tf.reduce_mean(categorical_crossentropy(labels, fc_densenet_model.output))
+loss = tf.reduce_mean(categorical_crossentropy(label_input, fc_densenet_model.output))
 
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
@@ -79,11 +77,11 @@ sess.run(init_op)
 with sess.as_default():
 	for i in range(num_epochs):
 		batch = mnist_data.train.next_batch(batch_size)
-		train_step.run(feed_dict={images: batch[0], labels: batch[1]})
+		train_step.run(feed_dict={image_input: batch[0], label_input: batch[1]})
 
 #%%------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
 
-acc_value = accuracy(labels, fc_densenet_model.output)
+acc_value = accuracy(label_input, fc_densenet_model.output)
 with sess.as_default():
-	print(acc_value.eval(feed_dict={images: mnist_data.test.images, labels: mnist_data.test.labels}))
+	print(acc_value.eval(feed_dict={image_input: mnist_data.test.images, labels: mnist_data.test.labels}))
