@@ -9,14 +9,25 @@ os.chdir('D:/work/swl_github/python/test/machine_learning')
 import sys
 sys.path.insert(0, '../../src/machine_learning')
 
+#%%------------------------------------------------------------------
+
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
+from keras.models import Model, Input
 from keras.preprocessing.image import ImageDataGenerator
 from loss import dice_coeff, dice_coeff_loss
 from cvppp_image_loader import CvpppImageLoader
 from unet import UNet
 from deconvnet import DeconvNet
+
+#%%------------------------------------------------------------------
+
+keras_backend = 'tf'
+num_classes = 2
+batch_size = 32
+steps_per_epoch = 2000
+num_epochs = 50
 
 #%%------------------------------------------------------------------
 
@@ -57,11 +68,6 @@ for train_label in train_labels:
 
 assert train_images.shape[0] == train_labels.shape[0] and train_images.shape[1] == train_labels.shape[1] and train_images.shape[2] == train_labels.shape[2], "ERROR: Image and label size mismatched."
 
-num_classes = 2
-batch_size = 32
-steps_per_epoch = 2000
-num_epoch = 50
-
 #%%------------------------------------------------------------------
 # Create a data generator.
 
@@ -89,13 +95,28 @@ train_labels_tf = tf.placeholder(tf.float32, shape=train_label_shape)
 # Create a U-Net model.
 
 with tf.name_scope('unet'):
-    unet_model = UNet().create_model(num_classes, backend='tf', input_shape=train_image_shape, tf_input=train_images_tf)
+	unet_model = UNet().create_model(num_classes, backend=keras_backend, input_shape=train_image_shape, tf_input=train_images_tf)
+	if 'tf' == keras_backend:
+		Model(inputs=Input(tensor=train_images_tf), outputs=unet_model).summary()
+	else:   
+		unet_model.summary()
 
 #%%------------------------------------------------------------------
 # Create a DeconvNet model.
 
 with tf.name_scope('deconvnet'):
-    deconv_model = DeconvNet().create_model(num_classes, backend='tf', input_shape=train_image_shape, tf_input=train_images_tf)
+	deconv_model = DeconvNet().create_model(num_classes, backend=keras_backend, input_shape=train_image_shape, tf_input=train_images_tf)
+	if 'tf' == keras_backend:
+		Model(inputs=Input(tensor=train_images_tf), outputs=deconv_model).summary()
+	else:   
+		deconv_model.summary()
+
+#%%------------------------------------------------------------------
+
+[tensor.name for tensor in tf.get_default_graph().as_graph_def().node]
+
+#images_placeholder = tf.get_default_graph().get_tensor_by_name("input_10:0")
+#seg_score = tf.get_default_graph().get_tensor_by_name('deconvnet\\seg-score:0')
 
 #%%------------------------------------------------------------------
 # Train the U-Net model.
