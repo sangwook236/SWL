@@ -194,11 +194,11 @@ loss = tf.reduce_mean(categorical_crossentropy(train_labels_tf, fc_densenet_mode
 
 train_step = tf.train.GradientDescentOptimizer(0.5).minimize(loss)
 
-# Initialize all variables
+# Initialize all variables.
 init_op = tf.global_variables_initializer()
 sess.run(init_op)
 
-# Run training loop
+# Run training loop.
 with sess.as_default():
 	for i in range(num_epochs):
 		batch = mnist_data.train.next_batch(batch_size)

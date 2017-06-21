@@ -112,7 +112,7 @@ with tf.name_scope('deconvnet'):
 
 # Define a loss.
 with tf.name_scope('cross_entropy'):
-    cross_entropy_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=train_labels_tf, logits=unet_model))
+    cross_entropy_loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=train_labels_tf, logits=deconv_model))
 
 # Define an optimzer.
 global_step = tf.Variable(0, name='global_step', trainable=False)
@@ -122,4 +122,4 @@ train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(cross_
 
 # Compute dice score for simple evaluation during training.
 with tf.name_scope('dice_eval'):
-    dice_evaluator = tf.reduce_mean(dice_coeff(train_labels_tf, unet_model))
+    dice_evaluator = tf.reduce_mean(dice_coeff(train_labels_tf, deconv_model))
