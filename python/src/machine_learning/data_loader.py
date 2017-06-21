@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import ndimage, misc
 import os, re
-from dataset import Dataset
+from .dataset import Dataset
 
 class DataLoader(object):
 	def __init__(self, width=0, height=0):
