@@ -69,8 +69,8 @@ label_save_dir_path = '../../../data/machine_learning/generated/label'
 
 #num_examples = x_train.shape[0]
 num_classes = 10
-batch_size = 37
-num_epochs = 1
+batch_size = 37  # Number of samples per gradient update.
+num_epochs = 1  # Number of times to iterate over the training data arrays.
 #steps_per_epoch = num_examples // batch_size
 steps_per_epoch = 1
 
@@ -152,8 +152,8 @@ model.fit_generator(
 class_labels = ['forest', 'fruit', 'house', 'street']
 num_classes = len(class_labels)
 num_examples = 9
-batch_size = 6
-num_epochs = 1
+batch_size = 6  # Number of samples per gradient update.
+num_epochs = 1  # Number of times to iterate over the training data arrays.
 #steps_per_epoch = num_examples / batch_size
 steps_per_epoch = 1
 
@@ -187,7 +187,7 @@ if crop_dataset_flag:
 		center_crop_size=None,
 		fill_mode='reflect',
 		cval=0.)
-	data_generator = ImageDataGeneratorWithCrop(**data_gen_with_crop_args)
+	train_data_generator = ImageDataGeneratorWithCrop(**data_gen_with_crop_args)
 else:
 	data_gen_args = dict(
 		rescale=1./255.,
@@ -208,7 +208,7 @@ else:
 		vertical_flip=True,
 		fill_mode='reflect',
 		cval=0.)
-	data_generator = ImageDataGenerator(**data_gen_args)
+	train_data_generator = ImageDataGenerator(**data_gen_args)
 
 # Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 # Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -218,7 +218,7 @@ else:
 #	The type of the generator output is 'tuple': (data, labels).
 #	The 1st item of the generator output is of shape (batch_size, heigth, width, channel) = (6, 200, 300, 3).
 #	The 2nd item of the generator output is of shape (batch_size, num_classes) = (6, 4).
-data_gen = data_generator.flow_from_directory(
+train_data_gen = train_data_generator.flow_from_directory(
 	data_dir_path,
 	target_size=resized_input_size,
 	color_mode='rgb',
@@ -250,9 +250,8 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 
 # Train the model on batches with real-time data augmentation.
 model.fit_generator(
-	#dataset_generator,
-	data_gen,
-	#validation_data=validation_dataset_generator,
+	train_data_gen,
+	#validation_data=validation_data_gen,
 	#validation_steps=800,
 	steps_per_epoch=steps_per_epoch,
 	epochs=num_epochs)
@@ -269,8 +268,8 @@ model.fit_generator(
 #num_classes = len(class_labels)
 num_classes = 21  # TODO [correct] >>
 num_examples = 9
-batch_size = 4
-num_epochs = 1
+batch_size = 4  # Number of samples per gradient update.
+num_epochs = 1  # Number of times to iterate over the training data arrays.
 #steps_per_epoch = num_examples / batch_size
 steps_per_epoch = 1
 
@@ -340,6 +339,8 @@ seed = 1
 data_gen = data_generator.flow_from_directory(
 	data_dir_path,
 	target_size=resized_input_size,
+	color_mode='rgb',
+	#classes=None,
 	class_mode=None,
 	batch_size=batch_size,
 	shuffle=True,
@@ -348,6 +349,8 @@ data_gen = data_generator.flow_from_directory(
 label_gen = label_generator.flow_from_directory(
 	label_dir_path,
 	target_size=resized_input_size,
+	color_mode='grayscale',
+	#classes=None,
 	class_mode=None,
 	batch_size=batch_size,
 	shuffle=True,
@@ -357,7 +360,7 @@ label_gen = label_generator.flow_from_directory(
 # NOTICE [info] >>
 #	The type of the generator output is 'tuple': (data, labels).
 #	The 1st item of the generator output is of shape (batch_size, heigth, width, channel) = (4, 200, 300, 3).
-#	The 2nd item of the generator output is of shape (batch_size, heigth, width, channel) = (4, 200, 300, 3).
+#	The 2nd item of the generator output is of shape (batch_size, heigth, width, channel) = (4, 200, 300, 1).
 
 # Combine generators into one which yields image and labels.
 dataset_generator = zip(data_gen, label_gen)
@@ -381,12 +384,11 @@ model.add(Activation('softmax'))
 
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
-
 # Train the model on batches with real-time data augmentation.
 
 # Method 1: Not correctly working.
 # NOTICE [important] >>
-#   The dimension of the 2nd item of the generator output here is different from that of the 2nd example.
+#   The dimension of the 2nd item of the generator output here is different from that of the 2nd example described above.
 #model.fit_generator(
 #	dataset_generator,
 #	#validation_data=validation_dataset_generator,
@@ -395,12 +397,27 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 #	epochs=num_epochs)
 
 # Method 2: Not correctly working.
-#   <error> 'zip' object has no attribute 'flow'.
 for epoch in range(num_epochs):
-    print('Epoch %d/%d' % (epoch, num_epochs))
-    batches = 1
-    for data_batch, label_batch in dataset_generator.flow(x_train, y_train, batch_size=batch_size):
-        model.fit(data_batch, label_batch)
-        batches += 1
-        if batches >= steps_per_epoch:
-            break
+	print('Epoch %d/%d' % (epoch + 1, num_epochs))
+	batches = 0
+	# <error> 'zip' object has no attribute 'flow'.
+	#for data_batch, label_batch in dataset_generator.flow(x_train, y_train, batch_size=batch_size):
+	for data_batch, label_batch in dataset_generator:
+		model.fit(data_batch, label_batch)
+		batches += 1
+		if batches >= steps_per_epoch:
+			break
+
+# Method 3: Not correctly working.
+# REF [site] >> https://keras.io/models/model/
+#def generate_dataset_from_generators(data_gen, label_gen, steps_per_epoch):
+#    for _ in range(steps_per_epoch):
+#        #yield ({'input_1': data_gen}, {'output': label_gen})
+#        yield (data_gen.next(), label_gen.next())
+#
+#model.fit_generator(
+#	generate_dataset_from_generators(data_gen, label_gen, steps_per_epoch),
+#	#validation_data=validation_dataset_generator,
+#	#validation_steps=800,
+#	steps_per_epoch=steps_per_epoch,
+#	epochs=num_epochs)
