@@ -5,7 +5,7 @@
 #%%------------------------------------------------------------------
 
 import os
-os.chdir('D:/work/swl_github/python/test/machine_learning')
+os.chdir('D:/work/swl_github/python/test/machine_learning/keras')
 
 #lib_home_dir_path = "/home/sangwook/lib_repo/python"
 lib_home_dir_path = "D:/lib_repo/python"
@@ -14,8 +14,8 @@ lib_home_dir_path = "D:/lib_repo/python"
 lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github"
 
 import sys
-sys.path.insert(0, '../../src/machine_learning')
-sys.path.insert(0, lib_dir_path)
+sys.path.append('../../../src')
+sys.path.append(lib_dir_path)
 
 #%%------------------------------------------------------------------
 
@@ -25,8 +25,8 @@ from keras import backend as K
 from keras.objectives import categorical_crossentropy
 from keras.metrics import categorical_accuracy as accuracy
 import densenet_fc as dc
-from data_loader import DataLoader
-from preprocessing import ImageDataGeneratorWithCrop
+from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
+from swl.machine_learning.data_loader import DataLoader
 
 #%%------------------------------------------------------------------
 

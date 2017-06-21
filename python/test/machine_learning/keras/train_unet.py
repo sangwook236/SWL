@@ -4,10 +4,10 @@
 #%%------------------------------------------------------------------
 
 import os
-os.chdir('D:/work/swl_github/python/test/machine_learning')
+os.chdir('D:/work/swl_github/python/test/machine_learning/keras')
 
 import sys
-sys.path.insert(0, '../../src/machine_learning')
+sys.path.append('../../../src')
 
 #%%------------------------------------------------------------------
 
@@ -16,9 +16,9 @@ import tensorflow as tf
 from keras import backend as K
 from keras.models import Model, Input
 from keras.preprocessing.image import ImageDataGenerator
-from unet import UNet
-from data_loader import DataLoader
-from loss import dice_coeff, dice_coeff_loss
+from swl.machine_learning.keras.unet import UNet
+from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
+from swl.machine_learning.data_loader import DataLoader
 
 #%%------------------------------------------------------------------
 

@@ -5,17 +5,17 @@
 #%%------------------------------------------------------------------
 
 import os
-os.chdir('D:/work/swl_github/python/test/machine_learning')
+os.chdir('D:/work/swl_github/python/test/machine_learning/keras')
 
 import sys
-sys.path.insert(0, '../../src/machine_learning')
+sys.path.append('../../../src')
 
 #%%------------------------------------------------------------------
 
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten, Conv2D, MaxPooling2D, Dropout
 from keras.preprocessing.image import ImageDataGenerator
-from preprocessing import ImageDataGeneratorWithCrop
+from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 
 #%%------------------------------------------------------------------
 

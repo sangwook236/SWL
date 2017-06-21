@@ -16,10 +16,10 @@ import tensorflow as tf
 from keras import backend as K
 from keras.models import Model, Input
 from keras.preprocessing.image import ImageDataGenerator
-#from keras.loss import dice_coeff, dice_coeff_loss
-from machine_learning.keras.unet import UNet
-#from deconvnet import DeconvNet
-#from data_loader import DataLoader
+from swl.machine_learning.keras.unet import UNet
+from swl.machine_learning.keras.deconvnet import DeconvNet
+#from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
+from swl.machine_learning.data_loader import DataLoader
 
 #%%------------------------------------------------------------------
 
