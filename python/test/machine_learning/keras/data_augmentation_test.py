@@ -14,22 +14,10 @@ sys.path.append('../../../src')
 
 import keras
 from keras.models import Sequential
-from keras.layers import Dense, Activation, Flatten, Conv2D, MaxPooling2D, Dropout
+from keras.layers import Dense, Activation, Flatten, Conv2D, Conv2DTranspose, MaxPooling2D, UpSampling2D, Dropout, Reshape
 from keras.preprocessing.image import ImageDataGenerator
 from keras.datasets import cifar10
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
-
-#%%------------------------------------------------------------------
-
-# All images are of the same size, 300x200.
-data_dir_path = '../../../data/machine_learning/dataset1/data'
-label_dir_path = '../../../data/machine_learning/dataset1/label'
-# All images have different sizes.
-#data_dir_path = '../../../data/machine_learning/dataset2/data'
-#label_dir_path = '../../../data/machine_learning/dataset2/label'
-
-data_save_dir_path = '../../../data/machine_learning/generated/data'
-label_save_dir_path = '../../../data/machine_learning/generated/label'
 
 #%%------------------------------------------------------------------
 
@@ -64,7 +52,9 @@ label_save_dir_path = '../../../data/machine_learning/generated/label'
 
 
 #%%------------------------------------------------------------------
+#%%------------------------------------------------------------------
 # Example 1.
+#	Labels are given to each image.
 # REF [fie] >> ${KERAS_HOME}/examples/cifar10_cnn.py
 
 #num_examples = x_train.shape[0]
@@ -116,21 +106,32 @@ opt = keras.optimizers.rmsprop(lr=0.0001, decay=1e-6)
 model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=['accuracy'])
 
 # NOTICE [info] >>
-#	The type of the generator output is 'tuple': (data, labels).
-#	The 1st item of the generator output is of shape (batch_size, heigth, width, channel) = (37, 32, 32, 3).
-#	The 2nd item of the generator output is of shape (batch_size, num_classes) = (37, 10).
+#	The generator output: (data, labels) -> tuple.
+#	The shape of the generator output:
+#		data: (batch_size, heigth, width, channel) = (37, 32, 32, 3).
+#		labels: (batch_size, num_classes) = (37, 10).
+#	The range of the generator output:
+#		data: [0.0, 1.0] -> float32.
+#		labels: one-hot encoding.
 datagen = ImageDataGenerator(
 	rescale=1./255.,
-	featurewise_center=False,  # Set input mean to 0 over the dataset.
+	preprocessing_function=None,
+	featurewise_center=True,  # Set input mean to 0 over the dataset.
+	featurewise_std_normalization=True,  # Divide inputs by std of the dataset.
 	samplewise_center=False,  # Set each sample mean to 0.
-	featurewise_std_normalization=False,  # Divide inputs by std of the dataset.
 	samplewise_std_normalization=False,  # Divide each input by its std.
 	zca_whitening=False,  # Apply ZCA whitening.
+	zca_epsilon=1e-6,
 	rotation_range=0,  # Randomly rotate images in the range (degrees, 0 to 180).
 	width_shift_range=0.1,  # Randomly shift images horizontally (fraction of total width).
 	height_shift_range=0.1,  # Randomly shift images vertically (fraction of total height).
 	horizontal_flip=True,  # Randomly flip images.
-	vertical_flip=False)  # Randomly flip images.
+	vertical_flip=False,  # Randomly flip images.
+	zoom_range=0.2,
+	#shear_range=0.,
+	#channel_shift_range=0.,
+	fill_mode='nearest',
+	cval=0.)
 
 # Compute quantities required for feature-wise normalization (std, mean, and principal components if ZCA whitening is applied).
 datagen.fit(x_train)
@@ -144,11 +145,21 @@ model.fit_generator(
 
 
 #%%------------------------------------------------------------------
+#%%------------------------------------------------------------------
 # Example 2.
 #	Images are only given.
+#	Labels are given to each image.
 #	Labels are automatically inferred from the subdirectory names/structure.
 # REF [site] >> https://keras.io/preprocessing/image/
 
+# All images are of the same size, 300x200.
+data_dir_path = '../../../data/machine_learning/data_only1'
+# All images have different sizes.
+#data_dir_path = '../../../data/machine_learning/data_only2'
+
+data_save_dir_path = '../../../data/machine_learning/generated/data_only'
+
+# Parameters.
 class_labels = ['forest', 'fruit', 'house', 'street']
 num_classes = len(class_labels)
 num_examples = 9
@@ -168,45 +179,45 @@ if crop_dataset_flag:
 
 	data_gen_with_crop_args = dict(
 		rescale=1./255.,
-		#preprocessing_function=None,
-		#featurewise_center=True,
-		#featurewise_std_normalization=True,
-		#samplewise_center=True,
-		#samplewise_std_normalization=True,
-		#zca_whitening=True,
-		#zca_epsilon=1e-6,
+		preprocessing_function=None,
+		featurewise_center=False,
+		featurewise_std_normalization=False,
+		samplewise_center=False,
+		samplewise_std_normalization=False,
+		zca_whitening=False,
+		zca_epsilon=1e-6,
 		rotation_range=20,
 		width_shift_range=0.2,
 		height_shift_range=0.2,
-		#shear_range=0.,
-		zoom_range=0.2,
-		#channel_shift_range=0.,
 		horizontal_flip=True,
 		vertical_flip=True,
+		zoom_range=0.2,
+		#shear_range=0.,
+		#channel_shift_range=0.,
 		random_crop_size=cropped_input_size,
 		center_crop_size=None,
-		fill_mode='reflect',
+		fill_mode='constant',
 		cval=0.)
 	train_data_generator = ImageDataGeneratorWithCrop(**data_gen_with_crop_args)
 else:
 	data_gen_args = dict(
 		rescale=1./255.,
-		#preprocessing_function=None,
-		#featurewise_center=True,
-		#featurewise_std_normalization=True,
-		#samplewise_center=True,
-		#samplewise_std_normalization=True,
-		#zca_whitening=True,
-		#zca_epsilon=1e-6,
+		preprocessing_function=None,
+		featurewise_center=False,
+		featurewise_std_normalization=False,
+		samplewise_center=False,
+		samplewise_std_normalization=False,
+		zca_whitening=False,
+		zca_epsilon=1e-6,
 		rotation_range=20,
 		width_shift_range=0.2,
 		height_shift_range=0.2,
-		#shear_range=0.,
-		zoom_range=0.2,
-		#channel_shift_range=0.,
 		horizontal_flip=True,
 		vertical_flip=True,
-		fill_mode='reflect',
+		zoom_range=0.2,
+		#shear_range=0.,
+		#channel_shift_range=0.,
+		fill_mode='constant',
 		cval=0.)
 	train_data_generator = ImageDataGenerator(**data_gen_args)
 
@@ -215,9 +226,13 @@ else:
 #data_generator.fit(dataset.data, augment=True)
 
 # NOTICE [info] >>
-#	The type of the generator output is 'tuple': (data, labels).
-#	The 1st item of the generator output is of shape (batch_size, heigth, width, channel) = (6, 200, 300, 3).
-#	The 2nd item of the generator output is of shape (batch_size, num_classes) = (6, 4).
+#	The generator output: (data, labels) -> tuple.
+#	The shape of the generator output:
+#		data: (batch_size, heigth, width, channel) = (6, 200, 300, 3).
+#		labels: (batch_size, num_classes) = (6, 4).
+#	The range of the generator output:
+#		data: [0.0, 1.0] -> float32.
+#		labels: one-hot encoding.
 train_data_gen = train_data_generator.flow_from_directory(
 	data_dir_path,
 	target_size=resized_input_size,
@@ -258,23 +273,33 @@ model.fit_generator(
 
 
 #%%------------------------------------------------------------------
+#%%------------------------------------------------------------------
 # Example 3.
 #	The pair of images & label(mask) images is given.
+#	Labels are given to each pixel.
 # REF [site] >> https://keras.io/preprocessing/image/
 
+# All images are of the same size, 2048x1024.
+data_dir_path = '../../../data/machine_learning/data_label/data'
+label_dir_path = '../../../data/machine_learning/data_label/label'
+
+data_save_dir_path = '../../../data/machine_learning/generated/data'
+label_save_dir_path = '../../../data/machine_learning/generated/label'
+
+# Parameters.
 # NOTICE [caution] >>
 #	['forest', 'fruit', 'house', 'street'] may not be corret. To be exact, the number of labels equals the number of object classes in images.
 #class_labels = ???
 #num_classes = len(class_labels)
-num_classes = 21  # TODO [correct] >>
-num_examples = 9
+num_classes = 34
+num_examples = 10
 batch_size = 4  # Number of samples per gradient update.
 num_epochs = 1  # Number of times to iterate over the training data arrays.
 #steps_per_epoch = num_examples / batch_size
 steps_per_epoch = 1
 
-resized_input_size = (200, 300)  # (height, width).
-cropped_input_size = (100, 100)  # (height, width).
+resized_input_size = (1024, 2048)  # (height, width).
+cropped_input_size = (300, 300)  # (height, width).
 crop_dataset_flag = False
 save_to_dir_flag = True
 
@@ -283,50 +308,50 @@ if crop_dataset_flag:
 	# REF [site] >> https://github.com/fchollet/keras/issues/3338
 
 	data_gen_with_crop_args = dict(
-		rescale=1./255.,
-		#preprocessing_function=None,
-		#featurewise_center=True,
-		#featurewise_std_normalization=True,
-		#samplewise_center=True,
-		#samplewise_std_normalization=True,
-		#zca_whitening=True,
-		#zca_epsilon=1e-6,
+		#rescale=1./255.,
+		preprocessing_function=None,
+		featurewise_center=False,
+		featurewise_std_normalization=False,
+		samplewise_center=False,
+		samplewise_std_normalization=False,
+		zca_whitening=False,
+		zca_epsilon=1e-6,
 		rotation_range=20,
 		width_shift_range=0.2,
 		height_shift_range=0.2,
-		#shear_range=0.,
-		zoom_range=0.2,
-		#channel_shift_range=0.,
 		horizontal_flip=True,
-		vertical_flip=True,
+		vertical_flip=False,
+		zoom_range=0.2,
+		#shear_range=0.,
+		#channel_shift_range=0.,
 		random_crop_size=cropped_input_size,
 		center_crop_size=None,
 		fill_mode='reflect',
 		cval=0.)
-	data_generator = ImageDataGeneratorWithCrop(**data_gen_with_crop_args)
-	label_generator = ImageDataGeneratorWithCrop(**data_gen_with_crop_args)
+	data_generator = ImageDataGeneratorWithCrop(rescale=1./255., **data_gen_with_crop_args)
+	label_generator = ImageDataGeneratorWithCrop(rescale=None, **data_gen_with_crop_args)  # Need no scaling.
 else:
 	data_gen_args = dict(
-		rescale=1./255.,
-		#preprocessing_function=None,
-		#featurewise_center=True,
-		#featurewise_std_normalization=True,
-		#samplewise_center=True,
-		#samplewise_std_normalization=True,
-		#zca_whitening=True,
-		#zca_epsilon=1e-6,
+		#rescale=1./255.,
+		preprocessing_function=None,
+		featurewise_center=False,
+		featurewise_std_normalization=False,
+		samplewise_center=False,
+		samplewise_std_normalization=False,
+		zca_whitening=False,
+		zca_epsilon=1e-6,
 		rotation_range=20,
 		width_shift_range=0.2,
 		height_shift_range=0.2,
-		#shear_range=0.,
-		zoom_range=0.2,
-		#channel_shift_range=0.,
 		horizontal_flip=True,
-		vertical_flip=True,
+		vertical_flip=False,
+		zoom_range=0.2,
+		#shear_range=0.,
+		#channel_shift_range=0.,
 		fill_mode='reflect',
 		cval=0.)
-	data_generator = ImageDataGenerator(**data_gen_args)
-	label_generator = ImageDataGenerator(**data_gen_args)
+	data_generator = ImageDataGenerator(rescale=1./255., **data_gen_args)
+	label_generator = ImageDataGenerator(rescale=None, **data_gen_args)  # Need no scaling.
 
 # NOTICE [caustion] >> Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -341,7 +366,7 @@ data_gen = data_generator.flow_from_directory(
 	target_size=resized_input_size,
 	color_mode='rgb',
 	#classes=None,
-	class_mode=None,
+	class_mode=None,  # NOTICE [important] >>
 	batch_size=batch_size,
 	shuffle=True,
 	seed=seed,
@@ -351,38 +376,65 @@ label_gen = label_generator.flow_from_directory(
 	target_size=resized_input_size,
 	color_mode='grayscale',
 	#classes=None,
-	class_mode=None,
+	class_mode=None,  # NOTICE [important] >>
 	batch_size=batch_size,
 	shuffle=True,
 	seed=seed,
 	save_to_dir=(label_save_dir_path if save_to_dir_flag else None))
 
-# NOTICE [info] >>
-#	The type of the generator output is 'tuple': (data, labels).
-#	The 1st item of the generator output is of shape (batch_size, heigth, width, channel) = (4, 200, 300, 3).
-#	The 2nd item of the generator output is of shape (batch_size, heigth, width, channel) = (4, 200, 300, 1).
-
 # Combine generators into one which yields image and labels.
+# NOTICE [info] >>
+#	The generator output: (data, labels) -> tuple.
+#	The shape of the generator output:
+#		data: (batch_size, heigth, width, channel) = (4, 200, 300, 3).
+#		labels: (batch_size, heigth, width, channel) = (4, 200, 300, 1).
+#	The range of the generator output:
+#		data: [0.0, 1.0] -> float32.
+#		labels: [0.0, 255.0] -> float32.
+# TODO [convert] >>
+#	Labels must be converted from grayvalues to class labels (if possibly, one-hot encoding).
+#		(batch_size, heigth, width, channel=1) -> (batch_size, heigth, width, num_classes)
 dataset_generator = zip(data_gen, label_gen)
 
 # Create a model.
 model = Sequential()
-model.add(Conv2D(64, (3, 3), activation='relu', input_shape=(cropped_input_size + (3,) if crop_dataset_flag else resized_input_size + (3,))))
-model.add(Conv2D(64, (3, 3), activation='relu'))
+model.add(Conv2D(64, (3, 3), activation='relu', padding='same', input_shape=(cropped_input_size + (3,) if crop_dataset_flag else resized_input_size + (3,))))
+model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Conv2D(32, (3, 3), activation='relu'))
-model.add(Conv2D(32, (3, 3), activation='relu'))
+model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
+model.add(Conv2D(128, (3, 3), activation='relu', padding='same'))
 model.add(MaxPooling2D(pool_size=(2, 2)))
-model.add(Dropout(0.25))
-model.add(Flatten())
-model.add(Dense(32))
-model.add(Activation('relu'))
-model.add(Dropout(0.5))
-model.add(Dense(num_classes))
-model.add(Activation('softmax'))
+model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+model.add(Conv2D(256, (3, 3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+model.add(Conv2D(512, (3, 3), activation='relu', padding='same'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+final_block_layer_shape = model.get_layer(index=-1).output_shape
+model.add(Conv2D(1024, (final_block_layer_shape[1], final_block_layer_shape[2]), activation='relu', padding='valid'))
+model.add(Dense(final_block_layer_shape[1] * final_block_layer_shape[2] * 512, activation='relu'))
+model.add(Reshape((final_block_layer_shape[1:3] + (512,))))
+model.add(UpSampling2D((2, 2)))
+model.add(Conv2DTranspose(512, (3, 3), activation='relu', padding='same'))
+model.add(Conv2DTranspose(512, (3, 3), activation='relu', padding='same'))
+model.add(UpSampling2D((2, 2)))
+model.add(Conv2DTranspose(256, (3, 3), activation='relu', padding='same'))
+model.add(Conv2DTranspose(256, (3, 3), activation='relu', padding='same'))
+model.add(UpSampling2D((2, 2)))
+model.add(Conv2DTranspose(128, (3, 3), activation='relu', padding='same'))
+model.add(Conv2DTranspose(128, (3, 3), activation='relu', padding='same'))
+model.add(UpSampling2D((2, 2)))
+model.add(Conv2DTranspose(64, (3, 3), activation='relu', padding='same'))
+model.add(Conv2DTranspose(64, (3, 3), activation='relu', padding='same'))
+model.add(Conv2D(num_classes, (1, 1), activation='softmax'))
+#model.add(Conv2D(1, (1, 1), activation='linear'))
+
+model.summary()
+print('model output shape =', model.output_shape)
 
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
+#model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+#model.compile(optimizer='rmsprop', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Train the model on batches with real-time data augmentation.
 
@@ -396,19 +448,26 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 #	steps_per_epoch=steps_per_epoch,
 #	epochs=num_epochs)
 
+import numpy as np
+
+# One-hot labels.
+inds = np.random.randint(0, num_classes-1, size=(num_examples, 1500))
+labels = np.zeros((num_examples, 1500, num_classes))
+
 # Method 2: Not correctly working.
 for epoch in range(num_epochs):
 	print('Epoch %d/%d' % (epoch + 1, num_epochs))
-	batches = 0
+	steps = 0
 	# <error> 'zip' object has no attribute 'flow'.
 	#for data_batch, label_batch in dataset_generator.flow(x_train, y_train, batch_size=batch_size):
 	for data_batch, label_batch in dataset_generator:
-		model.fit(data_batch, label_batch)
-		batches += 1
-		if batches >= steps_per_epoch:
+		model.fit(data_batch, keras.utils.to_categorical(label_batch.astype(np.int8)).reshape(label_batch.shape[:-1] + (-1,)), batch_size=batch_size, epochs=1, verbose=0)
+		#model.fit(data_batch, keras.utils.to_categorical(label_batch).reshape(label_batch.shape[:-1] + (-1,)), batch_size=batch_size, epochs=1, verbose=0)
+		steps += 1
+		if steps >= steps_per_epoch:
 			break
 
-# Method 3: Not correctly working.
+# Method 3: Not working.
 # REF [site] >> https://keras.io/models/model/
 #def generate_dataset_from_generators(data_gen, label_gen, steps_per_epoch):
 #    for _ in range(steps_per_epoch):
