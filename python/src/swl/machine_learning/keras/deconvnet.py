@@ -15,7 +15,6 @@ class DeconvNet(NeuralNetwork):
 
 	def __init__(self):
 		super().__init__()
-		print('Build DeconvNet ...')
 
 	def create_model(self, num_classes, backend='tf', input_shape=None, tf_input=None):
 		return self.__create_basic_model(num_classes, backend, input_shape, tf_input)

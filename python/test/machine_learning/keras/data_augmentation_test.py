@@ -5,7 +5,11 @@
 #%%------------------------------------------------------------------
 
 import os
-os.chdir('D:/work/swl_github/python/test/machine_learning/keras')
+if 'posix' == os.name:
+	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
+else:
+	swl_python_home_dir_path = 'D:/work/SWL_github/python'
+os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 import sys
 sys.path.append('../../../src')
@@ -395,7 +399,7 @@ label_gen = label_generator.flow_from_directory(
 # TODO [convert] >>
 #	Labels must be converted from grayvalues to class labels (if possibly, one-hot encoding).
 #		(batch_size, heigth, width, channel=1) -> (batch_size, heigth, width, num_classes)
-dataset_generator = zip(data_gen, label_gen)
+dataset_gen = zip(data_gen, label_gen)
 
 # Create a model.
 model = Sequential()
@@ -443,7 +447,7 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 # NOTICE [important] >>
 #   The dimension of the 2nd item of the generator output here is different from that of the 2nd example described above.
 #model.fit_generator(
-#	dataset_generator,
+#	dataset_gen,
 #	#validation_data=validation_dataset_generator,
 #	#validation_steps=800,
 #	steps_per_epoch=steps_per_epoch,
@@ -454,8 +458,8 @@ for epoch in range(num_epochs):
 	print('Epoch %d/%d' % (epoch + 1, num_epochs))
 	steps = 0
 	# NOTICE [error] >> 'zip' object has no attribute 'flow'.
-	#for data_batch, label_batch in dataset_generator.flow(x_train, y_train, batch_size=batch_size):
-	for data_batch, label_batch in dataset_generator:
+	#for data_batch, label_batch in dataset_gen.flow(x_train, y_train, batch_size=batch_size):
+	for data_batch, label_batch in dataset_gen:
 		model.fit(data_batch, keras.utils.to_categorical(label_batch.astype(np.int8)).reshape(label_batch.shape[:-1] + (-1,)), batch_size=batch_size, epochs=1, verbose=0)
 		#model.fit(data_batch, keras.utils.to_categorical(label_batch).reshape(label_batch.shape[:-1] + (-1,)), batch_size=batch_size, epochs=1, verbose=0)
 		steps += 1

@@ -1,5 +1,9 @@
 import os
-os.chdir('D:/work/swl_github/python/test/image_processing')
+if 'posix' == os.name:
+	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
+else:
+	swl_python_home_dir_path = 'D:/work/SWL_github/python'
+os.chdir(swl_python_home_dir_path + '/test/machine_learning')
 
 import sys
 sys.path.append('../../src')
