@@ -19,7 +19,6 @@ import numpy as np
 import tensorflow as tf
 import keras
 from keras import backend as K
-from keras.models import Model, Input
 from keras.preprocessing.image import ImageDataGenerator
 from swl.machine_learning.keras.unet import UNet
 from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
@@ -47,6 +46,9 @@ dataset_home_dir_path = "D:/dataset"
 
 train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
+
+train_summary_dir_path = './train'
+test_summary_dir_path = './test'
 
 # NOTICE [caution] >>
 #	If the size of data is changed, labels may be dense.
@@ -83,7 +85,7 @@ keras_backend = 'tf'
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 2.
 
-batch_size = 32
+batch_size = 1
 num_epochs = 50
 steps_per_epoch = num_examples // batch_size
 if steps_per_epoch < 1:
@@ -179,10 +181,18 @@ with tf.name_scope('loss'):
 global_step = tf.Variable(0, name='global_step', trainable=False)
 with tf.name_scope('learning_rate'):
 	learning_rate = tf.train.exponential_decay(0.0001, global_step, steps_per_epoch*3, 0.5, staircase=True)
-train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step=global_step)
+train_step = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.99).minimize(loss, global_step=global_step)
 
 #%%------------------------------------------------------------------
 # Train the U-Net model.
+
+# Merge all the summaries and write them out to a directory.
+merged = tf.summary.merge_all()
+train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
+test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
+
+# Saves a model every 2 hours and maximum 5 latest models are saved.
+saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
@@ -193,7 +203,10 @@ with sess.as_default():
 		print('Epoch %d/%d' % (epoch + 1, num_epochs))
 		steps = 0
 		for data_batch, label_batch in train_dataset_gen:
-			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,)).astype(np.uint8)
+			if 2 == num_classes:
+				label_batch = label_batch.astype(np.uint8)
+			else:
+				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,)).astype(np.uint8)
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
 			train_step.run(feed_dict={train_data_tf: data_batch, train_labels_tf: label_batch})

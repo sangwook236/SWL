@@ -274,7 +274,10 @@ with sess.as_default():
 		print('Epoch %d/%d' % (epoch + 1, num_epochs))
 		steps = 0
 		for data_batch, label_batch in train_dataset_gen:
-			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,)).astype(np.uint8)
+			if 2 == num_classes:
+				label_batch = label_batch.astype(np.uint8)
+			else:
+				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,)).astype(np.uint8)
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
 			train_step.run(feed_dict={train_data_tf: data_batch, train_labels_tf: label_batch})
