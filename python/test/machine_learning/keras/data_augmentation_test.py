@@ -12,6 +12,7 @@ sys.path.append('../../../src')
 
 #%%------------------------------------------------------------------
 
+import numpy as np
 import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten, Conv2D, Conv2DTranspose, MaxPooling2D, UpSampling2D, Dropout, Reshape
@@ -430,7 +431,7 @@ model.add(Conv2D(num_classes, (1, 1), activation='softmax'))
 #model.add(Conv2D(1, (1, 1), activation='linear'))
 
 model.summary()
-print('model output shape =', model.output_shape)
+#print('model output shape =', model.output_shape)
 
 model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 #model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
@@ -448,17 +449,11 @@ model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['ac
 #	steps_per_epoch=steps_per_epoch,
 #	epochs=num_epochs)
 
-import numpy as np
-
-# One-hot labels.
-inds = np.random.randint(0, num_classes-1, size=(num_examples, 1500))
-labels = np.zeros((num_examples, 1500, num_classes))
-
 # Method 2: Not correctly working.
 for epoch in range(num_epochs):
 	print('Epoch %d/%d' % (epoch + 1, num_epochs))
 	steps = 0
-	# <error> 'zip' object has no attribute 'flow'.
+	# NOTICE [error] >> 'zip' object has no attribute 'flow'.
 	#for data_batch, label_batch in dataset_generator.flow(x_train, y_train, batch_size=batch_size):
 	for data_batch, label_batch in dataset_generator:
 		model.fit(data_batch, keras.utils.to_categorical(label_batch.astype(np.int8)).reshape(label_batch.shape[:-1] + (-1,)), batch_size=batch_size, epochs=1, verbose=0)
