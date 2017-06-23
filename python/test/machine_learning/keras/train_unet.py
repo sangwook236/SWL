@@ -47,11 +47,12 @@ dataset_home_dir_path = "D:/dataset"
 train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
 
-train_summary_dir_path = './train'
-test_summary_dir_path = './test'
+model_dir_path = './log/unet/model'
+train_summary_dir_path = './log/unet/train'
+test_summary_dir_path = './log/unet/test'
 
 # NOTICE [caution] >>
-#	If the size of data is changed, labels may be dense.
+#	If the size of data is changed, labels in label images may be changed.
 
 data_loader = DataLoader()
 #data_loader = DataLoader(224, 224)
@@ -71,11 +72,6 @@ for train_label in train_dataset.labels:
 	for lbl in unique_lbls:
 		train_label[train_label == lbl] = unique_lbls.index(lbl)
 
-#print(np.max(train_dataset.labels))
-#print(np.unique(train_dataset.labels).shape[0])
-#print(np.max(train_dataset.labels[0]))
-#print(np.unique(train_dataset.labels[0]).shape[0])
-
 assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], "ERROR: Image and label size mismatched."
 
 #%%------------------------------------------------------------------
@@ -93,11 +89,16 @@ if steps_per_epoch < 1:
 
 resized_input_size = train_dataset.data.shape[1:3]  # (height, width) = (512, 512).
 
-train_data_shape = (None,) + resized_input_size + (train_dataset.data.shape[3],)
-train_label_shape = (None,) + resized_input_size + (1 if 2 == num_classes else num_classes,)
-train_data_tf = tf.placeholder(tf.float32, shape=train_data_shape)
-#train_labels_tf = tf.placeholder(tf.float32, shape=train_label_shape)
-train_labels_tf = tf.placeholder(tf.uint8, shape=train_label_shape)
+tf_data_shape = (None,) + resized_input_size + (train_dataset.data.shape[3],)
+tf_label_shape = (None,) + resized_input_size + (1 if 2 == num_classes else num_classes,)
+tf_data_placeholder = tf.placeholder(tf.float32, shape=tf_data_shape)
+tf_label_placeholder = tf.placeholder(tf.float32, shape=tf_label_shape)
+
+# Convert label types from uint16 to float32, and convert label IDs to one-hot encoding.
+train_dataset.labels = train_dataset.labels.astype(np.float32)
+# NOTICE [info] >> Axis 3 has to be 1, 3, or 4 for label images to be transformed by ImageDataGenerator.
+#if num_classes > 2:
+#	train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
 
 #%%------------------------------------------------------------------
 # Create a data generator.
@@ -161,62 +162,78 @@ train_dataset_gen = zip(train_data_gen, train_label_gen)
 # Create a U-Net model.
 
 with tf.name_scope('unet'):
-	unet_model = UNet().create_model(num_classes, backend=keras_backend, input_shape=train_data_shape, tf_input=train_data_tf)
-#	if 'tf' == keras_backend:
-#		Model(inputs=Input(tensor=train_data_tf), outputs=unet_model).summary()
-#	else:   
-#		unet_model.summary()
+	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_placeholder)
 
-#unet_model_output = unet_model(train_data_tf)
+#if 'tf' == keras_backend:
+#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_placeholder), outputs=unet_model_output).summary()
+#else:   
+#	unet_model.summary()
 
 #%%------------------------------------------------------------------
-# Configure training parameters of the FC-DenseNet model.
+# Prepare training.
 
 # Define a loss.
 with tf.name_scope('loss'):
-	#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=train_labels_tf, logits=unet_model))  # NOTICE [caution] >> float required.
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=train_labels_tf, logits=unet_model))
+	#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf_label_placeholder, logits=unet_model_output))  # NOTICE [caution] >> float required.
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_placeholder, logits=unet_model_output))
+	tf.summary.scalar('loss', loss)
+
+# Define a metric.
+with tf.name_scope('metric'):
+	metric = tf.reduce_mean(dice_coeff(tf_label_placeholder, unet_model_output))
+	#correct_prediction = tf.equal(tf.argmax(unet_model_output, 1), tf.argmax(tf_label_placeholder, 1))
+	#metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+	tf.summary.scalar('metric', metric)
 
 # Define an optimzer.
 global_step = tf.Variable(0, name='global_step', trainable=False)
 with tf.name_scope('learning_rate'):
 	learning_rate = tf.train.exponential_decay(0.0001, global_step, steps_per_epoch*3, 0.5, staircase=True)
+	tf.summary.scalar('learning_rate', learning_rate)
 train_step = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.99).minimize(loss, global_step=global_step)
 
-#%%------------------------------------------------------------------
-# Train the U-Net model.
-
 # Merge all the summaries and write them out to a directory.
-merged = tf.summary.merge_all()
+merged_summary = tf.summary.merge_all()
 train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
 test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 
 # Saves a model every 2 hours and maximum 5 latest models are saved.
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
+#%%------------------------------------------------------------------
+# Train the U-Net model.
+
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
 
 # Run training loop.
 with sess.as_default():
-	for epoch in range(num_epochs):
-		print('Epoch %d/%d' % (epoch + 1, num_epochs))
+	for epoch in range(1, num_epochs + 1):
+		print('Epoch %d/%d' % (epoch, num_epochs))
 		steps = 0
 		for data_batch, label_batch in train_dataset_gen:
-			if 2 == num_classes:
-				label_batch = label_batch.astype(np.uint8)
-			else:
-				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,)).astype(np.uint8)
+			if num_classes > 2:
+				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
-			train_step.run(feed_dict={train_data_tf: data_batch, train_labels_tf: label_batch})
+			train_step.run(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
 			steps += 1
 			if steps >= steps_per_epoch:
 				break
+		if 0 == epoch % 10:
+			for data_batch, label_batch in train_dataset_gen:
+				train_metric = metric.eval(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
+				print('Epoch %d: training metric = %g' % (epoch, train_metric))
+				break;
 
 #%%------------------------------------------------------------------
 # Evaluate the U-Net model.
 
-# Compute dice score for simple evaluation during training.
-with tf.name_scope('dice_eval'):
-    dice_evaluator = tf.reduce_mean(dice_coeff(train_labels_tf, unet_model))
+with sess.as_default():
+	test_metric = metric.eval(feed_dict={tf_data_placeholder: train_dataset.data, tf_label_placeholder: train_dataset.labels})
+	print('Test metric = %g' % test_metric)
+
+#%%------------------------------------------------------------------
+
+train_summary_writer.close()
+test_summary_writer.close()
