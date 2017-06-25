@@ -91,8 +91,8 @@ resized_input_size = train_dataset.data.shape[1:3]  # (height, width) = (512, 51
 
 tf_data_shape = (None,) + resized_input_size + (train_dataset.data.shape[3],)
 tf_label_shape = (None,) + resized_input_size + (1 if 2 == num_classes else num_classes,)
-tf_data_placeholder = tf.placeholder(tf.float32, shape=tf_data_shape)
-tf_label_placeholder = tf.placeholder(tf.float32, shape=tf_label_shape)
+tf_data_ph = tf.placeholder(tf.float32, shape=tf_data_shape)
+tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
 # Convert label types from uint16 to float32, and convert label IDs to one-hot encoding.
 train_dataset.labels = train_dataset.labels.astype(np.float32)
@@ -162,10 +162,10 @@ train_dataset_gen = zip(train_data_gen, train_label_gen)
 # Create a U-Net model.
 
 with tf.name_scope('unet'):
-	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_placeholder)
+	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
 
 #if 'tf' == keras_backend:
-#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_placeholder), outputs=unet_model_output).summary()
+#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=unet_model_output).summary()
 #else:   
 #	unet_model.summary()
 
@@ -174,14 +174,14 @@ with tf.name_scope('unet'):
 
 # Define a loss.
 with tf.name_scope('loss'):
-	#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf_label_placeholder, logits=unet_model_output))  # NOTICE [caution] >> float required.
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_placeholder, logits=unet_model_output))
+	#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf_label_ph, logits=unet_model_output))  # NOTICE [caution] >> float required.
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=unet_model_output))
 	tf.summary.scalar('loss', loss)
 
 # Define a metric.
 with tf.name_scope('metric'):
-	metric = tf.reduce_mean(dice_coeff(tf_label_placeholder, unet_model_output))
-	#correct_prediction = tf.equal(tf.argmax(unet_model_output, 1), tf.argmax(tf_label_placeholder, 1))
+	metric = tf.reduce_mean(dice_coeff(tf_label_ph, unet_model_output))
+	#correct_prediction = tf.equal(tf.argmax(unet_model_output, 1), tf.argmax(tf_label_ph, 1))
 	#metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	tf.summary.scalar('metric', metric)
 
@@ -214,23 +214,38 @@ with sess.as_default():
 		for data_batch, label_batch in train_dataset_gen:
 			if num_classes > 2:
 				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+			summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			train_summary_writer.add_summary(summary, epoch)
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
-			train_step.run(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
 			steps += 1
 			if steps >= steps_per_epoch:
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
-				train_metric = metric.eval(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
-				print('Epoch %d: training metric = %g' % (epoch, train_metric))
 				break;
+			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			test_summary_writer.add_summary(summary, epoch)
+			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+		# Save the model.
+		if 0 == epoch % 100:
+			model_saved_path = saver.save(sess, model_dir_path + '/unet.ckpt', global_step=global_step)
+			print('Model saved in file:', model_saved_path)
+
+#%%------------------------------------------------------------------
+# Restore the model.
+# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#with sess.as_default():
+#	saver.restore(sess, model_dir_path + '/unet.ckpt')
+#	#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+#	print('Model restored from file:', model_dir_path + '/unet.ckpt)
 
 #%%------------------------------------------------------------------
 # Evaluate the U-Net model.
 
 with sess.as_default():
-	test_metric = metric.eval(feed_dict={tf_data_placeholder: train_dataset.data, tf_label_placeholder: train_dataset.labels})
+	test_metric = metric.eval(feed_dict={tf_data_ph: train_dataset.data, tf_label_ph: train_dataset.labels})
 	print('Test metric = %g' % test_metric)
 
 #%%------------------------------------------------------------------

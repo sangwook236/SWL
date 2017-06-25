@@ -101,8 +101,8 @@ resized_input_size = train_dataset.data.shape[1:3]  # (height, width) = (360, 48
 
 tf_data_shape = (None,) + resized_input_size + (train_dataset.data.shape[3],)
 tf_label_shape = (None,) + resized_input_size + (1 if 2 == num_classes else num_classes,)
-tf_data_placeholder = tf.placeholder(tf.float32, shape=tf_data_shape)
-tf_label_placeholder = tf.placeholder(tf.float32, shape=tf_label_shape)
+tf_data_ph = tf.placeholder(tf.float32, shape=tf_data_shape)
+tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
 # Convert label types from uint16 to float32, and convert label IDs to one-hot encoding.
 train_dataset.labels = train_dataset.labels.astype(np.float32)
@@ -241,10 +241,10 @@ test_dataset_gen = zip(test_data_gen, test_label_gen)
 # Create a DeconvNet model.
 
 with tf.name_scope('deconvnet'):
-	deconv_model_output = DeconvNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_placeholder)
+	deconv_model_output = DeconvNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
 
 #if 'tf' == keras_backend:
-#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_placeholder), outputs=deconv_model_output).summary()
+#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=deconv_model_output).summary()
 #else:
 #	deconv_model.summary()
 
@@ -261,12 +261,12 @@ with tf.name_scope('deconvnet'):
 
 # Define a loss.
 with tf.name_scope('loss'):
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_placeholder, logits=deconv_model_output))
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=deconv_model_output))
 	tf.summary.scalar('loss', loss)
 
 # Define a metric.
 with tf.name_scope('metric'):
-	correct_prediction = tf.equal(tf.argmax(deconv_model_output, 1), tf.argmax(tf_label_placeholder, 1))
+	correct_prediction = tf.equal(tf.argmax(deconv_model_output, 1), tf.argmax(tf_label_ph, 1))
 	metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	tf.summary.scalar('metric', metric)
 
@@ -282,6 +282,9 @@ merged_summary = tf.summary.merge_all()
 train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
 test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 
+# Saves a model every 2 hours and maximum 5 latest models are saved.
+saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
 #%%------------------------------------------------------------------
 # Train the DeconvNet model.
 
@@ -296,23 +299,38 @@ with sess.as_default():
 		for data_batch, label_batch in train_dataset_gen:
 			if num_classes > 2:
 				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+			summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			train_summary_writer.add_summary(summary, epoch)
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
-			train_step.run(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
 			steps += 1
 			if steps >= steps_per_epoch:
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
-				train_metric = metric.eval(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
-				print('Epoch %d: training metric = %g' % (epoch, train_metric))
 				break;
+			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			test_summary_writer.add_summary(summary, epoch)
+			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+		# Save the model.
+		if 0 == epoch % 100:
+			model_saved_path = saver.save(sess, model_dir_path + '/deconvnet.ckpt', global_step=global_step)
+			print('Model saved in file:', model_saved_path)
+
+#%%------------------------------------------------------------------
+# Restore the model.
+# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#with sess.as_default():
+#	saver.restore(sess, model_dir_path + '/deconvnet.ckpt')
+#	#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+#	print('Model restored from file:', model_dir_path + '/deconvnet.ckpt)
 
 #%%------------------------------------------------------------------
 # Evaluate the DeconvNet model.
 
 with sess.as_default():
-	test_metric = metric.eval(feed_dict={tf_data_placeholder: test_dataset.data, tf_label_placeholder: test_dataset.labels})
+	test_metric = metric.eval(feed_dict={tf_data_ph: test_dataset.data, tf_label_ph: test_dataset.labels})
 	print('Test metric = %g' % test_metric)
 
 #%%------------------------------------------------------------------

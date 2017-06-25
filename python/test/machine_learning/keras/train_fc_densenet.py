@@ -12,8 +12,8 @@ else:
 os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 #lib_home_dir_path = "/home/sangwook/lib_repo/python"
-lib_home_dir_path = "D:/lib_repo/python"
-#lib_home_dir_path = "D:/lib_repo/python/rnd"
+#lib_home_dir_path = "D:/lib_repo/python"
+lib_home_dir_path = "D:/lib_repo/python/rnd"
 
 lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github"
 
@@ -113,8 +113,8 @@ cropped_input_size = (224, 224)  # (height, width).
 #tf_data_shape = (None,) + cropped_input_size + (train_dataset.data.shape[3],)
 tf_data_shape = (None,) + cropped_input_size + (3,)
 tf_label_shape = (None,) + cropped_input_size + (1 if 2 == num_classes else num_classes,)
-tf_data_placeholder = tf.placeholder(tf.float32, shape=tf_data_shape)
-tf_label_placeholder = tf.placeholder(tf.float32, shape=tf_label_shape)
+tf_data_ph = tf.placeholder(tf.float32, shape=tf_data_shape)
+tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
 # Convert label types from uint16 to float32, and convert label IDs to one-hot encoding.
 #train_dataset.labels = train_dataset.labels.astype(np.float32)
@@ -252,7 +252,7 @@ test_dataset_gen = zip(test_data_gen, test_label_gen)
 
 with tf.name_scope('fc-densenet'):
 	fc_densenet_model = dc.DenseNetFCN(tf_data_shape[1:], nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
-fc_densenet_model_output = fc_densenet_model(tf_data_placeholder)
+fc_densenet_model_output = fc_densenet_model(tf_data_ph)
 
 fc_densenet_model.summary()
 
@@ -262,13 +262,13 @@ fc_densenet_model.summary()
 
 # Define a loss.
 with tf.name_scope('loss'):
-	#loss = tf.reduce_mean(keras.objectives.categorical_crossentropy(tf_label_placeholder, fc_densenet_model_output))
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_placeholder, logits=fc_densenet_model_output))
+	#loss = tf.reduce_mean(keras.objectives.categorical_crossentropy(tf_label_ph, fc_densenet_model_output))
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=fc_densenet_model_output))
 	tf.summary.scalar('loss', loss)
 
 # Define a metric.
 with tf.name_scope('metric'):
-	metric = keras.metrics.categorical_accuracy(tf_label_placeholder, fc_densenet_model_output)
+	metric = keras.metrics.categorical_accuracy(tf_label_ph, fc_densenet_model_output)
 	tf.summary.scalar('metric', metric)
 
 # Define an optimzer.
@@ -311,31 +311,41 @@ with sess.as_default():
 		for data_batch, label_batch in train_dataset_gen:
 			if num_classes > 2:
 				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+			summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			train_summary_writer.add_summary(summary, epoch)
 			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
 			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
-			train_step.run(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
-#			if :
-#				summary = merged_summary.run(feed_dict=feed_dict(False))
-#				train_summary_writer.add_summary(summary, epoch)
 			steps += 1
 			if steps >= steps_per_epoch:
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
-				train_metric = metric.eval(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
-				#summary = merged_summary.run(feed_dict=feed_dict(False))
-				#test_summary_writer.add_summary(summary, epoch)
-				print('Epoch %d: training metric = %g' % (epoch, train_metric))
 				break;
+			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+			test_summary_writer.add_summary(summary, epoch)
+			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+		# Save the model.
+		if 0 == epoch % 100:
+			model_saved_path = saver.save(sess, model_dir_path + '/fc_densenet.ckpt', global_step=global_step)
+			print('Model saved in file:', model_saved_path)
+
+#%%------------------------------------------------------------------
+# Restore the model.
+# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#with sess.as_default():
+#	saver.restore(sess, model_dir_path + '/fc_densenet.ckpt')
+#	#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+#	print('Model restored from file:', model_dir_path + '/fc_densenet.ckpt)
 
 #%%------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
 
 with sess.as_default():
 	for data_batch, label_batch in test_dataset_gen:
-		test_metric = metric.eval(feed_dict={tf_data_placeholder: data_batch, tf_label_placeholder: label_batch})
-		print('Test metric = %g' % test_metric)
 		break
+	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+	print('Test metric = %g' % test_metric)
 
 #%%------------------------------------------------------------------
 
