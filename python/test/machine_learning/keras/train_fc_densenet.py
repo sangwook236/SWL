@@ -12,8 +12,8 @@ else:
 os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 #lib_home_dir_path = "/home/sangwook/lib_repo/python"
-#lib_home_dir_path = "D:/lib_repo/python"
-lib_home_dir_path = "D:/lib_repo/python/rnd"
+lib_home_dir_path = "D:/lib_repo/python"
+#lib_home_dir_path = "D:/lib_repo/python/rnd"
 
 lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github"
 
@@ -131,6 +131,8 @@ tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
 # REF [site] >> https://keras.io/preprocessing/image/
 # REF [site] >> https://github.com/fchollet/keras/issues/3338
+
+print('Create a data generator.')
 
 train_data_generator = ImageDataGeneratorWithCrop(
 	rescale=1./255.,
@@ -250,25 +252,33 @@ test_dataset_gen = zip(test_data_gen, test_label_gen)
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.
 
+print('Create a FC-DenseNet model.')
+
 with tf.name_scope('fc-densenet'):
 	fc_densenet_model = dc.DenseNetFCN(tf_data_shape[1:], nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
 fc_densenet_model_output = fc_densenet_model(tf_data_ph)
 
-fc_densenet_model.summary()
+#%%------------------------------------------------------------------
+# Display.
 
+#fc_densenet_model.summary()
 
 #%%------------------------------------------------------------------
 # Prepare training.
 
+print('Prepare training.')
+
 # Define a loss.
 with tf.name_scope('loss'):
-	#loss = tf.reduce_mean(keras.objectives.categorical_crossentropy(tf_label_ph, fc_densenet_model_output))
+	#loss = tf.reduce_mean(keras.objectives.categorical_crossentropy(tf_label_ph, fc_densenet_model_output))  # Error.
 	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=fc_densenet_model_output))
 	tf.summary.scalar('loss', loss)
 
 # Define a metric.
 with tf.name_scope('metric'):
-	metric = keras.metrics.categorical_accuracy(tf_label_ph, fc_densenet_model_output)
+	#metric = keras.metrics.categorical_accuracy(tf_label_ph, fc_densenet_model_output)
+	correct_prediction = tf.equal(tf.argmax(fc_densenet_model_output, 1), tf.argmax(tf_label_ph, 1))
+	metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	tf.summary.scalar('metric', metric)
 
 # Define an optimzer.
@@ -288,6 +298,8 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 #%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
+
+print('Start training...')
 
 # Use Keras ==> Cannot train.
 #fc_densenet_model.fit_generator(
@@ -320,18 +332,25 @@ with sess.as_default():
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
+				if num_classes > 2:
+					label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 				break;
 			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 			test_summary_writer.add_summary(summary, epoch)
 			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+
 		# Save the model.
-		if 0 == epoch % 100:
+		if 0 == epoch % 10:
 			model_saved_path = saver.save(sess, model_dir_path + '/fc_densenet.ckpt', global_step=global_step)
 			print('Model saved in file:', model_saved_path)
+
+print('End training...')
 
 #%%------------------------------------------------------------------
 # Restore the model.
 # REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#print('Restore a FC-DenseNet model.')
 
 #with sess.as_default():
 #	saver.restore(sess, model_dir_path + '/fc_densenet.ckpt')
@@ -341,11 +360,17 @@ with sess.as_default():
 #%%------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
 
+print('Start testing...')
+
 with sess.as_default():
 	for data_batch, label_batch in test_dataset_gen:
+		if num_classes > 2:
+			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 		break
 	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 	print('Test metric = %g' % test_metric)
+
+print('End testing...')
 
 #%%------------------------------------------------------------------
 

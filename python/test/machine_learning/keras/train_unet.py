@@ -105,6 +105,8 @@ train_dataset.labels = train_dataset.labels.astype(np.float32)
 
 # REF [site] >> https://keras.io/preprocessing/image/
 
+print('Create a data generator.')
+
 train_data_generator = ImageDataGenerator(
 	rescale=1./255.,
 	#preprocessing_function=None,
@@ -161,8 +163,13 @@ train_dataset_gen = zip(train_data_gen, train_label_gen)
 #%%------------------------------------------------------------------
 # Create a U-Net model.
 
+print('Create a U-Net model.')
+
 with tf.name_scope('unet'):
 	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
+
+#%%------------------------------------------------------------------
+# Display.
 
 #if 'tf' == keras_backend:
 #	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=unet_model_output).summary()
@@ -171,6 +178,8 @@ with tf.name_scope('unet'):
 
 #%%------------------------------------------------------------------
 # Prepare training.
+
+print('Prepare training.')
 
 # Define a loss.
 with tf.name_scope('loss'):
@@ -203,6 +212,8 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 #%%------------------------------------------------------------------
 # Train the U-Net model.
 
+print('Start training...')
+
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
 
@@ -223,18 +234,25 @@ with sess.as_default():
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
+				if num_classes > 2:
+					label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 				break;
 			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 			test_summary_writer.add_summary(summary, epoch)
 			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+
 		# Save the model.
-		if 0 == epoch % 100:
+		if 0 == epoch % 10:
 			model_saved_path = saver.save(sess, model_dir_path + '/unet.ckpt', global_step=global_step)
 			print('Model saved in file:', model_saved_path)
+
+print('End training...')
 
 #%%------------------------------------------------------------------
 # Restore the model.
 # REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#print('Restore a U-Net model.')
 
 #with sess.as_default():
 #	saver.restore(sess, model_dir_path + '/unet.ckpt')
@@ -244,9 +262,15 @@ with sess.as_default():
 #%%------------------------------------------------------------------
 # Evaluate the U-Net model.
 
+print('Start testing...')
+
 with sess.as_default():
+	if num_classes > 2:
+		train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
 	test_metric = metric.eval(feed_dict={tf_data_ph: train_dataset.data, tf_label_ph: train_dataset.labels})
 	print('Test metric = %g' % test_metric)
+
+print('End testing...')
 
 #%%------------------------------------------------------------------
 

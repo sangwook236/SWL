@@ -21,7 +21,7 @@ class UNet(NeuralNetwork):
 			concat_axis = 3
 			data_format = "channels_last"
 		else:
-			inputs = Input(shape = input_shape)
+			inputs = Input(shape=input_shape)
 			concat_axis = 1
 			data_format = "channels_first"
 
@@ -82,8 +82,6 @@ class UNet(NeuralNetwork):
 		conv9 = Conv2D(64, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv9_2')(conv9)
 
 		# Conv 10.
-		ch, cw = self.get_crop_shape(inputs, conv9)
-		conv9 = ZeroPadding2D(padding=((ch[0], ch[1]), (cw[0], cw[1])), data_format=data_format)(conv9)
 		if 2 == num_classes:
 			conv10 = Conv2D(1, (1, 1), activation='sigmoid', data_format=data_format, name='conv10_1')(conv9)
 		elif num_classes > 2:
@@ -104,7 +102,7 @@ class UNet(NeuralNetwork):
 			concat_axis = 3
 			data_format = "channels_last"
 		else:
-			inputs = Input(shape = input_shape)
+			inputs = Input(shape=input_shape)
 			concat_axis = 1
 			data_format = "channels_first"
 
@@ -165,8 +163,6 @@ class UNet(NeuralNetwork):
 		conv9 = Conv2D(32, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv9_2')(conv9)
 
 		# Conv 10.
-		ch, cw = self.get_crop_shape(inputs, conv9)
-		conv9 = ZeroPadding2D(padding=((ch[0], ch[1]), (cw[0], cw[1])), data_format=data_format)(conv9)
 		if 2 == num_classes:
 			conv10 = Conv2D(1, (1, 1), activation='sigmoid', data_format=data_format, name='conv10_1')(conv9)
 		elif num_classes > 2:

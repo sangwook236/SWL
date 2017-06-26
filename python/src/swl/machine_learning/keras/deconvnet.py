@@ -27,7 +27,7 @@ class DeconvNet(NeuralNetwork):
 			concat_axis = 3
 			data_format = "channels_last"
 		else:
-			inputs = Input(shape = input_shape)
+			inputs = Input(shape=input_shape)
 			concat_axis = 1
 			data_format = "channels_first"
 
@@ -182,7 +182,7 @@ class DeconvNet(NeuralNetwork):
 			concat_axis = 3
 			data_format = "channels_last"
 		else:
-			inputs = Input(shape = input_shape)
+			inputs = Input(shape=input_shape)
 			concat_axis = 1
 			data_format = "channels_first"
 
@@ -342,7 +342,7 @@ class DeconvNet(NeuralNetwork):
 			concat_axis = 3
 			data_format = "channels_last"
 		else:
-			inputs = Input(shape = input_shape)
+			inputs = Input(shape=input_shape)
 			concat_axis = 1
 			data_format = "channels_first"
 
