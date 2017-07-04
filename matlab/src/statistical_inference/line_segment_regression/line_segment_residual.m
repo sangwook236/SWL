@@ -1,4 +1,4 @@
-function [ resid inlier_flag ] = line_segment_residual(ls, line, angle_threshold)
+function [ resid inlier_flag ] = line_segment_residual(ls, ls_weight, line, angle_threshold)
 % A finite line segment: ls = [ x1 y1 x2 y2 ].
 %	(x1, y1) - (x2, y2).
 % An infinite line: line = [ a b c ].
@@ -13,11 +13,19 @@ inlier_flag = zeros(num_ls, 1);
 abs_cos_theta = abs(cos_theta);
 
 % Check inliers.
-if nargin >= 3
+if nargin >= 4
 	inlier_flag = abs_cos_theta > abs_cos_angle_threshold;
-	resid = sum((dist_perp ./ abs_cos_theta) .* inlier_flag);
+	if isempty(ls_weight)
+		resid = sum((dist_perp ./ abs_cos_theta) .* inlier_flag);
+	else
+		resid = sum(ls_weight .* (dist_perp ./ abs_cos_theta) .* inlier_flag);
+	end;
 else
-	resid = sum(dist_perp ./ abs_cos_theta);
+	if isempty(ls_weight)
+		resid = sum(dist_perp ./ abs_cos_theta);
+	else
+		resid = sum(ls_weight .* dist_perp ./ abs_cos_theta);
+	end;
 end;
 
 % Print the number of inliers.

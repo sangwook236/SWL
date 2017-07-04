@@ -1,4 +1,4 @@
-function subsegment = generate_subsegment_randomly(ls, ref_len)
+function [ subsegment subsegment_weight ] = generate_subsegment_randomly(ls, ref_len)
 % Generate subsegments at random from a finite line segment ls.
 %
 % A finite line segment: ls = [ x1 y1 x2 y2 ].
@@ -13,6 +13,7 @@ subsegment_count = ceil(segment_len / ref_len);
 subsegment_len = segment_len ./ subsegment_count;
 
 subsegment = zeros(sum(subsegment_count), 4);
+subsegment_weight = zeros(sum(subsegment_count), 1);
 idx = 1;
 for ii = 1:length(subsegment_len)
 	xc = ls(ii,1) + (ls(ii,3) - ls(ii,1)) .* rand([subsegment_count(ii), 1]);
@@ -27,6 +28,7 @@ for ii = 1:length(subsegment_len)
 		pt1 = [ xc(jj) yc(jj) ] - subsegment_len(ii) * segment_dir(ii,:) / 2;
 		pt2 = [ xc(jj) yc(jj) ] + subsegment_len(ii) * segment_dir(ii,:) / 2;
 		subsegment(idx,:) = [ pt1 pt2 ];
+		subsegment_weight(idx) = subsegment_len(ii) / ref_len;
 		idx = idx + 1;
 	end;
 end;

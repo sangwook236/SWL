@@ -1,4 +1,4 @@
-function subsegment = generate_centered_subsegment(ls, ref_len)
+function [ subsegment subsegment_weight ] = generate_centered_subsegment(ls, ref_len)
 % Generate subsegments from a finite line segment ls, which are centered at the center of ls and are of the same length.
 %
 % A finite line segment: ls = [ x1 y1 x2 y2 ].
@@ -16,6 +16,7 @@ xc = (ls(:,1) + ls(:,3)) / 2;
 yc = (ls(:,2) + ls(:,4)) / 2;
 
 subsegment = zeros(sum(subsegment_count), 4);
+subsegment_weight = zeros(sum(subsegment_count), 1);
 idx = 1;
 for ii = 1:length(subsegment_len)
 	pt1 = [ xc(ii) yc(ii) ] - subsegment_len(ii) * segment_dir(ii,:) / 2;
@@ -24,6 +25,7 @@ for ii = 1:length(subsegment_len)
 	% FIXME [improve] >> Vectorize.
 	for jj = 1:subsegment_count(ii)
 		subsegment(idx,:) = [ pt1 pt2 ];
+		subsegment_weight(idx) = subsegment_len(ii) / ref_len;
 		idx = idx + 1;
 	end;
 end;
