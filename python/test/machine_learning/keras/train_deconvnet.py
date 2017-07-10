@@ -119,6 +119,8 @@ test_dataset.labels = test_dataset.labels.astype(np.float32)
 
 # REF [site] >> https://keras.io/preprocessing/image/
 
+print('Create a data generator.')
+
 train_data_generator = ImageDataGenerator(
 	rescale=1./255.,
 	preprocessing_function=None,
@@ -240,16 +242,18 @@ test_dataset_gen = zip(test_data_gen, test_label_gen)
 #%%------------------------------------------------------------------
 # Create a DeconvNet model.
 
+print('Create a DeconvNet model.')
+
 with tf.name_scope('deconvnet'):
 	deconv_model_output = DeconvNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
+
+#%%------------------------------------------------------------------
+# Display.
 
 #if 'tf' == keras_backend:
 #	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=deconv_model_output).summary()
 #else:
 #	deconv_model.summary()
-
-#%%------------------------------------------------------------------
-# Display.
 
 #[print(tensor.name) for tensor in tf.get_default_graph().as_graph_def().node]
 
@@ -258,6 +262,8 @@ with tf.name_scope('deconvnet'):
 
 #%%------------------------------------------------------------------
 # Prepare training.
+
+print('Prepare training.')
 
 # Define a loss.
 with tf.name_scope('loss'):
@@ -288,6 +294,8 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 #%%------------------------------------------------------------------
 # Train the DeconvNet model.
 
+print('Start training...')
+
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
 
@@ -308,18 +316,25 @@ with sess.as_default():
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
+				if num_classes > 2:
+					label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 				break;
 			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 			test_summary_writer.add_summary(summary, epoch)
 			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+
 		# Save the model.
-		if 0 == epoch % 100:
+		if 0 == epoch % 10:
 			model_saved_path = saver.save(sess, model_dir_path + '/deconvnet.ckpt', global_step=global_step)
 			print('Model saved in file:', model_saved_path)
+
+print('End training...')
 
 #%%------------------------------------------------------------------
 # Restore the model.
 # REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+
+#print('Restore a DeconvNet model.')
 
 #with sess.as_default():
 #	saver.restore(sess, model_dir_path + '/deconvnet.ckpt')
@@ -329,9 +344,15 @@ with sess.as_default():
 #%%------------------------------------------------------------------
 # Evaluate the DeconvNet model.
 
+print('Start testing...')
+
 with sess.as_default():
+	if num_classes > 2:
+		test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
 	test_metric = metric.eval(feed_dict={tf_data_ph: test_dataset.data, tf_label_ph: test_dataset.labels})
 	print('Test metric = %g' % test_metric)
+
+print('End testing...')
 
 #%%------------------------------------------------------------------
 
