@@ -116,14 +116,14 @@ int main(int argc, char *argv[])
 		//hmm_segmentation();  // Not yet implemented.
 		//crf_segmentation();  // Not yet implemented.
 	}
-    catch (const std::bad_alloc &e)
+    catch (const std::bad_alloc &ex)
 	{
-		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		std::cout << "std::bad_alloc caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
-	catch (const std::exception &e)
+	catch (const std::exception &ex)
 	{
-		std::cout << "std::exception caught: " << e.what() << std::endl;
+		std::cout << "std::exception caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
 	catch (...)

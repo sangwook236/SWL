@@ -9,19 +9,23 @@
 
 int main(int argc, char *argv[])
 {
+	void wave_data();
+
 	int retval = EXIT_SUCCESS;
 	try
 	{
-		throw std::runtime_error("Not yet implemented");
+		//-----------------------------------------------------------
+		// Utility.
+		wave_data();
 	}
-    catch (const std::bad_alloc &e)
+    catch (const std::bad_alloc &ex)
 	{
-		std::cout << "std::bad_alloc caught: " << e.what() << std::endl;
+		std::cout << "std::bad_alloc caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
-	catch (const std::exception &e)
+	catch (const std::exception &ex)
 	{
-		std::cout << "std::exception caught: " << e.what() << std::endl;
+		std::cout << "std::exception caught: " << ex.what() << std::endl;
 		retval = EXIT_FAILURE;
 	}
 	catch (...)

@@ -17,6 +17,7 @@
     <File Name="../../inc/swl/util/TcpSocketConnectionUsingSession.h"/>
     <File Name="../../inc/swl/util/TcpSocketServer.h"/>
     <File Name="../../inc/swl/util/TcpSocketSession.h"/>
+    <File Name="../../inc/swl/util/WaveData.h"/>
     <File Name="dictionary.h"/>
     <File Name="iniparser_impl.h"/>
     <File Name="strlib.h"/>
@@ -37,6 +38,7 @@
     <File Name="iniexample.cpp"/>
     <File Name="iniparser_impl.cpp"/>
     <File Name="strlib.cpp"/>
+    <File Name="WaveData.cpp"/>
     <File Name="xgetopt.cpp"/>
     <File Name="xgetopt_example.cpp" ExcludeProjConfig="Debug;Release"/>
   </VirtualDirectory>

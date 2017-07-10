@@ -47,6 +47,7 @@
 			<Add directory="/usr/local/lib" />
 		</Linker>
 		<Unit filename="main.cpp" />
+		<Unit filename="WaveDataTest.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

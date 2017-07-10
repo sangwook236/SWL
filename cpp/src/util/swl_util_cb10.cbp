@@ -66,6 +66,7 @@
 		<Unit filename="../../inc/swl/util/TcpSocketConnectionUsingSession.h" />
 		<Unit filename="../../inc/swl/util/TcpSocketServer.h" />
 		<Unit filename="../../inc/swl/util/TcpSocketSession.h" />
+		<Unit filename="../../inc/swl/util/WaveData.h" />
 		<Unit filename="AsyncTcpSocketClient.cpp" />
 		<Unit filename="GuardedBuffer.cpp" />
 		<Unit filename="IniParser.cpp" />
@@ -86,6 +87,7 @@
 		<Unit filename="iniparser_impl.h" />
 		<Unit filename="strlib.cpp" />
 		<Unit filename="strlib.h" />
+		<Unit filename="WaveData.cpp" />
 		<Unit filename="xgetopt.cpp">
 			<Option compile="0" />
 			<Option link="0" />

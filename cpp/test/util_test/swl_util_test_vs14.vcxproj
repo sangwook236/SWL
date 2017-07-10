@@ -96,7 +96,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_utild.lib;swl_mathd.lib;swl_based.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_utild.lib;swl_mathd.lib;swl_based.lib;boost_timer-vc140-mt-gd-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -111,7 +111,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_utild.lib;swl_mathd.lib;swl_based.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_utild.lib;swl_mathd.lib;swl_based.lib;boost_timer-vc140-mt-gd-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -130,7 +130,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_util.lib;swl_math.lib;swl_base.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_util.lib;swl_math.lib;swl_base.lib;boost_timer-vc140-mt-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -149,11 +149,12 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>swl_util.lib;swl_math.lib;swl_base.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_util.lib;swl_math.lib;swl_base.lib;boost_timer-vc140-mt-1_64.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="WaveDataTest.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -2,6 +2,7 @@ set(TARGET swl_util_test)
 
 set(SRCS
 	main.cpp
+	WaveDataTest.cpp
 )
 set(LIBS
 	swl_util

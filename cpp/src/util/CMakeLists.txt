@@ -15,6 +15,7 @@ set(SRCS
 	TcpSocketClient.cpp
 	TcpSocketConnection.cpp
 	TcpSocketSession.cpp
+	WaveData.cpp
 	xgetopt.cpp
 #	xgetopt_example.cpp
 )

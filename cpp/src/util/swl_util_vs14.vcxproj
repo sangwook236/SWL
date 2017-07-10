@@ -196,6 +196,7 @@
     <ClCompile Include="TcpSocketClient.cpp" />
     <ClCompile Include="TcpSocketConnection.cpp" />
     <ClCompile Include="TcpSocketSession.cpp" />
+    <ClCompile Include="WaveData.cpp" />
     <ClCompile Include="xgetopt.cpp" />
     <ClCompile Include="xgetopt_example.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -206,6 +207,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\util\AsyncTcpSocketClient.h" />
+    <ClInclude Include="..\..\inc\swl\util\WaveData.h" />
     <ClInclude Include="dictionary.h" />
     <ClInclude Include="..\..\inc\swl\util\ExportUtil.h" />
     <ClInclude Include="..\..\inc\swl\util\GuardedBuffer.h" />

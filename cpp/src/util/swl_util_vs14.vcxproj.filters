@@ -63,6 +63,9 @@
     <ClCompile Include="xgetopt_example.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="WaveData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\util\AsyncTcpSocketClient.h">
@@ -117,6 +120,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xgetopt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\util\WaveData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
