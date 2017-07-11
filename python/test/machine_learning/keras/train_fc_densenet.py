@@ -101,7 +101,7 @@ num_examples = 0
 num_classes = 12  # 11 + 1.
 
 batch_size = 3
-num_epochs = 50
+num_epochs = 150
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
@@ -299,7 +299,12 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 #%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
 
-print('Start training...')
+resume_training = True
+
+if resume_training:
+	print('Resume training...')
+else:
+	print('Start training...')
 
 # Use Keras ==> Cannot train.
 #fc_densenet_model.fit_generator(
@@ -317,6 +322,16 @@ sess.run(tf.global_variables_initializer())
 
 # Run training loop.
 with sess.as_default():
+	if resume_training:
+		# Restore the model.
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		print('Restore a FC-DenseNet model.')
+
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(sess, ckpt.model_checkpoint_path)
+		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+		print('Model restored from directory:', model_dir_path)
+
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch %d/%d' % (epoch, num_epochs))
 		steps = 0
@@ -345,17 +360,6 @@ with sess.as_default():
 			print('Model saved in file:', model_saved_path)
 
 print('End training...')
-
-#%%------------------------------------------------------------------
-# Restore the model.
-# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-
-#print('Restore a FC-DenseNet model.')
-
-#with sess.as_default():
-#	saver.restore(sess, model_dir_path + '/fc_densenet.ckpt')
-#	#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
-#	print('Model restored from file:', model_dir_path + '/fc_densenet.ckpt)
 
 #%%------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.

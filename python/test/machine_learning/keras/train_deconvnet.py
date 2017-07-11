@@ -294,13 +294,28 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 #%%------------------------------------------------------------------
 # Train the DeconvNet model.
 
-print('Start training...')
+resume_training = False
+
+if resume_training:
+	print('Resume training...')
+else:
+	print('Start training...')
 
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
 
 # Run training loop.
 with sess.as_default():
+	if resume_training:
+		# Restore the model.
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		print('Restore a DeconvNet model.')
+
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(sess, ckpt.model_checkpoint_path)
+		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+		print('Model restored from directory:', model_dir_path)
+
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch %d/%d' % (epoch, num_epochs))
 		steps = 0
@@ -329,17 +344,6 @@ with sess.as_default():
 			print('Model saved in file:', model_saved_path)
 
 print('End training...')
-
-#%%------------------------------------------------------------------
-# Restore the model.
-# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-
-#print('Restore a DeconvNet model.')
-
-#with sess.as_default():
-#	saver.restore(sess, model_dir_path + '/deconvnet.ckpt')
-#	#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
-#	print('Model restored from file:', model_dir_path + '/deconvnet.ckpt)
 
 #%%------------------------------------------------------------------
 # Evaluate the DeconvNet model.
