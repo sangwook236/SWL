@@ -51,14 +51,17 @@ namespace swl {
 	const size_t &num = sample.size();
 	if (1 == num) return 0.0;
 
-	//const double &moment = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + (rhs - mean) * (rhs - mean); });
-	//return std::sqrt(moment / double(num - 1));
+#if 0
+	const double &moment = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + (rhs - mean) * (rhs - mean); });
+	return std::sqrt(moment / double(num - 1));
+#else
 	double accum = 0.0;
 	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += (val - mean) * (val - mean); });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta; });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 2); });
 
 	return std::sqrt(accum / double(num - 1));
+#endif
 }
 
 /*static*/ double Statistic::skewness(const std::vector<double> &sample, const double mean /*= 0.0*/, const double sd /*= 1.0*/)
@@ -89,6 +92,46 @@ namespace swl {
 
 	//return accum / ((double)num * sd * sd * sd * sd);
 	return accum / ((double)num * std::pow(sd, 4));
+}
+
+/*static*/ double Statistic::rms(const std::vector<double> &sample)
+{
+	if (sample.empty()) return 0.0;
+
+	const size_t &num = sample.size();
+	if (1 == num) return std::abs(sample[0]);
+
+#if 0
+	const double &sum = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + rhs * rhs; });
+	return std::sqrt(sum / double(num));
+#else
+	double accum = 0.0;
+	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += val * val; });
+	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val, 2); });
+
+	return std::sqrt(accum / (double)num);
+#endif
+}
+
+/*static*/ double Statistic::peak(const std::vector<double> &sample)
+{
+	if (sample.empty()) return 0.0;
+
+	const size_t &num = sample.size();
+	if (1 == num) return std::abs(sample[0]);
+
+	return *std::max_element(sample.begin(), sample.end(), [](const double &lhs, const double &rhs) -> bool { return std::abs(lhs) < std::abs(rhs); });
+}
+
+/*static*/ double Statistic::crest(const std::vector<double> &sample)
+{
+	if (sample.empty()) return 0.0;
+
+	const size_t &num = sample.size();
+	if (1 == num) return 1.0;
+
+	const double &rms = Statistic::rms(sample);
+	return rms > std::numeric_limits<double>::epsilon() ? Statistic::peak(sample) / rms : std::numeric_limits<double>::infinity();
 }
 
 /*static*/ double Statistic::sampleVariance(const Eigen::VectorXd &D)
