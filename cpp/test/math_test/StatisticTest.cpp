@@ -18,8 +18,9 @@ namespace local {
 
 void statistic()
 {
+	// Basic statistics.
 	{
-		//const std::vector<double> sample({ 1., -3., 2., 6., 7., 13., -37., 56. });
+		//const std::vector<double> sample({ 1, -3, 2, 6, 7, 13, -37, 56 });
 		const std::vector<double> sample({ 0, 3, 4, 1, 2, 3, 0, 2, 1, 3, 2, 0, 2, 2, 3, 2, 5, 2, 3, 999 });
 
 		boost::timer::auto_cpu_timer timer;
