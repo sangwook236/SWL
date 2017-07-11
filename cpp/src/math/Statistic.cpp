@@ -1,5 +1,6 @@
 #include "swl/Config.h"
 #include "swl/math/Statistic.h"
+#include <algorithm>
 #include <numeric>
 #include <cmath>
 
