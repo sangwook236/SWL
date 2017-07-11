@@ -9,10 +9,14 @@
 
 int main(int argc, char *argv[])
 {
+	void statistic();
+
 	int retval = EXIT_SUCCESS;
 	try
 	{
-		throw std::runtime_error("Not yet implemented");
+		//-----------------------------------------------------------
+		// Statistic.
+		statistic();
 	}
     catch (const std::bad_alloc &e)
 	{

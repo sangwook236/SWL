@@ -4,6 +4,7 @@
 
 #include "swl/math/ExportMath.h"
 #include <Eigen/Core>
+#include <vector>
 
 
 namespace swl {
@@ -14,6 +15,13 @@ namespace swl {
 struct SWL_MATH_API Statistic
 {
 public:
+	///
+	static double mean(const std::vector<double> &sample);
+	static double standardDeviation(const std::vector<double> &sample, const double mean = 0.0);
+	static double sampleStandardDeviation(const std::vector<double> &sample, const double mean = 0.0);
+	static double skewness(const std::vector<double> &sample, const double mean = 0.0, const double sd = 1.0);
+	static double kurtosis(const std::vector<double> &sample, const double mean = 0.0, const double sd = 1.0);
+
 	///
 	static double sampleVariance(const Eigen::VectorXd &D);
 	static Eigen::VectorXd sampleVariance(const Eigen::MatrixXd &D);

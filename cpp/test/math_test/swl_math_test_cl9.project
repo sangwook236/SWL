@@ -103,6 +103,7 @@
   </Settings>
   <VirtualDirectory Name="src">
     <File Name="main.cpp"/>
+    <File Name="StatisticTest.cpp"/>
   </VirtualDirectory>
   <Dependencies Name="Debug">
     <Project Name="swl_base"/>
