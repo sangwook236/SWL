@@ -2,6 +2,9 @@
 # REF [paper] >> "The One Hundred Layers Tiramisu: Fully Convolutional DenseNets for Semantic Segmentation", arXiv 2016.
 # REF [site] >> https://github.com/titu1994/Fully-Connected-DenseNets-Semantic-Segmentation
 
+# Path to libcudnn.so.5.
+#export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
 #%%------------------------------------------------------------------
 
 import os
@@ -62,6 +65,13 @@ model_dir_path = './log/fc_densenet/model'
 train_summary_dir_path = './log/fc_densenet/train'
 test_summary_dir_path = './log/fc_densenet/test'
 
+if not os.path.exists(model_dir_path):
+	os.makedirs(model_dir_path)
+if not os.path.exists(train_summary_dir_path):
+	os.makedirs(train_summary_dir_path)
+if not os.path.exists(test_summary_dir_path):
+	os.makedirs(test_summary_dir_path)
+
 # NOTICE [caution] >>
 #	If the size of data is changed, labels in label images may be changed.
 
@@ -100,8 +110,8 @@ num_examples = 0
 #num_classes = np.unique(train_dataset.labels).shape[0]
 num_classes = 12  # 11 + 1.
 
-batch_size = 3
-num_epochs = 150
+batch_size = 10
+num_epochs = 1000
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1

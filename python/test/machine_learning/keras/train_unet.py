@@ -51,6 +51,13 @@ model_dir_path = './log/unet/model'
 train_summary_dir_path = './log/unet/train'
 test_summary_dir_path = './log/unet/test'
 
+if not os.path.exists(model_dir_path):
+	os.makedirs(model_dir_path)
+if not os.path.exists(train_summary_dir_path):
+	os.makedirs(train_summary_dir_path)
+if not os.path.exists(test_summary_dir_path):
+	os.makedirs(test_summary_dir_path)
+
 # NOTICE [caution] >>
 #	If the size of data is changed, labels in label images may be changed.
 

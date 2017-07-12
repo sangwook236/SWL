@@ -34,9 +34,11 @@ print('Y ->', Y.shape)
 print('swl.machine_learning.util.to_one_hot_encoding ->', swl.machine_learning.util.to_one_hot_encoding(Y).shape)
 print(swl.machine_learning.util.to_one_hot_encoding(Y))
 print('keras.utils.to_categorical ->', keras.utils.to_categorical(Y).shape)
+#print(keras.utils.to_categorical(Y))  // Not correctly working.
 print(keras.utils.to_categorical(Y).reshape(Y.shape[:-1] + (-1,)))
 
 print('swl.machine_learning.util.to_one_hot_encoding ->', swl.machine_learning.util.to_one_hot_encoding(Y, 10).shape)
 print(swl.machine_learning.util.to_one_hot_encoding(Y, 10))
 print('keras.utils.to_categorical ->', keras.utils.to_categorical(Y, 10).shape)
+#print(keras.utils.to_categorical(Y, 10))  // Not correctly working.
 print(keras.utils.to_categorical(Y, 10).reshape(Y.shape[:-1] + (-1,)))

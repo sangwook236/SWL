@@ -125,70 +125,75 @@ class ImageDataGeneratorWithCrop(ImageDataGenerator):
 
 
 class NumpyArrayIteratorWithCrop(NumpyArrayIterator):
-    """Iterator yielding data from a Numpy array.
+	"""Iterator yielding data from a Numpy array.
 
-    # Arguments
-        x: Numpy array of input data.
-        y: Numpy array of targets data.
-        image_data_generator: Instance of `ImageDataGenerator`
-            to use for random transformations and normalization.
-        batch_size: Integer, size of a batch.
-        shuffle: Boolean, whether to shuffle the data between epochs.
-        seed: Random seed for data shuffling.
-        data_format: String, one of `channels_first`, `channels_last`.
-        save_to_dir: Optional directory where to save the pictures
-            being yielded, in a viewable format. This is useful
-            for visualizing the random transformations being
-            applied, for debugging purposes.
-        save_prefix: String prefix to use for saving sample
-            images (if `save_to_dir` is set).
-        save_format: Format to use for saving sample images
-            (if `save_to_dir` is set).
-    """
+	# Arguments
+		x: Numpy array of input data.
+		y: Numpy array of targets data.
+		image_data_generator: Instance of `ImageDataGenerator`
+			to use for random transformations and normalization.
+		batch_size: Integer, size of a batch.
+		shuffle: Boolean, whether to shuffle the data between epochs.
+		seed: Random seed for data shuffling.
+		data_format: String, one of `channels_first`, `channels_last`.
+		save_to_dir: Optional directory where to save the pictures
+			being yielded, in a viewable format. This is useful
+			for visualizing the random transformations being
+			applied, for debugging purposes.
+		save_prefix: String prefix to use for saving sample
+			images (if `save_to_dir` is set).
+		save_format: Format to use for saving sample images
+			(if `save_to_dir` is set).
+	"""
 
-    def __init__(self, x, y, image_data_generator,
-                 batch_size=32, shuffle=False, seed=None,
-                 data_format=None,
-                 save_to_dir=None, save_prefix='', save_format='png'):
-        super().__init__(x, y, image_data_generator,
-                 batch_size, shuffle, seed,
-                 data_format,
-                 save_to_dir, save_prefix, save_format)
+	def __init__(self, x, y, image_data_generator,
+			batch_size=32, shuffle=False, seed=None,
+			data_format=None,
+			save_to_dir=None, save_prefix='', save_format='png'):
+		super().__init__(x, y, image_data_generator,
+				batch_size, shuffle, seed,
+				data_format,
+				save_to_dir, save_prefix, save_format)
 
-    def next(self):
-        """For python 2.x.
-
-        # Returns
-            The next batch.
-        """
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch.
-        with self.lock:
-            index_array, current_index, current_batch_size = next(self.index_generator)
-        # The transformation of images is not under thread lock
-        # so it can be done in parallel
-        batch_x = np.zeros(tuple([current_batch_size] + list(self.x.shape)[1:]), dtype=K.floatx())
-        for i, j in enumerate(index_array):
-            x = self.x[j]
-            if self.image_data_generator.random_crop_size is not None:
-                x = self.image_data_generator.random_crop(x)
-            x = self.image_data_generator.random_transform(x.astype(K.floatx()))
-            x = self.image_data_generator.standardize(x)
-            if self.image_data_generator.center_crop_size is not None:
-                x = self.image_data_generator.center_crop(x)
-            batch_x[i] = x
-        if self.save_to_dir:
-            for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.data_format, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=current_index + i,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
-        if self.y is None:
-            return batch_x
-        batch_y = self.y[index_array]
-        return batch_x, batch_y
+	def next(self):
+		"""For python 2.x.
+		
+		# Returns
+			The next batch.
+		"""
+		# Keeps under lock only the mechanism which advances
+		# the indexing of each batch.
+		with self.lock:
+			index_array, current_index, current_batch_size = next(self.index_generator)
+		# The transformation of images is not under thread lock
+		# so it can be done in parallel
+		if self.image_data_generator.center_crop_size is not None:
+			batch_x = np.zeros(tuple([current_batch_size] + list(self.image_data_generator.center_crop_size) + list(self.x.shape)[3:]), dtype=K.floatx())
+		elif self.image_data_generator.random_crop_size is not None:
+			batch_x = np.zeros(tuple([current_batch_size] + list(self.image_data_generator.random_crop_size) + list(self.x.shape)[3:]), dtype=K.floatx())
+		else:
+			batch_x = np.zeros(tuple([current_batch_size] + list(self.x.shape)[1:]), dtype=K.floatx())
+		for i, j in enumerate(index_array):
+			x = self.x[j]
+			if self.image_data_generator.random_crop_size is not None:
+				x = self.image_data_generator.random_crop(x)
+			x = self.image_data_generator.random_transform(x.astype(K.floatx()))
+			x = self.image_data_generator.standardize(x)
+			if self.image_data_generator.center_crop_size is not None:
+				x = self.image_data_generator.center_crop(x)
+			batch_x[i] = x
+		if self.save_to_dir:
+			for i in range(current_batch_size):
+				img = array_to_img(batch_x[i], self.data_format, scale=True)
+				fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
+						index=current_index + i,
+						hash=np.random.randint(1e4),
+						format=self.save_format)
+				img.save(os.path.join(self.save_to_dir, fname))
+		if self.y is None:
+			return batch_x
+		batch_y = self.y[index_array]
+		return batch_x, batch_y
 
 
 class DirectoryIteratorWithCrop(DirectoryIterator):
