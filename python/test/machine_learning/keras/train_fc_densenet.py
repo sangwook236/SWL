@@ -50,9 +50,11 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Load data.
 
-#dataset_home_dir_path = "/home/sangwook/my_dataset"
-#dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
-dataset_home_dir_path = "D:/dataset"
+if 'posix' == os.name:
+	#dataset_home_dir_path = "/home/sangwook/my_dataset"
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+else:
+	dataset_home_dir_path = "D:/dataset"
 
 train_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/train"
 train_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/trainannot"
@@ -122,7 +124,8 @@ cropped_input_size = (224, 224)  # (height, width).
 
 #tf_data_shape = (None,) + cropped_input_size + (train_dataset.data.shape[3],)
 tf_data_shape = (None,) + cropped_input_size + (3,)
-tf_label_shape = (None,) + cropped_input_size + (1 if 2 == num_classes else num_classes,)
+#tf_label_shape = (None,) + cropped_input_size + (1 if 2 == num_classes else num_classes,)
+tf_label_shape = (None,) + cropped_input_size + (num_classes,)
 tf_data_ph = tf.placeholder(tf.float32, shape=tf_data_shape)
 tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
@@ -346,7 +349,7 @@ with sess.as_default():
 		print('Epoch %d/%d' % (epoch, num_epochs))
 		steps = 0
 		for data_batch, label_batch in train_dataset_gen:
-			if num_classes > 2:
+			if num_classes >= 2:
 				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 			summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 			train_summary_writer.add_summary(summary, epoch)
@@ -357,7 +360,7 @@ with sess.as_default():
 				break
 		if 0 == epoch % 10:
 			for data_batch, label_batch in train_dataset_gen:
-				if num_classes > 2:
+				if num_classes >= 2:
 					label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 				break;
 			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
@@ -378,7 +381,7 @@ print('Start testing...')
 
 with sess.as_default():
 	for data_batch, label_batch in test_dataset_gen:
-		if num_classes > 2:
+		if num_classes >= 2:
 			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 		break
 	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})

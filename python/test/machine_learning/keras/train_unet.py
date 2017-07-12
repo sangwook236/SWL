@@ -40,9 +40,11 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Load data.
 
-#dataset_home_dir_path = "/home/sangwook/my_dataset"
-#dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
-dataset_home_dir_path = "D:/dataset"
+if 'posix' == os.name:
+	#dataset_home_dir_path = "/home/sangwook/my_dataset"
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+else:
+	dataset_home_dir_path = "D:/dataset"
 
 train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
