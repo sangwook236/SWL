@@ -2,6 +2,7 @@ set(TARGET swl_math_test)
 
 set(SRCS
 	main.cpp
+	StatisticTest.cpp
 )
 set(LIBS
 	swl_math
