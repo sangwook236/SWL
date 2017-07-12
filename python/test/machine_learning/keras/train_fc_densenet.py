@@ -50,9 +50,11 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Load data.
 
-#dataset_home_dir_path = "/home/sangwook/my_dataset"
-#dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
-dataset_home_dir_path = "D:/dataset"
+if 'posix' == os.name:
+	#dataset_home_dir_path = "/home/sangwook/my_dataset"
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+else:
+	dataset_home_dir_path = "D:/dataset"
 
 train_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/train"
 train_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/trainannot"
