@@ -57,6 +57,25 @@ model_dir_path = './log/deconvnet/model'
 train_summary_dir_path = './log/deconvnet/train'
 test_summary_dir_path = './log/deconvnet/test'
 
+if not os.path.exists(model_dir_path):
+	try:
+		os.makedirs(model_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+if not os.path.exists(train_summary_dir_path):
+	try:
+		os.makedirs(train_summary_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+if not os.path.exists(test_summary_dir_path):
+	try:
+		os.makedirs(test_summary_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+
 # NOTICE [caution] >>
 #	If the size of data is changed, labels in label images may be changed.
 
