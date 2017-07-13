@@ -3,15 +3,14 @@
 
 #%%------------------------------------------------------------------
 
-import os
+import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
+sys.path.append(swl_python_home_dir_path + '/src')
 
-import sys
-sys.path.append('../../../src')
+os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 #%%------------------------------------------------------------------
 
@@ -41,9 +40,11 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Load data.
 
-#dataset_home_dir_path = "/home/sangwook/my_dataset"
-#dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
-dataset_home_dir_path = "D:/dataset"
+if 'posix' == os.name:
+	#dataset_home_dir_path = "/home/sangwook/my_dataset"
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+else:
+	dataset_home_dir_path = "D:/dataset"
 
 dataset_dir_path = dataset_home_dir_path + "/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1"
 

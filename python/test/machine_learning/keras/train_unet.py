@@ -3,15 +3,14 @@
 
 #%%------------------------------------------------------------------
 
-import os
+import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
+sys.path.append(swl_python_home_dir_path + '/src')
 
-import sys
-sys.path.append('../../../src')
+os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 #%%------------------------------------------------------------------
 
@@ -49,7 +48,7 @@ else:
 train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
 
-model_dir_path = './log/unet/model'
+model_dir_path = './result/unet/model'
 train_summary_dir_path = './log/unet/train'
 test_summary_dir_path = './log/unet/test'
 
@@ -233,19 +232,25 @@ saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 #%%------------------------------------------------------------------
 # Train the U-Net model.
 
-resume_training = False
+TRAINING_MODE = 0  # Start training a model.
+#TRAINING_MODE = 1  # Resume training a model.
+#TRAINING_MODE = 2  # Use a trained model.
 
-if resume_training:
-	print('Resume training...')
-else:
+if 0 == TRAINING_MODE:
 	print('Start training...')
+elif 1 == TRAINING_MODE:
+	print('Resume training...')
+elif 2 == TRAINING_MODE:
+	print('Use a trained model.')
+else:
+	raise Exception('Invalid TRAINING_MODE')
 
 # Initialize all variables.
 sess.run(tf.global_variables_initializer())
 
 # Run training loop.
 with sess.as_default():
-	if resume_training:
+	if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 		# Restore the model.
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 		print('Restore a U-Net model.')
@@ -255,32 +260,33 @@ with sess.as_default():
 		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
 		print('Model restored from directory:', model_dir_path)
 
-	for epoch in range(1, num_epochs + 1):
-		print('Epoch %d/%d' % (epoch, num_epochs))
-		steps = 0
-		for data_batch, label_batch in train_dataset_gen:
-			if num_classes > 2:
-				label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
-			summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
-			train_summary_writer.add_summary(summary, epoch)
-			#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
-			#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
-			steps += 1
-			if steps >= steps_per_epoch:
-				break
-		if 0 == epoch % 10:
+	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+		for epoch in range(1, num_epochs + 1):
+			print('Epoch %d/%d' % (epoch, num_epochs))
+			steps = 0
 			for data_batch, label_batch in train_dataset_gen:
 				if num_classes > 2:
 					label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
-				break;
-			summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
-			test_summary_writer.add_summary(summary, epoch)
-			print('Epoch %d: test metric = %g' % (epoch, test_metric))
+				summary, _ = sess.run([merged_summary, train_step], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+				train_summary_writer.add_summary(summary, epoch)
+				#print('data batch: (shape, dtype, min, max) =', data_batch.shape, data_batch.dtype, np.min(data_batch), np.max(data_batch))
+				#print('label batch: (shape, dtype, min, max) =', label_batch.shape, label_batch.dtype, np.min(label_batch), np.max(label_batch))
+				steps += 1
+				if steps >= steps_per_epoch:
+					break
+			if 0 == epoch % 10:
+				for data_batch, label_batch in train_dataset_gen:
+					if num_classes > 2:
+						label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+					break;
+				summary, test_metric = sess.run([merged_summary, metric], feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
+				test_summary_writer.add_summary(summary, epoch)
+				print('Epoch %d: test metric = %g' % (epoch, test_metric))
 
-		# Save the model.
-		if 0 == epoch % 10:
-			model_saved_path = saver.save(sess, model_dir_path + '/unet.ckpt', global_step=global_step)
-			print('Model saved in file:', model_saved_path)
+			# Save the model.
+			if 0 == epoch % 10:
+				model_saved_path = saver.save(sess, model_dir_path + '/unet.ckpt', global_step=global_step)
+				print('Model saved in file:', model_saved_path)
 
 print('End training...')
 
