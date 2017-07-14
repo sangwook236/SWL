@@ -24,7 +24,7 @@ public:
 
 	static double rms(const std::vector<double> &sample);
 	static double peak(const std::vector<double> &sample);
-	static double crest(const std::vector<double> &sample);
+	static double crestFactor(const std::vector<double> &sample);
 
 	///
 	static double sampleVariance(const Eigen::VectorXd &D);

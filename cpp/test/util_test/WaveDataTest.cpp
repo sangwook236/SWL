@@ -24,9 +24,10 @@ void wave_data()
 	const size_t BUFFER_SIZE = 4096;
 
 	const std::string wav_filename("./data/util/test1.wav");
-	swl::WaveData wav;
+	//const std::string wav_filename("./data/util/test2.wav");
 
 	// Open a wave file.
+	swl::WaveData wav;
 	if (wav.openWaveFile(wav_filename))
 	{
 		// Chunk descriptor.
@@ -51,6 +52,7 @@ void wave_data()
 		//
 		std::cout << "Number of samples = " << wav.getNumberOfSamples() << std::endl;
 		std::cout << "Actual file size = " << wav.getFileSize() << " bytes." << std::endl;
+		std::cout << "Actual file length = " << wav.getFileLength() << " seconds." << std::endl;
 
 		// Read the raw data.
 		{
@@ -87,14 +89,15 @@ void wave_data()
 			std::cout << "Read all the channel data: " << std::endl;
 
 			const size_t &numSamples = wav.getNumberOfSamples();
-			std::vector<std::vector<int16_t> > allChannelData(wav.getNumberOfChannels());
+			//std::vector<std::vector<int16_t> > allChannelData(wav.getNumberOfChannels());
+			std::vector<std::vector<double> > allChannelData(wav.getNumberOfChannels());
 			for (size_t ch = 0; ch < wav.getNumberOfChannels(); ++ch)
 				allChannelData[ch].resize(numSamples);
 
 			size_t numSamplesRead;
 			{
 				boost::timer::auto_cpu_timer timer;
-				if ((numSamplesRead = wav.readAllChannelData(0, allChannelData)) > 0)
+				if ((numSamplesRead = wav.readAllChannelData<int16_t>(0, allChannelData)) > 0)  // 16-bit signal.
 				{
 					// Do something.
 				}
@@ -107,7 +110,13 @@ void wave_data()
 			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
 			for (size_t idx = 0; idx < 20; ++idx)
 				for (uint16_t ch = 0; ch < wav.getNumberOfChannels(); ++ch)
-					std::cout << std::hex << allChannelData[ch][idx] << ", ";
+					//std::cout << std::hex << allChannelData[ch][idx] << ", ";
+					std::cout << std::hex << (short)std::floor(allChannelData[ch][idx] + 0.5) << ", ";
+			std::cout << std::dec << std::endl;
+			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
+			for (size_t idx = 0; idx < 20; ++idx)
+				for (uint16_t ch = 0; ch < wav.getNumberOfChannels(); ++ch)
+					std::cout << allChannelData[ch][idx] << ", ";
 			std::cout << std::dec << std::endl;
 #endif
 		}
@@ -119,11 +128,12 @@ void wave_data()
 			const size_t channel = 0;
 
 			const size_t &numSamples = wav.getNumberOfSamples();
-			std::vector<int16_t> channelData(numSamples);
+			//std::vector<int16_t> channelData(numSamples);
+			std::vector<double> channelData(numSamples);
 			size_t numSamplesRead;
 			{
 				boost::timer::auto_cpu_timer timer;
-				if ((numSamplesRead = wav.readChannelData(channel, 0, channelData)) > 0)
+				if ((numSamplesRead = wav.readChannelData<int16_t>(channel, 0, channelData)) > 0)  // 16-bit signal.
 				{
 					// Do something.
 				}
@@ -133,6 +143,11 @@ void wave_data()
 
 #if 1
 			// Display.
+			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
+			for (size_t idx = 0; idx < 20; ++idx)
+				//std::cout << std::hex << channelData[idx] << ", ";
+				std::cout << std::hex << (short)std::floor(channelData[idx] + 0.5) << ", ";
+			std::cout << std::dec << std::endl;
 			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
 			for (size_t idx = 0; idx < 20; ++idx)
 				std::cout << std::hex << channelData[idx] << ", ";

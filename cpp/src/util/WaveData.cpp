@@ -38,6 +38,7 @@ bool WaveData::openWaveFile(const std::string &filepath)
 	if (headerSize_ > 0)
 	{
 		std::clog << "Header size = " << headerSize_ << " bytes." << std::endl;
+		assert(1 == header_.audioFormat);
 		isOpened_ = true;
 		return true;
 	}

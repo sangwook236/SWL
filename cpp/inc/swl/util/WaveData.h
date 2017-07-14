@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <cstdio>
+#include <cassert>
 
 
 namespace swl {
@@ -51,10 +52,10 @@ public:
 	size_t readRawData(std::vector<uint8_t> &data) const;
 	size_t readRawData(const size_t start, std::vector<uint8_t> &data) const;
 
-	template<typename T>
-	size_t readAllChannelData(const size_t sampleStartIdx, std::vector<std::vector<T> > &allChannelData) const;
-	template<typename T>
-	size_t readChannelData(const size_t channel, const size_t sampleStartIdx, std::vector<T> &channelData) const;
+	template<typename SampleType, typename DataType>
+	size_t readAllChannelData(const size_t startSampleIdx, std::vector<std::vector<DataType> > &allChannelData) const;
+	template<typename SampleType, typename DataType>
+	size_t readChannelData(const size_t channel, const size_t startSampleIdx, std::vector<DataType> &channelData) const;
 
 	bool isOpened() const {  return fp_ && isOpened_;  }
 
@@ -81,7 +82,11 @@ public:
 		//return getDataSize() / (getBytesPerSample() * getNumberOfChannels());
 		return getDataSize() / getBlockAlign();
 	}
-	size_t getFileSize() const;
+	size_t getFileSize() const;  // [byte].
+	double getFileLength() const  // [sec].
+	{
+		return (double)getDataSize() / (double)getBytesPerSecond();
+	}
 
 private:
 	FILE *fp_;
@@ -91,123 +96,120 @@ private:
 	size_t headerSize_;
 };
 
-template<typename T>
-size_t WaveData::readAllChannelData(const size_t sampleStartIdx, std::vector<std::vector<T> > &allChannelData) const
+template<typename SampleType, typename DataType>
+size_t WaveData::readAllChannelData(const size_t startSampleIdx, std::vector<std::vector<DataType> > &allChannelData) const
 {
 	if (!isOpened() || allChannelData.empty() || allChannelData.size() != getNumberOfChannels()) return 0;
+	const size_t sampleSize = sizeof(SampleType);
+	assert(getBytesPerSample() == sampleSize);
 
-	const size_t &sampleCount = allChannelData[0].size();
+	const size_t &numSamples = allChannelData[0].size();
 	for (size_t ch = 1; ch < getNumberOfChannels(); ++ch)
-		if (allChannelData[ch].size() != sampleCount) return 0;
+		if (allChannelData[ch].size() != numSamples) return 0;
 
-	std::fseek(fp_, long(headerSize_ + sampleStartIdx * getBlockAlign()), SEEK_SET);
+	std::fseek(fp_, long(headerSize_ + startSampleIdx * getBlockAlign()), SEEK_SET);
 #if 1
-	T sample;
-	size_t samplesRead;
-	for (size_t idx = 0; idx < sampleCount; ++idx)
+	SampleType sample;
+	size_t numSamplesRead;
+	for (size_t idx = 0; idx < numSamples; ++idx)
 		for (size_t ch = 0; ch < getNumberOfChannels(); ++ch)
 		{
-			samplesRead = std::fread(&sample, getBytesPerSample(), 1, fp_);
-			//samplesRead = std::fread(&sample, sizeof(T), 1, fp_);
-			if (1 == samplesRead)
+			numSamplesRead = std::fread(&sample, sampleSize, 1, fp_);
+			if (1 == numSamplesRead)
 				allChannelData[ch][idx] = sample;
 			else return idx;
 		}
 
-	return sampleCount;
+	return numSamples;
 #elif 0
-	std::vector<T> sample(getNumberOfChannels());
-	size_t samplesRead;
-	for (size_t idx = 0; idx < sampleCount; ++idx)
+	std::vector<SampleType> sample(getNumberOfChannels());
+	size_t numSamplesRead;
+	for (size_t idx = 0; idx < numSamples; ++idx)
 	{
-		samplesRead = std::fread(&sample[0], getBytesPerSample(), getNumberOfChannels(), fp_);
-		//samplesRead = std::fread(&sample[0], sizeof(T), getNumberOfChannels(), fp_);
-		if (getNumberOfChannels() == samplesRead)
+		numSamplesRead = std::fread(&sample[0], sampleSize, getNumberOfChannels(), fp_);
+		if (getNumberOfChannels() == numSamplesRead)
 			for (size_t ch = 0; ch < getNumberOfChannels(); ++ch)
 				allChannelData[ch][idx] = sample[ch];
 		else return idx;
 	}
 
-	return sampleCount;
+	return numSamples;
 #else
-	std::vector<T> sample(getNumberOfChannels() * sampleCount);
-	const size_t samplesRead = std::fread(&sample[0], getBytesPerSample(), getNumberOfChannels() * sampleCount, fp_) / getNumberOfChannels();
-	//const size_t samplesRead = std::fread(&sample[0], sizeof(T), getNumberOfChannels() * sampleCount, fp_);
-	for (size_t idx = 0; idx < samplesRead; ++idx)
+	std::vector<SampleType> sample(getNumberOfChannels() * numSamples);
+	const size_t numSamplesRead = std::fread(&sample[0], sampleSize, getNumberOfChannels() * numSamples, fp_);
+	for (size_t idx = 0; idx < numSamplesRead; ++idx)
 		for (size_t ch = 0; ch < getNumberOfChannels(); ++ch)
 			allChannelData[ch][idx] = sample[idx * getNumberOfChannels() + ch];
 
-	return samplesRead;
+	return numSamplesRead;
 #endif
 }
 
-template<typename T>
-size_t WaveData::readChannelData(const size_t channel, const size_t sampleStartIdx, std::vector<T> &channelData) const
+template<typename SampleType, typename DataType>
+size_t WaveData::readChannelData(const size_t channel, const size_t startSampleIdx, std::vector<DataType> &channelData) const
 {
 	if (!isOpened() || channel >= getNumberOfChannels()) return 0;
+	const size_t sampleSize = sizeof(SampleType);
+	assert(getBytesPerSample() == sampleSize);
 
-	const size_t &sampleCount = channelData.size();
+	const size_t &numSamples = channelData.size();
 
-	std::fseek(fp_, long(headerSize_ + sampleStartIdx * getBlockAlign()), SEEK_SET);
+	std::fseek(fp_, long(headerSize_ + startSampleIdx * getBlockAlign()), SEEK_SET);
 #if 1
-	T sample;
-	size_t samplesRead;
-	for (size_t idx = 0; idx < sampleCount; ++idx)
+	SampleType sample;
+	size_t numSamplesRead;
+	for (size_t idx = 0; idx < numSamples; ++idx)
 		for (size_t ch = 0; ch < getNumberOfChannels(); ++ch)
 		{
-			samplesRead = std::fread(&sample, getBytesPerSample(), 1, fp_);
-			//samplesRead = std::fread(&sample, sizeof(T), 1, fp_);
+			numSamplesRead = std::fread(&sample, sampleSize, 1, fp_);
 			if (channel == ch)
 			{
-				if (1 == samplesRead)
+				if (1 == numSamplesRead)
 					channelData[idx] = sample;
 				else return idx;
 			}
 		}
 
-	return sampleCount;
+	return numSamples;
 #elif 0
 	if (channel > 0)
-		std::fseek(fp_, long(headerSize_ + sampleStartIdx * getBlockAlign() + channel * getBytesPerSample()), SEEK_SET);
+		std::fseek(fp_, long(headerSize_ + startSampleIdx * getBlockAlign() + channel * sampleSize), SEEK_SET);
 
-	T sample;
-	size_t samplesRead;
-	for (size_t idx = 0; idx < sampleCount; ++idx)
+	SampleType sample;
+	size_t numSamplesRead;
+	for (size_t idx = 0; idx < numSamples; ++idx)
 	{
-		samplesRead = std::fread(&sample, getBytesPerSample(), 1, fp_);
-		//const size_t samplesRead = std::fread(&sample, sizeof(T), 1, fp_);
-		if (1 == samplesRead)
+		const size_t numSamplesRead = std::fread(&sample, sampleSize, 1, fp_);
+		if (1 == numSamplesRead)
 			channelData[idx] = sample;
 		else return idx;
 
 		// Read the other channels.
-		samplesRead = std::fread(&sample, getBytesPerSample(), getNumberOfChannels() - 1, fp_);
+		numSamplesRead = std::fread(&sample, sampleSize, getNumberOfChannels() - 1, fp_);
 		// TODO [check] >> Is it correct to return idx?
-		if (0 == samplesRead || getNumberOfChannels() - 1 != samplesRead) return idx;
+		if (0 == numSamplesRead || getNumberOfChannels() - 1 != numSamplesRead) return idx;
 	}
 
-	return sampleCount;
+	return numSamples;
 #elif 0
-	std::vector<T> sample(getNumberOfChannels());
-	size_t samplesRead;
-	for (size_t idx = 0; idx < sampleCount; ++idx)
+	std::vector<SampleType> sample(getNumberOfChannels());
+	size_t numSamplesRead;
+	for (size_t idx = 0; idx < numSamples; ++idx)
 	{
-		samplesRead = std::fread(&sample[0], getBytesPerSample(), getNumberOfChannels(), fp_);
-		//samplesRead = std::fread(&sample[0], sizeof(T), getNumberOfChannels(), fp_);
-		if (getNumberOfChannels() == samplesRead)
+		numSamplesRead = std::fread(&sample[0], sampleSize, getNumberOfChannels(), fp_);
+		if (getNumberOfChannels() == numSamplesRead)
 			channelData[idx] = sample[channel];
 		else return idx;
 	}
 
-	return sampleCount;
+	return numSamples;
 #else
-	std::vector<T> sample(getNumberOfChannels() * sampleCount);
-	const size_t samplesRead = std::fread(&sample[0], getBytesPerSample(), getNumberOfChannels() * sampleCount, fp_) / getNumberOfChannels();
-	//const size_t samplesRead = std::fread(&sample[0], sizeof(T), getNumberOfChannels() * sampleCount, fp_);
-	for (size_t idx = 0; idx < samplesRead; ++idx)
+	std::vector<SampleType> sample(getNumberOfChannels() * numSamples);
+	//const size_t numSamplesRead = std::fread(&sample[0], sampleSize, getNumberOfChannels() * numSamples, fp_);
+	for (size_t idx = 0; idx < numSamplesRead; ++idx)
 		channelData[idx] = sample[idx * getNumberOfChannels() + channel];
 
-	return samplesRead;
+	return numSamplesRead;
 #endif
 }
 

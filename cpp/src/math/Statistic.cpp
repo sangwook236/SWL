@@ -120,10 +120,11 @@ namespace swl {
 	const size_t &num = sample.size();
 	if (1 == num) return std::abs(sample[0]);
 
-	return *std::max_element(sample.begin(), sample.end(), [](const double &lhs, const double &rhs) -> bool { return std::abs(lhs) < std::abs(rhs); });
+	//return *std::max_element(sample.begin(), sample.end(), [](const double lhs, const double rhs) -> bool { return std::abs(lhs) < std::abs(rhs); });
+	return std::abs(*std::max_element(sample.begin(), sample.end(), [](const double lhs, const double rhs) -> bool { return std::abs(lhs) < std::abs(rhs); }));
 }
 
-/*static*/ double Statistic::crest(const std::vector<double> &sample)
+/*static*/ double Statistic::crestFactor(const std::vector<double> &sample)
 {
 	if (sample.empty()) return 0.0;
 
