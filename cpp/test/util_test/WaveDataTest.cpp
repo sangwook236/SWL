@@ -52,7 +52,7 @@ void wave_data()
 		//
 		std::cout << "Number of samples = " << wav.getNumberOfSamples() << std::endl;
 		std::cout << "Actual file size = " << wav.getFileSize() << " bytes." << std::endl;
-		std::cout << "Actual file length = " << wav.getFileLength() << " seconds." << std::endl;
+		std::cout << "Actual file length = " << wav.getFileTime() << " seconds." << std::endl;
 
 		// Read the raw data.
 		{
@@ -118,6 +118,11 @@ void wave_data()
 				for (uint16_t ch = 0; ch < wav.getNumberOfChannels(); ++ch)
 					std::cout << allChannelData[ch][idx] << ", ";
 			std::cout << std::dec << std::endl;
+			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
+			for (size_t idx = 0; idx < 20; ++idx)
+				for (uint16_t ch = 0; ch < wav.getNumberOfChannels(); ++ch)
+					std::cout << allChannelData[ch][idx] / 32768.0 << ", ";  // 0x7FFF = 32767.
+			std::cout << std::dec << std::endl;
 #endif
 		}
 
@@ -151,6 +156,10 @@ void wave_data()
 			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
 			for (size_t idx = 0; idx < 20; ++idx)
 				std::cout << std::hex << channelData[idx] << ", ";
+			std::cout << std::dec << std::endl;
+			//for (size_t idx = 0; idx < numSamplesRead; ++idx)
+			for (size_t idx = 0; idx < 20; ++idx)
+				std::cout << std::hex << channelData[idx] / 32768.0 << ", ";  // 0x7FFF = 32767.
 			std::cout << std::dec << std::endl;
 #endif
 		}

@@ -83,7 +83,7 @@ public:
 		return getDataSize() / getBlockAlign();
 	}
 	size_t getFileSize() const;  // [byte].
-	double getFileLength() const  // [sec].
+	double getFileTime() const  // [sec].
 	{
 		return (double)getDataSize() / (double)getBytesPerSecond();
 	}

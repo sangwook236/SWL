@@ -24,10 +24,10 @@ namespace swl {
 	const size_t &num = sample.size();
 	if (1 == num) return sample[0];
 
-	return std::accumulate(std::begin(sample), std::end(sample), 0.0) / num;
+	return std::accumulate(std::begin(sample), std::end(sample), 0.0) / double(num);
 }
 
-/*static*/ double Statistic::standardDeviation(const std::vector<double> &sample, const double mean /*= 0.0*/)
+/*static*/ double Statistic::standardDeviation(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
@@ -41,10 +41,10 @@ namespace swl {
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta; });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 2); });
 
-	return std::sqrt(accum / (double)num);
+	return std::sqrt(accum / double(num));
 }
 
-/*static*/ double Statistic::sampleStandardDeviation(const std::vector<double> &sample, const double mean /*= 0.0*/)
+/*static*/ double Statistic::sampleStandardDeviation(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
@@ -64,7 +64,7 @@ namespace swl {
 #endif
 }
 
-/*static*/ double Statistic::skewness(const std::vector<double> &sample, const double mean /*= 0.0*/, const double sd /*= 1.0*/)
+/*static*/ double Statistic::skewness(const std::vector<double> &sample, const double mean, const double sd)
 {
 	if (sample.empty()) return 0.0;
 
@@ -75,11 +75,11 @@ namespace swl {
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta * delta; });
 	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 3); });
 
-	//return accum / ((double)num * sd * sd * sd);
-	return accum / ((double)num * std::pow(sd, 3));
+	//return accum / (double(num) * sd * sd * sd);
+	return accum / (double(num) * std::pow(sd, 3));
 }
 
-/*static*/ double Statistic::kurtosis(const std::vector<double> &sample, const double mean /*= 0.0*/, const double sd /*= 1.0*/)
+/*static*/ double Statistic::kurtosis(const std::vector<double> &sample, const double mean, const double sd)
 {
 	if (sample.empty()) return 0.0;
 
@@ -90,8 +90,8 @@ namespace swl {
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta * delta * delta; });
 	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 4); });
 
-	//return accum / ((double)num * sd * sd * sd * sd);
-	return accum / ((double)num * std::pow(sd, 4));
+	//return accum / (double(num) * sd * sd * sd * sd);
+	return accum / (double(num) * std::pow(sd, 4));
 }
 
 /*static*/ double Statistic::rms(const std::vector<double> &sample)
@@ -109,7 +109,7 @@ namespace swl {
 	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += val * val; });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val, 2); });
 
-	return std::sqrt(accum / (double)num);
+	return std::sqrt(accum / double(num));
 #endif
 }
 
@@ -142,7 +142,7 @@ namespace swl {
 
 	// Centered data.
 	const Eigen::VectorXd centered(D.array() - D.mean());
-	return centered.dot(centered) / (D.size() - 1);
+	return centered.dot(centered) / double(D.size() - 1);
 }
 
 /*static*/ Eigen::VectorXd Statistic::sampleVariance(const Eigen::MatrixXd &D)

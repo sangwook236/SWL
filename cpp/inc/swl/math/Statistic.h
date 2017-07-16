@@ -17,10 +17,10 @@ struct SWL_MATH_API Statistic
 public:
 	///
 	static double mean(const std::vector<double> &sample);
-	static double standardDeviation(const std::vector<double> &sample, const double mean = 0.0);
-	static double sampleStandardDeviation(const std::vector<double> &sample, const double mean = 0.0);
-	static double skewness(const std::vector<double> &sample, const double mean = 0.0, const double sd = 1.0);
-	static double kurtosis(const std::vector<double> &sample, const double mean = 0.0, const double sd = 1.0);
+	static double standardDeviation(const std::vector<double> &sample, const double mean);
+	static double sampleStandardDeviation(const std::vector<double> &sample, const double mean);
+	static double skewness(const std::vector<double> &sample, const double mean, const double sd);
+	static double kurtosis(const std::vector<double> &sample, const double mean, const double sd);
 
 	static double rms(const std::vector<double> &sample);
 	static double peak(const std::vector<double> &sample);
