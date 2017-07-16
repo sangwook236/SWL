@@ -49,12 +49,19 @@ train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_e
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
 
 model_dir_path = './result/unet/model'
+prediction_dir_path = './result/unet/prediction'
 train_summary_dir_path = './log/unet/train'
 test_summary_dir_path = './log/unet/test'
 
 if not os.path.exists(model_dir_path):
 	try:
 		os.makedirs(model_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+if not os.path.exists(prediction_dir_path):
+	try:
+		os.makedirs(prediction_dir_path)
 	except OSError as exception:
 		if exception.errno != os.errno.EEXIST:
 			raise
@@ -295,11 +302,26 @@ print('End training...')
 
 print('Start testing...')
 
+import matplotlib.pyplot as plt
+
 with sess.as_default():
-	if num_classes > 2:
-		train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
-	test_metric = metric.eval(feed_dict={tf_data_ph: train_dataset.data, tf_label_ph: train_dataset.labels})
+	#if num_classes > 2:
+	#	train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
+	#test_metric = metric.eval(feed_dict={tf_data_ph: train_dataset.data, tf_label_ph: train_dataset.labels})
+	for data_batch, label_batch in train_dataset_gen:
+		if num_classes > 2:
+			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+		break
+	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 	print('Test metric = %g' % test_metric)
+
+	predictions = unet_model_output.eval(feed_dic={tf_data_ph: data_batch})
+	for idx in range(predictions.shape[0]):
+		#prediction = np.argmax(predictions[idx], axis=2)
+		prediction = np.argmax(predictions[idx], axis=2) * 255  # Only when num_classes = 2.
+
+		plt.imshow(prediction, cmap='gray')
+		plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
 
 print('End testing...')
 

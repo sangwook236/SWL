@@ -62,12 +62,19 @@ test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/te
 test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
 
 model_dir_path = './result/fc_densenet/model'
+prediction_dir_path = './result/foreign_body_fc_densenet/prediction'
 train_summary_dir_path = './log/fc_densenet/train'
 test_summary_dir_path = './log/fc_densenet/test'
 
 if not os.path.exists(model_dir_path):
 	try:
 		os.makedirs(model_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+if not os.path.exists(prediction_dir_path):
+	try:
+		os.makedirs(prediction_dir_path)
 	except OSError as exception:
 		if exception.errno != os.errno.EEXIST:
 			raise
@@ -396,6 +403,8 @@ print('End training...')
 
 print('Start testing...')
 
+import matplotlib.pyplot as plt
+
 with sess.as_default():
 	for data_batch, label_batch in test_dataset_gen:
 		if num_classes >= 2:
@@ -403,6 +412,13 @@ with sess.as_default():
 		break
 	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 	print('Test metric = %g' % test_metric)
+
+	predictions = fc_densenet_model.predict(data_batch)
+	for idx in range(predictions.shape[0]):
+		prediction = np.argmax(predictions[idx], axis=2)
+
+		plt.imshow(prediction, cmap='gray')
+		plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
 
 print('End testing...')
 

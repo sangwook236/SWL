@@ -53,12 +53,19 @@ test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/te
 test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
 
 model_dir_path = './result/deconvnet/model'
+prediction_dir_path = './result/deconvnet/prediction'
 train_summary_dir_path = './log/deconvnet/train'
 test_summary_dir_path = './log/deconvnet/test'
 
 if not os.path.exists(model_dir_path):
 	try:
 		os.makedirs(model_dir_path)
+	except OSError as exception:
+		if exception.errno != os.errno.EEXIST:
+			raise
+if not os.path.exists(prediction_dir_path):
+	try:
+		os.makedirs(prediction_dir_path)
 	except OSError as exception:
 		if exception.errno != os.errno.EEXIST:
 			raise
@@ -377,11 +384,25 @@ print('End training...')
 
 print('Start testing...')
 
+import matplotlib.pyplot as plt
+
 with sess.as_default():
-	if num_classes > 2:
-		test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
-	test_metric = metric.eval(feed_dict={tf_data_ph: test_dataset.data, tf_label_ph: test_dataset.labels})
+	#if num_classes > 2:
+	#	test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
+	#test_metric = metric.eval(feed_dict={tf_data_ph: test_dataset.data, tf_label_ph: test_dataset.labels})
+	for data_batch, label_batch in test_dataset_gen:
+		if num_classes > 2:
+			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
+		break
+	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 	print('Test metric = %g' % test_metric)
+
+	predictions = deconv_model_output.eval(feed_dic={tf_data_ph: data_batch})
+	for idx in range(predictions.shape[0]):
+		prediction = np.argmax(predictions[idx], axis=2) * 255  # Only when num_classes = 2.
+
+		plt.imshow(prediction, cmap='gray')
+		plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
 
 print('End testing...')
 
