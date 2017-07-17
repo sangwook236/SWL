@@ -94,20 +94,20 @@ namespace swl {
 	return accum / (double(num) * std::pow(sd, 4));
 }
 
-/*static*/ double Statistic::rms(const std::vector<double> &sample)
+/*static*/ double Statistic::rms(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
 	const size_t &num = sample.size();
-	if (1 == num) return std::abs(sample[0]);
+	if (1 == num) return std::abs(sample[0] - mean);
 
 #if 0
-	const double &sum = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + rhs * rhs; });
+	const double &sum = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + (rhs - mean) * (rhs - mean); });
 	return std::sqrt(sum / double(num));
 #else
 	double accum = 0.0;
-	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += val * val; });
-	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val, 2); });
+	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += (val - mean) * (val - mean); });
+	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 2); });
 
 	return std::sqrt(accum / double(num));
 #endif
@@ -124,14 +124,15 @@ namespace swl {
 	return std::abs(*std::max_element(sample.begin(), sample.end(), [](const double lhs, const double rhs) -> bool { return std::abs(lhs) < std::abs(rhs); }));
 }
 
-/*static*/ double Statistic::crestFactor(const std::vector<double> &sample)
+/*static*/ double Statistic::crestFactor(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
 	const size_t &num = sample.size();
 	if (1 == num) return 1.0;
+	//if (1 == num) return std::abs(sample[0]) / (sample[0] - mean);
 
-	const double &rms = Statistic::rms(sample);
+	const double &rms = Statistic::rms(sample, mean);
 	return rms > std::numeric_limits<double>::epsilon() ? Statistic::peak(sample) / rms : std::numeric_limits<double>::infinity();
 }
 

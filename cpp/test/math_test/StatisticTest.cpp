@@ -27,9 +27,9 @@ void statistic()
 		sample.reserve(1000);
 		for (double t = 0.0; t < 1.0; t += 0.001)
 			sample.push_back(std::cos(2.0 * M_PI * 100.0 * t));
-#elif 1
-		const std::vector<double> sample({ 1, -3, 2, 6, 7, 13, -37, 56, -73});
 #elif 0
+		const std::vector<double> sample({ 1, -3, 2, 6, 7, 13, -37, 56, -73});
+#elif 1
 		const std::vector<double> sample({ 0, 3, 4, 1, 2, 3, 0, 2, 1, 3, 2, 0, 2, 2, 3, 2, 5, 2, 3, 999 });
 #else
 		const std::vector<double> sample({
@@ -58,13 +58,15 @@ void statistic()
 		const double &kurtosis = swl::Statistic::kurtosis(sample, mean, sd);
 		std::cout << "Kurtosis = " << kurtosis << std::endl;
 
-		const double &rms = swl::Statistic::rms(sample);
+		const double &rms = swl::Statistic::rms(sample, 0.0);
+		//const double &rms = swl::Statistic::rms(sample, mean);
 		std::cout << "RMS = " << rms << std::endl;
 
 		const double &peak = swl::Statistic::peak(sample);
 		std::cout << "Peak = " << peak << std::endl;
 
-		const double &crest = swl::Statistic::crestFactor(sample);
+		const double &crest = swl::Statistic::crestFactor(sample, 0.0);
+		//const double &crest = swl::Statistic::crestFactor(sample, mean);
 		std::cout << "Crest factor = " << crest << std::endl;
 	}
 }

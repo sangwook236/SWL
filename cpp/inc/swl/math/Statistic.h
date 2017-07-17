@@ -22,9 +22,9 @@ public:
 	static double skewness(const std::vector<double> &sample, const double mean, const double sd);
 	static double kurtosis(const std::vector<double> &sample, const double mean, const double sd);
 
-	static double rms(const std::vector<double> &sample);
+	static double rms(const std::vector<double> &sample, const double mean);
 	static double peak(const std::vector<double> &sample);
-	static double crestFactor(const std::vector<double> &sample);
+	static double crestFactor(const std::vector<double> &sample, const double mean);
 
 	///
 	static double sampleVariance(const Eigen::VectorXd &D);
