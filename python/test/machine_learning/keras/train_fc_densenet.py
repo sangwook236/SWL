@@ -62,7 +62,7 @@ test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/te
 test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
 
 model_dir_path = './result/fc_densenet/model'
-prediction_dir_path = './result/foreign_body_fc_densenet/prediction'
+prediction_dir_path = './result/fc_densenet/prediction'
 train_summary_dir_path = './log/fc_densenet/train'
 test_summary_dir_path = './log/fc_densenet/test'
 
@@ -307,14 +307,14 @@ with tf.name_scope('loss'):
 # Define a metric.
 with tf.name_scope('metric'):
 	#metric = keras.metrics.categorical_accuracy(tf_label_ph, fc_densenet_model_output)
-	correct_prediction = tf.equal(tf.argmax(fc_densenet_model_output, 1), tf.argmax(tf_label_ph, 1))
+	correct_prediction = tf.equal(tf.argmax(fc_densenet_model_output, -1), tf.argmax(tf_label_ph, -1))
 	metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	tf.summary.scalar('metric', metric)
 
 # Define an optimzer.
 global_step = tf.Variable(0, name='global_step', trainable=False)
 with tf.name_scope('learning_rate'):
-	learning_rate = tf.train.exponential_decay(1.0e-3, global_step, 1, 0.995, staircase=True)
+	learning_rate = tf.train.exponential_decay(0.001, global_step=global_step, decay_steps=100000, decay_rate=0.995, staircase=True)
 	tf.summary.scalar('learning_rate', learning_rate)
 train_step = tf.train.RMSPropOptimizer(learning_rate=learning_rate).minimize(loss, global_step=global_step)
 
@@ -396,7 +396,8 @@ with sess.as_default():
 				model_saved_path = saver.save(sess, model_dir_path + '/fc_densenet.ckpt', global_step=global_step)
 				print('Model saved in file:', model_saved_path)
 
-print('End training...')
+if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+	print('End training...')
 
 #%%------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
