@@ -40,7 +40,7 @@ void snr()
 	// Accounting for the power in the positive and negative frequencies results in an average power of (A^2 / 4) * 2.
 	const double powerFundamental = A * A / 2.0;
 	const double powerHarmonic = a * a / 2.0;
-	const double varNoise = s * s;
+	const double varNoiseTrue = s * s;
 
 	typedef boost::minstd_rand base_generator_type;
 	//typedef boost::mt19937 base_generator_type;
@@ -83,13 +83,13 @@ void snr()
 	const double meanSignal = swl::Statistic::mean(signals);
 	const double varSignal = swl::Statistic::variance(signals, meanSignal);
 	const double meanNoise = swl::Statistic::mean(noises);
-	//const double varNoise = swl::Statistic::variance(noises, meanNoise);
+	const double varNoise = swl::Statistic::variance(noises, meanNoise);
 
 	// Signal-to-noise ratio (SNR).
 	//const double SNR = 10.0 * std::log10(varX / varNoise);
 	//const double SNR = 10.0 * std::log10(varSignal / varNoise);
 	const double SNR = 10.0 * std::log10(varFundamental / varNoise);
-	const double defSNR = 10.0 * std::log10(powerFundamental / varNoise);  // By definition.
+	const double defSNR = 10.0 * std::log10(powerFundamental / varNoiseTrue);  // By definition.
 
 	std::cout << "Signal-to-noise ratio (SNR) = " << SNR << std::endl;
 	std::cout << "Signal-to-noise ratio (SNR) = " << defSNR << std::endl;
@@ -103,7 +103,7 @@ void snr()
 
 	// Signal to noise and distortion ratio (SINAD).
 	const double SINAD = 10.0 * std::log10(varFundamental / (varHarmonic + varNoise));
-	const double defSINAD = 10.0 * std::log10(powerFundamental / (powerHarmonic + varNoise));  // By definition.
+	const double defSINAD = 10.0 * std::log10(powerFundamental / (powerHarmonic + varNoiseTrue));  // By definition.
 
 	std::cout << "Signal to noise and distortion ratio (SINAD) = " << SINAD << std::endl;
 	std::cout << "Signal to noise and distortion ratio (SINAD) = " << defSINAD << std::endl;
