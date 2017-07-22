@@ -99,5 +99,8 @@
     <ClCompile Include="RansacPlaneEstimationTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SignalProcessingTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

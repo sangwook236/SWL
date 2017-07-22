@@ -27,24 +27,27 @@ namespace swl {
 	return std::accumulate(std::begin(sample), std::end(sample), 0.0) / double(num);
 }
 
-/*static*/ double Statistic::standardDeviation(const std::vector<double> &sample, const double mean)
+/*static*/ double Statistic::variance(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
 	const size_t &num = sample.size();
 	if (1 == num) return 0.0;
 
-	//const double &moment = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + (rhs - mean) * (rhs - mean); });
-	//return std::sqrt(moment / double(num - 1));
+#if 0
+	const double &moment = std::accumulate(std::begin(sample), std::end(sample), 0.0, [&](const double lhs, const double rhs) { return lhs + (rhs - mean) * (rhs - mean); });
+	return std::sqrt(moment / double(num));
+#else
 	double accum = 0.0;
 	std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += (val - mean) * (val - mean); });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta; });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 2); });
 
-	return std::sqrt(accum / double(num));
+	return accum / double(num);
+#endif
 }
 
-/*static*/ double Statistic::sampleStandardDeviation(const std::vector<double> &sample, const double mean)
+/*static*/ double Statistic::sampleVariance(const std::vector<double> &sample, const double mean)
 {
 	if (sample.empty()) return 0.0;
 
@@ -60,8 +63,18 @@ namespace swl {
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { const double delta = val - mean; accum += delta * delta; });
 	//std::for_each(std::begin(sample), std::end(sample), [&](const double val) { accum += std::pow(val - mean, 2); });
 
-	return std::sqrt(accum / double(num - 1));
+	return accum / double(num - 1);
 #endif
+}
+
+/*static*/ double Statistic::standardDeviation(const std::vector<double> &sample, const double mean)
+{
+	return std::sqrt(Statistic::variance(sample, mean));
+}
+
+/*static*/ double Statistic::sampleStandardDeviation(const std::vector<double> &sample, const double mean)
+{
+	return std::sqrt(Statistic::sampleVariance(sample, mean));
 }
 
 /*static*/ double Statistic::skewness(const std::vector<double> &sample, const double mean, const double sd)

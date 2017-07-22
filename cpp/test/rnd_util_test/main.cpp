@@ -17,6 +17,8 @@ int main(int argc, char *argv[])
 	void levenshtein_distance();
 	void dynamic_time_warping();
 
+	void signal_processing();
+
 	void hough_transform();
 	void line2d_estimation_using_ransac();
 	void circle2d_estimation_using_ransac();
@@ -58,11 +60,14 @@ int main(int argc, char *argv[])
 		//graph_traversal();
 
 		// Graph algorithm ------------------------------------------
-		graph_algorithm();
+		//graph_algorithm();
 
 		// Distance measure -----------------------------------------
 		//levenshtein_distance();  // Levenshtein / edit distance.
 		//dynamic_time_warping();  // Dynamic time warping (DTW).
+
+		// Signal processing ----------------------------------------
+		signal_processing();
 
 		// Estimation -----------------------------------------------
 		//hough_transform();
