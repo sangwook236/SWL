@@ -17,6 +17,8 @@ struct SWL_MATH_API Statistic
 public:
 	///
 	static double mean(const std::vector<double> &sample);
+	static double variance(const std::vector<double> &sample, const double mean);
+	static double sampleVariance(const std::vector<double> &sample, const double mean);
 	static double standardDeviation(const std::vector<double> &sample, const double mean);
 	static double sampleStandardDeviation(const std::vector<double> &sample, const double mean);
 	static double skewness(const std::vector<double> &sample, const double mean, const double sd);

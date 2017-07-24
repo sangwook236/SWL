@@ -23,6 +23,7 @@ set(SRCS
 	RansacTest.cpp
 	RejectionSamplingTest.cpp
 	SamplingImportanceResamplingTest.cpp
+	SignalProcessingTest.cpp
 	UnivariateNormalMixtureModelTest.cpp
 	UnscentedKalmanFilterTest.cpp
 	UnscentedKalmanFilterWithAdditiveNoiseTest.cpp

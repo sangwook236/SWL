@@ -23,6 +23,7 @@
     <File Name="ParticleFilterTest.cpp" ExcludeProjConfig="Debug;Release"/>
     <File Name="RejectionSamplingTest.cpp"/>
     <File Name="SamplingImportanceResamplingTest.cpp"/>
+    <File Name="SignalProcessingTest.cpp"/>
     <File Name="UnivariateNormalMixtureModelTest.cpp"/>
     <File Name="UnscentedKalmanFilterTest.cpp"/>
     <File Name="UnscentedKalmanFilterWithAdditiveNoiseTest.cpp"/>

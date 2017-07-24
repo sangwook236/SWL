@@ -202,6 +202,7 @@
     <ClCompile Include="RansacPlaneEstimationTest.cpp" />
     <ClCompile Include="RejectionSamplingTest.cpp" />
     <ClCompile Include="SamplingImportanceResamplingTest.cpp" />
+    <ClCompile Include="SignalProcessingTest.cpp" />
     <ClCompile Include="UnivariateNormalMixtureModelTest.cpp" />
     <ClCompile Include="UnscentedKalmanFilterTest.cpp" />
     <ClCompile Include="UnscentedKalmanFilterWithAdditiveNoiseTest.cpp" />

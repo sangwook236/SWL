@@ -102,6 +102,7 @@
 		<Unit filename="RansacPlaneEstimationTest.cpp" />
 		<Unit filename="RejectionSamplingTest.cpp" />
 		<Unit filename="SamplingImportanceResamplingTest.cpp" />
+		<Unit filename="SignalProcessingTest.cpp" />
 		<Unit filename="UnivariateNormalMixtureModelTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterTest.cpp" />
 		<Unit filename="UnscentedKalmanFilterWithAdditiveNoiseTest.cpp" />
