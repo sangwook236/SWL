@@ -108,8 +108,8 @@ keras_backend = 'tf'
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 2.
 
-batch_size = 1
-num_epochs = 50
+batch_size = 1  # Number of samples per gradient update.
+num_epochs = 50  # Number of times to iterate over training data.
 steps_per_epoch = num_examples // batch_size
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
@@ -195,9 +195,7 @@ print('Create a U-Net model.')
 with tf.name_scope('unet'):
 	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
 
-#%%------------------------------------------------------------------
-# Display.
-
+# Display the model summary.
 #if 'tf' == keras_backend:
 #	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=unet_model_output).summary()
 #else:   
@@ -320,8 +318,8 @@ with sess.as_default():
 
 	predictions = unet_model_output.eval(feed_dic={tf_data_ph: data_batch})
 	for idx in range(predictions.shape[0]):
-		#prediction = np.argmax(predictions[idx], axis=2)
-		prediction = np.argmax(predictions[idx], axis=2) * 255  # Only when num_classes = 2.
+		#prediction = np.argmax(predictions[idx], axis=-1)
+		prediction = np.argmax(predictions[idx], axis=-1) * 255  # Only when num_classes = 2.
 
 		plt.imshow(prediction, cmap='gray')
 		plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')

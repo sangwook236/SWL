@@ -29,7 +29,7 @@ def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height
 					filepath = os.path.join(root, filename)
 					image = Image.open(filepath)
 					if (height is not None and height > 0 and image.size[1] != height) or (width is not None and width > 0 and image.size[0] != width):
-						images.append(np.asarray(image.resize((width, height))))
+						images.append(np.asarray(image.resize((width, height), resample=Image.NEAREST)))
 					else:
 						images.append(np.asarray(image))
 	return np.array(images)

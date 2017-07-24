@@ -129,8 +129,8 @@ num_examples = 0
 #num_classes = np.unique(train_dataset.labels).shape[0]
 num_classes = 12  # 11 + 1.
 
-batch_size = 10
-num_epochs = 1000
+batch_size = 10  # Number of samples per gradient update.
+num_epochs = 1000  # Number of times to iterate over training data.
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
@@ -288,9 +288,7 @@ with tf.name_scope('fc-densenet'):
 	fc_densenet_model = dc.DenseNetFCN(tf_data_shape[1:], nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
 fc_densenet_model_output = fc_densenet_model(tf_data_ph)
 
-#%%------------------------------------------------------------------
-# Display.
-
+# Display the model summary.
 #fc_densenet_model.summary()
 
 #%%------------------------------------------------------------------
@@ -416,7 +414,7 @@ with sess.as_default():
 
 	predictions = fc_densenet_model.predict(data_batch)
 	for idx in range(predictions.shape[0]):
-		prediction = np.argmax(predictions[idx], axis=2)
+		prediction = np.argmax(predictions[idx], axis=-1)
 
 		plt.imshow(prediction, cmap='gray')
 		plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')

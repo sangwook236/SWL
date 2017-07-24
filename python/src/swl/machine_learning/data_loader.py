@@ -9,6 +9,7 @@ class DataLoader(object):
 		self.width = width
 		self.height = height
 
+	# REF [file] >> load_images_by_pil(), load_labels_by_pil(), load_images_by_scipy(), and load_labels_by_scipy() in ${SWL_PYTHON_HOME}/src/swl/image_processing/util.py
 	def load(self, data_dir_path, label_dir_path=None, data_suffix='', data_extension='png', label_suffix='', label_extension='png'):
 		data = []
 		labels = []
@@ -43,7 +44,7 @@ class DataLoader(object):
 						# Use PIL.
 						image = Image.open(filepath)
 						if (self.height > 0 and image.size[1] != self.height) or (self.width > 0 and image.size[0] != self.width):
-							data.append(np.asarray(image.resize((self.width, self.height))))
+							data.append(np.asarray(image.resize((self.width, self.height), resample=Image.NEAREST)))
 						else:
 							data.append(np.asarray(image))
 		else:
@@ -61,7 +62,7 @@ class DataLoader(object):
 						# Use PIL.
 						image = Image.open(filepath)
 						if (self.height > 0 and image.size[1] != self.height) or (self.width > 0 and image.size[0] != self.width):
-							data.append(np.asarray(image.resize((self.width, self.height))))
+							data.append(np.asarray(image.resize((self.width, self.height), resample=Image.NEAREST)))
 						else:
 							data.append(np.asarray(image))
 			for root, dirnames, filenames in os.walk(label_dir_path):
