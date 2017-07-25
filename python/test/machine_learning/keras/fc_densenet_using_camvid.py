@@ -100,9 +100,9 @@ test_labels = np.load('./camvid_data/test_labels.npy')
 
 #%%------------------------------------------------------------------
 
-keras_backend = 'tf'
-
 np.random.seed(7)
+
+#keras_backend = 'tf'
 
 num_examples = train_data.shape[0]
 #num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
@@ -162,9 +162,10 @@ reduce_lr_on_plateau_callback = callbacks.ReduceLROnPlateau(monitor='val_loss', 
 model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_filepath, monitor='val_acc', verbose=2, save_best_only=True, save_weights_only=False, mode='max')
 #model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_acc', verbose=2, save_best_only=False, save_weights_only=False, mode='max')
 
+# NOTICE [caution] >> Out of memory.
 #callback_list = [learning_rate_callback, tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
-callback_list = [tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
-#callback_list = [model_checkpoint_callback]
+#callback_list = [tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
+callback_list = [model_checkpoint_callback]
 
 optimizer = optimizers.RMSprop(lr=0.001, decay=0.0000001)
 #optimizer = optimizers.SGD(lr=0.01)
@@ -187,52 +188,52 @@ else:
 	raise Exception('Invalid TRAINING_MODE')
 
 if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
-    # Deserialize a model from JSON.
-    #with open(model_json_filepath, 'r') as json_file:
-    #    fc_densenet_model = models.model_from_json(json_file.read())
-    # Deserialize weights into the model.
-    #fc_densenet_model.load_weights(model_weight_filepath)
-    # Load a full model.
-    fc_densenet_model = models.load_model(model_filepath)
-    #fc_densenet_model = models.load_model(model_filepath.format(num_epochs))
+	# Deserialize a model from JSON.
+	#with open(model_json_filepath, 'r') as json_file:
+	#	fc_densenet_model = models.model_from_json(json_file.read())
+	# Deserialize weights into the model.
+	#fc_densenet_model.load_weights(model_weight_filepath)
+	# Load a full model.
+	fc_densenet_model = models.load_model(model_filepath)
+	#fc_densenet_model = models.load_model(model_filepath.format(num_epochs))
 
-    print('Restored a FC-DenseNet model.')
+	print('Restored a FC-DenseNet model.')
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-    fc_densenet_model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+	fc_densenet_model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 
-    history = fc_densenet_model.fit(train_data, train_labels, batch_size=batch_size, epochs=num_epochs,
-                                    callbacks=callback_list, class_weight=class_weighting, verbose=1, validation_data=(val_data, val_labels), shuffle=True)  # Validation split = 0.33.
+	history = fc_densenet_model.fit(train_data, train_labels, batch_size=batch_size, epochs=num_epochs,
+                    				callbacks=callback_list, class_weight=class_weighting, verbose=1, validation_data=(val_data, val_labels), shuffle=True)  # Validation split = 0.33.
 
-    # List all data in history.
-    print(history.history.keys())
+	# List all data in history.
+	print(history.history.keys())
 
-    # Summarize history for accuracy.
-    plt.plot(history.history['acc'])
-    plt.plot(history.history['val_acc'])
-    plt.title('model accuracy')
-    plt.ylabel('accuracy')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-    # Summarize history for loss.
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('model loss')
-    plt.ylabel('loss')
-    plt.xlabel('epoch')
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
+	# Summarize history for accuracy.
+	plt.plot(history.history['acc'])
+	plt.plot(history.history['val_acc'])
+	plt.title('model accuracy')
+	plt.ylabel('accuracy')
+	plt.xlabel('epoch')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
+	# Summarize history for loss.
+	plt.plot(history.history['loss'])
+	plt.plot(history.history['val_loss'])
+	plt.title('model loss')
+	plt.ylabel('loss')
+	plt.xlabel('epoch')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
 
-    # Serialize a model to JSON.
-    #with open(model_json_filepath, 'w') as json_file:
-    #    json_file.write(fc_densenet_model.to_json())
-    # Serialize weights to HDF5.
-    #fc_densenet_model.save_weights(model_weight_filepath)  # Save the model's weights.
-    # Save a full model.
-    #fc_densenet_model.save(model_filepath.format(num_epochs))
+	# Serialize a model to JSON.
+	#with open(model_json_filepath, 'w') as json_file:
+	#	json_file.write(fc_densenet_model.to_json())
+	# Serialize weights to HDF5.
+	#fc_densenet_model.save_weights(model_weight_filepath)  # Save the model's weights.
+	# Save a full model.
+	#fc_densenet_model.save(model_filepath.format(num_epochs))
 
-    print('Saved a FC-DenseNet model.')
+	print('Saved a FC-DenseNet model.')
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
@@ -254,7 +255,7 @@ print('End testing...')
 predictions = fc_densenet_model.predict(test_data, batch_size=batch_size, verbose=0)
 
 for idx in range(predictions.shape[0]):
-    prediction = np.argmax(predictions[idx], axis=-1)
+	prediction = np.argmax(predictions[idx], axis=-1)
 
-    plt.imshow(prediction, cmap='gray')
-    plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
+	plt.imshow(prediction, cmap='gray')
+	plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
