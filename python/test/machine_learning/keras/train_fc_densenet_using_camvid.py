@@ -79,9 +79,12 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay.best.hdf5"  # For a full model.
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay.best.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay.best_weight.hdf5"
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_epoch{}.hdf5"  # For a full model.
+model_filepath = model_checkpoint_best_filepath
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 train_data = np.load('./camvid_data/train_images.npy')
@@ -156,7 +159,8 @@ learning_rate_callback = callbacks.LearningRateScheduler(step_decay)
 tensor_board_callback = callbacks.TensorBoard(log_dir=train_summary_dir_path, histogram_freq=5, write_graph=True, write_images=True)
 reduce_lr_on_plateau_callback = callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=10, verbose=0, mode='auto', epsilon=0.0001, cooldown=0, min_lr=0)
 
-model_checkpoint_callback = callbacks.ModelCheckpoint(model_filepath, monitor='val_acc', verbose=2, save_best_only=True, save_weights_only=False, mode='max')
+model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_filepath, monitor='val_acc', verbose=2, save_best_only=True, save_weights_only=False, mode='max')
+#model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_acc', verbose=2, save_best_only=False, save_weights_only=False, mode='max')
 
 #callback_list = [learning_rate_callback, tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
 callback_list = [tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
@@ -190,6 +194,7 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
     #fc_densenet_model.load_weights(model_weight_filepath)
     # Load a full model.
     fc_densenet_model = models.load_model(model_filepath)
+    #fc_densenet_model = models.load_model(model_filepath.format(num_epochs))
 
     print('Restored a FC-DenseNet model.')
 
@@ -225,7 +230,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
     # Serialize weights to HDF5.
     #fc_densenet_model.save_weights(model_weight_filepath)  # Save the model's weights.
     # Save a full model.
-    fc_densenet_model.save(model_filepath)
+    #fc_densenet_model.save(model_filepath.format(num_epochs))
 
     print('Saved a FC-DenseNet model.')
 
