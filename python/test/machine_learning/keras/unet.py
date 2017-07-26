@@ -36,6 +36,8 @@ sess = tf.Session(config=config)
 K.set_session(sess)
 K.set_learning_phase(0)
 
+keras_backend = 'tf'
+
 #%%------------------------------------------------------------------
 # Load data.
 
@@ -48,10 +50,13 @@ else:
 train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
 test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
 
-model_dir_path = './result/unet/model'
-prediction_dir_path = './result/unet/prediction'
-train_summary_dir_path = './log/unet/train'
-test_summary_dir_path = './log/unet/test'
+output_dir_path = './result/unet'
+log_dir_path = './log/unet'
+
+model_dir_path = output_dir_path + '/model'
+prediction_dir_path = output_dir_path + '/prediction'
+train_summary_dir_path = log_dir_path + '/train'
+test_summary_dir_path = log_dir_path + '/test'
 
 if not os.path.exists(model_dir_path):
 	try:
@@ -102,8 +107,6 @@ for train_label in train_dataset.labels:
 assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], "ERROR: Image and label size mismatched."
 
 #%%------------------------------------------------------------------
-
-keras_backend = 'tf'
 
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 2.

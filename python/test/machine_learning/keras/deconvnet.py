@@ -36,6 +36,8 @@ sess = tf.Session(config=config)
 K.set_session(sess)
 K.set_learning_phase(0)
 
+keras_backend = 'tf'
+
 #%%------------------------------------------------------------------
 # Load data.
 
@@ -52,10 +54,13 @@ validation_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid
 test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/test"
 test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
 
-model_dir_path = './result/deconvnet/model'
-prediction_dir_path = './result/deconvnet/prediction'
-train_summary_dir_path = './log/deconvnet/train'
-test_summary_dir_path = './log/deconvnet/test'
+output_dir_path = './result/deconvnet'
+log_dir_path = './log/deconvnet'
+
+model_dir_path = output_dir_path + '/model'
+prediction_dir_path = output_dir_path + '/prediction'
+train_summary_dir_path = log_dir_path + '/train'
+test_summary_dir_path = log_dir_path + '/test'
 
 if not os.path.exists(model_dir_path):
 	try:
@@ -112,8 +117,6 @@ else:
 	raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
 
 #%%------------------------------------------------------------------
-
-keras_backend = 'tf'
 
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 11 + 1.
