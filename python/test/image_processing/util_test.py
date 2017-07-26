@@ -30,7 +30,7 @@ test_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/t
 test_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/testannot/image'
 
 #%%------------------------------------------------------------------
-# Image to array.
+# Convert image to array.
 
 image_suffix = ''
 image_extension = 'png'

@@ -32,6 +32,7 @@ def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height
 						images.append(np.asarray(image.resize((width, height), resample=Image.NEAREST)))
 					else:
 						images.append(np.asarray(image))
+			break  # Do not include subdirectories.
 	return np.array(images)
 
 def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height=None):
@@ -46,6 +47,7 @@ def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height
 						labels.append(np.asarray(label.resize((width, height), resample=Image.NEAREST)))
 					else:
 						labels.append(np.asarray(label))
+			break  # Do not include subdirectories.
 	return np.array(labels)
 
 # Image to numpy.array by scipy.
@@ -62,6 +64,7 @@ def load_images_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 						images.append(misc.imresize(image, (height, width)))
 					else:
 						images.append(image)
+			break  # Do not include subdirectories.
 	return np.array(images)
 
 def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, height=None):
@@ -78,4 +81,5 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 						labels.append(misc.imresize(label, (height, width), interp='nearest'))  # Do not correctly work.
 					else:
 						labels.append(label)
+			break  # Do not include subdirectories.
 	return np.array(labels)

@@ -47,6 +47,7 @@ class DataLoader(object):
 							data.append(np.asarray(image.resize((self.width, self.height), resample=Image.NEAREST)))
 						else:
 							data.append(np.asarray(image))
+				break  # Do not include subdirectories.
 		else:
 			for root, dirnames, filenames in os.walk(data_dir_path):
 				for filename in filenames:
@@ -65,6 +66,7 @@ class DataLoader(object):
 							data.append(np.asarray(image.resize((self.width, self.height), resample=Image.NEAREST)))
 						else:
 							data.append(np.asarray(image))
+				break  # Do not include subdirectories.
 			for root, dirnames, filenames in os.walk(label_dir_path):
 				for filename in filenames:
 					if re.search(label_suffix + "\." + label_extension + "$", filename):
@@ -83,4 +85,5 @@ class DataLoader(object):
 							labels.append(np.asarray(label.resize((self.width, self.height), resample=Image.NEAREST)))
 						else:
 							labels.append(np.asarray(label))
+				break  # Do not include subdirectories.
 		return Dataset(data = np.array(data), labels = np.array(labels))
