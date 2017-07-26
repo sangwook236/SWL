@@ -46,13 +46,18 @@ sess = tf.Session(config=config)
 K.set_session(sess)
 K.set_learning_phase(0)
 
+#keras_backend = 'tf'
+
 #%%------------------------------------------------------------------
 # Load data.
 
-model_dir_path = './result/fc_densenet_using_camvid/model'
-prediction_dir_path = './result/fc_densenet_using_camvid/prediction'
-train_summary_dir_path = './log/fc_densenet_using_camvid/train'
-test_summary_dir_path = './log/fc_densenet_using_camvid/test'
+output_dir_path = './result/fc_densenet_using_camvid'
+log_dir_path = './log/fc_densenet_using_camvid'
+
+model_dir_path = output_dir_path + '/model'
+prediction_dir_path = output_dir_path + '/prediction'
+train_summary_dir_path = log_dir_path + '/train'
+test_summary_dir_path = log_dir_path + '/test'
 
 if not os.path.exists(model_dir_path):
 	try:
@@ -79,14 +84,14 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_10e-7_decay_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+# REF [file] >> camvid_to_array.py
 train_data = np.load('./camvid_data/train_images.npy')
 train_labels = np.load('./camvid_data/train_labels.npy')
 val_data = np.load('./camvid_data/val_images.npy')
@@ -102,14 +107,12 @@ test_labels = np.load('./camvid_data/test_labels.npy')
 
 np.random.seed(7)
 
-#keras_backend = 'tf'
-
 num_examples = train_data.shape[0]
 #num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
-batch_size = 2  # Number of samples per gradient update.
+batch_size = 4  # Number of samples per gradient update.
 num_epochs = 1000  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
@@ -164,12 +167,16 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 
 # NOTICE [caution] >> Out of memory.
 #callback_list = [learning_rate_callback, tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
-#callback_list = [tensor_board_callback, reduce_lr_on_plateau_callback, model_checkpoint_callback]
+#callback_list = [tensor_board_callback, model_checkpoint_callback]
 callback_list = [model_checkpoint_callback]
 
-optimizer = optimizers.RMSprop(lr=0.001, decay=0.0000001)
-#optimizer = optimizers.SGD(lr=0.01)
-#optimizer = optimizers.Adam(lr=1e-3, decay=0.995)
+#optimizer = optimizers.SGD(lr=0.01, momentum=0.95, decay=0.0, nesterov=False)
+optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1e-08)
+#optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1e-08)
+#optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1e-08)
+#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.995, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+#optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+#optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 
 #%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
@@ -202,13 +209,16 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fc_densenet_model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
 
-	history = fc_densenet_model.fit(train_data, train_labels, batch_size=batch_size, epochs=num_epochs,
-                    				callbacks=callback_list, class_weight=class_weighting, verbose=1, validation_data=(val_data, val_labels), shuffle=True)  # Validation split = 0.33.
+	history = fc_densenet_model.fit(train_data, train_labels, batch_size=batch_size, epochs=num_epochs, initial_epoch=0,
+                    				#validation_data=(val_data, val_labels), validation_split=0.0,
+                    				validation_data=(test_data, test_labels), validation_split=0.0,
+                    				class_weight=class_weighting, callbacks=callback_list, shuffle=True, verbose=1)
 
 	# List all data in history.
 	print(history.history.keys())
 
 	# Summarize history for accuracy.
+	fig = plt.figure();
 	plt.plot(history.history['acc'])
 	plt.plot(history.history['val_acc'])
 	plt.title('model accuracy')
@@ -216,7 +226,10 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	plt.xlabel('epoch')
 	plt.legend(['train', 'test'], loc='upper left')
 	plt.show()
+	fig.savefig(output_dir_path + '/model_accuracy.png')
+	plt.close(fig)
 	# Summarize history for loss.
+	fig = plt.figure();
 	plt.plot(history.history['loss'])
 	plt.plot(history.history['val_loss'])
 	plt.title('model loss')
@@ -224,6 +237,8 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	plt.xlabel('epoch')
 	plt.legend(['train', 'test'], loc='upper left')
 	plt.show()
+	fig.savefig(output_dir_path + '/model_loss.png')
+	plt.close(fig)
 
 	# Serialize a model to JSON.
 	#with open(model_json_filepath, 'w') as json_file:
@@ -243,9 +258,8 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 
 print('Start testing...')
 
-score = fc_densenet_model.evaluate(test_data, test_labels, batch_size=batch_size, verbose=1)
-print('Test loss:', score[0])
-print('Test accuracy:', score[1])
+test_loss, test_accuracy = fc_densenet_model.evaluate(test_data, test_labels, batch_size=batch_size, verbose=1)
+print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 
 print('End testing...')
 
