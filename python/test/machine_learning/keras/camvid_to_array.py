@@ -7,8 +7,6 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
-
 #%%------------------------------------------------------------------
 
 import numpy as np
@@ -16,13 +14,13 @@ import keras
 import swl
 
 #%%------------------------------------------------------------------
-# Load data.
 
 if 'posix' == os.name:
 	#dataset_home_dir_path = '/home/sangwook/my_dataset'
 	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
 	dataset_home_dir_path = 'D:/dataset'
+
 train_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
 train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
 val_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'
@@ -31,7 +29,7 @@ test_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/t
 test_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/testannot/image'
 
 #%%------------------------------------------------------------------
-# Convert image to array.
+# Load images and convert them to numpy.array.
 
 image_suffix = ''
 image_extension = 'png'
