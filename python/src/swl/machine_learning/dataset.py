@@ -9,6 +9,10 @@ class Dataset(object):
 	def data(self):
 		return self._data
 
+	@data.setter
+	def data(self, data):
+		self._data = data
+
 	@property
 	def labels(self):
 		return self._labels
