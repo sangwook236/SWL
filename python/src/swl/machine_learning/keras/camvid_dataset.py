@@ -26,7 +26,7 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 #resized_image_size = (height, width)
 #cropped_image_size = (height, width)
 
-def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, cropped_image_size=None, use_loaded_dataset=True, seed=None):
+def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, cropped_image_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
 	if cropped_image_size is None:
 		train_data_generator = ImageDataGenerator(
 			rescale=1.0/255.0,
@@ -150,7 +150,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		train_dataset_gen = train_data_generator.flow(
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -158,7 +158,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		val_dataset_gen = test_data_generator.flow(
 			val_dataset.data, val_dataset.labels,
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -166,7 +166,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		test_dataset_gen = test_data_generator.flow(
 			test_dataset.data, test_dataset.labels,
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -179,7 +179,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -191,7 +191,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -203,7 +203,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -215,7 +215,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -227,7 +227,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -239,7 +239,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#classes=None,
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
-			shuffle=True,
+			shuffle=shuffle,
 			save_to_dir=False,
 			save_prefix='',
 			save_format='png',
@@ -257,13 +257,13 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 
-def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', resized_image_size=None):
-	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
-	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
-	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
-	val_labels = util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
-	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
-	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
+def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
+	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	val_labels = util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
 
 	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
 	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
