@@ -123,7 +123,13 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			raise ValueError('train_dataset.data.ndim or train_dataset.labels.ndim is invalid.')
 
 		# RGBA -> RGB.
-		#train_dataset.data = train_dataset.data[:,:,:,:-1]
+		train_dataset.data = train_dataset.data[:,:,:,:-1]
+
+		# One-hot encoding.
+		num_classes = np.unique(train_dataset.labels).shape[0]
+		#if num_classes > 2:
+		#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
+		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -164,6 +170,10 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			save_format='png',
 			seed=seed)
 
+		# FIXME [implement] >>
+		# RGBA -> RGB.
+		# One-hot encoding.
+
 		# Combine generators into one which yields image and labels.
 		train_dataset_gen = zip(train_data_gen, train_label_gen)
 
@@ -184,6 +194,7 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	train_data = train_data[:,:,:,:-1]
 	#test_data = test_data[:,:,:,:-1]
 
+	# One-hot encoding.
 	num_classes = np.unique(train_labels).shape[0]
 	#if num_classes > 2:
 	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
