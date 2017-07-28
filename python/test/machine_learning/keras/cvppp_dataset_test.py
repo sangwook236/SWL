@@ -1,11 +1,11 @@
 import os, sys
-from swl.machine_learning.keras.cvppp_dataset import create_cvppp_generator, load_cvppp_dataset
-
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
+
+from swl.machine_learning.keras.cvppp_dataset import create_cvppp_generator, load_cvppp_dataset
 
 #%%------------------------------------------------------------------
 
@@ -26,12 +26,14 @@ label_extension = 'png'
 #%%------------------------------------------------------------------
 
 batch_size = 32
-#resized_image_size = None
-resized_image_size = (530, 500)  # (height, width).
+use_loaded_dataset = True
+shuffle = False
+
+original_image_size = (530, 500)  # (height, width).
+resized_image_size = None
+#resized_image_size = original_image_size
 cropped_image_size = None
 #cropped_image_size = (224, 224)  # (height, width).
-use_loaded_dataset = True
-shuffle = True
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1

@@ -29,19 +29,19 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, cropped_image_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
 	if cropped_image_size is None:
 		train_data_generator = ImageDataGenerator(
-			rescale=1.0/255.0,
+			#rescale=1.0/255.0,
 			#preprocessing_function=None,
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
-			#samplewise_center=False,
-			#samplewise_std_normalization=False,
+			samplewise_center=True,
+			samplewise_std_normalization=True,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			#rotation_range=20,
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
 			#horizontal_flip=True,
-			vertical_flip=True,
+			#vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
@@ -60,7 +60,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
 			#horizontal_flip=True,
-			vertical_flip=True,
+			#vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
@@ -142,9 +142,9 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 
 		# One-hot encoding.
 		num_classes = np.max([np.max(np.unique(train_dataset.labels)), np.max(np.unique(val_dataset.labels)), np.max(np.unique(test_dataset.labels))]) + 1
-		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
-		val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
-		test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
+		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
+		val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape[:-1] + (-1,)))
+		test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -266,11 +266,11 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 
-def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
+def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
 	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=width, height=height)
 	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=width, height=height)
 	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=width, height=height)
-	val_labels = util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=width, height=height)
 	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
 	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
 

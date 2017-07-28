@@ -128,8 +128,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 		# One-hot encoding.
 		num_classes = np.unique(train_dataset.labels).shape[0]
 		#if num_classes > 2:
-		#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
-		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
+		#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
+		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -140,7 +140,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir='abc',
+			save_to_dir='',
 			save_prefix='',
 			save_format='png',
 			seed=seed)

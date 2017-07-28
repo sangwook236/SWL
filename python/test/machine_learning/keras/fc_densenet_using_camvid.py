@@ -49,7 +49,7 @@ K.set_learning_phase(0)
 #keras_backend = 'tf'
 
 #%%------------------------------------------------------------------
-# Load data.
+# Prepare directories.
 
 output_dir_path = './result/fc_densenet_using_camvid'
 log_dir_path = './log/fc_densenet_using_camvid'
@@ -91,6 +91,9 @@ model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_w
 #model_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
+#%%------------------------------------------------------------------
+# Load data.
+
 # REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 train_data = np.load('./camvid_data/train_images.npy')
 train_labels = np.load('./camvid_data/train_labels.npy')
@@ -104,6 +107,7 @@ test_labels = np.load('./camvid_data/test_labels.npy')
 #test_labels = test_labels.reshape((test_labels.shape[0], -1, test_labels.shape[-1]))
 
 #%%------------------------------------------------------------------
+# Parameters.
 
 np.random.seed(7)
 
@@ -174,7 +178,7 @@ callback_list = [model_checkpoint_callback]
 optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1e-08)
 #optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1e-08)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1e-08)
-#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.995, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 #optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
 

@@ -1,11 +1,11 @@
 import os, sys
-from swl.machine_learning.keras.camvid_dataset import create_camvid_generator, load_camvid_dataset
-
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
+
+from swl.machine_learning.keras.camvid_dataset import create_camvid_generator, load_camvid_dataset
 
 #%%------------------------------------------------------------------
 
@@ -30,12 +30,14 @@ label_extension = 'png'
 #%%------------------------------------------------------------------
 
 batch_size = 32
-#resized_image_size = None
-resized_image_size = (360, 480)  # (height, width).
+use_loaded_dataset = True
+shuffle = False
+
+original_image_size = (360, 480)  # (height, width).
+resized_image_size = None
+#resized_image_size = original_image_size
 cropped_image_size = None
 #cropped_image_size = (224, 224)  # (height, width).
-use_loaded_dataset = True
-shuffle = True
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -75,3 +77,38 @@ train_images, train_labels, val_images, val_labels, test_images, test_labels = l
 #batch_size = 32
 #num_epochs = 10
 #history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs)
+
+#%%------------------------------------------------------------------
+# For comparison.
+
+import numpy as np
+
+data_list = []
+labels_list = []
+num_examples = 367
+num_epochs = 1
+steps_per_epoch = num_examples / batch_size
+for epoch in range(num_epochs):
+	print('Epoch', epoch)
+	num_batches = 0
+	for data_batch, label_batch in train_dataset_gen:
+		data_list.append(data_batch)
+		labels_list.append(label_batch)
+		num_batches += 1
+		if num_batches >= steps_per_epoch:
+			break
+
+data = np.ndarray(shape=(367,360,480,3))
+for idx in range(len(data_list)):
+	start_idx = idx * batch_size
+	end_idx = start_idx + data_list[idx].shape[0]
+	data[start_idx:end_idx] = data_list[idx]
+labels = np.ndarray(shape=(367,360,480,12))
+for idx in range(len(labels_list)):
+	start_idx = idx * batch_size
+	end_idx = start_idx + labels_list[idx].shape[0]
+	labels[start_idx:end_idx] = labels_list[idx]
+labels = labels.astype(np.uint8)
+
+np.sum(train_images - data)
+np.sum(train_labels - labels)
