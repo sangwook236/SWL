@@ -112,8 +112,8 @@ num_examples = train_data.shape[0]
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
-batch_size = 4  # Number of samples per gradient update.
-num_epochs = 1000  # Number of times to iterate over training data.
+batch_size = 8  # Number of samples per gradient update.
+num_epochs = 2000  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
 #	steps_per_epoch = 1
