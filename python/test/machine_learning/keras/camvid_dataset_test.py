@@ -1,13 +1,11 @@
 import os, sys
+from swl.machine_learning.keras.camvid_dataset import create_camvid_generator, load_camvid_dataset
+
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
-
-#%%------------------------------------------------------------------
-
-from swl.machine_learning.keras.camvid_dataset import create_camvid_generator, load_camvid_dataset
 
 #%%------------------------------------------------------------------
 

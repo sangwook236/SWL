@@ -140,6 +140,12 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		else:
 			raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
 
+		# One-hot encoding.
+		num_classes = np.max([np.max(np.unique(train_dataset.labels)), np.max(np.unique(val_dataset.labels)), np.max(np.unique(test_dataset.labels))]) + 1
+		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
+		val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
+		test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
+
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
 		train_data_generator.fit(train_dataset.data, augment=True, seed=seed)
@@ -245,6 +251,9 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			save_format='png',
 			seed=seed)
 
+		# FIXME [implement] >>
+		# One-hot encoding.
+
 		# Combine generators into one which yields image and labels.
 		train_dataset_gen = zip(train_data_gen, train_label_gen)
 		val_dataset_gen = zip(val_data_gen, val_label_gen)
@@ -265,6 +274,7 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
 	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None if resized_image_size is None else resized_image_size[1], height=None if resized_image_size is None else resized_image_size[0])
 
+	# One-hot encoding.
 	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
 	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))

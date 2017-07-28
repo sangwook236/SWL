@@ -20,7 +20,7 @@ lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmenta
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
 
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
 #%%------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_w
 #model_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
-# REF [file] >> camvid_to_array.py
+# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 train_data = np.load('./camvid_data/train_images.npy')
 train_labels = np.load('./camvid_data/train_labels.npy')
 val_data = np.load('./camvid_data/val_images.npy')

@@ -1,13 +1,11 @@
 import os, sys
+from swl.machine_learning.keras.cvppp_dataset import create_cvppp_generator, load_cvppp_dataset
+
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
-
-#%%------------------------------------------------------------------
-
-from swl.machine_learning.keras.cvppp_dataset import create_cvppp_generator, load_cvppp_dataset
 
 #%%------------------------------------------------------------------
 
