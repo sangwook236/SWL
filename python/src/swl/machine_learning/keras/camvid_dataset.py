@@ -24,24 +24,25 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 #seed = 1
 
 #resized_image_size = (height, width)
-#cropped_image_size = (height, width)
+#random_crop_size = (height, width)
+#center_crop_size = (height, width)
 
-def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, cropped_image_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
-	if cropped_image_size is None:
+def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
+	if random_crop_size is None and center_crop_size is None:
 		train_data_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
 			#preprocessing_function=None,
-			#featurewise_center=False,
-			#featurewise_std_normalization=False,
-			samplewise_center=True,
-			samplewise_std_normalization=True,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
+			#samplewise_center=False,
+			#samplewise_std_normalization=False,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			#rotation_range=20,
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
-			#horizontal_flip=True,
-			#vertical_flip=True,
+			horizontal_flip=True,
+			vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
@@ -59,8 +60,8 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#rotation_range=20,
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
-			#horizontal_flip=True,
-			#vertical_flip=True,
+			horizontal_flip=True,
+			vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
@@ -70,10 +71,10 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		test_label_generator = ImageDataGenerator()
 	else:
 		train_data_generator = ImageDataGeneratorWithCrop(
-			rescale=1.0/255.0,
+			#rescale=1.0/255.0,
 			#preprocessing_function=None,
-			#featurewise_center=False,
-			#featurewise_std_normalization=False,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
 			#samplewise_center=False,
 			#samplewise_std_normalization=False,
 			#zca_whitening=False,
@@ -81,13 +82,13 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#rotation_range=20,
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
-			#horizontal_flip=True,
+			horizontal_flip=True,
 			vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			random_crop_size=cropped_image_size,
-			center_crop_size=None,
+			random_crop_size=random_crop_size,
+			center_crop_size=center_crop_size,
 			fill_mode='reflect',
 			cval=0.0)
 		train_label_generator = ImageDataGeneratorWithCrop(
@@ -102,13 +103,13 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#rotation_range=20,
 			#width_shift_range=0.2,
 			#height_shift_range=0.2,
-			#horizontal_flip=True,
+			horizontal_flip=True,
 			vertical_flip=True,
 			#zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			random_crop_size=cropped_image_size,
-			center_crop_size=None,
+			random_crop_size=random_crop_size,
+			center_crop_size=center_crop_size,
 			fill_mode='reflect',
 			cval=0.0)
 		test_data_generator = ImageDataGeneratorWithCrop(rescale=1.0/255.0)
@@ -157,7 +158,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -165,7 +166,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			val_dataset.data, val_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -173,7 +174,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			test_dataset.data, test_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -186,7 +187,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -198,7 +199,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -210,7 +211,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -222,7 +223,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -234,7 +235,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -246,7 +247,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
