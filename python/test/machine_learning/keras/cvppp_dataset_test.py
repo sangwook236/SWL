@@ -32,8 +32,9 @@ shuffle = False
 original_image_size = (530, 500)  # (height, width).
 resized_image_size = None
 #resized_image_size = original_image_size
-cropped_image_size = None
-#cropped_image_size = (224, 224)  # (height, width).
+random_crop_size = None
+#random_crop_size = (224, 224)  # (height, width).
+center_crop_size = None
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -41,7 +42,7 @@ seed = 1
 train_dataset_gen = create_cvppp_generator(
 		train_image_dir_path, train_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, resized_image_size=resized_image_size, cropped_image_size=cropped_image_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
 
 # Usage.
 #num_examples = 128

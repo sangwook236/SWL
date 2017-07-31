@@ -24,47 +24,32 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 #seed = 1
 
 #resized_image_size = (height, width)
-#cropped_image_size = (height, width)
+#random_crop_size = (height, width)
+#random_crop_size = (height, width)
 
-def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, cropped_image_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
-	if cropped_image_size is None:
+def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
+	if random_crop_size is None and center_crop_size is None:
 		train_data_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
 			#preprocessing_function=None,
-			#zca_whitening=False,
-			#zca_epsilon=1.0e-6,
-			#rotation_range=20,
-			#width_shift_range=0.2,
-			#height_shift_range=0.2,
-			#horizontal_flip=True,
-			#vertical_flip=True,
-			#zoom_range=0.2,
-			#shear_range=0.0,
-			#channel_shift_range=0.0,
-			fill_mode='constant',
-			cval=0.0)
-		train_label_generator = ImageDataGenerator(
-			#rescale=1.0/255.0,
-			#preprocessing_function=None,
-			#featurewise_center=False,
-			#featurewise_std_normalization=False,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
 			#samplewise_center=False,
 			#samplewise_std_normalization=False,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
-			#rotation_range=20,
-			#width_shift_range=0.2,
-			#height_shift_range=0.2,
-			#horizontal_flip=True,
-			#vertical_flip=True,
-			#zoom_range=0.2,
+			rotation_range=20,
+			width_shift_range=0.2,
+			height_shift_range=0.2,
+			horizontal_flip=True,
+			vertical_flip=True,
+			zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			fill_mode='constant',
+			fill_mode='reflect',
 			cval=0.0)
-	else:
-		train_data_generator = ImageDataGeneratorWithCrop(
-			rescale=1.0/255.0,
+		train_label_generator = ImageDataGenerator(
+			#rescale=1.0/255.0,
 			#preprocessing_function=None,
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
@@ -80,9 +65,29 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			random_crop_size=cropped_image_size,
-			center_crop_size=None,
-			fill_mode='constant',
+			fill_mode='reflect',
+			cval=0.0)
+	else:
+		train_data_generator = ImageDataGeneratorWithCrop(
+			#rescale=1.0/255.0,
+			#preprocessing_function=None,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
+			#samplewise_center=False,
+			#samplewise_std_normalization=False,
+			#zca_whitening=False,
+			#zca_epsilon=1.0e-6,
+			rotation_range=20,
+			width_shift_range=0.2,
+			height_shift_range=0.2,
+			horizontal_flip=True,
+			vertical_flip=True,
+			zoom_range=0.2,
+			#shear_range=0.0,
+			#channel_shift_range=0.0,
+			random_crop_size=random_crop_size,
+			center_crop_size=center_crop_size,
+			fill_mode='reflect',
 			cval=0.0)
 		train_label_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
@@ -101,9 +106,9 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			random_crop_size=cropped_image_size,
-			center_crop_size=None,
-			fill_mode='constant',
+			random_crop_size=random_crop_size,
+			center_crop_size=center_crop_size,
+			fill_mode='reflect',
 			cval=0.0)
 
 	if use_loaded_dataset == True:
@@ -124,6 +129,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 		# One-hot encoding.
 		num_classes = np.unique(train_dataset.labels).shape[0]
 		#if num_classes > 2:
+		#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
+		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -134,8 +141,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir='abc',
-			save_prefix='abc',
+			save_to_dir=None,
+			save_prefix='',
 			save_format='png',
 			seed=seed)
 	else:
@@ -147,7 +154,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
@@ -159,7 +166,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=False,
+			save_to_dir=None,
 			save_prefix='',
 			save_format='png',
 			seed=seed)
