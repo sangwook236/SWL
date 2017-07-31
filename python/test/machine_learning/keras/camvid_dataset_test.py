@@ -83,11 +83,14 @@ train_images, train_labels, val_images, val_labels, test_images, test_labels = l
 
 import numpy as np
 
-data_list = []
-labels_list = []
+width, height = 480, 360
 num_examples = 367
+num_classes = 12
 num_epochs = 1
 steps_per_epoch = num_examples / batch_size
+
+data_list = []
+labels_list = []
 for epoch in range(num_epochs):
 	print('Epoch', epoch)
 	num_batches = 0
@@ -98,17 +101,26 @@ for epoch in range(num_epochs):
 		if num_batches >= steps_per_epoch:
 			break
 
-data = np.ndarray(shape=(367,360,480,3))
+assert len(data_list) == len(labels_list), '[Error] len(data_list) == len(labels_list)'
+generated_images = np.ndarray(shape=(num_examples, height, width, 3))
+generated_labels = np.ndarray(shape=(num_examples, height, width, num_classes))
 for idx in range(len(data_list)):
 	start_idx = idx * batch_size
 	end_idx = start_idx + data_list[idx].shape[0]
-	data[start_idx:end_idx] = data_list[idx]
-labels = np.ndarray(shape=(367,360,480,12))
-for idx in range(len(labels_list)):
-	start_idx = idx * batch_size
-	end_idx = start_idx + labels_list[idx].shape[0]
-	labels[start_idx:end_idx] = labels_list[idx]
-labels = labels.astype(np.uint8)
+	generated_images[start_idx:end_idx] = data_list[idx]
+	generated_labels[start_idx:end_idx] = labels_list[idx]
+generated_labels = generated_labels.astype(np.uint8)
 
-np.sum(train_images - data)
-np.sum(train_labels - labels)
+np.sum(train_images - generated_images)
+np.sum(train_labels - generated_labels)
+
+#%%------------------------------------------------------------------
+# Plot.
+
+import matplotlib.pyplot as plt
+
+idx = 0
+plt.figure()
+plt.imshow((train_images[idx] - np.min(train_images[idx])) / (np.max(train_images[idx]) - np.min(train_images[idx])))
+plt.figure()
+plt.imshow((generated_images[idx] - np.min(generated_images[idx])) / (np.max(generated_images[idx]) - np.min(generated_images[idx])))

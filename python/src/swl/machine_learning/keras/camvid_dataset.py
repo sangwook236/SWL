@@ -280,6 +280,12 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
 	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
-	# FIXME [implement] >> Preprocessing (normalization, standardization, etc).
+	# Preprocessing (normalization, standardization, etc).
+	train_data = train_data.astype(np.float)
+	for r in range(train_data.shape[1]):
+		for c in range(train_data.shape[2]):
+			mean = np.mean(train_data[:,r,c,:], axis=0)
+			sd = np.std(train_data[:,r,c,:], axis=0)
+			train_data[:,r,c,:] = (train_data[:,r,c,:] - mean) / sd
 
 	return train_data, train_labels, val_data, val_labels, test_data, test_labels
