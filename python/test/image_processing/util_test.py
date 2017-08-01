@@ -1,12 +1,9 @@
-import os
+import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-os.chdir(swl_python_home_dir_path + '/test/image_processing')
-
-import sys
-sys.path.append('../../src')
+sys.path.append(swl_python_home_dir_path + '/src')
 
 #%%------------------------------------------------------------------
 
@@ -22,6 +19,7 @@ if 'posix' == os.name:
 	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
 	dataset_home_dir_path = 'D:/dataset'
+
 train_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
 train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
 val_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'

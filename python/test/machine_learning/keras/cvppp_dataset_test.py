@@ -23,11 +23,11 @@ image_extension = 'png'
 label_suffix = '_fg'
 label_extension = 'png'
 
-#%%------------------------------------------------------------------
-
 batch_size = 32
-use_loaded_dataset = True
 shuffle = False
+
+#%%------------------------------------------------------------------
+# Create a dataset generator.
 
 original_image_size = (530, 500)  # (height, width).
 resized_image_size = None
@@ -35,6 +35,8 @@ resized_image_size = None
 random_crop_size = None
 #random_crop_size = (224, 224)  # (height, width).
 center_crop_size = None
+
+use_loaded_dataset = True
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -61,13 +63,13 @@ train_dataset_gen = create_cvppp_generator(
 #%%------------------------------------------------------------------
 # Load images and convert them to numpy.array.
 
-width, height = None, None
-#width, height = 500, 530
+image_width, image_height = None, None
+#image_width, image_height = 500, 530
 
 train_images, train_labels = load_cvppp_dataset(
 		train_image_dir_path, train_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		width=width, height=height)
+		width=image_width, height=image_height)
 
 # Usage.
 #num_examples = 128
@@ -80,7 +82,7 @@ train_images, train_labels = load_cvppp_dataset(
 
 import numpy as np
 
-width, height = 500, 530
+image_width, image_height = 500, 530
 num_examples = 128
 num_classes = 2
 num_epochs = 1
@@ -99,8 +101,8 @@ for epoch in range(num_epochs):
 			break
 
 assert len(data_list) == len(labels_list), '[Error] len(data_list) == len(labels_list).'
-generated_images = np.ndarray(shape=(num_examples, height, width, 3))
-generated_labels = np.ndarray(shape=(num_examples, height, width, num_classes))
+generated_images = np.ndarray(shape=(num_examples, image_height, image_width, 3))
+generated_labels = np.ndarray(shape=(num_examples, image_height, image_width, num_classes))
 for idx in range(len(data_list)):
     start_idx = idx * batch_size
     end_idx = start_idx + data_list[idx].shape[0]
