@@ -20,8 +20,6 @@ lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmenta
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
 
-#os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
-
 #%%------------------------------------------------------------------
 
 import math
@@ -32,7 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.keras.camvid_dataset import create_camvid_generator, load_camvid_dataset
+from swl.machine_learning.keras.camvid_dataset import create_camvid_generator
 
 #%%------------------------------------------------------------------
 
@@ -52,8 +50,8 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Prepare directories.
 
-output_dir_path = './result/fc_densenet_using_camvid'
-log_dir_path = './log/fc_densenet_using_camvid'
+output_dir_path = './result/fc_densenet_using_camvid_generator'
+log_dir_path = './log/fc_densenet_using_camvid_generator'
 
 model_dir_path = output_dir_path + '/model'
 prediction_dir_path = output_dir_path + '/prediction'
@@ -85,11 +83,11 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_decay10e-7_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
 #%%------------------------------------------------------------------
@@ -100,11 +98,13 @@ np.random.seed(7)
 num_examples = 367
 num_classes = 12  # 11 + 1.
 
-batch_size = 4  # Number of samples per gradient update.
-num_epochs = 2000  # Number of times to iterate over training data.
+batch_size = 12  # Number of samples per gradient update.
+num_epochs = 500  # Number of times to iterate over training data.
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
+
+shuffle = False
 
 max_queue_size = 10
 workers = 4
@@ -131,9 +131,6 @@ image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
 
-use_loaded_dataset = True
-shuffle=False
-
 original_image_size = (360, 480)  # (height, width).
 #resized_image_size = None
 resized_image_size = (224, 224)  # (height, width).
@@ -151,9 +148,12 @@ else:
 	image_size = original_image_size
 image_shape = image_size + (3,)
 
+use_loaded_dataset = True
+
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
 
+# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
 train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
@@ -215,7 +215,7 @@ callback_list = [model_checkpoint_callback]
 #optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1.0e-8)
 #optimizer = optimizers.Adagrad(lr=0.01, decay=1.0e-7, epsilon=1.0e-8)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1.0e-8)
-optimizer = optimizers.Adam(lr=1.0e-3, decay=1.0e-7, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
+optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
@@ -251,7 +251,7 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 	print('Restored a FC-DenseNet model.')
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	fc_densenet_model.compile(loss="categorical_crossentropy", optimizer=optimizer, metrics=["accuracy"])
+	fc_densenet_model.compile(optimizer=optimizer, loss="categorical_crossentropy", metrics=["accuracy"])
 
 	history = fc_densenet_model.fit_generator(train_dataset_gen, steps_per_epoch=steps_per_epoch, epochs=num_epochs, initial_epoch=initial_epoch,
 			#validation_data=val_dataset_gen, validation_steps=steps_per_epoch,
@@ -263,7 +263,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print(history.history.keys())
 
 	# Summarize history for accuracy.
-	fig = plt.figure();
+	fig = plt.figure()
 	plt.plot(history.history['acc'])
 	plt.plot(history.history['val_acc'])
 	plt.title('model accuracy')
@@ -274,7 +274,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fig.savefig(output_dir_path + '/model_accuracy.png')
 	plt.close(fig)
 	# Summarize history for loss.
-	fig = plt.figure();
+	fig = plt.figure()
 	plt.plot(history.history['loss'])
 	plt.plot(history.history['val_loss'])
 	plt.title('model loss')
@@ -316,6 +316,8 @@ print('End testing...')
 #%%------------------------------------------------------------------
 # Predict.
 
+print('Start prediction...')
+
 predictions = fc_densenet_model.predict_generator(test_dataset_gen, steps=steps_per_epoch, verbose=0) #, max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing)
 
 for idx in range(predictions.shape[0]):
@@ -323,3 +325,5 @@ for idx in range(predictions.shape[0]):
 
 	plt.imshow(prediction, cmap='gray')
 	plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
+
+print('End prediction...')
