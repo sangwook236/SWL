@@ -315,7 +315,7 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 
 	test_data = test_data.astype(np.float)
 	#test_data /= 255.0
-	#test_data = featurewise_std_normalization(train_data)
-	test_data = samplewise_std_normalization(train_data)
+	#test_data = featurewise_std_normalization(test_data)
+	test_data = samplewise_std_normalization(test_data)
 
 	return train_data, train_labels, val_data, val_labels, test_data, test_labels
