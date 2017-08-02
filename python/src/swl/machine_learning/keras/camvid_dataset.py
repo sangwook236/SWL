@@ -281,14 +281,41 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
 	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
+	def featurewise_std_normalization(data):
+		for r in range(data.shape[1]):
+			for c in range(data.shape[2]):
+				mean = np.mean(data[:,r,c,:], axis=0)
+				sd = np.std(data[:,r,c,:], axis=0)
+				if sd is 0:
+					print('[Warn] sd = 0')
+				else:
+					data[:,r,c,:] = (data[:,r,c,:] - mean) / sd
+		return data
+	def samplewise_std_normalization(data):
+		for idx in range(data.shape[0]):
+			for ch in range(data.shape[3]):
+				mean = np.mean(data[idx,:,:,ch])
+				sd = np.std(data[idx,:,:,ch])
+				if sd is 0:
+					print('[Warn] sd = 0')
+				else:
+					data[idx,:,:,ch] = (data[idx,:,:,ch] - mean) / sd
+		return data
+
 	# Preprocessing (normalization, standardization, etc).
-	for data in (train_data, val_data, test_data):
-		data = data.astype(np.float)
-		#for r in range(data.shape[1]):
-		#	for c in range(data.shape[2]):
-		#		mean = np.mean(data[:,r,c,:], axis=0)
-		#		sd = np.std(data[:,r,c,:], axis=0)
-		#		data[:,r,c,:] = (data[:,r,c,:] - mean) / sd
-		data /= 255.0
+	train_data = train_data.astype(np.float)
+	#train_data /= 255.0
+	#train_data = featurewise_std_normalization(train_data)
+	train_data = samplewise_std_normalization(train_data)
+
+	val_data = val_data.astype(np.float)
+	#val_data /= 255.0
+	#val_data = featurewise_std_normalization(val_data)
+	val_data = samplewise_std_normalization(val_data)
+
+	test_data = test_data.astype(np.float)
+	#test_data /= 255.0
+	#test_data = featurewise_std_normalization(train_data)
+	test_data = samplewise_std_normalization(train_data)
 
 	return train_data, train_labels, val_data, val_labels, test_data, test_labels
