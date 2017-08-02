@@ -203,13 +203,37 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
+	def featurewise_std_normalization(data):
+		for r in range(data.shape[1]):
+			for c in range(data.shape[2]):
+				mean = np.mean(data[:,r,c,:], axis=0)
+				sd = np.std(data[:,r,c,:], axis=0)
+				if sd is 0:
+					print('[Warn] sd = 0')
+				else:
+					data[:,r,c,:] = (data[:,r,c,:] - mean) / sd
+		return data
+	def samplewise_std_normalization(data):
+		for idx in range(data.shape[0]):
+			for ch in range(data.shape[3]):
+				mean = np.mean(data[idx,:,:,ch])
+				sd = np.std(data[idx,:,:,ch])
+				if sd is 0:
+					print('[Warn] sd = 0')
+				else:
+					data[idx,:,:,ch] = (data[idx,:,:,ch] - mean) / sd
+		return data
+
 	# Preprocessing (normalization, standardization, etc).
 	train_data = train_data.astype(np.float)
-	for r in range(train_data.shape[1]):
-		for c in range(train_data.shape[2]):
-			mean = np.mean(train_data[:,r,c,:], axis=0)
-			sd = np.std(train_data[:,r,c,:], axis=0)
-			train_data[:,r,c,:] = (train_data[:,r,c,:] - mean) / sd
+	#train_data /= 255.0
+	#train_data = featurewise_std_normalization(train_data)
+	train_data = samplewise_std_normalization(train_data)
+
+	#test_data = test_data.astype(np.float)
+	#test_data /= 255.0
+	#test_data = featurewise_std_normalization(train_data)
+	#test_data = samplewise_std_normalization(train_data)
 
 	return train_data, train_labels
 	#return train_data, train_labels, test_data, test_labels
