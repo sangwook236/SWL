@@ -27,11 +27,11 @@ image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
 
-#%%------------------------------------------------------------------
-
 batch_size = 32
-use_loaded_dataset = True
 shuffle = False
+
+#%%------------------------------------------------------------------
+# Create a dataset generator.
 
 original_image_size = (360, 480)  # (height, width).
 resized_image_size = None
@@ -39,6 +39,8 @@ resized_image_size = None
 random_crop_size = None
 #random_crop_size = (224, 224)  # (height, width).
 center_crop_size = None
+
+use_loaded_dataset = True
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -65,13 +67,13 @@ train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
 #%%------------------------------------------------------------------
 # Load images and convert them to numpy.array.
 
-width, height = None, None
-#width, height = 480, 360
+image_width, image_height = None, None
+#image_width, image_height = 480, 360
 
 train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		width=width, height=height)
+		width=image_width, height=image_height)
 
 # Usage.
 #num_examples = 367
@@ -84,7 +86,7 @@ train_images, train_labels, val_images, val_labels, test_images, test_labels = l
 
 import numpy as np
 
-width, height = 480, 360
+image_width, image_height = 480, 360
 num_examples = 367
 num_classes = 12
 num_epochs = 1
@@ -103,8 +105,8 @@ for epoch in range(num_epochs):
 			break
 
 assert len(data_list) == len(labels_list), '[Error] len(data_list) == len(labels_list)'
-generated_images = np.ndarray(shape=(num_examples, height, width, 3))
-generated_labels = np.ndarray(shape=(num_examples, height, width, num_classes))
+generated_images = np.ndarray(shape=(num_examples, image_height, image_width, 3))
+generated_labels = np.ndarray(shape=(num_examples, image_height, image_width, num_classes))
 for idx in range(len(data_list)):
 	start_idx = idx * batch_size
 	end_idx = start_idx + data_list[idx].shape[0]
