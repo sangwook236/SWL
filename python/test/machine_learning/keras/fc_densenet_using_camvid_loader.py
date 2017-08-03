@@ -31,6 +31,7 @@ from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
 from swl.machine_learning.keras.camvid_dataset import load_camvid_dataset
+#from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
 
@@ -111,11 +112,19 @@ image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
 
-image_width, image_height = None, None
+#image_width, image_height = None, None
 #image_width, image_height = 480, 360
+image_width, image_height = 224, 224
+
+# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+#train_images = load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#val_images = load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#test_images = load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
 train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
@@ -131,8 +140,8 @@ num_examples = train_images.shape[0]
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
-batch_size = 8  # Number of samples per gradient update.
-num_epochs = 2000  # Number of times to iterate over training data.
+batch_size = 10  # Number of samples per gradient update.
+num_epochs = 10000  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
 #	steps_per_epoch = 1
@@ -191,8 +200,8 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 #callback_list = [tensor_board_callback, model_checkpoint_callback]
 callback_list = [model_checkpoint_callback]
 
-#optimizer = optimizers.SGD(lr=0.01, momentum=0.95, decay=0.0, nesterov=False)
-optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1e-08)
+#optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=False)
+optimizer = optimizers.RMSprop(lr=1.0e-1, decay=1.0e-9, rho=0.9, epsilon=1e-08)
 #optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1e-08)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1e-08)
 #optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
@@ -207,10 +216,13 @@ TRAINING_MODE = 0  # Start training a model.
 #TRAINING_MODE = 2  # Use a trained model.
 
 if 0 == TRAINING_MODE:
+	initial_epoch = 0
 	print('Start training...')
 elif 1 == TRAINING_MODE:
+	initial_epoch = 1000
 	print('Resume training...')
 elif 2 == TRAINING_MODE:
+	initial_epoch = 0
 	print('Use a trained model.')
 else:
 	raise Exception('Invalid TRAINING_MODE')
@@ -228,9 +240,9 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 	print('Restored a FC-DenseNet model.')
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	fc_densenet_model.compile(optimizer=optimizer, loss="categorical_crossentropy", metrics=["accuracy"])
+	fc_densenet_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-	history = fc_densenet_model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, initial_epoch=0,
+	history = fc_densenet_model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, initial_epoch=initial_epoch,
                     				#validation_data=(val_images, val_labels), validation_split=0.0,
                     				validation_data=(test_images, test_labels), validation_split=0.0,
                     				class_weight=class_weighting, callbacks=callback_list, shuffle=shuffle, verbose=1)
@@ -294,7 +306,16 @@ predictions = fc_densenet_model.predict(test_images, batch_size=batch_size, verb
 for idx in range(predictions.shape[0]):
 	prediction = np.argmax(predictions[idx], axis=-1)
 
-	plt.imshow(prediction, cmap='gray')
+	#plt.imshow(prediction, cmap='gray')
 	plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
+
+# Display.
+idx = 0
+plt.subplot(131)
+plt.imshow((test_images[idx] - np.min(test_images[idx])) / (np.max(test_images[idx]) - np.min(test_images[idx])))
+plt.subplot(132)
+plt.imshow(np.argmax(test_labels[idx], axis=-1), cmap='gray')
+plt.subplot(133)
+plt.imshow(np.argmax(predictions[idx], axis=-1), cmap='gray')
 
 print('End prediction...')

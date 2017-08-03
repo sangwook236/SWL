@@ -1,12 +1,9 @@
-import os
+import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-os.chdir(swl_python_home_dir_path + '/test/image_processing')
-
-import sys
-sys.path.append('../../src')
+sys.path.append(swl_python_home_dir_path + '/src')
 
 #%%------------------------------------------------------------------
 
@@ -15,13 +12,13 @@ import keras
 import swl
 
 #%%------------------------------------------------------------------
-# Load data.
 
 if 'posix' == os.name:
 	#dataset_home_dir_path = '/home/sangwook/my_dataset'
 	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
 	dataset_home_dir_path = 'D:/dataset'
+
 train_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
 train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
 val_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'
@@ -37,18 +34,22 @@ image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
 
-train_images = swl.image_processing.util.load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=224, height=224)
-train_labels = swl.image_processing.util.load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=224, height=224)
-val_images = swl.image_processing.util.load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=224, height=224)
-val_labels = swl.image_processing.util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=224, height=224)
-test_images = swl.image_processing.util.load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=224, height=224)
-test_labels = swl.image_processing.util.load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=224, height=224)
-#train_images = swl.image_processing.util.load_images_by_scipy(train_image_dir_path, image_suffix, image_extension, width=224, height=224)
-#train_labels = swl.image_processing.util.load_labels_by_scipy(train_label_dir_path, label_suffix, label_extension, width=224, height=224)
-#val_images = swl.image_processing.util.load_images_by_scipy(val_image_dir_path, image_suffix, image_extension, width=224, height=224)
-#val_labels = swl.image_processing.util.load_labels_by_scipy(val_label_dir_path, label_suffix, label_extension, width=224, height=224)
-#test_images = swl.image_processing.util.load_images_by_scipy(test_image_dir_path, image_suffix, image_extension, width=224, height=224)
-#test_labels = swl.image_processing.util.load_labels_by_scipy(test_label_dir_path, label_suffix, label_extension, width=224, height=224)
+#image_width, image_height = None, None
+#image_width, image_height = 480, 360
+image_width, image_height = 224, 224
+
+train_images = swl.image_processing.util.load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+train_labels = swl.image_processing.util.load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+val_images = swl.image_processing.util.load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+val_labels = swl.image_processing.util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+test_images = swl.image_processing.util.load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+test_labels = swl.image_processing.util.load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#train_images = swl.image_processing.util.load_images_by_scipy(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#train_labels = swl.image_processing.util.load_labels_by_scipy(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#val_images = swl.image_processing.util.load_images_by_scipy(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#val_labels = swl.image_processing.util.load_labels_by_scipy(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#test_images = swl.image_processing.util.load_images_by_scipy(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#test_labels = swl.image_processing.util.load_labels_by_scipy(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 
 #%%------------------------------------------------------------------
 

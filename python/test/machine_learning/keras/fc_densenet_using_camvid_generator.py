@@ -212,10 +212,10 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 callback_list = [model_checkpoint_callback]
 
 #optimizer = optimizers.SGD(lr=0.01, decay=1.0e-7, momentum=0.95, nesterov=False)
-#optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1.0e-8)
+optimizer = optimizers.RMSprop(lr=1.0e-5, decay=1.0e-9, rho=0.9, epsilon=1.0e-8)
 #optimizer = optimizers.Adagrad(lr=0.01, decay=1.0e-7, epsilon=1.0e-8)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1.0e-8)
-optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
+#optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
@@ -251,7 +251,7 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 	print('Restored a FC-DenseNet model.')
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	fc_densenet_model.compile(optimizer=optimizer, loss="categorical_crossentropy", metrics=["accuracy"])
+	fc_densenet_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
 	history = fc_densenet_model.fit_generator(train_dataset_gen, steps_per_epoch=steps_per_epoch, epochs=num_epochs, initial_epoch=initial_epoch,
 			#validation_data=val_dataset_gen, validation_steps=steps_per_epoch,
@@ -323,7 +323,19 @@ predictions = fc_densenet_model.predict_generator(test_dataset_gen, steps=steps_
 for idx in range(predictions.shape[0]):
 	prediction = np.argmax(predictions[idx], axis=-1)
 
-	plt.imshow(prediction, cmap='gray')
+	#plt.imshow(prediction, cmap='gray')
 	plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
+
+# Display.
+for batch_images, batch_labels in test_dataset_gen:
+	break
+batch_predictions = fc_densenet_model.predict(batch_images, batch_size=batch_size, verbose=0)
+idx = 0
+plt.subplot(131)
+plt.imshow((batch_images[idx] - np.min(batch_images[idx])) / (np.max(batch_images[idx]) - np.min(batch_images[idx])))
+plt.subplot(132)
+plt.imshow(np.argmax(batch_labels[idx], axis=-1), cmap='gray')
+plt.subplot(133)
+plt.imshow(np.argmax(batch_predictions[idx], axis=-1), cmap='gray')
 
 print('End prediction...')

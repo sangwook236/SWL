@@ -2,15 +2,12 @@
 
 %matplotlib inline
 
-import os
+import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-os.chdir(swl_python_home_dir_path + '/test/image_processing')
-
-import sys
-sys.path.append('../../src')
+sys.path.append(swl_python_home_dir_path + '/src')
 
 #%%------------------------------------------------------------------
 
