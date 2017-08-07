@@ -36,6 +36,7 @@ set(SRCS
 	RejectionSampling.cpp
 	RndUtilLocalApi.cpp
 	SamplingImportanceResampling.cpp
+	SignalProcessing.cpp
 	UnivariateNormalMixtureModel.cpp
 	UnscentedKalmanFilter.cpp
 	UnscentedKalmanFilterWithAdditiveNoise.cpp
