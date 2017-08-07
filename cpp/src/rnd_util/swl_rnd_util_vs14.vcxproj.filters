@@ -132,6 +132,9 @@
     <ClCompile Include="LevenshteinDistance.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="SignalProcessing.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\rnd_util\ContinuousLinearStochasticSystem.h">
@@ -273,6 +276,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\swl\rnd_util\GraphAlgorithm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\swl\rnd_util\SignalProcessing.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,6 +1,6 @@
 //#include "stdafx.h"
 #include "swl/Config.h"
-//#include "swl/rnd_util/SignalProcessing.h"
+#include "swl/rnd_util/SignalProcessing.h"
 #include "swl/math/Statistic.h"
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/normal_distribution.hpp>

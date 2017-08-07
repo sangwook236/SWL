@@ -212,6 +212,7 @@
     <ClCompile Include="MetropolisHastingsAlgorithm.cpp" />
     <ClCompile Include="MixtureModel.cpp" />
     <ClCompile Include="MultivariateNormalMixtureModel.cpp" />
+    <ClCompile Include="SignalProcessing.cpp" />
     <ClCompile Include="UnivariateNormalMixtureModel.cpp" />
     <ClCompile Include="Ransac.cpp" />
     <ClCompile Include="RejectionSampling.cpp" />
@@ -259,6 +260,7 @@
     <ClInclude Include="..\..\inc\swl\rnd_util\MetropolisHastingsAlgorithm.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\MultivariateNormalMixtureModel.h" />
+    <ClInclude Include="..\..\inc\swl\rnd_util\SignalProcessing.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\Sort.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\UnivariateNormalMixtureModel.h" />
     <ClInclude Include="..\..\inc\swl\rnd_util\Ransac.h" />

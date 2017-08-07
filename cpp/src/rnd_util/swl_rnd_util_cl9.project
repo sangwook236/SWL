@@ -44,6 +44,7 @@
     <File Name="../../inc/swl/rnd_util/Ransac.h"/>
     <File Name="../../inc/swl/rnd_util/RejectionSampling.h"/>
     <File Name="../../inc/swl/rnd_util/SamplingImportanceResampling.h"/>
+    <File Name="../../inc/swl/rnd_util/SignalProcessing.h"/>
     <File Name="../../inc/swl/rnd_util/Sort.h"/>
     <File Name="../../inc/swl/rnd_util/UnivariateNormalMixtureModel.h"/>
     <File Name="../../inc/swl/rnd_util/UnscentedKalmanFilter.h"/>
@@ -88,6 +89,7 @@
     <File Name="RejectionSampling.cpp"/>
     <File Name="RndUtilLocalApi.cpp"/>
     <File Name="SamplingImportanceResampling.cpp"/>
+    <File Name="SignalProcessing.cpp"/>
     <File Name="UnivariateNormalMixtureModel.cpp"/>
     <File Name="UnscentedKalmanFilter.cpp"/>
     <File Name="UnscentedKalmanFilterWithAdditiveNoise.cpp"/>
