@@ -140,8 +140,8 @@ num_examples = train_images.shape[0]
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
-batch_size = 10  # Number of samples per gradient update.
-num_epochs = 10000  # Number of times to iterate over training data.
+batch_size = 8  # Number of samples per gradient update.
+num_epochs = 500  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
 #	steps_per_epoch = 1
@@ -201,7 +201,7 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 callback_list = [model_checkpoint_callback]
 
 #optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=False)
-optimizer = optimizers.RMSprop(lr=1.0e-1, decay=1.0e-9, rho=0.9, epsilon=1e-08)
+optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-10, rho=0.9, epsilon=1e-08)
 #optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1e-08)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1e-08)
 #optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)

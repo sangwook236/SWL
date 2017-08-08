@@ -12,6 +12,7 @@ import keras
 from keras.preprocessing.image import ImageDataGenerator
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
+from swl.machine_learning.data_preprocessing import featurewise_std_normalization, samplewise_std_normalization
 from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
@@ -280,27 +281,6 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
 	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
-
-	def featurewise_std_normalization(data):
-		for r in range(data.shape[1]):
-			for c in range(data.shape[2]):
-				mean = np.mean(data[:,r,c,:], axis=0)
-				sd = np.std(data[:,r,c,:], axis=0)
-				if sd is 0:
-					print('[Warn] sd = 0')
-				else:
-					data[:,r,c,:] = (data[:,r,c,:] - mean) / sd
-		return data
-	def samplewise_std_normalization(data):
-		for idx in range(data.shape[0]):
-			for ch in range(data.shape[3]):
-				mean = np.mean(data[idx,:,:,ch])
-				sd = np.std(data[idx,:,:,ch])
-				if sd is 0:
-					print('[Warn] sd = 0')
-				else:
-					data[idx,:,:,ch] = (data[idx,:,:,ch] - mean) / sd
-		return data
 
 	# Preprocessing (normalization, standardization, etc).
 	train_data = train_data.astype(np.float)
