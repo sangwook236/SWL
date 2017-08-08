@@ -84,11 +84,11 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay10e-7_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay10e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay10e-7.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay10e-7_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay10e-7_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay1e-7_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay1e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay1e-7.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay1e-7_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_decay1e-7_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
 #%%------------------------------------------------------------------
@@ -140,7 +140,7 @@ num_examples = train_images.shape[0]
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
-batch_size = 8  # Number of samples per gradient update.
+batch_size = 10  # Number of samples per gradient update.
 num_epochs = 500  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
@@ -200,13 +200,13 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 #callback_list = [tensor_board_callback, model_checkpoint_callback]
 callback_list = [model_checkpoint_callback]
 
-#optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=False)
-optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-10, rho=0.9, epsilon=1e-08)
-#optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1e-08)
-#optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1e-08)
-#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-#optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
-#optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+#optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=True)
+optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-10, rho=0.9, epsilon=1.0e-8)
+#optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1.0e-8)
+#optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1.0e-8)
+#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
+#optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
+#optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
 #%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
