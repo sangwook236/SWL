@@ -12,7 +12,7 @@ import keras
 from keras.preprocessing.image import ImageDataGenerator
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
-from swl.machine_learning.data_preprocessing import featurewise_std_normalization, samplewise_std_normalization
+from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
 from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
@@ -207,13 +207,13 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	# Preprocessing (normalization, standardization, etc).
 	train_data = train_data.astype(np.float)
 	#train_data /= 255.0
-	#train_data = featurewise_std_normalization(train_data)
-	train_data = samplewise_std_normalization(train_data)
+	train_data = standardize_samplewise(train_data)
+	#train_data = standardize_featurewise(train_data)
 
 	#test_data = test_data.astype(np.float)
 	#test_data /= 255.0
-	#test_data = featurewise_std_normalization(train_data)
-	#test_data = samplewise_std_normalization(train_data)
+	#test_data = standardize_samplewise(train_data)
+	#test_data = standardize_featurewise(train_data)
 
 	return train_data, train_labels
 	#return train_data, train_labels, test_data, test_labels
