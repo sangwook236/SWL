@@ -83,11 +83,11 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_decay10e-7_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_generator.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
 #%%------------------------------------------------------------------
@@ -326,16 +326,20 @@ for idx in range(predictions.shape[0]):
 	#plt.imshow(prediction, cmap='gray')
 	plt.imsave(prediction_dir_path + '/prediction' + str(idx) + '.jpg', prediction, cmap='gray')
 
+print('End prediction...')
+
+#%%------------------------------------------------------------------
 # Display.
+
 for batch_images, batch_labels in test_dataset_gen:
 	break
 batch_predictions = fc_densenet_model.predict(batch_images, batch_size=batch_size, verbose=0)
+
 idx = 0
+#plt.figure(figsize=(7,7))
 plt.subplot(131)
 plt.imshow((batch_images[idx] - np.min(batch_images[idx])) / (np.max(batch_images[idx]) - np.min(batch_images[idx])))
 plt.subplot(132)
 plt.imshow(np.argmax(batch_labels[idx], axis=-1), cmap='gray')
 plt.subplot(133)
 plt.imshow(np.argmax(batch_predictions[idx], axis=-1), cmap='gray')
-
-print('End prediction...')
