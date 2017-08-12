@@ -10,6 +10,7 @@ from __future__ import print_function
 import numpy as np
 from six.moves import range
 import os
+import swl
 
 from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator, NumpyArrayIterator, DirectoryIterator, array_to_img, img_to_array, load_img
@@ -192,7 +193,31 @@ class NumpyArrayIteratorWithCrop(NumpyArrayIterator):
 				img.save(os.path.join(self.save_to_dir, fname))
 		if self.y is None:
 			return batch_x
-		batch_y = self.y[index_array]
+		#batch_y = self.y[index_array]
+		if self.image_data_generator.center_crop_size is not None:
+			batch_y = np.zeros(tuple([current_batch_size] + list(self.image_data_generator.center_crop_size) + list(self.y.shape)[3:]), dtype=self.y.dtype)
+		elif self.image_data_generator.random_crop_size is not None:
+			batch_y = np.zeros(tuple([current_batch_size] + list(self.image_data_generator.random_crop_size) + list(self.y.shape)[3:]), dtype=self.y.dtype)
+		else:
+			batch_y = np.zeros(tuple([current_batch_size] + list(self.y.shape)[1:]), dtype=self.y.dtype)
+		# FIXME [fix] >> Random transformation is applied to images and labels differently.
+		for i, j in enumerate(index_array):
+			y = self.y[j]
+			if self.image_data_generator.random_crop_size is not None:
+				y = self.image_data_generator.random_crop(y)
+			y = self.image_data_generator.random_transform(y.astype(self.y.dtype))  # TODO [check] >> y.astype(self.y.dtype) is correct?
+			y = self.image_data_generator.standardize(y)
+			if self.image_data_generator.center_crop_size is not None:
+				y = self.image_data_generator.center_crop(y)
+			batch_y[i] = y
+		if self.save_to_dir:
+			for i in range(current_batch_size):
+				img = array_to_img(swl.image_processing.util.to_rgb(np.argmax(batch_y[i], axis=-1)), self.data_format, scale=True)
+				fname = '{prefix}_{index}_{hash}.label.{format}'.format(prefix=self.save_prefix,
+						index=current_index + i,
+						hash=np.random.randint(1e4),
+						format=self.save_format)
+				img.save(os.path.join(self.save_to_dir, fname))
 		return batch_x, batch_y
 
 

@@ -34,9 +34,9 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			#rescale=1.0/255.0,
 			#preprocessing_function=None,
 			featurewise_center=True,
-			featurewise_std_normalization=True,
-			#samplewise_center=False,
-			#samplewise_std_normalization=False,
+			#eaturewise_std_normalization=True,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			rotation_range=20,
@@ -47,7 +47,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			fill_mode='reflect',
+			fill_mode='reflect',  # ???
 			cval=0.0)
 		train_label_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
@@ -66,7 +66,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			zoom_range=0.2,
 			#shear_range=0.0,
 			#channel_shift_range=0.0,
-			fill_mode='reflect',
+			fill_mode='reflect',  # ???
 			cval=0.0)
 	else:
 		train_data_generator = ImageDataGeneratorWithCrop(
@@ -74,8 +74,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			#preprocessing_function=None,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
-			#samplewise_center=False,
-			#samplewise_std_normalization=False,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			rotation_range=20,
@@ -88,7 +88,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			#channel_shift_range=0.0,
 			random_crop_size=random_crop_size,
 			center_crop_size=center_crop_size,
-			fill_mode='reflect',
+			fill_mode='reflect',  # ???
 			cval=0.0)
 		train_label_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
@@ -109,7 +109,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			#channel_shift_range=0.0,
 			random_crop_size=random_crop_size,
 			center_crop_size=center_crop_size,
-			fill_mode='reflect',
+			fill_mode='reflect',  # ???
 			cval=0.0)
 
 	if use_loaded_dataset == True:
@@ -142,8 +142,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=None,
-			save_prefix='',
+			save_to_dir='gen_img',
+			save_prefix='abc',
 			save_format='png',
 			seed=seed)
 	else:

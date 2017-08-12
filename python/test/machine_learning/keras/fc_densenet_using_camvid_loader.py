@@ -242,7 +242,8 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fc_densenet_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-	history = fc_densenet_model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, initial_epoch=initial_epoch,
+	history = fc_densenet_model.fit(train_images, train_labels,
+			batch_size=batch_size, epochs=num_epochs, initial_epoch=initial_epoch,
 			#validation_data=(val_images, val_labels), validation_split=0.0,
 			validation_data=(test_images, test_labels), validation_split=0.0,
 			class_weight=class_weighting, callbacks=callback_list, shuffle=shuffle, verbose=1)

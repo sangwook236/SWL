@@ -35,8 +35,8 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#preprocessing_function=None,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
-			#samplewise_center=False,
-			#samplewise_std_normalization=False,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			#rotation_range=20,
@@ -68,7 +68,17 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#channel_shift_range=0.0,
 			fill_mode='reflect',
 			cval=0.0)
-		test_data_generator = ImageDataGenerator(rescale=1.0/255.0)
+		test_data_generator = ImageDataGenerator(
+			#rescale=1.0/255.0,
+			#preprocessing_function=None,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
+			#zca_whitening=False,
+			#zca_epsilon=1.0e-6,
+			fill_mode='reflect',
+			cval=0.0)
 		test_label_generator = ImageDataGenerator()
 	else:
 		train_data_generator = ImageDataGeneratorWithCrop(
@@ -76,8 +86,8 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#preprocessing_function=None,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
-			#samplewise_center=False,
-			#samplewise_std_normalization=False,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
 			#zca_whitening=False,
 			#zca_epsilon=1.0e-6,
 			#rotation_range=20,
@@ -113,7 +123,17 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			center_crop_size=center_crop_size,
 			fill_mode='reflect',
 			cval=0.0)
-		test_data_generator = ImageDataGeneratorWithCrop(rescale=1.0/255.0)
+		test_data_generator = ImageDataGeneratorWithCrop(
+			#rescale=1.0/255.0,
+			#preprocessing_function=None,
+			featurewise_center=True,
+			featurewise_std_normalization=True,
+			#samplewise_center=True,
+			#samplewise_std_normalization=True,
+			#zca_whitening=False,
+			#zca_epsilon=1.0e-6,
+			fill_mode='reflect',
+			cval=0.0)
 		test_label_generator = ImageDataGeneratorWithCrop()
 
 	if use_loaded_dataset == True:

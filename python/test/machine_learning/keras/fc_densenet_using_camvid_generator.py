@@ -253,7 +253,8 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fc_densenet_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-	history = fc_densenet_model.fit_generator(train_dataset_gen, steps_per_epoch=steps_per_epoch, epochs=num_epochs, initial_epoch=initial_epoch,
+	history = fc_densenet_model.fit_generator(train_dataset_gen,
+			steps_per_epoch=steps_per_epoch, epochs=num_epochs, initial_epoch=initial_epoch,
 			#validation_data=val_dataset_gen, validation_steps=steps_per_epoch,
 			validation_data=test_dataset_gen, validation_steps=steps_per_epoch,
 			#max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing,
