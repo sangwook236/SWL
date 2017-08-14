@@ -1,9 +1,15 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
+	lib_home_dir_path = "/home/sangwook/lib_repo/python"
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
+	lib_home_dir_path = "D:/lib_repo/python"
+	#lib_home_dir_path = "D:/lib_repo/python/rnd"
+lib_dir_path = lib_home_dir_path + "/imgaug_github"
+
 sys.path.append(swl_python_home_dir_path + '/src')
+sys.path.append(lib_dir_path)
 
 #%%------------------------------------------------------------------
 
@@ -28,6 +34,8 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 #random_crop_size = (height, width)
 #center_crop_size = (height, width)
 
+# NOTICE [caution] >> Not correctly working.
+#	Use create_camvid_generator2.
 def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator = ImageDataGenerator(
@@ -282,6 +290,126 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		test_dataset_gen = zip(test_data_gen, test_label_gen)
 
 	return train_dataset_gen, val_dataset_gen, test_dataset_gen
+
+#%%------------------------------------------------------------------
+# Create a CamVid data generator using imgaug in https://github.com/aleju/imgaug.
+
+# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/image_augmentation_test.py
+
+import imgaug as ia
+from imgaug import augmenters as iaa
+
+# REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
+def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batch_size, shuffle=False):
+	while True:
+		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+		X_aug = seq_det.augment_images(X)
+		Y_aug = seq_det.augment_images(Y)
+
+		# One-hot encoding.
+		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
+
+		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
+		if shuffle is True:
+			indexes = np.arange(len(X_aug))
+			np.random.shuffle(indexes)
+			for idx in range(num_steps):
+				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				#yield({'input': batch_x}, {'output': batch_y})
+				yield(batch_x, batch_y)
+		else:
+			for idx in range(num_steps):
+				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
+				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
+				#yield({'input': batch_x}, {'output': batch_y})
+				yield(batch_x, batch_y)
+
+def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
+	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
+	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=None, height=None)
+	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=None, height=None)
+	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=None, height=None)
+	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None, height=None)
+	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None, height=None)
+
+	# Preprocessing (normalization, standardization, etc).
+	train_data = train_data.astype(np.float)
+	#train_data /= 255.0
+	#train_data = standardize_samplewise(train_data)
+	train_data = standardize_featurewise(train_data)
+
+	val_data = val_data.astype(np.float)
+	#val_data /= 255.0
+	#val_data = standardize_samplewise(val_data)
+	val_data = standardize_featurewise(val_data)
+
+	test_data = test_data.astype(np.float)
+	#test_data /= 255.0
+	#test_data = standardize_samplewise(test_data)
+	test_data = standardize_featurewise(test_data)
+
+	for idx in range(train_data.shape[0]):
+		train_data[idx] = (train_data[idx] - np.min(train_data[idx])) / (np.max(train_data[idx]) - np.min(train_data[idx])) * 255
+	train_data = train_data.astype(np.uint8)
+	for idx in range(val_data.shape[0]):
+		val_data[idx] = (val_data[idx] - np.min(val_data[idx])) / (np.max(val_data[idx]) - np.min(val_data[idx])) * 255
+	val_data = val_data.astype(np.uint8)
+	for idx in range(test_data.shape[0]):
+		test_data[idx] = (test_data[idx] - np.min(test_data[idx])) / (np.max(test_data[idx]) - np.min(test_data[idx])) * 255
+	test_data = test_data.astype(np.uint8)
+
+	if height is not None and width is not None:
+		seq = iaa.Sequential([
+			iaa.SomeOf(1, [
+				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.25))), # Crop images by 0-10% of their height/width.
+				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+				iaa.Sometimes(0.5, iaa.Affine(
+					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
+					shear=(-16, 16),  # Shear by -16 to +16 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					mode='reflect'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				))
+				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
+			]),
+			iaa.Scale(size={'height': height, 'width': width}, interpolation='nearest')  # Resize.
+		])
+	else:
+		seq = iaa.Sequential(
+			iaa.SomeOf(1, [
+				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
+				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+				iaa.Sometimes(0.5, iaa.Affine(
+					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
+					shear=(-16, 16),  # Shear by -16 to +16 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					mode='reflect'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				))
+				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
+			])
+		)
+
+	# One-hot encoding.
+	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
+	#train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
+	#val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
+	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+
+	return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
 #%%------------------------------------------------------------------
 # Load a CamVid dataset.

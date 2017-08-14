@@ -30,8 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.keras.camvid_dataset import load_camvid_dataset
-#from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
+from swl.machine_learning.camvid_dataset import create_camvid_generator2
 
 #%%------------------------------------------------------------------
 
@@ -51,8 +50,8 @@ K.set_learning_phase(0)
 #%%------------------------------------------------------------------
 # Prepare directories.
 
-output_dir_path = './result/fc_densenet_using_camvid_loader'
-log_dir_path = './log/fc_densenet_using_camvid_loader'
+output_dir_path = './result/fc_densenet_using_camvid_generator'
+log_dir_path = './log/fc_densenet_using_camvid_generator'
 
 model_dir_path = output_dir_path + '/model'
 prediction_dir_path = output_dir_path + '/prediction'
@@ -84,12 +83,32 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_loader.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_best.hdf5"  # For a best model.
+model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
+model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_generator.json"
+model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight.hdf5"
+#model_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_epoch{}.hdf5"  # For a full model.
 model_filepath = model_checkpoint_best_filepath
+
+#%%------------------------------------------------------------------
+# Parameters.
+
+np.random.seed(7)
+
+num_examples = 367
+num_classes = 12  # 11 + 1.
+
+batch_size = 11  # Number of samples per gradient update.
+num_epochs = 500  # Number of times to iterate over training data.
+steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
+if steps_per_epoch < 1:
+	steps_per_epoch = 1
+
+shuffle = False
+
+max_queue_size = 10
+workers = 4
+use_multiprocessing = False
 
 #%%------------------------------------------------------------------
 # Prepare dataset.
@@ -112,45 +131,37 @@ image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
 
-#image_width, image_height = None, None
-#image_width, image_height = 480, 360
-image_width, image_height = 224, 224
+original_image_size = (360, 480)  # (height, width).
+#resized_image_size = None
+resized_image_size = (224, 224)  # (height, width).
+random_crop_size = None
+#random_crop_size = (224, 224)  # (height, width).
+center_crop_size = None
 
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
-#train_images = load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-#val_images = load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-#test_images = load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+if center_crop_size is not None:
+	image_size = center_crop_size
+elif random_crop_size is not None:
+	image_size = random_crop_size
+elif resized_image_size is not None:
+	image_size = resized_image_size
+else:
+	image_size = original_image_size
+image_shape = image_size + (3,)
+
+use_loaded_dataset = True
+
+# Provide the same seed and keyword arguments to the fit and flow methods.
+seed = 1
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
+#train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
+#		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		width=image_width, height=image_height)
-
-#%%------------------------------------------------------------------
-# Parameters.
-
-np.random.seed(7)
-
-num_examples = train_images.shape[0]
-#num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
-num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
-#num_classes = 12  # 11 + 1.
-
-<<<<<<< Updated upstream
-batch_size = 10  # Number of samples per gradient update.
-=======
-batch_size = 12  # Number of samples per gradient update.
->>>>>>> Stashed changes
-num_epochs = 2000  # Number of times to iterate over training data.
-#steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
-#if steps_per_epoch < 1:
-#	steps_per_epoch = 1
-
-shuffle = False
+		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.
@@ -158,7 +169,7 @@ shuffle = False
 print('Create a FC-DenseNet model.')
 
 with tf.name_scope('fc-densenet'):
-	fc_densenet_model = dc.DenseNetFCN(train_images.shape[1:], nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
+	fc_densenet_model = dc.DenseNetFCN(image_shape, nb_dense_block=5, growth_rate=16, nb_layers_per_block=4, upsampling_type='upsampling', classes=num_classes)
 
 # Display the model summary.
 #fc_densenet_model.summary()
@@ -204,15 +215,11 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 #callback_list = [tensor_board_callback, model_checkpoint_callback]
 callback_list = [model_checkpoint_callback]
 
-#optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=True)
-<<<<<<< Updated upstream
-optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-8, rho=0.9, epsilon=1.0e-8)
-=======
-optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1.0e-8)
->>>>>>> Stashed changes
-#optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1.0e-8)
+#optimizer = optimizers.SGD(lr=0.01, decay=1.0e-7, momentum=0.95, nesterov=False)
+optimizer = optimizers.RMSprop(lr=1.0e-5, decay=1.0e-9, rho=0.9, epsilon=1.0e-8)
+#optimizer = optimizers.Adagrad(lr=0.01, decay=1.0e-7, epsilon=1.0e-8)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1.0e-8)
-#optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
+#optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
@@ -227,7 +234,7 @@ if 0 == TRAINING_MODE:
 	initial_epoch = 0
 	print('Start training...')
 elif 1 == TRAINING_MODE:
-	initial_epoch = 500
+	initial_epoch = 1000
 	print('Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0
@@ -250,17 +257,18 @@ if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fc_densenet_model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
 
-	history = fc_densenet_model.fit(train_images, train_labels,
-			batch_size=batch_size, epochs=num_epochs, initial_epoch=initial_epoch,
-			#validation_data=(val_images, val_labels), validation_split=0.0,
-			validation_data=(test_images, test_labels), validation_split=0.0,
-			class_weight=class_weighting, callbacks=callback_list, shuffle=shuffle, verbose=1)
+	history = fc_densenet_model.fit_generator(train_dataset_gen,
+			steps_per_epoch=steps_per_epoch, epochs=num_epochs, initial_epoch=initial_epoch,
+			#validation_data=val_dataset_gen, validation_steps=steps_per_epoch,
+			validation_data=test_dataset_gen, validation_steps=steps_per_epoch,
+			#max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing,
+			class_weight=class_weighting, callbacks=callback_list, verbose=1)
 
 	# List all data in history.
 	print(history.history.keys())
 
 	# Summarize history for accuracy.
-	fig = plt.figure();
+	fig = plt.figure()
 	plt.plot(history.history['acc'])
 	plt.plot(history.history['val_acc'])
 	plt.title('model accuracy')
@@ -271,7 +279,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	fig.savefig(output_dir_path + '/model_accuracy.png')
 	plt.close(fig)
 	# Summarize history for loss.
-	fig = plt.figure();
+	fig = plt.figure()
 	plt.plot(history.history['loss'])
 	plt.plot(history.history['val_loss'])
 	plt.title('model loss')
@@ -300,7 +308,12 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 
 print('Start testing...')
 
-test_loss, test_accuracy = fc_densenet_model.evaluate(test_images, test_labels, batch_size=batch_size, verbose=1)
+num_test_examples = 233
+steps_per_epoch = num_test_examples // batch_size if num_test_examples > 0 else 50
+if steps_per_epoch < 1:
+	steps_per_epoch = 1
+
+test_loss, test_accuracy = fc_densenet_model.evaluate_generator(test_dataset_gen, steps=steps_per_epoch) #, max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing)
 print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 
 print('End testing...')
@@ -310,7 +323,7 @@ print('End testing...')
 
 print('Start prediction...')
 
-predictions = fc_densenet_model.predict(test_images, batch_size=batch_size, verbose=0)
+predictions = fc_densenet_model.predict_generator(test_dataset_gen, steps=steps_per_epoch, verbose=0) #, max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing)
 
 for idx in range(predictions.shape[0]):
 	prediction = np.argmax(predictions[idx], axis=-1)
@@ -323,11 +336,15 @@ print('End prediction...')
 #%%------------------------------------------------------------------
 # Display.
 
+for batch_images, batch_labels in test_dataset_gen:
+	break
+batch_predictions = fc_densenet_model.predict(batch_images, batch_size=batch_size, verbose=0)
+
 idx = 0
 #plt.figure(figsize=(7,7))
 plt.subplot(131)
-plt.imshow((test_images[idx] - np.min(test_images[idx])) / (np.max(test_images[idx]) - np.min(test_images[idx])))
+plt.imshow((batch_images[idx] - np.min(batch_images[idx])) / (np.max(batch_images[idx]) - np.min(batch_images[idx])))
 plt.subplot(132)
-plt.imshow(np.argmax(test_labels[idx], axis=-1), cmap='gray')
+plt.imshow(np.argmax(batch_labels[idx], axis=-1), cmap='gray')
 plt.subplot(133)
-plt.imshow(np.argmax(predictions[idx], axis=-1), cmap='gray')
+plt.imshow(np.argmax(batch_predictions[idx], axis=-1), cmap='gray')
