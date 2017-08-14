@@ -350,7 +350,7 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					mode='reflect'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 				))
 				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
 			]),
@@ -372,7 +372,7 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
 					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					mode='reflect'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
 				))
 				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
 			])
