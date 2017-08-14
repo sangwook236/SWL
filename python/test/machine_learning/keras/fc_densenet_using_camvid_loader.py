@@ -140,7 +140,11 @@ num_examples = train_images.shape[0]
 num_classes = np.max([train_labels.shape[-1], val_labels.shape[-1], test_labels.shape[-1]])
 #num_classes = 12  # 11 + 1.
 
+<<<<<<< Updated upstream
 batch_size = 10  # Number of samples per gradient update.
+=======
+batch_size = 12  # Number of samples per gradient update.
+>>>>>>> Stashed changes
 num_epochs = 2000  # Number of times to iterate over training data.
 #steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 #if steps_per_epoch < 1:
@@ -201,7 +205,11 @@ model_checkpoint_callback = callbacks.ModelCheckpoint(model_checkpoint_best_file
 callback_list = [model_checkpoint_callback]
 
 #optimizer = optimizers.SGD(lr=1.0e-5, decay=1.0e-9, momentum=0.995, nesterov=True)
+<<<<<<< Updated upstream
 optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-8, rho=0.9, epsilon=1.0e-8)
+=======
+optimizer = optimizers.RMSprop(lr=1.0e-3, decay=1.0e-7, rho=0.9, epsilon=1.0e-8)
+>>>>>>> Stashed changes
 #optimizer = optimizers.Adagrad(lr=0.01, decay=0.0, epsilon=1.0e-8)
 #optimizer = optimizers.Adadelta(lr=1.0, decay=0.0, rho=0.95, epsilon=1.0e-8)
 #optimizer = optimizers.Adam(lr=1.0e-3, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
@@ -219,7 +227,7 @@ if 0 == TRAINING_MODE:
 	initial_epoch = 0
 	print('Start training...')
 elif 1 == TRAINING_MODE:
-	initial_epoch = 1000
+	initial_epoch = 500
 	print('Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0
