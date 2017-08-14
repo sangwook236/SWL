@@ -5,7 +5,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-from swl.machine_learning.keras.cvppp_dataset import create_cvppp_generator, load_cvppp_dataset
+from swl.machine_learning.cvppp_dataset import create_cvppp_generator2, load_cvppp_dataset
 
 #%%------------------------------------------------------------------
 
@@ -36,15 +36,28 @@ random_crop_size = None
 #random_crop_size = (224, 224)  # (height, width).
 center_crop_size = None
 
+if center_crop_size is not None:
+	image_size = center_crop_size
+elif random_crop_size is not None:
+	image_size = random_crop_size
+elif resized_image_size is not None:
+	image_size = resized_image_size
+else:
+	image_size = original_image_size
+image_shape = image_size + (3,)
+
 use_loaded_dataset = True
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
 
-train_dataset_gen = create_cvppp_generator(
-		train_image_dir_path, train_label_dir_path,
+#train_dataset_gen = create_cvppp_generator(
+#		train_image_dir_path, train_label_dir_path,
+#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+train_dataset_gen = create_cvppp_generator2(train_image_dir_path, train_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 # Usage.
 #num_examples = 128

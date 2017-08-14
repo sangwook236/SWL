@@ -5,10 +5,6 @@ from PIL import Image
 from scipy import ndimage, misc
 import os, re
 
-# REF [site] >> http://www.socouldanyone.com/2013/03/converting-grayscale-to-rgb-with-numpy.html
-def to_rgb(gray):
-    return np.dstack([gray.astype(np.uint8)] * 3)
-
 def center_crop(x, center_crop_size, **kwargs):
 	centerw, centerh = x.shape[1] // 2, x.shape[2] // 2
 	halfw, halfh = center_crop_size[0] // 2, center_crop_size[1] // 2

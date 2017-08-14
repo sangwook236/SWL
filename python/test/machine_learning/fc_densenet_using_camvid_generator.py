@@ -30,7 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.keras.camvid_dataset import create_camvid_generator
+from swl.machine_learning.camvid_dataset import create_camvid_generator2
 
 #%%------------------------------------------------------------------
 
@@ -154,10 +154,14 @@ use_loaded_dataset = True
 seed = 1
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
+#train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
+#		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+		batch_size=batch_size, shuffle=shuffle)
 
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.

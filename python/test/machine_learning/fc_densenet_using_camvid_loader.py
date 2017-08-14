@@ -30,7 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.keras.camvid_dataset import load_camvid_dataset
+from swl.machine_learning.camvid_dataset import load_camvid_dataset
 #from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
