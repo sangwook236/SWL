@@ -196,7 +196,34 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 
 import imgaug as ia
 from imgaug import augmenters as iaa
-from swl.machine_learning.util import generate_batch_from_image_augmentation_sequence
+
+# REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
+def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batch_size, shuffle=False):
+	while True:
+		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+		X_aug = seq_det.augment_images(X)
+		Y_aug = seq_det.augment_images(Y)
+
+		# One-hot encoding.
+		#if num_classes > 2:
+		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
+		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
+
+		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
+		if shuffle is True:
+			indexes = np.arange(len(X_aug))
+			np.random.shuffle(indexes)
+			for idx in range(num_steps):
+				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				#yield({'input': batch_x}, {'output': batch_y})
+				yield(batch_x, batch_y)
+		else:
+			for idx in range(num_steps):
+				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
+				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
+				#yield({'input': batch_x}, {'output': batch_y})
+				yield(batch_x, batch_y)
 
 def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
 	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
@@ -246,7 +273,7 @@ def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suff
 				))
 				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
 			]),
-			iaa.Scale(size={'height': height, 'width': width})  # Resize.
+			iaa.Scale(size={'height': height, 'width': width}, interpolation='nearest')  # Resize.
 		])
 	else:
 		seq = iaa.Sequential(
@@ -271,15 +298,15 @@ def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suff
 		)
 
 	# One-hot encoding.
-	#num_classes = np.unique(train_labels).shape[0]
+	num_classes = np.unique(train_labels).shape[0]
 	##if num_classes > 2:
 	##	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	##	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 	#train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	##test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
-	return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, batch_size, shuffle)
-	#return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, batch_size, shuffle)
+	return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle)
+	#return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
 #%%------------------------------------------------------------------
 # Load a CVPPP dataset.

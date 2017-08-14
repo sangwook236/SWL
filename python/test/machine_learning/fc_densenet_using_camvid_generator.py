@@ -98,7 +98,7 @@ np.random.seed(7)
 num_examples = 367
 num_classes = 12  # 11 + 1.
 
-batch_size = 12  # Number of samples per gradient update.
+batch_size = 11  # Number of samples per gradient update.
 num_epochs = 500  # Number of times to iterate over training data.
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
@@ -161,7 +161,7 @@ seed = 1
 train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, shuffle=shuffle)
+		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.

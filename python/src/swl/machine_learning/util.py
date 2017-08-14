@@ -42,16 +42,10 @@ def generate_batch_from_dataset(X, Y, batch_size, shuffle=False):
 			yield(batch_x, batch_y)
 
 def generate_batch_from_image_augmentation_sequence(seq, X, Y, batch_size, shuffle=False):
-	num_classes = np.unique(Y).shape[0]
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		X_aug = seq_det.augment_images(X)
 		Y_aug = seq_det.augment_images(Y)
-
-		# One-hot encoding.
-		#if num_classes > 2:
-		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
-		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 
 		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
 		if shuffle is True:
