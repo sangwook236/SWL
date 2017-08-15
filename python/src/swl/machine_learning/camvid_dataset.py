@@ -306,6 +306,12 @@ def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batc
 		X_aug = seq_det.augment_images(X)
 		Y_aug = seq_det.augment_images(Y)
 
+		# Preprocessing (normalization, standardization, etc).
+		X_aug = X_aug.astype(np.float)
+		#X_aug /= 255.0
+		X_aug = standardize_samplewise(X_aug)
+		#X_aug = standardize_featurewise(X_aug)
+
 		# One-hot encoding.
 		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 
@@ -332,32 +338,6 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=None, height=None)
 	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None, height=None)
-
-	# Preprocessing (normalization, standardization, etc).
-	train_data = train_data.astype(np.float)
-	#train_data /= 255.0
-	#train_data = standardize_samplewise(train_data)
-	train_data = standardize_featurewise(train_data)
-
-	val_data = val_data.astype(np.float)
-	#val_data /= 255.0
-	#val_data = standardize_samplewise(val_data)
-	val_data = standardize_featurewise(val_data)
-
-	test_data = test_data.astype(np.float)
-	#test_data /= 255.0
-	#test_data = standardize_samplewise(test_data)
-	test_data = standardize_featurewise(test_data)
-
-	for idx in range(train_data.shape[0]):
-		train_data[idx] = (train_data[idx] - np.min(train_data[idx])) / (np.max(train_data[idx]) - np.min(train_data[idx])) * 255
-	train_data = train_data.astype(np.uint8)
-	for idx in range(val_data.shape[0]):
-		val_data[idx] = (val_data[idx] - np.min(val_data[idx])) / (np.max(val_data[idx]) - np.min(val_data[idx])) * 255
-	val_data = val_data.astype(np.uint8)
-	for idx in range(test_data.shape[0]):
-		test_data[idx] = (test_data[idx] - np.min(test_data[idx])) / (np.max(test_data[idx]) - np.min(test_data[idx])) * 255
-	test_data = test_data.astype(np.uint8)
 
 	if height is not None and width is not None:
 		seq = iaa.Sequential([
