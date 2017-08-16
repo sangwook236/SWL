@@ -156,12 +156,14 @@ seed = 1
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
 #train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
 #		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+#		num_classes, batch_size=batch_size,
 #		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 #		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
 train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+		num_classes, batch_size=batch_size,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
+		width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.

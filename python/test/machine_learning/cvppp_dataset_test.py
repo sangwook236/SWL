@@ -5,7 +5,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-from swl.machine_learning.cvppp_dataset import create_cvppp_generator2, load_cvppp_dataset
+from swl.machine_learning.cvppp_dataset import create_cvppp_generator, create_cvppp_generator2, load_cvppp_dataset
 
 #%%------------------------------------------------------------------
 
@@ -23,6 +23,9 @@ image_extension = 'png'
 label_suffix = '_fg'
 label_extension = 'png'
 
+num_examples = 128
+num_classes = 2
+
 batch_size = 32
 shuffle = False
 
@@ -30,8 +33,8 @@ shuffle = False
 # Create a dataset generator.
 
 original_image_size = (530, 500)  # (height, width).
-resized_image_size = None
-#resized_image_size = original_image_size
+#resized_image_size = None
+resized_image_size = original_image_size
 random_crop_size = None
 #random_crop_size = (224, 224)  # (height, width).
 center_crop_size = None
@@ -46,18 +49,19 @@ else:
 	image_size = original_image_size
 image_shape = image_size + (3,)
 
-use_loaded_dataset = True
+use_loaded_dataset = False
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
 
-#train_dataset_gen = create_cvppp_generator(
-#		train_image_dir_path, train_label_dir_path,
-#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
-train_dataset_gen = create_cvppp_generator2(train_image_dir_path, train_label_dir_path,
+train_dataset_gen = create_cvppp_generator(train_image_dir_path, train_label_dir_path,
+		num_classes, batch_size=batch_size,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
+		resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+#train_dataset_gen = create_cvppp_generator2(train_image_dir_path, train_label_dir_path,
+#		num_classes, batch_size=batch_size,
+#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+#		width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 # Usage.
 #num_examples = 128
@@ -96,8 +100,6 @@ train_images, train_labels = load_cvppp_dataset(
 import numpy as np
 
 image_width, image_height = 500, 530
-num_examples = 128
-num_classes = 2
 num_epochs = 1
 steps_per_epoch = num_examples / batch_size
 

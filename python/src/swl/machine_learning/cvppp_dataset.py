@@ -1,12 +1,12 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/imgaug_github"
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+lib_dir_path = lib_home_dir_path + '/imgaug_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
@@ -20,6 +20,22 @@ from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
 from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
 from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
+
+#%%------------------------------------------------------------------
+# Prepare dataset.
+
+def prepare_dataset(X, Y=None):
+	if X is None:
+		pass
+	else:
+		# RGBA -> RGB.
+		X = X[:,:,:,:-1]
+	if Y is None:
+		pass
+	else:
+		# Do something on Y.
+		pass
+	return X, Y
 
 #%%------------------------------------------------------------------
 # Create a CVPPP data generator.
@@ -36,13 +52,13 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 # NOTICE [caution] >> Not correctly working.
 #	Use create_camvid_generator2.
-def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
+def create_cvppp_generator(train_data_dir_path, train_label_dir_path, num_classes, batch_size=32, data_suffix='', data_extension='png', label_suffix='', label_extension='png', resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			preprocessing_function=lambda img: img[:,:,:-1],  # RGBA -> RGB.
 			featurewise_center=True,
-			#eaturewise_std_normalization=True,
+			featurewise_std_normalization=True,
 			#samplewise_center=True,
 			#samplewise_std_normalization=True,
 			#zca_whitening=False,
@@ -59,7 +75,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			cval=0.0)
 		train_label_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
 			#samplewise_center=False,
@@ -79,7 +95,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 	else:
 		train_data_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			preprocessing_function=lambda img: img[:,:,:-1],  # RGBA -> RGB.
 			featurewise_center=True,
 			featurewise_std_normalization=True,
 			#samplewise_center=True,
@@ -100,7 +116,7 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			cval=0.0)
 		train_label_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
 			#samplewise_center=False,
@@ -132,26 +148,26 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 		else:
 			raise ValueError('train_dataset.data.ndim or train_dataset.labels.ndim is invalid.')
 
-		# RGBA -> RGB.
-		train_dataset.data = train_dataset.data[:,:,:,:-1]
+		# Prepare dataset.
+		#train_dataset.data = prepare_dataset(train_dataset.data)
 
+		assert num_classes == np.unique(train_dataset.labels).shape[0], '[Warning] Invalid number of classes.'
 		# One-hot encoding.
-		num_classes = np.unique(train_dataset.labels).shape[0]
 		#if num_classes > 2:
 		#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
 		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
-		train_data_generator.fit(train_dataset.data, augment=True, seed=seed)
-		#train_label_generator.fit(train_dataset.labels, augment=True, seed=seed)
+		train_data_generator.fit(train_dataset.data, augment=True, rounds=1, seed=seed)
+		#train_label_generator.fit(train_dataset.labels, augment=True, rounds=1, seed=seed)
 
 		train_dataset_gen = train_data_generator.flow(
 			train_dataset.data, train_dataset.labels,
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=None,
-			save_prefix='',
+			save_to_dir='augmented',
+			save_prefix='img',
 			save_format='png',
 			seed=seed)
 	else:
@@ -163,8 +179,8 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=None,
-			save_prefix='',
+			save_to_dir='augmented',
+			save_prefix='img',
 			save_format='png',
 			seed=seed)
 		train_label_gen = train_label_generator.flow_from_directory(
@@ -175,13 +191,13 @@ def create_cvppp_generator(train_data_dir_path, train_label_dir_path, data_suffi
 			class_mode=None,  # NOTICE [important] >>
 			batch_size=batch_size,
 			shuffle=shuffle,
-			save_to_dir=None,
-			save_prefix='',
+			save_to_dir='augmented',
+			save_prefix='lbl',
 			save_format='png',
 			seed=seed)
 
 		# FIXME [implement] >>
-		# RGBA -> RGB.
+		# Prepare dataset.
 		# One-hot encoding.
 
 		# Combine generators into one which yields image and labels.
@@ -231,15 +247,15 @@ def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batc
 				#yield({'input': batch_x}, {'output': batch_y})
 				yield(batch_x, batch_y)
 
-def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
+def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, num_classes, batch_size=32, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None, shuffle=True):
 	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=None, height=None)
 	#test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	#test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None, height=None)
 
-	# RGBA -> RGB.
-	train_data = train_data[:,:,:,:-1]
-	#test_data = test_data[:,:,:,:-1]
+	# Prepare dataset.
+	train_data = prepare_dataset(train_data)
+	#test_data = prepare_dataset(test_data)
 
 	if height is not None and width is not None:
 		seq = iaa.Sequential([
@@ -249,8 +265,8 @@ def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suff
 				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 				iaa.Sometimes(0.5, iaa.Affine(
-					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
 					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 					shear=(-16, 16),  # Shear by -16 to +16 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
@@ -271,8 +287,8 @@ def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suff
 				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 				iaa.Sometimes(0.5, iaa.Affine(
-					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
 					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 					shear=(-16, 16),  # Shear by -16 to +16 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
@@ -285,13 +301,7 @@ def create_cvppp_generator2(train_data_dir_path, train_label_dir_path, data_suff
 			])
 		)
 
-	# One-hot encoding.
-	num_classes = np.unique(train_labels).shape[0]
-	##if num_classes > 2:
-	##	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	##	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
-	#train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	##test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+	assert num_classes == np.unique(train_labels).shape[0], '[Warning] Invalid number of classes.'
 
 	return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle)
 	#return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
@@ -307,12 +317,12 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	#test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
 	#test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
 
-	# RGBA -> RGB.
-	train_data = train_data[:,:,:,:-1]
-	#test_data = test_data[:,:,:,:-1]
+	# Prepare dataset.
+	train_data = prepare_dataset(train_data)
+	#test_data = prepare_dataset(test_data)
 
-	# One-hot encoding.
 	num_classes = np.unique(train_labels).shape[0]
+	# One-hot encoding.
 	#if num_classes > 2:
 	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	#	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))

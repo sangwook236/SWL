@@ -5,7 +5,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-from swl.machine_learning.camvid_dataset import create_camvid_generator2, load_camvid_dataset
+from swl.machine_learning.camvid_dataset import create_camvid_generator, create_camvid_generator2, load_camvid_dataset
 
 #%%------------------------------------------------------------------
 
@@ -26,6 +26,9 @@ image_suffix = ''
 image_extension = 'png'
 label_suffix = ''
 label_extension = 'png'
+
+num_examples = 367
+num_classes = 12
 
 batch_size = 32
 shuffle = False
@@ -57,12 +60,14 @@ seed = 1
 
 #train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
 #		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+#		num_classes, batch_size=batch_size,
 #		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
+#		resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
 train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+		num_classes, batch_size=batch_size,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, shuffle=shuffle)
+		width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 
 # Usage.
 #num_examples = 367
@@ -101,8 +106,6 @@ train_images, train_labels, val_images, val_labels, test_images, test_labels = l
 import numpy as np
 
 image_width, image_height = 480, 360
-num_examples = 367
-num_classes = 12
 num_epochs = 1
 steps_per_epoch = num_examples / batch_size
 

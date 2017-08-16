@@ -1,12 +1,12 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/imgaug_github"
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+lib_dir_path = lib_home_dir_path + '/imgaug_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
@@ -20,6 +20,20 @@ from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
 from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
 from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
+
+#%%------------------------------------------------------------------
+# Prepare dataset.
+
+def prepare_dataset(X=None, Y=None):
+	if X is None:
+		pass
+	else:
+		# Do something on X.
+		if Y is None:
+			return X
+		else:
+			# Do something on Y.
+			return X, Y
 
 #%%------------------------------------------------------------------
 # Create a CamVid data generator.
@@ -36,11 +50,11 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 # NOTICE [caution] >> Not correctly working.
 #	Use create_camvid_generator2.
-def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
+def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, num_classes, batch_size=32, data_suffix='', data_extension='png', label_suffix='', label_extension='png', resized_image_size=None, random_crop_size=None, center_crop_size=None, use_loaded_dataset=True, shuffle=True, seed=None):
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: img,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
 			#samplewise_center=True,
@@ -59,7 +73,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			cval=0.0)
 		train_label_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
 			#samplewise_center=False,
@@ -78,7 +92,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			cval=0.0)
 		test_data_generator = ImageDataGenerator(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: img,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
 			#samplewise_center=True,
@@ -87,11 +101,21 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#zca_epsilon=1.0e-6,
 			fill_mode='reflect',
 			cval=0.0)
-		test_label_generator = ImageDataGenerator()
+		test_label_generator = ImageDataGenerator(
+			#rescale=1.0/255.0,
+			preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
+			#featurewise_center=False,
+			#featurewise_std_normalization=False,
+			#samplewise_center=False,
+			#samplewise_std_normalization=False,
+			#zca_whitening=False,
+			#zca_epsilon=1.0e-6,
+			fill_mode='reflect',
+			cval=0.0)
 	else:
 		train_data_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: img,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
 			#samplewise_center=True,
@@ -112,7 +136,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			cval=0.0)
 		train_label_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
 			#featurewise_center=False,
 			#featurewise_std_normalization=False,
 			#samplewise_center=False,
@@ -133,7 +157,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			cval=0.0)
 		test_data_generator = ImageDataGeneratorWithCrop(
 			#rescale=1.0/255.0,
-			#preprocessing_function=None,
+			#preprocessing_function=lambda img: img,
 			featurewise_center=True,
 			featurewise_std_normalization=True,
 			#samplewise_center=True,
@@ -142,7 +166,17 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			#zca_epsilon=1.0e-6,
 			fill_mode='reflect',
 			cval=0.0)
-		test_label_generator = ImageDataGeneratorWithCrop()
+		test_label_generator = ImageDataGeneratorWithCrop(
+			#rescale=1.0/255.0,
+			preprocessing_function=lambda img: np.uint8(keras.utils.to_categorical(img, num_classes).reshape(img.shape[:-1] + (-1,))),  # One-hot encoding.
+			#featurewise_center=False,
+			#featurewise_std_normalization=False,
+			#samplewise_center=False,
+			#samplewise_std_normalization=False,
+			#zca_whitening=False,
+			#zca_epsilon=1.0e-6,
+			fill_mode='reflect',
+			cval=0.0)
 
 	if use_loaded_dataset == True:
 		data_loader = DataLoader() if resized_image_size is None else DataLoader(width=resized_image_size[1], height=resized_image_size[0])
@@ -170,18 +204,23 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 		else:
 			raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
 
+		# Prepare dataset.
+		#train_dataset.data, train_dataset.labels = prepare_dataset(train_dataset.data, train_dataset.labels)
+		#val_dataset.data, val_dataset.labels = prepare_dataset(val_dataset.data, val_dataset.labels)
+		#test_dataset.data, test_dataset.labels = prepare_dataset(test_dataset.data, test_dataset.labels)
+
+		assert num_classes == np.max([np.max(np.unique(train_dataset.labels)), np.max(np.unique(val_dataset.labels)), np.max(np.unique(test_dataset.labels))]) + 1, '[Warning] Invalid number of classes.'
 		# One-hot encoding.
-		num_classes = np.max([np.max(np.unique(train_dataset.labels)), np.max(np.unique(val_dataset.labels)), np.max(np.unique(test_dataset.labels))]) + 1
 		train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
 		val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape[:-1] + (-1,)))
 		test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,)))
 
 		# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 		# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
-		train_data_generator.fit(train_dataset.data, augment=True, seed=seed)
-		#train_label_generator.fit(train_dataset.labels, augment=True, seed=seed)
-		test_data_generator.fit(test_dataset.data, augment=True, seed=seed)
-		#test_label_generator.fit(test_dataset.labels, augment=True, seed=seed)
+		train_data_generator.fit(train_dataset.data, augment=True, rounds=1, seed=seed)
+		#train_label_generator.fit(train_dataset.labels, augment=True, rounds=1, seed=seed)
+		test_data_generator.fit(test_dataset.data, augment=True, rounds=1, seed=seed)
+		#test_label_generator.fit(test_dataset.labels, augment=True, rounds=1, seed=seed)
 
 		train_dataset_gen = train_data_generator.flow(
 			train_dataset.data, train_dataset.labels,
@@ -282,6 +321,7 @@ def create_camvid_generator(train_data_dir_path, train_label_dir_path, val_data_
 			seed=seed)
 
 		# FIXME [implement] >>
+		# Prepare dataset.
 		# One-hot encoding.
 
 		# Combine generators into one which yields image and labels.
@@ -313,6 +353,8 @@ def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batc
 		#X_aug = standardize_featurewise(X_aug)
 
 		# One-hot encoding.
+		#if num_classes > 2:
+		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 
 		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
@@ -331,13 +373,18 @@ def generate_batch_from_image_augmentation_sequence(seq, X, Y, num_classes, batc
 				#yield({'input': batch_x}, {'output': batch_y})
 				yield(batch_x, batch_y)
 
-def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
+def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, num_classes, batch_size=32, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None, shuffle=True):
 	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=None, height=None)
 	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=None, height=None)
 	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None, height=None)
 	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None, height=None)
+
+	# Prepare dataset.
+	#train_data, train_labels = prepare_dataset(train_data, train_labels)
+	#val_data, val_labels = prepare_dataset(val_data, val_labels)
+	#test_data, test_labels = prepare_dataset(test_data, test_labels)
 
 	if height is not None and width is not None:
 		seq = iaa.Sequential([
@@ -347,8 +394,8 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 				iaa.Sometimes(0.5, iaa.Affine(
-					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
 					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 					shear=(-16, 16),  # Shear by -16 to +16 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
@@ -369,8 +416,8 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 				iaa.Sometimes(0.5, iaa.Affine(
-					scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
 					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 					shear=(-16, 16),  # Shear by -16 to +16 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
@@ -383,11 +430,7 @@ def create_camvid_generator2(train_data_dir_path, train_label_dir_path, val_data
 			])
 		)
 
-	# One-hot encoding.
-	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
-	#train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	#val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
-	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+	assert num_classes == np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1, '[Warning] Invalid number of classes.'
 
 	return generate_batch_from_image_augmentation_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
@@ -404,8 +447,13 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
 	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
 
-	# One-hot encoding.
+	# Prepare dataset.
+	#train_data, train_labels = prepare_dataset(train_data, train_labels)
+	#val_data, val_labels = prepare_dataset(val_data, val_labels)
+	#test_data, test_labels = prepare_dataset(test_data, test_labels)
+
 	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
+	# One-hot encoding.
 	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
 	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
