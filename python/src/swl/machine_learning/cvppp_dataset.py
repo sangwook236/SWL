@@ -350,13 +350,6 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	num_classes = np.max(np.unique(train_labels)) + 1
 	#num_classes = np.unique(train_labels).size
 
-	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
-	#if num_classes > 2:
-	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	#	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
-	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
-
 	# Preprocessing (normalization, standardization, etc).
 	train_data = train_data.astype(np.float)
 	#train_data /= 255.0
@@ -367,6 +360,13 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	#test_data /= 255.0
 	#test_data = standardize_samplewise(train_data)
 	#test_data = standardize_featurewise(train_data)
+
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
+	#if num_classes > 2:
+	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
+	#	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
+	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
 	return train_data, train_labels
 	#return train_data, train_labels, test_data, test_labels
