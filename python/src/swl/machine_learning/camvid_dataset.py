@@ -363,8 +363,10 @@ def create_camvid_generator_from_directory(train_data_dir_path, train_label_dir_
 
 import imgaug as ia
 from imgaug import augmenters as iaa
+import threading
 
 # REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
+# NOTICE [info] >> This is not thread-safe.
 def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=True):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
@@ -383,6 +385,7 @@ def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuf
 		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 
 		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
+		#num_steps = len(X) // batch_size + (0 if len(X) % batch_size == 0 else 1)
 		if shuffle is True:
 			indexes = np.arange(len(X_aug))
 			np.random.shuffle(indexes)
@@ -397,6 +400,60 @@ def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuf
 				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
 				#yield({'input': batch_x}, {'output': batch_y})
 				yield(batch_x, batch_y)
+
+class DatasetGenerator:
+	def __init__(self, seq, X, Y, num_classes, batch_size, shuffle=True):
+		self.seq = seq
+		self.X = X
+		self.Y = Y
+		self.num_classes = num_classes
+		self.batch_size = batch_size
+		self.shuffle = shuffle
+
+		self.num_steps = np.ceil(len(self.X) / self.batch_size).astype(np.int)
+		#self.num_steps = len(self.X) // self.batch_size + (0 if len(self.X) % self.batch_size == 0 else 1)
+		self.idx = 0
+		self.X_aug = None
+		self.Y_aug = None
+
+		self.lock = threading.Lock()
+
+	def __iter__(self):
+		return self
+
+	def __next__(self):
+		with self.lock:
+			if 0 == self.idx:
+				seq_det = self.seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+				self.X_aug = seq_det.augment_images(self.X)
+				self.Y_aug = seq_det.augment_images(self.Y)
+
+				# Preprocessing (normalization, standardization, etc).
+				self.X_aug = self.X_aug.astype(np.float)
+				#self.X_aug /= 255.0
+				self.X_aug = standardize_samplewise(self.X_aug)
+				#self.X_aug = standardize_featurewise(self.X_aug)
+
+				# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
+				#if self.num_classes > 2:
+				#	self.Y_aug = np.uint8(keras.utils.to_categorical(self.Y_aug, self.num_classes).reshape(self.Y_aug.shape + (-1,)))
+				self.Y_aug = np.uint8(keras.utils.to_categorical(self.Y_aug, self.num_classes).reshape(self.Y_aug.shape + (-1,)))
+
+				indexes = np.arange(len(self.X_aug))
+				if self.shuffle is True:
+					np.random.shuffle(indexes)
+
+			if self.X_aug is None or self.Y_aug is None:
+				assert False, 'Both X_aug and Y_aug are not None.'
+
+			if self.shuffle is True:
+				batch_x = self.X_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
+				batch_y = self.Y_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
+			else:
+				batch_x = self.X_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
+				batch_y = self.Y_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
+			self.idx = (self.idx + 1) % self.num_steps
+			return batch_x, batch_y
 
 def create_camvid_generator_from_imgaug(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
 	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
@@ -458,7 +515,8 @@ def create_camvid_generator_from_imgaug(train_data_dir_path, train_label_dir_pat
 			])
 		)
 
-	return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	return DatasetGenerator(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	#return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
 #%%------------------------------------------------------------------
 # Load a CamVid dataset.
