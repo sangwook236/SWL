@@ -212,34 +212,14 @@ def create_camvid_generator_from_data_loader(train_data_dir_path, train_label_di
 	test_dataset.data = standardize_samplewise(test_dataset.data)
 	#test_dataset.data = standardize_featurewise(test_dataset.data)
 
-	# Change the dimension of labels.
-	if train_dataset.data.ndim == train_dataset.labels.ndim:
-		pass
-	elif 1 == train_dataset.data.ndim - train_dataset.labels.ndim:
-		train_dataset.labels = train_dataset.labels.reshape(train_dataset.labels.shape + (1,))
-	else:
-		raise ValueError('train_dataset.data.ndim or train_dataset.labels.ndim is invalid.')
-	if val_dataset.data.ndim == val_dataset.labels.ndim:
-		pass
-	elif 1 == val_dataset.data.ndim - val_dataset.labels.ndim:
-		val_dataset.labels = val_dataset.labels.reshape(val_dataset.labels.shape + (1,))
-	else:
-		raise ValueError('val_dataset.data.ndim or val_dataset.labels.ndim is invalid.')
-	if test_dataset.data.ndim == test_dataset.labels.ndim:
-		pass
-	elif 1 == test_dataset.data.ndim - test_dataset.labels.ndim:
-		test_dataset.labels = test_dataset.labels.reshape(test_dataset.labels.shape + (1,))
-	else:
-		raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
-
-	# One-hot encoding.
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 	#if num_classes > 2:
 	#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
 	#	val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
 	#	test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
-	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
-	val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape[:-1] + (-1,)))
-	test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,)))
+	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
+	val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
+	test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
 
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator, _, test_data_generator, _ = get_camvid_dataset_generator(None, None, num_classes)
@@ -385,7 +365,7 @@ import imgaug as ia
 from imgaug import augmenters as iaa
 
 # REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
-def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=False):
+def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=True):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		X_aug = seq_det.augment_images(X)
@@ -397,7 +377,7 @@ def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuf
 		X_aug = standardize_samplewise(X_aug)
 		#X_aug = standardize_featurewise(X_aug)
 
-		# One-hot encoding.
+		# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 		#if num_classes > 2:
 		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
@@ -478,7 +458,7 @@ def create_camvid_generator_from_imgaug(train_data_dir_path, train_label_dir_pat
 			])
 		)
 
-	return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_image_augmentation_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
 #%%------------------------------------------------------------------
 # Load a CamVid dataset.
@@ -517,7 +497,7 @@ def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_
 	test_data = standardize_samplewise(test_data)
 	#test_data = standardize_featurewise(test_data)
 
-	# One-hot encoding.
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 	#if num_classes > 2:
 	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	#	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))

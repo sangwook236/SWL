@@ -70,7 +70,7 @@ elif 2 == dataset_generator_type:
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 else:
-	assert dataset_generator_type < 3, 'Invalid generator type.'
+	assert dataset_generator_type < 3, 'Invalid dataset generator type.'
 
 # Usage.
 #num_examples = 128

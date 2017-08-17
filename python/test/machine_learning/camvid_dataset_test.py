@@ -37,8 +37,8 @@ shuffle = False
 # Create a dataset generator.
 
 original_image_size = (360, 480)  # (height, width).
-resized_image_size = None
-#resized_image_size = original_image_size
+#resized_image_size = None
+resized_image_size = original_image_size
 random_crop_size = None
 #random_crop_size = (224, 224)  # (height, width).
 center_crop_size = None
@@ -74,11 +74,10 @@ elif 1 == dataset_generator_type:
 elif 2 == dataset_generator_type:
 	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_imgaug(
 			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
-			num_classes, batch_size=batch_size,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 else:
-	assert dataset_generator_type < 3, 'Invalid generator type.'
+	assert dataset_generator_type < 3, 'Invalid dataset generator type.'
 
 # Usage.
 #num_examples = 367

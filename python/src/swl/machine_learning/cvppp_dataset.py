@@ -143,7 +143,7 @@ def create_cvppp_generator_from_data_loader(train_data_dir_path, train_label_dir
 	train_dataset = data_loader.load(data_dir_path=train_data_dir_path, label_dir_path=train_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
 
 	# Prepare dataset.
-	#train_dataset.data = prepare_dataset(train_dataset.data)
+	train_dataset.data, _ = prepare_dataset(train_dataset.data)
 
 	num_classes = np.max(np.unique(train_dataset.labels)) + 1
 	#num_classes = np.unique(train_dataset.labels).size
@@ -154,18 +154,10 @@ def create_cvppp_generator_from_data_loader(train_data_dir_path, train_label_dir
 	train_dataset.data = standardize_samplewise(train_dataset.data)
 	#train_dataset.data = standardize_featurewise(train_dataset.data)
 
-	# Change the dimension of labels.
-	if train_dataset.data.ndim == train_dataset.labels.ndim:
-		pass
-	elif 1 == train_dataset.data.ndim - train_dataset.labels.ndim:
-		train_dataset.labels = train_dataset.labels.reshape(train_dataset.labels.shape + (1,))
-	else:
-		raise ValueError('train_dataset.data.ndim or train_dataset.labels.ndim is invalid.')
-
-	# One-hot encoding.
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 	#if num_classes > 2:
-	#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
-	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,)))
+	#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
+	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
 
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator, _ = get_cvppp_dataset_generator(None, None, num_classes)
@@ -247,7 +239,7 @@ import imgaug as ia
 from imgaug import augmenters as iaa
 
 # REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
-def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=False):
+def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=True):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		X_aug = seq_det.augment_images(X)
@@ -259,7 +251,7 @@ def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuf
 		X_aug = standardize_samplewise(X_aug)
 		#X_aug = standardize_featurewise(X_aug)
 
-		# One-hot encoding.
+		# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 		#if num_classes > 2:
 		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
 		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
@@ -355,8 +347,10 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	train_data, _ = prepare_dataset(train_data, train_labels)
 	#test_data, _ = prepare_dataset(test_data, test_labels)
 
-	num_classes = np.unique(train_labels).shape[0]
-	# One-hot encoding.
+	num_classes = np.max(np.unique(train_labels)) + 1
+	#num_classes = np.unique(train_labels).size
+
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
 	#if num_classes > 2:
 	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 	#	#test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
