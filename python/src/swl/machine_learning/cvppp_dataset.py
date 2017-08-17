@@ -238,9 +238,10 @@ def create_cvppp_generator_from_directory(train_data_dir_path, train_label_dir_p
 import imgaug as ia
 from imgaug import augmenters as iaa
 import threading
+from swl.util.threading import ThreadSafeGenerator
 
 # REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
-# NOTICE [info] >> This is not thread-safe.
+# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
 def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=True):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
@@ -266,14 +267,14 @@ def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuf
 			for idx in range(num_steps):
 				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
 				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
-				#yield({'input': batch_x}, {'output': batch_y})
-				yield(batch_x, batch_y)
+				#yield {'input': batch_x}, {'output': batch_y}
+				yield batch_x, batch_y
 		else:
 			for idx in range(num_steps):
 				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
 				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
-				#yield({'input': batch_x}, {'output': batch_y})
-				yield(batch_x, batch_y)
+				#yield {'input': batch_x}, {'output': batch_y}
+				yield batch_x, batch_y
 
 class DatasetGenerator:
 	def __init__(self, seq, X, Y, num_classes, batch_size, shuffle=True):
@@ -386,9 +387,12 @@ def create_cvppp_generator_from_imgaug(train_data_dir_path, train_label_dir_path
 			])
 		)
 
-	return DatasetGenerator(seq, train_data, train_labels, num_classes, batch_size, shuffle)
+	#return DatasetGenerator(seq, train_data, train_labels, num_classes, batch_size, shuffle)
+	return ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle))
 	#return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle)
-	#return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	##return DatasetGenerator(seq, train_data, train_labels, num_classes, batch_size, shuffle), DatasetGenerator(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	##return ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle))
+	##return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 
 #%%------------------------------------------------------------------
 # Load a CVPPP dataset.
