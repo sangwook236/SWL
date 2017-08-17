@@ -30,7 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.camvid_dataset import load_camvid_dataset
+from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset
 #from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
@@ -125,10 +125,12 @@ image_width, image_height = 224, 224
 #test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
+train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes = load_camvid_dataset(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 		width=image_width, height=image_height)
+
+train_images, train_labels, val_images, val_labels, test_images, test_labels = preprocess_camvid_dataset(train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Parameters.

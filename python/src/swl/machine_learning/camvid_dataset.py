@@ -6,10 +6,8 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-lib_dir_path = lib_home_dir_path + '/imgaug_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_dir_path)
 
 #%%------------------------------------------------------------------
 
@@ -24,7 +22,7 @@ from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 #%%------------------------------------------------------------------
 # Prepare dataset.
 
-def prepare_dataset(X=None, Y=None):
+def prepare_camvid_dataset(X=None, Y=None):
 	if X is None:
 		pass
 	else:
@@ -36,6 +34,49 @@ def prepare_dataset(X=None, Y=None):
 		# Do something on Y.
 		pass
 	return X, Y
+
+def preprocess_camvid_dataset(X, Y, num_classes):
+	# Preprocessing (normalization, standardization, etc).
+	X = X.astype(np.float)
+	#X /= 255.0
+	X = standardize_samplewise(X)
+	#X = standardize_featurewise(X)
+
+	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
+	#if num_classes > 2:
+	#	Y = np.uint8(keras.utils.to_categorical(Y, num_classes).reshape(Y.shape + (-1,)))
+	Y = np.uint8(keras.utils.to_categorical(Y, num_classes).reshape(Y.shape + (-1,)))
+
+	return X, Y
+
+#%%------------------------------------------------------------------
+# Load a CamVid dataset.
+
+# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+
+def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
+	# Method 1: Use load_images_by_pil().
+	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
+	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
+	# Method 2: Use DataLoader class.
+	#data_loader = DataLoader() if width is None or height is None else DataLoader(width=width, height=height)
+	#train_dataset = data_loader.load(data_dir_path=train_data_dir_path, label_dir_path=train_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
+	#val_dataset = data_loader.load(data_dir_path=val_data_dir_path, label_dir_path=val_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
+	#test_dataset = data_loader.load(data_dir_path=test_data_dir_path, label_dir_path=test_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
+
+	# Prepare dataset.
+	#train_data, train_labels = prepare_camvid_dataset(train_data, train_labels)
+	#val_data, val_labels = prepare_camvid_dataset(val_data, val_labels)
+	#test_data, test_labels = prepare_camvid_dataset(test_data, test_labels)
+
+	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
+	#num_classes = np.max([np.unique(train_labels).size, np.unique(val_labels).size, np.unique(test_labels).size])
+
+	return train_data, train_labels, val_data, val_labels, test_data, test_labels, num_classes
 
 #%%------------------------------------------------------------------
 
@@ -105,9 +146,9 @@ def get_camvid_dataset_generator(data_preprocessing_function, label_preprocessin
 def get_camvid_dataset_generator_with_crop(data_preprocessing_function, label_preprocessing_function, num_classes, random_crop_size, center_crop_size):
 	train_data_generator = ImageDataGeneratorWithCrop(
 		#rescale=1.0/255.0,
-		#preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		preprocessing_function=data_preprocessing_function,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,
@@ -147,9 +188,9 @@ def get_camvid_dataset_generator_with_crop(data_preprocessing_function, label_pr
 		cval=0.0)
 	test_data_generator = ImageDataGeneratorWithCrop(
 		#rescale=1.0/255.0,
-		#preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		preprocessing_function=data_preprocessing_function,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,
@@ -182,44 +223,10 @@ def get_camvid_dataset_generator_with_crop(data_preprocessing_function, label_pr
 #random_crop_size = (height, width)
 #center_crop_size = (height, width)
 
-def create_camvid_generator_from_data_loader(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
-	data_loader = DataLoader() if resized_image_size is None else DataLoader(width=resized_image_size[1], height=resized_image_size[0])
-	train_dataset = data_loader.load(data_dir_path=train_data_dir_path, label_dir_path=train_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
-	val_dataset = data_loader.load(data_dir_path=val_data_dir_path, label_dir_path=val_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
-	test_dataset = data_loader.load(data_dir_path=test_data_dir_path, label_dir_path=test_label_dir_path, data_suffix=data_suffix, data_extension=data_extension, label_suffix=label_suffix, label_extension=label_extension)
-
-	# Prepare dataset.
-	#train_dataset.data, train_dataset.labels = prepare_dataset(train_dataset.data, train_dataset.labels)
-	#val_dataset.data, val_dataset.labels = prepare_dataset(val_dataset.data, val_dataset.labels)
-	#test_dataset.data, test_dataset.labels = prepare_dataset(test_dataset.data, test_dataset.labels)
-
-	num_classes = np.max([np.max(np.unique(train_dataset.labels)), np.max(np.unique(val_dataset.labels)), np.max(np.unique(test_dataset.labels))]) + 1
-	#num_classes = np.max([np.unique(train_dataset.labels).size, np.unique(val_dataset.labels).size, np.unique(test_dataset.labels).size])
-
-	# Preprocessing (normalization, standardization, etc).
-	train_dataset.data = train_dataset.data.astype(np.float)
-	#train_dataset.data /= 255.0
-	train_dataset.data = standardize_samplewise(train_dataset.data)
-	#train_dataset.data = standardize_featurewise(train_dataset.data)
-
-	val_dataset.data = val_dataset.data.astype(np.float)
-	#val_dataset.data /= 255.0
-	val_dataset.data = standardize_samplewise(val_dataset.data)
-	#val_dataset.data = standardize_featurewise(val_dataset.data)
-
-	test_dataset.data = test_dataset.data.astype(np.float)
-	#test_dataset.data /= 255.0
-	test_dataset.data = standardize_samplewise(test_dataset.data)
-	#test_dataset.data = standardize_featurewise(test_dataset.data)
-
-	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
-	#if num_classes > 2:
-	#	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
-	#	val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
-	#	test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
-	train_dataset.labels = np.uint8(keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape + (-1,)))
-	val_dataset.labels = np.uint8(keras.utils.to_categorical(val_dataset.labels, num_classes).reshape(val_dataset.labels.shape + (-1,)))
-	test_dataset.labels = np.uint8(keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape + (-1,)))
+# A dataset generator for images(data) and labels per image.
+#	- Images are only transformed, but labels are not transformed.
+def create_camvid_generator_from_array(train_data, train_labels, val_data, val_labels, test_data, test_labels, num_classes, batch_size=32, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
+	train_data, train_labels, val_data, val_labels, test_data, test_labels = preprocess_camvid_dataset(train_data, train_labels, val_data, val_labels, test_data, test_labels, num_classes)
 
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator, _, test_data_generator, _ = get_camvid_dataset_generator(None, None, num_classes)
@@ -228,13 +235,13 @@ def create_camvid_generator_from_data_loader(train_data_dir_path, train_label_di
 
 	# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 	# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
-	train_data_generator.fit(train_dataset.data, augment=True, rounds=1, seed=seed)
-	#train_label_generator.fit(train_dataset.labels, augment=True, rounds=1, seed=seed)
-	test_data_generator.fit(test_dataset.data, augment=True, rounds=1, seed=seed)
-	#test_label_generator.fit(test_dataset.labels, augment=True, rounds=1, seed=seed)
+	train_data_generator.fit(train_data, augment=True, rounds=1, seed=seed)
+	#train_label_generator.fit(train_labels, augment=True, rounds=1, seed=seed)
+	test_data_generator.fit(test_data, augment=True, rounds=1, seed=seed)
+	#test_label_generator.fit(test_labels, augment=True, rounds=1, seed=seed)
 
 	train_dataset_gen = train_data_generator.flow(
-		train_dataset.data, train_dataset.labels,
+		train_data, train_labels,
 		batch_size=batch_size,
 		shuffle=shuffle,
 		save_to_dir=None,
@@ -242,7 +249,7 @@ def create_camvid_generator_from_data_loader(train_data_dir_path, train_label_di
 		save_format='png',
 		seed=seed)
 	val_dataset_gen = test_data_generator.flow(
-		val_dataset.data, val_dataset.labels,
+		val_data, val_labels,
 		batch_size=batch_size,
 		shuffle=shuffle,
 		save_to_dir=None,
@@ -250,7 +257,7 @@ def create_camvid_generator_from_data_loader(train_data_dir_path, train_label_di
 		save_format='png',
 		seed=seed)
 	test_dataset_gen = test_data_generator.flow(
-		test_dataset.data, test_dataset.labels,
+		test_data, test_labels,
 		batch_size=batch_size,
 		shuffle=shuffle,
 		save_to_dir=None,
@@ -273,9 +280,9 @@ def create_camvid_generator_from_directory(train_data_dir_path, train_label_dir_
 	# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 	# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
 	#train_data_generator.fit(train_dataset.data, augment=True, rounds=1, seed=seed)
-	#train_label_generator.fit(train_dataset.labels, augment=True, rounds=1, seed=seed)
+	##train_label_generator.fit(train_dataset.labels, augment=True, rounds=1, seed=seed)
 	#test_data_generator.fit(test_dataset.data, augment=True, rounds=1, seed=seed)
-	#test_label_generator.fit(test_dataset.labels, augment=True, rounds=1, seed=seed)
+	##test_label_generator.fit(test_dataset.labels, augment=True, rounds=1, seed=seed)
 
 	train_data_gen = train_data_generator.flow_from_directory(
 		train_data_dir_path,
@@ -366,112 +373,7 @@ from imgaug import augmenters as iaa
 import threading
 from swl.util.threading import ThreadSafeGenerator
 
-# REF [function] >> generate_batch_from_image_augmentation_sequence() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
-# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
-def generate_batch_from_imgaug_sequence(seq, X, Y, num_classes, batch_size, shuffle=True):
-	while True:
-		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-		X_aug = seq_det.augment_images(X)
-		Y_aug = seq_det.augment_images(Y)
-
-		# Preprocessing (normalization, standardization, etc).
-		X_aug = X_aug.astype(np.float)
-		#X_aug /= 255.0
-		X_aug = standardize_samplewise(X_aug)
-		#X_aug = standardize_featurewise(X_aug)
-
-		# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#if num_classes > 2:
-		#	Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
-		Y_aug = np.uint8(keras.utils.to_categorical(Y_aug, num_classes).reshape(Y_aug.shape + (-1,)))
-
-		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
-		#num_steps = len(X) // batch_size + (0 if len(X) % batch_size == 0 else 1)
-		if shuffle is True:
-			indexes = np.arange(len(X_aug))
-			np.random.shuffle(indexes)
-			for idx in range(num_steps):
-				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
-				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
-				#yield {'input': batch_x}, {'output': batch_y}
-				yield batch_x, batch_y
-		else:
-			for idx in range(num_steps):
-				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
-				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
-				#yield {'input': batch_x}, {'output': batch_y}
-				yield batch_x, batch_y
-
-class DatasetGenerator:
-	def __init__(self, seq, X, Y, num_classes, batch_size, shuffle=True):
-		self.seq = seq
-		self.X = X
-		self.Y = Y
-		self.num_classes = num_classes
-		self.batch_size = batch_size
-		self.shuffle = shuffle
-
-		self.num_steps = np.ceil(len(self.X) / self.batch_size).astype(np.int)
-		#self.num_steps = len(self.X) // self.batch_size + (0 if len(self.X) % self.batch_size == 0 else 1)
-		self.idx = 0
-		self.X_aug = None
-		self.Y_aug = None
-
-		self.lock = threading.Lock()
-
-	def __iter__(self):
-		return self
-
-	def __next__(self):
-		with self.lock:
-			if 0 == self.idx:
-				seq_det = self.seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-				self.X_aug = seq_det.augment_images(self.X)
-				self.Y_aug = seq_det.augment_images(self.Y)
-
-				# Preprocessing (normalization, standardization, etc).
-				self.X_aug = self.X_aug.astype(np.float)
-				#self.X_aug /= 255.0
-				self.X_aug = standardize_samplewise(self.X_aug)
-				#self.X_aug = standardize_featurewise(self.X_aug)
-
-				# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
-				#if self.num_classes > 2:
-				#	self.Y_aug = np.uint8(keras.utils.to_categorical(self.Y_aug, self.num_classes).reshape(self.Y_aug.shape + (-1,)))
-				self.Y_aug = np.uint8(keras.utils.to_categorical(self.Y_aug, self.num_classes).reshape(self.Y_aug.shape + (-1,)))
-
-				indexes = np.arange(len(self.X_aug))
-				if self.shuffle is True:
-					np.random.shuffle(indexes)
-
-			if self.X_aug is None or self.Y_aug is None:
-				assert False, 'Both X_aug and Y_aug are not None.'
-
-			if self.shuffle is True:
-				batch_x = self.X_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
-				batch_y = self.Y_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
-			else:
-				batch_x = self.X_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
-				batch_y = self.Y_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
-			self.idx = (self.idx + 1) % self.num_steps
-			return batch_x, batch_y
-
-def create_camvid_generator_from_imgaug(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', batch_size=32, width=None, height=None, shuffle=True):
-	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=None, height=None)
-	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=None, height=None)
-	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=None, height=None)
-	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=None, height=None)
-	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=None, height=None)
-	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=None, height=None)
-
-	# Prepare dataset.
-	#train_data, train_labels = prepare_dataset(train_data, train_labels)
-	#val_data, val_labels = prepare_dataset(val_data, val_labels)
-	#test_data, test_labels = prepare_dataset(test_data, test_labels)
-
-	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
-	#num_classes = np.max([np.unique(train_labels).size, np.unique(val_labels).size, np.unique(test_labels).size])
-
+def get_imgaug_sequence_for_camvid(width=None, height=None):
 	if height is not None and width is not None:
 		seq = iaa.Sequential([
 			iaa.SomeOf(1, [
@@ -516,54 +418,83 @@ def create_camvid_generator_from_imgaug(train_data_dir_path, train_label_dir_pat
 			])
 		)
 
-	#return DatasetGenerator(seq, train_data, train_labels, num_classes, batch_size, shuffle), DatasetGenerator(seq, val_data, val_labels, num_classes, batch_size, shuffle), DatasetGenerator(seq, test_data, test_labels, num_classes, batch_size, shuffle)
-	return ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle))
-	#return generate_batch_from_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_from_imgaug_sequence(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	return seq
 
-#%%------------------------------------------------------------------
-# Load a CamVid dataset.
+# REF [function] >> generate_batch_using_imgaug() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
+# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
+def generate_batch_using_imgaug(seq, X, Y, num_classes, batch_size, shuffle=True):
+	while True:
+		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+		X_aug = seq_det.augment_images(X)
+		Y_aug = seq_det.augment_images(Y)
 
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+		# Preprocessing (normalization, standardization, etc).
+		X_aug, Y_aug = preprocess_camvid_dataset(X_aug, Y_aug, num_classes)
 
-def load_camvid_dataset(train_data_dir_path, train_label_dir_path, val_data_dir_path, val_label_dir_path, test_data_dir_path, test_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
-	train_data = load_images_by_pil(train_data_dir_path, data_suffix, data_extension, width=width, height=height)
-	train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=width, height=height)
-	val_data = load_images_by_pil(val_data_dir_path, data_suffix, data_extension, width=width, height=height)
-	val_labels = load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=width, height=height)
-	test_data = load_images_by_pil(test_data_dir_path, data_suffix, data_extension, width=width, height=height)
-	test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=width, height=height)
+		num_steps = np.ceil(len(X) / batch_size).astype(np.int)
+		#num_steps = len(X) // batch_size + (0 if len(X) % batch_size == 0 else 1)
+		if shuffle is True:
+			indexes = np.arange(len(X_aug))
+			np.random.shuffle(indexes)
+			for idx in range(num_steps):
+				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
+				#yield {'input': batch_x}, {'output': batch_y}
+				yield batch_x, batch_y
+		else:
+			for idx in range(num_steps):
+				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
+				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
+				#yield {'input': batch_x}, {'output': batch_y}
+				yield batch_x, batch_y
 
-	# Prepare dataset.
-	#train_data, train_labels = prepare_dataset(train_data, train_labels)
-	#val_data, val_labels = prepare_dataset(val_data, val_labels)
-	#test_data, test_labels = prepare_dataset(test_data, test_labels)
+class DatasetGeneratorUsingImgaug:
+	def __init__(self, seq, X, Y, num_classes, batch_size, shuffle=True):
+		self.seq = seq
+		self.X = X
+		self.Y = Y
+		self.num_classes = num_classes
+		self.batch_size = batch_size
+		self.shuffle = shuffle
 
-	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
-	#num_classes = np.max([np.unique(train_labels).size, np.unique(val_labels).size, np.unique(test_labels).size])
+		self.num_steps = np.ceil(len(self.X) / self.batch_size).astype(np.int)
+		#self.num_steps = len(self.X) // self.batch_size + (0 if len(self.X) % self.batch_size == 0 else 1)
+		self.idx = 0
+		self.X_aug = None
+		self.Y_aug = None
 
-	# Preprocessing (normalization, standardization, etc).
-	train_data = train_data.astype(np.float)
-	#train_data /= 255.0
-	train_data = standardize_samplewise(train_data)
-	#train_data = standardize_featurewise(train_data)
+		self.lock = threading.Lock()
 
-	val_data = val_data.astype(np.float)
-	#val_data /= 255.0
-	val_data = standardize_samplewise(val_data)
-	#val_data = standardize_featurewise(val_data)
+	def __iter__(self):
+		return self
 
-	test_data = test_data.astype(np.float)
-	#test_data /= 255.0
-	test_data = standardize_samplewise(test_data)
-	#test_data = standardize_featurewise(test_data)
+	def __next__(self):
+		with self.lock:
+			if 0 == self.idx:
+				seq_det = self.seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+				self.X_aug = seq_det.augment_images(self.X)
+				self.Y_aug = seq_det.augment_images(self.Y)
 
-	# One-hot encoding. (num_examples, height, width) -> (num_examples, height, width, num_classes).
-	#if num_classes > 2:
-	#	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	#	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
-	#	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
-	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
-	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+				# Preprocessing (normalization, standardization, etc).
+				self.X_aug, self.Y_aug = preprocess_camvid_dataset(self.X_aug, self.Y_aug, self.num_classes)
 
-	return train_data, train_labels, val_data, val_labels, test_data, test_labels
+				indexes = np.arange(len(self.X_aug))
+				if self.shuffle is True:
+					np.random.shuffle(indexes)
+
+			if self.X_aug is None or self.Y_aug is None:
+				assert False, 'Both X_aug and Y_aug are not None.'
+
+			if self.shuffle is True:
+				batch_x = self.X_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
+				batch_y = self.Y_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
+			else:
+				batch_x = self.X_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
+				batch_y = self.Y_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
+			self.idx = (self.idx + 1) % self.num_steps
+			return batch_x, batch_y
+
+def create_camvid_generator_using_imgaug_sequence(seq, train_data, train_labels, val_data, val_labels, test_data, test_labels, num_classes, batch_size=32, shuffle=True):
+	#return DatasetGeneratorUsingImgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), DatasetGeneratorUsingImgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle), DatasetGeneratorUsingImgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+	return ThreadSafeGenerator(generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_using_imgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle))
+	#return generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_using_imgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)

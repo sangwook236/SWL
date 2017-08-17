@@ -41,7 +41,7 @@ def generate_batch_from_dataset(X, Y, batch_size, shuffle=False):
 			#yield({'input': batch_x}, {'output': batch_y})
 			yield(batch_x, batch_y)
 
-def generate_batch_from_image_augmentation_sequence(seq, X, Y, batch_size, shuffle=False):
+def generate_batch_using_imgaug(seq, X, Y, batch_size, shuffle=False):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		X_aug = seq_det.augment_images(X)
