@@ -10,12 +10,12 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github"
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+lib_dir_path = lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
@@ -30,7 +30,7 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.camvid_dataset import load_camvid_dataset
+from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset
 #from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
@@ -84,11 +84,11 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_loader.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_loader_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_best.hdf5'  # For a best model.
+model_checkpoint_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_weight_{epoch:02d}-{val_loss:.2f}.hdf5'
+model_json_filepath = model_dir_path + '/fc_densenet_using_camvid_loader.json'
+model_weight_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_weight.hdf5'
+#model_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_epoch{}.hdf5'  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
 #%%------------------------------------------------------------------
@@ -125,10 +125,12 @@ image_width, image_height = 224, 224
 #test_labels = load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
+train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes = load_camvid_dataset(
 		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 		width=image_width, height=image_height)
+
+train_images, train_labels, val_images, val_labels, test_images, test_labels = preprocess_camvid_dataset(train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Parameters.

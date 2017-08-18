@@ -10,12 +10,12 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github"
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+lib_dir_path = lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_dir_path)
@@ -30,7 +30,8 @@ from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
-from swl.machine_learning.camvid_dataset import create_camvid_generator2
+from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, create_camvid_generator_from_array, create_camvid_generator_from_directory
+from swl.machine_learning.camvid_dataset import get_imgaug_sequence_for_camvid, create_camvid_generator_using_imgaug_sequence
 
 #%%------------------------------------------------------------------
 
@@ -83,11 +84,11 @@ if not os.path.exists(test_summary_dir_path):
 		if exception.errno != os.errno.EEXIST:
 			raise
 
-model_checkpoint_best_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_best.hdf5"  # For a best model.
-model_checkpoint_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight_{epoch:02d}-{val_loss:.2f}.hdf5"
-model_json_filepath = model_dir_path + "/fc_densenet_using_camvid_generator.json"
-model_weight_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_weight.hdf5"
-#model_filepath = model_dir_path + "/fc_densenet_using_camvid_generator_epoch{}.hdf5"  # For a full model.
+model_checkpoint_best_filepath = model_dir_path + '/fc_densenet_using_camvid_generator_best.hdf5'  # For a best model.
+model_checkpoint_filepath = model_dir_path + '/fc_densenet_using_camvid_generator_weight_{epoch:02d}-{val_loss:.2f}.hdf5'
+model_json_filepath = model_dir_path + '/fc_densenet_using_camvid_generator.json'
+model_weight_filepath = model_dir_path + '/fc_densenet_using_camvid_generator_weight.hdf5'
+#model_filepath = model_dir_path + '/fc_densenet_using_camvid_generator_epoch{}.hdf5'  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
 #%%------------------------------------------------------------------
@@ -148,20 +149,46 @@ else:
 	image_size = original_image_size
 image_shape = image_size + (3,)
 
-use_loaded_dataset = True
-
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
-#train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator(
-#		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
-#		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-#		batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, use_loaded_dataset=use_loaded_dataset, shuffle=shuffle, seed=seed)
-train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator2(
-		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
-		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
-		batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
+dataset_generator_type = 2
+if 0 == dataset_generator_type:
+	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = preprocess_camvid_dataset(
+			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+			width=resized_image_size[1], height=resized_image_size[0])
+
+	assert num_classes == num_classes0, '[Warning] The number of classes is unmatched.'
+
+	# FIXME [fix] >> A dataset generator for images(data) and labels per image.
+	#	- Images are only transformed, but labels are not transformed.
+	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_array(
+			train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes,
+			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+			batch_size=batch_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=None)
+elif 1 == dataset_generator_type:
+	# NOTICE [caution] >>
+	#	- resized_image_size should be not None.
+	#	- Each input directory should contain one subdirectory per class.
+	#	- Images are loaded as either a RGB or gray color.
+	train_dataset_gen = create_camvid_generator_from_directory(train_image_dir_path, train_label_dir_path,
+			num_classes, batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=seed)
+elif 2 == dataset_generator_type:
+	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = preprocess_camvid_dataset(
+			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
+			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
+			width=resized_image_size[1], height=resized_image_size[0])
+
+	assert num_classes == num_classes0, '[Warning] The number of classes is unmatched.'
+
+	seq = get_imgaug_sequence_for_camvid(width=image_shape[1], height=image_shape[0])
+	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_using_imgaug_sequence(
+			seq, train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes,
+			batch_size=batch_size, shuffle=shuffle)
+else:
+	assert dataset_generator_type < 3, 'Invalid dataset generator type.'
 
 #%%------------------------------------------------------------------
 # Create a FC-DenseNet model.
@@ -341,7 +368,7 @@ for batch_images, batch_labels in test_dataset_gen:
 batch_predictions = fc_densenet_model.predict(batch_images, batch_size=batch_size, verbose=0)
 
 idx = 0
-#plt.figure(figsize=(7,7))
+#plt.figure(figsize=(15,5))
 plt.subplot(131)
 plt.imshow((batch_images[idx] - np.min(batch_images[idx])) / (np.max(batch_images[idx]) - np.min(batch_images[idx])))
 plt.subplot(132)
