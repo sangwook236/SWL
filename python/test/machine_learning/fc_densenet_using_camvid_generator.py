@@ -267,6 +267,35 @@ optimizer = optimizers.RMSprop(lr=1.0e-5, decay=1.0e-9, rho=0.9, epsilon=1.0e-8)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
 #%%------------------------------------------------------------------
+
+def display_history(history):
+	# List all data in history.
+	print(history.history.keys())
+
+	# Summarize history for accuracy.
+	fig = plt.figure()
+	plt.plot(history.history['acc'])
+	plt.plot(history.history['val_acc'])
+	plt.title('model accuracy')
+	plt.ylabel('accuracy')
+	plt.xlabel('epoch')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
+	fig.savefig(output_dir_path + '/model_accuracy.png')
+	plt.close(fig)
+	# Summarize history for loss.
+	fig = plt.figure()
+	plt.plot(history.history['loss'])
+	plt.plot(history.history['val_loss'])
+	plt.title('model loss')
+	plt.ylabel('loss')
+	plt.xlabel('epoch')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
+	fig.savefig(output_dir_path + '/model_loss.png')
+	plt.close(fig)
+
+#%%------------------------------------------------------------------
 # Train the FC-DenseNet model.
 
 TRAINING_MODE = 0  # Start training a model.
@@ -307,31 +336,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 			#max_queue_size=max_queue_size, workers=workers, use_multiprocessing=use_multiprocessing,
 			class_weight=class_weighting, callbacks=callback_list, verbose=1)
 
-	# List all data in history.
-	print(history.history.keys())
-
-	# Summarize history for accuracy.
-	fig = plt.figure()
-	plt.plot(history.history['acc'])
-	plt.plot(history.history['val_acc'])
-	plt.title('model accuracy')
-	plt.ylabel('accuracy')
-	plt.xlabel('epoch')
-	plt.legend(['train', 'test'], loc='upper left')
-	plt.show()
-	fig.savefig(output_dir_path + '/model_accuracy.png')
-	plt.close(fig)
-	# Summarize history for loss.
-	fig = plt.figure()
-	plt.plot(history.history['loss'])
-	plt.plot(history.history['val_loss'])
-	plt.title('model loss')
-	plt.ylabel('loss')
-	plt.xlabel('epoch')
-	plt.legend(['train', 'test'], loc='upper left')
-	plt.show()
-	fig.savefig(output_dir_path + '/model_loss.png')
-	plt.close(fig)
+	display_history(history)
 
 	# Serialize a model to JSON.
 	#with open(model_json_filepath, 'w') as json_file:
