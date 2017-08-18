@@ -1,11 +1,8 @@
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = 'D:/lib_repo/python'
-	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
@@ -17,6 +14,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
 from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
+from swl.machine_learning.data_generator import create_dataset_generator_using_imgaug, DatasetGeneratorUsingImgaug
 from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
@@ -77,7 +75,7 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 
 #%%------------------------------------------------------------------
 
-def get_cvppp_dataset_generator(data_preprocessing_function, label_preprocessing_function, num_classes):
+def get_cvppp_dataset_generator(data_preprocessing_function, label_preprocessing_function):
 	train_data_generator = ImageDataGenerator(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
@@ -118,7 +116,7 @@ def get_cvppp_dataset_generator(data_preprocessing_function, label_preprocessing
 		cval=0.0)
 	return train_data_generator, train_label_generator
 
-def get_cvppp_dataset_generator_with_crop(data_preprocessing_function, label_preprocessing_function, num_classes, random_crop_size, center_crop_size):
+def get_cvppp_dataset_generator_with_crop(data_preprocessing_function, label_preprocessing_function, random_crop_size, center_crop_size):
 	train_data_generator = ImageDataGeneratorWithCrop(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
@@ -178,13 +176,11 @@ def get_cvppp_dataset_generator_with_crop(data_preprocessing_function, label_pre
 
 # A dataset generator for images(data) and labels per image.
 #	- Images are only transformed, but labels are not transformed.
-def create_cvppp_generator_from_array(train_data, train_labels, num_classes, batch_size=32, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
-	train_data, train_labels = preprocess_cvppp_dataset(train_data, train_labels, num_classes)
-
+def create_cvppp_generator_from_array(train_data, train_labels, batch_size=32, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
 	if random_crop_size is None and center_crop_size is None:
-		train_data_generator, _ = get_cvppp_dataset_generator(None, None, num_classes)
+		train_data_generator, _ = get_cvppp_dataset_generator(None, None)
 	else:
-		train_data_generator, _ = get_cvppp_dataset_generator_with_crop(None, None, num_classes, random_crop_size, center_crop_size)
+		train_data_generator, _ = get_cvppp_dataset_generator_with_crop(None, None, random_crop_size, center_crop_size)
 
 	# Compute the internal data stats related to the data-dependent transformations, based on an array of sample data.
 	# Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
@@ -201,18 +197,18 @@ def create_cvppp_generator_from_array(train_data, train_labels, num_classes, bat
 		seed=seed)
 	return train_dataset_gen
 
-def create_cvppp_generator_from_directory(train_data_dir_path, train_label_dir_path, num_classes, batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
+def create_cvppp_generator_from_directory(train_data_dir_path, train_label_dir_path, batch_size=32, resized_image_size=None, random_crop_size=None, center_crop_size=None, shuffle=True, seed=None):
 	# Prepare dataset & one-hot encoding.
 	if random_crop_size is None and center_crop_size is None:
 		train_data_generator, train_label_generator = get_cvppp_dataset_generator(
 				#lambda img: img = img[:,:,:,:-1],  # RGBA -> RGB.
 				None,
-				None, num_classes)
+				None)
 	else:
 		train_data_generator, train_label_generator = get_cvppp_dataset_generator_with_crop(
 				#lambda img: img = img[:,:,:,:-1],  # RGBA -> RGB.
 				None,
-				None, num_classes, random_crop_size, center_crop_size)
+				None, random_crop_size, center_crop_size)
 
 	# FIXME [implement] >>
 	# Preprocessing (normalization, standardization, etc).
@@ -259,8 +255,6 @@ def create_cvppp_generator_from_directory(train_data_dir_path, train_label_dir_p
 
 import imgaug as ia
 from imgaug import augmenters as iaa
-import threading
-from swl.util.threading import ThreadSafeGenerator
 
 def get_imgaug_sequence_for_cvppp(width=None, height=None):
 	if height is not None and width is not None:
@@ -278,8 +272,8 @@ def get_imgaug_sequence_for_cvppp(width=None, height=None):
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode=ia.ALL  # Use any of scikit-image's warping modes.
+					#mode='edge'  # Use any of scikit-image's warping modes.
 				))
 				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
 			]),
@@ -300,93 +294,11 @@ def get_imgaug_sequence_for_cvppp(width=None, height=None):
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode=ia.ALL  # Use any of scikit-image's warping modes.
+					#mode='edge'  # Use any of scikit-image's warping modes.
 				))
 				#iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
 			])
 		)
 
 	return seq
-
-# REF [function] >> generate_batch_using_imgaug() in ${SWL_PYTHON_HOME}/src/swl/machine_learning/util/py
-# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
-def generate_batch_using_imgaug(seq, X, Y, num_classes, batch_size, shuffle=True):
-	while True:
-		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-		X_aug = seq_det.augment_images(X)
-		Y_aug = seq_det.augment_images(Y)
-
-		# Preprocessing (normalization, standardization, etc).
-		X_aug, Y_aug = preprocess_cvppp_dataset(X_aug, Y_aug, num_classes)
-
-		num_steps = np.ceil(len(X_aug) / batch_size).astype(np.int)
-		#num_steps = len(X_aug) // batch_size + (0 if len(X_aug) % batch_size == 0 else 1)
-		if shuffle is True:
-			indexes = np.arange(len(X_aug))
-			np.random.shuffle(indexes)
-			for idx in range(num_steps):
-				batch_x = X_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
-				batch_y = Y_aug[indexes[idx*batch_size:(idx+1)*batch_size]]
-				#yield {'input': batch_x}, {'output': batch_y}
-				yield batch_x, batch_y
-		else:
-			for idx in range(num_steps):
-				batch_x = X_aug[idx*batch_size:(idx+1)*batch_size]
-				batch_y = Y_aug[idx*batch_size:(idx+1)*batch_size]
-				#yield {'input': batch_x}, {'output': batch_y}
-				yield batch_x, batch_y
-
-class DatasetGeneratorUsingImgaug:
-	def __init__(self, seq, X, Y, num_classes, batch_size, shuffle=True):
-		self.seq = seq
-		self.X = X
-		self.Y = Y
-		self.num_classes = num_classes
-		self.batch_size = batch_size
-		self.shuffle = shuffle
-
-		self.num_steps = np.ceil(len(self.X) / self.batch_size).astype(np.int)
-		#self.num_steps = len(self.X) // self.batch_size + (0 if len(self.X) % self.batch_size == 0 else 1)
-		self.idx = 0
-		self.X_aug = None
-		self.Y_aug = None
-
-		self.lock = threading.Lock()
-
-	def __iter__(self):
-		return self
-
-	def __next__(self):
-		with self.lock:
-			if 0 == self.idx:
-				seq_det = self.seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-				self.X_aug = seq_det.augment_images(self.X)
-				self.Y_aug = seq_det.augment_images(self.Y)
-
-				# Preprocessing (normalization, standardization, etc).
-				self.X_aug, self.Y_aug = preprocess_cvppp_dataset(self.X_aug, self.Y_aug, self.num_classes)
-
-				indexes = np.arange(len(self.X_aug))
-				if self.shuffle is True:
-					np.random.shuffle(indexes)
-
-			if self.X_aug is None or self.Y_aug is None:
-				assert False, 'Both X_aug and Y_aug are not None.'
-
-			if self.shuffle is True:
-				batch_x = self.X_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
-				batch_y = self.Y_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
-			else:
-				batch_x = self.X_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
-				batch_y = self.Y_aug[self.idx*self.batch_size:(self.idx+1)*self.batch_size]
-			self.idx = (self.idx + 1) % self.num_steps
-			return batch_x, batch_y
-
-def create_cvppp_generator_using_imgaug_sequence(seq, train_data, train_labels, num_classes, batch_size=32, shuffle=True):
-	#return DatasetGeneratorUsingImgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle)
-	return ThreadSafeGenerator(generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle))
-	#return generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle)
-	##return DatasetGeneratorUsingImgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), DatasetGeneratorUsingImgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)
-	##return ThreadSafeGenerator(generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle))
-	##return generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)

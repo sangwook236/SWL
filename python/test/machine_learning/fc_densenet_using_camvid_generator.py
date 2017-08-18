@@ -15,23 +15,24 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-lib_dir_path = lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_dir_path)
+sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 
 #%%------------------------------------------------------------------
 
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 import tensorflow as tf
 from keras import backend as K
 from keras import models
 from keras import optimizers, callbacks
 import densenet_fc as dc
-import matplotlib.pyplot as plt
-from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, create_camvid_generator_from_array, create_camvid_generator_from_directory
-from swl.machine_learning.camvid_dataset import get_imgaug_sequence_for_camvid, create_camvid_generator_using_imgaug_sequence
+from swl.util.threading import ThreadSafeGenerator
+from swl.machine_learning.data_generator import create_dataset_generator_using_imgaug, DatasetGeneratorUsingImgaug
+from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset, create_camvid_generator_from_array, create_camvid_generator_from_directory
+from swl.machine_learning.camvid_dataset import get_imgaug_sequence_for_camvid
 
 #%%------------------------------------------------------------------
 
@@ -155,17 +156,20 @@ seed = 1
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/keras/camvid_dataset_test.py
 dataset_generator_type = 2
 if 0 == dataset_generator_type:
-	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = preprocess_camvid_dataset(
+	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = load_camvid_dataset(
 			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			width=resized_image_size[1], height=resized_image_size[0])
 
 	assert num_classes == num_classes0, '[Warning] The number of classes is unmatched.'
 
+	# Preprocessing (normalization, standardization, etc).
+	train_images, train_labels, val_images, val_labels, test_images, test_labels = preprocess_camvid_dataset(train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes)
+
 	# FIXME [fix] >> A dataset generator for images(data) and labels per image.
 	#	- Images are only transformed, but labels are not transformed.
 	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_array(
-			train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes,
+			train_images, train_labels, val_images, val_labels, test_images, test_labels,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			batch_size=batch_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=None)
 elif 1 == dataset_generator_type:
@@ -174,9 +178,9 @@ elif 1 == dataset_generator_type:
 	#	- Each input directory should contain one subdirectory per class.
 	#	- Images are loaded as either a RGB or gray color.
 	train_dataset_gen = create_camvid_generator_from_directory(train_image_dir_path, train_label_dir_path,
-			num_classes, batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=seed)
+			batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=seed)
 elif 2 == dataset_generator_type:
-	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = preprocess_camvid_dataset(
+	train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes0 = load_camvid_dataset(
 			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			width=resized_image_size[1], height=resized_image_size[0])
@@ -184,9 +188,21 @@ elif 2 == dataset_generator_type:
 	assert num_classes == num_classes0, '[Warning] The number of classes is unmatched.'
 
 	seq = get_imgaug_sequence_for_camvid(width=image_shape[1], height=image_shape[0])
-	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_using_imgaug_sequence(
-			seq, train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes,
-			batch_size=batch_size, shuffle=shuffle)
+
+	gen_type = -1
+	if 0 == gen_type:
+		# NOTICE [caution] >> Not thread-safe.
+		train_dataset_gen = create_dataset_generator_using_imgaug(seq, train_images, train_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+		val_dataset_gen = create_dataset_generator_using_imgaug(seq, val_images, val_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+		test_dataset_gen = create_dataset_generator_using_imgaug(seq, test_images, test_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+	elif 1 == gen_type:
+		train_dataset_gen = DatasetGeneratorUsingImgaug(seq, train_images, train_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+		val_dataset_gen = DatasetGeneratorUsingImgaug(seq, val_images, val_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+		test_dataset_gen = DatasetGeneratorUsingImgaug(seq, test_images, test_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset)
+	else:
+		train_dataset_gen = ThreadSafeGenerator(create_dataset_generator_using_imgaug(seq, train_images, train_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset))
+		val_dataset_gen = ThreadSafeGenerator(create_dataset_generator_using_imgaug(seq, val_images, val_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset))
+		test_dataset_gen = ThreadSafeGenerator(create_dataset_generator_using_imgaug(seq, test_images, test_labels, num_classes, batch_size=batch_size, shuffle=shuffle, dataset_preprocessing_function=preprocess_camvid_dataset))
 else:
 	assert dataset_generator_type < 3, 'Invalid dataset generator type.'
 

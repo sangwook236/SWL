@@ -15,10 +15,9 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-lib_dir_path = lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github'
 
 sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_dir_path)
+sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 
 #%%------------------------------------------------------------------
 
