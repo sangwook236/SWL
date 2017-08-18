@@ -81,8 +81,8 @@ def get_cvppp_dataset_generator(data_preprocessing_function, label_preprocessing
 	train_data_generator = ImageDataGenerator(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,
@@ -122,8 +122,8 @@ def get_cvppp_dataset_generator_with_crop(data_preprocessing_function, label_pre
 	train_data_generator = ImageDataGeneratorWithCrop(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,

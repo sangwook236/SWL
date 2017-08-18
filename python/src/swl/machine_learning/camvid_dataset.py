@@ -84,8 +84,8 @@ def get_camvid_dataset_generator(data_preprocessing_function, label_preprocessin
 	train_data_generator = ImageDataGenerator(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,
@@ -122,8 +122,8 @@ def get_camvid_dataset_generator(data_preprocessing_function, label_preprocessin
 	test_data_generator = ImageDataGenerator(
 		#rescale=1.0/255.0,
 		preprocessing_function=data_preprocessing_function,
-		featurewise_center=True,
-		featurewise_std_normalization=True,
+		#featurewise_center=True,
+		#featurewise_std_normalization=True,
 		#samplewise_center=True,
 		#samplewise_std_normalization=True,
 		#zca_whitening=False,
@@ -498,3 +498,4 @@ def create_camvid_generator_using_imgaug_sequence(seq, train_data, train_labels,
 	#return DatasetGeneratorUsingImgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), DatasetGeneratorUsingImgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle), DatasetGeneratorUsingImgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)
 	return ThreadSafeGenerator(generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_using_imgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle)), ThreadSafeGenerator(generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle))
 	#return generate_batch_using_imgaug(seq, train_data, train_labels, num_classes, batch_size, shuffle), generate_batch_using_imgaug(seq, val_data, val_labels, num_classes, batch_size, shuffle), generate_batch_using_imgaug(seq, test_data, test_labels, num_classes, batch_size, shuffle)
+

@@ -99,8 +99,8 @@ np.random.seed(7)
 num_examples = 367
 num_classes = 12  # 11 + 1.
 
-batch_size = 11  # Number of samples per gradient update.
-num_epochs = 500  # Number of times to iterate over training data.
+batch_size = 12  # Number of samples per gradient update.
+num_epochs = 1000  # Number of times to iterate over training data.
 steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
