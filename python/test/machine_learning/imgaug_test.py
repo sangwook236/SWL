@@ -5,8 +5,6 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#os.chdir(swl_python_home_dir_path + '/test/machine_learning')
-
 #%%------------------------------------------------------------------
 # Prepare dataset.
 
@@ -53,15 +51,16 @@ def export_images(images, labels, filepath_prefix, filepath_suffix):
 		stacked_img.save(filepath_prefix + str(idx) + filepath_suffix + '.jpg')
 
 #%%------------------------------------------------------------------
-# Transform randomly.
+# Do data augmentation.
 
 if 'posix' == os.name:
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/imgaug_github"
-sys.path.append(lib_dir_path)
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+sys.path.append(lib_home_dir_path + '/imgaug_github')
+
+# REF [site] >> https://github.com/aleju/imgaug
 
 import imgaug as ia
 from imgaug import augmenters as iaa
@@ -82,8 +81,8 @@ seq = iaa.Sequential([
 		iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 		iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 		iaa.Sometimes(0.5, iaa.Affine(
-			scale={"x": (0.8, 1.2), "y": (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-			translate_percent={"x": (-0.2, 0.2), "y": (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+			scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+			translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
 			rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
 			shear=(-16, 16),  # Shear by -16 to +16 degrees.
 			#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
@@ -159,19 +158,19 @@ export_images(images_aug, labels_aug, './augmented2/img', '_aug')
 
 #%%------------------------------------------------------------------
 
-from swl.machine_learning.util import generate_batch_from_dataset, generate_batch_from_image_augmentation_sequence
+from swl.machine_learning.data_generator import create_dataset_generator_from_array, create_dataset_generator_using_imgaug
 
 batch_size = 5
 
 #batch_idx = 0
-#for batch_images, batch_labels in generate_batch_from_dataset(images_aug, labels_aug, batch_size):
+#for batch_images, batch_labels in create_dataset_generator_from_array(images_aug, labels_aug, batch_size):
 #	export_images(batch_images, batch_labels, './generated/img', '')
 #	#print(batch_idx, type(batch_images), type(batch_labels))
 #	print(batch_idx, ':', batch_images.shape, ',', batch_labels.shape)
 #	batch_idx += 1
 
 batch_idx = 0
-for batch_images, batch_labels in generate_batch_from_image_augmentation_sequence(seq, images, labels, batch_size):
+for batch_images, batch_labels in create_dataset_generator_using_imgaug(seq, images, labels, batch_size):
 	export_images(batch_images, np.argmax(batch_labels, axis=-1), './augmented/img', '')
 	#print(batch_idx, type(batch_images), type(batch_labels))
 	print(batch_idx, ':', batch_images.shape, ',', batch_labels.shape)
