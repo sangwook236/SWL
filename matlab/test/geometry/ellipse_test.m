@@ -40,7 +40,7 @@ hold off;
 
 ABCDEF = ellipse2conic(a, b, theta, tx, ty);
 
-[a0, b0, theta0, tx0, ty0] = conic2ellipse(ABCDEF)
+[a0, b0, theta0, tx0, ty0] = conic2ellipse(ABCDEF);
 
 figure;
 hold on;
@@ -61,10 +61,23 @@ end;
 axis equal;
 hold off;
 
+%-----------------------------------------------------------
 % Intersection points between the ellipse with a line y = x.
+%	A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
+%	y = x.
+
+[a, b, theta, tx, ty] = deal(2, 1, pi / 4, 1, 0);
+ABCDEF = ellipse2conic(a, b, theta, tx, ty);
+A = ABCDEF(1);
+B = ABCDEF(2);
+C = ABCDEF(3);
+D = ABCDEF(4);
+E = ABCDEF(5);
+F = ABCDEF(6);
+
 a = A + B + C;
 b = D + E;
 c = F;
-dd = sqrt(b^2 - 4 * a * c);
-x_sol1 = (-b + dd) / (2 * a)
-x_sol2 = (-b - dd) / (2 * a)
+sqrt_discriminant = sqrt(b^2 - 4 * a * c);
+x_sol1 = (-b + sqrt_discriminant) / (2 * a)
+x_sol2 = (-b - sqrt_discriminant) / (2 * a)

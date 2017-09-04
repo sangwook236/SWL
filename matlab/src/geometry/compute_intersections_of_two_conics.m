@@ -1,16 +1,22 @@
 function sols = compute_intersections_of_two_conics(ABCDEF1, ABCDEF2)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
-% REF [site] >> https://elliotnoma.wordpress.com/2013/04/10/a-closed-form-solution-for-the-intersections-of-two-ellipses/
 
-sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2);
-%sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2);
-%sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2);
+%tol = eps * 1e5;
+tol = 1.0e-10;
+
+%sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol);  % Partial solutions in some speical cases.
+%sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol);  % Not correctly working.
+sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol);  % Partial solutions if at least one of two conics is a circle.
+
 return;
 
-function sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2)
+%-----------------------------------------------------------
+
+function sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
+% REF [site] >> https://elliotnoma.wordpress.com/2013/04/10/a-closed-form-solution-for-the-intersections-of-two-ellipses/
 
 A1 = ABCDEF1(1);
 B1 = ABCDEF1(2);
@@ -45,7 +51,7 @@ aa = C1;
 bb = B1 * x + E1;
 cc = A1 * x.^2 + D1 * x + F1;
 
-if abs(aa) > eps
+if abs(aa) > tol
 	determinant = sqrt(bb.^2 - 4 * aa * cc);
 	yy = [(-bb + determinant) (-bb - determinant)] / (2 * aa);
 	func1 = abs(A2 * x.^2 + B2 * x.*yy(:,1) + C2 * yy(:,1).^2 + D2 * x + E2 * yy(:,1) + F2);
@@ -55,64 +61,23 @@ if abs(aa) > eps
 	for ii = 1:length(I)
 		y(ii) = yy(ii,I(ii));
 	end;
-elseif all(abs(bb) > eps)
+elseif all(abs(bb) > tol)
 	y = -cc ./ bb;
 else
 	error('[Error] Improper quadratic equation.')
 end;
 
-sols = [x, y];
+sols = [x' ; y'];
+%sols = [x' ; y' ; ones(size(x'))];
+
 return;
 
-function sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2)
+%-----------------------------------------------------------
+
+function sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
 % REF [site] >> https://elliotnoma.wordpress.com/2013/04/10/a-closed-form-solution-for-the-intersections-of-two-ellipses/
-
-a = ABCDEF1(1);
-b = ABCDEF1(2);
-c = ABCDEF1(3);
-d = ABCDEF1(4);
-e = ABCDEF1(5);
-f = ABCDEF1(6);
-
-A1 = ABCDEF2(1);
-B1 = ABCDEF2(2);
-C1 = ABCDEF2(3);
-D1 = ABCDEF2(4);
-E1 = ABCDEF2(5);
-F1 = ABCDEF2(6);
-
-% z0 + z1 * y + z2 * y^2 + z3 * y^3 + z4 * y^4 = 0.
-z0 = f*a*D1^2+a^2*F1^2-d*a*D1*F1+A1^2*f^2-2*a*F1*A1*f-d*D1*A1*f+A1*d^2*F1;
-z1 = E1*d^2*A1-F1*D1*a*b-2*a*F1*A1*e-f*A1*B1*d+2*D1*B1*a*f+2*E1*F1*a^2+D1^2*a*e...
-	-E1*D1*a*d-2*a*E1*A1*f-f*A1*D1*b+2*f*e*A1^2-F1*B1*a*d-e*A1*D1*d+2*F1*b*A1*d;
-z2 = E1^2*a^2+2*C1*F1*a^2-e*A1*D1*b+F1*A1*b^2-e*A1*B1*d-F1*B1*a*b-2*a*E1*A1*e...
-	+2*D1*B1*a*e-C1*D1*a*d-2*a*C1*A1*f+B1^2*a*f+2*E1*b*A1*d+e^2*A1^2-c*A1*D1*d...
-	-E1*B1*a*d+2*f*c*A1^2-f*A1*B1*b+C1*d^2*A1+D1^2*a*c-E1*D1*a*b-2*a*F1*A1*c;
-z3 = -2*a*A1*c*E1+E1*A1*b^2+2*C1*b*A1*d-c*A1*B1*d+B1^2*a*e-E1*B1*a*b-2*a*C1*A1*e...
-	-e*A1*B1*b-C1*B1*a*d+2*E1*C1*a^2+2*e*c*A1^2-c*A1*D1*b+2*D1*B1*a*c-C1*D1*a*b;
-z4 = a^2*C1^2-2*a*C1*A1*c+A1^2*c^2-b*a*B1*C1-b*B1*A1*c+b^2*A1*C1+c*a*B1^2;
-
-y = roots([z4 z3 z2 z1 z0]);
-
-denom = a*B1*y+a*D1-A1*b*y-A1*d;
-if abs(denom) > eps
-	x = -(a*F1+a*C1*y.^2-A1*c*y.^2+a*E1*y-A1*e*y-A1*f) ./ denom;
-else
-	bb = b * y + d;
-	cc = c * y.^2 + e * y + f;
-	x1 = (-bb + sqrt(bb.^2 - 4 * a * cc)) / (2 * a);
-	x1
-	x = (-bb - sqrt(bb.^2 - 4 * a * cc)) / (2 * a);
-end;
-
-sols = [x, y];
-return;
-
-function sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2)
-% A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
-% A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
 
 A1 = ABCDEF1(1);
 B1 = ABCDEF1(2);
@@ -120,6 +85,7 @@ C1 = ABCDEF1(3);
 D1 = ABCDEF1(4);
 E1 = ABCDEF1(5);
 F1 = ABCDEF1(6);
+
 A2 = ABCDEF2(1);
 B2 = ABCDEF2(2);
 C2 = ABCDEF2(3);
@@ -127,24 +93,81 @@ D2 = ABCDEF2(4);
 E2 = ABCDEF2(5);
 F2 = ABCDEF2(6);
 
-A = [
-	2*A1 B1 D1
-	B1 2*C1 E1
-	D1 E1 2*F1
-];
-B = [
-	2*A2 B2 D2
-	B2 2*C2 E2
-	D2 E2 2*F2
-];
+% a * y^4 + b * y^3 + c * y^2 + d * y + e = 0.
+a = A1^2*C2^2-2*A1*C2*A2*C1+A2^2*C1^2-B1*A1*B2*C2-B1*B2*A2*C1+B1^2*A2*C2+C1*A1*B2^2;
+b = -2*A1*A2*C1*E2+E2*A2*B1^2+2*C2*B1*A2*D1-C1*A2*B2*D1+B2^2*A1*E1-E2*B2*A1*B1-2*A1*C2*A2*E1...
+	-E1*A2*B2*B1-C2*B2*A1*D1+2*E2*C2*A1^2+2*E1*C1*A2^2-C1*A2*D2*B1+2*D2*B2*A1*C1-C2*D2*A1*B1;
+c = E2^2*A1^2+2*C2*F2*A1^2-E1*A2*D2*B1+F2*A2*B1^2-E1*A2*B2*D1-F2*B2*A1*B1-2*A1*E2*A2*E1...
+	+2*D2*B2*A1*E1-C2*D2*A1*D1-2*A1*C2*A2*F1+B2^2*A1*F1+2*E2*B1*A2*D1+E1^2*A2^2-C1*A2*D2*D1...
+	-E2*B2*A1*D1+2*F1*C1*A2^2-F1*A2*B2*B1+C2*D1^2*A2+D2^2*A1*C1-E2*D2*A1*B1-2*A1*F2*A2*C1;
+d = E2*D1^2*A2-F2*D2*A1*B1-2*A1*F2*A2*E1-F1*A2*B2*D1+2*D2*B2*A1*F1+2*E2*F2*A1^2+D2^2*A1*E1...
+	-E2*D2*A1*D1-2*A1*E2*A2*F1-F1*A2*D2*B1+2*F1*E1*A2^2-F2*B2*A1*D1-E1*A2*D2*D1+2*F2*B1*A2*D1;
+e = F1*A1*D2^2+A1^2*F2^2-D1*A1*D2*F2+A2^2*F1^2-2*A1*F2*A2*F1-D1*D2*A2*F1+A2*D1^2*F2;
 
-rankA = rank(A);
-rankB = rank(B);
+y = roots([a b c d e]);
 
-% det(lambda * A + mu * B) = 0;
-%if rankA >= 3
-if rankA >= 5
-	% mu = 1 -> det(lambda * A + B) = 0;
+denom = (A1-A2)*(B1*y+D1);
+if abs(denom) > tol
+	x = -((A1*C2-A2*C1)*y.^2+(A1*E2-A2*E1)*y+A1*F2-A2*F1) ./ denom;
+
+	sols = [x' ; y'];
+	%sols = [x' ; y' ; ones(size(x'))];
+else
+	% Cases where the denominator is zero when the main axes of the ellipses are horizontal and vertical.
+	%	There are only two different values out of 4 y values.
+
+	yy = find_unique(y, 1.0e-5);
+
+	% FIXME [fix] >> There are some errors.
+
+	bb = B1 * yy + D1;
+	cc = C1 * yy.^2 + E1 * yy + F1;
+	sqrt_discriminant = sqrt(bb.^2 - 4 * A1 * cc);
+	x1 = (-bb + sqrt_discriminant) / (2 * A1);
+	x2 = (-bb - sqrt_discriminant) / (2 * A1);
+
+	sols = [x1 x2 ; yy yy];
+	%sols = [x1 x2 ; yy yy ; ones(size([x1 x2]))];
+end;
+
+return;
+
+%-----------------------------------------------------------
+
+function sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol)
+% A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
+% A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
+% REF [site] >> https://en.wikipedia.org/wiki/Conic_section#Intersecting_two_conics
+% REF [site] >> https://math.stackexchange.com/questions/425366/finding-intersection-of-an-ellipse-with-another-ellipse-when-both-are-rotated/425412#425412
+% REF [site] >> https://math.stackexchange.com/questions/2332007/find-intersection-of-hyperbola-and-ellipse
+% Bezout's theorem.
+%	REF [site] >> https://en.wikipedia.org/wiki/B%C3%A9zout%27s_theorem
+
+A1 = ABCDEF1(1);
+B1 = ABCDEF1(2);
+C1 = ABCDEF1(3);
+D1 = ABCDEF1(4);
+E1 = ABCDEF1(5);
+F1 = ABCDEF1(6);
+
+A2 = ABCDEF2(1);
+B2 = ABCDEF2(2);
+C2 = ABCDEF2(3);
+D2 = ABCDEF2(4);
+E2 = ABCDEF2(5);
+F2 = ABCDEF2(6);
+
+Cc1 = conic_poly2mat(ABCDEF1);
+Cc2 = conic_poly2mat(ABCDEF2);
+
+rankCc1 = rank(Cc1);
+rankCc2 = rank(Cc2);
+
+% det(lambda * Cc1 + mu * Cc2) = 0.
+CC = {};
+kk = 1;
+if rankCc1 >= 3
+	% mu = 1 -> det(lambda * Cc1 + Cc2) = 0;
 
 	a = 8*A1*C1*F1-2*B1^2*F1-2*A1*E1^2+2*B1*D1*E1-2*C1*D1^2;
 	b = 8*A1*C1*F2-2*B1^2*F2+8*A1*C2*F1+8*A2*C1*F1-4*B1*B2*F1-4*A1*E1*E2 ...
@@ -155,13 +178,15 @@ if rankA >= 5
 
 	lambda = roots([a b c d]);
 
-	CC = cell(size(lambda));
+	%CC = cell(size(lambda));
 	for ii = 1:length(lambda)
 	%for ii = 1:2
-		CC{ii} = lambda(ii) * A + B;  % rank 2.
+		CC{kk} = lambda(ii) * Cc1 + Cc2;  % rank 2.
+		kk = kk + 1;
 	end;
-elseif rankB >= 3
-	% lambda = 1 -> det(A + mu * B) = 0;
+end;
+if rankCc2 >= 3
+	% lambda = 1 -> det(Cc1 + mu * Cc2) = 0;
 
 	a = 8*A2*C2*F2-2*B2^2*F2-2*A2*E2^2+2*B2*D2*E2-2*C2*D2^2;
 	b = 8*A1*C2*F2+8*A2*C1*F2-4*B1*B2*F2+8*A2*C2*F1-2*B2^2*F1-2*A1*E2^2 ...
@@ -172,21 +197,22 @@ elseif rankB >= 3
 
 	mu = roots([a b c d]);
 
-	CC = cell(size(mu));
+	%CC = cell(size(mu));
 	for ii = 1:length(mu)
 	%for ii = 1:2
-		CC{ii} = A + mu(ii) * B;  % rank 2.
+		CC{kk} = Cc1 + mu(ii) * Cc2;  % rank 2.
+		kk = kk + 1;
 	end;
 end;
 
-l1 = cell(1, length(CC));
-l2 = cell(1, length(CC));
+LL = cell(1, length(CC));
 for ii = 1:length(CC)
-	adjCC = det(CC{ii}) * inv(CC{ii});  % rank 1.
+	%adjCC = det(CC{ii}) * inv(CC{ii});  % rank 1.
+	adjCC = adjoint(CC{ii});  % rank 1.
 
 	p = [];
 	for jj = 1:size(adjCC, 2)
-		if norm(adjCC(:,jj)) > eps
+		if norm(adjCC(:,jj)) > tol
 			p = adjCC(:,jj);
 			break;
 		end;
@@ -204,41 +230,74 @@ for ii = 1:length(CC)
 	alpha = sqrt((CC{ii}(1,2)^2 - CC{ii}(1,1) * CC{ii}(2,2)) / p(3)^2);
 	%alpha = -sqrt((CC{ii}(1,2)^2 - CC{ii}(1,1) * CC{ii}(2,2)) / p(3)^2);
 
-	CP = CC{ii} + alpha * P;
+	LL{ii} = zeros(size(P,1),4);
+	for mm = 1:2
+		if 1 == mm
+			CP = CC{ii} + alpha * P;
+		else
+			CP = CC{ii} - alpha * P;
+		end;
 
-    for jj = 1:size(CP, 1)
-		if norm(CP(jj,:)) > eps
-			l1{ii} = CP(jj,:)';
-			break;
+	    for jj = 1:size(CP, 1)
+			if norm(CP(jj,:)) > tol
+				LL{ii}(:,2*(mm-1)+1) = CP(jj,:)';
+				break;
+			end;
 		end;
-	end;
-	for jj = 1:size(CP, 2)
-		if norm(CP(:,jj)) > eps
-			l2{ii} = CP(:,jj);
-			break;
+		for jj = 1:size(CP, 2)
+			if norm(CP(:,jj)) > tol
+				LL{ii}(:,2*(mm-1)+2) = CP(:,jj);
+				break;
+			end;
 		end;
-	end;
-	if isempty(l1{ii}) | isempty(l2{ii})
-		error('[Error] Any valid line not found.');
+		if isempty(LL{ii}(:,1)) | isempty(LL{ii}(:,2)) | isempty(LL{ii}(:,3)) | isempty(LL{ii}(:,4))
+			error('[Error] Any valid line not found.');
+		end;
 	end;
 end;
 
-l1{1}
-l1{2}
-l1{3}
-l2{1}
-l2{2}
-l2{3}
-
-pt1 = cross(l1{1}, l2{1})
-pt2 = cross(l1{1}, l2{2});
-%pt3 = cross(l1{1}, l2{3});
-pt4 = cross(l1{2}, l2{1});
-pt5 = cross(l1{2}, l2{2});
-%pt6 = cross(l1{2}, l2{3});
-%pt7 = cross(l1{3}, l2{1});
-%pt8 = cross(l1{3}, l2{2});
-%pt9 = cross(l1{3}, l2{3});
+pts = [
+	cross(LL{1}(:,1), LL{2}(:,1)) cross(LL{1}(:,1), LL{2}(:,2)) cross(LL{1}(:,2), LL{2}(:,1)) cross(LL{1}(:,2), LL{2}(:,2)) ...
+	cross(LL{1}(:,1), LL{3}(:,1)) cross(LL{1}(:,1), LL{3}(:,2)) cross(LL{1}(:,2), LL{3}(:,1)) cross(LL{1}(:,2), LL{3}(:,2)) ...
+	cross(LL{2}(:,1), LL{3}(:,1)) cross(LL{2}(:,1), LL{3}(:,2)) cross(LL{2}(:,2), LL{3}(:,1)) cross(LL{2}(:,2), LL{3}(:,2)) ...
+	cross(LL{1}(:,3), LL{2}(:,3)) cross(LL{1}(:,3), LL{2}(:,4)) cross(LL{1}(:,4), LL{2}(:,3)) cross(LL{1}(:,4), LL{2}(:,4)) ...
+	cross(LL{1}(:,3), LL{3}(:,3)) cross(LL{1}(:,3), LL{3}(:,4)) cross(LL{1}(:,4), LL{3}(:,3)) cross(LL{1}(:,4), LL{3}(:,4)) ...
+	cross(LL{2}(:,3), LL{3}(:,3)) cross(LL{2}(:,3), LL{3}(:,4)) cross(LL{2}(:,4), LL{3}(:,3)) cross(LL{2}(:,4), LL{3}(:,4)) ...
+	cross(LL{4}(:,1), LL{5}(:,1)) cross(LL{4}(:,1), LL{5}(:,2)) cross(LL{4}(:,2), LL{5}(:,1)) cross(LL{4}(:,2), LL{5}(:,2)) ...
+	cross(LL{4}(:,1), LL{6}(:,1)) cross(LL{4}(:,1), LL{6}(:,2)) cross(LL{4}(:,2), LL{6}(:,1)) cross(LL{4}(:,2), LL{6}(:,2)) ...
+	cross(LL{5}(:,1), LL{6}(:,1)) cross(LL{5}(:,1), LL{6}(:,2)) cross(LL{5}(:,2), LL{6}(:,1)) cross(LL{5}(:,2), LL{6}(:,2)) ...
+	cross(LL{4}(:,3), LL{5}(:,3)) cross(LL{4}(:,3), LL{5}(:,4)) cross(LL{4}(:,4), LL{5}(:,3)) cross(LL{4}(:,4), LL{5}(:,4)) ...
+	cross(LL{4}(:,3), LL{6}(:,3)) cross(LL{4}(:,3), LL{6}(:,4)) cross(LL{4}(:,4), LL{6}(:,3)) cross(LL{4}(:,4), LL{6}(:,4)) ...
+	cross(LL{5}(:,3), LL{6}(:,3)) cross(LL{5}(:,3), LL{6}(:,4)) cross(LL{5}(:,4), LL{6}(:,3)) cross(LL{5}(:,4), LL{6}(:,4))
+];
 
 sols = [];
+kk = 1;
+for ii = 1:size(pts, 2)
+	pts(:,ii) = pts(:,ii) / pts(3,ii);
+	if abs(transpose(pts(:,ii)) * Cc1 * pts(:,ii)) < tol & abs(transpose(pts(:,ii)) * Cc2 * pts(:,ii)) < tol
+		sols(:,kk) = pts(:,ii);
+		kk = kk + 1;
+	end;
+end;
+
+if ~isempty(sols)
+	sols = find_unique(sols, tol);
+	sols = sols(1:2,:);
+end;
+
+if 4 ~= size(sols,2)
+	error('[Error] Invalid number of solutions.');
+end;
+
+return;
+
+function adjA = adjoint(A)
+
+adjA = [
+	A(2,2)*A(3,3)-A(2,3)^2 A(1,3)*A(2,3)-A(1,2)*A(3,3) A(1,2)*A(2,3)-A(1,3)*A(2,2)
+	A(1,3)*A(2,3)-A(1,2)*A(3,3) A(1,1)*A(3,3)-A(1,3)^2 A(1,2)*A(1,3)-A(1,1)*A(2,3)
+	A(1,2)*A(2,3)-A(1,3)*A(2,2) A(1,2)*A(1,3)-A(1,1)*A(2,3) A(1,1)*A(2,2)-A(1,2)^2
+];
+
 return;
