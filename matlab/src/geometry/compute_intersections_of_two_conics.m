@@ -5,9 +5,9 @@ function sols = compute_intersections_of_two_conics(ABCDEF1, ABCDEF2)
 %tol = eps * 1e5;
 tol = 1.0e-10;
 
-%sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol);  % Partial solutions in some speical cases.
+sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol);  % Partial solutions in some speical cases.
 %sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol);  % Not correctly working.
-sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol);  % Partial solutions if at least one of two conics is a circle.
+%sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol);  % Partial solutions if at least one of two conics is a circle.
 
 return;
 
