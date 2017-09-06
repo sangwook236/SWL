@@ -1,19 +1,21 @@
-function sols = compute_intersections_of_two_conics(ABCDEF1, ABCDEF2)
+function sols = find_intersections_of_two_conics(ABCDEF1, ABCDEF2)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
+
+% NOTICE [important] >> Computing intersection points of two circles has to be specially treated as exceptional cases.
 
 %tol = eps * 1e5;
 tol = 1.0e-10;
 
-sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol);  % Partial solutions in some speical cases.
-%sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol);  % Not correctly working.
-%sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol);  % Partial solutions if at least one of two conics is a circle.
+sols = find_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol);  % Partial solutions in some speical cases.
+%sols = find_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol);  % Not correctly working.
+%sols = find_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol);  % Partial solutions if at least one of two conics is a circle.
 
 return;
 
 %-----------------------------------------------------------
 
-function sols = compute_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol)
+function sols = find_intersections_of_two_conics1(ABCDEF1, ABCDEF2, tol)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
 % REF [site] >> https://elliotnoma.wordpress.com/2013/04/10/a-closed-form-solution-for-the-intersections-of-two-ellipses/
@@ -74,7 +76,7 @@ return;
 
 %-----------------------------------------------------------
 
-function sols = compute_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol)
+function sols = find_intersections_of_two_conics2(ABCDEF1, ABCDEF2, tol)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
 % REF [site] >> https://elliotnoma.wordpress.com/2013/04/10/a-closed-form-solution-for-the-intersections-of-two-ellipses/
@@ -134,7 +136,7 @@ return;
 
 %-----------------------------------------------------------
 
-function sols = compute_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol)
+function sols = find_intersections_of_two_conics3(ABCDEF1, ABCDEF2, tol)
 % A1*x^2 + B1*x*y + C1*y^2 + D1*x + E1*y + F1 = 0.
 % A2*x^2 + B2*x*y + C2*y^2 + D2*x + E2*y + F2 = 0.
 % REF [site] >> https://en.wikipedia.org/wiki/Conic_section#Intersecting_two_conics
@@ -291,6 +293,8 @@ if 4 ~= size(sols,2)
 end;
 
 return;
+
+%-----------------------------------------------------------
 
 function adjA = adjoint(A)
 
