@@ -1,4 +1,4 @@
-function [Ls, Linf, II, JJ, alpha, beta] = find_invariants_for_single_axis_geometry(ABCDEF)
+function [II, JJ, Linf, Ls, OO, alpha, beta] = find_invariants_for_single_axis_geometry(ABCDEF)
 % Intersection points of N imaged circles = the imaged circular points I & J at infinity.
 %	Images of N circles in world planes = N ellipses in an image plane.
 % ABCDEF: coefficients of conic(ellipse) equations. [N, 6].
@@ -6,14 +6,18 @@ function [Ls, Linf, II, JJ, alpha, beta] = find_invariants_for_single_axis_geome
 %	...
 %	An*x^2 + Bn*x*y + Cn*y^2 + Dn*x + En*y + Fn = 0.
 %
-% Ls: the imaged rotation axis.
-% Linf: the imaged line at infinity (vanishing line).
 % II, JJ: the imaged circular points at infinity.
-% alpha, beta: the circular points at infinity.
+% Linf: the imaged line at infinity (vanishing line) Linf = cross(II, JJ).
+% Ls: the imaged rotation axis.
+% OO: the projections of circle centers = the poles of their imaged conics wrt the vanishing line.
+% alpha, beta: the circular points at infinity on the affine plane [alpha -+ beta*i ; 1 ; 0].
 %	The coordinates [1 ; +-i ; 0] of the circular points on the metric plane to [alpha -+ beta*i ; 1 ; 0] on the affine plane.
 % 
 % REF [paper] >> "Single Axis Geometry by Fitting Conics", ECCV 2002.
 % REF [book] >> "Multiple View Geometry in Computer Vision", p.490~.
+
+% NOTICE [important] >>
+%	This algorithm is very unstable. So you should use single_axis_geometry_objective().
 
 %tol = eps * 1e5;
 tol = 1.0e-10;
@@ -40,9 +44,16 @@ end;
 % Compute the rotation axis.
 
 %Ls = cross(OO(:,ii), OO(:,jj));  % FIXME [fix] >>
-%Ls = linear_regression(OO(:,1)', OO(:,2)')'
-Ls = orthogonal_linear_regression(OO(:,1)', OO(:,2)')';
-Ls = Ls / Ls(3);
+%Ls = linear_regression(OO(1,:)', OO(2,:)')'
+Ls = orthogonal_linear_regression(OO(1,:)', OO(2,:)')';
+%Ls = Ls / Ls(3);
+
+%----------
+% Compute the points on the rotation axis which are nearest to the poles of their imaged conics.
+
+for ii = 1:num_conics
+	OO(:,ii) = find_perpendicular_foot(Ls, OO(:,ii));
+end;
 
 return;
 
@@ -55,6 +66,7 @@ function [Linf, II, JJ, alpha, beta] = find_invariants_for_single_axis_geometry1
 %	An*x^2 + Bn*x*y + Cn*y^2 + Dn*x + En*y + Fn = 0.
 
 % FIXME [fix] >>
+error('[Error] Not yet implemented.');
 
 for kk = 1:num_conics
 	for ii = (kk+1):num_conics
@@ -78,38 +90,42 @@ function [Linf, II, JJ, alpha, beta] = find_invariants_for_single_axis_geometry2
 %	...
 %	An*x^2 + Bn*x*y + Cn*y^2 + Dn*x + En*y + Fn = 0.
 
-x0 = rand([4, 1]);  % l1, l2, alpha, beta.
+%x0 = rand([5, 1]);  % l_inf = [l1, l2, l3], alpha, beta.
+x0 = [0.0001*rand() 1 1 rand() rand()]';  % l_inf = [l1, l2, l3] (horizontal line: y = 1), alpha, beta.
 
-%options = optimoptions(@fminunc, 'Algorithm', 'quasi-newton', 'MaxIterations', 1000, 'MaxFunctionEvaluations', 1000, 'StepTolerance', 1e-6, 'OptimalityTolerance', 1e-6);
+%options = optimoptions(@fminunc, 'Algorithm', 'quasi-newton');
+%%options = optimoptions(@fminunc, 'Algorithm', 'quasi-newton', 'MaxIterations', 1000, 'MaxFunctionEvaluations', 1000, 'StepTolerance', 1e-6, 'OptimalityTolerance', 1e-6);
 %[x_sol, fval, exitflag, output] = fminunc(@local_single_axis_geometry_objective, x0, options, ABCDEF);
-options = optimset('MaxIter', 1000, 'TolX', 1e-6, 'TolFun', 1e-6);
+options = optimset();
+%options = optimset('MaxIter', 1000, 'TolX', 1e-6, 'TolFun', 1e-6);
 [x_sol, fval, exitflag, output] = fminsearch(@local_single_axis_geometry_objective, x0, options, ABCDEF);
-%options = optimoptions(@lsqnonlin, 'Algorithm', 'levenberg-marquardt', 'MaxIterations', 10000, 'MaxFunctionEvaluations', 10000, 'StepTolerance', 1e-6, 'OptimalityTolerance', 1e-6);
+%options = optimoptions(@lsqnonlin, 'Algorithm', 'levenberg-marquardt');
+%%options = optimoptions(@lsqnonlin, 'Algorithm', 'levenberg-marquardt', 'MaxIterations', 10000, 'MaxFunctionEvaluations', 10000, 'StepTolerance', 1e-6, 'OptimalityTolerance', 1e-6);
 %[x_sol, resnorm, residual, exitflag, output] = lsqnonlin(@local_single_axis_geometry_objective, x0, [], [], options, ABCDEF);
 
 l1 = x_sol(1);
 l2 = x_sol(2);
-l3 = 1;
-alpha = x_sol(3);
-beta = x_sol(4);
+l3 = x_sol(3);
+alpha = x_sol(4);
+beta = x_sol(5);
 
 Linf = [l1 ; l2 ; l3];
 
 if false
 	ee = l2^2 + 2 * alpha * l1 * l2 + (beta^2 + alpha^2) * l1^2;
-	aa = -((alpha^2 + beta^2) * l1 + alpha * l2);
-	bb = -beta * l2;
-	cc = -(alpha * l1 + l2);
-	dd = beta * l1;
+	aa = -l3 * ((alpha^2 + beta^2) * l1 + alpha * l2);
+	bb = -beta * l2 * l3;
+	cc = -l3 * (alpha * l1 + l2);
+	dd = beta * l1 * l3;
 
 	II = [aa - bb*i ; cc - dd*i ; ee];
 	JJ = [aa + bb*i ; cc + dd*i ; ee];
 else
 	ee = l2^2 + 2 * alpha * l1 * l2 + (beta^2 + alpha^2) * l1^2;
-	aa = -((alpha^2 + beta^2) * l1 + alpha * l2) / ee;
-	bb = -beta * l2 / ee;
-	cc = -(alpha * l1 + l2) / ee;
-	dd = beta * l1 / ee;
+	aa = -l3 * ((alpha^2 + beta^2) * l1 + alpha * l2) / ee;
+	bb = -beta * l2 * l3 / ee;
+	cc = -l3 * (alpha * l1 + l2) / ee;
+	dd = beta * l1 * l3 / ee;
 
 	II = [aa - bb*i ; cc - dd*i ; 1];
 	JJ = [aa + bb*i ; cc + dd*i ; 1];
@@ -130,26 +146,24 @@ function cost = local_single_axis_geometry_objective(x, ABCDEF)
 
 l1 = x(1);
 l2 = x(2);
-l3 = 1;
-alpha = x(3);
-beta = x(4);
+l3 = x(3);
+alpha = x(4);
+beta = x(5);
 
 num_conics = size(ABCDEF, 1);
 num_polys = nchoosek(num_conics, 2);
 
 ee = l2^2 + 2 * alpha * l1 * l2 + (beta^2 + alpha^2) * l1^2;
-aa = -((alpha^2 + beta^2) * l1 + alpha * l2) / ee;
-bb = -beta * l2 / ee;
-cc = -(alpha * l1 + l2) / ee;
-dd = beta * l1 / ee;
-
-II = [aa - bb*i ; cc - dd*i ; 1];
-JJ = [aa + bb*i ; cc + dd*i ; 1];
+aa = -l3 * ((alpha^2 + beta^2) * l1 + alpha * l2) / ee;
+bb = -beta * l2 * l3 / ee;
+cc = -l3 * (alpha * l1 + l2) / ee;
+dd = beta * l1 * l3 / ee;
 
 cost = 0;
 intersection_point_computation_method = 2;
 if 1 == intersection_point_computation_method
 	% Find common points of intersection points of pairs of conics.
+	%	=> Not good.
 
 	for ii = 1:num_conics
 		for jj = (ii+1):num_conics
@@ -176,12 +190,16 @@ if 1 == intersection_point_computation_method
 elseif 2 == intersection_point_computation_method
 	% Find common intersection points of all conics.
 
+	II_img = [aa - bb*i ; cc - dd*i ; 1];
+	JJ_img = [aa + bb*i ; cc + dd*i ; 1];
+
 	for ii = 1:num_conics
 		CC = conic_poly2mat(ABCDEF(ii,:));
-		cost = cost + abs(transpose(II) * CC * II)^2 + abs(transpose(JJ) * CC * JJ)^2;
-		%CI = CC * II;
-		%CJ = CC * JJ;
-		%cost = cost + 0.25 * ((transpose(II) * CI)^2 / (CI(1)^2 + CI(2)^2) + (transpose(JJ) * CJ)^2 / (CJ(1)^2 + CJ(2)^2));
+		cost = cost + abs(transpose(II_img) * CC * II_img)^2 + abs(transpose(JJ_img) * CC * JJ_img)^2;
+		% TODO [check] >> What does geometric distance mean to imaginary points(complex number) like the circular points?
+		%CI = CC * II_img;
+		%CJ = CC * JJ_img;
+		%cost = cost + 0.25 * ((transpose(II_img) * CI)^2 / (CI(1)^2 + CI(2)^2) + (transpose(JJ_img) * CJ)^2 / (CJ(1)^2 + CJ(2)^2));
 	end;
 else
 	error('[Error] Invalid intersection point computation method.');

@@ -23,6 +23,7 @@ if abs(discrimiant) < eps
 	ezplot(@(x,y) A * x.^2 + B * x*y + C * y.^2 + D*x + E*y + F, plot_pattern);
 elseif discrimiant < 0
 	% Ellipse.
+	% If A = C, circle.
 	%ezplot(@(x,y) A * x.^2 + B * x*y + C * y.^2 + D*x + E*y + F, plot_pattern);
 	draw_ellipse(ABCDEF, plot_pattern);
 else
