@@ -19,7 +19,7 @@ def create_dataset_generator_from_array(X, Y, batch_size, shuffle=False):
 			yield(batch_x, batch_y)
 
 # NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
-def create_dataset_generator_using_imgaug(seq, X, Y, num_classes, batch_size, shuffle=True, dataset_preprocessing_function=None):
+def create_dataset_generator_using_imgaug(seq, X, Y, batch_size, shuffle=True, dataset_preprocessing_function=None, num_classes=None):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		X_aug = seq_det.augment_images(X)
