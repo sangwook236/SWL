@@ -1,5 +1,7 @@
 #include "swl/Config.h"
 #include "swl/math/Statistic.h"
+#include "swl/math/MathConstant.h"
+#include <Eigen/Cholesky>
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -181,6 +183,36 @@ namespace swl {
 	// Centered data.
 	const Eigen::MatrixXd centered(D.colwise() - D.rowwise().mean());
 	return (centered * centered.adjoint()) / double(D.cols() - 1);
+}
+
+/*static*/ double Statistic::multivariateNormalDistibutionPdf(const Eigen::VectorXd &x, const Eigen::VectorXd &mean, const Eigen::MatrixXd &cov)
+// Compute p(x) at the point x using mean vector and variance-covariance matrix.
+{
+	if (x.size() != mean.size() || x.size() != cov.rows() || cov.rows() != cov.cols())
+		throw std::runtime_error("Invalid vector or matrix size");
+
+	Eigen::LLT<Eigen::MatrixXd> chol(cov);
+	if (Eigen::Success != chol.info())
+		throw std::runtime_error("Cholesky decompoistion failed");
+
+	const Eigen::LLT<Eigen::MatrixXd>::Traits::MatrixL& L = chol.matrixL();
+	const double numer = std::exp(-0.5 * L.solve(x - mean).squaredNorm());
+	const double denom = std::pow(MathConstant::_2_PI, L.rows() * 0.5) * L.determinant();
+	return numer / denom;
+}
+
+/*static*/ double Statistic::multivariateNormalDistibutionLogPdf(const Eigen::VectorXd &x, const Eigen::VectorXd &mean, const Eigen::MatrixXd &cov)
+// Compute log(p(x)) at the point x using mean vector and variance-covariance matrix.
+{
+	if (x.size() != mean.size() || x.size() != cov.rows() || cov.rows() != cov.cols())
+		throw std::runtime_error("Invalid vector or matrix size");
+
+	Eigen::LLT<Eigen::MatrixXd> chol(cov);
+	if (Eigen::Success != chol.info())
+		throw std::runtime_error("Cholesky decompoistion failed");
+
+	const Eigen::LLT<Eigen::MatrixXd>::Traits::MatrixL& L = chol.matrixL();
+	return -0.5 * L.solve(x - mean).squaredNorm() - 0.5 * L.rows() * std::log(MathConstant::_2_PI) - std::log(L.determinant());
 }
 
 }  //  namespace swl

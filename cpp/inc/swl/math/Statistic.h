@@ -32,6 +32,10 @@ public:
 	static double sampleVariance(const Eigen::VectorXd &D);
 	static Eigen::VectorXd sampleVariance(const Eigen::MatrixXd &D);
 	static Eigen::MatrixXd sampleCovarianceMatrix(const Eigen::MatrixXd &D);
+
+	///
+	static double multivariateNormalDistibutionPdf(const Eigen::VectorXd &x, const Eigen::VectorXd &mean, const Eigen::MatrixXd &cov);
+	static double multivariateNormalDistibutionLogPdf(const Eigen::VectorXd &x, const Eigen::VectorXd &mean, const Eigen::MatrixXd &cov);
 };
 
 }  // namespace swl
