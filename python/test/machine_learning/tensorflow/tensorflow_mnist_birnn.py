@@ -57,6 +57,7 @@ def inference(x, num_in, num_time, num_hidden, num_out):
 		initial = tf.zeros(shape, dtype=tf.float32)
 		return tf.Variable(initial)
 
+	# Make a list of length (time steps), each tensor of shape [samples, features].
 	x = tf.transpose(x, [1, 0, 2])
 	x = tf.reshape(x, [-1, num_in])
 	x = tf.split(x, num_time, 0)
@@ -116,7 +117,7 @@ num_time = 28
 num_hidden = 128
 num_out = 10
 
-# [samples, time steps, features]. (?)
+# [samples, time steps, features].
 x = tf.placeholder(tf.float32, shape=[None, num_time, num_in])
 t = tf.placeholder(tf.float32, shape=[None, num_out])
 
