@@ -1,5 +1,6 @@
 function C_conic = conic_mat2poly(ABCDEF)
-% Input: A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
+% Input: ABCDEF = [ A B C D E F ].
+%	A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
 % Output: x^T * C_conic * x = 0.
 %	C_conic = [
 %		A B/2 D/2

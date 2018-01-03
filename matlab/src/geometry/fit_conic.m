@@ -1,9 +1,16 @@
-function ABCDEF = fit_conic(x, y)
-% Conic section: A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
+function ABCDEF = fit_conic(x, y, method)
+% Output: ABCDEF = [ A B C D E F ].
+%	A*x^2 + B*x*y + C*y^2 + D*x + E*y + F = 0.
 % More than 5 points are required.
+% REF [site] >> https://en.wikipedia.org/wiki/Conic_section
 
-%ABCDEF = fit_conic_by_linear_regression(x, y);
-ABCDEF = fit_conic_by_sampson_approximation(x, y);
+if nargin < 3 | strcmpi(method, 'sampson')
+	ABCDEF = fit_conic_by_sampson_approximation(x, y);
+elseif strcmpi(method, 'regression')
+	ABCDEF = fit_conic_by_linear_regression(x, y);
+else
+	error('Invalid fitting method.');
+end;
 
 return;
 
@@ -30,16 +37,16 @@ function ABCDEF = fit_conic_by_sampson_approximation(x, y)
 % Use the Sampson approximation to the geometric distance for a conic.
 % REF [book] >> "Multiple View Geometry in Computer Vision", p. 99.
 
-ABCDEF0 = fit_conic_by_linear_regression(x, y);
+ABCDEF_init = fit_conic_by_linear_regression(x, y);
 
 options = optimset('TolX', 1e-6, 'TolFun', 1e-6);
-ABCDEF = fminsearch(@sampson_approximation_cost, ABCDEF0, options, [x y ones(size(x))]');
+ABCDEF = fminsearch(@conic_sampson_approximation_cost, ABCDEF_init, options, [x y ones(size(x))]');
 
 return;
 
 %-----------------------------------------------------------
 
-function cost = sampson_approximation_cost(ABCDEF, X)
+function cost = conic_sampson_approximation_cost(ABCDEF, X)
 
 C = conic_poly2mat(ABCDEF);
 len = size(X, 2);

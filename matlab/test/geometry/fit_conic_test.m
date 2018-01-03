@@ -1,4 +1,4 @@
-%addpath('D:/work/SWL_github/matlab/src/geometry');
+%addpath('../../src/geometry');
 
 %-----------------------------------------------------------
 
@@ -172,14 +172,14 @@ for kk = 1:num_pts
 	pts{kk}(:,3) = 1 - pts{kk}(:,3) / image_height;
 end;
 
-%-----
+%----------
 
 ABCDEF = zeros(num_pts, 6);
 for kk = 1:num_pts
 	ABCDEF(kk,:) = fit_conic(pts{kk}(:,2), pts{kk}(:,3));
 end;
 
-%-----
+%----------
 
 pt_colors = { 'r.', 'g.', 'b.', 'c.', 'm.', 'y.' };
 line_colors = { 'r-', 'g-', 'b-', 'c-', 'm-', 'y-' };
