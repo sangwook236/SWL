@@ -1,6 +1,8 @@
 # REF [book] >> "Á¤¼®À¸·Î ¹è¿ì´Â µö·¯´×", p.264.
+# REF [site] >> http://wikibook.co.kr/deep-learning-with-tensorflow/
+# REF [site] >> https://github.com/wikibook/deep-learning-with-tensorflow
 
-# Path to libcudnn.so.5.
+# Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 #%%------------------------------------------------------------------
@@ -13,19 +15,20 @@ else:
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
-# Load datasets.
-
+#----------
 import numpy as np
 import tensorflow as tf
 from tensorflow.contrib import rnn
-import matplotlib.pyplot as plt
 from sklearn import datasets
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+import matplotlib.pyplot as plt
 
 np.random.seed(0)
 tf.set_random_seed(1234)
+
+#%%------------------------------------------------------------------
+# Load datasets.
 
 mnist = datasets.fetch_mldata('MNIST original', data_home='.')
 
@@ -48,7 +51,7 @@ X_train, X_validation, Y_train, Y_validation = train_test_split(X_train, Y_train
 
 #%%------------------------------------------------------------------
 
-def inference(x, num_in, num_time, num_hidden, num_out):
+def infer(x, num_in, num_time, num_hidden, num_out):
 	def weight_variable(shape):
 		initial = tf.truncated_normal(shape, stddev=0.01)
 		return tf.Variable(initial)
@@ -118,19 +121,15 @@ num_hidden = 128
 num_out = 10
 
 # [samples, time steps, features].
-x = tf.placeholder(tf.float32, shape=[None, num_time, num_in])
-t = tf.placeholder(tf.float32, shape=[None, num_out])
+x_ph = tf.placeholder(tf.float32, shape=[None, num_time, num_in])
+t_ph = tf.placeholder(tf.float32, shape=[None, num_out])
 
-y = inference(x, num_in=num_in, num_time=num_time, num_hidden=num_hidden, num_out=num_out)
-loss = loss(y, t)
-accuracy = accuracy(y, t)
+y = infer(x_ph, num_in=num_in, num_time=num_time, num_hidden=num_hidden, num_out=num_out)
+loss = loss(y, t_ph)
+accuracy = accuracy(y, t_ph)
 train_step = train(loss)
 
 early_stopping = EarlyStopping(patience=10, verbose=1)
-history = {
-	'val_loss': [],
-	'val_acc': []
-}
 
 #%%------------------------------------------------------------------
 
@@ -139,6 +138,11 @@ batch_size = 250
 steps_per_epoch = num_train_examples // batch_size if num_train_examples > 0 else 50
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
+
+history = {
+	'val_loss': [],
+	'val_acc': []
+}
 
 init = tf.global_variables_initializer()
 with tf.Session() as sess:
@@ -152,10 +156,10 @@ with tf.Session() as sess:
 			start = i * batch_size
 			end = start + batch_size
 
-			sess.run(train_step, feed_dict={x: X_[start:end], t: Y_[start:end]})
+			sess.run(train_step, feed_dict={x_ph: X_[start:end], t_ph: Y_[start:end]})
 
-		val_loss = loss.eval(session=sess, feed_dict={x: X_validation, t: Y_validation})
-		val_acc = accuracy.eval(session=sess, feed_dict={x: X_validation, t: Y_validation})
+		val_loss = loss.eval(session=sess, feed_dict={x_ph: X_validation, t_ph: Y_validation})
+		val_acc = accuracy.eval(session=sess, feed_dict={x_ph: X_validation, t_ph: Y_validation})
 
 		history['val_loss'].append(val_loss)
 		history['val_acc'].append(val_acc)
@@ -166,7 +170,7 @@ with tf.Session() as sess:
 			break
 
 	# Evaluate.
-	accuracy_rate = accuracy.eval(session=sess, feed_dict={x: X_test, t: Y_test})
+	accuracy_rate = accuracy.eval(session=sess, feed_dict={x_ph: X_test, t_ph: Y_test})
 	print('accuracy: ', accuracy_rate)
 
 #%%------------------------------------------------------------------
@@ -177,12 +181,22 @@ acc = history['val_acc']
 
 plt.rc('font', family='serif')
 plt.figure()
-plt.plot(range(len(loss)), loss, label='loss', color='red')
-plt.xlabel('epochs')
-plt.ylabel('loss')
-plt.show()
-plt.figure()
-plt.plot(range(len(acc)), acc, label='accuracy', color='blue')
-plt.xlabel('epochs')
-plt.ylabel('accuracy')
-plt.show()
+	plt.plot(range(len(loss)), loss, label='loss', color='red')
+	plt.xlabel('epochs')
+	plt.ylabel('loss')
+	plt.show()
+	plt.figure()
+	plt.plot(range(len(acc)), acc, label='accuracy', color='blue')
+	plt.xlabel('epochs')
+	plt.ylabel('accuracy')
+	plt.show()
+else:
+	fig, ax1 = plt.subplots()
+	ax2 = ax1.twinx()
+
+	ax1.plot(range(len(loss)), loss, label='loss', color='red')
+	ax1.set_xlabel('epochs')
+	ax1.set_ylabel('loss')
+
+	ax2.plot(range(len(acc)), acc, label='accuracy', color='blue')
+	ax2.set_ylabel('accuracy')
