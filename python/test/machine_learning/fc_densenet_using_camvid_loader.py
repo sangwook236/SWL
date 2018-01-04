@@ -129,7 +129,9 @@ train_images, train_labels, val_images, val_labels, test_images, test_labels, nu
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 		width=image_width, height=image_height)
 
-train_images, train_labels, val_images, val_labels, test_images, test_labels = preprocess_camvid_dataset(train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes)
+train_images, train_labels = preprocess_camvid_dataset(train_images, train_labels, num_classes)
+val_images, val_labels = preprocess_camvid_dataset(val_images, val_labels, num_classes)
+test_images, test_labels = preprocess_camvid_dataset(test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Parameters.
