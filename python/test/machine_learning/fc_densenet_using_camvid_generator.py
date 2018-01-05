@@ -164,7 +164,9 @@ if 0 == dataset_generator_type:
 	assert num_classes == num_classes0, '[Warning] The number of classes is unmatched.'
 
 	# Preprocessing (normalization, standardization, etc).
-	train_images, train_labels, val_images, val_labels, test_images, test_labels = preprocess_camvid_dataset(train_images, train_labels, val_images, val_labels, test_images, test_labels, num_classes)
+	train_images, train_labels = preprocess_camvid_dataset(train_images, train_labels, num_classes)
+	val_images, val_labels = preprocess_camvid_dataset(val_images, val_labels, num_classes)
+	test_images, test_labels = preprocess_camvid_dataset(test_images, test_labels, num_classes)
 
 	# FIXME [fix] >> A dataset generator for images(data) and labels per image.
 	#	- Images are only transformed, but labels are not transformed.

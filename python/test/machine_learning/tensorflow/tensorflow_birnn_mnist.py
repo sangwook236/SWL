@@ -181,6 +181,7 @@ acc = history['val_acc']
 
 plt.rc('font', family='serif')
 plt.figure()
+if False:
 	plt.plot(range(len(loss)), loss, label='loss', color='red')
 	plt.xlabel('epochs')
 	plt.ylabel('loss')

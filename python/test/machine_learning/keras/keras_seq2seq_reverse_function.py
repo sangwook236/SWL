@@ -20,8 +20,7 @@ else:
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
-
+#---------
 import numpy as np
 import matplotlib.pyplot as plt
 import keras
@@ -260,7 +259,7 @@ history = simple_rnn_model.fit(train_input_data, train_output_data,
 display_history(history)
 
 # Save the model.
-simple_rnn_model.save('seq2seq_reverse_function_simple_rnn.h5')
+simple_rnn_model.save('keras_seq2seq_reverse_function_simple_rnn.h5')
 
 # Evaluate.
 test_loss, test_accuracy = simple_rnn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
@@ -319,7 +318,7 @@ history = bi_rnn_model.fit(train_input_data, train_output_data,
 display_history(history)
 
 # Save the model.
-bi_rnn_model.save('seq2seq_reverse_function_bidirectional_rnn.h5')
+bi_rnn_model.save('keras_seq2seq_reverse_function_bidirectional_rnn.h5')
 
 # Evaluate.
 test_loss, test_accuracy = bi_rnn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
@@ -388,7 +387,7 @@ history = encdec_train_model.fit([train_input_data, train_output_data], train_ou
 display_history(history)
 
 # Save the training model.
-encdec_train_model.save('seq2seq_reverse_function_encdec_model.h5')
+encdec_train_model.save('keras_seq2seq_reverse_function_encdec_model.h5')
 
 #----------
 # Build inference models.
@@ -463,7 +462,7 @@ history = attn_model.fit(train_input_data, train_output_data_ahead_of_one_timest
 display_history(history)
 
 # Save the model.
-attn_model.save('seq2seq_reverse_function_attention_model.h5')
+attn_model.save('keras_seq2seq_reverse_function_attention_model.h5')
 
 # Evaluate.
 test_loss, test_accuracy = attn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
