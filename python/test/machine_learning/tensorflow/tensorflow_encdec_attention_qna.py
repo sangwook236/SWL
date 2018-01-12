@@ -108,10 +108,10 @@ def accuracy(y, t):
 	accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	return accuracy
 
-def train(loss):
-	#optimizer = tf.train.GradientDescentOptimizer(0.5)
-	optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999)
-	train_step = optimizer.minimize(loss)
+def train(loss, learning_rate, global_step=None):
+	#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+	optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+	train_step = optimizer.minimize(loss, global_step=global_step)
 	return train_step
 
 #%%------------------------------------------------------------------
@@ -187,9 +187,29 @@ y = infer(x_ph, t_ph, batch_size_ph, is_training_ph,
 		num_input_digits=num_input_digits,
 		num_output_digits=num_output_digits,
 		num_hidden=num_hidden, num_out=num_out)
-loss = loss(y, t_ph)
-acc = accuracy(y, t_ph)
-train_step = train(loss)
+with tf.name_scope('loss'):
+	loss = loss(y, t_ph)
+	tf.summary.scalar('loss', loss)
+with tf.name_scope('accuracy'):
+	accuracy = accuracy(y, t_ph)
+	tf.summary.scalar('accuracy', accuracy)
+global_step = tf.Variable(0, name='global_step', trainable=False)
+with tf.name_scope('learning_rate'):
+	learning_rate = tf.train.exponential_decay(0.001, global_step=global_step, decay_steps=100000, decay_rate=0.995, staircase=True)
+	tf.summary.scalar('learning_rate', learning_rate)
+with tf.name_scope('train'):
+	train_step = train(loss, learning_rate=0.001)
+	#train_step = train(loss, learning_rate=learning_rate, global_step=global_step)
+
+"""
+# Merge all the summaries and write them out to a directory.
+merged_summary = tf.summary.merge_all()
+train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
+test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
+
+# Saves a model every 2 hours and maximum 5 latest models are saved.
+saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+"""
 
 #%%------------------------------------------------------------------
 # Build a model.
