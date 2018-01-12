@@ -2,12 +2,14 @@
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 #--------------------
+import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
 from tensorflow_cnn_model import TensorFlowCnnModel
 from tf_slim_cnn_model import TfSlimCnnModel
 from keras_cnn_model import KerasCnnModel
 from tflearn_cnn_model import TfLearnCnnModel
+import keras
 
 #np.random.seed(7)
 
@@ -18,16 +20,55 @@ config = tf.ConfigProto()
 config.log_device_placement = True
 config.gpu_options.allow_growth = True
 #config.gpu_options.per_process_gpu_memory_fraction = 0.4  # only allocate 40% of the total memory of each GPU.
-sess = tf.Session(config=config)
+
+# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
+#graph = tf.Graph()
+#session = tf.Session(graph=graph, config=config)
+session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
 # Load datasets.
 
 from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("D:/dataset/pattern_recognition/mnist/0_original/", one_hot=True)
 
-num_examples = mnist.train.num_examples
+def load_data():
+	mnist = input_data.read_data_sets("D:/dataset/pattern_recognition/mnist/0_original/", one_hot=True)
+
+	train_images = np.reshape(mnist.train.images, (-1, 28, 28, 1))  # 784 = 28 * 28.
+	train_labels = int(np.round(mnist.train.labels))
+	test_images = np.reshape(mnist.test.images, (-1, 28, 28, 1))  # 784 = 28 * 28.
+	test_labels = int(np.round(mnist.test.labels))
+
+	return train_images, train_labels, test_images, test_labels
+
+train_images, train_labels, test_images, test_labels = load_data()
+
 num_classes = 10
+num_examples = train_images.shape[0]
+input_shape = train_images.shape[1:]
+
+#--------------------
+# Pre-process.
+
+def preprocess_dataset(data, labels, num_classes, axis=0):
+	if data is not None:
+		# Preprocessing (normalization, standardization, etc.).
+		#data = data.astype(np.float)
+		#data /= 255.0
+		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
+		#data = np.reshape(data, data.shape + (1,))
+		pass
+
+	if labels is not None:
+		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
+		#if 2 != num_classes:
+		#	#labels = np.uint8(keras.utils.to_categorical(labels, num_classes).reshape(labels.shape + (-1,)))
+		#	labels = np.uint8(keras.utils.to_categorical(labels, num_classes))
+		pass
+		
+
+#train_images, train_labels = preprocess_dataset(train_images, train_labels, num_classes)
+#test_images, test_labels = preprocess_dataset(test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Prepare directories.
@@ -44,17 +85,17 @@ test_summary_dir_path = './log/test_' + timestamp
 #%%------------------------------------------------------------------
 # Create a model.
 
-print('Create a model.')
+print('[SWL] Info: Create a model.')
 
-cnnModel = TensorFlowCnnModel(num_classes)
+#cnnModel = TensorFlowCnnModel(num_classes)
 #cnnModel = TfSlimCnnModel(num_classes)
-#cnnModel = KerasCnnModel(num_classes)
+cnnModel = KerasCnnModel(num_classes)
 #cnnModel = TfLearnCnnModel(num_classes)
 
 #%%------------------------------------------------------------------
 # Prepare training.
 
-print('Prepare training.')
+print('[SWL] Info: Prepare training.')
 
 def loss(y, t):
 	#cross_entropy = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y), reduction_indices=[1]))
@@ -74,13 +115,14 @@ def train(loss, learning_rate, global_step=None):
 	train_step = optimizer.minimize(loss, global_step=global_step)
 	return train_step
 
-x_ph = tf.placeholder(tf.float32, shape=[None, 784])  # 784 = 28 * 28.
-t_ph = tf.placeholder(tf.float32, shape=[None, num_classes])
+x_ph = tf.placeholder(tf.float32, shape=(None,) + input_shape)
+t_ph = tf.placeholder(tf.float32, shape=(None, num_classes))
 is_training_ph = tf.placeholder(tf.bool)
 
 global_step = tf.Variable(0, name='global_step', trainable=False)
 
 model_output = cnnModel(x_ph, is_training_ph)
+
 with tf.name_scope('loss'):
 	loss = loss(model_output, t_ph)
 	tf.summary.scalar('loss', loss)
@@ -146,21 +188,19 @@ TRAINING_MODE = 0  # Start training a model.
 
 if 0 == TRAINING_MODE:
 	initial_epoch = 0
-	print('Start training...')
+	print('[SWL] Info: Start training...')
 elif 1 == TRAINING_MODE:
 	initial_epoch = 200
-	print('Resume training...')
+	print('[SWL] Info: Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0
-	print('Use a trained model.')
+	print('[SWL] Info: Use a trained model.')
 else:
-	raise Exception('Invalid TRAINING_MODE')
+	raise Exception('[SWL] Error: Invalid TRAINING_MODE')
 
-init = tf.global_variables_initializer()
+session.run(tf.global_variables_initializer())
 
-with tf.Session() as sess:
-	sess.run(init)
-
+with session.as_default() as sess:
 	# Merge all the summaries and write them out to a directory.
 	merged_summary = tf.summary.merge_all()
 	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
@@ -176,7 +216,7 @@ with tf.Session() as sess:
 		saver.restore(sess, ckpt.model_checkpoint_path)
 		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
 
-		print('Restored a model.')
+		print('[SWL] Info: Restored a model.')
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 		for epoch in range(1, num_epochs + 1):
@@ -185,8 +225,7 @@ with tf.Session() as sess:
 			# Train.
 			for step in range(steps_per_epoch):
 				batch = mnist.train.next_batch(batch_size=batch_size, shuffle=shuffle)
-				data_batch, label_batch = batch[0], batch[1]
-
+				data_batch, label_batch = np.reshape(batch[0], (-1,) + input_shape), batch[1]
 				summary, _ = sess.run([merged_summary, train_step], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: True})
 				train_summary_writer.add_summary(summary, epoch)
 
@@ -194,29 +233,29 @@ with tf.Session() as sess:
 			#if 0 == epoch % 10:
 			if True:
 				batch = mnist.train.next_batch(batch_size=batch_size, shuffle=shuffle)
-				data_batch, label_batch = batch[0], batch[1]
-				#loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				#acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				loss, acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+				data_batch, label_batch = np.reshape(batch[0], (-1,) + input_shape), batch[1]
+				#train_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+				#train_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+				train_loss, train_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 
-				data_batch, label_batch = mnist.test.images, mnist.test.labels
+				data_batch, label_batch = test_images, test_labels
 				#summary = merged_summary.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				#val_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				#val_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				summary, val_loss, val_acc = sess.run([merged_summary, loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				test_summary_writer.add_summary(summary, epoch)
 
-				history['loss'].append(loss)
-				history['acc'].append(acc)
+				history['loss'].append(train_loss)
+				history['acc'].append(train_acc)
 				history['val_loss'].append(val_loss)
 				history['val_acc'].append(val_acc)
 
-				print('epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, loss, acc, val_loss, val_acc))
+				print('epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, train_loss, train_acc, val_loss, val_acc))
 
 			# Save a model.
 			if 0 == epoch % 10:
 				model_saved_path = saver.save(sess, model_dir_path + '/model.ckpt', global_step=global_step)
-				print('Saved a model.')
+				print('[SWL] Info: Saved a model.')
 
 		# Display results.
 		display_history(history)
@@ -226,32 +265,36 @@ with tf.Session() as sess:
 		test_summary_writer.close()
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	print('End training...')
+	print('[SWL] Info: End training...')
 
 #%%------------------------------------------------------------------
 # Evaluate the model.
 
-print('Start evaluating...')
+print('[SWL] Info: Start evaluating...')
 
-with tf.Session() as sess:
-	test_data, test_label = mnist.test.images, mnist.test.labels
+with session.as_default() as sess:
+	test_data, test_label = test_images, test_labels
 	#test_loss = loss.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
 	#test_acc = accuracy.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
 	test_loss, test_acc = sess.run([loss, accuracy], feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
 
 	print('test loss = {}, test accurary = {}'.format(test_loss, test_acc))
 
-print('End evaluating...')
+print('[SWL] Info: End evaluating...')
 
 #%%------------------------------------------------------------------
 # Predict.
 
-print('Start prediction...')
+print('[SWL] Info: Start prediction...')
 
-with tf.Session() as sess:
-	for step in range(steps_per_epoch):
-		batch = mnist.test.next_batch(batch_size=1, shuffle=False)
-		test_data, test_label = batch[0], batch[1]
-		prediction = model_output.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
+with session.as_default() as sess:
+	test_data = test_images
+	predictions = model_output.eval(session=sess, feed_dict={x_ph: test_data, is_training_ph: False})
 
-print('End prediction...')
+	predictions = np.argmax(predictions, 1)
+	groundtruths = np.argmax(test_labels, 1)
+	count = np.count_nonzero(np.equal(predictions, groundtruths))
+
+	print('accurary = {} / {}'.format(count, predictions.shape[0]))
+
+print('[SWL] Info: End prediction...')

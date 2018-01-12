@@ -4,8 +4,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = "/home/sangwook/lib_repo/python"
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = "D:/lib_repo/python"
-	lib_home_dir_path = "D:/lib_repo/python/rnd"
+	lib_home_dir_path = "D:/lib_repo/python"
+	#lib_home_dir_path = "D:/lib_repo/python/rnd"
 lib_dir_path = lib_home_dir_path + "/tflearn_github"
 
 sys.path.append(swl_python_home_dir_path + '/src')
@@ -39,9 +39,10 @@ class TfLearnCnnModel:
 		pass
 
 	def _create_model(self, input_tensor, num_classes, is_training=True):
+		# REF [site] >> http://tflearn.org/getting_started/
 		keep_prob = 0.25 if is_training is True else 1.0
 
-		with tf.variable_scope('tflearn_cnn_model', reuse=True):
+		with tf.variable_scope('tflearn_cnn_model', reuse=None):
 			#net = tflearn.input_data(shape=input_shape)
 
 			net = tflearn.conv_2d(input_tensor, nb_filter=32, filter_size=5, strides=1, padding='same', activation='relu', name='conv1_1')
@@ -50,7 +51,7 @@ class TfLearnCnnModel:
 			net = tflearn.conv_2d(net, nb_filter=64, filter_size=3, strides=1, padding='same', activation='relu', name='conv2_1')
 			net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool2_1')
 
-			net = tflearn.flatten(net)
+			net = tflearn.flatten(net, name='flatten1_1')
 
 			net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc1_1')
 			net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout1_1')
