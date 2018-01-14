@@ -145,7 +145,7 @@ class DnnTrainer(object):
 
 					print('[SWL] Info: Improved accurary and saved the model at {}.'.format(model_saved_path))
 
-			print('Epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, train_loss, train_acc, val_loss, val_acc))
+			print('Loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
 
 		# Close writers.
 		if train_summary_writer is not None:
@@ -155,11 +155,64 @@ class DnnTrainer(object):
 
 		return history
 
-	def evaluate(self):
-		pass
+	def evaluate(self, session, test_images, test_labels, batch_size):
+		num_test_examples = test_images.shape[0]
 
-	def test(self):
-		pass
+		"""
+		#test_loss = self.loss_.eval(session=session, feed_dict={self.input_tensor_ph_: test_data, self.output_tensor_ph_: test_labels, self.is_training_ph_: False})
+		#test_acc = self.accuracy_.eval(session=session, feed_dict={self.input_tensor_ph_: test_data, self.output_tensor_ph_: test_labels, self.is_training_ph_: False})
+		test_loss, test_acc = session.run([self.loss_, self.accuracy_], feed_dict={self.input_tensor_ph_: test_data, self.output_tensor_ph_: test_labels, self.is_training_ph_: False})
+		"""
+		test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
+
+		indices = np.arange(num_test_examples)
+		#if True == shuffle:
+		#	np.random.shuffle(indices)
+
+		test_loss, test_acc = 0, 0
+		for step in range(test_steps_per_epoch):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			data_batch, label_batch = test_images[batch_indices,], test_labels[batch_indices,]
+			if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+				#batch_loss = self.loss_.eval(session=session, feed_dict={self.input_tensor_ph_: data_batch, self.output_tensor_ph_: label_batch, self.is_training_ph_: False})
+				#batch_acc = self.accuracy_.eval(session=session, feed_dict={self.input_tensor_ph_: data_batch, self.output_tensor_ph_: label_batch, self.is_training_ph_: False})
+				batch_loss, batch_acc = session.run([self.loss_, self.accuracy_], feed_dict={self.input_tensor_ph_: data_batch, self.output_tensor_ph_: label_batch, self.is_training_ph_: False})
+
+				# TODO [check] >> Is test_loss or test_acc correct?
+				test_loss += batch_loss * batch_indices.size
+				test_acc += batch_acc * batch_indices.size
+		test_loss /= num_test_examples
+		test_acc /= num_test_examples
+
+		return test_loss, test_acc
+
+	def predict(self, session, test_images, batch_size):
+		num_pred_examples = test_images.shape[0]
+
+		"""
+		predictions = self.model_output_.eval(session=session, feed_dict={self.input_tensor_ph_: test_images, self.is_training_ph_: False})
+		"""
+		pred_steps_per_epoch = (num_pred_examples - 1) // batch_size + 1
+
+		indices = np.arange(num_pred_examples)
+
+		predictions = np.array([])
+		for step in range(pred_steps_per_epoch):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			data_batch = test_images[batch_indices,]
+			if data_batch.size > 0:  # If data_batch is non-empty.
+				batch_prediction = self.model_output_.eval(session=session, feed_dict={self.input_tensor_ph_: data_batch, self.is_training_ph_: False})
+	
+				if predictions.size > 0:  # If predictions is non-empty.
+					predictions = np.concatenate((predictions, batch_prediction), axis=0)
+				else:
+					predictions = batch_prediction
+
+		return np.argmax(predictions, 1)
 
 	def display_history(self, history):
 		# List all data in history.

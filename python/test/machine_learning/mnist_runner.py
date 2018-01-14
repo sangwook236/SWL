@@ -149,37 +149,11 @@ with session.as_default() as sess:
 			num_test_examples = test_images.shape[0]
 
 	if num_test_examples > 0:
-		"""
-		#test_loss = loss.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_labels, is_training_ph: False})
-		#test_acc = accuracy.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_labels, is_training_ph: False})
-		test_loss, test_acc = sess.run([loss, accuracy], feed_dict={x_ph: test_data, t_ph: test_labels, is_training_ph: False})
-		"""
-		test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
-
-		indices = np.arange(num_test_examples)
-		#if True == shuffle:
-		#	np.random.shuffle(indices)
-
-		test_loss, test_acc = 0, 0
-		for step in range(test_steps_per_epoch):
-			start = step * batch_size
-			end = start + batch_size
-			batch_indices = indices[start:end]
-			data_batch, label_batch = test_images[batch_indices,], test_labels[batch_indices,]
-			if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
-				#batch_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				#batch_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				batch_loss, batch_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-
-				# TODO [check] >> Is test_loss or test_acc correct?
-				test_loss += batch_loss * batch_indices.size
-				test_acc += batch_acc * batch_indices.size
-		test_loss /= num_test_examples
-		test_acc /= num_test_examples
+		test_loss, test_acc = dnnTrainer.evaluate(session, test_images, test_labels, batch_size)
 
 		print('Test loss = {}, test accurary = {}'.format(test_loss, test_acc))
 	else:
-		print('[SWL] Error: The number of test images is not equal to one of test labels.')
+		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 print('[SWL] Info: End evaluating...')
 
@@ -195,33 +169,13 @@ with session.as_default() as sess:
 			num_pred_examples = test_images.shape[0]
 
 	if num_pred_examples > 0:
-		"""
-		predictions = model_output.eval(session=sess, feed_dict={x_ph: test_images, is_training_ph: False})
-		"""
-		pred_steps_per_epoch = (num_pred_examples - 1) // batch_size + 1
+		predictions = dnnTrainer.predict(session, test_images, batch_size)
 
-		indices = np.arange(num_pred_examples)
-
-		predictions = np.array([])
-		for step in range(pred_steps_per_epoch):
-			start = step * batch_size
-			end = start + batch_size
-			batch_indices = indices[start:end]
-			data_batch = test_images[batch_indices,]
-			if data_batch.size > 0:  # If data_batch is non-empty.
-				batch_prediction = model_output.eval(session=sess, feed_dict={x_ph: data_batch, is_training_ph: False})
-	
-				if predictions.size > 0:  # If predictions is non-empty.
-					predictions = np.concatenate((predictions, batch_prediction), axis=0)
-				else:
-					predictions = batch_prediction
-
-		predictions = np.argmax(predictions, 1)
 		groundtruths = np.argmax(test_labels, 1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
 		print('Accurary = {} / {}'.format(correct_estimation_count, num_pred_examples))
 	else:
-		print('[SWL] Error: The number of test images is not equal to one of test labels.')
+		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 print('[SWL] Info: End prediction...')
