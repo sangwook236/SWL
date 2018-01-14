@@ -1,95 +1,8 @@
-# Path to libcudnn.so.
-#export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-
-#--------------------
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from tensorflow_cnn_model import TensorFlowCnnModel
-from tf_slim_cnn_model import TfSlimCnnModel
-from keras_cnn_model import KerasCnnModel
-#from tflearn_cnn_model import TfLearnCnnModel
 
-#np.random.seed(7)
-
-#%%------------------------------------------------------------------
-
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # only allocate 40% of the total memory of each GPU.
-
-# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
-#graph = tf.Graph()
-#session = tf.Session(graph=graph, config=config)
-session = tf.Session(config=config)
-
-#%%------------------------------------------------------------------
-# Load datasets.
-
-from tensorflow.examples.tutorials.mnist import input_data
-
-def load_data(shape):
-	mnist = input_data.read_data_sets("D:/dataset/pattern_recognition/mnist/0_original/", one_hot=True)
-
-	train_images = np.reshape(mnist.train.images, (-1,) + shape)
-	train_labels = np.round(mnist.train.labels).astype(np.int)
-	test_images = np.reshape(mnist.test.images, (-1,) + shape)
-	test_labels = np.round(mnist.test.labels).astype(np.int)
-
-	return train_images, train_labels, test_images, test_labels
-
-num_classes = 10
-input_shape = (28, 28, 1)  # 784 = 28 * 28.
-
-train_images, train_labels, test_images, test_labels = load_data(input_shape)
-
-#--------------------
-# Pre-process.
-
-def preprocess_dataset(data, labels, num_classes, axis=0):
-	if data is not None:
-		# Preprocessing (normalization, standardization, etc.).
-		#data = data.astype(np.float)
-		#data /= 255.0
-		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
-		#data = np.reshape(data, data.shape + (1,))
-		pass
-
-	if labels is not None:
-		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#if 2 != num_classes:
-		#	#labels = np.uint8(keras.utils.to_categorical(labels, num_classes).reshape(labels.shape + (-1,)))
-		#	labels = np.uint8(keras.utils.to_categorical(labels, num_classes))
-		pass
-		
-
-#train_images, train_labels = preprocess_dataset(train_images, train_labels, num_classes)
-#test_images, test_labels = preprocess_dataset(test_images, test_labels, num_classes)
-
-#%%------------------------------------------------------------------
-# Prepare directories.
-
-import datetime
-
-timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-
-model_dir_path = './result/model_' + timestamp
-prediction_dir_path = './result/prediction_' + timestamp
-train_summary_dir_path = './log/train_' + timestamp
-test_summary_dir_path = './log/test_' + timestamp
-
-#%%------------------------------------------------------------------
-# Create a model.
-
-print('[SWL] Info: Create a model.')
-
-#cnnModel = TensorFlowCnnModel(num_classes)
-#cnnModel = TfSlimCnnModel(num_classes)
-cnnModel = KerasCnnModel(num_classes)
-#cnnModel = TfLearnCnnModel(num_classes)
-
+class DnnTrainer(object):
 #%%------------------------------------------------------------------
 # Prepare training.
 
@@ -199,7 +112,7 @@ with session.as_default() as sess:
 	# Merge all the summaries and write them out to a directory.
 	merged_summary = tf.summary.merge_all()
 	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph)
-	test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
+	val_summary_writer = tf.summary.FileWriter(val_summary_dir_path)
 
 	# Saves a model every 2 hours and maximum 5 latest models are saved.
 	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
@@ -214,15 +127,18 @@ with session.as_default() as sess:
 		print('[SWL] Info: Restored a model.')
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-		num_train_examples = train_images.shape[0]
-		train_steps_per_epoch = (num_train_examples // batch_size + 1) if num_train_examples > 0 else 1
-		if train_steps_per_epoch < 1:
-			train_steps_per_epoch = 1
-		num_val_examples = test_images.shape[0]
-		val_steps_per_epoch = (num_val_examples // batch_size + 1) if num_val_examples > 0 else 1
-		if val_steps_per_epoch < 1:
-			val_steps_per_epoch = 1
+		num_train_examples = 0
+		if train_images is not None and train_labels is not None:
+			if train_images.shape[0] == train_labels.shape[0]:
+				num_train_examples = train_images.shape[0]
+			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
+		num_val_examples = 0
+		if test_images is not None and test_labels is not None:
+			if test_images.shape[0] == test_labels.shape[0]:
+				num_val_examples = test_images.shape[0]
+			val_steps_per_epoch = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
 
+		best_val_acc = 0.0
 		for epoch in range(1, num_epochs + 1):
 			print('Epoch {}/{}'.format(epoch, num_epochs))
 
@@ -240,9 +156,9 @@ with session.as_default() as sess:
 					summary, _ = sess.run([merged_summary, train_step], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: True})
 					train_summary_writer.add_summary(summary, epoch)
 
-			# Evaluate.
-			#if 0 == epoch % 10:
-			if True:
+			# Evaluate training.
+			#if False:
+			if num_train_examples > 0:
 				"""
 				batch_indices = indices[0:batch_size]
 				data_batch, label_batch = train_images[batch_indices,], train_labels[batch_indices,]
@@ -268,13 +184,22 @@ with session.as_default() as sess:
 						train_loss += batch_loss * batch_indices.size
 						train_acc += batch_acc * batch_indices.size
 
+				train_loss /= num_train_examples
+				train_acc /= num_train_examples
+
+				history['loss'].append(train_loss)
+				history['acc'].append(train_acc)
+
+			# Validate.
+			#if test_images is not None and test_labels is not None:
+			if num_val_examples > 0:
 				"""
 				data_batch, label_batch = test_images, test_labels
 				#summary = merged_summary.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				#val_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				#val_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 				summary, val_loss, val_acc = sess.run([merged_summary, loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				test_summary_writer.add_summary(summary, epoch)
+				val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
 				if True == shuffle:
@@ -291,34 +216,32 @@ with session.as_default() as sess:
 						#batch_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 						#batch_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 						summary, batch_loss, batch_acc = sess.run([merged_summary, loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-						test_summary_writer.add_summary(summary, epoch)
+						val_summary_writer.add_summary(summary, epoch)
 
 						# TODO [check] >> Is val_loss or val_acc correct?
 						val_loss += batch_loss * batch_indices.size
 						val_acc += batch_acc * batch_indices.size
-				train_loss /= num_train_examples
-				train_acc /= num_train_examples
 				val_loss /= num_val_examples
 				val_acc /= num_val_examples
 
-				history['loss'].append(train_loss)
-				history['acc'].append(train_acc)
 				history['val_loss'].append(val_loss)
 				history['val_acc'].append(val_acc)
 
-				print('Epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, train_loss, train_acc, val_loss, val_acc))
+				# Save a model.
+				if val_acc >= best_val_acc:
+					model_saved_path = saver.save(sess, model_dir_path + '/model.ckpt', global_step=global_step)
+					val_acc = best_val_acc
 
-			# Save a model.
-			if 0 == epoch % 10:
-				model_saved_path = saver.save(sess, model_dir_path + '/model.ckpt', global_step=global_step)
-				print('[SWL] Info: Saved a model.')
+					print('[SWL] Info: Saved a model at {}.'.format(model_saved_path))
+
+				print('Epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, train_loss, train_acc, val_loss, val_acc))
 
 		# Display results.
 		display_history(history)
 
 		# Close writers.
 		train_summary_writer.close()
-		test_summary_writer.close()
+		val_summary_writer.close()
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('[SWL] Info: End training...')
@@ -403,3 +326,9 @@ with session.as_default() as sess:
 	print('Accurary = {} / {}'.format(count, predictions.shape[0]))
 
 print('[SWL] Info: End prediction...')
+
+#%%------------------------------------------------------------------
+
+if __name__ == "__main__":
+	# Execute only if run as a script.
+	main()
