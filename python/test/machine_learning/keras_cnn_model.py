@@ -12,8 +12,8 @@ class KerasCnnModel:
 		self.model_output = None
 
 	def __call__(self, input_tensor, is_training=True):
-		#self.model_output = self._create_model_1(input_tensor, self.num_classes, is_training)
-		self.model_output = self._create_model_2(input_tensor, self.num_classes, is_training)
+		self.model_output = self._create_model_1(input_tensor, self.num_classes, is_training)
+		#self.model_output = self._create_model_2(input_tensor, self.num_classes, is_training)
 		return self.model_output
 
 	def train(self, train_data, train_labels, batch_size, num_epochs, shuffle, initial_epoch=0):
