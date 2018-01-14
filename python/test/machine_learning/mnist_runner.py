@@ -1,8 +1,95 @@
+# Path to libcudnn.so.
+#export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+
+#--------------------
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+from tensorflow_cnn_model import TensorFlowCnnModel
+from tf_slim_cnn_model import TfSlimCnnModel
+from keras_cnn_model import KerasCnnModel
+#from tflearn_cnn_model import TfLearnCnnModel
 
-class DnnTrainer(object):
+#np.random.seed(7)
+
+#%%------------------------------------------------------------------
+
+config = tf.ConfigProto()
+#config.allow_soft_placement = True
+config.log_device_placement = True
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # only allocate 40% of the total memory of each GPU.
+
+# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
+#graph = tf.Graph()
+#session = tf.Session(graph=graph, config=config)
+session = tf.Session(config=config)
+
+#%%------------------------------------------------------------------
+# Load datasets.
+
+from tensorflow.examples.tutorials.mnist import input_data
+
+def load_data(shape):
+	mnist = input_data.read_data_sets("D:/dataset/pattern_recognition/mnist/0_original/", one_hot=True)
+
+	train_images = np.reshape(mnist.train.images, (-1,) + shape)
+	train_labels = np.round(mnist.train.labels).astype(np.int)
+	test_images = np.reshape(mnist.test.images, (-1,) + shape)
+	test_labels = np.round(mnist.test.labels).astype(np.int)
+
+	return train_images, train_labels, test_images, test_labels
+
+num_classes = 10
+input_shape = (28, 28, 1)  # 784 = 28 * 28.
+
+train_images, train_labels, test_images, test_labels = load_data(input_shape)
+
+#--------------------
+# Pre-process.
+
+def preprocess_dataset(data, labels, num_classes, axis=0):
+	if data is not None:
+		# Preprocessing (normalization, standardization, etc.).
+		#data = data.astype(np.float)
+		#data /= 255.0
+		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
+		#data = np.reshape(data, data.shape + (1,))
+		pass
+
+	if labels is not None:
+		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
+		#if 2 != num_classes:
+		#	#labels = np.uint8(keras.utils.to_categorical(labels, num_classes).reshape(labels.shape + (-1,)))
+		#	labels = np.uint8(keras.utils.to_categorical(labels, num_classes))
+		pass
+		
+
+#train_images, train_labels = preprocess_dataset(train_images, train_labels, num_classes)
+#test_images, test_labels = preprocess_dataset(test_images, test_labels, num_classes)
+
+#%%------------------------------------------------------------------
+# Prepare directories.
+
+import datetime
+
+timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+
+model_dir_path = './result/model_' + timestamp
+prediction_dir_path = './result/prediction_' + timestamp
+train_summary_dir_path = './log/train_' + timestamp
+test_summary_dir_path = './log/test_' + timestamp
+
+#%%------------------------------------------------------------------
+# Create a model.
+
+print('[SWL] Info: Create a model.')
+
+#cnnModel = TensorFlowCnnModel(num_classes)
+#cnnModel = TfSlimCnnModel(num_classes)
+cnnModel = KerasCnnModel(num_classes)
+#cnnModel = TfLearnCnnModel(num_classes)
+
 #%%------------------------------------------------------------------
 # Prepare training.
 
