@@ -3,28 +3,18 @@ from keras.layers import Input, Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 #from keras import optimizers, callbacks
 import tensorflow as tf
+from dnn_model import DnnBaseModel
 
 #%%------------------------------------------------------------------
 
-class KerasCnnModel(object):
+class KerasCnnModel(DnnBaseModel):
 	def __init__(self, num_classes):
-		self.num_classes = num_classes
-		self.model_output = None
+		super(KerasCnnModel, self).__init__(num_classes)
 
 	def __call__(self, input_tensor, is_training=True):
 		self.model_output = self._create_model_1(input_tensor, self.num_classes, is_training)
 		#self.model_output = self._create_model_2(input_tensor, self.num_classes, is_training)
 		return self.model_output
-
-	def train(self, train_data, train_labels, batch_size, num_epochs, shuffle, initial_epoch=0):
-		pass
-		#return history
-
-	def load(self, model_filepath):
-		pass
-
-	def save(self, model_filepath):
-		pass
 
 	def _create_model_1(self, input_tensor, num_classes, is_training=True):
 		# REF [site] >> https://keras.io/models/model/
@@ -58,8 +48,8 @@ class KerasCnnModel(object):
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
 		keep_prob = 0.25 if is_training is True else 1.0
 
-		#input_shape = input_tensor.get_shape()
-		input_shape = (28, 28, 1)
+		input_shape = input_tensor.get_shape().as_list()
+		input_shape = input_shape[1:]
 		#input_tensor = Input(shape=input_shape)
 
 		with tf.variable_scope('keras_cnn_model_2', reuse=None):
@@ -82,5 +72,5 @@ class KerasCnnModel(object):
 				model.add(Dense(num_classes, activation='softmax'))
 				#model.add(Dense(num_classes, activation='softmax', activity_regularizer=keras.regularizers.activity_l2(0.0001)))
 
-			#return model(input_tensor)
-			return model.output
+			return model(input_tensor)
+			#return model.output  # Run-time error.

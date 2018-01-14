@@ -78,17 +78,17 @@ timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 model_dir_path = './result/model_' + timestamp
 prediction_dir_path = './result/prediction_' + timestamp
 train_summary_dir_path = './log/train_' + timestamp
-test_summary_dir_path = './log/test_' + timestamp
+val_summary_dir_path = './log/val_' + timestamp
 
 #%%------------------------------------------------------------------
 # Create a model.
 
-print('[SWL] Info: Create a model.')
-
-#cnnModel = TensorFlowCnnModel(num_classes)
+cnnModel = TensorFlowCnnModel(num_classes)
 #cnnModel = TfSlimCnnModel(num_classes)
-cnnModel = KerasCnnModel(num_classes)
+#cnnModel = KerasCnnModel(num_classes)
 #cnnModel = TfLearnCnnModel(num_classes)
+
+print('[SWL] Info: Created a model.')
 
 #%%------------------------------------------------------------------
 # Prepare training.
@@ -244,25 +244,23 @@ with session.as_default() as sess:
 					train_summary_writer.add_summary(summary, epoch)
 
 			# Evaluate training.
+			train_loss, train_acc = 0, 0
 			#if False:
 			if num_train_examples > 0:
 				"""
 				batch_indices = indices[0:batch_size]
 				data_batch, label_batch = train_images[batch_indices,], train_labels[batch_indices,]
-				if data_batch.size > 0 and label_batch.size > 0:  # If data_batch or label_batch is non-empty.
+				if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 					#train_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 					#train_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 					train_loss, train_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				else:
-					train_loss, train_acc = 0, 0
 				"""
-				train_loss, train_acc = 0, 0
 				for step in range(train_steps_per_epoch):
 					start = step * batch_size
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					data_batch, label_batch = train_images[batch_indices,], train_labels[batch_indices,]
-					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch or label_batch is non-empty.
+					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						#batch_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 						#batch_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 						batch_loss, batch_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
@@ -278,21 +276,22 @@ with session.as_default() as sess:
 				history['acc'].append(train_acc)
 
 			# Validate.
+			val_loss, val_acc = 0, 0
 			#if test_images is not None and test_labels is not None:
 			if num_val_examples > 0:
 				"""
 				data_batch, label_batch = test_images, test_labels
-				#summary = merged_summary.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				#val_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				#val_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				summary, val_loss, val_acc = sess.run([merged_summary, loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-				val_summary_writer.add_summary(summary, epoch)
+				if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+					#summary = merged_summary.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+					#val_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+					#val_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+					summary, val_loss, val_acc = sess.run([merged_summary, loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+					val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
 				if True == shuffle:
 					np.random.shuffle(indices)
 
-				val_loss, val_acc = 0, 0
 				for step in range(val_steps_per_epoch):
 					start = step * batch_size
 					end = start + batch_size
@@ -317,11 +316,11 @@ with session.as_default() as sess:
 				# Save a model.
 				if val_acc >= best_val_acc:
 					model_saved_path = saver.save(sess, model_dir_path + '/model.ckpt', global_step=global_step)
-					val_acc = best_val_acc
+					best_val_acc = val_acc
 
-					print('[SWL] Info: Saved a model at {}.'.format(model_saved_path))
+					print('[SWL] Info: Improved accurary and saved the model at {}.'.format(model_saved_path))
 
-				print('Epoch {}: loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(epoch, train_loss, train_acc, val_loss, val_acc))
+			print('Loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
 
 		# Display results.
 		display_history(history)
@@ -339,39 +338,43 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 print('[SWL] Info: Start evaluating...')
 
 with session.as_default() as sess:
-	"""
-	test_data, test_label = test_images, test_labels
-	#test_loss = loss.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
-	#test_acc = accuracy.eval(session=sess, feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
-	test_loss, test_acc = sess.run([loss, accuracy], feed_dict={x_ph: test_data, t_ph: test_label, is_training_ph: False})
-	"""
-	num_test_examples = test_images.shape[0]
-	test_steps_per_epoch = (num_test_examples // batch_size + 1) if num_test_examples > 0 else 1
-	if test_steps_per_epoch < 1:
-		test_steps_per_epoch = 1
+	num_test_examples = 0
+	if test_images is not None and test_labels is not None:
+		if test_images.shape[0] == test_labels.shape[0]:
+			num_test_examples = test_images.shape[0]
 
-	indices = np.arange(num_test_examples)
-	if True == shuffle:
-		np.random.shuffle(indices)
+	if num_test_examples > 0:
+		"""
+		#test_loss = loss.eval(session=sess, feed_dict={x_ph: test_images, t_ph: test_labels, is_training_ph: False})
+		#test_acc = accuracy.eval(session=sess, feed_dict={x_ph: test_images, t_ph: test_labels, is_training_ph: False})
+		test_loss, test_acc = sess.run([loss, accuracy], feed_dict={x_ph: test_images, t_ph: test_labels, is_training_ph: False})
+		"""
+		test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
 
-	test_loss, test_acc = 0, 0
-	for step in range(test_steps_per_epoch):
-		start = step * batch_size
-		end = start + batch_size
-		batch_indices = indices[start:end]
-		data_batch, label_batch = test_images[batch_indices,], test_labels[batch_indices,]
-		if data_batch.size > 0 and label_batch.size > 0:  # If data_batch or label_batch is non-empty.
-			#batch_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-			#batch_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
-			batch_loss, batch_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+		indices = np.arange(num_test_examples)
+		#if True == shuffle:
+		#	np.random.shuffle(indices)
 
-			# TODO [check] >> Is test_loss or test_acc correct?
-			test_loss += batch_loss * batch_indices.size
-			test_acc += batch_acc * batch_indices.size
-	test_loss /= num_test_examples
-	test_acc /= num_test_examples
+		test_loss, test_acc = 0, 0
+		for step in range(test_steps_per_epoch):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			data_batch, label_batch = test_images[batch_indices,], test_labels[batch_indices,]
+			if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+				#batch_loss = loss.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+				#batch_acc = accuracy.eval(session=sess, feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
+				batch_loss, batch_acc = sess.run([loss, accuracy], feed_dict={x_ph: data_batch, t_ph: label_batch, is_training_ph: False})
 
-	print('Test loss = {}, test accurary = {}'.format(test_loss, test_acc))
+				# TODO [check] >> Is test_loss or test_acc correct?
+				test_loss += batch_loss * batch_indices.size
+				test_acc += batch_acc * batch_indices.size
+		test_loss /= num_test_examples
+		test_acc /= num_test_examples
+
+		print('Test loss = {}, test accurary = {}'.format(test_loss, test_acc))
+	else:
+		print('[SWL] Error: The number of test images is not equal to one of test labels.')
 
 print('[SWL] Info: End evaluating...')
 
@@ -381,41 +384,47 @@ print('[SWL] Info: End evaluating...')
 print('[SWL] Info: Start prediction...')
 
 with session.as_default() as sess:
-	"""
-	pred_data = test_images
-	predictions = cnn_model.eval(session=sess, feed_dict={x_ph: pred_data, is_training_ph: False})
-	"""
-	num_pred_examples = test_images.shape[0]
-	pred_steps_per_epoch = (num_pred_examples // batch_size + 1) if num_pred_examples > 0 else 1
-	if pred_steps_per_epoch < 1:
-		pred_steps_per_epoch = 1
+	num_pred_examples = 0
+	if test_images is not None and test_labels is not None:
+		if test_images.shape[0] == test_labels.shape[0]:
+			num_pred_examples = test_images.shape[0]
 
-	indices = np.arange(num_test_examples)
+	if num_pred_examples > 0:
+		"""
+		predictions = cnn_model.eval(session=sess, feed_dict={x_ph: test_images, is_training_ph: False})
+		"""
+		pred_steps_per_epoch = (num_pred_examples - 1) // batch_size + 1
 
-	predictions = np.array([])
-	for step in range(pred_steps_per_epoch):
-		start = step * batch_size
-		end = start + batch_size
-		batch_indices = indices[start:end]
-		data_batch = test_images[batch_indices,]
-		if data_batch.size > 0:  # If data_batch is non-empty.
-			batch_prediction = cnn_model.eval(session=sess, feed_dict={x_ph: data_batch, is_training_ph: False})
+		indices = np.arange(num_test_examples)
 
-			if predictions.size > 0:  # If predictions is non-empty.
-				predictions = np.concatenate((predictions, batch_prediction), axis=0)
-			else:
-				predictions = batch_prediction
+		predictions = np.array([])
+		for step in range(pred_steps_per_epoch):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			data_batch = test_images[batch_indices,]
+			if data_batch.size > 0:  # If data_batch is non-empty.
+				batch_prediction = cnn_model.eval(session=sess, feed_dict={x_ph: data_batch, is_training_ph: False})
 
-	predictions = np.argmax(predictions, 1)
-	groundtruths = np.argmax(test_labels, 1)
-	count = np.count_nonzero(np.equal(predictions, groundtruths))
+				if predictions.size > 0:  # If predictions is non-empty.
+					predictions = np.concatenate((predictions, batch_prediction), axis=0)
+				else:
+					predictions = batch_prediction
 
-	print('Accurary = {} / {}'.format(count, predictions.shape[0]))
+		predictions = np.argmax(predictions, 1)
+		groundtruths = np.argmax(test_labels, 1)
+		count = np.count_nonzero(np.equal(predictions, groundtruths))
+
+		print('Accurary = {} / {}'.format(count, predictions.shape[0]))
+	else:
+		print('[SWL] Error: The number of test images is not equal to one of test labels.')
 
 print('[SWL] Info: End prediction...')
 
 #%%------------------------------------------------------------------
 
+'''
 if __name__ == "__main__":
 	# Execute only if run as a script.
 	main()
+'''

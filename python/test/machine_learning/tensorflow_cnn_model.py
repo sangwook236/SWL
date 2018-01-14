@@ -1,26 +1,16 @@
 import tensorflow as tf
+from dnn_model import DnnBaseModel
 
 #%%------------------------------------------------------------------
 
-class TensorFlowCnnModel(object):
+class TensorFlowCnnModel(DnnBaseModel):
 	def __init__(self, num_classes):
-		self.num_classes = num_classes
-		self.model_output = None
+		super(TensorFlowCnnModel, self).__init__(num_classes)
 
 	def __call__(self, input_tensor, is_training=True):
 		self.model_output = self._create_model_1(input_tensor, self.num_classes, is_training)
 		#self.model_output = self._create_model_2(input_tensor, self.num_classes, is_training)
 		return self.model_output
-
-	def train(self, train_data, train_labels, batch_size, num_epochs, shuffle, initial_epoch=0):
-		pass
-		#return history
-
-	def load(self, model_filepath):
-		pass
-
-	def save(self, model_filepath):
-		pass
 
 	def _create_model_1(self, input_tensor, num_classes, is_training=True):
 		with tf.variable_scope('tf_cnn_model_1', reuse=None):

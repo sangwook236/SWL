@@ -1,26 +1,16 @@
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
+from dnn_model import DnnBaseModel
 
 #%%------------------------------------------------------------------
 
-class TfSlimCnnModel(object):
+class TfSlimCnnModel(DnnBaseModel):
 	def __init__(self, num_classes):
-		self.num_classes = num_classes
-		self.model_output = None
+		super(TfSlimCnnModel, self).__init__(num_classes)
 
 	def __call__(self, input_tensor, is_training=True):
 		self.model_output = self._create_model(input_tensor, self.num_classes, is_training)
 		return self.model_output
-
-	def train(self, train_data, train_labels, batch_size, num_epochs, shuffle, initial_epoch=0):
-		pass
-		#return history
-
-	def load(self, model_filepath):
-		pass
-
-	def save(self, model_filepath):
-		pass
 
 	def _create_model(self, input_tensor, num_classes, is_training=True):
 		# REF [site] >> https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim

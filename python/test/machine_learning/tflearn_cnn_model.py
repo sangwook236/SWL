@@ -14,29 +14,19 @@ sys.path.append(lib_dir_path)
 #-------------------
 import tflearn
 import tensorflow as tf
+from dnn_model import DnnBaseModel
 
 #%%------------------------------------------------------------------
 
-class TfLearnCnnModel(object):
+class TfLearnCnnModel(DnnBaseModel):
 	def __init__(self, num_classes):
-		self.num_classes = num_classes
-		self.model_output = None
+		super(TfLearnCnnModel, self).__init__(num_classes)
 
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
 
 	def __call__(self, input_tensor, is_training=True):
 		self.model_output = self._create_model(input_tensor, self.num_classes, is_training)
 		return self.model_output
-
-	def train(self, train_data, train_labels, batch_size, num_epochs, shuffle, initial_epoch=0):
-		pass
-		#return history
-
-	def load(self, model_filepath):
-		pass
-
-	def save(self, model_filepath):
-		pass
 
 	def _create_model(self, input_tensor, num_classes, is_training=True):
 		# REF [site] >> http://tflearn.org/getting_started/
