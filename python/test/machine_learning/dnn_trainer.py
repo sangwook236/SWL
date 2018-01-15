@@ -2,6 +2,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import time
 
 #%%------------------------------------------------------------------
 
@@ -46,6 +47,8 @@ class DnnTrainer(object):
 		best_val_acc = 0.0
 		for epoch in range(1, num_epochs + 1):
 			print('Epoch {}/{}'.format(epoch, num_epochs))
+
+			start_time = time.time()
 
 			indices = np.arange(num_train_examples)
 			if True == shuffle:
@@ -142,7 +145,7 @@ class DnnTrainer(object):
 
 					print('[SWL] Info: Improved accurary and saved the model at {}.'.format(model_saved_path))
 
-			print('Loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
+			print('Loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}, elapsed time = {}'.format(train_loss, train_acc, val_loss, val_acc, time.time() - start_time))
 
 		# Close writers.
 		if train_summary_writer is not None:

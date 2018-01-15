@@ -9,6 +9,7 @@ from tf_slim_cnn_model import TfSlimCnnModel
 from keras_cnn_model import KerasCnnModel
 #from tflearn_cnn_model import TfLearnCnnModel
 from dnn_trainer import DnnTrainer
+import time
 
 #np.random.seed(7)
 
@@ -81,13 +82,13 @@ val_summary_dir_path = './log/val_' + timestamp
 #%%------------------------------------------------------------------
 # Create a model.
 
-#cnnModel = TensorFlowCnnModel(num_classes)
+cnnModel = TensorFlowCnnModel(num_classes)
 #cnnModel = TfSlimCnnModel(num_classes)
 #cnnModel = TfLearnCnnModel(num_classes)
-from keras import backend as K
-K.set_learning_phase(1)  # Set the learning phase to 'train'.
-#K.set_learning_phase(0)  # Set the learning phase to 'train'.
-cnnModel = KerasCnnModel(num_classes)
+#from keras import backend as K
+#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+##K.set_learning_phase(0)  # Set the learning phase to 'train'.
+#cnnModel = KerasCnnModel(num_classes)
 
 dnnTrainer = DnnTrainer(cnnModel, input_shape, output_shape)
 
@@ -153,9 +154,11 @@ with session.as_default() as sess:
 			num_test_examples = test_images.shape[0]
 
 	if num_test_examples > 0:
+		start_time = time.time()
 		test_loss, test_acc = dnnTrainer.evaluate(session, test_images, test_labels, batch_size)
+		end_time = time.time()
 
-		print('Test loss = {}, test accurary = {}'.format(test_loss, test_acc))
+		print('Test loss = {}, test accurary = {}, elapsed time = {}'.format(test_loss, test_acc, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
@@ -173,12 +176,14 @@ with session.as_default() as sess:
 			num_pred_examples = test_images.shape[0]
 
 	if num_pred_examples > 0:
+		start_time = time.time()
 		predictions = dnnTrainer.predict(session, test_images, batch_size)
+		end_time = time.time()
 
 		groundtruths = np.argmax(test_labels, 1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('Accurary = {} / {}'.format(correct_estimation_count, num_pred_examples))
+		print('Accurary = {} / {}, elapsed time = {}'.format(correct_estimation_count, num_pred_examples, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
