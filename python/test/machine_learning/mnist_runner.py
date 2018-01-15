@@ -40,7 +40,7 @@ def load_data(shape):
 
 	return train_images, train_labels, test_images, test_labels
 
-def preprocess_dataset(data, labels, num_classes, axis=0):
+def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
 		# Preprocessing (normalization, standardization, etc.).
 		#data = data.astype(np.float)
@@ -56,14 +56,15 @@ def preprocess_dataset(data, labels, num_classes, axis=0):
 		#	labels = np.uint8(keras.utils.to_categorical(labels, num_classes))
 		pass
 
-input_shape = (28, 28, 1)  # 784 = 28 * 28.
 num_classes = 10
+input_shape = (28, 28, 1)  # 784 = 28 * 28.
+output_shape = (num_classes,)
 
 train_images, train_labels, test_images, test_labels = load_data(input_shape)
 
 # Pre-process.
-#train_images, train_labels = preprocess_dataset(train_images, train_labels, num_classes)
-#test_images, test_labels = preprocess_dataset(test_images, test_labels, num_classes)
+#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Prepare directories.
@@ -85,7 +86,7 @@ cnnModel = TensorFlowCnnModel(num_classes)
 #cnnModel = KerasCnnModel(num_classes)
 #cnnModel = TfLearnCnnModel(num_classes)
 
-dnnTrainer = DnnTrainer(cnnModel, input_shape, num_classes, train_summary_dir_path, val_summary_dir_path)
+dnnTrainer = DnnTrainer(cnnModel, input_shape, output_shape)
 
 print('[SWL] Info: Created a model.')
 
@@ -129,7 +130,7 @@ with session.as_default() as sess:
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 		# Train the model.
-		history = dnnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path)
+		history = dnnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 
 		# Display results.
 		dnnTrainer.display_history(history)

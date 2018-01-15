@@ -6,12 +6,9 @@ import tensorflow as tf
 #%%------------------------------------------------------------------
 
 class DnnTrainer(object):
-	def __init__(self, dnnModel, input_shape, num_classes, train_summary_dir_path=None, val_summary_dir_path=None):
-		self.train_summary_dir_path_ = train_summary_dir_path
-		self.val_summary_dir_path_ = val_summary_dir_path
-
+	def __init__(self, dnnModel, input_shape, output_shape):
 		self.input_tensor_ph_ = tf.placeholder(tf.float32, shape=(None,) + input_shape)
-		self.output_tensor_ph_ = tf.placeholder(tf.float32, shape=(None, num_classes))
+		self.output_tensor_ph_ = tf.placeholder(tf.float32, shape=(None,) + output_shape)
 		self.is_training_ph_ = tf.placeholder(tf.bool)
 
 		self.global_step_ = tf.Variable(0, name='global_step', trainable=False)
@@ -20,13 +17,13 @@ class DnnTrainer(object):
 		self.loss_, self.accuracy_ = self._prepare_evaluation(self.model_output_, self.output_tensor_ph_)
 		self.train_step_ = self._prepare_training(self.loss_, self.global_step_)
 
-	def train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None):
+	def train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None):
 		# Merge all the summaries.
 		merged_summary = tf.summary.merge_all()
 
 		# Create writers to write all the summaries out to a directory.
-		train_summary_writer = tf.summary.FileWriter(self.train_summary_dir_path_, session.graph) if self.train_summary_dir_path_ is not None else None
-		val_summary_writer = tf.summary.FileWriter(self.val_summary_dir_path_) if self.val_summary_dir_path_ is not None else None
+		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+		val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
 
 		num_train_examples = 0
 		if train_data is not None and train_labels is not None:

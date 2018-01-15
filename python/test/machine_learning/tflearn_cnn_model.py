@@ -25,8 +25,8 @@ class TfLearnCnnModel(DnnBaseModel):
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
 
 	def __call__(self, input_tensor, is_training=True):
-		self.model_output = self._create_model(input_tensor, self.num_classes, is_training)
-		return self.model_output
+		self.model_output_ = self._create_model(input_tensor, self.num_classes_, is_training)
+		return self.model_output_
 
 	def _create_model(self, input_tensor, num_classes, is_training=True):
 		# REF [site] >> http://tflearn.org/getting_started/

@@ -9,8 +9,8 @@ class TfSlimCnnModel(DnnBaseModel):
 		super(TfSlimCnnModel, self).__init__(num_classes)
 
 	def __call__(self, input_tensor, is_training=True):
-		self.model_output = self._create_model(input_tensor, self.num_classes, is_training)
-		return self.model_output
+		self.model_output_ = self._create_model(input_tensor, self.num_classes_, is_training)
+		return self.model_output_
 
 	def _create_model(self, input_tensor, num_classes, is_training=True):
 		# REF [site] >> https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim

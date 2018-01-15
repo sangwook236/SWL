@@ -8,9 +8,9 @@ class TensorFlowCnnModel(DnnBaseModel):
 		super(TensorFlowCnnModel, self).__init__(num_classes)
 
 	def __call__(self, input_tensor, is_training=True):
-		self.model_output = self._create_model_1(input_tensor, self.num_classes, is_training)
-		#self.model_output = self._create_model_2(input_tensor, self.num_classes, is_training)
-		return self.model_output
+		self.model_output_ = self._create_model_1(input_tensor, self.num_classes_, is_training)
+		#self.model_output_ = self._create_model_2(input_tensor, self.num_classes_, is_training)
+		return self.model_output_
 
 	def _create_model_1(self, input_tensor, num_classes, is_training=True):
 		with tf.variable_scope('tf_cnn_model_1', reuse=None):
