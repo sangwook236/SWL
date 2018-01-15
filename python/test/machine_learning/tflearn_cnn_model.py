@@ -24,13 +24,15 @@ class TfLearnCnnModel(DnnBaseModel):
 
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
 
-	def __call__(self, input_tensor, is_training=True):
-		self.model_output_ = self._create_model(input_tensor, self.num_classes_, is_training)
+	def __call__(self, input_tensor, is_training_tensor):
+		self.model_output_ = self._create_model(input_tensor, is_training_tensor, self.num_classes_)
 		return self.model_output_
 
-	def _create_model(self, input_tensor, num_classes, is_training=True):
+	def _create_model(self, input_tensor, is_training_tensor, num_classes):
 		# REF [site] >> http://tflearn.org/getting_started/
-		keep_prob = 0.25 if is_training is True else 1.0
+
+		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
+		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
 		with tf.variable_scope('tflearn_cnn_model', reuse=None):
 			#net = tflearn.input_data(shape=input_shape)
@@ -44,6 +46,7 @@ class TfLearnCnnModel(DnnBaseModel):
 			net = tflearn.flatten(net, name='flatten1_1')
 
 			net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc1_1')
+			# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
 			net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout1_1')
 
 			if 2 == num_classes:

@@ -81,10 +81,13 @@ val_summary_dir_path = './log/val_' + timestamp
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnModel = TensorFlowCnnModel(num_classes)
+#cnnModel = TensorFlowCnnModel(num_classes)
 #cnnModel = TfSlimCnnModel(num_classes)
-#cnnModel = KerasCnnModel(num_classes)
 #cnnModel = TfLearnCnnModel(num_classes)
+from keras import backend as K
+K.set_learning_phase(1)  # Set the learning phase to 'train'.
+#K.set_learning_phase(0)  # Set the learning phase to 'train'.
+cnnModel = KerasCnnModel(num_classes)
 
 dnnTrainer = DnnTrainer(cnnModel, input_shape, output_shape)
 

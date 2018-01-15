@@ -11,16 +11,23 @@ class KerasCnnModel(DnnBaseModel):
 	def __init__(self, num_classes):
 		super(KerasCnnModel, self).__init__(num_classes)
 
-	def __call__(self, input_tensor, is_training=True):
-		self.model_output_ = self._create_model_1(input_tensor, self.num_classes_, is_training)
-		#self.model_output_ = self._create_model_2(input_tensor, self.num_classes_, is_training)
+	def __call__(self, input_tensor, is_training_tensor=None):
+		self.model_output_ = self._create_model_1(input_tensor, self.num_classes_)
+		#self.model_output_ = self._create_model_2(input_tensor, self.num_classes_)
 		return self.model_output_
 
-	def _create_model_1(self, input_tensor, num_classes, is_training=True):
+	def _create_model_1(self, input_tensor, num_classes):
 		# REF [site] >> https://keras.io/getting-started/functional-api-guide
 		# REF [site] >> https://keras.io/models/model/
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
-		keep_prob = 0.25 if is_training is True else 1.0
+
+		# Note [info] >> Because is_training_tensor is a TensorFlow tensor, it can not be used as an argument in Keras.
+		#	In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
+		#		K.set_learning_phase(1)  # Set the learning phase to 'train'.
+		#		K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		#drop_rate = 0.75 if True == is_training_tensor else 0.0  # Error: Not working.
+		#drop_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
+		drop_rate = 0.75
 
 		with tf.variable_scope('keras_cnn_model_1', reuse=None):
 			x = Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu')(input_tensor)
@@ -32,7 +39,7 @@ class KerasCnnModel(DnnBaseModel):
 			x = Flatten()(x)
 
 			x = Dense(1024, activation='relu')(x)
-			x = Dropout(keep_prob)(x)
+			x = Dropout(drop_rate)(x)
 
 			if 2 == num_classes:
 				x = Dense(1, activation='sigmoid')(x)
@@ -45,9 +52,16 @@ class KerasCnnModel(DnnBaseModel):
 
 			return x
 
-	def _create_model_2(self, input_tensor, num_classes, is_training=True):
+	def _create_model_2(self, input_tensor, num_classes):
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
-		keep_prob = 0.25 if is_training is True else 1.0
+
+		# Note [info] >> Because is_training_tensor is a TensorFlow tensor, it can not be used as an argument in Keras.
+		#	In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model. 
+		#		K.set_learning_phase(1)  # Set the learning phase to 'train'.
+		#		K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		#drop_rate = 0.75 if True == is_training_tensor else 0.0  # Error: Not working.
+		#drop_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
+		drop_rate = 0.75
 
 		input_shape = input_tensor.get_shape().as_list()
 		input_shape = input_shape[1:]
@@ -64,7 +78,7 @@ class KerasCnnModel(DnnBaseModel):
 			model.add(Flatten())
 
 			model.add(Dense(1024, activation='relu'))
-			model.add(Dropout(keep_prob))
+			model.add(Dropout(drop_rate))
 
 			if 2 == num_classes:
 				model.add(Dense(1, activation='sigmoid'))
