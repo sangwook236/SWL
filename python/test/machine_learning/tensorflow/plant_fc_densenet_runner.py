@@ -163,7 +163,7 @@ if 0 == TRAINING_MODE:
 	initial_epoch = 0
 	print('[SWL] Info: Start training...')
 elif 1 == TRAINING_MODE:
-	initial_epoch = 10
+	initial_epoch = 100
 	print('[SWL] Info: Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0

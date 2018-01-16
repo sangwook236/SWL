@@ -49,7 +49,7 @@ session = tf.Session(config=config)
 
 import datetime
 
-output_dir_prefix = 'fc-densenet'
+output_dir_prefix = 'mnist'
 timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 
 model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, timestamp)
