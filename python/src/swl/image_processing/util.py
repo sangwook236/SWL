@@ -86,6 +86,7 @@ def load_image_list_by_scipy(dir_path, file_suffix, file_extension):
 					filepath = os.path.join(root, filename)
 					image = ndimage.imread(filepath, mode='RGB')  # RGB image.
 					#image = ndimage.imread(filepath)
+					images.append(image)
 			break  # Do not include subdirectories.
 	return images
 
@@ -127,50 +128,24 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 #%%------------------------------------------------------------------
 
 # Generate fixed-size image & label
-def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_ratio_threshold):
+def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_label_ratio_threshold):
 	if False == np.array_equal(image.shape[:2], label.shape[:2]):
-		return None, None
+		return None, None, None
 
 	rows, cols = math.ceil(image.shape[0] / patch_height), math.ceil(image.shape[1] / patch_width)
-	image_patch_list, label_patch_list = [], []
-	"""
-	for r in range(rows):
-		r_start = r * patch_height
-		if r_start > image.shape[0]:
-			break
-		if rows - 1 == r:
-			r_end = image.shape[0]
-			r_start = r_end - patch_height
-		else:
-			r_end = r_start + patch_height
-			#if r_end > image.shape[0]:
-			#	r_end = image.shape[0]
-			#	r_start = r_end - patch_height
+	if rows < 1 or cols < 1:
+		return None, None, None
 
-		for c in range(cols):
-			c_start = c * patch_width
-			if c_start > image.shape[1]:
-				break
-			if cols - 1 == c:
-				c_end = image.shape[1]
-				c_start = c_end - patch_width
-			else:
-				c_end = c_start + patch_width
-				#if c_end > image.shape[1]:
-				#	c_end = image.shape[1]
-				#	c_start = c_end - patch_width
-
-			if label is not None:
-				lbl_pat = label[r_start:r_end,c_start:c_end]
-				if np.count_nonzero(lbl_pat) / lbl_pat.size >= nonzero_ratio_threshold:
-					image_patch_list.append(image[r_start:r_end,c_start:c_end])
-					label_patch_list.append(lbl_pat)
-			else:
-				image_patch_list.append(image[r_start:r_end,c_start:c_end])
-	return image_patch_list, label_patch_list
 	"""
+	# Patches without overlap except patches in the last row and column.
+	r_stride = patch_height
+	c_stride = patch_width
+	"""
+	# Patches with equal overlap.
 	r_stride = (image.shape[0] - patch_height) / (rows - 1)
 	c_stride = (image.shape[1] - patch_width) / (cols - 1)
+
+	r_intervals = []
 	for r in range(rows):
 		r_start = int(r * r_stride)
 		if r_start > image.shape[0]:
@@ -183,28 +158,51 @@ def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_r
 			#if r_end > image.shape[0]:
 			#	r_end = image.shape[0]
 			#	r_start = r_end - patch_height
+		r_intervals.append((r_start, r_end))
 
-		for c in range(cols):
-			c_start = int(c * c_stride)
-			if c_start > image.shape[1]:
-				break
-			if cols - 1 == c:
-				c_end = image.shape[1]
-				c_start = c_end - patch_width
-			else:
-				c_end = c_start + patch_width
-				#if c_end > image.shape[1]:
-				#	c_end = image.shape[1]
-				#	c_start = c_end - patch_width
+	c_intervals = []
+	for c in range(cols):
+		c_start = int(c * c_stride)
+		if c_start > image.shape[1]:
+			break
+		if cols - 1 == c:
+			c_end = image.shape[1]
+			c_start = c_end - patch_width
+		else:
+			c_end = c_start + patch_width
+			#if c_end > image.shape[1]:
+			#	c_end = image.shape[1]
+			#	c_start = c_end - patch_width
+		c_intervals.append((c_start, c_end))
 
-			if label is not None:
-				lbl_pat = label[r_start:r_end,c_start:c_end]
-				if np.count_nonzero(lbl_pat) / lbl_pat.size >= nonzero_ratio_threshold:
-					image_patch_list.append(image[r_start:r_end,c_start:c_end])
-					label_patch_list.append(lbl_pat)
+	path_region_list = []
+	for r_itv in r_intervals:
+		for c_itv in c_intervals:
+			path_region_list.append((r_itv[0], c_itv[0], r_itv[1], c_itv[1]))  # (top, left, bottom, right).
+
+	image_patch_list, label_patch_list = [], []
+	if label is None:
+		for rgn in path_region_list:
+			image_patch_list.append(image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
+	else:
+		"""
+		for rgn in path_region_list:
+			lbl_pat = label[rgn[0]:rgn[2],rgn[1]:rgn[3]]
+			if np.count_nonzero(lbl_pat) / lbl_pat.size >= nonzero_label_ratio_threshold:
+				image_patch_list.append(image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
+				label_patch_list.append(lbl_pat)
 			else:
-				image_patch_list.append(image[r_start:r_end,c_start:c_end])
-	return image_patch_list, label_patch_list
+				path_region_list.remove(rgn)  # Do not correctly work.
+		"""
+		for idx in reversed(range(len(path_region_list))):
+			rgn = path_region_list[idx]
+			lbl_pat = label[rgn[0]:rgn[2],rgn[1]:rgn[3]]
+			if np.count_nonzero(lbl_pat) / lbl_pat.size >= nonzero_label_ratio_threshold:
+				image_patch_list.insert(0, image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
+				label_patch_list.insert(0, lbl_pat)
+			else:
+				del path_region_list[idx]
+	return image_patch_list, label_patch_list, path_region_list
 
 #%%------------------------------------------------------------------
 

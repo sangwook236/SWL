@@ -47,17 +47,18 @@ if False:
 
 #%%------------------------------------------------------------------
 
-image_patch_list = []
-label_patch_list = []
+image_patch_list, label_patch_list, patch_region_list = [], [], []
 for idx in range(len(image_list)):
 	if image_list[idx].shape[0] >= patch_height and image_list[idx].shape[1] >= patch_width:
-		img_pats, lbl_pats = generate_image_patch_list(image_list[idx], label_list[idx], patch_height, patch_width, 0.02)
-		if img_pats is not None and lbl_pats is not None:
+		img_pats, lbl_pats, pat_rgns = generate_image_patch_list(image_list[idx], label_list[idx], patch_height, patch_width, 0.02)
+		if img_pats is not None and lbl_pats is not None and pat_rgns is not None:
 			image_patch_list += img_pats
 			label_patch_list += lbl_pats
+			patch_region_list += pat_rgns
 
 image_patches = np.array(image_patch_list)
 label_patches = np.array(label_patch_list)
+patch_regions = np.array(patch_region_list)
 
 #%%------------------------------------------------------------------
 # Save a numpy.array to an npy file.
