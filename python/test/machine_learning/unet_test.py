@@ -1,4 +1,4 @@
-# Path to libcudnn.so.5.
+# Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 #%%------------------------------------------------------------------
@@ -19,7 +19,7 @@ import tensorflow as tf
 import keras
 from keras import backend as K
 from keras.preprocessing.image import ImageDataGenerator
-from swl.machine_learning.keras.deconvnet import DeconvNet
+from swl.machine_learning.keras.unet import UNet
 from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
 from swl.machine_learning.data_loader import DataLoader
 
@@ -43,19 +43,15 @@ keras_backend = 'tf'
 
 if 'posix' == os.name:
 	#dataset_home_dir_path = "/home/sangwook/my_dataset"
-	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"\
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
 else:
 	dataset_home_dir_path = "D:/dataset"
 
-train_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/train"
-train_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/trainannot"
-validation_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/val"
-validation_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/valannot"
-test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/test"
-test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
+train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
+test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
 
-output_dir_path = './result/deconvnet'
-log_dir_path = './log/deconvnet'
+output_dir_path = './result/unet'
+log_dir_path = './log/unet'
 
 model_dir_path = output_dir_path + '/model'
 prediction_dir_path = output_dir_path + '/prediction'
@@ -91,10 +87,8 @@ if not os.path.exists(test_summary_dir_path):
 #	If the size of data is changed, labels in label images may be changed.
 
 data_loader = DataLoader()
-#data_loader = DataLoader(width=480, height=360)
-train_dataset = data_loader.load(data_dir_path=train_data_dir_path, label_dir_path=train_label_dir_path, data_extension ='png', label_extension='png')
-validation_dataset = data_loader.load(data_dir_path=validation_data_dir_path, label_dir_path=validation_label_dir_path, data_extension ='png', label_extension='png')
-test_dataset = data_loader.load(data_dir_path=test_data_dir_path, label_dir_path=test_label_dir_path, data_extension ='png', label_extension='png')
+#data_loader = DataLoader(224, 224)
+train_dataset = data_loader.load(train_dataset_dir_path, data_suffix='', data_extension='tif', label_suffix='_mask', label_extension='tif')
 
 # Change the dimension of labels.
 if train_dataset.data.ndim == train_dataset.labels.ndim:
@@ -103,31 +97,27 @@ elif 1 == train_dataset.data.ndim - train_dataset.labels.ndim:
 	train_dataset.labels = train_dataset.labels.reshape(train_dataset.labels.shape + (1,))
 else:
 	raise ValueError('train_dataset.data.ndim or train_dataset.labels.ndim is invalid.')
-if validation_dataset.data.ndim == validation_dataset.labels.ndim:
-	pass
-elif 1 == validation_dataset.data.ndim - validation_dataset.labels.ndim:
-	validation_dataset.labels = validation_dataset.labels.reshape(validation_dataset.labels.shape + (1,))
-else:
-	raise ValueError('validation_dataset.data.ndim or validation_dataset.labels.ndim is invalid.')
-if test_dataset.data.ndim == test_dataset.labels.ndim:
-	pass
-elif 1 == test_dataset.data.ndim - test_dataset.labels.ndim:
-	test_dataset.labels = test_dataset.labels.reshape(test_dataset.labels.shape + (1,))
-else:
-	raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
+
+# Change labels from grayscale values to indexes.
+for train_label in train_dataset.labels:
+	unique_lbls = np.unique(train_label).tolist()
+	for lbl in unique_lbls:
+		train_label[train_label == lbl] = unique_lbls.index(lbl)
+
+assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], "ERROR: Image and label size mismatched."
 
 #%%------------------------------------------------------------------
 
 num_examples = train_dataset.num_examples
-num_classes = np.unique(train_dataset.labels).shape[0]  # 11 + 1.
+num_classes = np.unique(train_dataset.labels).shape[0]  # 2.
 
-batch_size = 32  # Number of samples per gradient update.
+batch_size = 1  # Number of samples per gradient update.
 num_epochs = 50  # Number of times to iterate over training data.
-steps_per_epoch = num_examples // batch_size if num_examples > 0 else 50
+steps_per_epoch = num_examples // batch_size
 if steps_per_epoch < 1:
 	steps_per_epoch = 1
 
-resized_input_size = train_dataset.data.shape[1:3]  # (height, width) = (360, 480).
+resized_input_size = train_dataset.data.shape[1:3]  # (height, width) = (512, 512).
 
 tf_data_shape = (None,) + resized_input_size + (train_dataset.data.shape[3],)
 tf_label_shape = (None,) + resized_input_size + (1 if 2 == num_classes else num_classes,)
@@ -136,13 +126,9 @@ tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 
 # Convert label types from uint16 to float32, and convert label IDs to one-hot encoding.
 train_dataset.labels = train_dataset.labels.astype(np.float32)
-validation_dataset.labels = validation_dataset.labels.astype(np.float32)
-test_dataset.labels = test_dataset.labels.astype(np.float32)
 # NOTICE [info] >> Axis 3 has to be 1, 3, or 4 for label images to be transformed by ImageDataGenerator.
 #if num_classes > 2:
 #	train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
-#	validation_dataset.labels = keras.utils.to_categorical(validation_dataset.labels, num_classes).reshape(validation_dataset.labels.shape[:-1] + (-1,))
-#	test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
 
 #%%------------------------------------------------------------------
 # Create a data generator.
@@ -153,13 +139,13 @@ print('Create a data generator.')
 
 train_data_generator = ImageDataGenerator(
 	rescale=1./255.,
-	preprocessing_function=None,
+	#preprocessing_function=None,
 	featurewise_center=True,
 	featurewise_std_normalization=True,
-	samplewise_center=False,
-	samplewise_std_normalization=False,
-	zca_whitening=False,
-	zca_epsilon=1e-6,
+	#samplewise_center=False,
+	#samplewise_std_normalization=False,
+	#zca_whitening=False,
+	#zca_epsilon=1e-6,
 	rotation_range=20,
 	width_shift_range=0.2,
 	height_shift_range=0.2,
@@ -189,8 +175,6 @@ train_label_generator = ImageDataGenerator(
 	#channel_shift_range=0.,
 	fill_mode='reflect',
 	cval=0.)
-test_data_generator = ImageDataGenerator(rescale=1./255.)
-test_label_generator = ImageDataGenerator()
 
 # Provide the same seed and keyword arguments to the fit and flow methods.
 seed = 1
@@ -199,94 +183,26 @@ seed = 1
 # Only required if featurewise_center or featurewise_std_normalization or zca_whitening.
 train_data_generator.fit(train_dataset.data, augment=True, seed=seed)
 #train_label_generator.fit(train_dataset.labels, augment=True, seed=seed)
-#test_data_generator.fit(test_dataset.data, augment=True, seed=seed)
-#test_label_generator.fit(test_dataset.labels, augment=True, seed=seed)
-
-#train_data_gen = train_data_generator.flow_from_directory(
-#	train_data_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='rgb',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=batch_size,
-#	shuffle=True,
-#	seed=seed)
-#train_label_gen = train_label_generator.flow_from_directory(
-#	train_label_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='grayscale',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=batch_size,
-#	shuffle=True,
-#	seed=seed)
-#validation_data_gen = test_data_generator.flow_from_directory(
-#	validation_data_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='rgb',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=batch_size,
-#	shuffle=True,
-#	seed=seed)
-#validation_label_gen = test_label_generator.flow_from_directory(
-#	validation_label_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='grayscale',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=batch_size,
-#	shuffle=True,
-#	seed=seed)
-#test_data_gen = test_data_generator.flow_from_directory(
-#	test_data_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='rgb',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=num_examples if num_examples > 0 else 100,
-#	shuffle=True,
-#	seed=seed)
-#test_label_gen = test_label_generator.flow_from_directory(
-#	test_label_dir_path,
-#	target_size=resized_input_size,
-#	color_mode='grayscale',
-#	#classes=None,
-#	class_mode=None,  # NOTICE [important] >>
-#	batch_size=num_examples if num_examples > 0 else 100,
-#	shuffle=True,
-#	seed=seed)
 
 train_data_gen = train_data_generator.flow(train_dataset.data, batch_size=batch_size, shuffle=True, seed=seed)
 train_label_gen = train_label_generator.flow(train_dataset.labels, batch_size=batch_size, shuffle=True, seed=seed)
-validation_data_gen = test_data_generator.flow(validation_dataset.data, batch_size=batch_size, shuffle=True, seed=seed)
-validation_label_gen = test_label_generator.flow(validation_dataset.labels, batch_size=batch_size, shuffle=True, seed=seed)
-test_data_gen = test_data_generator.flow(test_dataset.data, batch_size=batch_size, shuffle=True, seed=seed)
-test_label_gen = test_label_generator.flow(test_dataset.labels, batch_size=batch_size, shuffle=True, seed=seed)
 
 # Combine generators into one which yields image and labels.
 train_dataset_gen = zip(train_data_gen, train_label_gen)
-validation_dataset_gen = zip(validation_data_gen, validation_label_gen)
-test_dataset_gen = zip(test_data_gen, test_label_gen)
 
 #%%------------------------------------------------------------------
-# Create a DeconvNet model.
+# Create a U-Net model.
 
-print('Create a DeconvNet model.')
+print('Create a U-Net model.')
 
-with tf.name_scope('deconvnet'):
-	deconv_model_output = DeconvNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
+with tf.name_scope('unet'):
+	unet_model_output = UNet().create_model(num_classes, backend=keras_backend, input_shape=tf_data_shape, tf_input=tf_data_ph)
 
 # Display the model summary.
 #if 'tf' == keras_backend:
-#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=deconv_model_output).summary()
-#else:
-#	deconv_model.summary()
-
-#[print(tensor.name) for tensor in tf.get_default_graph().as_graph_def().node]
-
-#images_placeholder = tf.get_default_graph().get_tensor_by_name("input_10:0")
-#seg_score = tf.get_default_graph().get_tensor_by_name('deconvnet/seg-score/Sigmoid')
+#	keras.models.Model(inputs=keras.models.Input(tensor=tf_data_ph), outputs=unet_model_output).summary()
+#else:   
+#	unet_model.summary()
 
 #%%------------------------------------------------------------------
 # Prepare training.
@@ -295,21 +211,25 @@ print('Prepare training.')
 
 # Define a loss.
 with tf.name_scope('loss'):
-	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=deconv_model_output))
+	#loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=tf_label_ph, logits=unet_model_output))  # NOTICE [caution] >> float required.
+	loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=tf_label_ph, logits=unet_model_output))
 	tf.summary.scalar('loss', loss)
 
 # Define a metric.
 with tf.name_scope('metric'):
-	correct_prediction = tf.equal(tf.argmax(deconv_model_output, -1), tf.argmax(tf_label_ph, -1))
-	metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+	metric = tf.reduce_mean(dice_coeff(tf_label_ph, unet_model_output))
+	#correct_prediction = tf.equal(tf.argmax(unet_model_output, -1), tf.argmax(tf_label_ph, -1))
+	#metric = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 	tf.summary.scalar('metric', metric)
 
 # Define an optimzer.
 global_step = tf.Variable(0, name='global_step', trainable=False)
 with tf.name_scope('learning_rate'):
-	learning_rate = tf.train.exponential_decay(0.001, global_step=global_step, decay_steps=100000, decay_rate=0.995, staircase=True)
+	#learning_rate = tf.train.exponential_decay(0.001, global_step=global_step, decay_steps=100000, decay_rate=0.995, staircase=True)
+	#learning_rate = tf.train.exponential_decay(0.01, global_step=global_step, decay_steps=2000, decay_rate=0.995, staircase=True)
+	learning_rate = tf.train.exponential_decay(0.0001, global_step=global_step, decay_steps=steps_per_epoch*3, decay_rate=0.5, staircase=True)
 	tf.summary.scalar('learning_rate', learning_rate)
-train_step = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss, global_step=global_step)
+train_step = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.99).minimize(loss, global_step=global_step)
 
 # Merge all the summaries and write them out to a directory.
 merged_summary = tf.summary.merge_all()
@@ -320,7 +240,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 #%%------------------------------------------------------------------
-# Train the DeconvNet model.
+# Train the U-Net model.
 
 TRAINING_MODE = 0  # Start training a model.
 #TRAINING_MODE = 1  # Resume training a model.
@@ -343,7 +263,7 @@ with sess.as_default():
 	if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 		# Restore the model.
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		print('Restore a DeconvNet model.')
+		print('Restore a U-Net model.')
 
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
 		saver.restore(sess, ckpt.model_checkpoint_path)
@@ -375,14 +295,14 @@ with sess.as_default():
 
 			# Save the model.
 			if 0 == epoch % 10:
-				model_saved_path = saver.save(sess, model_dir_path + '/deconvnet.ckpt', global_step=global_step)
+				model_saved_path = saver.save(sess, model_dir_path + '/unet.ckpt', global_step=global_step)
 				print('Model saved in file:', model_saved_path)
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
 
 #%%------------------------------------------------------------------
-# Evaluate the DeconvNet model.
+# Evaluate the U-Net model.
 
 print('Start testing...')
 
@@ -390,17 +310,18 @@ import matplotlib.pyplot as plt
 
 with sess.as_default():
 	#if num_classes > 2:
-	#	test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
-	#test_metric = metric.eval(feed_dict={tf_data_ph: test_dataset.data, tf_label_ph: test_dataset.labels})
-	for data_batch, label_batch in test_dataset_gen:
+	#	train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
+	#test_metric = metric.eval(feed_dict={tf_data_ph: train_dataset.data, tf_label_ph: train_dataset.labels})
+	for data_batch, label_batch in train_dataset_gen:
 		if num_classes > 2:
 			label_batch = keras.utils.to_categorical(label_batch, num_classes).reshape(label_batch.shape[:-1] + (-1,))
 		break
 	test_metric = metric.eval(feed_dict={tf_data_ph: data_batch, tf_label_ph: label_batch})
 	print('Test metric = %g' % test_metric)
 
-	predictions = deconv_model_output.eval(feed_dic={tf_data_ph: data_batch})
+	predictions = unet_model_output.eval(feed_dic={tf_data_ph: data_batch})
 	for idx in range(predictions.shape[0]):
+		#prediction = np.argmax(predictions[idx], axis=-1)
 		prediction = np.argmax(predictions[idx], axis=-1) * 255  # Only when num_classes = 2.
 
 		plt.imshow(prediction, cmap='gray')

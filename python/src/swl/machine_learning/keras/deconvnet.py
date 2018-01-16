@@ -1,12 +1,12 @@
-# REF [paper] >> "Learning Deconvolution Network for Semantic Segmentation".
+# REF [paper] >> "Learning Deconvolution Network for Semantic Segmentation", ICCV 2015.
 # REF [site] >> https://github.com/HyeonwooNoh/DeconvNet
 # REF [site] >> https://github.com/fchollet/keras/blob/master/keras/applications/vgg16.py
 
 from keras.models import Model
 from keras.layers import Input, concatenate, Conv2D, Conv2DTranspose, BatchNormalization, Activation, MaxPooling2D, UpSampling2D, Dense, Flatten, Reshape
-from .neural_network import NeuralNetwork
+from .keras_neural_network import KerasNeuralNetwork
 
-class DeconvNet(NeuralNetwork):
+class DeconvNet(KerasNeuralNetwork):
 	# TODO [check] >>
 	#	- Batch normalization may differ frome one in the original paper.
 	#	- Fully connected layers consists of convolutional layers.
@@ -20,6 +20,12 @@ class DeconvNet(NeuralNetwork):
 		return self.__create_basic_model(num_classes, backend, input_shape, tf_input)
 		#return self.__create_model_with_skip_connections(num_classes, backend, input_shape, tf_input)
 		#return self.__create_model_without_batch_normalization(num_classes, backend, input_shape, tf_input)
+
+	def train(self):
+		raise NotImplementedError
+
+	def predict(self):
+		raise NotImplementedError
 
 	def __create_basic_model(self, num_classes, backend='tf', input_shape=None, tf_input=None):
 		if 'tf' == backend:
@@ -432,9 +438,3 @@ class DeconvNet(NeuralNetwork):
 		else:
 			model = Model(input=inputs, output=seg_score)
 			return model
-
-	def train(self):
-		raise NotImplementedError
-
-	def predict(self):
-		raise NotImplementedError

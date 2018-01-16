@@ -1,16 +1,12 @@
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
-from dnn_model import DnnBaseModel
+from tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 
-class TfSlimCnnModel(DnnBaseModel):
-	def __init__(self, num_classes):
-		super(TfSlimCnnModel, self).__init__(num_classes)
-
-	def __call__(self, input_tensor, is_training_tensor):
-		self.model_output_ = self._create_model(input_tensor, is_training_tensor, self.num_classes_)
-		return self.model_output_
+class MnistTfSlimCNN(TensorFlowNeuralNet):
+	def __init__(self, input_shape, output_shape):
+		super().__init__(input_shape, output_shape)
 
 	def _create_model(self, input_tensor, is_training_tensor, num_classes):
 		# REF [site] >> https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim
@@ -18,7 +14,7 @@ class TfSlimCnnModel(DnnBaseModel):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tf_slim_cnn_model', reuse=None):
+		with tf.variable_scope('tf_slim_cnn_model', reuse=tf.AUTO_REUSE):
 			conv1 = slim.conv2d(input_tensor, num_outputs=32, kernel_size=[5, 5], stride=1, padding='SAME', activation_fn=tf.nn.relu, scope='conv1_1')
 			conv1 = slim.max_pool2d(conv1, kernel_size=[2, 2], stride=2, scope='maxpool1_1')
 

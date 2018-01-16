@@ -1,19 +1,25 @@
-# REF [paper] >> "U-Net: Convolutional Networks for Biomedical Image Segmentation".
+# REF [paper] >> "U-Net: Convolutional Networks for Biomedical Image Segmentation", MICCAI 2015.
 # REF [site] >> https://github.com/zizhaozhang/unet-tensorflow-keras
 # REF [file] >> https://github.com/zizhaozhang/unet-tensorflow-keras/blob/master/model.py
 # REF [site] >> https://lmb.informatik.uni-freiburg.de/resources/opensource/unet.en.html
 
 from keras.models import Model
 from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, Cropping2D, ZeroPadding2D
-from .neural_network import NeuralNetwork
+from .keras_neural_network import KerasNeuralNetwork
 
-class UNet(NeuralNetwork):
+class UNet(KerasNeuralNetwork):
 	def __init__(self):
 		super().__init__()
 
 	def create_model(self, num_classes, backend='tf', input_shape=None, tf_input=None):
 		return self.__create_basic_model(num_classes, backend, input_shape, tf_input)
 		#return self.__create_small_model(num_classes, backend, input_shape, tf_input)
+
+	def train(self):
+		raise NotImplementedError
+
+	def predict(self):
+		raise NotImplementedError
 
 	def __create_basic_model(self, num_classes, backend='tf', input_shape=None, tf_input=None):
 		if 'tf' == backend:
@@ -51,7 +57,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 6.
 		up_conv5 = UpSampling2D(size=(2, 2), data_format=data_format)(conv5)
-		ch, cw = self.get_crop_shape(conv4, up_conv5)
+		ch, cw = self.__get_crop_shape(conv4, up_conv5)
 		crop_conv4 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv4)
 		up6 = concatenate([up_conv5, crop_conv4], axis=concat_axis)
 		conv6 = Conv2D(512, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv6_1')(up6)
@@ -59,7 +65,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 7.
 		up_conv6 = UpSampling2D(size=(2, 2), data_format=data_format)(conv6)
-		ch, cw = self.get_crop_shape(conv3, up_conv6)
+		ch, cw = self.__get_crop_shape(conv3, up_conv6)
 		crop_conv3 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv3)
 		up7 = concatenate([up_conv6, crop_conv3], axis=concat_axis)
 		conv7 = Conv2D(256, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv7_1')(up7)
@@ -67,7 +73,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 8.
 		up_conv7 = UpSampling2D(size=(2, 2), data_format=data_format)(conv7)
-		ch, cw = self.get_crop_shape(conv2, up_conv7)
+		ch, cw = self.__get_crop_shape(conv2, up_conv7)
 		crop_conv2 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv2)
 		up8 = concatenate([up_conv7, crop_conv2], axis=concat_axis)
 		conv8 = Conv2D(128, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv8_1')(up8)
@@ -75,7 +81,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 9.
 		up_conv8 = UpSampling2D(size=(2, 2), data_format=data_format)(conv8)
-		ch, cw = self.get_crop_shape(conv1, up_conv8)
+		ch, cw = self.__get_crop_shape(conv1, up_conv8)
 		crop_conv1 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv1)
 		up9 = concatenate([up_conv8, crop_conv1], axis=concat_axis)
 		conv9 = Conv2D(64, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv9_1')(up9)
@@ -132,7 +138,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 6.
 		up_conv5 = UpSampling2D(size=(2, 2), data_format=data_format)(conv5)
-		ch, cw = self.get_crop_shape(conv4, up_conv5)
+		ch, cw = self.__get_crop_shape(conv4, up_conv5)
 		crop_conv4 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv4)
 		up6 = concatenate([up_conv5, crop_conv4], axis=concat_axis)
 		conv6 = Conv2D(256, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv6_1')(up6)
@@ -140,7 +146,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 7.
 		up_conv6 = UpSampling2D(size=(2, 2), data_format=data_format)(conv6)
-		ch, cw = self.get_crop_shape(conv3, up_conv6)
+		ch, cw = self.__get_crop_shape(conv3, up_conv6)
 		crop_conv3 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv3)
 		up7 = concatenate([up_conv6, crop_conv3], axis=concat_axis)
 		conv7 = Conv2D(128, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv7_1')(up7)
@@ -148,7 +154,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 8.
 		up_conv7 = UpSampling2D(size=(2, 2), data_format=data_format)(conv7)
-		ch, cw = self.get_crop_shape(conv2, up_conv7)
+		ch, cw = self.__get_crop_shape(conv2, up_conv7)
 		crop_conv2 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv2)
 		up8 = concatenate([up_conv7, crop_conv2], axis=concat_axis)
 		conv8 = Conv2D(64, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv8_1')(up8)
@@ -156,7 +162,7 @@ class UNet(NeuralNetwork):
 
 		# Conv 9.
 		up_conv8 = UpSampling2D(size=(2, 2), data_format=data_format)(conv8)
-		ch, cw = self.get_crop_shape(conv1, up_conv8)
+		ch, cw = self.__get_crop_shape(conv1, up_conv8)
 		crop_conv1 = Cropping2D(cropping=(ch,cw), data_format=data_format)(conv1)
 		up9 = concatenate([up_conv8, crop_conv1], axis=concat_axis)
 		conv9 = Conv2D(32, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv9_1')(up9)
@@ -177,8 +183,20 @@ class UNet(NeuralNetwork):
 			model = Model(input=inputs, output=conv10)
 			return model
 
-	def train(self):
-		raise NotImplementedError
+	def __get_crop_shape(self, target, refer):
+		# Width, the 3rd dimension.
+		cw = (target.get_shape()[2] - refer.get_shape()[2]).value
+		assert (cw >= 0)
+		if cw % 2 != 0:
+			cw1, cw2 = int(cw/2), int(cw/2) + 1
+		else:
+			cw1, cw2 = int(cw/2), int(cw/2)
+		# Height, the 2nd dimension.
+		ch = (target.get_shape()[1] - refer.get_shape()[1]).value
+		assert (ch >= 0)
+		if ch % 2 != 0:
+			ch1, ch2 = int(ch/2), int(ch/2) + 1
+		else:
+			ch1, ch2 = int(ch/2), int(ch/2)
 
-	def predict(self):
-		raise NotImplementedError
+		return (ch1, ch2), (cw1, cw2)

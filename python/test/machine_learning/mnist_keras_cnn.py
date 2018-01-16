@@ -3,18 +3,17 @@ from keras.layers import Input, Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 #from keras import optimizers, callbacks
 import tensorflow as tf
-from dnn_model import DnnBaseModel
+from tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 
-class KerasCnnModel(DnnBaseModel):
-	def __init__(self, num_classes):
-		super(KerasCnnModel, self).__init__(num_classes)
+class MnistKerasCNN(TensorFlowNeuralNet):
+	def __init__(self, input_shape, output_shape):
+		super().__init__(input_shape, output_shape)
 
-	def __call__(self, input_tensor, is_training_tensor=None):
-		self.model_output_ = self._create_model_1(input_tensor, self.num_classes_)
-		#self.model_output_ = self._create_model_2(input_tensor, self.num_classes_)
-		return self.model_output_
+	def _create_model(self, input_tensor, is_training_tensor, num_classes):
+		return self._create_model_1(input_tensor, num_classes)
+		#return self._create_model_2(input_tensor, num_classes)
 
 	def _create_model_1(self, input_tensor, num_classes):
 		# REF [site] >> https://keras.io/getting-started/functional-api-guide
@@ -29,7 +28,7 @@ class KerasCnnModel(DnnBaseModel):
 		#drop_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
 		drop_rate = 0.75
 
-		with tf.variable_scope('keras_cnn_model_1', reuse=None):
+		with tf.variable_scope('keras_cnn_model_1', reuse=tf.AUTO_REUSE):
 			x = Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu')(input_tensor)
 			x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(x)
 
@@ -67,7 +66,7 @@ class KerasCnnModel(DnnBaseModel):
 		input_shape = input_shape[1:]
 		#input_tensor = Input(shape=input_shape)
 
-		with tf.variable_scope('keras_cnn_model_2', reuse=None):
+		with tf.variable_scope('keras_cnn_model_2', reuse=tf.AUTO_REUSE):
 			model = Sequential()
 			model.add(Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu', input_shape=input_shape))
 			model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))

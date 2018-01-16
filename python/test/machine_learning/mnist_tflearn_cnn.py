@@ -14,19 +14,15 @@ sys.path.append(lib_dir_path)
 #-------------------
 import tflearn
 import tensorflow as tf
-from dnn_model import DnnBaseModel
+from tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 
-class TfLearnCnnModel(DnnBaseModel):
-	def __init__(self, num_classes):
-		super(TfLearnCnnModel, self).__init__(num_classes)
+class MnistTfLearnCNN(TensorFlowNeuralNet):
+	def __init__(self, input_shape, output_shape):
+		super().__init__(input_shape, output_shape)
 
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
-
-	def __call__(self, input_tensor, is_training_tensor):
-		self.model_output_ = self._create_model(input_tensor, is_training_tensor, self.num_classes_)
-		return self.model_output_
 
 	def _create_model(self, input_tensor, is_training_tensor, num_classes):
 		# REF [site] >> http://tflearn.org/getting_started/
@@ -34,7 +30,7 @@ class TfLearnCnnModel(DnnBaseModel):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tflearn_cnn_model', reuse=None):
+		with tf.variable_scope('tflearn_cnn_model', reuse=tf.AUTO_REUSE):
 			#net = tflearn.input_data(shape=input_shape)
 
 			net = tflearn.conv_2d(input_tensor, nb_filter=32, filter_size=5, strides=1, padding='same', activation='relu', name='conv1_1')

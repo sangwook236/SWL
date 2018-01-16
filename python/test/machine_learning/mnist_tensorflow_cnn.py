@@ -1,19 +1,18 @@
 import tensorflow as tf
-from dnn_model import DnnBaseModel
+from tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 
-class TensorFlowCnnModel(DnnBaseModel):
-	def __init__(self, num_classes):
-		super(TensorFlowCnnModel, self).__init__(num_classes)
+class MnistTensorFlowCNN(TensorFlowNeuralNet):
+	def __init__(self, input_shape, output_shape):
+		super().__init__(input_shape, output_shape)
 
-	def __call__(self, input_tensor, is_training_tensor):
-		self.model_output_ = self._create_model_1(input_tensor, is_training_tensor, self.num_classes_)
-		#self.model_output_ = self._create_model_2(input_tensor, is_training_tensor, self.num_classes_)
-		return self.model_output_
+	def _create_model(self, input_tensor, is_training_tensor, num_classes):
+		return self._create_model_1(input_tensor, is_training_tensor, num_classes)
+		#return self._create_model_2(input_tensor, is_training_tensor, num_classes)
 
 	def _create_model_1(self, input_tensor, is_training_tensor, num_classes):
-		with tf.variable_scope('tf_cnn_model_1', reuse=None):
+		with tf.variable_scope('tf_cnn_model_1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv1_1')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool1_1')
 
@@ -41,7 +40,7 @@ class TensorFlowCnnModel(DnnBaseModel):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tf_cnn_model_2', reuse=None):
+		with tf.variable_scope('tf_cnn_model_2', reuse=tf.AUTO_REUSE):
 			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv1_1', act=tf.nn.relu)
 			conv1 = self._max_pool_layer(conv1, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool1_1')
 
