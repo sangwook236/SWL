@@ -97,9 +97,9 @@ val_summary_dir_path = './log/val_' + timestamp
 #%%------------------------------------------------------------------
 # Create a model.
 
-#cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
+cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
 #cnnForMnist = MnistTfSlimCNN(input_shape, output_shape)
-cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
+#cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'train'.
@@ -111,7 +111,7 @@ print('[SWL] Info: Created a model.')
 # Train the model.
 
 batch_size = 128  # Number of samples per gradient update.
-num_epochs = 10  # Number of times to iterate over training data.
+num_epochs = 50  # Number of times to iterate over training data.
 
 shuffle = True
 

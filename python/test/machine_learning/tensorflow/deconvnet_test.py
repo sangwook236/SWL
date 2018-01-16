@@ -26,7 +26,7 @@ config = tf.ConfigProto()
 #config.allow_soft_placement = True
 config.log_device_placement = True
 config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # only allocate 40% of the total memory of each GPU.
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 sess = tf.Session(config=config)
 
 # This means that Keras will use the session we registered to initialize all variables that it creates internally.
@@ -40,7 +40,7 @@ keras_backend = 'tf'
 
 if 'posix' == os.name:
 	#dataset_home_dir_path = "/home/sangwook/my_dataset"
-	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"\
+	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
 else:
 	dataset_home_dir_path = "D:/dataset"
 
