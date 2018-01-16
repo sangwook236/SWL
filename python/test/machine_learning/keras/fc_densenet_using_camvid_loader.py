@@ -2,7 +2,7 @@
 # REF [paper] >> "The One Hundred Layers Tiramisu: Fully Convolutional DenseNets for Semantic Segmentation", arXiv 2016.
 # REF [site] >> https://github.com/titu1994/Fully-Connected-DenseNets-Semantic-Segmentation
 
-# Path to libcudnn.so.5.
+# Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
 #%%------------------------------------------------------------------
@@ -15,12 +15,12 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 
-#%%------------------------------------------------------------------
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 
+#--------------------
 import math
 import numpy as np
 import tensorflow as tf

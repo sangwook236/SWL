@@ -3,7 +3,7 @@ from keras.layers import Input, Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 #from keras import optimizers, callbacks
 import tensorflow as tf
-from tensorflow_neural_net import TensorFlowNeuralNet
+from swl.machine_learning.tensorflow.tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 

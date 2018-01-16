@@ -1,5 +1,5 @@
 import tensorflow as tf
-from tensorflow_neural_net import TensorFlowNeuralNet
+from swl.machine_learning.tensorflow.tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 

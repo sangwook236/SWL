@@ -1,20 +1,6 @@
-import os, sys
-if 'posix' == os.name:
-	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
-else:
-	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
-lib_dir_path = lib_home_dir_path + "/tflearn_github"
-
-sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_dir_path)
-
-#-------------------
 import tflearn
 import tensorflow as tf
-from tensorflow_neural_net import TensorFlowNeuralNet
+from swl.machine_learning.tensorflow.tensorflow_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 

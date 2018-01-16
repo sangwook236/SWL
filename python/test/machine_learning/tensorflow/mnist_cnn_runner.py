@@ -1,16 +1,29 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
+import os, sys
+if 'posix' == os.name:
+	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
+	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+else:
+	swl_python_home_dir_path = 'D:/work/SWL_github/python'
+	lib_home_dir_path = "D:/lib_repo/python"
+	#lib_home_dir_path = "D:/lib_repo/python/rnd"
+sys.path.append(swl_python_home_dir_path + '/src')
+sys.path.append(lib_home_dir_path + "/tflearn_github")
+
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+
 #--------------------
 import numpy as np
 import tensorflow as tf
 from mnist_tensorflow_cnn import MnistTensorFlowCNN
 from mnist_tf_slim_cnn import MnistTfSlimCNN
 from mnist_keras_cnn import MnistKerasCNN
-#from mnist_tflearn_cnn import MnistTfLearnCNN
-from neural_net_trainer import NeuralNetTrainer
-from neural_net_evaluator import NeuralNetEvaluator
-from neural_net_predictor import NeuralNetPredictor
+from mnist_tflearn_cnn import MnistTfLearnCNN
+from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
+from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 import time
 
 #np.random.seed(7)
@@ -84,9 +97,9 @@ val_summary_dir_path = './log/val_' + timestamp
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
+#cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
 #cnnForMnist = MnistTfSlimCNN(input_shape, output_shape)
-#cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
+cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'train'.
