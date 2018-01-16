@@ -143,9 +143,9 @@ class DnnTrainer(object):
 					model_saved_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self.global_step_)
 					best_val_acc = val_acc
 
-					print('[SWL] Info: Improved accurary and saved the model at {}.'.format(model_saved_path))
+					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(model_saved_path))
 
-			print('Loss = {}, accuracy = {}, validation loss = {}, validation accurary = {}, elapsed time = {}'.format(train_loss, train_acc, val_loss, val_acc, time.time() - start_time))
+			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}, elapsed time = {}'.format(train_loss, train_acc, val_loss, val_acc, time.time() - start_time))
 
 		# Close writers.
 		if train_summary_writer is not None:

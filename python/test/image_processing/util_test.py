@@ -4,9 +4,9 @@ if 'posix' == os.name:
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
+#sys.path.append('../../src')
 
-#%%------------------------------------------------------------------
-
+#--------------------
 import numpy as np
 import keras
 import swl
@@ -59,7 +59,7 @@ val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshap
 test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
 #%%------------------------------------------------------------------
-# Save array to npy file.
+# Save a numpy.array to an npy file.
 
 np.save('camvid_data/train_images.npy', train_images)
 np.save('camvid_data/train_labels.npy', train_labels)
@@ -75,7 +75,7 @@ np.save('camvid_data/test_labels.npy', test_labels)
 #np.savez('camvid_data/test_labels.npz', test_labels)
 
 #%%------------------------------------------------------------------
-# Load array from npy file.
+# Load a numpy.array from an npy file.
 
 train_images0 = np.load('camvid_data/train_images.npy')
 train_labels0 = np.load('camvid_data/train_labels.npy')

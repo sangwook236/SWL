@@ -95,6 +95,7 @@ dnnTrainer = DnnTrainer(cnnModel, input_shape, output_shape)
 print('[SWL] Info: Created a model.')
 
 #%%------------------------------------------------------------------
+# Train the model.
 
 batch_size = 128  # Number of samples per gradient update.
 num_epochs = 50  # Number of times to iterate over training data.
@@ -113,18 +114,19 @@ elif 1 == TRAINING_MODE:
 	print('[SWL] Info: Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0
-	print('[SWL] Info: Use a trained model.')
+	print('[SWL] Info: Use a saved model.')
 else:
-	raise Exception('[SWL] Error: Invalid TRAINING_MODE')
+	assert False, '[SWL] Error: Invalid TRAINING_MODE'
 
 session.run(tf.global_variables_initializer())
 
 with session.as_default() as sess:
-	# Saves a model every 2 hours and maximum 5 latest models are saved.
+	# Save a model every 2 hours and maximum 5 latest models are saved.
 	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 	if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
 		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
 		saver.restore(sess, ckpt.model_checkpoint_path)
@@ -133,8 +135,9 @@ with session.as_default() as sess:
 		print('[SWL] Info: Restored a model.')
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-		# Train the model.
+		start_time = time.time()
 		history = dnnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		print('\tTraining time = {}'.format(time.time() - start_time))
 
 		# Display results.
 		dnnTrainer.display_history(history)
@@ -158,7 +161,7 @@ with session.as_default() as sess:
 		test_loss, test_acc = dnnTrainer.evaluate(session, test_images, test_labels, batch_size)
 		end_time = time.time()
 
-		print('Test loss = {}, test accurary = {}, elapsed time = {}'.format(test_loss, test_acc, end_time - start_time))
+		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
@@ -183,7 +186,7 @@ with session.as_default() as sess:
 		groundtruths = np.argmax(test_labels, 1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('Accurary = {} / {}, elapsed time = {}'.format(correct_estimation_count, num_pred_examples, end_time - start_time))
+		print('\tAccurary = {} / {}, prediction time = {}'.format(correct_estimation_count, num_pred_examples, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
