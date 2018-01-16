@@ -1,6 +1,7 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
+#--------------------
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
@@ -8,7 +9,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
 #--------------------
 import numpy as np
@@ -39,17 +40,17 @@ keras_backend = 'tf'
 # Load data.
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = "/home/sangwook/my_dataset"
-	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+	#data_home_dir_path = '/home/sangwook/my_dataset'
+	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = "D:/dataset"
+	data_home_dir_path = 'D:/dataset'
 
-train_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/train"
-train_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/trainannot"
-validation_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/val"
-validation_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/valannot"
-test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/test"
-test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
+train_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/train'
+train_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot'
+validation_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/val'
+validation_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/valannot'
+test_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test'
+test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/testannot'
 
 output_dir_path = './result/deconvnet'
 log_dir_path = './log/deconvnet'
@@ -282,7 +283,7 @@ with tf.name_scope('deconvnet'):
 
 #[print(tensor.name) for tensor in tf.get_default_graph().as_graph_def().node]
 
-#images_placeholder = tf.get_default_graph().get_tensor_by_name("input_10:0")
+#images_placeholder = tf.get_default_graph().get_tensor_by_name('input_10:0')
 #seg_score = tf.get_default_graph().get_tensor_by_name('deconvnet/seg-score/Sigmoid')
 
 #%%------------------------------------------------------------------

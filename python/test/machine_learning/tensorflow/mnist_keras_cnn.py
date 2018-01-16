@@ -28,7 +28,7 @@ class MnistKerasCNN(TensorFlowNeuralNet):
 		#drop_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
 		drop_rate = 0.75
 
-		with tf.variable_scope('keras_cnn_model_1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_keras_cnn_1', reuse=tf.AUTO_REUSE):
 			x = Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu')(input_tensor)
 			x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(x)
 
@@ -66,7 +66,7 @@ class MnistKerasCNN(TensorFlowNeuralNet):
 		input_shape = input_shape[1:]
 		#input_tensor = Input(shape=input_shape)
 
-		with tf.variable_scope('keras_cnn_model_2', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_keras_cnn_2', reuse=tf.AUTO_REUSE):
 			model = Sequential()
 			model.add(Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu', input_shape=input_shape))
 			model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
@@ -85,6 +85,9 @@ class MnistKerasCNN(TensorFlowNeuralNet):
 			else:
 				model.add(Dense(num_classes, activation='softmax'))
 				#model.add(Dense(num_classes, activation='softmax', activity_regularizer=keras.regularizers.activity_l2(0.0001)))
+
+			# Display the model summary.
+			#model.summary()
 
 			return model(input_tensor)
 			#return model.output  # Run-time error.

@@ -5,18 +5,19 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
+#--------------------
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
-	lib_home_dir_path = "/home/sangwook/lib_repo/python"
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = "D:/lib_repo/python"
-	#lib_home_dir_path = "D:/lib_repo/python/rnd"
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_home_dir_path + "/Fully-Connected-DenseNets-Semantic-Segmentation_github")
+sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
 #--------------------
 import numpy as np
@@ -33,7 +34,7 @@ config = tf.ConfigProto()
 #config.allow_soft_placement = True
 config.log_device_placement = True
 config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # only allocate 40% of the total memory of each GPU.
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 sess = tf.Session(config=config)
 
 # This means that Keras will use the session we registered to initialize all variables that it creates internally.
@@ -46,17 +47,17 @@ K.set_learning_phase(0)
 # Load data.
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = "/home/sangwook/my_dataset"
-	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+	#dataset_home_dir_path = '/home/sangwook/my_dataset'
+	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = "D:/dataset"
+	dataset_home_dir_path = 'D:/dataset'
 
-train_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/train"
-train_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/trainannot"
-validation_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/val"
-validation_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/valannot"
-test_data_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/test"
-test_label_dir_path = dataset_home_dir_path + "/pattern_recognition/camvid/tmp/testannot"
+train_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train'
+train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot'
+validation_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val'
+validation_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/valannot'
+test_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/test'
+test_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/testannot'
 
 output_dir_path = './result/fc_densenet'
 log_dir_path = './log/fc_densenet'

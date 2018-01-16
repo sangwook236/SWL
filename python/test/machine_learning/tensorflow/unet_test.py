@@ -1,6 +1,7 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
+#--------------------
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
@@ -8,7 +9,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
 #--------------------
 import numpy as np
@@ -39,13 +40,13 @@ keras_backend = 'tf'
 # Load data.
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = "/home/sangwook/my_dataset"
-	dataset_home_dir_path = "/home/HDD1/sangwook/my_dataset"
+	#data_home_dir_path = '/home/sangwook/my_dataset'
+	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = "D:/dataset"
+	data_home_dir_path = 'D:/dataset'
 
-train_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/train"
-test_dataset_dir_path = dataset_home_dir_path + "/biomedical_imaging/isbi2012_em_segmentation_challenge/test"
+train_dataset_dir_path = data_home_dir_path + '/biomedical_imaging/isbi2012_em_segmentation_challenge/train'
+test_dataset_dir_path = data_home_dir_path + '/biomedical_imaging/isbi2012_em_segmentation_challenge/test'
 
 output_dir_path = './result/unet'
 log_dir_path = './log/unet'
@@ -101,7 +102,7 @@ for train_label in train_dataset.labels:
 	for lbl in unique_lbls:
 		train_label[train_label == lbl] = unique_lbls.index(lbl)
 
-assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], "ERROR: Image and label size mismatched."
+assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], 'ERROR: Image and label size mismatched.'
 
 #%%------------------------------------------------------------------
 

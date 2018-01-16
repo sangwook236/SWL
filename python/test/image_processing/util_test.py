@@ -14,17 +14,17 @@ import swl
 #%%------------------------------------------------------------------
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = '/home/sangwook/my_dataset'
-	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	#data_home_dir_path = '/home/sangwook/my_dataset'
+	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = 'D:/dataset'
+	data_home_dir_path = 'D:/dataset'
 
-train_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
-train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
-val_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'
-val_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/valannot/image'
-test_image_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/test/image'
-test_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/testannot/image'
+train_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
+train_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
+val_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'
+val_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/valannot/image'
+test_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test/image'
+test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/testannot/image'
 
 #%%------------------------------------------------------------------
 # Convert image to array.

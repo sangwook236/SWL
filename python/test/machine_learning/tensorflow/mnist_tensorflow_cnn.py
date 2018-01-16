@@ -12,7 +12,7 @@ class MnistTensorFlowCNN(TensorFlowNeuralNet):
 		#return self._create_model_2(input_tensor, is_training_tensor, num_classes)
 
 	def _create_model_1(self, input_tensor, is_training_tensor, num_classes):
-		with tf.variable_scope('tf_cnn_model_1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_tf_cnn_1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv1_1')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool1_1')
 
@@ -40,7 +40,7 @@ class MnistTensorFlowCNN(TensorFlowNeuralNet):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tf_cnn_model_2', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_tf_cnn_2', reuse=tf.AUTO_REUSE):
 			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv1_1', act=tf.nn.relu)
 			conv1 = self._max_pool_layer(conv1, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool1_1')
 

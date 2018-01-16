@@ -6,17 +6,15 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
-#%%------------------------------------------------------------------
-
+#--------------------
 import os, sys
 if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#----------
+#--------------------
 import numpy as np
 import tensorflow as tf
 from sklearn.utils import shuffle

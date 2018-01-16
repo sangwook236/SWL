@@ -1,3 +1,8 @@
+# REF [paper] >> "Densely Connected Convolutional Networks", arXiv 2016.
+# REF [paper] >> "The One Hundred Layers Tiramisu: Fully Convolutional DenseNets for Semantic Segmentation", arXiv 2016.
+# REF [site] >> https://github.com/titu1994/Fully-Connected-DenseNets-Semantic-Segmentation
+# REF [site] >> https://github.com/0bserver07/One-Hundred-Layers-Tiramisu
+
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
@@ -8,10 +13,10 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = 'D:/lib_repo/python'
-	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	#lib_home_dir_path = 'D:/lib_repo/python'
+	lib_home_dir_path = 'D:/lib_repo/python/rnd'
 sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_home_dir_path + '/tflearn_github')
+sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 #sys.path.append('../../../src')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
@@ -19,13 +24,13 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 import numpy as np
 import tensorflow as tf
-from mnist_tensorflow_cnn import MnistTensorFlowCNN
-from mnist_tf_slim_cnn import MnistTfSlimCNN
-from mnist_keras_cnn import MnistKerasCNN
-#from mnist_tflearn_cnn import MnistTfLearnCNN
+from sklearn.model_selection import train_test_split
+from plant_fc_densenet import PlantFcDenseNet
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
+from swl.machine_learning.util import to_one_hot_encoding
+from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list
 import time
 
 #np.random.seed(7)
@@ -60,62 +65,87 @@ val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, timestamp)
 #%%------------------------------------------------------------------
 # Load data.
 
-from tensorflow.examples.tutorials.mnist import input_data
-
 if 'posix' == os.name:
 	#data_home_dir_path = '/home/sangwook/my_dataset'
 	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
 	data_home_dir_path = 'D:/dataset'
 
-def load_data(data_dir_path, shape):
-	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
+image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
+label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
 
-	train_images = np.reshape(mnist.train.images, (-1,) + shape)
-	train_labels = np.round(mnist.train.labels).astype(np.int)
-	test_images = np.reshape(mnist.test.images, (-1,) + shape)
-	test_labels = np.round(mnist.test.labels).astype(np.int)
+image_suffix = ''
+image_extension = 'png'
+label_suffix = '_foreground'
+label_extension = 'png'
 
-	return train_images, train_labels, test_images, test_labels
+patch_height, patch_width = 224, 224
 
+image_list = load_image_list_by_pil(image_dir_path, image_suffix, image_extension)
+label_list = load_image_list_by_pil(label_dir_path, label_suffix, label_extension)
+
+assert len(image_list) == len(label_list), '[SWL] Error: The numbers of images and labels are not equal.'
+for idx in range(len(image_list)):
+	assert image_list[idx].shape[:2] == label_list[idx].shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
+
+if False:
+	fg_ratios = []
+	for idx in range(len(label_list)):
+		fg_ratios.append(np.count_nonzero(label_list[idx]) / label_list[idx].size)
+
+	small_image_indices = []
+	for idx in range(len(image_list)):
+		if image_list[idx].shape[0] < patch_height or image_list[idx].shape[1] < patch_width:
+			small_image_indices.append(idx)
+
+image_patches, label_patches = [], []
+for idx in range(len(image_list)):
+	if image_list[idx].shape[0] >= patch_height and image_list[idx].shape[1] >= patch_width:
+		img_pats, lbl_pats, _ = generate_image_patch_list(image_list[idx], label_list[idx], patch_height, patch_width, 0.02)
+		if img_pats is not None and lbl_pats is not None:
+			image_patches += img_pats
+			label_patches += lbl_pats
+			#patch_regions += pat_rgns
+
+image_patches = np.array(image_patches)
+label_patches = np.array(label_patches)
+#patch_regions = np.array(image_patches)
+
+train_images, test_images, train_labels, test_labels = train_test_split(image_patches, label_patches, test_size=0.2, random_state=None)
+
+#--------------------
 def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
 		# Preprocessing (normalization, standardization, etc.).
-		#data = data.astype(np.float32)
-		#data /= 255.0
+		data = data.astype(np.float32)
+		data /= 255.0
 		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
 		#data = np.reshape(data, data.shape + (1,))
-		pass
 
 	if labels is not None:
+		labels //= 255
 		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
-		pass
+		labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
 
 	return data, labels
 
-num_classes = 10
-input_shape = (28, 28, 1)  # 784 = 28 * 28.
-output_shape = (num_classes,)
-
-train_images, train_labels, test_images, test_labels = load_data(data_home_dir_path + '/pattern_recognition/mnist/0_original', input_shape)
+num_classes = 2
+input_shape = (patch_height, patch_width, 3)
+output_shape = (patch_height, patch_width, num_classes)
 
 # Pre-process.
-#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
-#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
-#cnnForMnist = MnistTfSlimCNN(input_shape, output_shape)
-#cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
-#from keras import backend as K
-#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#cnnForMnist = MnistKerasCNN(input_shape, output_shape)
+from keras import backend as K
+K.set_learning_phase(1)  # Set the learning phase to 'train'.
+#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+denseNetForPlant = PlantFcDenseNet(input_shape, output_shape)
 
-print('[SWL] Info: Created a model.')
+print('[SWL] Info: Created a FC-DenseNet model.')
 
 #%%------------------------------------------------------------------
 # Train the model.
@@ -141,7 +171,7 @@ elif 2 == TRAINING_MODE:
 else:
 	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
 
-nnTrainer = NeuralNetTrainer(cnnForMnist, initial_epoch)
+nnTrainer = NeuralNetTrainer(denseNetForPlant, initial_epoch)
 print('[SWL] Info: Created a trainer.')
 
 session.run(tf.global_variables_initializer())
@@ -187,7 +217,7 @@ with session.as_default() as sess:
 
 	if num_test_examples > 0:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(session, cnnForMnist, test_images, test_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(session, denseNetForPlant, test_images, test_labels, batch_size)
 		end_time = time.time()
 
 		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
@@ -212,7 +242,7 @@ with session.as_default() as sess:
 
 	if num_pred_examples > 0:
 		start_time = time.time()
-		predictions = nnPredictor.predict(session, cnnForMnist, test_images, batch_size)
+		predictions = nnPredictor.predict(session, denseNetForPlant, test_images, batch_size)
 		end_time = time.time()
 
 		groundtruths = np.argmax(test_labels, 1)

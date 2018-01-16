@@ -14,7 +14,7 @@ class MnistTfSlimCNN(TensorFlowNeuralNet):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tf_slim_cnn_model', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_tf_slim_cnn', reuse=tf.AUTO_REUSE):
 			conv1 = slim.conv2d(input_tensor, num_outputs=32, kernel_size=[5, 5], stride=1, padding='SAME', activation_fn=tf.nn.relu, scope='conv1_1')
 			conv1 = slim.max_pool2d(conv1, kernel_size=[2, 2], stride=2, scope='maxpool1_1')
 

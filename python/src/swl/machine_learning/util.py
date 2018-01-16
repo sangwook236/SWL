@@ -1,4 +1,4 @@
-import keras
+#import keras
 import numpy as np
 import math
 
@@ -10,9 +10,12 @@ def to_one_hot_encoding(label_indexes, num_classes=None):
 	if 1 == label_indexes.ndim:
 		return np.eye(num_classes)[label_indexes]
 		#return np.transpose(np.eye(num_classes)[label_indexes])
-	else:
+	elif 1 == label_indexes.shape[-1]:
 		return np.eye(num_classes)[label_indexes].reshape(label_indexes.shape[:-1] + (-1,))
 		#return np.transpose(np.eye(num_classes)[label_indexes].reshape(label_indexes.shape[:-1] + (-1,)))
+	else:
+		return np.eye(num_classes)[label_indexes].reshape(label_indexes.shape + (-1,))
+		#return np.transpose(np.eye(num_classes)[label_indexes].reshape(label_indexes.shape + (-1,)))
 
 # Time-based learning rate schedule.
 # REF [site] >> http://machinelearningmastery.com/using-learning-rate-schedules-deep-learning-models-python-keras/

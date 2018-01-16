@@ -10,12 +10,12 @@ from swl.machine_learning.cvppp_dataset import create_cvppp_generator_from_data_
 #%%------------------------------------------------------------------
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = '/home/sangwook/my_dataset'
-	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	#data_home_dir_path = '/home/sangwook/my_dataset'
+	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = 'D:/dataset'
+	data_home_dir_path = 'D:/dataset'
 
-train_image_dir_path = dataset_home_dir_path + '/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1'
+train_image_dir_path = data_home_dir_path + '/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1'
 train_label_dir_path = train_image_dir_path
 
 image_suffix = '_rgb'

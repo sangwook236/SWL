@@ -16,7 +16,7 @@ class MnistTfLearnCNN(TensorFlowNeuralNet):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('tflearn_cnn_model', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_tflearn_cnn', reuse=tf.AUTO_REUSE):
 			#net = tflearn.input_data(shape=input_shape)
 
 			net = tflearn.conv_2d(input_tensor, nb_filter=32, filter_size=5, strides=1, padding='same', activation='relu', name='conv1_1')

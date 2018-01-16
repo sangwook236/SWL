@@ -5,8 +5,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
-
+#--------------------
 import swl
 
 #%%------------------------------------------------------------------

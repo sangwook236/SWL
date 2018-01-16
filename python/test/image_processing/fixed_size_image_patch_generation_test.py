@@ -13,13 +13,13 @@ from swl.image_processing.util import load_image_list_by_pil, generate_image_pat
 #%%------------------------------------------------------------------
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = '/home/sangwook/my_dataset'
-	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	#data_home_dir_path = '/home/sangwook/my_dataset'
+	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = 'D:/dataset'
+	data_home_dir_path = 'D:/dataset'
 
-image_dir_path = dataset_home_dir_path + '/phenotyping/RDA/all_plants'
-label_dir_path = dataset_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
+image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
+label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
 
 image_suffix = ''
 image_extension = 'png'
