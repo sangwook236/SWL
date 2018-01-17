@@ -128,8 +128,12 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 
 #%%------------------------------------------------------------------
 
-# Generate fixed-size image & label
 def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_label_ratio_threshold=None):
+	"""
+	Generate fixed-size image & label patches.
+	Args:
+	Returns:
+	"""
 	if label is not None and False == np.array_equal(image.shape[:2], label.shape[:2]):
 		return None, None, None
 
@@ -143,8 +147,8 @@ def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_l
 	c_stride = patch_width
 	"""
 	# Patches with equal overlap.
-	r_stride = (image.shape[0] - patch_height) / (rows - 1)
-	c_stride = (image.shape[1] - patch_width) / (cols - 1)
+	r_stride = (image.shape[0] - patch_height) / (rows - 1) if rows > 1 else patch_height
+	c_stride = (image.shape[1] - patch_width) / (cols - 1) if cols > 1 else patch_width
 
 	r_intervals = []
 	for r in range(rows):
@@ -182,9 +186,13 @@ def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_l
 			path_region_list.append((r_itv[0], c_itv[0], r_itv[1], c_itv[1]))  # (top, left, bottom, right).
 
 	image_patch_list, label_patch_list = [], []
-	if label is None or nonzero_label_ratio_threshold is None:
+	if label is None:
 		for rgn in path_region_list:
 			image_patch_list.append(image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
+	elif nonzero_label_ratio_threshold is None:
+		for rgn in path_region_list:
+			image_patch_list.append(image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
+			label_patch_list.append(label[rgn[0]:rgn[2],rgn[1]:rgn[3]])
 	else:
 		"""
 		for rgn in path_region_list:
@@ -204,6 +212,25 @@ def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_l
 			else:
 				del path_region_list[idx]
 	return image_patch_list, label_patch_list, path_region_list
+
+def stitch_label_patches(patches, regions, shape):
+	"""
+	Stitches partially overlapped label patches to create a label.
+	Args:
+		patches (np.array): Label patches have labels expressed in one-hot encoding.
+		regions (np.array): Each row is (top, right, bottom, left).
+		shape (tuple): The size of the output array.
+	Returns:
+		np.array: array of shape 'shape'
+	"""
+	if patches.shape[0] != regions.shape[0]:
+		return None
+
+	stitched = np.zeros(shape + (patches.shape[-1],))
+	for idx in range(patches.shape[0]):
+		rgn = regions[idx]
+		stitched[rgn[0]:rgn[2],rgn[1]:rgn[3]] += patches[idx]
+	return np.argmax(stitched, -1).astype(np.uint8)  # Its shape = shape.
 
 #%%------------------------------------------------------------------
 

@@ -30,7 +30,7 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 from swl.machine_learning.util import to_one_hot_encoding
-from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list
+from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list, stitch_label_patches
 import time
 
 #np.random.seed(7)
@@ -258,70 +258,68 @@ with session.as_default() as sess:
 print('[SWL] Info: End prediction...')
 
 #%%------------------------------------------------------------------
-# Predict for full-size images.
+# Predict for full-size images using patches.
 
 from PIL import Image
 import matplotlib.pyplot as plt
 
-img, lbl = image_list[0], label_list[0]
+img, lbl = image_list[9], label_list[9]
 
-ratio = max(patch_height / img.shape[0], patch_width / img.shape[1])
-#img2 = np.asarray(Image.fromarray(img).resize((int(img.shape[1] * ratio), int(img.shape[0] * ratio)), resample=Image.BICUBIC))
-img2 = np.asarray(Image.fromarray(img).resize((int(img.shape[1] * ratio), int(img.shape[0] * ratio)), resample=Image.LANCZOS))
-lbl2 = np.asarray(Image.fromarray(lbl).resize((int(lbl.shape[1] * ratio), int(lbl.shape[0] * ratio)), resample=Image.NEAREST))
+original_shape = img.shape[:2]
+if original_shape[0] < patch_height or original_shape[1] < patch_width:
+	ratio = max(patch_height / original_shape[0], patch_width / original_shape[1])
+	resized_shape = (int(original_shape[0] * ratio), int(original_shape[1] * ratio))
+	#img = np.asarray(Image.fromarray(img).resize((resized_shape[1], resized_shape[0]), resample=Image.BICUBIC))
+	img = np.asarray(Image.fromarray(img).resize((resized_shape[1], resized_shape[0]), resample=Image.LANCZOS))
+	lbl = np.asarray(Image.fromarray(lbl).resize((resized_shape[1], resized_shape[0]), resample=Image.NEAREST))
+else:
+	resized_shape = original_shape
 
+#img_pats, _, pat_rgns = generate_image_patch_list(img, None, patch_height, patch_width, None)
+img_pats, lbl_pats, pat_rgns = generate_image_patch_list(img, lbl, patch_height, patch_width, None)
+predictions = []
+if img_pats is not None and pat_rgns is not None:
+	assert len(img_pats) == len(pat_rgns), '[SWL] Error: The number of generated patches is not equal.'
+
+	patch_images, patch_labels = preprocess_data(np.array(img_pats), np.array(lbl_pats), num_classes)
+	#patch_preds = nnPredictor.predict(sess, denseNetForPlant, patch_images, batch_size=None)
+	patch_preds = stitch_label_patches(patch_labels, np.array(pat_rgns), resized_shape)
+
+	patch_preds = np.asarray(Image.fromarray(patch_preds).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST))
+	#predictions.append(patch_preds)
+
+plt.imshow(patch_preds)
 plt.figure()
-plt.imshow(img)
-plt.figure()
-plt.imshow(lbl)
-plt.figure()
-plt.imshow(img2)
-plt.figure()
-plt.imshow(lbl2)
+plt.imshow(label_list[9])
+print('*************************', np.count_nonzero((label_list[9] / 255).astype(np.uint8) - patch_preds))
 
 #%%
 
-def to_one_hot(label_indexes, num_classes=None):
-	return np.eye(num_classes)[label_indexes].reshape(label_indexes.shape + (-1,))
-
-def find_most_frequent_value(a):
-	counts = np.bincount(a)
-	return np.argmax(counts)
-
-np.argmax(a)
-
-def stitch_patch_predictions(patches, regions, shape):
-	pred = np.zeros(shape)
-	for (pat, rgn) in zip(patches, regions):
-		pred[rgn[0]:rgn[2],rgn[1]:rgn[3]] += pat
-
-	patch_preds = np.asarray(Image.fromarray(patch_preds).resize((shape[1], shape[0]), resample=Image.NEAREST))
-	return pred
-
-print('[SWL] Info: Start prediction for full-size images...')
+print('[SWL] Info: Start prediction for full-size images using patches...')
 
 with session.as_default() as sess:
 	start_time = time.time()
 	for (img, lbl) in zip(image_list, label_list):
-		if img.shape[0] < patch_height or img.shape[1] < patch_width:
-			ratio = max(patch_height / img.shape[0], patch_width / img.shape[1])
-			height, width = int(img.shape[0] * ratio), int(img.shape[1] * ratio)
-			#img = np.asarray(Image.fromarray(img).resize((width, height), resample=Image.BICUBIC))
-			img = np.asarray(Image.fromarray(img).resize((width, height), resample=Image.LANCZOS))
-			lbl = np.asarray(Image.fromarray(lbl).resize((width, height), resample=Image.NEAREST))
+		original_shape = img.shape[:2]
+		if original_shape[0] < patch_height or original_shape[1] < patch_width:
+			ratio = max(patch_height / original_shape[0], patch_width / original_shape[1])
+			resized_shape = (int(original_shape[0] * ratio), int(original_shape[1] * ratio))
+			#img = np.asarray(Image.fromarray(img).resize((resized_shape[1], resized_shape[0]), resample=Image.BICUBIC))
+			img = np.asarray(Image.fromarray(img).resize((resized_shape[1], resized_shape[0]), resample=Image.LANCZOS))
+			lbl = np.asarray(Image.fromarray(lbl).resize((resized_shape[1], resized_shape[0]), resample=Image.NEAREST))
+		else:
+			resized_shape = original_shape
 
 		img_pats, _, pat_rgns = generate_image_patch_list(img, None, patch_height, patch_width, None)
 		predictions = []
-		if img_pats is not None and lbl_pats is not None and pat_rgns is not None:
+		if img_pats is not None and pat_rgns is not None:
 			assert len(img_pats) == len(pat_rgns), '[SWL] Error: The number of generated patches is not equal.'
 
 			patch_images, _ = preprocess_data(np.array(img_pats), None, num_classes)
-
 			patch_preds = nnPredictor.predict(sess, denseNetForPlant, patch_images, batch_size=None)
+			patch_preds = stitch_label_patches(patch_preds, np.array(pat_rgns), resized_shape)
 
-			patch_preds = stitch_patch_predictions(patch_preds, pat_rgns, lbl.shape[:2])
-
-			patch_preds = np.argmax(patch_preds, -1)
+			patch_preds = np.asarray(Image.fromarray(patch_preds).resize((original_shape[1], original_shape[0]), resample=Image.NEAREST))
 			predictions.append(patch_preds)
 	end_time = time.time()
 
@@ -340,4 +338,4 @@ with session.as_default() as sess:
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
-print('[SWL] Info: End prediction for full-size images...')
+print('[SWL] Info: End prediction for full-size images using patches...')
