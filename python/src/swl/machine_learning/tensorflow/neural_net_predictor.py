@@ -29,4 +29,4 @@ class NeuralNetPredictor(object):
 				else:
 					predictions = batch_prediction
 
-		return np.argmax(predictions, 1)
+		return predictions

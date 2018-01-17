@@ -19,9 +19,9 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 import numpy as np
 import tensorflow as tf
-from mnist_tensorflow_cnn import MnistTensorFlowCNN
-from mnist_tf_slim_cnn import MnistTfSlimCNN
-from mnist_keras_cnn import MnistKerasCNN
+from mnist_tf_cnn import MnistTensorFlowCNN
+#from mnist_tf_slim_cnn import MnistTfSlimCNN
+#from mnist_keras_cnn import MnistKerasCNN
 #from mnist_tflearn_cnn import MnistTfLearnCNN
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -121,7 +121,7 @@ print('[SWL] Info: Created a model.')
 # Train the model.
 
 batch_size = 128  # Number of samples per gradient update.
-num_epochs = 50  # Number of times to iterate over training data.
+num_epochs = 20  # Number of times to iterate over training data.
 
 shuffle = True
 
@@ -215,10 +215,11 @@ with session.as_default() as sess:
 		predictions = nnPredictor.predict(session, cnnForMnist, test_images, batch_size)
 		end_time = time.time()
 
-		groundtruths = np.argmax(test_labels, 1)
+		predictions = np.argmax(predictions, -1)
+		groundtruths = np.argmax(test_labels, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('\tAccurary = {} / {}, prediction time = {}'.format(correct_estimation_count, num_pred_examples, end_time - start_time))
+		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 

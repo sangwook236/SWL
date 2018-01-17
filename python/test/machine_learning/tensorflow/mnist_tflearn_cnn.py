@@ -1,10 +1,10 @@
 import tflearn
 import tensorflow as tf
-from swl.machine_learning.tensorflow.tensorflow_neural_net import TensorFlowNeuralNet
+from mnist_cnn import MnistCNN
 
 #%%------------------------------------------------------------------
 
-class MnistTfLearnCNN(TensorFlowNeuralNet):
+class MnistTfLearnCNN(MnistCNN):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 

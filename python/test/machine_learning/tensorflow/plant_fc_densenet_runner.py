@@ -13,8 +13,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 #sys.path.append('../../../src')
@@ -88,6 +88,7 @@ assert len(image_list) == len(label_list), '[SWL] Error: The numbers of images a
 for idx in range(len(image_list)):
 	assert image_list[idx].shape[:2] == label_list[idx].shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
 
+# For checking.
 if False:
 	fg_ratios = []
 	for idx in range(len(label_list)):
@@ -150,7 +151,7 @@ print('[SWL] Info: Created a FC-DenseNet model.')
 #%%------------------------------------------------------------------
 # Train the model.
 
-batch_size = 128  # Number of samples per gradient update.
+batch_size = 12  # Number of samples per gradient update.
 num_epochs = 50  # Number of times to iterate over training data.
 
 shuffle = True
@@ -245,10 +246,11 @@ with session.as_default() as sess:
 		predictions = nnPredictor.predict(session, denseNetForPlant, test_images, batch_size)
 		end_time = time.time()
 
-		groundtruths = np.argmax(test_labels, 1)
+		predictions = np.argmax(predictions, -1)
+		groundtruths = np.argmax(test_labels, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('\tAccurary = {} / {}, prediction time = {}'.format(correct_estimation_count, num_pred_examples, end_time - start_time))
+		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
