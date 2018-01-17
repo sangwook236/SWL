@@ -32,25 +32,25 @@ image_list = load_image_list_by_pil(image_dir_path, image_suffix, image_extensio
 label_list = load_image_list_by_pil(label_dir_path, label_suffix, label_extension)
 
 assert len(image_list) == len(label_list), '[SWL] Error: The numbers of images and labels are not equal.'
-for idx in range(len(image_list)):
-	assert image_list[idx].shape[:2] == label_list[idx].shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
+for (img, lbl) in zip(image_list, label_list):
+	assert img.shape[:2] == lbl.shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
 
 if False:
 	fg_ratios = []
-	for idx in range(len(label_list)):
-		fg_ratios.append(np.count_nonzero(label_list[idx]) / label_list[idx].size)
+	for lbl in label_list:
+		fg_ratios.append(np.count_nonzero(lbl) / lbl.size)
 
 	small_image_indices = []
-	for idx in range(len(image_list)):
-		if image_list[idx].shape[0] < patch_height or image_list[idx].shape[1] < patch_width:
+	for (idx, img) in enumerate(image_list):
+		if img.shape[0] < patch_height or img.shape[1] < patch_width:
 			small_image_indices.append(idx)
 
 #%%------------------------------------------------------------------
 
 image_patch_list, label_patch_list, patch_region_list = [], [], []
-for idx in range(len(image_list)):
-	if image_list[idx].shape[0] >= patch_height and image_list[idx].shape[1] >= patch_width:
-		img_pats, lbl_pats, pat_rgns = generate_image_patch_list(image_list[idx], label_list[idx], patch_height, patch_width, 0.02)
+for (img, lbl) in zip(image_list, label_list):
+	if img.shape[0] >= patch_height and img.shape[1] >= patch_width:
+		img_pats, lbl_pats, pat_rgns = generate_image_patch_list(img, lbl, patch_height, patch_width, 0.02)
 		if img_pats is not None and lbl_pats is not None and pat_rgns is not None:
 			image_patch_list += img_pats
 			label_patch_list += lbl_pats

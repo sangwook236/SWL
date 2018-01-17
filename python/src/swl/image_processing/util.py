@@ -54,7 +54,8 @@ def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height
 					image = Image.open(filepath)
 					if (height is not None and height > 0 and image.size[1] != height) or (width is not None and width > 0 and image.size[0] != width):
 						#images.append(np.asarray(image.resize((width, height), resample=Image.NEAREST)))
-						images.append(np.asarray(image.resize((width, height), resample=Image.BICUBIC)))
+						#images.append(np.asarray(image.resize((width, height), resample=Image.BICUBIC)))
+						images.append(np.asarray(image.resize((width, height), resample=Image.NEAREST)))
 					else:
 						images.append(np.asarray(image))
 			break  # Do not include subdirectories.
@@ -128,8 +129,8 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 #%%------------------------------------------------------------------
 
 # Generate fixed-size image & label
-def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_label_ratio_threshold):
-	if False == np.array_equal(image.shape[:2], label.shape[:2]):
+def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_label_ratio_threshold=None):
+	if label is not None and False == np.array_equal(image.shape[:2], label.shape[:2]):
 		return None, None, None
 
 	rows, cols = math.ceil(image.shape[0] / patch_height), math.ceil(image.shape[1] / patch_width)
@@ -181,7 +182,7 @@ def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_l
 			path_region_list.append((r_itv[0], c_itv[0], r_itv[1], c_itv[1]))  # (top, left, bottom, right).
 
 	image_patch_list, label_patch_list = [], []
-	if label is None:
+	if label is None or nonzero_label_ratio_threshold is None:
 		for rgn in path_region_list:
 			image_patch_list.append(image[rgn[0]:rgn[2],rgn[1]:rgn[3]])
 	else:

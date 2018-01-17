@@ -58,6 +58,7 @@ output_dir_prefix = 'fc-densenet'
 timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 
 model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, timestamp)
+model_dir_path = './result/fc-densenet_model_20180117T135317'
 prediction_dir_path = './result/{}_prediction_{}'.format(output_dir_prefix, timestamp)
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, timestamp)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, timestamp)
@@ -85,24 +86,24 @@ image_list = load_image_list_by_pil(image_dir_path, image_suffix, image_extensio
 label_list = load_image_list_by_pil(label_dir_path, label_suffix, label_extension)
 
 assert len(image_list) == len(label_list), '[SWL] Error: The numbers of images and labels are not equal.'
-for idx in range(len(image_list)):
-	assert image_list[idx].shape[:2] == label_list[idx].shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
+for (img, lbl) in zip(image_list, label_list):
+	assert img.shape[:2] == lbl.shape[:2], '[SWL] Error: The sizes of every corresponding image and label are not equal.'
 
 # For checking.
 if False:
 	fg_ratios = []
-	for idx in range(len(label_list)):
-		fg_ratios.append(np.count_nonzero(label_list[idx]) / label_list[idx].size)
+	for lbl in label_list:
+		fg_ratios.append(np.count_nonzero(lbl) / lbl.size)
 
 	small_image_indices = []
-	for idx in range(len(image_list)):
-		if image_list[idx].shape[0] < patch_height or image_list[idx].shape[1] < patch_width:
+	for (idx, img) in enumerate(image_list):
+		if img.shape[0] < patch_height or img.shape[1] < patch_width:
 			small_image_indices.append(idx)
 
 image_patches, label_patches = [], []
-for idx in range(len(image_list)):
-	if image_list[idx].shape[0] >= patch_height and image_list[idx].shape[1] >= patch_width:
-		img_pats, lbl_pats, _ = generate_image_patch_list(image_list[idx], label_list[idx], patch_height, patch_width, 0.02)
+for (img, lbl) in zip(image_list, label_list):
+	if img.shape[0] >= patch_height and img.shape[1] >= patch_width:
+		img_pats, lbl_pats, _ = generate_image_patch_list(img, lbl, patch_height, patch_width, 0.02)
 		if img_pats is not None and lbl_pats is not None:
 			image_patches += img_pats
 			label_patches += lbl_pats
@@ -156,15 +157,15 @@ num_epochs = 50  # Number of times to iterate over training data.
 
 shuffle = True
 
-TRAINING_MODE = 0  # Start training a model.
-#TRAINING_MODE = 1  # Resume training a model.
+#TRAINING_MODE = 0  # Start training a model.
+TRAINING_MODE = 1  # Resume training a model.
 #TRAINING_MODE = 2  # Use a saved model.
 
 if 0 == TRAINING_MODE:
 	initial_epoch = 0
 	print('[SWL] Info: Start training...')
 elif 1 == TRAINING_MODE:
-	initial_epoch = 100
+	initial_epoch = 50
 	print('[SWL] Info: Resume training...')
 elif 2 == TRAINING_MODE:
 	initial_epoch = 0
@@ -193,7 +194,7 @@ with session.as_default() as sess:
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 		start_time = time.time()
-		history = nnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(sess, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		print('\tTraining time = {}'.format(time.time() - start_time))
 
 		# Display results.
@@ -218,7 +219,7 @@ with session.as_default() as sess:
 
 	if num_test_examples > 0:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(session, denseNetForPlant, test_images, test_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, denseNetForPlant, test_images, test_labels, batch_size)
 		end_time = time.time()
 
 		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
@@ -243,7 +244,7 @@ with session.as_default() as sess:
 
 	if num_pred_examples > 0:
 		start_time = time.time()
-		predictions = nnPredictor.predict(session, denseNetForPlant, test_images, batch_size)
+		predictions = nnPredictor.predict(sess, denseNetForPlant, test_images, batch_size)
 		end_time = time.time()
 
 		predictions = np.argmax(predictions, -1)
@@ -255,3 +256,88 @@ with session.as_default() as sess:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 print('[SWL] Info: End prediction...')
+
+#%%------------------------------------------------------------------
+# Predict for full-size images.
+
+from PIL import Image
+import matplotlib.pyplot as plt
+
+img, lbl = image_list[0], label_list[0]
+
+ratio = max(patch_height / img.shape[0], patch_width / img.shape[1])
+#img2 = np.asarray(Image.fromarray(img).resize((int(img.shape[1] * ratio), int(img.shape[0] * ratio)), resample=Image.BICUBIC))
+img2 = np.asarray(Image.fromarray(img).resize((int(img.shape[1] * ratio), int(img.shape[0] * ratio)), resample=Image.LANCZOS))
+lbl2 = np.asarray(Image.fromarray(lbl).resize((int(lbl.shape[1] * ratio), int(lbl.shape[0] * ratio)), resample=Image.NEAREST))
+
+plt.figure()
+plt.imshow(img)
+plt.figure()
+plt.imshow(lbl)
+plt.figure()
+plt.imshow(img2)
+plt.figure()
+plt.imshow(lbl2)
+
+#%%
+
+def to_one_hot(label_indexes, num_classes=None):
+	return np.eye(num_classes)[label_indexes].reshape(label_indexes.shape + (-1,))
+
+def find_most_frequent_value(a):
+	counts = np.bincount(a)
+	return np.argmax(counts)
+
+np.argmax(a)
+
+def stitch_patch_predictions(patches, regions, shape):
+	pred = np.zeros(shape)
+	for (pat, rgn) in zip(patches, regions):
+		pred[rgn[0]:rgn[2],rgn[1]:rgn[3]] += pat
+
+	patch_preds = np.asarray(Image.fromarray(patch_preds).resize((shape[1], shape[0]), resample=Image.NEAREST))
+	return pred
+
+print('[SWL] Info: Start prediction for full-size images...')
+
+with session.as_default() as sess:
+	start_time = time.time()
+	for (img, lbl) in zip(image_list, label_list):
+		if img.shape[0] < patch_height or img.shape[1] < patch_width:
+			ratio = max(patch_height / img.shape[0], patch_width / img.shape[1])
+			height, width = int(img.shape[0] * ratio), int(img.shape[1] * ratio)
+			#img = np.asarray(Image.fromarray(img).resize((width, height), resample=Image.BICUBIC))
+			img = np.asarray(Image.fromarray(img).resize((width, height), resample=Image.LANCZOS))
+			lbl = np.asarray(Image.fromarray(lbl).resize((width, height), resample=Image.NEAREST))
+
+		img_pats, _, pat_rgns = generate_image_patch_list(img, None, patch_height, patch_width, None)
+		predictions = []
+		if img_pats is not None and lbl_pats is not None and pat_rgns is not None:
+			assert len(img_pats) == len(pat_rgns), '[SWL] Error: The number of generated patches is not equal.'
+
+			patch_images, _ = preprocess_data(np.array(img_pats), None, num_classes)
+
+			patch_preds = nnPredictor.predict(sess, denseNetForPlant, patch_images, batch_size=None)
+
+			patch_preds = np.argmax(patch_preds, -1)
+			patch_preds = stitch_patch_predictions(patch_preds, pat_rgns, lbl.shape[:2])
+
+			predictions.append(patch_preds)
+	end_time = time.time()
+
+	predictions = np.array(predictions)
+
+	num_pred_examples = 0
+	if predictions is not None and test_labels is not None:
+		if predictions.shape[0] == test_labels.shape[0]:
+			num_pred_examples = predictions.shape[0]
+
+	if num_pred_examples > 0:
+		groundtruths = np.argmax(test_labels, -1)
+		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
+
+		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
+	else:
+		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+
+print('[SWL] Info: End prediction for full-size images...')
