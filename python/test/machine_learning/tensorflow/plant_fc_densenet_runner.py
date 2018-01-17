@@ -319,9 +319,9 @@ with session.as_default() as sess:
 
 			patch_preds = nnPredictor.predict(sess, denseNetForPlant, patch_images, batch_size=None)
 
-			patch_preds = np.argmax(patch_preds, -1)
 			patch_preds = stitch_patch_predictions(patch_preds, pat_rgns, lbl.shape[:2])
 
+			patch_preds = np.argmax(patch_preds, -1)
 			predictions.append(patch_preds)
 	end_time = time.time()
 
