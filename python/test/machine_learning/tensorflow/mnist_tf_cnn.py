@@ -61,15 +61,15 @@ class MnistTensorFlowCNN(MnistCNN):
 			return fc2
 
 	# We can't initialize these variables to 0 - the network will get stuck.
-	def _weight_variable(self, shape):
+	def _weight_variable(self, shape, name=None):
 		"""Create a weight variable with appropriate initialization."""
 		initial = tf.truncated_normal(shape, stddev=0.1)
-		return tf.Variable(initial)
+		return tf.Variable(initial, name=name)
 
-	def _bias_variable(self, shape):
+	def _bias_variable(self, shape, name=None):
 		"""Create a bias variable with appropriate initialization."""
 		initial = tf.constant(0.1, shape=shape)
-		return tf.Variable(initial)
+		return tf.Variable(initial, name=name)
 
 	def _variable_summaries(self, var):
 		"""Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""

@@ -31,20 +31,6 @@ import time
 #np.random.seed(7)
 
 #%%------------------------------------------------------------------
-# Configure tensorflow.
-
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
-#graph = tf.Graph()
-#session = tf.Session(graph=graph, config=config)
-session = tf.Session(config=config)
-
-#%%------------------------------------------------------------------
 # Prepare directories.
 
 import datetime
@@ -116,6 +102,20 @@ cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
 #cnnForMnist = MnistKerasCNN(input_shape, output_shape)
 
 print('[SWL] Info: Created a model.')
+
+#%%------------------------------------------------------------------
+# Configure tensorflow.
+
+config = tf.ConfigProto()
+#config.allow_soft_placement = True
+config.log_device_placement = True
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
+#graph = tf.Graph()
+#session = tf.Session(graph=graph, config=config)
+session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
 # Train the model.
