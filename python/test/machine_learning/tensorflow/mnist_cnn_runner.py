@@ -36,12 +36,13 @@ import time
 import datetime
 
 output_dir_prefix = 'mnist'
-timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+#output_dir_suffix = '20180116T212902'
 
-model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, timestamp)
-prediction_dir_path = './result/{}_prediction_{}'.format(output_dir_prefix, timestamp)
-train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, timestamp)
-val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, timestamp)
+model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
+prediction_dir_path = './result/{}_prediction_{}'.format(output_dir_prefix, output_dir_suffix)
+train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
+val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
 
 #%%------------------------------------------------------------------
 # Load data.
@@ -141,8 +142,11 @@ elif 2 == TRAINING_MODE:
 else:
 	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
 
-nnTrainer = NeuralNetTrainer(cnnForMnist, initial_epoch)
-print('[SWL] Info: Created a trainer.')
+if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+	nnTrainer = NeuralNetTrainer(cnnForMnist, initial_epoch)
+	print('[SWL] Info: Created a trainer.')
+else:
+	nnTrainer = None
 
 session.run(tf.global_variables_initializer())
 
