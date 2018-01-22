@@ -28,7 +28,7 @@ class TensorFlowNeuralNet(object):
 	def accuracy(self):
 		return self._accuracy
 
-	def fill_feed_dict(self, data, labels=None, is_training=True):
+	def get_feed_dict(self, data, labels=None, is_training=True):
 		if labels is None:
 			feed_dict = { self._input_tensor_ph: data, self._is_training_tensor_ph: is_training}
 		else:
