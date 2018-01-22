@@ -13,8 +13,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
 #sys.path.append('../../../src')
@@ -351,12 +351,24 @@ if False:
 	plt.imshow(np.not_equal(pred, lbl), cmap='gray')
 
 #%%------------------------------------------------------------------
-# Visualize activations.
 
 import math
 
-# REF [function] >> plot_conv_units() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_unit_visualization_1.py.
-def plot_conv_units(units, num_columns=5, figsize=None):
+# REF [function] >> plot_conv_filters() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_weight_visualization.py.
+def plot_conv_filters(sess, filter_variable, num_columns=5, figsize=None):
+	filters = filter_variable.eval(sess)  # Shape = (height, width, input_dim, output_dim).
+	input_dim, output_dim = filters.shape[2], filters.shape[3]
+	num_columns = num_columns if num_columns > 0 else 1
+	num_rows = math.ceil(output_dim / num_columns) + 1
+	for odim in range(output_dim):
+		plt.figure(figsize=figsize)
+		for idim in range(input_dim):
+			plt.subplot(num_rows, num_columns, idim + 1)
+			#plt.title('Filter {}'.format(idim))
+			plt.imshow(filters[:,:,idim,odim], interpolation='nearest', cmap='gray')
+
+# REF [function] >> plot_conv_neurons() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_neuron_visualization_1.py.
+def plot_conv_neurons(units, num_columns=5, figsize=None):
 	num_filters = units.shape[3]
 	plt.figure(figsize=figsize)
 	num_columns = num_columns if num_columns > 0 else 1
@@ -366,55 +378,60 @@ def plot_conv_units(units, num_columns=5, figsize=None):
 		plt.title('Filter ' + str(i))
 		plt.imshow(units[0,:,:,i], interpolation='nearest', cmap='gray')
 
-# REF [function] >> compute_units_in_layer() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_unit_visualization_1.py.
-def compute_units_in_layer(sess, layer_tensor, input_stimuli):
+# REF [function] >> compute_neurons_in_layer() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_neuron_visualization_1.py.
+def compute_neurons_in_layer(sess, layer_tensor, input_stimuli):
 	return sess.run(layer_tensor, feed_dict=denseNetForPlant.get_feed_dict(input_stimuli, is_training=False))
 
+#%%------------------------------------------------------------------
+# Visualize filters in a convolutional layer.
+
+global_variables = tf.global_variables()
+#print(global_variables)
+for var in global_variables:
+	print(var)
+
 with session.as_default() as sess:
-	layer_before_concat_tensor = session.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-	layer_after_concat_tensor = session.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
+	with tf.variable_scope('plant_fc_densenet', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
+			filters = tf.get_variable('kernel')
+			#plot_conv_filters(sess, filters)
+			print('**************************', filters.op)
+
+#%%------------------------------------------------------------------
+# Visualize neurons' ouputs in a convolutional layer.
+
+with session.as_default() as sess:
+	layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
+	layer_after_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
 
 	start_time = time.time()
-	idx = 0
-	for img in image_list:
+	#idx = 0
+	#for img in image_list:
+	if True:
+		idx = 3
+		img = image_list[idx]
+		#plt.imshow(img)
+
 		predicted_label_patches, image_patches, patch_regions, resized_size = predict_label_patches(sess, img, num_classes, patch_height, patch_width, nnPredictor, batch_size)
 		#predicted_label_patches = np.argmax(predicted_label_patches, -1)
 		if resized_size is None:
+			pat_idx = 0
 			for (img_pat, lbl_pat) in zip(image_patches, predicted_label_patches):
-				FIXME [implement] >>
+				neurons_before_concat = compute_neurons_in_layer(sess, layer_before_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
+				#plot_conv_neurons(neurons_before_concat, figsize=(40, 40))
+				neurons_after_concat = compute_neurons_in_layer(sess, layer_after_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
+				#plot_conv_neurons(neurons_after_concat, figsize=(40, 40))
 
-				units_before_concat = compute_units_in_layer(sess, layer_before_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-				#plot_conv_units(units_before_concat, figsize=(40, 40))
-				units_after_concat = compute_units_in_layer(sess, layer_after_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-				#plot_conv_units(units_after_concat, figsize=(40, 40))
+				np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
+				np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
+				np.save(('./npy/neurons_before_concat_{}_{}.npy').format(idx, pat_idx), neurons_before_concat)
+				np.save(('./npy/neurons_after_concat_{}_{}.npy').format(idx, pat_idx), neurons_after_concat)
+	
+				pat_idx += 1
+
+			np.save(('./npy/patch_ranges_{}.npy').format(idx), np.array(patch_regions))
+		else:
+			pass
 		idx += 1
 	end_time = time.time()
 	print('\tElapsed time = {}'.format(end_time - start_time))
-
-#%%
-if True:
-	layer_before_concat_tensor = session.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-	layer_after_concat_tensor = session.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
-
-	idx = 3
-	img = image_list[idx]
-	#plt.imshow(img)
-
-	predicted_label_patches, image_patches, patch_regions, resized_size = predict_label_patches(sess, img, num_classes, patch_height, patch_width, nnPredictor, batch_size)
-	predicted_label_patches = np.argmax(predicted_label_patches, -1)
-	if resized_size is None:
-		pat_idx = 0
-		for (img_pat, lbl_pat) in zip(image_patches, predicted_label_patches):
-			units_before_concat = compute_units_in_layer(sess, layer_before_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-			#plot_conv_units(units_before_concat, figsize=(40, 40))
-			units_after_concat = compute_units_in_layer(sess, layer_after_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-			#plot_conv_units(units_after_concat, figsize=(40, 40))
-
-			np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
-			np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
-			np.save(('./npy/units_before_concat_{}_{}.npy').format(idx, pat_idx), units_before_concat)
-			np.save(('./npy/units_after_concat_{}_{}.npy').format(idx, pat_idx), units_after_concat)
-
-			pat_idx += 1
-
-		np.save(('./npy/patch_ranges_{}.npy').format(idx), np.array(patch_regions))

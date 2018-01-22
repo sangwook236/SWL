@@ -61,17 +61,19 @@ class MnistTensorFlowCNN(MnistCNN):
 			return fc2
 
 	# We can't initialize these variables to 0 - the network will get stuck.
-	def _weight_variable(self, shape, name=None):
+	def _weight_variable(self, shape, name):
 		"""Create a weight variable with appropriate initialization."""
-		initial = tf.truncated_normal(shape, stddev=0.1)
-		return tf.Variable(initial, name=name)
+		#initial = tf.truncated_normal(shape, stddev=0.1)
+		#return tf.Variable(initial, name=name)
+		return tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=0.1))
 
-	def _bias_variable(self, shape, name=None):
+	def _bias_variable(self, shape, name):
 		"""Create a bias variable with appropriate initialization."""
-		initial = tf.constant(0.1, shape=shape)
-		return tf.Variable(initial, name=name)
+		#initial = tf.constant(0.1, shape=shape)
+		#return tf.Variable(initial, name=name)
+		return tf.get_variable(name, shape, initializer=tf.constant_initializer(0.1))
 
-	def _variable_summaries(self, var):
+	def _variable_summaries(self, var, is_filter=False):
 		"""Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
 		with tf.name_scope('summaries'):
 			mean = tf.reduce_mean(var)
@@ -82,6 +84,8 @@ class MnistTensorFlowCNN(MnistCNN):
 			tf.summary.scalar('max', tf.reduce_max(var))
 			tf.summary.scalar('min', tf.reduce_min(var))
 			tf.summary.histogram('histogram', var)
+			if True == is_filter:
+				tf.summary.image('filter', var)  # To visualize filters.
 
 	def _conv_layer(self, input_tensor, output_dim, kernel_shape, strides, padding, layer_name, act=tf.nn.relu):
 		with tf.name_scope(layer_name):
@@ -95,7 +99,7 @@ class MnistTensorFlowCNN(MnistCNN):
 			"""
 			with tf.name_scope('weights'):
 				kernel = self._weight_variable(kernel_shape + (output_dim,))
-				self._variable_summaries(kernel)
+				self._variable_summaries(kernel, True)
 			conv = tf.nn.conv2d(input_tensor, filter=kernel, strides=strides, padding=padding)
 			#tf.summary.histogram('convolution', conv)
 			with tf.name_scope('biases'):
