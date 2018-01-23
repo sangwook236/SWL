@@ -4,33 +4,43 @@ from mnist_cnn import MnistCNN
 #%%------------------------------------------------------------------
 
 class MnistTensorFlowCNN(MnistCNN):
-	def __init__(self, input_shape, output_shape):
+	def __init__(self, input_shape, output_shape, model_type):
+		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
 
 	def _create_model(self, input_tensor, is_training_tensor, num_classes):
-		return self._create_model_1(input_tensor, is_training_tensor, num_classes)
-		#return self._create_model_2(input_tensor, is_training_tensor, num_classes)
+		with tf.variable_scope('mnist_tf_cnn', reuse=tf.AUTO_REUSE):
+			if 0 == self._model_type:
+				return self._create_model_1(input_tensor, is_training_tensor, num_classes)
+			elif 1 == self._model_type:
+				return self._create_model_2(input_tensor, is_training_tensor, num_classes)
+			else:
+				assert False, 'Invalid model type.'
+				return None
 
 	def _create_model_1(self, input_tensor, is_training_tensor, num_classes):
-		with tf.variable_scope('mnist_tf_cnn_1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv1_1')
-			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool1_1')
+		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
+			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
+			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
 
-			conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu, name='conv2_1')
-			conv2 = tf.layers.max_pooling2d(conv2, 2, 2, name='maxpool2_1')
+		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
+			conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu, name='conv')
+			conv2 = tf.layers.max_pooling2d(conv2, 2, 2, name='maxpool')
 
-			fc1 = tf.layers.flatten(conv2, name='flatten1_1')
+			conv2 = tf.layers.flatten(conv2, name='flatten')
 
-			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc1_1')
+		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+			fc1 = tf.layers.dense(conv2, 1024, activation=tf.nn.relu, name='fc')
 			# NOTE [info] >> If dropout rate=0.0, droput layer is not created.
-			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training_tensor, name='dropout1_1')
+			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training_tensor, name='dropout')
 
+		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 2 == num_classes:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, name='fc2_1')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc2_1')
+				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, name='fc')
+				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc2_1')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc2_1')
+				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 
 			return fc2
 
@@ -40,23 +50,26 @@ class MnistTensorFlowCNN(MnistCNN):
 		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
-		with tf.variable_scope('mnist_tf_cnn_2', reuse=tf.AUTO_REUSE):
-			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv1_1', act=tf.nn.relu)
-			conv1 = self._max_pool_layer(conv1, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool1_1')
+		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
+			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv', act=tf.nn.relu)
+			conv1 = self._max_pool_layer(conv1, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool')
 
-			conv2 = self._conv_layer(conv1, 64, (3, 3, 32), (1, 1, 1, 1), padding='SAME', layer_name='conv2_1', act=tf.nn.relu)
-			conv2 = self._max_pool_layer(conv2, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool2_1')
+		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
+			conv2 = self._conv_layer(conv1, 64, (3, 3, 32), (1, 1, 1, 1), padding='SAME', layer_name='conv', act=tf.nn.relu)
+			conv2 = self._max_pool_layer(conv2, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool')
 
-			fc1 = self._flatten_layer(conv2, 7 * 7 * 64, layer_name='flatten1_1')
+			conv2 = self._flatten_layer(conv2, 7 * 7 * 64, layer_name='flatten')
 
-			fc1 = self._fc_layer(fc1, 7 * 7 * 64, 1024, layer_name='fc1_1', act=tf.nn.relu)
+		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+			fc1 = self._fc_layer(conv2, 7 * 7 * 64, 1024, layer_name='fc', act=tf.nn.relu)
 			# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
-			fc1 = self._dropout_layer(fc1, keep_prob, 'dropout1_1')
+			fc1 = self._dropout_layer(fc1, keep_prob, 'dropout')
 
+		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 2 == num_classes:
-				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc2_1', act=tf.sigmoid)
+				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.sigmoid)
 			else:
-				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc2_1', act=tf.nn.softmax)
+				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.nn.softmax)
 
 			return fc2
 

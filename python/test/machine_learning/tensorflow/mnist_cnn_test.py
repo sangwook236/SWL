@@ -54,6 +54,7 @@ if 'posix' == os.name:
 	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
 else:
 	data_home_dir_path = 'D:/dataset'
+data_dir_path = data_home_dir_path + '/pattern_recognition/mnist/0_original'
 
 def load_data(data_dir_path, shape):
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
@@ -85,7 +86,7 @@ num_classes = 10
 input_shape = (28, 28, 1)  # 784 = 28 * 28.
 output_shape = (num_classes,)
 
-train_images, train_labels, test_images, test_labels = load_data(data_home_dir_path + '/pattern_recognition/mnist/0_original', input_shape)
+train_images, train_labels, test_images, test_labels = load_data(data_dir_path, input_shape)
 
 # Pre-process.
 #train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
@@ -94,13 +95,13 @@ train_images, train_labels, test_images, test_labels = load_data(data_home_dir_p
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnForMnist = MnistTensorFlowCNN(input_shape, output_shape)
-#cnnForMnist = MnistTfSlimCNN(input_shape, output_shape)
-#cnnForMnist = MnistTfLearnCNN(input_shape, output_shape)
+cnnModel = MnistTensorFlowCNN(input_shape, output_shape)
+#cnnModel = MnistTfSlimCNN(input_shape, output_shape)
+#cnnModel = MnistTfLearnCNN(input_shape, output_shape)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#cnnForMnist = MnistKerasCNN(input_shape, output_shape)
+#cnnModel = MnistKerasCNN(input_shape, output_shape)
 
 print('[SWL] Info: Created a model.')
 
@@ -140,10 +141,10 @@ elif 2 == TRAINING_MODE:
 	initial_epoch = 0
 	print('[SWL] Info: Use a saved model.')
 else:
-	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
+	assert False, '[SWL] Error: Invalid training mode.'
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	nnTrainer = NeuralNetTrainer(cnnForMnist, initial_epoch)
+	nnTrainer = NeuralNetTrainer(cnnModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None
@@ -178,7 +179,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 #%%------------------------------------------------------------------
 # Evaluate the model.
 
-print('[SWL] Info: Start evaluating...')
+print('[SWL] Info: Start evaluation...')
 
 nnEvaluator = NeuralNetEvaluator()
 print('[SWL] Info: Created an evaluator.')
@@ -191,14 +192,14 @@ with session.as_default() as sess:
 
 	if num_test_examples > 0:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(session, cnnForMnist, test_images, test_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(session, cnnModel, test_images, test_labels, batch_size)
 		end_time = time.time()
 
 		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
-print('[SWL] Info: End evaluating...')
+print('[SWL] Info: End evaluation...')
 
 #%%------------------------------------------------------------------
 # Predict.
@@ -216,7 +217,7 @@ with session.as_default() as sess:
 
 	if num_pred_examples > 0:
 		start_time = time.time()
-		predictions = nnPredictor.predict(session, cnnForMnist, test_images, batch_size)
+		predictions = nnPredictor.predict(session, cnnModel, test_images, batch_size)
 		end_time = time.time()
 
 		predictions = np.argmax(predictions, -1)

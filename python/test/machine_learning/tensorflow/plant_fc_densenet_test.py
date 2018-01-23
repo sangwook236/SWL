@@ -139,7 +139,7 @@ from keras import backend as K
 K.set_learning_phase(1)  # Set the learning phase to 'train'.
 #K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-denseNetForPlant = PlantFcDenseNet(input_shape, output_shape)
+denseNetModel = PlantFcDenseNet(input_shape, output_shape)
 
 print('[SWL] Info: Created a FC-DenseNet model.')
 
@@ -184,7 +184,7 @@ else:
 	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
-	nnTrainer = NeuralNetTrainer(denseNetForPlant, initial_epoch)
+	nnTrainer = NeuralNetTrainer(denseNetModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None
@@ -227,7 +227,7 @@ print('[SWL] Info: Created an evaluator.')
 with session.as_default() as sess:
 	if test_image_patches.shape[0] > 0:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, denseNetForPlant, test_image_patches, test_label_patches, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, denseNetModel, test_image_patches, test_label_patches, batch_size)
 		end_time = time.time()
 
 		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
@@ -247,7 +247,7 @@ print('[SWL] Info: Created a predictor.')
 with session.as_default() as sess:
 	if test_image_patches.shape[0] > 0:
 		start_time = time.time()
-		predictions = nnPredictor.predict(sess, denseNetForPlant, test_image_patches, batch_size)
+		predictions = nnPredictor.predict(sess, denseNetModel, test_image_patches, batch_size)
 		end_time = time.time()
 
 		predictions = np.argmax(predictions, -1)
@@ -293,7 +293,7 @@ def predict_label_patches(sess, img, num_classes, patch_height, patch_width, nnP
 	if image_patches is not None and patch_regions is not None and len(image_patches) == len(patch_regions):
 		image_patches, _ = preprocess_data(np.array(image_patches), None, num_classes)
 
-		predicted_label_patches = nnPredictor.predict(sess, denseNetForPlant, image_patches, batch_size=batch_size)  # Predicted label patches.
+		predicted_label_patches = nnPredictor.predict(sess, denseNetModel, image_patches, batch_size=batch_size)  # Predicted label patches.
 		return predicted_label_patches, image_patches, patch_regions, resized_size
 	else:
 		return None, None, None, None
@@ -380,7 +380,7 @@ def plot_conv_neurons(units, num_columns=5, figsize=None):
 
 # REF [function] >> compute_neurons_in_layer() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_neuron_visualization_1.py.
 def compute_neurons_in_layer(sess, layer_tensor, input_stimuli):
-	return sess.run(layer_tensor, feed_dict=denseNetForPlant.get_feed_dict(input_stimuli, is_training=False))
+	return sess.run(layer_tensor, feed_dict=denseNetModel.get_feed_dict(input_stimuli, is_training=False))
 
 #%%------------------------------------------------------------------
 # Visualize filters in a convolutional layer.
