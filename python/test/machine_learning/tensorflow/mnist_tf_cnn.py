@@ -27,20 +27,22 @@ class MnistTensorFlowCNN(MnistCNN):
 			conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu, name='conv')
 			conv2 = tf.layers.max_pooling2d(conv2, 2, 2, name='maxpool')
 
-			conv2 = tf.layers.flatten(conv2, name='flatten')
-
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			fc1 = tf.layers.dense(conv2, 1024, activation=tf.nn.relu, name='fc')
+			fc1 = tf.layers.flatten(conv2, name='flatten')
+
+			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc')
 			# NOTE [info] >> If dropout rate=0.0, droput layer is not created.
 			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-			if 2 == num_classes:
+			if 1 == num_classes:
 				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='fc')
 				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
+			elif num_classes >= 2:
 				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc')
 				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
 
 			return fc2
 
@@ -58,18 +60,20 @@ class MnistTensorFlowCNN(MnistCNN):
 			conv2 = self._conv_layer(conv1, 64, (3, 3, 32), (1, 1, 1, 1), padding='SAME', layer_name='conv', act=tf.nn.relu)
 			conv2 = self._max_pool_layer(conv2, (1, 2, 2, 1), (1, 2, 2, 1), padding='VALID', layer_name='maxpool')
 
-			conv2 = self._flatten_layer(conv2, 7 * 7 * 64, layer_name='flatten')
-
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			fc1 = self._fc_layer(conv2, 7 * 7 * 64, 1024, layer_name='fc', act=tf.nn.relu)
+			fc1 = self._flatten_layer(conv2, 7 * 7 * 64, layer_name='flatten')
+
+			fc1 = self._fc_layer(fc1, 7 * 7 * 64, 1024, layer_name='fc', act=tf.nn.relu)
 			# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
 			fc1 = self._dropout_layer(fc1, keep_prob, 'dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-			if 2 == num_classes:
+			if 1 == num_classes:
 				fc2 = self._fc_layer(fc1, 1024, 1, layer_name='fc', act=tf.sigmoid)
-			else:
+			elif num_classes >= 2:
 				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.nn.softmax)
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
 
 			return fc2
 

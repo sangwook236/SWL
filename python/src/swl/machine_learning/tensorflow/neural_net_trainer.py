@@ -69,6 +69,8 @@ class NeuralNetTrainer(object):
 					summary, _ = session.run([merged_summary, self._train_step], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 					if train_summary_writer is not None:
 						train_summary_writer.add_summary(summary, epoch)
+				print('.', sep='', end='')
+			print()
 
 			# Evaluate training.
 			train_loss, train_acc = 0, 0
@@ -160,7 +162,7 @@ class NeuralNetTrainer(object):
 
 	def display_history(self, history):
 		# List all data in history.
-		print(history.keys())
+		#print(history.keys())
 
 		# Summarize history for accuracy.
 		fig = plt.figure()

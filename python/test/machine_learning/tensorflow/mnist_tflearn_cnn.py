@@ -27,17 +27,19 @@ class MnistTfLearnCNN(MnistCNN):
 				net = tflearn.conv_2d(net, nb_filter=64, filter_size=3, strides=1, padding='same', activation='relu', name='conv')
 				net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool')
 
+			with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 				net = tflearn.flatten(net, name='flatten')
 
-			with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 				net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc')
 				# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
 				net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout')
 
 			with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-				if 2 == num_classes:
+				if 1 == num_classes:
 					net = tflearn.fully_connected(net, n_units=1, activation='sigmoid', name='fc')
-				else:
+				elif num_classes >= 2:
 					net = tflearn.fully_connected(net, n_units=num_classes, activation='softmax', name='fc')
+				else:
+					assert num_classes > 0, 'Invalid number of classes.'
 
 				return net

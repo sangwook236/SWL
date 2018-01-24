@@ -23,17 +23,19 @@ class MnistTfSlimCNN(MnistCNN):
 				conv2 = slim.conv2d(conv1, num_outputs=64, kernel_size=[3, 3], stride=1, padding='SAME', activation_fn=tf.nn.relu, scope='conv')
 				conv2 = slim.max_pool2d(conv2, kernel_size=[2, 2], stride=2, scope='maxpool')
 
-				conv2 = slim.flatten(conv2, scope='flatten')
-
 			with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-				fc1 = slim.fully_connected(conv2, num_outputs=1024, activation_fn=tf.nn.relu, scope='fc')
+				fc1 = slim.flatten(conv2, scope='flatten')
+
+				fc1 = slim.fully_connected(fc1, num_outputs=1024, activation_fn=tf.nn.relu, scope='fc')
 				# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
 				fc1 = slim.dropout(fc1, keep_prob=keep_prob, scope='dropout')
 
 			with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-				if 2 == num_classes:
+				if 1 == num_classes:
 					fc2 = slim.fully_connected(fc1, num_outputs=1, activation_fn=tf.sigmoid, scope='fc')
-				else:
+				elif num_classes >= 2:
 					fc2 = slim.fully_connected(fc1, num_outputs=num_classes, activation_fn=tf.nn.softmax, scope='fc')
+				else:
+					assert num_classes > 0, 'Invalid number of classes.'
 
 				return fc2

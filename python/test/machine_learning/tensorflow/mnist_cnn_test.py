@@ -218,8 +218,12 @@ with session.as_default() as sess:
 		predictions = nnPredictor.predict(session, cnnModel, test_images, batch_size)
 		end_time = time.time()
 
-		predictions = np.argmax(predictions, -1)
-		groundtruths = np.argmax(test_labels, -1)
+		if num_classes <= 2:
+			predictions = np.around(predictions)
+			groundtruths = test_labels
+		else:
+			predictions = np.argmax(predictions, -1)
+			groundtruths = np.argmax(test_labels, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
 		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))

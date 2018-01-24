@@ -46,12 +46,14 @@ class MnistKerasCNN(MnistCNN):
 		x = Dense(1024, activation='relu')(x)
 		x = Dropout(dropout_rate)(x)
 
-		if 2 == num_classes:
+		if 1 == num_classes:
 			x = Dense(1, activation='sigmoid')(x)
 			#x = Dense(1, activation='sigmoid', activity_regularizer=keras.regularizers.activity_l2(0.0001))(x)
-		else:
+		elif num_classes >= 2:
 			x = Dense(num_classes, activation='softmax')(x)
 			#x = Dense(num_classes, activation='softmax', activity_regularizer=keras.regularizers.activity_l2(0.0001))(x)
+		else:
+			assert num_classes > 0, 'Invalid number of classes.'
 
 		#model = Model(inputs=input_tensor, outputs=x)
 
@@ -74,12 +76,14 @@ class MnistKerasCNN(MnistCNN):
 		model.add(Dense(1024, activation='relu'))
 		model.add(Dropout(dropout_rate))
 
-		if 2 == num_classes:
+		if 1 == num_classes:
 			model.add(Dense(1, activation='sigmoid'))
 			#model.add(Dense(1, activation='sigmoid', activity_regularizer=keras.regularizers.activity_l2(0.0001)))
-		else:
+		elif num_classes >= 2:
 			model.add(Dense(num_classes, activation='softmax'))
 			#model.add(Dense(num_classes, activation='softmax', activity_regularizer=keras.regularizers.activity_l2(0.0001)))
+		else:
+			assert num_classes > 0, 'Invalid number of classes.'
 
 		# Display the model summary.
 		#model.summary()
