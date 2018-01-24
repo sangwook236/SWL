@@ -26,7 +26,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from plant_fc_densenet import PlantFcDenseNet
-from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer, TrainingMode
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 from swl.machine_learning.util import to_one_hot_encoding
@@ -167,23 +167,21 @@ num_epochs = 50  # Number of times to iterate over training data.
 
 shuffle = True
 
-#TRAINING_MODE = 0  # Start training a model.
-#TRAINING_MODE = 1  # Resume training a model.
-TRAINING_MODE = 2  # Use a saved model.
+trainingMode = TrainingMode.START_TRAINING
 
-if 0 == TRAINING_MODE:
+if TrainingMode.START_TRAINING == trainingMode:
 	initial_epoch = 0
 	print('[SWL] Info: Start training...')
-elif 1 == TRAINING_MODE:
+elif TrainingMode.RESUME_TRAINING == trainingMode:
 	initial_epoch = 50
 	print('[SWL] Info: Resume training...')
-elif 2 == TRAINING_MODE:
+elif TrainingMode.USE_SAVED_MODEL == trainingMode:
 	initial_epoch = 0
 	print('[SWL] Info: Use a saved model.')
 else:
 	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
 
-if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 	nnTrainer = NeuralNetTrainer(denseNetModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
@@ -195,7 +193,7 @@ with session.as_default() as sess:
 	# Save a model every 2 hours and maximum 5 latest models are saved.
 	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-	if 1 == TRAINING_MODE or 2 == TRAINING_MODE:
+	if TrainingMode.RESUME_TRAINING == trainingMode or TrainingMode.USE_SAVED_MODEL == trainingMode:
 		# Load a model.
 		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
@@ -205,7 +203,7 @@ with session.as_default() as sess:
 
 		print('[SWL] Info: Restored a model.')
 
-	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		start_time = time.time()
 		history = nnTrainer.train(sess, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		print('\tTraining time = {}'.format(time.time() - start_time))
@@ -213,7 +211,7 @@ with session.as_default() as sess:
 		# Display results.
 		nnTrainer.display_history(history)
 
-if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
+if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 	print('[SWL] Info: End training...')
 
 #%%------------------------------------------------------------------
