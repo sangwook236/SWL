@@ -36,8 +36,8 @@ class MnistTensorFlowCNN(MnistCNN):
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 2 == num_classes:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, name='fc')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='fc')
+				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc')
 				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
@@ -67,7 +67,7 @@ class MnistTensorFlowCNN(MnistCNN):
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 2 == num_classes:
-				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.sigmoid)
+				fc2 = self._fc_layer(fc1, 1024, 1, layer_name='fc', act=tf.sigmoid)
 			else:
 				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.nn.softmax)
 

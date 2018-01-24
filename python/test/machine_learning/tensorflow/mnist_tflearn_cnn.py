@@ -17,23 +17,27 @@ class MnistTfLearnCNN(MnistCNN):
 		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
 
 		with tf.variable_scope('mnist_tflearn_cnn', reuse=tf.AUTO_REUSE):
-			#net = tflearn.input_data(shape=input_shape)
+			with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
+				#net = tflearn.input_data(shape=input_shape)
 
-			net = tflearn.conv_2d(input_tensor, nb_filter=32, filter_size=5, strides=1, padding='same', activation='relu', name='conv1_1')
-			net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool1_1')
+				net = tflearn.conv_2d(input_tensor, nb_filter=32, filter_size=5, strides=1, padding='same', activation='relu', name='conv')
+				net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool')
 
-			net = tflearn.conv_2d(net, nb_filter=64, filter_size=3, strides=1, padding='same', activation='relu', name='conv2_1')
-			net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool2_1')
+			with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
+				net = tflearn.conv_2d(net, nb_filter=64, filter_size=3, strides=1, padding='same', activation='relu', name='conv')
+				net = tflearn.max_pool_2d(net, kernel_size=2, strides=2, name='maxpool')
 
-			net = tflearn.flatten(net, name='flatten1_1')
+				net = tflearn.flatten(net, name='flatten')
 
-			net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc1_1')
-			# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
-			net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout1_1')
+			with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+				net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc')
+				# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
+				net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout')
 
-			if 2 == num_classes:
-				net = tflearn.fully_connected(net, n_units=num_classes, activation='sigmoid', name='fc2_1')
-			else:
-				net = tflearn.fully_connected(net, n_units=num_classes, activation='softmax', name='fc2_1')
+			with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
+				if 2 == num_classes:
+					net = tflearn.fully_connected(net, n_units=1, activation='sigmoid', name='fc')
+				else:
+					net = tflearn.fully_connected(net, n_units=num_classes, activation='softmax', name='fc')
 
-			return net
+				return net
