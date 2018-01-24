@@ -41,8 +41,8 @@ import time
 import datetime
 
 output_dir_prefix = 'fc-densenet'
-#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-output_dir_suffix = '20180117T135317'
+output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+#output_dir_suffix = '20180117T135317'
 
 model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
 prediction_dir_path = './result/{}_prediction_{}'.format(output_dir_prefix, output_dir_suffix)
@@ -179,7 +179,7 @@ elif TrainingMode.USE_SAVED_MODEL == trainingMode:
 	initial_epoch = 0
 	print('[SWL] Info: Use a saved model.')
 else:
-	assert False, '[SWL] Error: Invalid TRAINING_MODE.'
+	assert False, '[SWL] Error: Invalid training mode.'
 
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 	nnTrainer = NeuralNetTrainer(denseNetModel, initial_epoch)
@@ -217,7 +217,7 @@ if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING =
 #%%------------------------------------------------------------------
 # Evaluate the model.
 
-print('[SWL] Info: Start evaluating...')
+print('[SWL] Info: Start evaluation...')
 
 nnEvaluator = NeuralNetEvaluator()
 print('[SWL] Info: Created an evaluator.')
@@ -232,7 +232,7 @@ with session.as_default() as sess:
 	else:
 		print('[SWL] Error: The number of test images is greater than 0.')
 
-print('[SWL] Info: End evaluating...')
+print('[SWL] Info: End evaluation...')
 
 #%%------------------------------------------------------------------
 # Predict.
@@ -356,7 +356,7 @@ if False:
 
 import math
 
-# REF [function] >> plot_conv_filters() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_weight_visualization.py.
+# REF [function] >> plot_conv_filters() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_filter_visualization.py.
 def plot_conv_filters(sess, filter_variable, num_columns=5, figsize=None):
 	filters = filter_variable.eval(sess)  # Shape = (height, width, input_dim, output_dim).
 	input_dim, output_dim = filters.shape[2], filters.shape[3]
@@ -369,19 +369,19 @@ def plot_conv_filters(sess, filter_variable, num_columns=5, figsize=None):
 			#plt.title('Filter {}'.format(idim))
 			plt.imshow(filters[:,:,idim,odim], interpolation='nearest', cmap='gray')
 
-# REF [function] >> plot_conv_neurons() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_neuron_visualization_1.py.
-def plot_conv_neurons(units, num_columns=5, figsize=None):
-	num_filters = units.shape[3]
+# REF [function] >> plot_conv_activations() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_activation_visualization_1.py.
+def plot_conv_activations(activations, num_columns=5, figsize=None):
+	num_filters = activations.shape[3]
 	plt.figure(figsize=figsize)
 	num_columns = num_columns if num_columns > 0 else 1
 	num_rows = math.ceil(num_filters / num_columns) + 1
 	for i in range(num_filters):
 		plt.subplot(num_rows, num_columns, i + 1)
 		plt.title('Filter ' + str(i))
-		plt.imshow(units[0,:,:,i], interpolation='nearest', cmap='gray')
+		plt.imshow(activations[0,:,:,i], interpolation='nearest', cmap='gray')
 
-# REF [function] >> compute_neurons_in_layer() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_neuron_visualization_1.py.
-def compute_neurons_in_layer(sess, layer_tensor, input_stimuli):
+# REF [function] >> compute_layer_activations() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_layer_activation_visualization_1.py.
+def compute_layer_activations(sess, layer_tensor, input_stimuli):
 	return sess.run(layer_tensor, feed_dict=denseNetModel.get_feed_dict(input_stimuli, is_training=False))
 
 #%%------------------------------------------------------------------
@@ -400,7 +400,7 @@ with session.as_default() as sess:
 			print('**************************', filters.op)
 
 #%%------------------------------------------------------------------
-# Visualize neurons' ouputs in a convolutional layer.
+# Visualize activations(layer ouputs) in a convolutional layer.
 
 with session.as_default() as sess:
 	layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
@@ -419,15 +419,15 @@ with session.as_default() as sess:
 		if resized_size is None:
 			pat_idx = 0
 			for (img_pat, lbl_pat) in zip(image_patches, predicted_label_patches):
-				neurons_before_concat = compute_neurons_in_layer(sess, layer_before_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-				#plot_conv_neurons(neurons_before_concat, figsize=(40, 40))
-				neurons_after_concat = compute_neurons_in_layer(sess, layer_after_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
-				#plot_conv_neurons(neurons_after_concat, figsize=(40, 40))
+				activations_before_concat = compute_layer_activations(sess, layer_before_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
+				#plot_conv_activations(activations_before_concat, figsize=(40, 40))
+				activations_after_concat = compute_layer_activations(sess, layer_after_concat_tensor, img_pat.reshape((-1,) + img_pat.shape))
+				#plot_conv_activations(activations_after_concat, figsize=(40, 40))
 
 				np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
 				np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
-				np.save(('./npy/neurons_before_concat_{}_{}.npy').format(idx, pat_idx), neurons_before_concat)
-				np.save(('./npy/neurons_after_concat_{}_{}.npy').format(idx, pat_idx), neurons_after_concat)
+				np.save(('./npy/activations_before_concat_{}_{}.npy').format(idx, pat_idx), activations_before_concat)
+				np.save(('./npy/activations_after_concat_{}_{}.npy').format(idx, pat_idx), activations_after_concat)
 	
 				pat_idx += 1
 
