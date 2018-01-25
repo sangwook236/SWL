@@ -23,7 +23,8 @@ from mnist_tf_cnn import MnistTensorFlowCNN
 #from mnist_tf_slim_cnn import MnistTfSlimCNN
 #from mnist_keras_cnn import MnistKerasCNN
 #from mnist_tflearn_cnn import MnistTfLearnCNN
-from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer, TrainingMode
+from mnist_cnn_trainer import MnistCnnTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 import time
@@ -142,7 +143,7 @@ else:
 	assert False, '[SWL] Error: Invalid training mode.'
 
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-	nnTrainer = NeuralNetTrainer(cnnModel, initial_epoch)
+	nnTrainer = MnistCnnTrainer(cnnModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None
