@@ -24,9 +24,9 @@ from mnist_tf_cnn import MnistTensorFlowCNN
 #from mnist_keras_cnn import MnistKerasCNN
 #from mnist_tflearn_cnn import MnistTfLearnCNN
 from mnist_cnn_trainer import MnistCnnTrainer
-from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
+from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 import time
 
 #np.random.seed(7)
@@ -129,24 +129,24 @@ num_epochs = 20  # Number of times to iterate over training data.
 shuffle = True
 
 trainingMode = TrainingMode.START_TRAINING
+initial_epoch = 0
 
-if TrainingMode.START_TRAINING == trainingMode:
-	initial_epoch = 0
-	print('[SWL] Info: Start training...')
-elif TrainingMode.RESUME_TRAINING == trainingMode:
-	initial_epoch = 10
-	print('[SWL] Info: Resume training...')
-elif TrainingMode.USE_SAVED_MODEL == trainingMode:
-	initial_epoch = 0
-	print('[SWL] Info: Use a saved model.')
-else:
-	assert False, '[SWL] Error: Invalid training mode.'
-
+#--------------------
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 	nnTrainer = MnistCnnTrainer(cnnModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None
+
+#--------------------
+if TrainingMode.START_TRAINING == trainingMode:
+	print('[SWL] Info: Start training...')
+elif TrainingMode.RESUME_TRAINING == trainingMode:
+	print('[SWL] Info: Resume training...')
+elif TrainingMode.USE_SAVED_MODEL == trainingMode:
+	print('[SWL] Info: Use a saved model.')
+else:
+	assert False, '[SWL] Error: Invalid training mode.'
 
 session.run(tf.global_variables_initializer())
 
@@ -178,10 +178,11 @@ if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING =
 #%%------------------------------------------------------------------
 # Evaluate the model.
 
-print('[SWL] Info: Start evaluation...')
-
 nnEvaluator = NeuralNetEvaluator()
 print('[SWL] Info: Created an evaluator.')
+
+#--------------------
+print('[SWL] Info: Start evaluation...')
 
 with session.as_default() as sess:
 	num_test_examples = 0
@@ -203,10 +204,11 @@ print('[SWL] Info: End evaluation...')
 #%%------------------------------------------------------------------
 # Predict.
 
-print('[SWL] Info: Start prediction...')
-
 nnPredictor = NeuralNetPredictor()
 print('[SWL] Info: Created a predictor.')
+
+#--------------------
+print('[SWL] Info: Start prediction...')
 
 with session.as_default() as sess:
 	num_pred_examples = 0

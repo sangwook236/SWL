@@ -27,9 +27,9 @@ import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from plant_fc_densenet import PlantFcDenseNet
 from plant_fc_densenet_trainer import PlantFcDenseNetTrainer
-from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
+from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from swl.machine_learning.util import to_one_hot_encoding
 from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list, stitch_label_patches
 import time
@@ -169,24 +169,24 @@ num_epochs = 50  # Number of times to iterate over training data.
 shuffle = True
 
 trainingMode = TrainingMode.START_TRAINING
+initial_epoch = 0
 
-if TrainingMode.START_TRAINING == trainingMode:
-	initial_epoch = 0
-	print('[SWL] Info: Start training...')
-elif TrainingMode.RESUME_TRAINING == trainingMode:
-	initial_epoch = 50
-	print('[SWL] Info: Resume training...')
-elif TrainingMode.USE_SAVED_MODEL == trainingMode:
-	initial_epoch = 0
-	print('[SWL] Info: Use a saved model.')
-else:
-	assert False, '[SWL] Error: Invalid training mode.'
-
+#--------------------
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 	nnTrainer = PlantFcDenseNetTrainer(denseNetModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None
+
+#--------------------
+if TrainingMode.START_TRAINING == trainingMode:
+	print('[SWL] Info: Start training...')
+elif TrainingMode.RESUME_TRAINING == trainingMode:
+	print('[SWL] Info: Resume training...')
+elif TrainingMode.USE_SAVED_MODEL == trainingMode:
+	print('[SWL] Info: Use a saved model.')
+else:
+	assert False, '[SWL] Error: Invalid training mode.'
 
 session.run(tf.global_variables_initializer())
 
@@ -218,10 +218,11 @@ if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING =
 #%%------------------------------------------------------------------
 # Evaluate the model.
 
-print('[SWL] Info: Start evaluation...')
-
 nnEvaluator = NeuralNetEvaluator()
 print('[SWL] Info: Created an evaluator.')
+
+#--------------------
+print('[SWL] Info: Start evaluation...')
 
 with session.as_default() as sess:
 	if test_image_patches.shape[0] > 0:
@@ -238,10 +239,11 @@ print('[SWL] Info: End evaluation...')
 #%%------------------------------------------------------------------
 # Predict.
 
-print('[SWL] Info: Start prediction...')
-
 nnPredictor = NeuralNetPredictor()
 print('[SWL] Info: Created a predictor.')
+
+#--------------------
+print('[SWL] Info: Start prediction...')
 
 with session.as_default() as sess:
 	if test_image_patches.shape[0] > 0:

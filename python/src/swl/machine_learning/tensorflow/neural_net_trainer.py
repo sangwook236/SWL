@@ -58,6 +58,7 @@ class NeuralNetTrainer(object):
 				np.random.shuffle(indices)
 
 			# Train.
+			print('>', sep='', end='')
 			for step in range(train_steps_per_epoch):
 				start = step * batch_size
 				end = start + batch_size
@@ -70,7 +71,7 @@ class NeuralNetTrainer(object):
 					if train_summary_writer is not None:
 						train_summary_writer.add_summary(summary, epoch)
 				print('.', sep='', end='')
-			print()
+			print('<')
 
 			# Evaluate training.
 			train_loss, train_acc = 0, 0

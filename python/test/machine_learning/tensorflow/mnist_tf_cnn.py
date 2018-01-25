@@ -8,7 +8,8 @@ class MnistTensorFlowCNN(MnistCNN):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
+		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_tf_cnn', reuse=tf.AUTO_REUSE):
 			if 0 == self._model_type:
 				return self._create_model_1(input_tensor, is_training_tensor, num_classes)

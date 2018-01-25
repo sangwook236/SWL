@@ -12,7 +12,7 @@ class MnistKerasCNN(MnistCNN):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
 		# REF [site] >> https://keras.io/getting-started/functional-api-guide
 		# REF [site] >> https://keras.io/models/model/
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
@@ -25,6 +25,7 @@ class MnistKerasCNN(MnistCNN):
 		#dropout_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
 		dropout_rate = 0.75
 
+		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_keras_cnn', reuse=tf.AUTO_REUSE):
 			if 0 == self._model_type:
 				return self._create_model_1(input_tensor, num_classes, dropout_rate)
