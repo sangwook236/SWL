@@ -29,15 +29,18 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
+		# For tf.nn.static_rnn().
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, 1)
+		#input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Defines a cell.
 		cell = rnn.BasicLSTMCell(num_hidden_units, forget_bias=1.0)
 
 		# Gets cell outputs.
-		#cell_outputs, cell_states = rnn.static_rnn(cell, input_tensor, dtype=tf.float32)
-		cell_outputs, _ = rnn.static_rnn(cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
+		cell_outputs, _ = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
 
 		lstm = cell_outputs[-1]  # Uses the final output only.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
@@ -50,27 +53,35 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
+			print('^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^', fc1.get_shape().as_list())
 			return fc1
 
 	def _create_stacked_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		def create_cell(num_units):
+			#return rnn.BasicRNNCell(num_units, forget_bias=1.0)
 			return rnn.BasicLSTMCell(num_units, forget_bias=1.0)
+			#return rnn.RNNCell(num_units, forget_bias=1.0)
+			#return rnn.LSTMCell(num_units, forget_bias=1.0)
+			#return rnn.GRUCell(num_units, forget_bias=1.0)
 
 		num_hidden_units = 128
 		num_layers = 2
 		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
+		# For tf.nn.static_rnn().
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, 1)
+		#input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
 		stacked_cell = rnn.MultipleRNNCell([create_cell(num_hidden_units) for _ in range(num_layers)])
 
 		# Gets cell outputs.
-		#cell_outputs, cell_states = rnn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
-		cell_outputs, _ = rnn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, _ = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+		cell_outputs, _ = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 
 		lstm = cell_outputs[-1]  # Uses the final output only.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
@@ -90,16 +101,19 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
+		# For tf.nn.static_rnn().
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, 1)
+		#input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Defines a cell.
 		cell_fw = rnn.BasicLSTMCell(num_hidden_units, forget_bias=1.0)  # Forward cell.
 		cell_bw = rnn.BasicLSTMCell(num_hidden_units, forget_bias=1.0)  # Backward cell.
 
 		# Gets cell outputs.
-		#cell_outputs, cell_states_fw, cell_states_bw = rnn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
-		cell_outputs, _, _ = rnn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs, _, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
 
 		lstm = cell_outputs[-1]  # Uses the final output only.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
@@ -116,15 +130,20 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 
 	def _create_stacked_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		def create_cell(num_units):
+			#return rnn.BasicRNNCell(num_units, forget_bias=1.0)
 			return rnn.BasicLSTMCell(num_units, forget_bias=1.0)
+			#return rnn.RNNCell(num_units, forget_bias=1.0)
+			#return rnn.LSTMCell(num_units, forget_bias=1.0)
+			#return rnn.GRUCell(num_units, forget_bias=1.0)
 
 		num_hidden_units = 128
 		num_layers = 2
 		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
+		# For tf.nn.static_rnn().
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, 1)
+		#input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
@@ -132,8 +151,10 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		stacked_cell_bw = rnn.MultipleRNNCell([create_cell(num_hidden_units) for _ in range(num_layers)])  # Backward cell.
 
 		# Gets cell outputs.
-		#cell_outputs, cell_states_fw, cell_states_bw = rnn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
-		cell_outputs, _, _ = rnn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs, _, _ = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
 
 		lstm = cell_outputs[-1]  # Uses the final output only.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):

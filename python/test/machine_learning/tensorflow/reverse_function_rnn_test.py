@@ -217,10 +217,10 @@ val_input_data = keras.utils.to_categorical(val_input_data, VOCAB_SIZE).reshape(
 val_output_data = keras.utils.to_categorical(val_output_data, VOCAB_SIZE).reshape(val_output_data.shape + (-1,))
 val_output_data_ahead_of_one_timestep = keras.utils.to_categorical(val_output_data_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_output_data_ahead_of_one_timestep.shape + (-1,))
 
-#input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-#output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-input_shape = (None, VOCAB_SIZE)
-output_shape = (None, VOCAB_SIZE)
+input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+#input_shape = (None, VOCAB_SIZE)
+#output_shape = (None, VOCAB_SIZE)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -242,11 +242,11 @@ session = tf.Session(config=config)
 
 # Build a model.
 model_type = 0
-#rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type)
-from keras import backend as K
-K.set_learning_phase(1)  # Set the learning phase to 'train'.
-#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
+rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type)
+#from keras import backend as K
+#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+##K.set_learning_phase(0)  # Set the learning phase to 'test'.
+#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
 
 #--------------------
 # Train.
