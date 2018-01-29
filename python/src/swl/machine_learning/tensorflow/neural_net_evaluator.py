@@ -16,7 +16,7 @@ class NeuralNetEvaluator(object):
 			test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
 
 			indices = np.arange(num_test_examples)
-			#if True == shuffle:
+			#if shuffle:
 			#	np.random.shuffle(indices)
 
 			test_loss, test_acc = 0, 0

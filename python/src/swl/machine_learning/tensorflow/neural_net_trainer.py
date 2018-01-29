@@ -54,7 +54,7 @@ class NeuralNetTrainer(object):
 			start_time = time.time()
 
 			indices = np.arange(num_train_examples)
-			if True == shuffle:
+			if shuffle:
 				np.random.shuffle(indices)
 
 			# Train.
@@ -70,7 +70,8 @@ class NeuralNetTrainer(object):
 					summary, _ = session.run([merged_summary, self._train_step], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 					if train_summary_writer is not None:
 						train_summary_writer.add_summary(summary, epoch)
-				print('.', sep='', end='')
+				if 0 == step % 10:
+					print('.', sep='', end='')
 			print('<')
 
 			# Evaluate training.
@@ -119,7 +120,7 @@ class NeuralNetTrainer(object):
 						val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
-				if True == shuffle:
+				if shuffle:
 					np.random.shuffle(indices)
 
 				for step in range(val_steps_per_epoch):

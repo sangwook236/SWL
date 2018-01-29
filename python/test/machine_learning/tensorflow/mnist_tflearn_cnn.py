@@ -32,7 +32,7 @@ class MnistTfLearnCNN(MnistCNN):
 				net = tflearn.flatten(net, name='flatten')
 
 				net = tflearn.fully_connected(net, n_units=1024, activation='relu', name='fc')
-				# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
+				# NOTE [info] >> If keep_prob=1.0, dropout layer is not created.
 				net = tflearn.dropout(net, keep_prob=keep_prob, name='dropout')
 
 			with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):

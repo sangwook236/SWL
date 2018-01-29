@@ -269,7 +269,7 @@ print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 input_seq = 'abc'
 test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)
 test_datum.fill(char2int[EOS])
-tmp = np.array(preprocess_string('abc'))
+tmp = np.array(preprocess_string(input_seq))
 test_datum[:,:tmp.shape[0]] = tmp
 test_datum = keras.utils.to_categorical(test_datum, VOCAB_SIZE).reshape(test_datum.shape + (-1,))
 prediction = simple_rnn_model.predict(test_datum)

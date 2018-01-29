@@ -71,18 +71,20 @@ def sample_model(min_length, max_length):
 	random_str = ''.join(random_char_list)
 	return random_str, random_str[::-1]  # Return the random string and its reverse.
 
-def add_eos(str):
-	str = list(str) + [EOS]
-	return [char2int[ch] for ch in str]
-
-def add_sos_and_eos(str):
+# A character string to a numeric datum(numeric list).
+def str2datum(str):
+	#str = list(str) + [EOS]
 	str = [SOS] + list(str) + [EOS]
 	return [char2int[ch] for ch in str]
 
+# A numeric datum(numeric list) to a character string.
+def datum2str(datum):
+	#return ''.join([int2char[no] for no in datum[:-1]])
+	return ''.join([int2char[no] for no in datum[1:-1]])
+
 # Preprocessing function for character strings.
 def preprocess_string(str):
-	#return add_eos(str)
-	return add_sos_and_eos(str)
+	return str2datum(str)
 
 def create_dataset(dataset, window_size=1):
 	dataX, dataY = [], []
@@ -178,8 +180,8 @@ def decode_sequence(encoder_model, decoder_model, input_seq):
 #%%------------------------------------------------------------------
 # Prepare data.
 	
-SOS = '<SOS>'  # All strings will start with the Start Of String token.
-EOS = '<EOS>'  # All strings will end with the End Of String token.
+SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 characters = list('abcd')
 characters = [SOS] + characters + [EOS]
 
@@ -217,8 +219,10 @@ val_input_data = keras.utils.to_categorical(val_input_data, VOCAB_SIZE).reshape(
 val_output_data = keras.utils.to_categorical(val_output_data, VOCAB_SIZE).reshape(val_output_data.shape + (-1,))
 val_output_data_ahead_of_one_timestep = keras.utils.to_categorical(val_output_data_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_output_data_ahead_of_one_timestep.shape + (-1,))
 
+# For static RNN.
 input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
 output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+# For dynamic RNN.
 #input_shape = (None, VOCAB_SIZE)
 #output_shape = (None, VOCAB_SIZE)
 
@@ -242,7 +246,7 @@ session = tf.Session(config=config)
 
 # Build a model.
 model_type = 0
-rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type)
+rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=True)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'test'.
@@ -279,26 +283,25 @@ with session.as_default() as sess:
 
 	print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
 
-test_loss, test_accuracy = simple_rnn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
-print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
-
 #--------------------
 # Predict.
 nnPredictor = NeuralNetPredictor()
 with session.as_default() as sess:
+	input_str = 'abc'
+	test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)
+	test_datum.fill(char2int[EOS])
+	tmp = np.array(preprocess_string(input_str))
+	test_datum[:,:tmp.shape[0]] = tmp
+	test_datum.reshape((-1,) + test_datum.shape)
+	test_datum = keras.utils.to_categorical(test_datum, VOCAB_SIZE).reshape(test_datum.shape + (-1,))
+
 	start_time = time.time()
-	predictions = nnPredictor.predict(session, rnnModel, test_images, batch_size)
+	predictions = nnPredictor.predict(session, rnnModel, test_datum)
 	end_time = time.time()
+	
+	predictions = np.argmax(predictions, axis=-1)
 
-	if num_classes <= 2:
-		predictions = np.around(predictions)
-		groundtruths = test_labels
-	else:
-		predictions = np.argmax(predictions, -1)
-		groundtruths = np.argmax(test_labels, -1)
-	correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
-
-	print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
+	print('\tPrediction = {}, rediction time = {}'.format(predictions, end_time - start_time))
 
 input_seq = 'abc'
 test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)

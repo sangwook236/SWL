@@ -28,7 +28,7 @@ class MnistTfSlimCNN(MnistCNN):
 				fc1 = slim.flatten(conv2, scope='flatten')
 
 				fc1 = slim.fully_connected(fc1, num_outputs=1024, activation_fn=tf.nn.relu, scope='fc')
-				# NOTE [info] >> If keep_prob=1.0, droput layer is not created.
+				# NOTE [info] >> If keep_prob=1.0, dropout layer is not created.
 				fc1 = slim.dropout(fc1, keep_prob=keep_prob, scope='dropout')
 
 			with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
