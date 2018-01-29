@@ -207,7 +207,9 @@ with session.as_default() as sess:
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		start_time = time.time()
 		history = nnTrainer.train(sess, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-		print('\tTraining time = {}'.format(time.time() - start_time))
+		end_time = time.time()
+
+		print('\tTraining time = {}'.format(end_time - start_time))
 
 		# Display results.
 		nnTrainer.display_history(history)
@@ -230,7 +232,8 @@ with session.as_default() as sess:
 		test_loss, test_acc = nnEvaluator.evaluate(sess, denseNetModel, test_image_patches, test_label_patches, batch_size)
 		end_time = time.time()
 
-		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
+		print('\tEvaluation time = {}'.format(end_time - start_time))
+		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
 	else:
 		print('[SWL] Error: The number of test images is greater than 0.')
 
@@ -259,7 +262,8 @@ with session.as_default() as sess:
 			groundtruths = np.argmax(test_label_patches, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
+		print('\tPrediction time = {}'.format(end_time - start_time))
+		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 	else:
 		print('[SWL] Error: The number of test images is greater than 0.')
 
@@ -341,7 +345,8 @@ with session.as_default() as sess:
 			else:
 				print('[SWL] Error: Invalid image or label.')
 
-		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(total_correct_estimation_count, total_pixel_count, total_correct_estimation_count / total_pixel_count, end_time - start_time))
+		print('\tPrediction time = {}'.format(end_time - start_time))
+		print('\tAccurary = {} / {} = {}'.format(total_correct_estimation_count, total_pixel_count, total_correct_estimation_count / total_pixel_count))
 		print('\tMin accurary = {} at index {}, max accuracy = {} at index {}'.format(np.array(prediction_accurary_rates).min(), np.argmin(np.array(prediction_accurary_rates)), np.array(prediction_accurary_rates).max(), np.argmax(np.array(prediction_accurary_rates))))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')

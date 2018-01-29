@@ -59,6 +59,7 @@ class NeuralNetTrainer(object):
 
 			# Train.
 			print('>', sep='', end='')
+			processing_ratio = 0.05
 			for step in range(train_steps_per_epoch):
 				start = step * batch_size
 				end = start + batch_size
@@ -70,8 +71,9 @@ class NeuralNetTrainer(object):
 					summary, _ = session.run([merged_summary, self._train_step], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 					if train_summary_writer is not None:
 						train_summary_writer.add_summary(summary, epoch)
-				if 0 == step % 10:
-					print('.', sep='', end='')
+				if step / train_steps_per_epoch >= processing_ratio:
+					print('-', sep='', end='')
+					processing_ratio = round(step / train_steps_per_epoch, 2) + 0.05
 			print('<')
 
 			# Evaluate training.
@@ -152,7 +154,8 @@ class NeuralNetTrainer(object):
 
 					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(model_saved_path))
 
-			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}, elapsed time = {}'.format(train_loss, train_acc, val_loss, val_acc, time.time() - start_time))
+			print('\tElapsed time = {}'.format(time.time() - start_time))
+			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
 
 		# Close writers.
 		if train_summary_writer is not None:

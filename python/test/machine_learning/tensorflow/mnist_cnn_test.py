@@ -166,8 +166,10 @@ with session.as_default() as sess:
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		start_time = time.time()
-		history = nnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-		print('\tTraining time = {}'.format(time.time() - start_time))
+		history = nnTrainer.train(sess, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		end_time = time.time()
+
+		print('\tTraining time = {}'.format(end_time - start_time))
 
 		# Display results.
 		nnTrainer.display_history(history)
@@ -192,10 +194,11 @@ with session.as_default() as sess:
 
 	if num_test_examples > 0:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(session, cnnModel, test_images, test_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, cnnModel, test_images, test_labels, batch_size)
 		end_time = time.time()
 
-		print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
+		print('\tEvaluation time = {}'.format(end_time - start_time))
+		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
@@ -218,7 +221,7 @@ with session.as_default() as sess:
 
 	if num_pred_examples > 0:
 		start_time = time.time()
-		predictions = nnPredictor.predict(session, cnnModel, test_images, batch_size)
+		predictions = nnPredictor.predict(sess, cnnModel, test_images, batch_size)
 		end_time = time.time()
 
 		if num_classes <= 2:
@@ -229,7 +232,8 @@ with session.as_default() as sess:
 			groundtruths = np.argmax(test_labels, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(predictions, groundtruths))
 
-		print('\tAccurary = {} / {} = {}, prediction time = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size, end_time - start_time))
+		print('\tPrediction time = {}'.format(end_time - start_time))
+		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 

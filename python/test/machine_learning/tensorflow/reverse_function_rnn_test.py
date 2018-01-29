@@ -35,6 +35,7 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 from random import choice, randrange
 from reverse_function_tf_rnn import ReverseFunctionTensorFlowRNN
+from reverse_function_tf_encdec import ReverseFunctionTensorFlowEncoderDecoder
 from reverse_function_keras_rnn import ReverseFunctionKerasRNN
 from reverse_function_rnn_trainer import ReverseFunctionRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -79,8 +80,10 @@ def str2datum(str):
 
 # A numeric datum(numeric list) to a character string.
 def datum2str(datum):
-	#return ''.join([int2char[no] for no in datum[:-1]])
-	return ''.join([int2char[no] for no in datum[1:-1]])
+	locs = np.where(char2int[EOS] == datum)
+	datum = datum[:locs[0][0]]
+	#return ''.join([int2char[no] for no in datum[:]])
+	return ''.join([int2char[no] for no in datum[1:]])
 
 # Preprocessing function for character strings.
 def preprocess_string(str):
@@ -116,21 +119,27 @@ def max_len(dataset):
 			ml = len(dataset[i][0])
 	return ml
 
-def create_dataset_array(input_output_pairs, str_len):
+# Fixed-size dataset.
+def create_array_dataset(input_output_pairs, str_len):
 	num_data = len(input_output_pairs)
-	input_data = np.empty((num_data, str_len), dtype=np.int)
-	input_data.fill(char2int[EOS])
-	output_data = np.empty((num_data, str_len), dtype=np.int)
-	output_data.fill(char2int[EOS])
-	output_data_ahead_of_one_timestep = np.empty((num_data, str_len), dtype=np.int)
-	output_data_ahead_of_one_timestep.fill(char2int[EOS])
-	for i in range(num_data):
-		inp = input_output_pairs[i][0]
-		outp = input_output_pairs[i][1]
+	input_data = np.full((num_data, str_len), char2int[EOS])
+	output_data = np.full((num_data, str_len), char2int[EOS])
+	output_data_ahead_of_one_timestep = np.full((num_data, str_len), char2int[EOS])
+	for (i, (inp, outp)) in enumerate(input_output_pairs):
 		input_data[i,:len(inp)] = np.array(inp)
 		outa = np.array(outp)
 		output_data[i,:len(outp)] = outa
 		output_data_ahead_of_one_timestep[i,:(len(outp) - 1)] = outa[1:]
+
+	return input_data, output_data, output_data_ahead_of_one_timestep
+
+# Variable-size dataset.
+def create_list_dataset(input_output_pairs, str_len):
+	input_data, output_data, output_data_ahead_of_one_timestep = [], [], []
+	for (inp, outp) in input_output_pairs:
+		input_data.append(np.array(inp))
+		output_data.append(np.array(outp))
+		output_data_ahead_of_one_timestep.append(np.array(outp[1:]))
 
 	return input_data, output_data, output_data_ahead_of_one_timestep
 
@@ -206,25 +215,51 @@ val_string_list = create_string_dataset(num_val_data, MAX_STRING_LEN)
 train_numeric_list = convert_string_dataset_to_numeric_dataset(train_string_list)
 val_numeric_list = convert_string_dataset_to_numeric_dataset(val_string_list)
 
-train_input_data, train_output_data, train_output_data_ahead_of_one_timestep = create_dataset_array(train_numeric_list, MAX_TOKEN_LEN)
-#val_input_data, _, val_output_data_ahead_of_one_timestep = create_dataset_array(val_numeric_list, MAX_TOKEN_LEN)
-val_input_data, val_output_data, val_output_data_ahead_of_one_timestep = create_dataset_array(val_numeric_list, MAX_TOKEN_LEN)
+if True:
+	# Uses fixed-size dataset.
 
-# Reshape input to be (samples, time steps, features) = (num_train_data, MAX_TOKEN_LEN, VOCAB_SIZE).
-train_input_data = keras.utils.to_categorical(train_input_data, VOCAB_SIZE).reshape(train_input_data.shape + (-1,))
-train_output_data = keras.utils.to_categorical(train_output_data, VOCAB_SIZE).reshape(train_output_data.shape + (-1,))
-train_output_data_ahead_of_one_timestep = keras.utils.to_categorical(train_output_data_ahead_of_one_timestep, VOCAB_SIZE).reshape(train_output_data_ahead_of_one_timestep.shape + (-1,))
-# Reshape input to be (samples, time steps, features) = (num_val_data, MAX_TOKEN_LEN, VOCAB_SIZE).
-val_input_data = keras.utils.to_categorical(val_input_data, VOCAB_SIZE).reshape(val_input_data.shape + (-1,))
-val_output_data = keras.utils.to_categorical(val_output_data, VOCAB_SIZE).reshape(val_output_data.shape + (-1,))
-val_output_data_ahead_of_one_timestep = keras.utils.to_categorical(val_output_data_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_output_data_ahead_of_one_timestep.shape + (-1,))
+	train_data, train_labels, train_labels_ahead_of_one_timestep = create_array_dataset(train_numeric_list, MAX_TOKEN_LEN)
+	#val_data, _, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN)
+	val_data, val_labels, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN)
+
+	# Reshape input to be (samples, time-steps, features) = (num_train_data, MAX_TOKEN_LEN, VOCAB_SIZE).
+	train_data = keras.utils.to_categorical(train_data, VOCAB_SIZE).reshape(train_data.shape + (-1,))
+	train_labels = keras.utils.to_categorical(train_labels, VOCAB_SIZE).reshape(train_labels.shape + (-1,))
+	train_labels_ahead_of_one_timestep = keras.utils.to_categorical(train_labels_ahead_of_one_timestep, VOCAB_SIZE).reshape(train_labels_ahead_of_one_timestep.shape + (-1,))
+	# Reshape input to be (samples, time-steps, features) = (num_val_data, MAX_TOKEN_LEN, VOCAB_SIZE).
+	val_data = keras.utils.to_categorical(val_data, VOCAB_SIZE).reshape(val_data.shape + (-1,))
+	val_labels = keras.utils.to_categorical(val_labels, VOCAB_SIZE).reshape(val_labels.shape + (-1,))
+	val_labels_ahead_of_one_timestep = keras.utils.to_categorical(val_labels_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_labels_ahead_of_one_timestep.shape + (-1,))
+else:
+	# Uses variable-size dataset.
+	# TensorFlow internally uses np.arary for tf.placeholder. (?)
+
+	train_data, train_labels, train_labels_ahead_of_one_timestep = create_list_dataset(train_numeric_list, MAX_TOKEN_LEN)
+	#val_data, _, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, MAX_TOKEN_LEN)
+	val_data, val_labels, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, MAX_TOKEN_LEN)
+
+	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
+	for (dat, lbl, lbl_ahead) in zip(train_data, train_labels, train_labels_ahead_of_one_timestep):
+		tmp_data.append(keras.utils.to_categorical(dat, VOCAB_SIZE).reshape(dat.shape + (-1,)))
+		tmp_labels.append(keras.utils.to_categorical(lbl, VOCAB_SIZE).reshape(lbl.shape + (-1,)))
+		tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, VOCAB_SIZE).reshape(lbl_ahead.shape + (-1,)))
+	train_data, train_labels, train_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
+	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
+	for (dat, lbl, lbl_ahead) in zip(val_data, val_labels, val_labels_ahead_of_one_timestep):
+		tmp_data.append(keras.utils.to_categorical(dat, VOCAB_SIZE).reshape(dat.shape + (-1,)))
+		tmp_labels.append(keras.utils.to_categorical(lbl, VOCAB_SIZE).reshape(lbl.shape + (-1,)))
+		tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, VOCAB_SIZE).reshape(lbl_ahead.shape + (-1,)))
+	val_data, val_labels, val_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
+	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
 
 # For static RNN.
-input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+#is_dynamic = False
+#input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+#output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
 # For dynamic RNN.
-#input_shape = (None, VOCAB_SIZE)
-#output_shape = (None, VOCAB_SIZE)
+is_dynamic = True
+input_shape = (None, VOCAB_SIZE)
+output_shape = (None, VOCAB_SIZE)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -241,143 +276,128 @@ config.gpu_options.allow_growth = True
 session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
+
+def train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
+	nnTrainer = ReverseFunctionRnnTrainer(rnnModel, initial_epoch)
+	session.run(tf.global_variables_initializer())
+	with session.as_default() as sess:
+		# Save a model every 2 hours and maximum 5 latest models are saved.
+		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+		start_time = time.time()
+		history = nnTrainer.train(sess, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		end_time = time.time()
+
+		print('\tTraining time = {}'.format(end_time - start_time))
+
+		# Display results.
+		nnTrainer.display_history(history)
+
+def evaluate_model(rnnModel, batch_size):
+	nnEvaluator = NeuralNetEvaluator()
+	with session.as_default() as sess:
+		start_time = time.time()
+		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_data, val_labels, batch_size)
+		end_time = time.time()
+
+		print('\tEvaluation time = {}'.format(end_time - start_time))
+		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
+
+def predict_model(rnnModel, batch_size, test_strs):
+	nnPredictor = NeuralNetPredictor()
+	with session.as_default() as sess:
+		# Character strings -> numeric data.
+		test_data = np.full((len(test_strs), MAX_TOKEN_LEN), char2int[EOS])
+		for (i, str) in enumerate(test_strs):
+			tmp = np.array(preprocess_string(str))
+			test_data[i,:tmp.shape[0]] = tmp
+		test_data.reshape((-1,) + test_data.shape)
+		test_data = keras.utils.to_categorical(test_data, VOCAB_SIZE).reshape(test_data.shape + (-1,))
+
+		start_time = time.time()
+		predictions = nnPredictor.predict(sess, rnnModel, test_data)
+		end_time = time.time()
+
+		# Numeric data -> character strings.
+		predictions = np.argmax(predictions, axis=-1)
+		predicted_strs = []
+		for pred in predictions:
+			predicted_strs.append(datum2str(pred))
+
+		print('\tPrediction time = {}'.format(end_time - start_time))
+		print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
+
+#%%------------------------------------------------------------------
 # Simple RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
 # Build a model.
-model_type = 0
-rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=True)
+#model_type = 0
+model_type = 1  # Uses a stacked RNN.
+rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=is_dynamic)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'test'.
 #rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
 
 #--------------------
-# Train.
 batch_size = 4  # Number of samples per gradient update.
 num_epochs = 20  # Number of times to iterate over training data.
 
 shuffle = True
 initial_epoch = 0
 
-nnTrainer = ReverseFunctionRnnTrainer(rnnModel, initial_epoch)
-session.run(tf.global_variables_initializer())
-with session.as_default() as sess:
-	# Save a model every 2 hours and maximum 5 latest models are saved.
-	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
-
-	start_time = time.time()
-	history = nnTrainer.train(session, train_input_data, train_output_data, val_input_data, val_output_data, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-	print('\tTraining time = {}'.format(time.time() - start_time))
-
-	# Display results.
-	nnTrainer.display_history(history)
-
-#--------------------
-# Evaluate.
-nnEvaluator = NeuralNetEvaluator()
-with session.as_default() as sess:
-	start_time = time.time()
-	test_loss, test_acc = nnEvaluator.evaluate(session, rnnModel, val_input_data, val_output_data, batch_size)
-	end_time = time.time()
-
-	print('\tTest loss = {}, test accurary = {}, evaluation time = {}'.format(test_loss, test_acc, end_time - start_time))
-
-#--------------------
-# Predict.
-nnPredictor = NeuralNetPredictor()
-with session.as_default() as sess:
-	input_str = 'abc'
-	test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)
-	test_datum.fill(char2int[EOS])
-	tmp = np.array(preprocess_string(input_str))
-	test_datum[:,:tmp.shape[0]] = tmp
-	test_datum.reshape((-1,) + test_datum.shape)
-	test_datum = keras.utils.to_categorical(test_datum, VOCAB_SIZE).reshape(test_datum.shape + (-1,))
-
-	start_time = time.time()
-	predictions = nnPredictor.predict(session, rnnModel, test_datum)
-	end_time = time.time()
-	
-	predictions = np.argmax(predictions, axis=-1)
-
-	print('\tPrediction = {}, rediction time = {}'.format(predictions, end_time - start_time))
-
-input_seq = 'abc'
-test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)
-test_datum.fill(char2int[EOS])
-tmp = np.array(preprocess_string('abc'))
-test_datum[:,:tmp.shape[0]] = tmp
-test_datum = keras.utils.to_categorical(test_datum, VOCAB_SIZE).reshape(test_datum.shape + (-1,))
-prediction = simple_rnn_model.predict(test_datum)
-
-predicted_seq = decode_predicted_sequence(prediction)
-print('Predicted sequence of {} = {}'.format(input_seq, predicted_seq))
+train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(rnnModel, batch_size)
+test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+predict_model(rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Bidirectional RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
-state_size = 128
-dropout_rate = 0.5
-batch_size = 4
-num_epochs = 50
-
 # Build a model.
-# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
-bi_rnn_inputs = Input(shape=(None, VOCAB_SIZE))
-#bi_rnn_inputs = Input(shape=(MAX_TOKEN_LEN, VOCAB_SIZE))
-bi_rnn_lstm1 = Bidirectional(LSTM(state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True))
-bi_rnn_outputs = bi_rnn_lstm1(bi_rnn_inputs)
-# FIXME [check] >> I don't know why.
-# Output shape = (None, state_size * 2).
-#bi_rnn_lstm2 = Bidirectional(LSTM(state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate))
-# Output shape = (None, None, state_size * 2).
-bi_rnn_lstm2 = Bidirectional(LSTM(state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True))
-bi_rnn_outputs = bi_rnn_lstm2(bi_rnn_outputs)
-bi_rnn_dense = Dense(VOCAB_SIZE, activation='softmax')
-bi_rnn_outputs = bi_rnn_dense(bi_rnn_outputs)
+#model_type = 2
+model_type = 3  # Uses a stacked RNN.
+rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=is_dynamic)
+#from keras import backend as K
+#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+##K.set_learning_phase(0)  # Set the learning phase to 'test'.
+#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
 
-bi_rnn_model = Model(inputs=bi_rnn_inputs, outputs=bi_rnn_outputs)
+#--------------------
+batch_size = 4  # Number of samples per gradient update.
+num_epochs = 20  # Number of times to iterate over training data.
 
-# Summarize the model.
-#print(bi_rnn_model.summary())
+shuffle = True
+initial_epoch = 0
 
-# Train.
-optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
-
-bi_rnn_model.compile(optimizer=optimizer, loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
-
-history = bi_rnn_model.fit(train_input_data, train_output_data,
-		batch_size=batch_size, epochs=num_epochs,
-		validation_data=(val_input_data, val_output_data))
-		#validation_split=0.2)
-display_history(history)
-
-# Save the model.
-bi_rnn_model.save('seq2seq_reverse_function_bidirectional_rnn.h5')
-
-# Evaluate.
-test_loss, test_accuracy = bi_rnn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
-print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
-
-# Predict.
-input_seq = 'abc'
-test_datum = np.empty((1, MAX_TOKEN_LEN), dtype=np.int)
-test_datum.fill(char2int[EOS])
-tmp = np.array(preprocess_string(input_seq))
-test_datum[:,:tmp.shape[0]] = tmp
-test_datum = keras.utils.to_categorical(test_datum, VOCAB_SIZE).reshape(test_datum.shape + (-1,))
-prediction = bi_rnn_model.predict(test_datum)
-
-predicted_seq = decode_predicted_sequence(prediction)
-print('Predicted sequence of {} = {}'.format(input_seq, predicted_seq))
+train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(rnnModel, batch_size)
+test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+predict_model(rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Encoder-decoder model.
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 # REF [site] >> https://talbaumel.github.io/attention/
 
+# Build a model.
+rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_bidirectional=False, is_dynamic=is_dynamic)
+
+#--------------------
+batch_size = 4  # Number of samples per gradient update.
+num_epochs = 20  # Number of times to iterate over training data.
+
+shuffle = True
+initial_epoch = 0
+
+train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(rnnModel, batch_size)
+test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+predict_model(rnnModel, batch_size, test_strs)
+
+#%%
 enc_state_size = 128
 dec_state_size = 128
 dropout_rate = 0.5
@@ -417,9 +437,9 @@ optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, e
 
 encdec_train_model.compile(optimizer=optimizer, loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
 
-history = encdec_train_model.fit([train_input_data, train_output_data], train_output_data_ahead_of_one_timestep,
+history = encdec_train_model.fit([train_data, train_labels], train_labels_ahead_of_one_timestep,
 		batch_size=batch_size, epochs=num_epochs,
-		validation_data=([val_input_data, val_output_data], val_output_data_ahead_of_one_timestep))
+		validation_data=([val_data, val_labels], val_labels_ahead_of_one_timestep))
 		#validation_split=0.2)
 display_history(history)
 
@@ -441,7 +461,7 @@ encdec_dec_outputs = encdec_dec_dense(encdec_dec_outputs)
 encdec_inf_decoder_model = Model(inputs=[encdec_dec_inputs] + encdec_states_inputs, outputs=[encdec_dec_outputs] + encdec_dec_states)
 
 # Evaluate.
-test_loss, test_accuracy = encdec_inf_decoder_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
+test_loss, test_accuracy = encdec_inf_decoder_model.evaluate(val_data, val_labels_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
 print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 
 # Predict.
@@ -492,9 +512,9 @@ optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, e
 
 attn_model.compile(optimizer=optimizer, loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
 
-history = attn_model.fit(train_input_data, train_output_data_ahead_of_one_timestep,
+history = attn_model.fit(train_data, train_labels_ahead_of_one_timestep,
 		batch_size=batch_size, epochs=num_epochs,
-		validation_data=(val_input_data, val_output_data_ahead_of_one_timestep))
+		validation_data=(val_data, val_labels_ahead_of_one_timestep))
 		#validation_split=0.2)
 display_history(history)
 
@@ -502,7 +522,7 @@ display_history(history)
 attn_model.save('seq2seq_reverse_function_attention_model.h5')
 
 # Evaluate.
-test_loss, test_accuracy = attn_model.evaluate(val_input_data, val_output_data_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
+test_loss, test_accuracy = attn_model.evaluate(val_data, val_labels_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
 print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 
 # Predict.

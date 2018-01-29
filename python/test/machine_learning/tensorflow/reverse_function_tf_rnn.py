@@ -29,7 +29,7 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 				if 0 == self._model_type:
 					return self._create_static_rnn(input_tensor, is_training_tensor, num_time_steps, num_classes)
 				elif 1 == self._model_type:
-					return self._create_static_tacked_rnn(input_tensor, is_training_tensor, num_time_steps, num_classes)
+					return self._create_static_stacked_rnn(input_tensor, is_training_tensor, num_time_steps, num_classes)
 				elif 2 == self._model_type:
 					return self._create_static_birnn(input_tensor, is_training_tensor, num_time_steps, num_classes)
 				elif 3 == self._model_type:
@@ -40,7 +40,6 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 
 	def _create_dynamic_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		num_hidden_units = 256
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Defines a cell.
@@ -49,6 +48,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		# Gets cell outputs.
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -65,16 +67,18 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 	def _create_dynamic_stacked_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		num_hidden_units = 128
 		num_layers = 2
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])
+		stacked_cell = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -89,8 +93,7 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_dynamic_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-		num_hidden_units = 256
-		# FIXME [implement] >> Add dropout layers.
+		num_hidden_units = 128
 		dropout_rate = 0.5
 
 		# Defines a cell.
@@ -98,8 +101,13 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		cell_bw = self._create_cell(num_hidden_units)  # Backward cell.
 
 		# Gets cell outputs.
-		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
-		cell_outputs, _, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs = tf.concat(cell_outputs, 2)
+		#cell_states = tf.concat(cell_states, 2)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -114,19 +122,23 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_dynamic_stacked_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-		num_hidden_units = 128
+		num_hidden_units = 64
 		num_layers = 2
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell_fw = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Forward cell.
-		stacked_cell_bw = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Backward cell.
+		stacked_cell_fw = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Forward cell.
+		stacked_cell_bw = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Backward cell.
 
 		# Gets cell outputs.
-		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
-		cell_outputs, _, _ = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		cell_outputs = tf.concat(cell_outputs, 2)
+		#cell_states = tf.concat(cell_states, 2)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -142,7 +154,6 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 
 	def _create_static_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		num_hidden_units = 256
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -167,7 +178,7 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			#logits = tf.matmul(cell_output, weights) + biases
 			# TODO [check] >>
 			logits = tf.layers.dense(cell_output, 1024, activation=tf.nn.softmax, name='fc')
-			# NOTE [info] >> If dropout rate=0.0, dropout layer is not created.
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 			probabilities.append(tf.nn.softmax(logits))
@@ -175,6 +186,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		"""
 		#cell_outputs, cell_state = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -191,7 +205,6 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 	def _create_static_stacked_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
 		num_hidden_units = 128
 		num_layers = 2
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -222,7 +235,7 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			#logits = tf.matmul(cell_output, weights) + biases
 			# TODO [check] >>
 			logits = tf.layers.dense(cell_output, 1024, activation=tf.nn.softmax, name='fc')
-			# NOTE [info] >> If dropout rate=0.0, dropout layer is not created.
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 			probabilities.append(tf.nn.softmax(logits))
@@ -230,11 +243,14 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		"""
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])
+		stacked_cell = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -249,8 +265,7 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-		num_hidden_units = 256
-		# FIXME [implement] >> Add dropout layers.
+		num_hidden_units = 128
 		dropout_rate = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -262,7 +277,11 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -277,10 +296,8 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_stacked_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-
-		num_hidden_units = 128
+		num_hidden_units = 64
 		num_layers = 2
-		# FIXME [implement] >> Add dropout layers.
 		dropout_rate = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -288,12 +305,16 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 
 		# Defines a cell.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell_fw = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Forward cell.
-		stacked_cell_bw = rnn.MultipleRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Backward cell.
+		stacked_cell_fw = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Forward cell.
+		stacked_cell_bw = rnn.MultiRNNCell([self._create_cell(num_hidden_units) for _ in range(num_layers)])  # Backward cell.
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+
+		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:

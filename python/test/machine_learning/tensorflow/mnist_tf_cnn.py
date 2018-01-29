@@ -32,7 +32,7 @@ class MnistTensorFlowCNN(MnistCNN):
 			fc1 = tf.layers.flatten(conv2, name='flatten')
 
 			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc')
-			# NOTE [info] >> If dropout rate=0.0, dropout layer is not created.
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
