@@ -102,8 +102,8 @@ class MnistTensorFlowCNN(MnistCNN):
 			tf.summary.scalar('max', tf.reduce_max(var))
 			tf.summary.scalar('min', tf.reduce_min(var))
 			tf.summary.histogram('histogram', var)
-			if True == is_filter:
-				tf.summary.image('filter', var)  # To visualize filters.
+			if is_filter:
+				tf.summary.image('filter', var)  # Visualizes filters.
 
 	def _conv_layer(self, input_tensor, output_dim, kernel_shape, strides, padding, layer_name, act=tf.nn.relu):
 		with tf.name_scope(layer_name):

@@ -36,6 +36,7 @@ import tensorflow as tf
 from random import choice, randrange
 from reverse_function_tf_rnn import ReverseFunctionTensorFlowRNN
 from reverse_function_tf_encdec import ReverseFunctionTensorFlowEncoderDecoder
+#from reverse_function_tf_attention import ReverseFunctionTensorFlowEncoderDecoderWithAttention
 from reverse_function_keras_rnn import ReverseFunctionKerasRNN
 from reverse_function_rnn_trainer import ReverseFunctionRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -252,16 +253,6 @@ else:
 	val_data, val_labels, val_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
 	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
 
-is_dynamic = True
-if is_dynamic:
-	# For dynamic RNN.
-	input_shape = (None, VOCAB_SIZE)
-	output_shape = (None, VOCAB_SIZE)
-else:
-	# For static RNN.
-	input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-	output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-
 #%%------------------------------------------------------------------
 # Configure tensorflow.
 
@@ -328,152 +319,109 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 		print('\tPrediction time = {}'.format(end_time - start_time))
 		print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
 
+is_dynamic = True
+if is_dynamic:
+	# For dynamic RNNs.
+	# TODO [improve] >> Training & validation datasets are still fixed-size (static).
+	input_shape = (None, VOCAB_SIZE)
+	output_shape = (None, VOCAB_SIZE)
+else:
+	# For static RNNs.
+	input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+	output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+
 #%%------------------------------------------------------------------
 # Simple RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
-# Build a model.
-#model_type = 0
-model_type = 1  # Uses a stacked RNN.
-rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=is_dynamic)
-#from keras import backend as K
-#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
+if False:
+	# Build a model.
+	is_stacked = True  # Uses multiple layers.
+	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked)
+	#from keras import backend as K
+	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
-#--------------------
-batch_size = 4  # Number of samples per gradient update.
-num_epochs = 20  # Number of times to iterate over training data.
+	#--------------------
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 20  # Number of times to iterate over training data.
 
-shuffle = True
-initial_epoch = 0
+	shuffle = True
+	initial_epoch = 0
 
-train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(session, rnnModel, batch_size)
-test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(session, rnnModel, batch_size, test_strs)
+	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+	evaluate_model(session, rnnModel, batch_size)
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Bidirectional RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
-# Build a model.
-#model_type = 2
-model_type = 3  # Uses a stacked RNN.
-rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, model_type, is_dynamic=is_dynamic)
-#from keras import backend as K
-#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, model_type)
+if False:
+	# Build a model.
+	is_stacked = True  # Uses multiple layers.
+	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked)
+	#from keras import backend as K
+	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
 
-#--------------------
-batch_size = 4  # Number of samples per gradient update.
-num_epochs = 20  # Number of times to iterate over training data.
+	#--------------------
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 120  # Number of times to iterate over training data.
 
-shuffle = True
-initial_epoch = 0
+	shuffle = True
+	initial_epoch = 0
 
-train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(session, rnnModel, batch_size)
-test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(session, rnnModel, batch_size, test_strs)
+	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+	evaluate_model(session, rnnModel, batch_size)
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Encoder-decoder model.
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 # REF [site] >> https://talbaumel.github.io/attention/
 
-# Build a model.
-rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_bidirectional=False, is_dynamic=is_dynamic)
+if False:
+	is_bidirectional = True
+	rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional)
 
-#--------------------
-batch_size = 4  # Number of samples per gradient update.
-num_epochs = 20  # Number of times to iterate over training data.
+	#--------------------
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 150  # Number of times to iterate over training data.
 
-shuffle = True
-initial_epoch = 0
+	shuffle = True
+	initial_epoch = 0
 
-train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(session, rnnModel, batch_size)
-test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(session, rnnModel, batch_size, test_strs)
-
-#%%
-enc_state_size = 128
-dec_state_size = 128
-dropout_rate = 0.5
-batch_size = 4
-num_epochs = 100
-
-#----------
-# Build a training model.
-# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
-encdec_enc_inputs = Input(shape=(None, VOCAB_SIZE))
-#encdec_enc_inputs = Input(shape=(MAX_TOKEN_LEN, VOCAB_SIZE))
-encdec_enc_lstm1 = LSTM(enc_state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True, return_state=True)
-encdec_enc_outputs, encdec_enc_state_h, encdec_enc_state_c = encdec_enc_lstm1(encdec_enc_inputs)
-# Discard 'encdec_enc_outputs' and only keep the states.
-encdec_enc_states = [encdec_enc_state_h, encdec_enc_state_c]
-#encdec_enc_states = keras.layers.concatenate([encdec_enc_state_h, encdec_enc_state_c], axis=-1)
-
-# NOTE [info] >>
-#	encdec_enc_outputs.shape = (None, None, enc_state_size).
-#	encdec_enc_state_h.shape = (None, enc_state_size).
-#	encdec_enc_state_c.shape = (None, enc_state_size).
-
-# Input shape = (samples, time-steps, features).
-encdec_dec_inputs = Input(shape=(None, VOCAB_SIZE))
-encdec_dec_lstm1 = LSTM(dec_state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True, return_state=True)
-encdec_dec_outputs, _, _ = encdec_dec_lstm1(encdec_dec_inputs, initial_state=encdec_enc_states)
-encdec_dec_dense = Dense(VOCAB_SIZE, activation='softmax')
-encdec_dec_outputs = encdec_dec_dense(encdec_dec_outputs)
-
-encdec_train_model = Model(inputs=[encdec_enc_inputs, encdec_dec_inputs], outputs=encdec_dec_outputs)
-
-# Summarize the training model.
-#print(encdec_train_model.summary())
-
-# Train.
-optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
-
-encdec_train_model.compile(optimizer=optimizer, loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
-
-history = encdec_train_model.fit([train_data, train_labels], train_labels_ahead_of_one_timestep,
-		batch_size=batch_size, epochs=num_epochs,
-		validation_data=([val_data, val_labels], val_labels_ahead_of_one_timestep))
-		#validation_split=0.2)
-display_history(history)
-
-# Save the training model.
-encdec_train_model.save('seq2seq_reverse_function_encdec_model.h5')
-
-#----------
-# Build inference models.
-encdec_inf_encoder_model = Model(inputs=encdec_enc_inputs, outputs=encdec_enc_states)
-
-# Input shape = (samples, time-steps, features).
-encdec_state_input_h = Input(shape=(dec_state_size,))
-encdec_state_input_c = Input(shape=(dec_state_size,))
-encdec_states_inputs = [encdec_state_input_h, encdec_state_input_c]
-encdec_dec_outputs, encdec_state_h, encdec_state_c = encdec_dec_lstm1(encdec_dec_inputs, initial_state=encdec_states_inputs)
-encdec_dec_states = [encdec_state_h, encdec_state_c]
-encdec_dec_outputs = encdec_dec_dense(encdec_dec_outputs)
-
-encdec_inf_decoder_model = Model(inputs=[encdec_dec_inputs] + encdec_states_inputs, outputs=[encdec_dec_outputs] + encdec_dec_states)
-
-# Evaluate.
-test_loss, test_accuracy = encdec_inf_decoder_model.evaluate(val_data, val_labels_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
-print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
-
-# Predict.
-input_seq = 'abc'
-decoded_seq = decode_sequence(encdec_inf_encoder_model, encdec_inf_decoder_model, preprocess_string(input_seq))
-print('Predicted sequence of {} = {}'.format(input_seq, decoded_seq))
+	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+	evaluate_model(session, rnnModel, batch_size)
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Attention model.
 # REF [site] >> https://talbaumel.github.io/attention/
 
+if True:
+	is_bidirectional = True
+	rnnModel = ReverseFunctionTensorFlowEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional)
+
+	#--------------------
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 50  # Number of times to iterate over training data.
+
+	shuffle = True
+	initial_epoch = 0
+
+	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+	evaluate_model(session, rnnModel, batch_size)
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	predict_model(session, rnnModel, batch_size, test_strs)
+
+#%%
 enc_state_size = 128
 dec_state_size = 128
 dropout_rate = 0.5

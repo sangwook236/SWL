@@ -3,14 +3,14 @@ from reverse_function_rnn import ReverseFunctionRNN
 
 #%%------------------------------------------------------------------
 
-class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
+class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True):
 		self._is_dynamic = is_dynamic
 		self._is_bidirectional = is_bidirectional
 		super().__init__(input_shape, output_shape)
 
 	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
-		with tf.variable_scope('reverse_function_tf_encdec', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('reverse_function_tf_attention', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:
@@ -32,19 +32,16 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		# Defines cells.
 		enc_cell = self._create_cell(num_enc_hidden_units)
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, , state_is_tuple=True)
 		dec_cell = self._create_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, , state_is_tuple=True)
 
 		# Encoder.
 		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
-		enc_cell_output_shape = tf.shape(enc_cell_outputs)
-		enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units]), [1, enc_cell_output_shape[1], 1])
+		# Attention.
 
 		# Decoder.
 		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
@@ -86,21 +83,27 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
 		#enc_cell_states = tf.concat(enc_cell_states, 2)
 
-		# Use the last output of the encoder.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
-		enc_cell_output_shape = tf.shape(enc_cell_outputs)
-		enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units * 2]), [1, enc_cell_output_shape[1], 1])
+		# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
+		with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
+			attention_W1 = tf.get_variable('attn-W1', shape=(3, 3)) 
+			attention_W2 = tf.get_variable('attn-W2', shape=(3, 3)) 
+			attention_V = tf.get_variable('attn-V', shape=(3, 3)) 
 
-		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			input_tensor_shape = tf.shape(input_tensor)
+			dec_cell_state = dec_cell.zero_state(input_tensor_shape[0], tf.float32)
+			for in :
+				for outp in enc_cell_outputs:
+					# Attention.
+					attention = tf.matmul(outp, attention_W1) + tf.matmul(dec_cell_state, attention_W2)
+					attention = tf.matmul(tf.tanh(attention), attention_V)
+	
+					# Decoder.
+					dec_cell_outputs, dec_cell_state = cell(inp, dec_cell_state)
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(dec_cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -132,9 +135,7 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_outputs, enc_cell_state = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
-		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+		# Attention.
 
 		# Decoder.
 		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
@@ -181,9 +182,7 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_states = tf.concat((enc_cell_state_fw, enc_cell_state_bw), 2)  # ?
 		enc_cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
-		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+		# Attention.
 
 		# Decoder.
 		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
@@ -215,3 +214,52 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#return tf.contrib.rnn.RNNCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.GRUCell(num_units, forget_bias=1.0)
+
+	# REF [function] >> _weight_variable() in ./mnist_tf_cnn.py.
+	# We can't initialize these variables to 0 - the network will get stuck.
+	def _weight_variable(self, shape, name):
+		"""Create a weight variable with appropriate initialization."""
+		#initial = tf.truncated_normal(shape, stddev=0.1)
+		#return tf.Variable(initial, name=name)
+		return tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=0.1))
+
+	# REF [function] >> _variable_summaries() in ./mnist_tf_cnn.py.
+	def _variable_summaries(self, var, is_filter=False):
+		"""Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
+		with tf.name_scope('summaries'):
+			mean = tf.reduce_mean(var)
+			tf.summary.scalar('mean', mean)
+			with tf.name_scope('stddev'):
+				stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
+			tf.summary.scalar('stddev', stddev)
+			tf.summary.scalar('max', tf.reduce_max(var))
+			tf.summary.scalar('min', tf.reduce_min(var))
+			tf.summary.histogram('histogram', var)
+			if is_filter:
+				tf.summary.image('filter', var)  # Visualizes filters.
+
+	def _attention_layer(self, enc_cell_outputs, dec_cell, layer_name):
+		"""Add a name scope ensures logical grouping of the layers in the graph."""
+		with tf.name_scope(layer_name):
+			enc_cell_output_shape = tf.shape(enc_cell_outputs)
+
+			# This variable will hold the state of the weights for the layer.
+			with tf.name_scope('attention_W1'):
+				attention_W1 = self._weight_variable((enc_cell_output_size, enc_cell_output_size))
+				self._variable_summaries(attention_W1)
+			with tf.name_scope('attention_W2'):
+				attention_W2 = self._weight_variable((dec_cell.state_size, enc_cell_output_size))
+				self._variable_summaries(attention_W2)
+			with tf.name_scope('attention_V'):
+				attention_V = self._weight_variable((enc_cell_output_size, 1))
+				self._variable_summaries(attention_V)
+
+			dec_cell_state = dec_cell.zero_state(enc_cell_output_shape[0], tf.float32)
+			for in :
+				# Attention.
+				for outp in enc_cell_outputs:
+					attention = tf.matmul(outp, attention_W1) + tf.matmul(dec_cell_state, attention_W2)
+					attention = tf.matmul(tf.tanh(attention), attention_V)
+
+				# Decoder.
+				dec_cell_outputs, dec_cell_state = cell(inp, dec_cell_state)

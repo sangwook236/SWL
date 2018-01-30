@@ -5,8 +5,9 @@ from reverse_function_rnn import ReverseFunctionRNN
 #%%------------------------------------------------------------------
 
 class ReverseFunctionKerasRNN(ReverseFunctionRNN):
-	def __init__(self, input_shape, output_shape, model_type=0):
-		self._model_type = model_type
+	def __init__(self, input_shape, output_shape, is_bidirectional=True, is_stacked=True):
+		self._is_bidirectional = is_bidirectional
+		self._is_stacked = is_stacked
 		super().__init__(input_shape, output_shape)
 
 	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
@@ -20,21 +21,19 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 
 		num_classes = output_shape[-1]
 		with tf.variable_scope('reverse_function_keras_rnn', reuse=tf.AUTO_REUSE):
-			if 0 == self._model_type:
-				return self._create_rnn(input_tensor, num_classes, dropout_rate)
-			elif 1 == self._model_type:
-				return self._create_stacked_rnn(input_tensor, num_classes, dropout_rate)
-			elif 2 == self._model_type:
-				return self._create_birnn(input_tensor, num_classes, dropout_rate)
-			elif 3 == self._model_type:
-				return self._create_stacked_birnn(input_tensor, num_classes, dropout_rate)
+			if self._is_bidirectional:
+				if self._is_stacked:
+					return self._create_stacked_birnn(input_tensor, num_classes, dropout_rate)
+				else:
+					return self._create_birnn(input_tensor, num_classes, dropout_rate)
 			else:
-				assert False, 'Invalid model type.'
-				return None
+				if self._is_stacked:
+					return self._create_stacked_rnn(input_tensor, num_classes, dropout_rate)
+				else:
+					return self._create_rnn(input_tensor, num_classes, dropout_rate)
 
 	def _create_rnn(self, input_tensor, num_classes, dropout_rate):
 		num_hidden_units = 256
-		dropout_rate = 0.5
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		x = LSTM(num_hidden_units, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True)(input_tensor)
@@ -52,7 +51,6 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 
 	def _create_stacked_rnn(self, input_tensor, num_classes, dropout_rate):
 		num_hidden_units = 128
-		dropout_rate = 0.5
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		x = LSTM(num_hidden_units, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True)(input_tensor)
@@ -71,7 +69,6 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 
 	def _create_birnn(self, input_tensor, num_classes, dropout_rate):
 		num_hidden_units = 256
-		dropout_rate = 0.5
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		# FIXME [check] >>.
@@ -92,7 +89,6 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 
 	def _create_stacked_birnn(self, input_tensor, num_classes, dropout_rate):
 		num_hidden_units = 128
-		dropout_rate = 0.5
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		x = Bidirectional(LSTM(num_hidden_units, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True))(input_tensor)
