@@ -49,8 +49,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(cell, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -77,8 +78,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -106,8 +108,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		cell_outputs = tf.concat(cell_outputs, 2)
 		#cell_states = tf.concat(cell_states, 2)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -137,8 +140,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		cell_outputs = tf.concat(cell_outputs, 2)
 		#cell_states = tf.concat(cell_states, 2)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -187,8 +191,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_outputs, cell_state = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -249,8 +254,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_outputs, cell_state = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -280,8 +286,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -313,8 +320,9 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
 
-		# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
+			cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:

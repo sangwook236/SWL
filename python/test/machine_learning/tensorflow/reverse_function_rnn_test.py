@@ -252,14 +252,15 @@ else:
 	val_data, val_labels, val_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
 	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
 
-# For static RNN.
-#is_dynamic = False
-#input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-#output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-# For dynamic RNN.
 is_dynamic = True
-input_shape = (None, VOCAB_SIZE)
-output_shape = (None, VOCAB_SIZE)
+if is_dynamic:
+	# For dynamic RNN.
+	input_shape = (None, VOCAB_SIZE)
+	output_shape = (None, VOCAB_SIZE)
+else:
+	# For static RNN.
+	input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+	output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -277,7 +278,7 @@ session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
 
-def train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
+def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
 	nnTrainer = ReverseFunctionRnnTrainer(rnnModel, initial_epoch)
 	session.run(tf.global_variables_initializer())
 	with session.as_default() as sess:
@@ -293,7 +294,7 @@ def train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
 		# Display results.
 		nnTrainer.display_history(history)
 
-def evaluate_model(rnnModel, batch_size):
+def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
@@ -303,7 +304,7 @@ def evaluate_model(rnnModel, batch_size):
 		print('\tEvaluation time = {}'.format(end_time - start_time))
 		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
 
-def predict_model(rnnModel, batch_size, test_strs):
+def predict_model(session, rnnModel, batch_size, test_strs):
 	nnPredictor = NeuralNetPredictor()
 	with session.as_default() as sess:
 		# Character strings -> numeric data.
@@ -347,10 +348,10 @@ num_epochs = 20  # Number of times to iterate over training data.
 shuffle = True
 initial_epoch = 0
 
-train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(rnnModel, batch_size)
+train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(session, rnnModel, batch_size)
 test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(rnnModel, batch_size, test_strs)
+predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Bidirectional RNN.
@@ -372,10 +373,10 @@ num_epochs = 20  # Number of times to iterate over training data.
 shuffle = True
 initial_epoch = 0
 
-train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(rnnModel, batch_size)
+train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(session, rnnModel, batch_size)
 test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(rnnModel, batch_size, test_strs)
+predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
 # Encoder-decoder model.
@@ -392,10 +393,10 @@ num_epochs = 20  # Number of times to iterate over training data.
 shuffle = True
 initial_epoch = 0
 
-train_model(rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-evaluate_model(rnnModel, batch_size)
+train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+evaluate_model(session, rnnModel, batch_size)
 test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-predict_model(rnnModel, batch_size, test_strs)
+predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%
 enc_state_size = 128
