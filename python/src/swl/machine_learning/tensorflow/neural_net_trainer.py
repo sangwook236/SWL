@@ -58,7 +58,7 @@ class NeuralNetTrainer(object):
 				np.random.shuffle(indices)
 
 			# Train.
-			print('>', sep='', end='')
+			print('>-', sep='', end='')
 			processing_ratio = 0.05
 			for step in range(train_steps_per_epoch):
 				start = step * batch_size
