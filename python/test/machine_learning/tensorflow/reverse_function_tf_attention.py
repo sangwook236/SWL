@@ -32,10 +32,12 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		# Defines cells.
 		enc_cell = self._create_cell(num_enc_hidden_units)
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, , state_is_tuple=True)
+		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, attention_window_len, state_is_tuple=True)
 		dec_cell = self._create_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, , state_is_tuple=True)
+		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
 		# Encoder.
 		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
@@ -44,8 +46,7 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		# Attention.
 
 		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -83,22 +84,13 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
 		#enc_cell_states = tf.concat(enc_cell_states, 2)
 
-		# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
-		with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
-			attention_W1 = tf.get_variable('attn-W1', shape=(3, 3)) 
-			attention_W2 = tf.get_variable('attn-W2', shape=(3, 3)) 
-			attention_V = tf.get_variable('attn-V', shape=(3, 3)) 
+		# Attention.
+		with tf.name_scope('attention'):
+			self._attend()
 
-			input_tensor_shape = tf.shape(input_tensor)
-			dec_cell_state = dec_cell.zero_state(input_tensor_shape[0], tf.float32)
-			for in :
-				for outp in enc_cell_outputs:
-					# Attention.
-					attention = tf.matmul(outp, attention_W1) + tf.matmul(dec_cell_state, attention_W2)
-					attention = tf.matmul(tf.tanh(attention), attention_V)
-	
-					# Decoder.
-					dec_cell_outputs, dec_cell_state = cell(inp, dec_cell_state)
+		# Decoder.
+		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		#with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -125,8 +117,12 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		# Defines cells.
 		enc_cell = self._create_cell(num_enc_hidden_units)
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, attention_window_len, state_is_tuple=True)
 		dec_cell = self._create_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
 		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
@@ -135,11 +131,18 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		#enc_cell_outputs, enc_cell_state = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Attention.
+		input_shape = tf.shape(input_tensor)
+		batch_size = input_shape[0]
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+		dec_cell_outputs = []
+		for _ in range(num_time_steps):
+			# Attention.
+			context = self._attend_additively(enc_cell_outputs, dec_cell_state)
+			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state)
 
-		# Decoder.
-		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			# Decoder.
+			dec_cell_output, dec_cell_state = tf.nn.static_rnn(dec_cell, context, initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+			dec_cell_outputs.append(dec_cell_output)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
@@ -238,28 +241,33 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 			if is_filter:
 				tf.summary.image('filter', var)  # Visualizes filters.
 
-	def _attention_layer(self, enc_cell_outputs, dec_cell, layer_name):
-		"""Add a name scope ensures logical grouping of the layers in the graph."""
-		with tf.name_scope(layer_name):
-			enc_cell_output_shape = tf.shape(enc_cell_outputs)
+	# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
+	# REF [site] >> https://talbaumel.github.io/attention/
+	def _attend_additively(self, inputs, state):
+		input_shape = tf.shape(inputs)
+		state_shape = tf.shape(state)
 
-			# This variable will hold the state of the weights for the layer.
-			with tf.name_scope('attention_W1'):
-				attention_W1 = self._weight_variable((enc_cell_output_size, enc_cell_output_size))
-				self._variable_summaries(attention_W1)
-			with tf.name_scope('attention_W2'):
-				attention_W2 = self._weight_variable((dec_cell.state_size, enc_cell_output_size))
-				self._variable_summaries(attention_W2)
-			with tf.name_scope('attention_V'):
-				attention_V = self._weight_variable((enc_cell_output_size, 1))
-				self._variable_summaries(attention_V)
+		with tf.name_scope('attention_W1'):
+			attention_W1 = self._weight_variable((input_shape[-1], input_shape[-1]))
+			self._variable_summaries(attention_W1)
+		with tf.name_scope('attention_W2'):
+			attention_W2 = self._weight_variable((state_shape[-1], input_shape[-1]))
+			self._variable_summaries(attention_W2)
+		with tf.name_scope('attention_V'):
+			attention_V = self._weight_variable((input_shape[-1], 1))
+			self._variable_summaries(attention_V)
 
-			dec_cell_state = dec_cell.zero_state(enc_cell_output_shape[0], tf.float32)
-			for in :
-				# Attention.
-				for outp in enc_cell_outputs:
-					attention = tf.matmul(outp, attention_W1) + tf.matmul(dec_cell_state, attention_W2)
-					attention = tf.matmul(tf.tanh(attention), attention_V)
+		attention_weights = []
+		for inp in inputs:
+			attention_weight = tf.matmul(inp, attention_W1) + tf.matmul(state, attention_W2)
+			attention_weight = tf.matmul(tf.tanh(attention_weight), attention_V)
+			attention_weights.append(attention_weight)
 
-				# Decoder.
-				dec_cell_outputs, dec_cell_state = cell(inp, dec_cell_state)
+		attention_weights = tf.nn.softmax(tf.convert_to_tensor(attention_weights, dtype=tf.float32))
+		return tf.reduce_sum(tf.convert_to_tensor([inp * weight for inp, weight in zip(inputs, attention_weights)], dtype=tf.float32), axis=1)
+
+	# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
+	def _attend_multiplicatively(self, inputs, state):
+		raise NotImplementedError

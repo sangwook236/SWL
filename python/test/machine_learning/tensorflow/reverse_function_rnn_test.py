@@ -120,7 +120,7 @@ def max_len(dataset):
 			ml = len(dataset[i][0])
 	return ml
 
-# Fixed-size dataset.
+# Fixed-length dataset.
 def create_array_dataset(input_output_pairs, str_len):
 	num_data = len(input_output_pairs)
 	input_data = np.full((num_data, str_len), char2int[EOS])
@@ -217,7 +217,7 @@ train_numeric_list = convert_string_dataset_to_numeric_dataset(train_string_list
 val_numeric_list = convert_string_dataset_to_numeric_dataset(val_string_list)
 
 if True:
-	# Uses fixed-size dataset.
+	# Uses fixed-length dataset.
 
 	train_data, train_labels, train_labels_ahead_of_one_timestep = create_array_dataset(train_numeric_list, MAX_TOKEN_LEN)
 	#val_data, _, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN)
@@ -232,7 +232,7 @@ if True:
 	val_labels = keras.utils.to_categorical(val_labels, VOCAB_SIZE).reshape(val_labels.shape + (-1,))
 	val_labels_ahead_of_one_timestep = keras.utils.to_categorical(val_labels_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_labels_ahead_of_one_timestep.shape + (-1,))
 else:
-	# Uses variable-size dataset.
+	# Uses variable-length dataset.
 	# TensorFlow internally uses np.arary for tf.placeholder. (?)
 
 	train_data, train_labels, train_labels_ahead_of_one_timestep = create_list_dataset(train_numeric_list, MAX_TOKEN_LEN)
@@ -321,12 +321,12 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 
 is_dynamic = True
 if is_dynamic:
-	# For dynamic RNNs.
-	# TODO [improve] >> Training & validation datasets are still fixed-size (static).
+	# Dynamic RNNs use variable-length dataset.
+	# TODO [improve] >> Training & validation datasets are still fixed-length (static).
 	input_shape = (None, VOCAB_SIZE)
 	output_shape = (None, VOCAB_SIZE)
 else:
-	# For static RNNs.
+	# Static RNNs use fixed-length dataset.
 	input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
 	output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
 

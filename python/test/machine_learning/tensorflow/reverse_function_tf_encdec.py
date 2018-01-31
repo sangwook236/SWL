@@ -39,7 +39,7 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
+		# Uses the last output of the encoder only.
 		# TODO [enhance] >> The dimension of tensors is fixed as 3.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
 		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
@@ -86,7 +86,7 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
 		#enc_cell_states = tf.concat(enc_cell_states, 2)
 
-		# Use the last output of the encoder.
+		# Uses the last output of the encoder only.
 		# TODO [enhance] >> The dimension of tensors is fixed as 3.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
 		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
@@ -132,13 +132,28 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_outputs, enc_cell_state = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
-		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
-
 		# Decoder.
-		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		if True:
+			# Uses the last output of the encoder only.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
+			enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+	
+			# Decoder.
+			#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		else:
+			# When using the last output of the encoder (context) and the previous output of the decoder together.
+			input_shape = tf.shape(input_tensor)
+			batch_size = input_shape[0]
+
+			context = enc_cell_outputs[-1]
+			dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+			# FIXME [fix] >>
+			dec_cell_output = None  # The start word.
+			dec_cell_outputs = []
+			for _ in range(num_time_steps):
+				dec_cell_output, dec_cell_state = tf.nn.static_rnn(dec_cell, [context, dec_cell_output], initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+				dec_cell_outputs.append(dec_cell_output)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
@@ -181,7 +196,7 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_states = tf.concat((enc_cell_state_fw, enc_cell_state_bw), 2)  # ?
 		enc_cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Use the last output of the encoder.
+		# Uses the last output of the encoder only.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
 		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
 
