@@ -36,7 +36,7 @@ import tensorflow as tf
 from random import choice, randrange
 from reverse_function_tf_rnn import ReverseFunctionTensorFlowRNN
 from reverse_function_tf_encdec import ReverseFunctionTensorFlowEncoderDecoder
-#from reverse_function_tf_attention import ReverseFunctionTensorFlowEncoderDecoderWithAttention
+from reverse_function_tf_attention import ReverseFunctionTensorFlowEncoderDecoderWithAttention
 from reverse_function_keras_rnn import ReverseFunctionKerasRNN
 from reverse_function_rnn_trainer import ReverseFunctionRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -319,7 +319,7 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 		print('\tPrediction time = {}'.format(end_time - start_time))
 		print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
 
-is_dynamic = True
+is_dynamic = False
 if is_dynamic:
 	# Dynamic RNNs use variable-length dataset.
 	# TODO [improve] >> Training & validation datasets are still fixed-length (static).
@@ -406,7 +406,7 @@ if False:
 # REF [site] >> https://talbaumel.github.io/attention/
 
 if True:
-	is_bidirectional = True
+	is_bidirectional = False
 	rnnModel = ReverseFunctionTensorFlowEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional)
 
 	#--------------------
@@ -420,58 +420,3 @@ if True:
 	evaluate_model(session, rnnModel, batch_size)
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
 	predict_model(session, rnnModel, batch_size, test_strs)
-
-#%%
-enc_state_size = 128
-dec_state_size = 128
-dropout_rate = 0.5
-batch_size = 4
-num_epochs = 50
-
-# Build a model.
-# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
-attn_enc_inputs = Input(shape=(None, VOCAB_SIZE))
-#attn_enc_inputs = Input(shape=(MAX_TOKEN_LEN, VOCAB_SIZE))
-attn_enc_lstm1 = LSTM(enc_state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True, return_state=True)
-attn_enc_outputs, attn_enc_state_h, attn_enc_state_c = attn_enc_lstm1(attn_enc_inputs)
-# Discard 'attn_enc_outputs' and only keep the states.
-attn_enc_states = [attn_enc_state_h, attn_enc_state_c]
-
-# Input shape = (samples, time-steps, features).
-attn_attn_inputs = Input(shape=(enc_state_size,))
-attn_attn_lstm1 = LSTM(dec_state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate)
-attn_attn_outputs = attn_attn_lstm1(attn_attn_inputs)
-attn_attn_dense = Dense(VOCAB_SIZE, activation='softmax')
-attn_attn_outputs = attn_attn_dense(attn_attn_outputs)
-
-# Input shape = (samples, time-steps, features).
-attn_dec_inputs = Input(shape=(enc_state_size,))
-attn_dec_lstm1 = LSTM(dec_state_size, dropout=dropout_rate, recurrent_dropout=dropout_rate)
-attn_dec_outputs = attn_dec_lstm1(attn_dec_inputs)
-attn_dec_dense = Dense(VOCAB_SIZE, activation='softmax')
-attn_dec_outputs = attn_dec_dense(attn_dec_outputs)
-
-attn_model = Model(inputs=attn_enc_inputs, outputs=attn_dec_outputs)
-
-# Summarize the model.
-#print(attn_model.summary())
-
-# Train.
-optimizer = optimizers.Adam(lr=1.0e-5, decay=1.0e-9, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
-
-attn_model.compile(optimizer=optimizer, loss=keras.losses.categorical_crossentropy, metrics=['accuracy'])
-
-history = attn_model.fit(train_data, train_labels_ahead_of_one_timestep,
-		batch_size=batch_size, epochs=num_epochs,
-		validation_data=(val_data, val_labels_ahead_of_one_timestep))
-		#validation_split=0.2)
-display_history(history)
-
-# Save the model.
-attn_model.save('seq2seq_reverse_function_attention_model.h5')
-
-# Evaluate.
-test_loss, test_accuracy = attn_model.evaluate(val_data, val_labels_ahead_of_one_timestep, batch_size=batch_size, verbose=1)
-print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
-
-# Predict.

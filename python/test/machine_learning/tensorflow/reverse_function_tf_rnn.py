@@ -38,8 +38,12 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 						return self._create_static_rnn(input_tensor, is_training_tensor, num_time_steps, num_classes)
 
 	def _create_dynamic_rnn(self, input_tensor, is_training_tensor, num_classes):
+		"""
 		num_hidden_units = 256
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 512
+		keep_prob = 0.5
 
 		# Defines a cell.
 		cell = self._create_cell(num_hidden_units)
@@ -67,9 +71,13 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_dynamic_stacked_rnn(self, input_tensor, is_training_tensor, num_classes):
-		num_hidden_units = 128
 		num_layers = 2
-		keep_prob = 0.75
+		"""
+		num_hidden_units = 128
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
@@ -98,8 +106,12 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_dynamic_birnn(self, input_tensor, is_training_tensor, num_classes):
+		"""
 		num_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		cell_fw = self._create_cell(num_hidden_units)  # Forward cell.
@@ -131,9 +143,13 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_dynamic_stacked_birnn(self, input_tensor, is_training_tensor, num_classes):
-		num_hidden_units = 64
 		num_layers = 2
-		keep_prob = 0.75
+		"""
+		num_hidden_units = 64
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 128
+		keep_prob = 0.5
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
@@ -166,8 +182,12 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
+		"""
 		num_hidden_units = 256
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 512
+		keep_prob = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
 		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
@@ -222,9 +242,13 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_stacked_rnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-		num_hidden_units = 128
 		num_layers = 2
-		keep_prob = 0.75
+		"""
+		num_hidden_units = 128
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 256
+		keep_prob = 0.5
 
 		"""
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
@@ -293,8 +317,12 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
+		"""
 		num_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		cell_fw = self._create_cell(num_hidden_units)  # Forward cell.
@@ -331,9 +359,13 @@ class ReverseFunctionTensorFlowRNN(ReverseFunctionRNN):
 			return fc1
 
 	def _create_static_stacked_birnn(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
-		num_hidden_units = 64
 		num_layers = 2
-		keep_prob = 0.75
+		"""
+		num_hidden_units = 64
+		keep_prob = 1.0
+		"""
+		num_hidden_units = 128
+		keep_prob = 0.5
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent

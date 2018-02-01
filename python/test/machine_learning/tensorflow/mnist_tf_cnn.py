@@ -116,7 +116,7 @@ class MnistTensorFlowCNN(MnistCNN):
 			activations = act(preactivations, name='activation')
 			"""
 			with tf.name_scope('weights'):
-				kernel = self._weight_variable(kernel_shape + (output_dim,))
+				kernel = self._weight_variable(kernel_shape + (output_dim,), 'Variable')
 				self._variable_summaries(kernel, True)
 			conv = tf.nn.conv2d(input_tensor, filter=kernel, strides=strides, padding=padding)
 			#tf.summary.histogram('convolution', conv)
@@ -135,7 +135,7 @@ class MnistTensorFlowCNN(MnistCNN):
 		with tf.name_scope(layer_name):
 			# This variable will hold the state of the weights for the layer.
 			with tf.name_scope('weights'):
-				weights = self._weight_variable((input_dim, output_dim))
+				weights = self._weight_variable((input_dim, output_dim), 'Variable')
 				self._variable_summaries(weights)
 			with tf.name_scope('biases'):
 				biases = self._bias_variable((output_dim,))

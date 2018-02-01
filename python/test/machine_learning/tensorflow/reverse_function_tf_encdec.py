@@ -11,23 +11,29 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 
 	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
 		with tf.variable_scope('reverse_function_tf_encdec', reuse=tf.AUTO_REUSE):
+			use_previous_output_in_decoder = False
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:
-					return self._create_dynamic_bidirectional_model(input_tensor, is_training_tensor, num_classes)
+					return self._create_dynamic_bidirectional_model(input_tensor, is_training_tensor, num_classes, use_previous_output_in_decoder)
 				else:
-					return self._create_dynamic_model(input_tensor, is_training_tensor, num_classes)
+					return self._create_dynamic_model(input_tensor, is_training_tensor, num_classes, use_previous_output_in_decoder)
 			else:
 				num_time_steps, num_classes = input_shape[0], output_shape[-1]
 				if self._is_bidirectional:
-					return self._create_static_bidirectional_model(input_tensor, is_training_tensor, num_time_steps, num_classes)
+					return self._create_static_bidirectional_model(input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder)
 				else:
-					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes)
+					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder)
 
-	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes, use_previous_output_in_decoder):
+		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_enc_hidden_units = 256
+		num_dec_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		enc_cell = self._create_cell(num_enc_hidden_units)
@@ -39,16 +45,34 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Uses the last output of the encoder only.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
-		enc_cell_output_shape = tf.shape(enc_cell_outputs)
-		enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units]), [1, enc_cell_output_shape[1], 1])
-
 		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		if use_previous_output_in_decoder:
+			# When using the last output of the encoder (context) and the previous output of the decoder together.
+			input_shape = tf.shape(input_tensor)
+			batch_size = input_shape[0]
+			# FIXME [improve] >> Do not use num_time_steps as far as possible. Refer to np.rollaxis().
+			num_time_steps = input_shape[1]
+
+			# TODO [enhance] >> The dimension of tensors is fixed as 3.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
+			context = enc_cell_outputs[:,-1,:]
+			dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+			# TODO [check] >> Is None ok?
+			dec_cell_output = None  # The start word.
+			dec_cell_outputs = []
+			for _ in range(num_time_steps):
+				dec_cell_output, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, [context, dec_cell_output], initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+				dec_cell_outputs.append(dec_cell_output)
+		else:
+			# Uses the last output of the encoder only.
+			# TODO [enhance] >> The dimension of tensors is fixed as 3.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
+			#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
+			enc_cell_output_shape = tf.shape(enc_cell_outputs)
+			enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units]), [1, enc_cell_output_shape[1], 1])
+
+			#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -67,10 +91,15 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_dynamic_bidirectional_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_dynamic_bidirectional_model(self, input_tensor, is_training_tensor, num_classes, use_previous_output_in_decoder):
+		"""
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_enc_hidden_units = 128
+		num_dec_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		enc_cell_fw = self._create_cell(num_enc_hidden_units)  # Forward cell.
@@ -86,16 +115,34 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
 		#enc_cell_states = tf.concat(enc_cell_states, 2)
 
-		# Uses the last output of the encoder only.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
-		enc_cell_output_shape = tf.shape(enc_cell_outputs)
-		enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units * 2]), [1, enc_cell_output_shape[1], 1])
-
 		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+		if use_previous_output_in_decoder:
+			# When using the last output of the encoder (context) and the previous output of the decoder together.
+			input_shape = tf.shape(input_tensor)
+			batch_size = input_shape[0]
+			# FIXME [improve] >> Do not use num_time_steps as far as possible. Refer to np.rollaxis().
+			num_time_steps = input_shape[1]
+
+			# TODO [enhance] >> The dimension of tensors is fixed as 3.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
+			context = enc_cell_outputs[:,-1,:]
+			dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+			# TODO [check] >> Is None ok?
+			dec_cell_output = None  # The start word.
+			dec_cell_outputs = []
+			for _ in range(num_time_steps):
+				dec_cell_output, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, [context, dec_cell_output], initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+				dec_cell_outputs.append(dec_cell_output)
+		else:
+			# Uses the last output of the encoder only.
+			# TODO [enhance] >> The dimension of tensors is fixed as 3.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
+			#enc_cell_outputs = tf.tile(enc_cell_outputs[:,-1,:], [1, num_time_steps, 1])
+			enc_cell_output_shape = tf.shape(enc_cell_outputs)
+			enc_cell_outputs = tf.tile(tf.reshape(enc_cell_outputs[:,-1,:], [-1, 1, num_enc_hidden_units * 2]), [1, enc_cell_output_shape[1], 1])
+
+			#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -114,10 +161,15 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
+	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder):
+		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_enc_hidden_units = 256
+		num_dec_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		enc_cell = self._create_cell(num_enc_hidden_units)
@@ -133,27 +185,26 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
 		# Decoder.
-		if True:
-			# Uses the last output of the encoder only.
-			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
-			enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
-	
-			# Decoder.
-			#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-			dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		else:
+		if use_previous_output_in_decoder:
 			# When using the last output of the encoder (context) and the previous output of the decoder together.
-			input_shape = tf.shape(input_tensor)
+			input_shape = tf.shape(input_tensor[0])
 			batch_size = input_shape[0]
 
 			context = enc_cell_outputs[-1]
 			dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-			# FIXME [fix] >>
+			# TODO [check] >> Is None ok?
 			dec_cell_output = None  # The start word.
 			dec_cell_outputs = []
 			for _ in range(num_time_steps):
 				dec_cell_output, dec_cell_state = tf.nn.static_rnn(dec_cell, [context, dec_cell_output], initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
 				dec_cell_outputs.append(dec_cell_output)
+		else:
+			# Uses the last output of the encoder only.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
+			enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+	
+			#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
@@ -175,10 +226,15 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_static_bidirectional_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
+	def _create_static_bidirectional_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder):
+		"""
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
-		keep_prob = 0.75
+		keep_prob = 1.0
+		"""
+		num_enc_hidden_units = 128
+		num_dec_hidden_units = 256
+		keep_prob = 0.5
 
 		# Defines cells.
 		enc_cell_fw = self._create_cell(num_enc_hidden_units)  # Forward cell.
@@ -196,13 +252,26 @@ class ReverseFunctionTensorFlowEncoderDecoder(ReverseFunctionRNN):
 		#enc_cell_states = tf.concat((enc_cell_state_fw, enc_cell_state_bw), 2)  # ?
 		enc_cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Uses the last output of the encoder only.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
-		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+		if use_previous_output_in_decoder:
+			# TODO [check] >> Is None ok?
+			input_shape = tf.shape(input_tensor[0])
+			batch_size = input_shape[0]
 
-		# Decoder.
-		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			context = enc_cell_outputs[-1]
+			dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+			# TODO [check] >> Is None correct?
+			dec_cell_output = None  # The start word.
+			dec_cell_outputs = []
+			for _ in range(num_time_steps):
+				dec_cell_output, dec_cell_state = tf.nn.static_rnn(dec_cell, [context, dec_cell_output], initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+				dec_cell_outputs.append(dec_cell_output)
+		else:
+			# Uses the last output of the encoder only.
+			# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
+			enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps
+
+			#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
