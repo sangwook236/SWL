@@ -121,27 +121,47 @@ def max_len(dataset):
 	return ml
 
 # Fixed-length dataset.
-def create_array_dataset(input_output_pairs, str_len):
-	num_data = len(input_output_pairs)
-	input_data = np.full((num_data, str_len), char2int[EOS])
-	output_data = np.full((num_data, str_len), char2int[EOS])
-	output_data_ahead_of_one_timestep = np.full((num_data, str_len), char2int[EOS])
+def create_array_dataset(input_output_pairs, max_time_steps, num_features, is_time_major):
+	num_samples = len(input_output_pairs)
+	input_data = np.full((num_samples, max_time_steps), char2int[EOS])
+	output_data = np.full((num_samples, max_time_steps), char2int[EOS])
+	output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), char2int[EOS])
 	for (i, (inp, outp)) in enumerate(input_output_pairs):
 		input_data[i,:len(inp)] = np.array(inp)
 		outa = np.array(outp)
 		output_data[i,:len(outp)] = outa
 		output_data_ahead_of_one_timestep[i,:(len(outp) - 1)] = outa[1:]
 
-	return input_data, output_data, output_data_ahead_of_one_timestep
+	# (samples, time-steps) -> (samples, time-steps, features).
+	input_data = keras.utils.to_categorical(input_data, num_features).reshape(input_data.shape + (-1,))
+	output_data = keras.utils.to_categorical(output_data, num_features).reshape(output_data.shape + (-1,))
+	output_data_ahead_of_one_timestep = keras.utils.to_categorical(output_data_ahead_of_one_timestep, num_features).reshape(output_data_ahead_of_one_timestep.shape + (-1,))
 
-# Variable-size dataset.
-def create_list_dataset(input_output_pairs, str_len):
+	if is_time_major:
+		# (time-steps, samples, features) -> (samples, time-steps, features).
+		return np.stack(input_data, axis=1), np.stack(output_data, axis=1), np.stack(output_data_ahead_of_one_timestep, axis=1)
+	else:
+		return input_data, output_data, output_data_ahead_of_one_timestep
+
+# Variable-length dataset.
+def create_list_dataset(input_output_pairs, num_features, is_time_major):
 	input_data, output_data, output_data_ahead_of_one_timestep = [], [], []
-	for (inp, outp) in input_output_pairs:
-		input_data.append(np.array(inp))
-		output_data.append(np.array(outp))
-		output_data_ahead_of_one_timestep.append(np.array(outp[1:]))
+	if is_time_major:
+		# Cannot create a time-major dataset.
+		raise NotImplementedError
+	else:
+		for (inp, outp) in input_output_pairs:
+			input_data.append(np.array(inp))
+			output_data.append(np.array(outp))
+			output_data_ahead_of_one_timestep.append(np.array(outp[1:]))
 
+		# A 'samples' list of (time-steps) -> A 'samples' list of (time-steps, features).
+		tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
+		for (dat, lbl, lbl_ahead) in zip(input_data, output_data, output_data_ahead_of_one_timestep):
+			tmp_data.append(keras.utils.to_categorical(dat, num_features).reshape(dat.shape + (-1,)))
+			tmp_labels.append(keras.utils.to_categorical(lbl, num_features).reshape(lbl.shape + (-1,)))
+			tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, num_features).reshape(lbl_ahead.shape + (-1,)))
+		input_data, output_data, output_data_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
 	return input_data, output_data, output_data_ahead_of_one_timestep
 
 def decode_predicted_sequence(prediction):
@@ -216,42 +236,21 @@ val_string_list = create_string_dataset(num_val_data, MAX_STRING_LEN)
 train_numeric_list = convert_string_dataset_to_numeric_dataset(train_string_list)
 val_numeric_list = convert_string_dataset_to_numeric_dataset(val_string_list)
 
+# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
+is_time_major = False
 if True:
-	# Uses fixed-length dataset.
+	# Uses a fixed-length dataset of type np.array.
 
-	train_data, train_labels, train_labels_ahead_of_one_timestep = create_array_dataset(train_numeric_list, MAX_TOKEN_LEN)
-	#val_data, _, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN)
-	val_data, val_labels, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN)
-
-	# Reshape input to be (samples, time-steps, features) = (num_train_data, MAX_TOKEN_LEN, VOCAB_SIZE).
-	train_data = keras.utils.to_categorical(train_data, VOCAB_SIZE).reshape(train_data.shape + (-1,))
-	train_labels = keras.utils.to_categorical(train_labels, VOCAB_SIZE).reshape(train_labels.shape + (-1,))
-	train_labels_ahead_of_one_timestep = keras.utils.to_categorical(train_labels_ahead_of_one_timestep, VOCAB_SIZE).reshape(train_labels_ahead_of_one_timestep.shape + (-1,))
-	# Reshape input to be (samples, time-steps, features) = (num_val_data, MAX_TOKEN_LEN, VOCAB_SIZE).
-	val_data = keras.utils.to_categorical(val_data, VOCAB_SIZE).reshape(val_data.shape + (-1,))
-	val_labels = keras.utils.to_categorical(val_labels, VOCAB_SIZE).reshape(val_labels.shape + (-1,))
-	val_labels_ahead_of_one_timestep = keras.utils.to_categorical(val_labels_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_labels_ahead_of_one_timestep.shape + (-1,))
+	train_data, train_labels, train_labels_ahead_of_one_timestep = create_array_dataset(train_numeric_list, MAX_TOKEN_LEN, VOCAB_SIZE, is_time_major)
+	#val_data, _, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN, is_time_major)
+	val_data, val_labels, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN, VOCAB_SIZE, is_time_major)
 else:
-	# Uses variable-length dataset.
+	# Uses a variable-length dataset of a list of np.array.
 	# TensorFlow internally uses np.arary for tf.placeholder. (?)
 
-	train_data, train_labels, train_labels_ahead_of_one_timestep = create_list_dataset(train_numeric_list, MAX_TOKEN_LEN)
-	#val_data, _, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, MAX_TOKEN_LEN)
-	val_data, val_labels, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, MAX_TOKEN_LEN)
-
-	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
-	for (dat, lbl, lbl_ahead) in zip(train_data, train_labels, train_labels_ahead_of_one_timestep):
-		tmp_data.append(keras.utils.to_categorical(dat, VOCAB_SIZE).reshape(dat.shape + (-1,)))
-		tmp_labels.append(keras.utils.to_categorical(lbl, VOCAB_SIZE).reshape(lbl.shape + (-1,)))
-		tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, VOCAB_SIZE).reshape(lbl_ahead.shape + (-1,)))
-	train_data, train_labels, train_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
-	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
-	for (dat, lbl, lbl_ahead) in zip(val_data, val_labels, val_labels_ahead_of_one_timestep):
-		tmp_data.append(keras.utils.to_categorical(dat, VOCAB_SIZE).reshape(dat.shape + (-1,)))
-		tmp_labels.append(keras.utils.to_categorical(lbl, VOCAB_SIZE).reshape(lbl.shape + (-1,)))
-		tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, VOCAB_SIZE).reshape(lbl_ahead.shape + (-1,)))
-	val_data, val_labels, val_labels_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
-	tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
+	train_data, train_labels, train_labels_ahead_of_one_timestep = create_list_dataset(train_numeric_list, VOCAB_SIZE, is_time_major)
+	#val_data, _, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, is_time_major)
+	val_data, val_labels, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, VOCAB_SIZE, is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -323,12 +322,18 @@ is_dynamic = False
 if is_dynamic:
 	# Dynamic RNNs use variable-length dataset.
 	# TODO [improve] >> Training & validation datasets are still fixed-length (static).
-	input_shape = (None, VOCAB_SIZE)
-	output_shape = (None, VOCAB_SIZE)
+	input_shape = (None, None, VOCAB_SIZE)
+	output_shape = (None, None, VOCAB_SIZE)
 else:
 	# Static RNNs use fixed-length dataset.
-	input_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
-	output_shape = (MAX_TOKEN_LEN, VOCAB_SIZE)
+	if is_time_major:
+		# (time-steps, samples, features).
+		input_shape = (MAX_TOKEN_LEN, None, VOCAB_SIZE)
+		output_shape = (MAX_TOKEN_LEN, None, VOCAB_SIZE)
+	else:
+		# (samples, time-steps, features).
+		input_shape = (None, MAX_TOKEN_LEN, VOCAB_SIZE)
+		output_shape = (None, MAX_TOKEN_LEN, VOCAB_SIZE)
 
 #%%------------------------------------------------------------------
 # Simple RNN.
@@ -337,7 +342,7 @@ else:
 if False:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked)
+	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
@@ -362,7 +367,7 @@ if False:
 if False:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked)
+	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
@@ -387,11 +392,11 @@ if False:
 
 if False:
 	is_bidirectional = True
-	rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional)
+	rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 150  # Number of times to iterate over training data.
+	num_epochs = 50  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0
@@ -406,8 +411,8 @@ if False:
 # REF [site] >> https://talbaumel.github.io/attention/
 
 if True:
-	is_bidirectional = False
-	rnnModel = ReverseFunctionTensorFlowEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional)
+	is_bidirectional = True
+	rnnModel = ReverseFunctionTensorFlowEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

@@ -4,28 +4,31 @@ from reverse_function_rnn import ReverseFunctionRNN
 #%%------------------------------------------------------------------
 
 class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
-	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True):
+	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True, is_time_major=False):
 		self._is_dynamic = is_dynamic
 		self._is_bidirectional = is_bidirectional
+		self._is_time_major = is_time_major
 		super().__init__(input_shape, output_shape)
 
 	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
-		use_previous_output_in_decoder = False
 		with tf.variable_scope('reverse_function_tf_attention', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:
-					return self._create_dynamic_bidirectional_model(input_tensor, is_training_tensor, num_classes)
+					return self._create_dynamic_bidirectional_model(input_tensor, is_training_tensor, num_classes, self._is_time_major)
 				else:
-					return self._create_dynamic_model(input_tensor, is_training_tensor, num_classes)
+					return self._create_dynamic_model(input_tensor, is_training_tensor, num_classes, self._is_time_major)
 			else:
-				num_time_steps, num_classes = input_shape[0], output_shape[-1]
-				if self._is_bidirectional:
-					return self._create_static_bidirectional_model(input_tensor, is_training_tensor, num_time_steps, num_classes)
+				if self._is_time_major:
+					num_time_steps, num_classes = input_shape[0], output_shape[-1]
 				else:
-					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder)
+					num_time_steps, num_classes = input_shape[1], output_shape[-1]
+				if self._is_bidirectional:
+					return self._create_static_bidirectional_model(input_tensor, is_training_tensor, num_time_steps, num_classes, self._is_time_major)
+				else:
+					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes, self._is_time_major)
 
-	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
@@ -36,23 +39,35 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell = self._create_cell(num_enc_hidden_units)
+		enc_cell = self._create_unit_cell(num_enc_hidden_units)
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, attention_window_len, state_is_tuple=True)
-		dec_cell = self._create_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
 		# Encoder.
-		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
-		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
+		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
+		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
 
-		# Attention.
+		input_shape = tf.shape(input_tensor[0])
+		batch_size = input_shape[0]
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		dec_cell_outputs = []
+		for _ in range(num_time_steps):
+			# Attention.
+			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
+			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
 
-		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+			# Decoder.
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#cell_outputs, dec_cell_state = dec_cell((context, dec_cell_output), dec_cell_state, scope='dec')
+			#cell_outputs, dec_cell_state = dec_cell(dec_cell_output, (context, dec_cell_state), scope='dec')
+			cell_outputs, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
+			dec_cell_outputs.append(cell_outputs)
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -71,7 +86,7 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_dynamic_bidirectional_model(self, input_tensor, is_training_tensor, num_classes):
+	def _create_dynamic_bidirectional_model(self, input_tensor, is_training_tensor, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
@@ -82,24 +97,35 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell_fw = self._create_cell(num_enc_hidden_units)  # Forward cell.
+		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
 		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		enc_cell_bw = self._create_cell(num_enc_hidden_units)  # Backward cell.
+		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
 		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Encoder.
-		#enc_cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32)
-		enc_cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32)
+		#enc_cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
+		enc_cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
 		#enc_cell_states = tf.concat(enc_cell_states, 2)
 
-		# Attention.
+		input_shape = tf.shape(input_tensor[0])
+		batch_size = input_shape[0]
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		dec_cell_outputs = []
+		for _ in range(num_time_steps):
+			# Attention.
+			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
+			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
 
-		# Decoder.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			# Decoder.
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#cell_outputs, dec_cell_state = dec_cell((context, dec_cell_output), dec_cell_state, scope='dec')
+			#cell_outputs, dec_cell_state = dec_cell(dec_cell_output, (context, dec_cell_state), scope='dec')
+			cell_outputs, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
+			dec_cell_outputs.append(cell_outputs)
 
 		#with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -118,7 +144,7 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, use_previous_output_in_decoder):
+	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
@@ -129,17 +155,20 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell = self._create_cell(num_enc_hidden_units)
+		enc_cell = self._create_unit_cell(num_enc_hidden_units)
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, attention_window_len, state_is_tuple=True)
-		dec_cell = self._create_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		if is_time_major:
+			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
+		else:
+			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Encoder.
 		#enc_cell_outputs, enc_cell_state = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
@@ -148,21 +177,26 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		# TODO [check] >> Is None ok?
-		dec_cell_output = None  # The start word.
+		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# Attention.
-			# TODO [check] >> dec_cell_state[0] or dec_cell_state[1]. dec_cell_state is an instance of tf.contrib.rnn.LSTMStateTuple, which stores (c, h).
-			context = self._attend_additively(enc_cell_outputs, dec_cell_state[1])
-			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state[1])
+			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
+			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
 
 			# Decoder.
-			dec_cell_output, dec_cell_state = tf.nn.static_rnn(dec_cell, [context, dec_cell_output] if use_previous_output_in_decoder else context, initial_state=dec_cell_state, dtype=tf.float32, scope='dec')
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#dec_cell_output, dec_cell_state = dec_cell((context, dec_cell_output), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, (context, dec_cell_state), scope='dec')
+			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 
+
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
+		if is_time_major:
+			cell_outputs = tf.stack(dec_cell_outputs, axis=0)
+		else:
+			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -181,7 +215,7 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_static_bidirectional_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes):
+	def _create_static_bidirectional_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
@@ -192,29 +226,47 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell_fw = self._create_cell(num_enc_hidden_units)  # Forward cell.
+		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
 		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		enc_cell_bw = self._create_cell(num_enc_hidden_units)  # Backward cell.
+		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
 		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units)
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		if is_time_major:
+			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
+		else:
+			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Encoder.
-		#enc_cell_outputs, enc_cell_state_fw, enc_cell_state_bw = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
+		#enc_cell_outputs, enc_cell_state_fw, enc_cell_state_bw = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 		#enc_cell_states = tf.concat((enc_cell_state_fw, enc_cell_state_bw), 2)  # ?
 		enc_cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 
-		# Attention.
+		input_shape = tf.shape(input_tensor[0])
+		batch_size = input_shape[0]
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		dec_cell_outputs = []
+		for _ in range(num_time_steps):
+			# Attention.
+			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
+			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
+			#context = enc_cell_outputs[-1]  # For testing.
 
-		# Decoder.
-		#dec_cell_outputs, dec_cell_state = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
-		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
+			# Decoder.
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#dec_cell_output, dec_cell_state = dec_cell((context, dec_cell_output), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, (context, dec_cell_state), scope='dec')
+			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
+			dec_cell_outputs.append(dec_cell_output)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		cell_outputs = tf.stack(dec_cell_outputs, axis=1)
+		if is_time_major:
+			cell_outputs = tf.stack(dec_cell_outputs, axis=0)
+		else:
+			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
 		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -233,11 +285,13 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 
 			return fc1
 
-	def _create_cell(self, num_units):
+	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units, forget_bias=1.0)
-		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.RNNCell(num_units, forget_bias=1.0)
+
+		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
+
 		#return tf.contrib.rnn.GRUCell(num_units, forget_bias=1.0)
 
 	# REF [function] >> _weight_variable() in ./mnist_tf_cnn.py.
@@ -263,10 +317,7 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 			if is_filter:
 				tf.summary.image('filter', var)  # Visualizes filters.
 
-	# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
-	# REF [site] >> https://talbaumel.github.io/attention/
-	def _attend_additively(self, inputs, state):
+	def _create_variables_for_additive_attention(self, inputs, state):
 		#input_shape = tf.shape(inputs[0])
 		#state_shape = tf.shape(state)
 		# TODO [caution] >> inputs is a list.
@@ -274,25 +325,34 @@ class ReverseFunctionTensorFlowEncoderDecoderWithAttention(ReverseFunctionRNN):
 		state_shape = state.get_shape().as_list()
 
 		with tf.name_scope('attention_W1'):
-			attention_W1 = self._weight_variable((input_shape[-1], input_shape[-1]), 'VariableW1')
-			self._variable_summaries(attention_W1)
+			W1 = self._weight_variable((input_shape[-1], input_shape[-1]), 'W1')
+			self._variable_summaries(W1)
 		with tf.name_scope('attention_W2'):
-			attention_W2 = self._weight_variable((state_shape[-1], input_shape[-1]), 'VariableW2')
-			self._variable_summaries(attention_W2)
+			W2 = self._weight_variable((state_shape[-1], input_shape[-1]), 'W2')
+			self._variable_summaries(W2)
 		with tf.name_scope('attention_V'):
-			attention_V = self._weight_variable((input_shape[-1], 1), 'VariableV')
-			self._variable_summaries(attention_V)
+			V = self._weight_variable((input_shape[-1], 1), 'V')
+			self._variable_summaries(V)
+		return W1, W2, V
 
+	# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+	# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
+	# REF [site] >> https://talbaumel.github.io/attention/
+	# FIXME [improve] >> Too slow.
+	def _attend_additively(self, inputs, state, W1, W2, V):
 		attention_weights = []
 		for inp in inputs:
-			attention_weight = tf.matmul(inp, attention_W1) + tf.matmul(state, attention_W2)
-			attention_weight = tf.matmul(tf.tanh(attention_weight), attention_V)
+			attention_weight = tf.matmul(inp, W1) + tf.matmul(state, W2)
+			attention_weight = tf.matmul(tf.tanh(attention_weight), V)
 			attention_weights.append(attention_weight)
 
-		attention_weights = tf.nn.softmax(tf.convert_to_tensor(attention_weights, dtype=tf.float32))
-		return tf.reduce_sum(tf.convert_to_tensor([inp * weight for inp, weight in zip(inputs, attention_weights)], dtype=tf.float32), axis=1)
+		attention_weights = tf.nn.softmax(attention_weights)  # alpha.
+		attention_weights = tf.unstack(attention_weights, len(inputs), axis=0)
+		return tf.reduce_sum([inp * weight for inp, weight in zip(inputs, attention_weights)], axis=0)  # Context, c.
 
 	# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+	# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
 	def _attend_multiplicatively(self, inputs, state):
 		raise NotImplementedError
