@@ -19,7 +19,7 @@ class NeuralNetTrainer(object):
 		self._loss, self._accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 
 		self._global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
-		self._train_step = self._train(self._loss, self._global_step)
+		self._train_step = self._get_train_step(self._loss, self._global_step)
 
 	def train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None):
 		# Merge all the summaries.
@@ -191,5 +191,5 @@ class NeuralNetTrainer(object):
 		plt.show()
 		plt.close(fig)
 
-	def _train(self, loss, global_step=None):
+	def _get_train_step(self, loss, global_step=None):
 		raise NotImplementedError

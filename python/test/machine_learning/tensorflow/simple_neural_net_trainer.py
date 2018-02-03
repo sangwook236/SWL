@@ -3,11 +3,11 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 
 #%%------------------------------------------------------------------
 
-class SimpleRnnTrainer(NeuralNetTrainer):
+class SimpleNeuralNetTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		super().__init__(neuralNet, initial_epoch)
 
-	def _train(self, loss, global_step=None):
+	def _get_train_step(self, loss, global_step=None):
 		with tf.name_scope('learning_rate'):
 			#learning_rate = tf.train.exponential_decay(0.001, global_step=global_step, decay_steps=10, decay_rate=0.995, staircase=True)
 			learning_rate = 0.001

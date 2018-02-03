@@ -3,11 +3,11 @@ from keras.layers import Input, Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 #from keras import optimizers, callbacks
 import tensorflow as tf
-from mnist_cnn import MnistCNN
+from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistKerasCNN(MnistCNN):
+class MnistKerasCNN(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type=0):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)

@@ -1,10 +1,10 @@
 import tensorflow.contrib.slim as slim
 import tensorflow as tf
-from mnist_cnn import MnistCNN
+from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistTfSlimCNN(MnistCNN):
+class MnistTfSlimCNN(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 

@@ -32,8 +32,8 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 #import numpy as np
 import tensorflow as tf
-from simple_rnn_tf import SimpleRNNForTF
-from simple_rnn_keras import SimpleRNNForKeras
+from simple_encdec import SimpleEncoderDecoder
+from simple_encdec_attention import SimpleEncoderDecoderWithAttention
 from simple_rnn_trainer import SimpleRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
@@ -48,7 +48,7 @@ import time
 
 import datetime
 
-output_dir_prefix = 'reverse_function_rnn'
+output_dir_prefix = 'reverse_function_encdec'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
@@ -59,7 +59,7 @@ val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_su
 
 #%%------------------------------------------------------------------
 # Prepare data.
-
+	
 characters = list('abcd')
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
@@ -143,21 +143,17 @@ else:
 		output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
-# Simple RNN.
+# Encoder-decoder model.
+# REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 # REF [site] >> https://talbaumel.github.io/attention/
 
 if False:
-	# Build a model.
-	is_stacked = True  # Uses multiple layers.
-	rnnModel = SimpleRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
-	#from keras import backend as K
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = SimpleRNNForKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
+	is_bidirectional = True
+	rnnModel = SimpleEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
+	num_epochs = 50  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0
@@ -168,17 +164,12 @@ if False:
 	predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
-# Bidirectional RNN.
+# Attention model.
 # REF [site] >> https://talbaumel.github.io/attention/
 
 if True:
-	# Build a model.
-	is_stacked = True  # Uses multiple layers.
-	rnnModel = SimpleRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
-	#from keras import backend as K
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = SimpleRNNForKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
+	is_bidirectional = True
+	rnnModel = SimpleEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

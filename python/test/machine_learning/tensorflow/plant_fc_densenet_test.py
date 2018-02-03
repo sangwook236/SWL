@@ -26,7 +26,7 @@ import numpy as np
 import tensorflow as tf
 from sklearn.model_selection import train_test_split
 from plant_fc_densenet import PlantFcDenseNet
-from plant_fc_densenet_trainer import PlantFcDenseNetTrainer
+from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
@@ -173,7 +173,7 @@ initial_epoch = 0
 
 #--------------------
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-	nnTrainer = PlantFcDenseNetTrainer(denseNetModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(denseNetModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None

@@ -23,7 +23,7 @@ from mnist_tf_cnn import MnistTensorFlowCNN
 #from mnist_tf_slim_cnn import MnistTfSlimCNN
 #from mnist_keras_cnn import MnistKerasCNN
 #from mnist_tflearn_cnn import MnistTfLearnCNN
-from mnist_cnn_trainer import MnistCnnTrainer
+from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
@@ -133,7 +133,7 @@ initial_epoch = 0
 
 #--------------------
 if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-	nnTrainer = MnistCnnTrainer(cnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(cnnModel, initial_epoch)
 	print('[SWL] Info: Created a trainer.')
 else:
 	nnTrainer = None

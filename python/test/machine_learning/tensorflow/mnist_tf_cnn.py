@@ -1,9 +1,9 @@
 import tensorflow as tf
-from mnist_cnn import MnistCNN
+from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistTensorFlowCNN(MnistCNN):
+class MnistTensorFlowCNN(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
