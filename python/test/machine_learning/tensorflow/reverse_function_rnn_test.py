@@ -32,11 +32,11 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 import numpy as np
 import tensorflow as tf
-from reverse_function_rnn_tf import ReverseFunctionRNNInTF
-from reverse_function_rnn_keras import ReverseFunctionRNNInKeras
-from reverse_function_encdec import ReverseFunctionEncoderDecoder
-from reverse_function_encdec_attention import ReverseFunctionEncoderDecoderWithAttention
-from reverse_function_rnn_trainer import ReverseFunctionRnnTrainer
+from simple_rnn_tf import SimpleRNNForTF
+from simple_rnn_keras import SimpleRNNForKeras
+from simple_encdec import SimpleEncoderDecoder
+from simple_encdec_attention import SimpleEncoderDecoderWithAttention
+from simple_rnn_trainer import SimpleRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 #from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
@@ -151,11 +151,11 @@ else:
 if False:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionRNNInTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = ReverseFunctionRNNInKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
+	#rnnModel = ReverseFunctionRNNForKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
@@ -176,11 +176,11 @@ if False:
 if True:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionRNNInTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = ReverseFunctionRNNInKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
+	#rnnModel = ReverseFunctionRNNForKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

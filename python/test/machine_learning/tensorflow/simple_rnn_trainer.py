@@ -3,7 +3,7 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 
 #%%------------------------------------------------------------------
 
-class ReverseFunctionRnnTrainer(NeuralNetTrainer):
+class SimpleRnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		super().__init__(neuralNet, initial_epoch)
 
