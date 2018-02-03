@@ -1,10 +1,10 @@
 import tensorflow as tf
 from keras.layers import LSTM, Dense, Bidirectional
-from reverse_function_rnn import ReverseFunctionRNN
+from reverse_function_neural_net import ReverseFunctionNeuralNet
 
 #%%------------------------------------------------------------------
 
-class ReverseFunctionKerasRNN(ReverseFunctionRNN):
+class ReverseFunctionRNNInKeras(ReverseFunctionNeuralNet):
 	def __init__(self, input_shape, output_shape, is_bidirectional=True, is_stacked=True):
 		self._is_bidirectional = is_bidirectional
 		self._is_stacked = is_stacked
@@ -15,9 +15,9 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 		#	In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
 		#		K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		#		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		#dropout_rate = 0.75 if True == is_training_tensor else 0.0  # Error: Not working.
+		#dropout_rate = 0.5 if True == is_training_tensor else 0.0  # Error: Not working.
 		#dropout_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
-		dropout_rate = 0.25
+		dropout_rate = 0.5
 
 		num_classes = output_shape[-1]
 		with tf.variable_scope('reverse_function_keras_rnn', reuse=tf.AUTO_REUSE):
@@ -33,7 +33,7 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 					return self._create_rnn(input_tensor, num_classes, dropout_rate)
 
 	def _create_rnn(self, input_tensor, num_classes, dropout_rate):
-		num_hidden_units = 256
+		num_hidden_units = 512
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		x = LSTM(num_hidden_units, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True)(input_tensor)
@@ -50,7 +50,7 @@ class ReverseFunctionKerasRNN(ReverseFunctionRNN):
 		return x
 
 	def _create_stacked_rnn(self, input_tensor, num_classes, dropout_rate):
-		num_hidden_units = 128
+		num_hidden_units = 256
 
 		# Input shape = (samples, time-steps, features) = (None, None, VOCAB_SIZE).
 		x = LSTM(num_hidden_units, dropout=dropout_rate, recurrent_dropout=dropout_rate, return_sequences=True)(input_tensor)

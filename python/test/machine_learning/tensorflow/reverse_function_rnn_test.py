@@ -31,18 +31,16 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 
 #--------------------
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from random import choice, randrange
-from reverse_function_tf_rnn import ReverseFunctionTensorFlowRNN
-from reverse_function_tf_encdec import ReverseFunctionTensorFlowEncoderDecoder
-from reverse_function_tf_attention import ReverseFunctionTensorFlowEncoderDecoderWithAttention
-from reverse_function_keras_rnn import ReverseFunctionKerasRNN
+from reverse_function_rnn_tf import ReverseFunctionRNNInTF
+from reverse_function_rnn_keras import ReverseFunctionRNNInKeras
+from reverse_function_encdec import ReverseFunctionEncoderDecoder
+from reverse_function_encdec_attention import ReverseFunctionEncoderDecoderWithAttention
 from reverse_function_rnn_trainer import ReverseFunctionRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 #from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
-import keras
+from reverse_function_util import ReverseFunctionDataset
 import time
 
 #np.random.seed(7)
@@ -62,195 +60,14 @@ train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_di
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
 
 #%%------------------------------------------------------------------
-# Generate a toy problem.
-# REF [site] >> https://talbaumel.github.io/attention/
-
-def sample_model(min_length, max_length):
-	random_length = randrange(min_length, max_length)
-	# Pick a random length.
-	random_char_list = [choice(characters[1:-1]) for _ in range(random_length)]
-	# Pick random chars.
-	random_str = ''.join(random_char_list)
-	return random_str, random_str[::-1]  # Return the random string and its reverse.
-
-# A character string to a numeric datum(numeric list).
-def str2datum(str):
-	#str = list(str) + [EOS]
-	str = [SOS] + list(str) + [EOS]
-	return [char2int[ch] for ch in str]
-
-# A numeric datum(numeric list) to a character string.
-def datum2str(datum):
-	locs = np.where(char2int[EOS] == datum)
-	datum = datum[:locs[0][0]]
-	#return ''.join([int2char[no] for no in datum[:]])
-	return ''.join([int2char[no] for no in datum[1:]])
-
-# Preprocessing function for character strings.
-def preprocess_string(str):
-	return str2datum(str)
-
-def create_dataset(dataset, window_size=1):
-	dataX, dataY = [], []
-	# FIXME [check] >> Which one is correct?
-	#for i in range(len(dataset) - window_size - 1):
-	for i in range(len(dataset) - window_size):
-		dataX.append(dataset[i:(i + window_size)])
-		dataY.append(dataset[i + window_size])  # Next character.
-	return np.array(dataX), np.array(dataY)
-
-def create_string_dataset(num_data, str_len):
-	return [sample_model(1, str_len) for _ in range(num_data)]
-
-def convert_string_dataset_to_numeric_dataset(dataset):
-	data = []
-	for input_str, output_str in dataset:
-		#_, x = create_dataset(preprocess_string(input_str), window_size=0)
-		#_, y = create_dataset(preprocess_string(output_str), window_size=0)
-		x = preprocess_string(input_str)
-		y = preprocess_string(output_str)
-		data.append((x, y))
-	return data
-
-def max_len(dataset):
-	num_data = len(dataset)
-	ml = 0
-	for i in range(num_data):
-		if len(dataset[i][0]) > ml:
-			ml = len(dataset[i][0])
-	return ml
-
-# Fixed-length dataset.
-def create_array_dataset(input_output_pairs, max_time_steps, num_features, is_time_major):
-	num_samples = len(input_output_pairs)
-	input_data = np.full((num_samples, max_time_steps), char2int[EOS])
-	output_data = np.full((num_samples, max_time_steps), char2int[EOS])
-	output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), char2int[EOS])
-	for (i, (inp, outp)) in enumerate(input_output_pairs):
-		input_data[i,:len(inp)] = np.array(inp)
-		outa = np.array(outp)
-		output_data[i,:len(outp)] = outa
-		output_data_ahead_of_one_timestep[i,:(len(outp) - 1)] = outa[1:]
-
-	# (samples, time-steps) -> (samples, time-steps, features).
-	input_data = keras.utils.to_categorical(input_data, num_features).reshape(input_data.shape + (-1,))
-	output_data = keras.utils.to_categorical(output_data, num_features).reshape(output_data.shape + (-1,))
-	output_data_ahead_of_one_timestep = keras.utils.to_categorical(output_data_ahead_of_one_timestep, num_features).reshape(output_data_ahead_of_one_timestep.shape + (-1,))
-
-	if is_time_major:
-		# (time-steps, samples, features) -> (samples, time-steps, features).
-		return np.stack(input_data, axis=1), np.stack(output_data, axis=1), np.stack(output_data_ahead_of_one_timestep, axis=1)
-	else:
-		return input_data, output_data, output_data_ahead_of_one_timestep
-
-# Variable-length dataset.
-def create_list_dataset(input_output_pairs, num_features, is_time_major):
-	input_data, output_data, output_data_ahead_of_one_timestep = [], [], []
-	if is_time_major:
-		# Cannot create a time-major dataset.
-		raise NotImplementedError
-	else:
-		for (inp, outp) in input_output_pairs:
-			input_data.append(np.array(inp))
-			output_data.append(np.array(outp))
-			output_data_ahead_of_one_timestep.append(np.array(outp[1:]))
-
-		# A 'samples' list of (time-steps) -> A 'samples' list of (time-steps, features).
-		tmp_data, tmp_labels, tmp_labels_ahead = [], [], []
-		for (dat, lbl, lbl_ahead) in zip(input_data, output_data, output_data_ahead_of_one_timestep):
-			tmp_data.append(keras.utils.to_categorical(dat, num_features).reshape(dat.shape + (-1,)))
-			tmp_labels.append(keras.utils.to_categorical(lbl, num_features).reshape(lbl.shape + (-1,)))
-			tmp_labels_ahead.append(keras.utils.to_categorical(lbl_ahead, num_features).reshape(lbl_ahead.shape + (-1,)))
-		input_data, output_data, output_data_ahead_of_one_timestep = tmp_data, tmp_labels, tmp_labels_ahead
-	return input_data, output_data, output_data_ahead_of_one_timestep
-
-def decode_predicted_sequence(prediction):
-	num_tokens = prediction.shape[1]
-	predicted_sentence = ''
-	for i in range(num_tokens):
-		token_index = np.argmax(prediction[0, i, :])
-		ch = int2char[token_index]
-		predicted_sentence += ch
-
-	return predicted_sentence;
-
-def decode_sequence(encoder_model, decoder_model, input_seq):
-	# Encode the input as state vectors.
-	states_output = encoder_model.predict(input_seq)
-
-	# Generate empty target sequence of length 1.
-	target_seq = np.zeros((1, 1, VOCAB_SIZE))
-	# Populate the first character of target sequence with the start character.
-	target_seq[0, 0, 0] = 1  # <SOS>.
-
-	# Sampling loop for a batch of sequences (to simplify, here we assume a batch of size 1).
-	stop_condition = False
-	decoded_sentence = ''
-	while not stop_condition:
-		output_tokens, h, c = decoder_model.predict([target_seq] + states_output)
-
-		# Sample a token.
-		sampled_token_index = np.argmax(output_tokens[0, -1, :])
-		sampled_char = int2char[sampled_token_index]
-		decoded_sentence += sampled_char
-
-		# Exit condition: either hit max length or find stop character.
-		if (sampled_char == EOS or len(decoded_sentence) > MAX_TOKEN_LEN):
-			stop_condition = True
-
-		# Update the target sequence (of length 1).
-		target_seq = np.zeros((1, 1, VOCAB_SIZE))
-		target_seq[0, 0, sampled_token_index] = 1
-
-		# Update states.
-		states_output = [h, c]
-
-	return decoded_sentence
-
-#%%------------------------------------------------------------------
 # Prepare data.
-	
-SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
-EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+
 characters = list('abcd')
-characters = [SOS] + characters + [EOS]
-
-int2char = list(characters)
-char2int = {c:i for i, c in enumerate(characters)}
-
-VOCAB_SIZE = len(characters)
-
-#print(sample_model(4, 5))
-#print(sample_model(5, 10))
-
-MAX_STRING_LEN = 15
-#MAX_TOKEN_LEN = MAX_STRING_LEN
-#MAX_TOKEN_LEN = MAX_STRING_LEN + 1
-MAX_TOKEN_LEN = MAX_STRING_LEN + 2
-num_train_data = 3000
-num_val_data = 100
-
-train_string_list = create_string_dataset(num_train_data, MAX_STRING_LEN)
-val_string_list = create_string_dataset(num_val_data, MAX_STRING_LEN)
-
-train_numeric_list = convert_string_dataset_to_numeric_dataset(train_string_list)
-val_numeric_list = convert_string_dataset_to_numeric_dataset(val_string_list)
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
 is_time_major = False
-if True:
-	# Uses a fixed-length dataset of type np.array.
-
-	train_data, train_labels, train_labels_ahead_of_one_timestep = create_array_dataset(train_numeric_list, MAX_TOKEN_LEN, VOCAB_SIZE, is_time_major)
-	#val_data, _, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN, is_time_major)
-	val_data, val_labels, val_labels_ahead_of_one_timestep = create_array_dataset(val_numeric_list, MAX_TOKEN_LEN, VOCAB_SIZE, is_time_major)
-else:
-	# Uses a variable-length dataset of a list of np.array.
-	# TensorFlow internally uses np.arary for tf.placeholder. (?)
-
-	train_data, train_labels, train_labels_ahead_of_one_timestep = create_list_dataset(train_numeric_list, VOCAB_SIZE, is_time_major)
-	#val_data, _, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, is_time_major)
-	val_data, val_labels, val_labels_ahead_of_one_timestep = create_list_dataset(val_numeric_list, VOCAB_SIZE, is_time_major)
+dataset = ReverseFunctionDataset(characters)
+train_data, train_labels, train_labels_ahead_of_one_timestep, val_data, val_labels, val_labels_ahead_of_one_timestep = dataset.generate_dataset(is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -298,22 +115,14 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 	nnPredictor = NeuralNetPredictor()
 	with session.as_default() as sess:
 		# Character strings -> numeric data.
-		test_data = np.full((len(test_strs), MAX_TOKEN_LEN), char2int[EOS])
-		for (i, str) in enumerate(test_strs):
-			tmp = np.array(preprocess_string(str))
-			test_data[i,:tmp.shape[0]] = tmp
-		test_data.reshape((-1,) + test_data.shape)
-		test_data = keras.utils.to_categorical(test_data, VOCAB_SIZE).reshape(test_data.shape + (-1,))
+		test_data = dataset.to_numeric_data(test_strs)
 
 		start_time = time.time()
 		predictions = nnPredictor.predict(sess, rnnModel, test_data)
 		end_time = time.time()
 
 		# Numeric data -> character strings.
-		predictions = np.argmax(predictions, axis=-1)
-		predicted_strs = []
-		for pred in predictions:
-			predicted_strs.append(datum2str(pred))
+		predicted_strs = dataset.to_char_strings(predictions)
 
 		print('\tPrediction time = {}'.format(end_time - start_time))
 		print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
@@ -322,18 +131,18 @@ is_dynamic = False
 if is_dynamic:
 	# Dynamic RNNs use variable-length dataset.
 	# TODO [improve] >> Training & validation datasets are still fixed-length (static).
-	input_shape = (None, None, VOCAB_SIZE)
-	output_shape = (None, None, VOCAB_SIZE)
+	input_shape = (None, None, dataset.vocab_size)
+	output_shape = (None, None, dataset.vocab_size)
 else:
 	# Static RNNs use fixed-length dataset.
 	if is_time_major:
 		# (time-steps, samples, features).
-		input_shape = (MAX_TOKEN_LEN, None, VOCAB_SIZE)
-		output_shape = (MAX_TOKEN_LEN, None, VOCAB_SIZE)
+		input_shape = (dataset.max_token_len, None, dataset.vocab_size)
+		output_shape = (dataset.max_token_len, None, dataset.vocab_size)
 	else:
 		# (samples, time-steps, features).
-		input_shape = (None, MAX_TOKEN_LEN, VOCAB_SIZE)
-		output_shape = (None, MAX_TOKEN_LEN, VOCAB_SIZE)
+		input_shape = (None, dataset.max_token_len, dataset.vocab_size)
+		output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
 # Simple RNN.
@@ -342,11 +151,11 @@ else:
 if False:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionRNNInTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
+	#rnnModel = ReverseFunctionRNNInKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
@@ -364,18 +173,18 @@ if False:
 # Bidirectional RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
-if False:
+if True:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = ReverseFunctionTensorFlowRNN(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionRNNInTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = ReverseFunctionKerasRNN(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
+	#rnnModel = ReverseFunctionRNNInKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 120  # Number of times to iterate over training data.
+	num_epochs = 50  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0
@@ -392,7 +201,7 @@ if False:
 
 if False:
 	is_bidirectional = True
-	rnnModel = ReverseFunctionTensorFlowEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
@@ -410,9 +219,9 @@ if False:
 # Attention model.
 # REF [site] >> https://talbaumel.github.io/attention/
 
-if True:
+if False:
 	is_bidirectional = True
-	rnnModel = ReverseFunctionTensorFlowEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	rnnModel = ReverseFunctionEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

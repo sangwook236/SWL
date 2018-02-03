@@ -3,7 +3,7 @@ from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet
 
 #%%------------------------------------------------------------------
 
-class ReverseFunctionRNN(TensorFlowNeuralNet):
+class ReverseFunctionNeuralNet(TensorFlowNeuralNet):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 
