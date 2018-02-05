@@ -28,6 +28,24 @@ class SimpleSeq2SeqWithAttention(SimpleNeuralNet):
 				else:
 					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes, self._is_time_major)
 
+	def _loss(self, y, t):
+		with tf.name_scope('loss'):
+			"""
+			if 1 == num_classes:
+				loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=t, logits=y))
+			elif num_classes >= 2:
+				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y), reduction_indices=[1]))
+				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), reduction_indices=[1]))
+				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
+			"""
+			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+			masks = tf.sequence_mask(Y_seq_len, tf.reduce_max(Y_seq_len), dtype=tf.float32)
+			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
+			tf.summary.scalar('loss', loss)
+			return loss
+
 	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 128

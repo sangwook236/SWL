@@ -7,7 +7,7 @@ from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistKerasCNN(SimpleNeuralNet):
+class MnistCnnUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type=0):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)

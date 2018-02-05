@@ -4,7 +4,7 @@ from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistTfLearnCNN(SimpleNeuralNet):
+class MnistCnnUsingTfLearn(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 

@@ -4,7 +4,7 @@ from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class SimpleRNNForKeras(SimpleNeuralNet):
+class SimpleRnnUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_bidirectional=True, is_stacked=True):
 		self._is_bidirectional = is_bidirectional
 		self._is_stacked = is_stacked

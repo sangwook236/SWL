@@ -19,10 +19,10 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 import numpy as np
 import tensorflow as tf
-from mnist_tf_cnn import MnistTensorFlowCNN
-#from mnist_tf_slim_cnn import MnistTfSlimCNN
-#from mnist_keras_cnn import MnistKerasCNN
-#from mnist_tflearn_cnn import MnistTfLearnCNN
+from mnist_cnn_tf import MnistCnnUsingTF
+#from mnist_cnn_tf_slim import MnistCnnUsingTfSlim
+#from mnist_cnn_keras import MnistCnnUsingKeras
+#from mnist_cnn_tflearn import MnistCnnUsingTfLearn
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
@@ -96,13 +96,13 @@ train_images, train_labels, test_images, test_labels = load_data(data_dir_path, 
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnModel = MnistTensorFlowCNN(input_shape, output_shape)
-#cnnModel = MnistTfSlimCNN(input_shape, output_shape)
-#cnnModel = MnistTfLearnCNN(input_shape, output_shape)
+cnnModel = MnistCnnUsingTF(input_shape, output_shape)
+#cnnModel = MnistCnnUsingTfSlim(input_shape, output_shape)
+#cnnModel = MnistCnnForTfLearn(input_shape, output_shape)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#cnnModel = MnistKerasCNN(input_shape, output_shape)
+#cnnModel = MnistCnnUsingKeras(input_shape, output_shape)
 
 print('[SWL] Info: Created a model.')
 

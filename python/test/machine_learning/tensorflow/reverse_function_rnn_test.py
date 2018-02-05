@@ -32,8 +32,8 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 #import numpy as np
 import tensorflow as tf
-from simple_rnn_tf import SimpleRNNForTF
-from simple_rnn_keras import SimpleRNNForKeras
+from simple_rnn_tf import SimpleRnnUsingTF
+from simple_rnn_keras import SimpleRnnUsingKeras
 from simple_rnn_trainer import SimpleRnnTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
@@ -61,11 +61,11 @@ val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_su
 # Prepare data.
 
 characters = list('abcd')
+dataset = ReverseFunctionDataset(characters)
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
 is_time_major = False
-dataset = ReverseFunctionDataset(characters)
-train_data, train_labels, train_labels_ahead_of_one_timestep, val_data, val_labels, val_labels_ahead_of_one_timestep = dataset.generate_dataset(is_time_major)
+train_input_seqs, train_output_seqs, _, val_input_seqs, val_output_seqs, _ = dataset.generate_dataset(is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -91,7 +91,7 @@ def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoc
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(sess, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -103,7 +103,7 @@ def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_data, val_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_input_seqs, val_output_seqs, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
@@ -116,7 +116,7 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 		test_data = dataset.to_numeric_data(test_strs)
 
 		start_time = time.time()
-		predictions = nnPredictor.predict(sess, rnnModel, test_data)
+		predictions = nnPredictor.predict(sess, rnnModel, test_data, batch_size)
 		end_time = time.time()
 
 		# Numeric data -> character strings.
@@ -149,11 +149,11 @@ else:
 if False:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = SimpleRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = SimpleRnnUsingTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = SimpleRNNForKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
+	#rnnModel = SimpleRnnUsingKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
@@ -174,11 +174,11 @@ if False:
 if True:
 	# Build a model.
 	is_stacked = True  # Uses multiple layers.
-	rnnModel = SimpleRNNForTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
+	rnnModel = SimpleRnnUsingTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=True, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	#rnnModel = SimpleRNNForKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
+	#rnnModel = SimpleRnnUsingKeras(input_shape, output_shape, is_bidirectional=True, is_stacked=is_stacked)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

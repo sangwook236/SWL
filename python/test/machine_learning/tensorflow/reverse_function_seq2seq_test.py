@@ -60,11 +60,11 @@ val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_su
 # Prepare data.
 	
 characters = list('abcd')
+dataset = ReverseFunctionDataset(characters)
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
 is_time_major = False
-dataset = ReverseFunctionDataset(characters)
-train_data, train_labels, train_labels_ahead_of_one_timestep, val_data, val_labels, val_labels_ahead_of_one_timestep = dataset.generate_dataset(is_time_major)
+train_input_seqs, train_output_seqs, train_output_seqs_of_one_timestep, val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep = dataset.generate_dataset(is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -90,7 +90,7 @@ def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoc
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(sess, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -102,7 +102,7 @@ def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_data, val_labels, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_input_seqs, val_output_seqs, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
@@ -115,7 +115,7 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 		test_data = dataset.to_numeric_data(test_strs)
 
 		start_time = time.time()
-		predictions = nnPredictor.predict(sess, rnnModel, test_data)
+		predictions = nnPredictor.predict(sess, rnnModel, test_data, batch_size)
 		end_time = time.time()
 
 		# Numeric data -> character strings.

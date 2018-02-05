@@ -3,7 +3,7 @@ from simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
-class SimpleRNNForTF(SimpleNeuralNet):
+class SimpleRnnUsingTF(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True, is_stacked=True, is_time_major=False):
 		self._is_dynamic = is_dynamic
 		self._is_bidirectional = is_bidirectional

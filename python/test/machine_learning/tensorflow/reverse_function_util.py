@@ -20,11 +20,11 @@ class ReverseFunctionDataset(object):
 		self._int2char = list(self._characters)
 		self._char2int = {c:i for i, c in enumerate(self._characters)}
 
-		#print(self._sample_model(4, 5))
-		#print(self._sample_model(5, 10))
-
 		self._num_train_data = 3000
 		self._num_val_data = 100
+
+		#print(self._sample_model(4, 5))
+		#print(self._sample_model(5, 10))
 	
 	@property
 	def vocab_size(self):
@@ -44,18 +44,18 @@ class ReverseFunctionDataset(object):
 		if True:
 			# Uses a fixed-length dataset of type np.array.
 
-			train_data, train_labels, train_labels_ahead_of_one_timestep = self._create_array_dataset(train_numeric_list, self._MAX_TOKEN_LEN, self._VOCAB_SIZE, is_time_major)
-			#val_data, _, val_labels_ahead_of_one_timestep = self._create_array_dataset(val_numeric_list, self._MAX_TOKEN_LEN, is_time_major)
-			val_data, val_labels, val_labels_ahead_of_one_timestep = self._create_array_dataset(val_numeric_list, self._MAX_TOKEN_LEN, self._VOCAB_SIZE, is_time_major)
+			train_input_seqs, train_output_seqs, train_output_seqs_ahead_of_one_timestep = self._create_array_dataset(train_numeric_list, self._MAX_TOKEN_LEN, self._VOCAB_SIZE, is_time_major)
+			#val_input_seqs, _, val_output_seqs_ahead_of_one_timestep = self._create_array_dataset(val_numeric_list, self._MAX_TOKEN_LEN, is_time_major)
+			val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep = self._create_array_dataset(val_numeric_list, self._MAX_TOKEN_LEN, self._VOCAB_SIZE, is_time_major)
 		else:
 			# Uses a variable-length dataset of a list of np.array.
 			# TensorFlow internally uses np.arary for tf.placeholder. (?)
 
-			train_data, train_labels, train_labels_ahead_of_one_timestep = self._create_list_dataset(train_numeric_list, self._VOCAB_SIZE, is_time_major)
-			#val_data, _, val_labels_ahead_of_one_timestep = self._create_list_dataset(val_numeric_list, is_time_major)
-			val_data, val_labels, val_labels_ahead_of_one_timestep = self._create_list_dataset(val_numeric_list, self._VOCAB_SIZE, is_time_major)
+			train_input_seqs, train_output_seqs, train_output_seqs_ahead_of_one_timestep = self._create_list_dataset(train_numeric_list, self._VOCAB_SIZE, is_time_major)
+			#val_input_seqs, _, val_output_seqs_ahead_of_one_timestep = self._create_list_dataset(val_numeric_list, is_time_major)
+			val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep = self._create_list_dataset(val_numeric_list, self._VOCAB_SIZE, is_time_major)
 
-		return train_data, train_labels, train_labels_ahead_of_one_timestep, val_data, val_labels, val_labels_ahead_of_one_timestep
+		return train_input_seqs, train_output_seqs, train_output_seqs_ahead_of_one_timestep, val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep
 
 	# Character strings -> numeric data.
 	def to_numeric_data(self, char_strs):
