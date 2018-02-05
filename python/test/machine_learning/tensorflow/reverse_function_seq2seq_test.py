@@ -32,7 +32,7 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 #import numpy as np
 import tensorflow as tf
-from simple_seq2seq_attention import SimpleSeq2SeqWithAttention
+from simple_seq2seq_encdec_attention import SimpleSeq2SeqEncoderDecoderWithAttention
 from simple_seq2seq_trainer import SimpleSeq2SeqTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
@@ -142,11 +142,11 @@ else:
 		output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
-# Sequence-to-sequence attention model.
+# Sequence-to-sequence model w/ attention.
 
 if True:
-	is_bidirectional = True
-	rnnModel = SimpleSeq2SeqWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	is_bidirectional = False
+	rnnModel = SimpleSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

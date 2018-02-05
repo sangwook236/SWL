@@ -153,7 +153,7 @@ if False:
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 50  # Number of times to iterate over training data.
+	num_epochs = 150  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0
@@ -164,7 +164,7 @@ if False:
 	predict_model(session, rnnModel, batch_size, test_strs)
 
 #%%------------------------------------------------------------------
-# Attention model.
+# Encoder-decoder model w/ attention.
 # REF [site] >> https://talbaumel.github.io/attention/
 
 if True:
@@ -173,7 +173,7 @@ if True:
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 50  # Number of times to iterate over training data.
+	num_epochs = 150  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0

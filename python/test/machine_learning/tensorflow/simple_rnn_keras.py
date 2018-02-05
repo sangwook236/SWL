@@ -10,7 +10,7 @@ class SimpleRnnUsingKeras(SimpleNeuralNet):
 		self._is_stacked = is_stacked
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
+	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
 		# Note [info] >> Because is_training_tensor is a TensorFlow tensor, it can not be used as an argument in Keras.
 		#	In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
 		#		K.set_learning_phase(1)  # Set the learning phase to 'train'.
@@ -20,7 +20,7 @@ class SimpleRnnUsingKeras(SimpleNeuralNet):
 		dropout_rate = 0.5
 
 		num_classes = output_shape[-1]
-		with tf.variable_scope('reverse_function_keras_rnn', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('simple_rnn_using_keras', reuse=tf.AUTO_REUSE):
 			if self._is_bidirectional:
 				if self._is_stacked:
 					return self._create_stacked_birnn(input_tensor, num_classes, dropout_rate)

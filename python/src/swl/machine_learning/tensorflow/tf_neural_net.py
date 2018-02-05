@@ -8,10 +8,10 @@ class TensorFlowNeuralNet(object):
 		self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape)
 		self._is_training_tensor_ph = tf.placeholder(tf.bool)
 
-		# model_output is used in training, evaluation, & prediction steps.
-		self._model_output = self._create_model(self._input_tensor_ph, self._is_training_tensor_ph, input_shape, output_shape)
+		# model_output is used in training, evaluation, and prediction steps.
+		self._model_output = self._create_model(self._input_tensor_ph, self._output_tensor_ph, self._is_training_tensor_ph, input_shape, output_shape)
 
-		# Loss & accuracy are used in training & evaluation steps.
+		# Loss and accuracy are used in training and evaluation steps.
 		self._loss = self._loss(self._model_output, self._output_tensor_ph)
 		self._accuracy = self._accuracy(self._model_output, self._output_tensor_ph)
 

@@ -11,8 +11,8 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		self._is_time_major = is_time_major
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
-		with tf.variable_scope('reverse_function_tf_rnn', reuse=tf.AUTO_REUSE):
+	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
+		with tf.variable_scope('simple_rnn_using_tf', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:
