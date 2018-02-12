@@ -4,9 +4,9 @@ import tensorflow as tf
 
 class TensorFlowNeuralNet(object):
 	def __init__(self, input_shape, output_shape):
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=input_shape)
-		self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape)
-		self._is_training_tensor_ph = tf.placeholder(tf.bool)
+		self._input_tensor_ph = tf.placeholder(tf.float32, shape=input_shape, name='input_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
+		self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and prediction steps.
 		self._model_output = self._create_model(self._input_tensor_ph, self._output_tensor_ph, self._is_training_tensor_ph, input_shape, output_shape)

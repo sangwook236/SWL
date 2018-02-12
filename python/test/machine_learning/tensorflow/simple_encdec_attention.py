@@ -147,7 +147,6 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 			return fc1
 
 	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
-		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -155,6 +154,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		num_enc_hidden_units = 256
 		num_dec_hidden_units = 256
 		keep_prob = 0.5
+		"""
 
 		# Defines cells.
 		enc_cell = self._create_unit_cell(num_enc_hidden_units)

@@ -145,12 +145,12 @@ else:
 # Sequence-to-sequence encoder-decoder model w/ attention.
 
 if True:
-	is_bidirectional = False
-	rnnModel = SimpleSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	is_bidirectional = True
+	rnnModel = SimpleSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 50  # Number of times to iterate over training data.
+	num_epochs = 1  # Number of times to iterate over training data.
 
 	shuffle = True
 	initial_epoch = 0

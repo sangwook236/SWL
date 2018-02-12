@@ -34,6 +34,14 @@ class ReverseFunctionDataset(object):
 	def max_token_len(self):
 		return self._MAX_TOKEN_LEN
 
+	@property
+	def start_token(self):
+		return self._char2int[self._SOS]
+
+	@property
+	def end_token(self):
+		return self._char2int[self._EOS]
+
 	def generate_dataset(self, is_time_major):
 		train_string_list = self._create_string_dataset(self._num_train_data, self._MAX_STRING_LEN)
 		val_string_list = self._create_string_dataset(self._num_val_data, self._MAX_STRING_LEN)
