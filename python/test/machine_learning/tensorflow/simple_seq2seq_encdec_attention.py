@@ -117,9 +117,13 @@ class SimpleSeq2SeqEncoderDecoderWithAttention(SimpleNeuralNet):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-		training_helper = tf.contrib.seq2seq.TrainingHelper(inputs=output_tensor, sequence_length=output_seq_lens, time_major=is_time_major)
+		def get_training_helper():
+			return tf.contrib.seq2seq.TrainingHelper(inputs=output_tensor, sequence_length=output_seq_lens, time_major=is_time_major)
+		def get_testing_helper():
+			return tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=output_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
+		helper = tf.cond(is_training_tensor, get_training_helper, get_testing_helper)
 		decoder = tf.contrib.seq2seq.BasicDecoder(
-			dec_cell, helper=training_helper,
+			dec_cell, helper=helper,
 			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state),  # tf.contrib.seq2seq.AttentionWrapperState.
 			output_layer=output_layer)
 		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
@@ -184,12 +188,20 @@ class SimpleSeq2SeqEncoderDecoderWithAttention(SimpleNeuralNet):
 				assert num_classes > 0, 'Invalid number of classes.'
 
 		training_helper = tf.contrib.seq2seq.TrainingHelper(inputs=output_tensor, sequence_length=output_seq_lens, time_major=is_time_major)
-		decoder = tf.contrib.seq2seq.BasicDecoder(
+		testing_helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=output_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
+		training_decoder = tf.contrib.seq2seq.BasicDecoder(
 			dec_cell, helper=training_helper,
 			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states),  # tf.contrib.seq2seq.AttentionWrapperState.
 			output_layer=output_layer)
+		testing_decoder = tf.contrib.seq2seq.BasicDecoder(
+			dec_cell, helper=testing_helper,
+			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states),  # tf.contrib.seq2seq.AttentionWrapperState.
+			output_layer=output_layer)
 		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
-		decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
+		#decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
+		training_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(training_decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
+		testing_decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(testing_decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if output_seq_lens is None else tf.reduce_max(output_seq_lens))
+		decoder_outputs = tf.cond(is_training_tensor, lambda: training_decoder_outputs, lambda: testing_decoder_outputs)
 
 		return decoder_outputs.rnn_output
 
