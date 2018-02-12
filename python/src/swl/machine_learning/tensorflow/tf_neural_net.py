@@ -27,11 +27,11 @@ class TensorFlowNeuralNet(object):
 	def accuracy(self):
 		return self._accuracy
 
-	def get_feed_dict(self, data, labels=None, is_training=True):
+	def get_feed_dict(self, data, labels=None, is_training=True, **kwargs):
 		if labels is None:
-			feed_dict = { self._input_tensor_ph: data, self._is_training_tensor_ph: is_training}
+			feed_dict = {self._input_tensor_ph: data, self._is_training_tensor_ph: is_training}
 		else:
-			feed_dict = { self._input_tensor_ph: data, self._output_tensor_ph: labels, self._is_training_tensor_ph: is_training}
+			feed_dict = {self._input_tensor_ph: data, self._output_tensor_ph: labels, self._is_training_tensor_ph: is_training}
 		return feed_dict
 
 	def _create_model(self, input_tensor, is_training_tensor, num_classes):

@@ -34,7 +34,7 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 import tensorflow as tf
 from simple_rnn_tf import SimpleRnnUsingTF
 from simple_rnn_keras import SimpleRnnUsingKeras
-from simple_rnn_trainer import SimpleRnnTrainer
+from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 #from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
@@ -84,7 +84,7 @@ session = tf.Session(config=config)
 #%%------------------------------------------------------------------
 
 def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
-	nnTrainer = SimpleRnnTrainer(rnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
 	session.run(tf.global_variables_initializer())
 	with session.as_default() as sess:
 		# Save a model every 2 hours and maximum 5 latest models are saved.

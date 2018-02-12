@@ -142,7 +142,7 @@ else:
 		output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
-# Sequence-to-sequence model w/ attention.
+# Sequence-to-sequence encoder-decoder model w/ attention.
 
 if True:
 	is_bidirectional = False
