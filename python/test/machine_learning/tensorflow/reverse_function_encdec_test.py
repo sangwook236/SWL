@@ -65,7 +65,9 @@ dataset = ReverseFunctionDataset(characters)
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
 is_time_major = False
-train_input_seqs, train_output_seqs, _, val_input_seqs, val_output_seqs, _ = dataset.generate_dataset(is_time_major)
+# NOTICE [info] >> There is no additional input to the decoder except the hidden state c of the encoder.
+train_encoder_input_seqs, train_decoder_output_seqs, _, val_encoder_input_seqs, val_decoder_output_seqs, _ = dataset.generate_dataset(is_time_major)
+#train_encoder_input_seqs, _, train_decoder_output_seqs, val_encoder_input_seqs, _, val_decoder_output_seqs = dataset.generate_dataset(is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -85,13 +87,14 @@ session = tf.Session(config=config)
 
 def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
 	nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
+	#nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
 	session.run(tf.global_variables_initializer())
 	with session.as_default() as sess:
 		# Save a model every 2 hours and maximum 5 latest models are saved.
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(sess, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -103,7 +106,7 @@ def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_input_seqs, val_output_seqs, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_encoder_input_seqs, val_decoder_output_seqs, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))

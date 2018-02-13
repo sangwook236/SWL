@@ -32,8 +32,8 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 #import numpy as np
 import tensorflow as tf
-from simple_seq2seq_encdec_attention import SimpleSeq2SeqEncoderDecoderWithAttention
-from simple_seq2seq_trainer import SimpleSeq2SeqTrainer
+from simple_tf_seq2seq_encdec_attention import SimpleTfSeq2SeqEncoderDecoderWithAttention
+from simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
 #from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
@@ -47,7 +47,7 @@ import time
 
 import datetime
 
-output_dir_prefix = 'reverse_function_seq2seq'
+output_dir_prefix = 'reverse_function_tf_seq2seq'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
@@ -64,7 +64,10 @@ dataset = ReverseFunctionDataset(characters)
 
 # FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
 is_time_major = False
-train_input_seqs, train_output_seqs, train_output_seqs_of_one_timestep, val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep = dataset.generate_dataset(is_time_major)
+# NOTICE [info] >> How to use the hidden state c of an encoder in a decoder?
+#	1) The hidden state c of the encoder is used as the initial state of the decoder and the previous output of the decoder may be used as its only input.
+#	2) The previous output of the decoder is used as its input along with the hidden state c of the encoder.
+train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs = dataset.generate_dataset(is_time_major)
 
 #%%------------------------------------------------------------------
 # Configure tensorflow.
@@ -83,14 +86,15 @@ session = tf.Session(config=config)
 #%%------------------------------------------------------------------
 
 def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
-	nnTrainer = SimpleSeq2SeqTrainer(rnnModel, initial_epoch)
+	#nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
 	session.run(tf.global_variables_initializer())
 	with session.as_default() as sess:
 		# Save a model every 2 hours and maximum 5 latest models are saved.
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(sess, train_encoder_input_seqs, train_decoder_input_seqs, val_encoder_input_seqs, val_decoder_input_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -102,7 +106,7 @@ def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_input_seqs, val_output_seqs, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_encoder_input_seqs, val_decoder_output_seqs, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
@@ -146,7 +150,7 @@ else:
 
 if True:
 	is_bidirectional = True
-	rnnModel = SimpleSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	rnnModel = SimpleTfSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.

@@ -63,8 +63,8 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], -1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], -1), scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
 			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 		"""
@@ -116,10 +116,10 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Encoder.
-		#enc_cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
+		#enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
-		enc_cell_outputs = tf.concat(enc_cell_outputs, 2)
-		#enc_cell_states = tf.concat(enc_cell_states, 2)
+		enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
+		#enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
 		"""
 		# When using the last output of the encoder (context) and the previous output of the decoder together.
@@ -136,8 +136,8 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], -1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], -1), scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
 			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 		"""
@@ -171,7 +171,6 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 			return fc1
 
 	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
-		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -179,6 +178,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		num_enc_hidden_units = 256
 		num_dec_hidden_units = 256
 		keep_prob = 0.5
+		"""
 
 		# Defines cells.
 		enc_cell = self._create_unit_cell(num_enc_hidden_units)
@@ -207,8 +207,8 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], -1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], -1), scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
 			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 		"""
@@ -269,9 +269,10 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Encoder.
-		#enc_cell_outputs, enc_cell_state_fw, enc_cell_state_bw = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
-		#enc_cell_states = tf.concat((enc_cell_state_fw, enc_cell_state_bw), 2)  # ?
+		#enc_cell_outputs, enc_cell_state_fw, enc_cell_state_bw = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
+		#enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)  # Don't need.
+		#enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_state_fw.c, enc_cell_state_bw.c), axis=-1), tf.concat((enc_cell_state_fw.h, enc_cell_state_bw.h), axis=-1))
 
 		"""
 		# When using the last output of the encoder (context) and the previous output of the decoder together.
@@ -284,8 +285,8 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], -1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], -1), scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
+			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
 			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 		"""
@@ -322,10 +323,10 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 			return fc1
 
 	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.RNNCell(num_units, forget_bias=1.0)
+		#return tf.contrib.rnn.BasicRNNCell(num_units)
+		#return tf.contrib.rnn.RNNCell(num_units)
 
 		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
-		#return tf.contrib.rnn.GRUCell(num_units, forget_bias=1.0)
+		#return tf.contrib.rnn.GRUCell(num_units)

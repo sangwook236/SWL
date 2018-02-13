@@ -126,8 +126,8 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Gets cell outputs.
 		#cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(cell_fw, cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
-		cell_outputs = tf.concat(cell_outputs, 2)
-		#cell_states = tf.concat(cell_states, 2)
+		cell_outputs = tf.concat(cell_outputs, axis=-1)
+		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
 		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -165,8 +165,8 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Gets cell outputs.
 		#cell_outputs, cell_states = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.bidirectional_dynamic_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, time_major=is_time_major, dtype=tf.float32)
-		cell_outputs = tf.concat(cell_outputs, 2)
-		#cell_states = tf.concat(cell_states, 2)
+		cell_outputs = tf.concat(cell_outputs, axis=-1)
+		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
 		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -354,8 +354,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
-		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs = tf.concat(cell_outputs, axis=-1)  # Don't need.
+		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_state_fw.c, cell_state_bw.c), axis=-1), tf.concat((cell_state_fw.h, cell_state_bw.h), axis=-1))
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		if is_time_major:
@@ -404,8 +405,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
-		#cell_states = tf.concat((cell_state_fw, cell_state_bw), 2)  # ?
 		cell_outputs, _, _ = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
+		#cell_outputs = tf.concat(cell_outputs, axis=-1)  # Don't need.
+		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_state_fw.c, cell_state_bw.c), axis=-1), tf.concat((cell_state_fw.h, cell_state_bw.h), axis=-1))
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		if is_time_major:
@@ -431,10 +433,10 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 			return fc1
 
 	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.RNNCell(num_units, forget_bias=1.0)
+		#return tf.contrib.rnn.BasicRNNCell(num_units)
+		#return tf.contrib.rnn.RNNCell(num_units)
 
 		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
-		#return tf.contrib.rnn.GRUCell(num_units, forget_bias=1.0)
+		#return tf.contrib.rnn.GRUCell(num_units)
