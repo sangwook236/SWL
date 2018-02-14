@@ -32,6 +32,7 @@ sys.path.append(lib_home_dir_path + '/tflearn_github')
 #--------------------
 #import numpy as np
 import tensorflow as tf
+from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
 from simple_tf_seq2seq_encdec_attention import SimpleTfSeq2SeqEncoderDecoderWithAttention
 from simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -94,7 +95,7 @@ def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoc
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_encoder_input_seqs, train_decoder_input_seqs, val_encoder_input_seqs, val_decoder_input_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train_seq2seq(sess, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -106,7 +107,7 @@ def evaluate_model(session, rnnModel, batch_size):
 	nnEvaluator = NeuralNetEvaluator()
 	with session.as_default() as sess:
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_encoder_input_seqs, val_decoder_output_seqs, batch_size)
+		test_loss, test_acc = nnEvaluator.evaluate_seq2seq(sess, rnnModel, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
@@ -119,7 +120,7 @@ def predict_model(session, rnnModel, batch_size, test_strs):
 		test_data = dataset.to_numeric_data(test_strs)
 
 		start_time = time.time()
-		predictions = nnPredictor.predict(sess, rnnModel, test_data, batch_size)
+		predictions = nnPredictor.predict_seq2seq(sess, rnnModel, test_data, batch_size)
 		end_time = time.time()
 
 		# Numeric data -> character strings.
@@ -138,19 +139,40 @@ else:
 	# Static RNNs use fixed-length dataset.
 	if is_time_major:
 		# (time-steps, samples, features).
-		input_shape = (dataset.max_token_len, None, dataset.vocab_size)
-		output_shape = (dataset.max_token_len, None, dataset.vocab_size)
+		encoder_input_shape = (dataset.max_token_len, None, dataset.vocab_size)
+		decoder_input_shape = (dataset.max_token_len, None, dataset.vocab_size)
+		decoder_output_shape = (dataset.max_token_len, None, dataset.vocab_size)
 	else:
 		# (samples, time-steps, features).
-		input_shape = (None, dataset.max_token_len, dataset.vocab_size)
-		output_shape = (None, dataset.max_token_len, dataset.vocab_size)
+		encoder_input_shape = (None, dataset.max_token_len, dataset.vocab_size)
+		decoder_input_shape = (None, dataset.max_token_len, dataset.vocab_size)
+		decoder_output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
-# Sequence-to-sequence encoder-decoder model w/ attention.
+# Sequence-to-sequence encoder-decoder model w/o attention.
 
 if True:
 	is_bidirectional = True
-	rnnModel = SimpleTfSeq2SeqEncoderDecoderWithAttention(input_shape, output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+	rnnModel = SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
+
+	#--------------------
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 1  # Number of times to iterate over training data.
+
+	shuffle = True
+	initial_epoch = 0
+
+	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
+	evaluate_model(session, rnnModel, batch_size)
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	predict_model(session, rnnModel, batch_size, test_strs)
+
+#%%------------------------------------------------------------------
+# TF Sequence-to-sequence encoder-decoder model w/ attention.
+
+if False:
+	is_bidirectional = True
+	rnnModel = SimpleTfSeq2SeqEncoderDecoderWithAttention(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
 	#--------------------
 	batch_size = 4  # Number of samples per gradient update.
