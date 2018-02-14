@@ -48,26 +48,6 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.dynamic_rnn(enc_cell, input_tensor, time_major=is_time_major, dtype=tf.float32, scope='enc')
 
-		"""
-		# When using the last output of the encoder (context) and the previous output of the decoder together.
-		input_shape = tf.shape(input_tensor)
-		batch_size = input_shape[0]
-		# FIXME [improve] >> Do not use num_time_steps as far as possible. Refer to np.rollaxis().
-		num_time_steps = input_shape[1]
-
-		# Decoder.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		context = enc_cell_outputs[:,-1,:]
-		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		dec_cell_outputs = []
-		for _ in range(num_time_steps):
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
-			dec_cell_outputs.append(dec_cell_output)
-		"""
 		# Uses the last output of the encoder only.
 		# TODO [enhance] >> The dimension of tensors is fixed as 3.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
@@ -121,26 +101,6 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
 		#enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
-		"""
-		# When using the last output of the encoder (context) and the previous output of the decoder together.
-		input_shape = tf.shape(input_tensor)
-		batch_size = input_shape[0]
-		# FIXME [improve] >> Do not use num_time_steps as far as possible. Refer to np.rollaxis().
-		num_time_steps = input_shape[1]
-
-		# Decoder.
-		# TODO [enhance] >> The dimension of tensors is fixed as 3.
-		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
-		context = enc_cell_outputs[:,-1,:]
-		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		dec_cell_outputs = []
-		for _ in range(num_time_steps):
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
-			dec_cell_outputs.append(dec_cell_output)
-		"""
 		# Uses the last output of the encoder only.
 		# TODO [enhance] >> The dimension of tensors is fixed as 3.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[:,-1,:] is used?
@@ -274,22 +234,6 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)  # Don't need.
 		#enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_state_fw.c, enc_cell_state_bw.c), axis=-1), tf.concat((enc_cell_state_fw.h, enc_cell_state_bw.h), axis=-1))
 
-		"""
-		# When using the last output of the encoder (context) and the previous output of the decoder together.
-		input_shape = tf.shape(input_tensor[0])
-		batch_size = input_shape[0]
-
-		# Decoder.
-		context = enc_cell_outputs[-1]
-		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		dec_cell_outputs = []
-		for _ in range(num_time_steps):
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
-			dec_cell_outputs.append(dec_cell_output)
-		"""
 		# Uses the last output of the encoder only.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
 		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps

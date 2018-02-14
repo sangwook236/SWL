@@ -1,5 +1,6 @@
 import tensorflow as tf
 from simple_neural_net import SimpleNeuralNet
+from swl.machine_learning.tensorflow.attention_mechanism import BahdanauAttentionMechanism, LuongAttentionMechanism
 
 #%%------------------------------------------------------------------
 
@@ -55,12 +56,12 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		attention = BahdanauAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
+		#attention = LuongAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# Attention.
-			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
-			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
+			context = attention(enc_cell_outputs, dec_cell_state.c)  # dec_cell_state.h or dec_cell_state.c?
 
 			# Decoder.
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -114,12 +115,12 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		attention = BahdanauAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
+		#attention = LuongAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# Attention.
-			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
-			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
+			context = attention(enc_cell_outputs, dec_cell_state.c)  # dec_cell_state.h or dec_cell_state.c?
 
 			# Decoder.
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -179,12 +180,13 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		attention = BahdanauAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
+		#attention = LuongAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# Attention.
-			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
-			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
+			context = attention(enc_cell_outputs, dec_cell_state.c)  # dec_cell_state.h or dec_cell_state.c?
+			#context = enc_cell_outputs[-1]  # For testing.
 
 			# Decoder.
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -249,13 +251,12 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
-		W1, W2, V = self._create_variables_for_additive_attention(enc_cell_outputs, dec_cell_state.c)
+		attention = BahdanauAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
+		#attention = LuongAttentionMechanism(enc_cell_outputs[0].shape[-1], dec_cell_state.c.shape[-1])
 		dec_cell_outputs = []
 		for _ in range(num_time_steps):
 			# Attention.
-			context = self._attend_additively(enc_cell_outputs, dec_cell_state.c, W1, W2, V)
-			#context = self._attend_multiplicatively(enc_cell_outputs, dec_cell_state.c)
-			#context = enc_cell_outputs[-1]  # For testing.
+			context = attention(enc_cell_outputs, dec_cell_state.c)  # dec_cell_state.h or dec_cell_state.c?
 
 			# Decoder.
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -295,66 +296,3 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
 		#return tf.contrib.rnn.GRUCell(num_units)
-
-	# REF [function] >> _weight_variable() in ./mnist_tf_cnn.py.
-	# We can't initialize these variables to 0 - the network will get stuck.
-	def _weight_variable(self, shape, name):
-		"""Create a weight variable with appropriate initialization."""
-		#initial = tf.truncated_normal(shape, stddev=0.1)
-		#return tf.Variable(initial, name=name)
-		return tf.get_variable(name, shape, initializer=tf.truncated_normal_initializer(stddev=0.1))
-
-	# REF [function] >> _variable_summaries() in ./mnist_tf_cnn.py.
-	def _variable_summaries(self, var, is_filter=False):
-		"""Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-		with tf.name_scope('summaries'):
-			mean = tf.reduce_mean(var)
-			tf.summary.scalar('mean', mean)
-			with tf.name_scope('stddev'):
-				stddev = tf.sqrt(tf.reduce_mean(tf.square(var - mean)))
-			tf.summary.scalar('stddev', stddev)
-			tf.summary.scalar('max', tf.reduce_max(var))
-			tf.summary.scalar('min', tf.reduce_min(var))
-			tf.summary.histogram('histogram', var)
-			if is_filter:
-				tf.summary.image('filter', var)  # Visualizes filters.
-
-	def _create_variables_for_additive_attention(self, inputs, state):
-		#input_shape = tf.shape(inputs[0])
-		#state_shape = tf.shape(state)
-		# TODO [caution] >> inputs is a list.
-		input_shape = inputs[0].get_shape().as_list()
-		state_shape = state.get_shape().as_list()
-
-		with tf.name_scope('attention_W1'):
-			W1 = self._weight_variable((input_shape[-1], input_shape[-1]), 'W1')
-			self._variable_summaries(W1)
-		with tf.name_scope('attention_W2'):
-			W2 = self._weight_variable((state_shape[-1], input_shape[-1]), 'W2')
-			self._variable_summaries(W2)
-		with tf.name_scope('attention_V'):
-			V = self._weight_variable((input_shape[-1], 1), 'V')
-			self._variable_summaries(V)
-		return W1, W2, V
-
-	# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-	# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
-	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
-	# REF [site] >> https://talbaumel.github.io/attention/
-	# FIXME [improve] >> Too slow.
-	def _attend_additively(self, inputs, state, W1, W2, V):
-		attention_weights = []
-		for inp in inputs:
-			attention_weight = tf.matmul(inp, W1) + tf.matmul(state, W2)
-			attention_weight = tf.matmul(tf.tanh(attention_weight), V)
-			attention_weights.append(attention_weight)
-
-		attention_weights = tf.nn.softmax(attention_weights)  # alpha.
-		attention_weights = tf.unstack(attention_weights, len(inputs), axis=0)
-		return tf.reduce_sum([inp * weight for inp, weight in zip(inputs, attention_weights)], axis=0)  # Context, c.
-
-	# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
-	# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
-	# REF [site] >> https://www.tensorflow.org/api_guides/python/contrib.seq2seq
-	def _attend_multiplicatively(self, inputs, state):
-		raise NotImplementedError

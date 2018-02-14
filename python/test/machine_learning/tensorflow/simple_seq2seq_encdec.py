@@ -43,11 +43,16 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 
 	def _create_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		with tf.variable_scope('simple_seq2seq_encdec', reuse=tf.AUTO_REUSE):
-			num_classes = decoder_output_shape[-1]
-			if self._is_bidirectional:
-				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+			# TODO [improve] >> It is not good to use num_time_steps.
+			#num_classes = decoder_output_shape[-1]
+			if self._is_time_major:
+				num_time_steps, num_classes = decoder_output_shape[0], decoder_output_shape[-1]
 			else:
-				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				num_time_steps, num_classes = decoder_output_shape[1], decoder_output_shape[-1]
+			if self._is_bidirectional:
+				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+			else:
+				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 
 	def _loss(self, y, t):
 		with tf.name_scope('loss'):
@@ -67,7 +72,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -116,7 +121,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 
 		return fc1
 
-	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -155,9 +160,47 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
 
 		# Decoder.
-		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
+		def get_training_decoder_outputs():
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
+			dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
+			return dec_cell_outputs
+		def get_testing_decoder_outputs():
+			dec_cell_state = enc_cell_states
+			dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([3])), axis=-1), float(self._start_token))
+			print('^^^^^^', dec_cell_output.shape.as_list(), dec_cell_state.c.shape.as_list(), dec_cell_state.h.shape.as_list())
+			dec_cell_outputs = []
+			for _ in range(num_time_steps):
+				print('*******')
+				dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, dec_cell_state, scope='dec')
+				print('*******11')
+				dec_cell_outputs.append(dec_cell_output)
+			return dec_cell_outputs
+			"""
+			print('***********2')
+			dec_cell_state = enc_cell_states
+			dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([num_dec_hidden_units])), axis=0), float(self._start_token))
+			dec_cell_outputs = None
+			max_time_steps = tf.reduce_max(encoder_input_seq_lens)
+			def body(i, dec_cell_output, dec_cell_state, dec_cell_outputs):
+				tf.add(i, 1)
+				dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, dec_cell_state, scope='dec')
+				#dec_cell_outputs.append(dec_cell_output)
+				if dec_cell_outputs is None:
+					dec_cell_outputs = dec_cell_output
+				else:
+					dec_cell_outputs = tf.concat([dec_cell_outputs, dec_cell_output], axis=1)
+				return [i+1, dec_cell_output, dec_cell_state, dec_cell_outputs]
+			i = tf.constant(0)
+			cond = lambda i, dec_cell_output, dec_cell_state, dec_cell_outputs: tf.less(i, max_time_steps)
+			print('***********3')
+			print('^^^^^^^^^^^^^^1', dec_cell_output.get_shape().as_list(), dec_cell_outputs.get_shape().as_list())
+			r = tf.while_loop(cond, body, loop_vars=[i, dec_cell_output, dec_cell_state, dec_cell_outputs])
+			print('***********4', len(dec_cell_outputs))
+			return dec_cell_outputs
+			"""
+		cell_outputs = tf.cond(is_training_tensor, get_training_decoder_outputs, get_testing_decoder_outputs)
+		dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
