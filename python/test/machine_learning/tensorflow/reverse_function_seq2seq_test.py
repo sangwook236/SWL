@@ -48,7 +48,7 @@ import time
 
 import datetime
 
-output_dir_prefix = 'reverse_function_tf_seq2seq'
+output_dir_prefix = 'reverse_function_seq2seq'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 

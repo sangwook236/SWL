@@ -71,7 +71,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 			dec_cell_outputs.append(dec_cell_output)
 		cell_outputs = dec_cell_outputs
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -130,7 +130,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 			dec_cell_outputs.append(dec_cell_output)
 		cell_outputs = dec_cell_outputs
 
-		#with tf.variable_scope('attention', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(dec_cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -201,7 +201,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -271,7 +271,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')

@@ -106,7 +106,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('enc-dec-attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -164,7 +164,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('enc-dec-attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -241,7 +241,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('enc-dec-attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -305,7 +305,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('enc-dec-attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')

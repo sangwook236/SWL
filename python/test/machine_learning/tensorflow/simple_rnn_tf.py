@@ -57,7 +57,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -92,7 +92,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(stacked_cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(stacked_cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -129,7 +129,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_outputs = tf.concat(cell_outputs, axis=-1)
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -168,7 +168,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_outputs = tf.concat(cell_outputs, axis=-1)
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -234,7 +234,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(cell_outputs, axis=1)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -315,7 +315,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(cell_outputs, axis=1)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -364,7 +364,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(cell_outputs, axis=1)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -415,7 +415,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(cell_outputs, axis=1)
 
-		#with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')

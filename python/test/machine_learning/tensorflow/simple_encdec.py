@@ -60,7 +60,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, time_major=is_time_major, dtype=tf.float32, scope='dec')
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -113,7 +113,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, time_major=is_time_major, dtype=tf.float32, scope='dec')
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -157,19 +157,25 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
 		"""
-		# When using the last output of the encoder (context) and the previous output of the decoder together.
 		input_shape = tf.shape(input_tensor[0])
 		batch_size = input_shape[0]
 
 		# Decoder.
-		context = enc_cell_outputs[-1]
-		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)
+		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)  # Initial state.
+		dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([num_dec_hidden_units])), axis=-1), float(start_token))  # Initial input.
 		dec_cell_outputs = []
+		for outp in enc_cell_outputs:
+			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([outp, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
+			dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([outp, dec_cell_state], axis=-1), scope='dec')
+			dec_cell_outputs.append(dec_cell_output)
+		# Uses the last output of the encoder (context) as well as the previous output of the decoder.
+		context = enc_cell_outputs[-1]
 		for _ in range(num_time_steps):
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
 			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			#dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(context, dec_cell_state, scope='dec')
+			dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
 		"""
 		# Uses the last output of the encoder only.
@@ -187,7 +193,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
@@ -249,7 +255,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		else:
 			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
 
-		#with tf.variable_scope('enc-dec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
