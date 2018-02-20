@@ -12,7 +12,7 @@ class MnistCnnUsingKeras(SimpleNeuralNet):
 		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, is_training_tensor, input_shape, output_shape):
+	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
 		# REF [site] >> https://keras.io/getting-started/functional-api-guide
 		# REF [site] >> https://keras.io/models/model/
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html
@@ -26,15 +26,16 @@ class MnistCnnUsingKeras(SimpleNeuralNet):
 		dropout_rate = 0.75
 
 		num_classes = output_shape[-1]
-		with tf.variable_scope('mnist_keras_cnn', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('mnist_cnn_using_keras', reuse=tf.AUTO_REUSE):
 			if 0 == self._model_type:
 				return self._create_model_1(input_tensor, num_classes, dropout_rate)
 			elif 1 == self._model_type:
-				return self._create_model_2(input_tensor, num_classes, dropout_rate)
+				return self._create_model_2(input_tensor, input_shape, num_classes, dropout_rate)
 			else:
 				assert False, 'Invalid model type.'
 				return None
 
+	# TODO [caution] >> input_tensor is not an actual input tensor of a Keras model.
 	def _create_model_1(self, input_tensor, num_classes, dropout_rate):
 		x = Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu')(input_tensor)
 		x = MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(x)
@@ -60,13 +61,12 @@ class MnistCnnUsingKeras(SimpleNeuralNet):
 
 		return x
 
-	def _create_model_2(self, input_tensor, num_classes, dropout_rate):
-		input_shape = input_tensor.get_shape().as_list()
-		input_shape = input_shape[1:]
+	# TODO [caution] >> input_tensor is not an actual input tensor of a Keras model.
+	def _create_model_2(self, input_tensor, input_shape, num_classes, dropout_rate):
 		#input_tensor = Input(shape=input_shape)
 
 		model = Sequential()
-		model.add(Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu', input_shape=input_shape))
+		model.add(Conv2D(32, kernel_size=(5, 5), padding='same', activation='relu', input_shape=input_shape[1:]))
 		model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
 
 		model.add(Conv2D(64, kernel_size=(3, 3), padding='same', activation='relu'))

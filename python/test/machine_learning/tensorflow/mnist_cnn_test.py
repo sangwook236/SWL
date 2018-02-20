@@ -84,10 +84,10 @@ def preprocess_data(data, labels, num_classes, axis=0):
 	return data, labels
 
 num_classes = 10
-input_shape = (28, 28, 1)  # 784 = 28 * 28.
-output_shape = (num_classes,)
+input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
+output_shape = (None, num_classes)
 
-train_images, train_labels, test_images, test_labels = load_data(data_dir_path, input_shape)
+train_images, train_labels, test_images, test_labels = load_data(data_dir_path, input_shape[1:])
 
 # Pre-process.
 #train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
@@ -96,13 +96,14 @@ train_images, train_labels, test_images, test_labels = load_data(data_dir_path, 
 #%%------------------------------------------------------------------
 # Create a model.
 
-cnnModel = MnistCnnUsingTF(input_shape, output_shape)
+model_type = 0
+cnnModel = MnistCnnUsingTF(input_shape, output_shape, model_type)
 #cnnModel = MnistCnnUsingTfSlim(input_shape, output_shape)
 #cnnModel = MnistCnnForTfLearn(input_shape, output_shape)
 #from keras import backend as K
 #K.set_learning_phase(1)  # Set the learning phase to 'train'.
 ##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#cnnModel = MnistCnnUsingKeras(input_shape, output_shape)
+#cnnModel = MnistCnnUsingKeras(input_shape, output_shape, model_type)
 
 print('[SWL] Info: Created a model.')
 
