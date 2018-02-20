@@ -78,7 +78,7 @@ class NeuralNetTrainer(object):
 			print('<')
 
 			# Evaluate training.
-			train_loss, train_acc = 0, 0
+			train_loss, train_acc = 0.0, 0.0
 			#if False:
 			if num_train_examples > 0:
 				"""
@@ -111,7 +111,7 @@ class NeuralNetTrainer(object):
 				history['acc'].append(train_acc)
 
 			# Validate.
-			val_loss, val_acc = 0, 0
+			val_loss, val_acc = 0.0, 0.0
 			#if val_data is not None and val_labels is not None:
 			if num_val_examples > 0:
 				"""
@@ -153,10 +153,10 @@ class NeuralNetTrainer(object):
 
 				# Save a model.
 				if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
-					model_saved_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
 					best_val_acc = val_acc
 
-					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(model_saved_path))
+					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
 			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
@@ -302,10 +302,10 @@ class NeuralNetTrainer(object):
 
 				# Save a model.
 				if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
-					model_saved_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
 					best_val_acc = val_acc
 
-					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(model_saved_path))
+					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
 			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))

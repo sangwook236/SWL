@@ -94,20 +94,6 @@ train_images, train_labels, test_images, test_labels = load_data(data_dir_path, 
 #test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 #%%------------------------------------------------------------------
-# Create a model.
-
-model_type = 0
-cnnModel = MnistCnnUsingTF(input_shape, output_shape, model_type)
-#cnnModel = MnistCnnUsingTfSlim(input_shape, output_shape)
-#cnnModel = MnistCnnForTfLearn(input_shape, output_shape)
-#from keras import backend as K
-#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-##K.set_learning_phase(0)  # Set the learning phase to 'test'.
-#cnnModel = MnistCnnUsingKeras(input_shape, output_shape, model_type)
-
-print('[SWL] Info: Created a model.')
-
-#%%------------------------------------------------------------------
 # Configure tensorflow.
 
 config = tf.ConfigProto()
@@ -116,58 +102,51 @@ config.log_device_placement = True
 config.gpu_options.allow_growth = True
 #config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
-#graph = tf.Graph()
+# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+train_graph = tf.Graph()
+eval_graph = tf.Graph()
+infer_graph = tf.Graph()
+
+#with train_graph.as_default():
+#	
+
 #session = tf.Session(graph=graph, config=config)
 session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
-# Train the model.
 
-batch_size = 128  # Number of samples per gradient update.
-num_epochs = 20  # Number of times to iterate over training data.
+def train_neural_net(session, cnnModel, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, initial_epoch, trainingMode):
+	with session.graph.as_default():	
+		# Save a model every 2 hours and maximum 5 latest models are saved.
+		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-shuffle = True
+	session.run(tf.global_variables_initializer())
 
-trainingMode = TrainingMode.START_TRAINING
-initial_epoch = 0
-
-#--------------------
-if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-	nnTrainer = SimpleNeuralNetTrainer(cnnModel, initial_epoch)
-	print('[SWL] Info: Created a trainer.')
-else:
-	nnTrainer = None
-
-#--------------------
-if TrainingMode.START_TRAINING == trainingMode:
-	print('[SWL] Info: Start training...')
-elif TrainingMode.RESUME_TRAINING == trainingMode:
-	print('[SWL] Info: Resume training...')
-elif TrainingMode.USE_SAVED_MODEL == trainingMode:
-	print('[SWL] Info: Use a saved model.')
-else:
-	assert False, '[SWL] Error: Invalid training mode.'
-
-session.run(tf.global_variables_initializer())
-
-with session.as_default() as sess:
-	# Save a model every 2 hours and maximum 5 latest models are saved.
-	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+	if TrainingMode.START_TRAINING == trainingMode:
+		print('[SWL] Info: Start training...')
+	elif TrainingMode.RESUME_TRAINING == trainingMode:
+		print('[SWL] Info: Resume training...')
+	elif TrainingMode.USE_SAVED_MODEL == trainingMode:
+		print('[SWL] Info: Use a saved model.')
+	else:
+		assert False, '[SWL] Error: Invalid training mode.'
 
 	if TrainingMode.RESUME_TRAINING == trainingMode or TrainingMode.USE_SAVED_MODEL == trainingMode:
 		# Load a model.
 		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
-		saver.restore(sess, ckpt.model_checkpoint_path)
-		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 		print('[SWL] Info: Restored a model.')
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
+		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		cnnModel.create_training_model()
+		nnTrainer = SimpleNeuralNetTrainer(cnnModel, initial_epoch)
+		history = nnTrainer.train(session, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -175,54 +154,45 @@ with session.as_default() as sess:
 		# Display results.
 		nnTrainer.display_history(history)
 
-if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-	print('[SWL] Info: End training...')
+	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
+		print('[SWL] Info: End training...')
 
-#%%------------------------------------------------------------------
-# Evaluate the model.
+def evaluate_neural_net(session, cnnModel, val_images, val_labels, batch_size):
+	num_val_examples = 0
+	if val_images is not None and val_labels is not None:
+		if val_images.shape[0] == val_labels.shape[0]:
+			num_val_examples = val_images.shape[0]
 
-nnEvaluator = NeuralNetEvaluator()
-print('[SWL] Info: Created an evaluator.')
+	if num_val_examples > 0:
+		print('[SWL] Info: Start evaluation...')
 
-#--------------------
-print('[SWL] Info: Start evaluation...')
-
-with session.as_default() as sess:
-	num_test_examples = 0
-	if test_images is not None and test_labels is not None:
-		if test_images.shape[0] == test_labels.shape[0]:
-			num_test_examples = test_images.shape[0]
-
-	if num_test_examples > 0:
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, cnnModel, test_images, test_labels, batch_size)
+		nnEvaluator = NeuralNetEvaluator()
+		cnnModel.create_evaluation_model()
+		test_loss, test_acc = nnEvaluator.evaluate(session, cnnModel, val_images, val_labels, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
-		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
+		print('\tValidation loss = {}, validation accurary = {}'.format(test_loss, test_acc))
+		print('[SWL] Info: End evaluation...')
 	else:
-		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-print('[SWL] Info: End evaluation...')
-
-#%%------------------------------------------------------------------
-# Predict.
-
-nnPredictor = NeuralNetPredictor()
-print('[SWL] Info: Created a predictor.')
-
-#--------------------
-print('[SWL] Info: Start prediction...')
-
-with session.as_default() as sess:
+def infer_using_neural_net(session, cnnModel, test_images, test_labels, batch_size):
 	num_pred_examples = 0
 	if test_images is not None and test_labels is not None:
 		if test_images.shape[0] == test_labels.shape[0]:
 			num_pred_examples = test_images.shape[0]
 
 	if num_pred_examples > 0:
+		print('[SWL] Info: Start prediction...')
+
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 		start_time = time.time()
-		predictions = nnPredictor.predict(sess, cnnModel, test_images, batch_size)
+		nnPredictor = NeuralNetPredictor()
+		cnnModel.create_inference_model()
+		predictions = nnPredictor.predict(session, test_images, batch_size, cnnModel)
 		end_time = time.time()
 
 		if num_classes <= 2:
@@ -235,7 +205,30 @@ with session.as_default() as sess:
 
 		print('\tPrediction time = {}'.format(end_time - start_time))
 		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
+		print('[SWL] Info: End prediction...')
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
-print('[SWL] Info: End prediction...')
+#%%------------------------------------------------------------------
+# Simple CNN.
+
+# Build a model.
+model_type = 0
+cnnModel = MnistCnnUsingTF(input_shape, output_shape, model_type)
+#cnnModel = MnistCnnUsingTfSlim(input_shape, output_shape)
+#cnnModel = MnistCnnUsingTfLearn(input_shape, output_shape)
+#from keras import backend as K
+#cnnModel = MnistCnnUsingKeras(input_shape, output_shape, model_type)
+
+#--------------------
+batch_size = 128  # Number of samples per gradient update.
+num_epochs = 20  # Number of times to iterate over training data.
+
+shuffle = True
+initial_epoch = 0
+trainingMode = TrainingMode.START_TRAINING
+
+train_neural_net(session, cnnModel, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, initial_epoch, trainingMode)
+evaluate_neural_net(session, cnnModel, test_images, test_labels, batch_size)
+
+infer_using_neural_net(session, cnnModel, test_images, test_labels, batch_size)

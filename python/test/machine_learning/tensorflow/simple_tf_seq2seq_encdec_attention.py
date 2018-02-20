@@ -41,17 +41,17 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._is_training_tensor_ph: is_training, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		return feed_dict
 
-	def _create_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		with tf.variable_scope('simple_tf_seq2seq_encdec_attention', reuse=tf.AUTO_REUSE):
 			num_classes = decoder_output_shape[-1]
 			if self._is_bidirectional:
-				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
-				#return self._create_dynamic_bidirectional_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				#return self._create_dynamic_bidirectional_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 			else:
-				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
-				#return self._create_dynamic_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				#return self._create_dynamic_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 
-	def _loss(self, y, t):
+	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			"""
 			if 1 == num_classes:
@@ -70,7 +70,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 			return loss
 
 	# REF [function] >> SimpleSeq2SeqEncoderDecoder._create_dynamic_model() in ./simple_seq2seq_encdec.py.
-	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -109,7 +109,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -128,7 +128,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 
 		return fc1
 
-	def _create_dynamic_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -167,7 +167,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
@@ -194,12 +194,12 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 			#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 			decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 			return decoder_outputs
-		decoder_outputs = tf.cond(is_training_tensor, lambda: get_decoder_outputs(get_training_helper()), lambda: get_decoder_outputs(get_testing_helper()))
+		decoder_outputs = get_decoder_outputs(get_training_helper()) if is_training else get_decoder_outputs(get_testing_helper())
 
 		return decoder_outputs.rnn_output
 
 	# REF [function] >> SimpleSeq2SeqEncoderDecoder._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec.py.
-	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -244,7 +244,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -263,7 +263,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 
 		return fc1
 
-	def _create_dynamic_bidirectional_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -308,7 +308,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
@@ -335,7 +335,7 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 			#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 			decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 			return decoder_outputs
-		decoder_outputs = tf.cond(is_training_tensor, lambda: get_decoder_outputs(get_training_helper()), lambda: get_decoder_outputs(get_testing_helper()))
+		decoder_outputs = get_decoder_outputs(get_training_helper()) if is_training else get_decoder_outputs(get_testing_helper())
 
 		return decoder_outputs.rnn_output
 

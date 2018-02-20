@@ -23,9 +23,8 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_home_dir_path + '/tflearn_github')
 #sys.path.append('../../../src')
+sys.path.append(swl_python_home_dir_path + '/src')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
@@ -37,7 +36,7 @@ from simple_rnn_keras import SimpleRnnUsingKeras
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_predictor import NeuralNetPredictor
-#from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
+from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from reverse_function_util import ReverseFunctionDataset
 import time
 
@@ -77,55 +76,85 @@ config.log_device_placement = True
 config.gpu_options.allow_growth = True
 #config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
+# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 #graph = tf.Graph()
 #session = tf.Session(graph=graph, config=config)
 session = tf.Session(config=config)
 
 #%%------------------------------------------------------------------
 
-def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
-	nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
-	#nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
+def train_neural_net(session, rnnModel, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, initial_epoch, trainingMode):
+	# Save a model every 2 hours and maximum 5 latest models are saved.
+	saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
 	session.run(tf.global_variables_initializer())
-	with session.as_default() as sess:
-		# Save a model every 2 hours and maximum 5 latest models are saved.
-		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
+	if TrainingMode.START_TRAINING == trainingMode:
+		print('[SWL] Info: Start training...')
+	elif TrainingMode.RESUME_TRAINING == trainingMode:
+		print('[SWL] Info: Resume training...')
+	elif TrainingMode.USE_SAVED_MODEL == trainingMode:
+		print('[SWL] Info: Use a saved model.')
+	else:
+		assert False, '[SWL] Error: Invalid training mode.'
+
+	if TrainingMode.RESUME_TRAINING == trainingMode or TrainingMode.USE_SAVED_MODEL == trainingMode:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+
+		print('[SWL] Info: Restored a model.')
+
+	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
+		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		start_time = time.time()
-		history = nnTrainer.train(sess, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
+		#nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
+		history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
-
+	
 		print('\tTraining time = {}'.format(end_time - start_time))
-
+	
 		# Display results.
 		nnTrainer.display_history(history)
 
-def evaluate_model(session, rnnModel, batch_size):
+	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
+		print('[SWL] Info: End training...')
+
+def evaluate_neural_net(session, rnnModel, val_input_seqs, val_output_seqs, batch_size):
+	print('[SWL] Info: Start evaluation...')
+
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	start_time = time.time()
 	nnEvaluator = NeuralNetEvaluator()
-	with session.as_default() as sess:
-		start_time = time.time()
-		test_loss, test_acc = nnEvaluator.evaluate(sess, rnnModel, val_rnn_input_seqs, val_rnn_output_seqs, batch_size)
-		end_time = time.time()
+	test_loss, test_acc = nnEvaluator.evaluate(session, rnnModel, val_input_seqs, val_output_seqs, batch_size)
+	end_time = time.time()
 
-		print('\tEvaluation time = {}'.format(end_time - start_time))
-		print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
+	print('\tEvaluation time = {}'.format(end_time - start_time))
+	print('\tTest loss = {}, test accurary = {}'.format(test_loss, test_acc))
+	print('[SWL] Info: End evaluation...')
 
-def predict_model(session, rnnModel, batch_size, test_strs):
+def infer_using_neural_net(session, rnnModel, test_strs, batch_size):
+	# Character strings -> numeric data.
+	test_data = dataset.to_numeric_data(test_strs)
+
+	print('[SWL] Info: Start prediction...')
+	
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	start_time = time.time()
 	nnPredictor = NeuralNetPredictor()
-	with session.as_default() as sess:
-		# Character strings -> numeric data.
-		test_data = dataset.to_numeric_data(test_strs)
+	predictions = nnPredictor.predict(session, rnnModel, test_data, batch_size)
+	end_time = time.time()
 
-		start_time = time.time()
-		predictions = nnPredictor.predict(sess, rnnModel, test_data, batch_size)
-		end_time = time.time()
+	# Numeric data -> character strings.
+	predicted_strs = dataset.to_char_strings(predictions)
 
-		# Numeric data -> character strings.
-		predicted_strs = dataset.to_char_strings(predictions)
-
-		print('\tPrediction time = {}'.format(end_time - start_time))
-		print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
+	print('\tPrediction time = {}'.format(end_time - start_time))
+	print('\tTest strings = {}, predicted strings = {}'.format(test_strs, predicted_strs))
+	print('[SWL] Info: End prediction...')
 
 is_dynamic = False
 if is_dynamic:
@@ -153,8 +182,6 @@ if False:
 	is_stacked = True  # Uses multiple layers.
 	rnnModel = SimpleRnnUsingTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=False, is_stacked=is_stacked, is_time_major=is_time_major)
 	#from keras import backend as K
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-	##K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	#rnnModel = SimpleRnnUsingKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
 	#--------------------
@@ -163,11 +190,13 @@ if False:
 
 	shuffle = True
 	initial_epoch = 0
+	trainingMode = TrainingMode.START_TRAINING
 
-	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-	evaluate_model(session, rnnModel, batch_size)
+	train_neural_net(session, rnnModel, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, initial_epoch, trainingMode)
+	evaluate_neural_net(session, rnnModel, val_rnn_input_seqs, val_rnn_output_seqs, batch_size)
+
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	predict_model(session, rnnModel, batch_size, test_strs)
+	infer_using_neural_net(session, rnnModel, test_strs, batch_size)
 
 #%%------------------------------------------------------------------
 # Bidirectional RNN.
@@ -188,8 +217,10 @@ if True:
 
 	shuffle = True
 	initial_epoch = 0
+	trainingMode = TrainingMode.START_TRAINING
 
-	train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch)
-	evaluate_model(session, rnnModel, batch_size)
+	train_neural_net(session, rnnModel, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, initial_epoch, trainingMode)
+	evaluate_neural_net(session, rnnModel, val_rnn_input_seqs, val_rnn_output_seqs, batch_size)
+
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	predict_model(session, rnnModel, batch_size, test_strs)
+	infer_using_neural_net(session, rnnModel, test_strs, batch_size)

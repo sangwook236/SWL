@@ -23,9 +23,8 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_home_dir_path + '/tflearn_github')
 #sys.path.append('../../../src')
+sys.path.append(swl_python_home_dir_path + '/src')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
@@ -79,7 +78,7 @@ config.log_device_placement = True
 config.gpu_options.allow_growth = True
 #config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-# REF [site] >> https://stackoverflow.com/questions/45093688/how-to-understand-sess-as-default-and-sess-graph-as-default
+# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 #graph = tf.Graph()
 #session = tf.Session(graph=graph, config=config)
 session = tf.Session(config=config)
@@ -87,9 +86,10 @@ session = tf.Session(config=config)
 #%%------------------------------------------------------------------
 
 def train_model(session, rnnModel, batch_size, num_epochs, shuffle, initial_epoch):
+	session.run(tf.global_variables_initializer())
+
 	#nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
 	nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
-	session.run(tf.global_variables_initializer())
 	with session.as_default() as sess:
 		# Save a model every 2 hours and maximum 5 latest models are saved.
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)

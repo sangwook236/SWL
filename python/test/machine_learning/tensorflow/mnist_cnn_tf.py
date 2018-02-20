@@ -5,21 +5,22 @@ from simple_neural_net import SimpleNeuralNet
 
 class MnistCnnUsingTF(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type):
-		self._model_type = model_type
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
+		self._model_type = model_type
+
+	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
 		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_cnn_using_tf', reuse=tf.AUTO_REUSE):
 			if 0 == self._model_type:
-				return self._create_model_1(input_tensor, is_training_tensor, num_classes)
+				return self._create_model_1(input_tensor, is_training, num_classes)
 			elif 1 == self._model_type:
-				return self._create_model_2(input_tensor, is_training_tensor, num_classes)
+				return self._create_model_2(input_tensor, is_training, num_classes)
 			else:
 				assert False, 'Invalid model type.'
 				return None
 
-	def _create_model_1(self, input_tensor, is_training_tensor, num_classes):
+	def _create_model_1(self, input_tensor, is_training, num_classes):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
@@ -33,7 +34,7 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 
 			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc')
 			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training_tensor, name='dropout')
+			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -47,11 +48,10 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 
 			return fc2
 
-	def _create_model_2(self, input_tensor, is_training_tensor, num_classes):
+	def _create_model_2(self, input_tensor, is_training, num_classes):
 		# FIXME [fix] >> Too slow and too low accuracy.
 
-		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
-		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
+		keep_prob = 0.25 if is_training else 1.0
 
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv', act=tf.nn.relu)

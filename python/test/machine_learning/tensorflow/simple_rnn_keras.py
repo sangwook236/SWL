@@ -6,18 +6,16 @@ from simple_neural_net import SimpleNeuralNet
 
 class SimpleRnnUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_bidirectional=True, is_stacked=True):
-		self._is_bidirectional = is_bidirectional
-		self._is_stacked = is_stacked
 		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
-		# Note [info] >> Because is_training_tensor is a TensorFlow tensor, it can not be used as an argument in Keras.
-		#	In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
-		#		K.set_learning_phase(1)  # Set the learning phase to 'train'.
-		#		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		#dropout_rate = 0.5 if True == is_training_tensor else 0.0  # Error: Not working.
-		#dropout_rate = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.75), lambda: tf.constant(0.0))  # Error: Not working.
-		dropout_rate = 0.5
+		self._is_bidirectional = is_bidirectional
+		self._is_stacked = is_stacked
+
+	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+		# In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
+		#	K.set_learning_phase(1)  # Set the learning phase to 'train'.
+		#	K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		dropout_rate = 0.5 if is_training else 0.0
 
 		num_classes = output_shape[-1]
 		with tf.variable_scope('simple_rnn_using_keras', reuse=tf.AUTO_REUSE):

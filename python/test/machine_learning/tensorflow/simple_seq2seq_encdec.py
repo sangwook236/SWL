@@ -41,7 +41,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._is_training_tensor_ph: is_training, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		return feed_dict
 
-	def _create_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		with tf.variable_scope('simple_seq2seq_encdec', reuse=tf.AUTO_REUSE):
 			# TODO [improve] >> It is not good to use num_time_steps.
 			#num_classes = decoder_output_shape[-1]
@@ -50,11 +50,11 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			else:
 				num_time_steps, num_classes = decoder_output_shape[1], decoder_output_shape[-1]
 			if self._is_bidirectional:
-				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 			else:
-				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training_tensor, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 
-	def _loss(self, y, t):
+	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			"""
 			if 1 == num_classes:
@@ -72,7 +72,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
+	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -102,7 +102,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('seq2seq_encdec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
@@ -121,7 +121,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 
 		return fc1
 
-	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training_tensor, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -157,7 +157,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#with tf.variable_scope('seq2seq_encdec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
 		def get_training_decoder_outputs():
@@ -203,7 +203,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			print('***********4', len(dec_cell_outputs))
 			return dec_cell_outputs
 			"""
-		#cell_outputs = tf.cond(is_training_tensor, get_training_decoder_outputs, get_testing_decoder_outputs)
+		#cell_outputs = get_training_decoder_outputs if is_training else get_testing_decoder_outputs)
 		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		cell_outputs = get_testing_decoder_outputs()
 

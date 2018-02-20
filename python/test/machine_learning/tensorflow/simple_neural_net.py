@@ -7,7 +7,25 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 
-	def _loss(self, y, t):
+	def create_training_model(self):
+		self._model_output = self._create_single_model(self._input_tensor_ph, True, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_evaluation_model(self):
+		self._model_output = self._create_single_model(self._input_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_inference_model(self):
+		self._model_output = self._create_single_model(self._input_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+
+	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+		raise NotImplementedError
+
+	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			"""
 			if 1 == num_classes:
@@ -23,7 +41,7 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _accuracy(self, y, t):
+	def _get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
 			"""
 			if 1 == num_classes:
@@ -44,7 +62,25 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		super().__init__(encoder_input_shape, decoder_input_shape, decoder_output_shape)
 
-	def _loss(self, y, t):
+	def create_training_model(self):
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, True, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+
+		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
+
+	def create_evaluation_model(self):
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, False, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+
+		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
+
+	def create_inference_model(self):
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, False, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+		raise NotImplementedError
+
+	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			"""
 			if 1 == num_classes:
@@ -60,7 +96,7 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _accuracy(self, y, t):
+	def _get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
 			"""
 			if 1 == num_classes:

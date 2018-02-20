@@ -3,60 +3,60 @@ import numpy as np
 #%%------------------------------------------------------------------
 
 class NeuralNetEvaluator(object):
-	def evaluate(self, session, neuralNet, test_data, test_labels, batch_size=None):
+	def evaluate(self, session, neuralNet, val_data, val_labels, batch_size=None):
 		loss, accuracy = neuralNet.loss, neuralNet.accuracy
 
-		num_test_examples = test_data.shape[0]
+		num_val_examples = val_data.shape[0]
 
-		if batch_size is None or num_test_examples <= batch_size:
-			#test_loss = loss.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_data, test_labels, is_training=False))
-			#test_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_data, test_labels, is_training=False))
-			test_loss, test_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(test_data, test_labels, is_training=False))
+		if batch_size is None or num_val_examples <= batch_size:
+			#val_loss = loss.eval(session=session, feed_dict=neuralNet.get_feed_dict(val_data, val_labels, is_training=False))
+			#val_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(val_data, val_labels, is_training=False))
+			val_loss, val_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(val_data, val_labels, is_training=False))
 		else:
-			test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
+			val_steps_per_epoch = (num_val_examples - 1) // batch_size + 1
 
-			indices = np.arange(num_test_examples)
+			indices = np.arange(num_val_examples)
 			#if shuffle:
 			#	np.random.shuffle(indices)
 
-			test_loss, test_acc = 0, 0
-			for step in range(test_steps_per_epoch):
+			val_loss, val_acc = 0.0, 0.0
+			for step in range(val_steps_per_epoch):
 				start = step * batch_size
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch, label_batch = test_data[batch_indices,], test_labels[batch_indices,]
+					data_batch, label_batch = val_data[batch_indices,], val_labels[batch_indices,]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						#batch_loss = loss.eval(session=session, feed_dict=neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 						#batch_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 						batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 	
-						# TODO [check] >> Is test_loss or test_acc correct?
-						test_loss += batch_loss * batch_indices.size
-						test_acc += batch_acc * batch_indices.size
-			test_loss /= num_test_examples
-			test_acc /= num_test_examples
+						# TODO [check] >> Is val_loss or val_acc correct?
+						val_loss += batch_loss * batch_indices.size
+						val_acc += batch_acc * batch_indices.size
+			val_loss /= num_val_examples
+			val_acc /= num_val_examples
 
-		return test_loss, test_acc
+		return val_loss, val_acc
 
 	def evaluate_seq2seq(self, session, neuralNet, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None):
 		loss, accuracy = neuralNet.loss, neuralNet.accuracy
 
-		num_test_examples = test_encoder_inputs.shape[0]
+		num_val_examples = test_encoder_inputs.shape[0]
 
-		if batch_size is None or num_test_examples <= batch_size:
-			#test_loss = loss.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
-			#test_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
-			test_loss, test_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
+		if batch_size is None or num_val_examples <= batch_size:
+			#val_loss = loss.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
+			#val_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
+			val_loss, val_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
 		else:
-			test_steps_per_epoch = (num_test_examples - 1) // batch_size + 1
+			val_steps_per_epoch = (num_val_examples - 1) // batch_size + 1
 
-			indices = np.arange(num_test_examples)
+			indices = np.arange(num_val_examples)
 			#if shuffle:
 			#	np.random.shuffle(indices)
 
-			test_loss, test_acc = 0, 0
-			for step in range(test_steps_per_epoch):
+			val_loss, val_acc = 0.0, 0.0
+			for step in range(val_steps_per_epoch):
 				start = step * batch_size
 				end = start + batch_size
 				batch_indices = indices[start:end]
@@ -67,10 +67,10 @@ class NeuralNetEvaluator(object):
 						#batch_acc = accuracy.eval(session=session, feed_dict=neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 						batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 	
-						# TODO [check] >> Is test_loss or test_acc correct?
-						test_loss += batch_loss * batch_indices.size
-						test_acc += batch_acc * batch_indices.size
-			test_loss /= num_test_examples
-			test_acc /= num_test_examples
+						# TODO [check] >> Is val_loss or val_acc correct?
+						val_loss += batch_loss * batch_indices.size
+						val_acc += batch_acc * batch_indices.size
+			val_loss /= num_val_examples
+			val_acc /= num_val_examples
 
-		return test_loss, test_acc
+		return val_loss, val_acc

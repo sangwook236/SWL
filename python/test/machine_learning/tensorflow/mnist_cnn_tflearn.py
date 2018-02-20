@@ -10,11 +10,10 @@ class MnistCnnUsingTfLearn(SimpleNeuralNet):
 
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
 
-	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
 		# REF [site] >> http://tflearn.org/getting_started/
 
-		#keep_prob = 0.25 if True == is_training_tensor else 1.0  # Error: Not working.
-		keep_prob = tf.cond(tf.equal(is_training_tensor, tf.constant(True)), lambda: tf.constant(0.25), lambda: tf.constant(1.0))
+		keep_prob = 0.25 if is_training else 1.0
 
 		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_cnn_using_tflearn', reuse=tf.AUTO_REUSE):

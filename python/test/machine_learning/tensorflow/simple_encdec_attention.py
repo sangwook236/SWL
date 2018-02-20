@@ -6,30 +6,31 @@ from swl.machine_learning.tensorflow.attention_mechanism import BahdanauAttentio
 
 class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, is_dynamic=True, is_bidirectional=True, is_time_major=False):
+		super().__init__(input_shape, output_shape)
+
 		self._is_dynamic = is_dynamic
 		self._is_bidirectional = is_bidirectional
 		self._is_time_major = is_time_major
-		super().__init__(input_shape, output_shape)
 
-	def _create_model(self, input_tensor, output_tensor, is_training_tensor, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
 		with tf.variable_scope('simple_encdec_attention', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:
-					return self._create_dynamic_bidirectional_model(input_tensor, is_training_tensor, num_classes, self._is_time_major)
+					return self._create_dynamic_bidirectional_model(input_tensor, is_training, num_classes, self._is_time_major)
 				else:
-					return self._create_dynamic_model(input_tensor, is_training_tensor, num_classes, self._is_time_major)
+					return self._create_dynamic_model(input_tensor, is_training, num_classes, self._is_time_major)
 			else:
 				if self._is_time_major:
 					num_time_steps, num_classes = input_shape[0], output_shape[-1]
 				else:
 					num_time_steps, num_classes = input_shape[1], output_shape[-1]
 				if self._is_bidirectional:
-					return self._create_static_bidirectional_model(input_tensor, is_training_tensor, num_time_steps, num_classes, self._is_time_major)
+					return self._create_static_bidirectional_model(input_tensor, is_training, num_time_steps, num_classes, self._is_time_major)
 				else:
-					return self._create_static_model(input_tensor, is_training_tensor, num_time_steps, num_classes, self._is_time_major)
+					return self._create_static_model(input_tensor, is_training, num_time_steps, num_classes, self._is_time_major)
 
-	def _create_dynamic_model(self, input_tensor, is_training_tensor, num_classes, is_time_major):
+	def _create_dynamic_model(self, input_tensor, is_training, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
@@ -74,7 +75,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -88,7 +89,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 
 			return fc1
 
-	def _create_dynamic_bidirectional_model(self, input_tensor, is_training_tensor, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model(self, input_tensor, is_training, num_classes, is_time_major):
 		"""
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
@@ -133,7 +134,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(dec_cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(dec_cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -147,7 +148,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 
 			return fc1
 
-	def _create_static_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
+	def _create_static_model(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -204,7 +205,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -218,7 +219,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 
 			return fc1
 
-	def _create_static_bidirectional_model(self, input_tensor, is_training_tensor, num_time_steps, num_classes, is_time_major):
+	def _create_static_bidirectional_model(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -274,7 +275,7 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		#with tf.variable_scope('enc_dec_attn', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training_tensor, name='dropout')
+		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
