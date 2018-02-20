@@ -226,7 +226,7 @@ class NeuralNetTrainer(object):
 			print('<')
 
 			# Evaluate training.
-			train_loss, train_acc = 0, 0
+			train_loss, train_acc = 0.0, 0.0
 			#if False:
 			if num_train_examples > 0:
 				"""
@@ -259,7 +259,7 @@ class NeuralNetTrainer(object):
 				history['acc'].append(train_acc)
 
 			# Validate.
-			val_loss, val_acc = 0, 0
+			val_loss, val_acc = 0.0, 0.0
 			#if val_data is not None and val_labels is not None:
 			if num_val_examples > 0:
 				"""
