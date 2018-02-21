@@ -41,7 +41,7 @@ import time
 
 import datetime
 
-output_dir_prefix = 'fc-densenet'
+output_dir_prefix = 'fc_densenet'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180117T135317'
 
@@ -50,6 +50,18 @@ inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
 
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(inference_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(val_summary_dir_path)
+  
 #%%------------------------------------------------------------------
 # Load data.
 
@@ -122,8 +134,8 @@ def preprocess_data(data, labels, num_classes, axis=0):
 	return data, labels
 
 num_classes = 2
-input_shape = (patch_height, patch_width, 3)
-output_shape = (patch_height, patch_width, num_classes)
+input_shape = (None, patch_height, patch_width, 3)
+output_shape = (None, patch_height, patch_width, num_classes)
 
 # Pre-process.
 all_image_patches, all_label_patches = preprocess_data(all_image_patches, all_label_patches, num_classes)
@@ -152,7 +164,7 @@ def train_neural_net(session, nnTrainer, saver, train_images, train_labels, val_
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		start_time = time.time()
-		history = nnTrainer.train(session, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+		history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
 
 		print('\tTraining time = {}'.format(end_time - start_time))
@@ -179,11 +191,11 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_images, val_labels, bat
 		print('[SWL] Info: Start evaluation...')
 
 		start_time = time.time()
-		val_loss, val_acc = nnEvaluator.evaluate(session, denseNetModel, test_image_patches, test_label_patches, batch_size)
+		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
 		end_time = time.time()
 
 		print('\tEvaluation time = {}'.format(end_time - start_time))
-		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, valt_acc))
+		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
@@ -204,15 +216,15 @@ def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, ba
 		print('[SWL] Info: Start inferring...')
 
 		start_time = time.time()
-		inferences = nnInferrer.infer(session, denseNetModel, test_image_patches, batch_size)
+		inferences = nnInferrer.infer(session, test_image_patches, batch_size)
 		end_time = time.time()
 
 		if num_classes <= 2:
 			inferences = np.around(inferences)
-			groundtruths = test_label_patches
+			groundtruths = test_labels
 		else:
 			inferences = np.argmax(inferences, -1)
-			groundtruths = np.argmax(test_label_patches, -1)
+			groundtruths = np.argmax(test_labels, -1)
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
 
 		print('\tInference time = {}'.format(end_time - start_time))
@@ -294,24 +306,26 @@ train_session.run(initializer)
 # FIXME [restore] >>
 #batch_size = 12  # Number of samples per gradient update.
 batch_size = 5  # Number of samples per gradient update.
-num_epochs = 50  # Number of times to iterate over training data.
+num_epochs = 2  # Number of times to iterate over training data.
 
 with train_session as sess:
 	K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
-	train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	train_neural_net(sess, nnTrainer, train_saver, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 
 with eval_session as sess:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
+	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
 
-with infer_session as sess:
+# FIXME [restore] >>
+#with infer_session as sess:
+if True:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
+	infer_by_neural_net(infer_session, nnInferrer, infer_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
 
 #%%------------------------------------------------------------------
-# Infer for full-size images using patches.
+# Infer full-size images using patches.
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -343,7 +357,7 @@ def infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInf
 	if image_patches is not None and patch_regions is not None and len(image_patches) == len(patch_regions):
 		image_patches, _ = preprocess_data(np.array(image_patches), None, num_classes)
 
-		inferred_label_patches = nnInferrer.infer(sess, denseNetModel, image_patches, batch_size=batch_size)  # Inferred label patches.
+		inferred_label_patches = nnInferrer.infer(sess, image_patches, batch_size=batch_size)  # Inferred label patches.
 		return inferred_label_patches, image_patches, patch_regions, resized_size
 	else:
 		return None, None, None, None

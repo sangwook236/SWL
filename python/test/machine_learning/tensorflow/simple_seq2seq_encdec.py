@@ -36,9 +36,9 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			batch_size = [encoder_inputs.shape[0]]
 
 		if decoder_inputs is None or decoder_outputs is None:
-			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._is_training_tensor_ph: is_training, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		else:
-			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._is_training_tensor_ph: is_training, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		return feed_dict
 
 	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
@@ -160,52 +160,24 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
-		def get_training_decoder_outputs():
+		# FIXME [restore] >>
+		#if is_training:
+		if False:
 			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
 			#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 			dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
-			return dec_cell_outputs
-		def get_testing_decoder_outputs():
+		else:
 			dec_cell_state = enc_cell_states  # Initial state.
 			dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([num_dec_hidden_units])), axis=-1), float(self._start_token))  # Initial input.
-			print('^^^^^^', dec_cell_output.shape.as_list(), dec_cell_state.c.shape.as_list(), dec_cell_state.h.shape.as_list())
 			dec_cell_outputs = []
 			for _ in range(num_time_steps):
-				print('*******')
 				dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, dec_cell_state, scope='dec')
-				print('*******11', dec_cell_output.shape.as_list(), dec_cell_state.c.shape.as_list(), dec_cell_state.h.shape.as_list())
 				dec_cell_outputs.append(dec_cell_output)
 			if is_time_major:
 				dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0)
 			else:
 				dec_cell_outputs = tf.stack(dec_cell_outputs, axis=1)
-			return dec_cell_outputs
-			"""
-			print('***********2')
-			dec_cell_state = enc_cell_states  # Initial state.
-			dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([num_dec_hidden_units])), axis=0), float(self._start_token))  # Initial input.
-			dec_cell_outputs = None
-			max_time_steps = tf.reduce_max(encoder_input_seq_lens)
-			def body(i, dec_cell_output, dec_cell_state, dec_cell_outputs):
-				tf.add(i, 1)
-				dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, dec_cell_state, scope='dec')
-				#dec_cell_outputs.append(dec_cell_output)
-				if dec_cell_outputs is None:
-					dec_cell_outputs = dec_cell_output
-				else:
-					dec_cell_outputs = tf.concat([dec_cell_outputs, dec_cell_output], axis=1)
-				return [i+1, dec_cell_output, dec_cell_state, dec_cell_outputs]
-			i = tf.constant(0)
-			cond = lambda i, dec_cell_output, dec_cell_state, dec_cell_outputs: tf.less(i, max_time_steps)
-			print('***********3')
-			print('^^^^^^^^^^^^^^1', dec_cell_output.get_shape().as_list(), dec_cell_outputs.get_shape().as_list())
-			r = tf.while_loop(cond, body, loop_vars=[i, dec_cell_output, dec_cell_state, dec_cell_outputs])
-			print('***********4', len(dec_cell_outputs))
-			return dec_cell_outputs
-			"""
-		#cell_outputs = get_training_decoder_outputs if is_training else get_testing_decoder_outputs)
-		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
-		cell_outputs = get_testing_decoder_outputs()
+		cell_outputs = dec_cell_outputs
 
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:

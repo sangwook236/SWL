@@ -83,7 +83,7 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		raise NotImplementedError
 
 	def _get_loss(self, y, t):

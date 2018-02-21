@@ -45,6 +45,18 @@ inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
 
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(inference_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(val_summary_dir_path)
+
 #%%------------------------------------------------------------------
 # Load data.
 

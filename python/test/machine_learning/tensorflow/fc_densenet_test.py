@@ -67,30 +67,17 @@ prediction_dir_path = output_dir_path + '/prediction'
 train_summary_dir_path = log_dir_path + '/train'
 test_summary_dir_path = log_dir_path + '/test'
 
-if not os.path.exists(model_dir_path):
-	try:
-		os.makedirs(model_dir_path)
-	except OSError as exception:
-		if exception.errno != os.errno.EEXIST:
-			raise
-if not os.path.exists(prediction_dir_path):
-	try:
-		os.makedirs(prediction_dir_path)
-	except OSError as exception:
-		if exception.errno != os.errno.EEXIST:
-			raise
-if not os.path.exists(train_summary_dir_path):
-	try:
-		os.makedirs(train_summary_dir_path)
-	except OSError as exception:
-		if exception.errno != os.errno.EEXIST:
-			raise
-if not os.path.exists(test_summary_dir_path):
-	try:
-		os.makedirs(test_summary_dir_path)
-	except OSError as exception:
-		if exception.errno != os.errno.EEXIST:
-			raise
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(prediction_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(test_summary_dir_path)
 
 # NOTICE [caution] >>
 #	If the size of data is changed, labels in label images may be changed.

@@ -56,6 +56,18 @@ inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
 
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(inference_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(val_summary_dir_path)
+
 #%%------------------------------------------------------------------
 # Prepare data.
 	
@@ -171,7 +183,7 @@ config.gpu_options.allow_growth = True
 
 # REF [site] >> https://talbaumel.github.io/attention/
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
-def create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+def create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major):
 	if is_attentive:
 		# Encoder-decoder model w/ attention.
 		return SimpleEncoderDecoderWithAttention(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)

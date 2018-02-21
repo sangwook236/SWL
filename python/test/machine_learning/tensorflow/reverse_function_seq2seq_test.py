@@ -52,9 +52,21 @@ output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
 model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
-prediction_dir_path = './result/{}_prediction_{}'.format(output_dir_prefix, output_dir_suffix)
+inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output_dir_suffix)
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
+
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(inference_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(val_summary_dir_path)
 
 #%%------------------------------------------------------------------
 # Prepare data.
@@ -62,7 +74,7 @@ val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_su
 characters = list('abcd')
 dataset = ReverseFunctionDataset(characters)
 
-# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and predictor have to be modified.
+# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
 is_time_major = False
 # NOTICE [info] >> How to use the hidden state c of an encoder in a decoder?
 #	1) The hidden state c of the encoder is used as the initial state of the decoder and the previous output of the decoder may be used as its only input.
@@ -173,7 +185,7 @@ config.gpu_options.allow_growth = True
 #%%------------------------------------------------------------------
 # RNN models, sessions, and graphs.
 
-def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major)
+def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major):
 	if is_attentive:
 		# TF Sequence-to-sequence encoder-decoder model w/ attention.
 		return SimpleTfSeq2SeqEncoderDecoderWithAttention(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
@@ -181,14 +193,14 @@ def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, dec
 		# Sequence-to-sequence encoder-decoder model w/o attention.
 		return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
-is_attentive = True  # Uses attention mechanism.
+is_attentive = False  # Uses attention mechanism.
 is_bidirectional = True  # Uses a bidirectional model.
 if is_attentive:
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 1  # Number of times to iterate over training data.
+	num_epochs = 50  # Number of times to iterate over training data.
 else:
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 1  # Number of times to iterate over training data.
+	num_epochs = 50  # Number of times to iterate over training data.
 
 #--------------------
 train_graph = tf.Graph()
@@ -245,10 +257,10 @@ train_session.run(initializer)
 with train_session as sess:
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
-	train_neural_net(sess, nnTrainer, train_saver, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	train_neural_net(sess, nnTrainer, train_saver, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 
 with eval_session as sess:
-	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, model_dir_path)
+	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path)
 
 with infer_session as sess:
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']

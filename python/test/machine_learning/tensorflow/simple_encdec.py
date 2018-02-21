@@ -158,7 +158,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
 		"""
-		input_shape = tf.shape(input_tensor[0])
+		input_shape = input_tensor[0].shape
 		batch_size = input_shape[0]
 
 		# Decoder.

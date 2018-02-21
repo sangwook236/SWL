@@ -52,9 +52,21 @@ output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
 model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
-inferrence_dir_path = './result/{}_inferrence_{}'.format(output_dir_prefix, output_dir_suffix)
+inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output_dir_suffix)
 train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
 val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
+
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+make_dir(model_dir_path)
+make_dir(inference_dir_path)
+make_dir(train_summary_dir_path)
+make_dir(val_summary_dir_path)
 
 #%%------------------------------------------------------------------
 # Prepare data.
@@ -175,7 +187,7 @@ config.gpu_options.allow_growth = True
 #from keras import backend as K
 
 # REF [site] >> https://talbaumel.github.io/attention/
-def create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+def create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major):
 	return SimpleRnnUsingTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_stacked=is_stacked, is_time_major=is_time_major)
 	#return SimpleRnnUsingKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
 
