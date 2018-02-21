@@ -22,6 +22,9 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 	def create_inference_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
 
+		self._loss = None
+		self._accuracy = None
+
 	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
 		raise NotImplementedError
 
@@ -76,6 +79,9 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 
 	def create_inference_model(self):
 		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, False, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+
+		self._loss = None
+		self._accuracy = None
 
 	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		raise NotImplementedError
