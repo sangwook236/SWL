@@ -174,15 +174,6 @@ else:
 		decoder_output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 #%%------------------------------------------------------------------
-# Configure tensorflow.
-
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-#%%------------------------------------------------------------------
 # RNN models, sessions, and graphs.
 
 def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major):
@@ -200,19 +191,16 @@ if is_attentive:
 	num_epochs = 50  # Number of times to iterate over training data.
 else:
 	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 50  # Number of times to iterate over training data.
+	num_epochs = 2  # Number of times to iterate over training data.
 
 #--------------------
+# Create graphs.
 train_graph = tf.Graph()
 eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
-train_session = tf.Session(graph=train_graph, config=config)
-eval_session = tf.Session(graph=eval_graph, config=config)
-infer_session = tf.Session(graph=infer_graph, config=config)
-
-with train_session:
-#with train_graph.as_default():
+with train_graph.as_default():
+#with train_session:
 	# Create a model.
 	rnnModel = create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major)
 	rnnModel.create_training_model()
@@ -222,13 +210,14 @@ with train_session:
 	#nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
 	nnTrainer = SimpleNeuralNetGradientTrainer(rnnModel, initial_epoch)
 
-	# Save a model every 2 hours and maximum 5 latest models are saved.
+	# Create a saver.
+	#	Save a model every 2 hours and maximum 5 latest models are saved.
 	train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 	initializer = tf.global_variables_initializer()
 
-with eval_session:
-#with eval_graph.as_default():
+with eval_graph.as_default():
+#with eval_session:
 	# Create a model.
 	rnnModel = create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major)
 	rnnModel.create_evaluation_model()
@@ -239,8 +228,8 @@ with eval_session:
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
-with infer_session:
-#with infer_graph.as_default():
+with infer_graph.as_default():
+#with infer_session:
 	# Create a model.
 	rnnModel = create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_attentive, is_bidirectional, is_time_major)
 	rnnModel.create_inference_model()
@@ -251,17 +240,31 @@ with infer_session:
 	# Create a saver.
 	infer_saver = tf.train.Saver()
 
+#--------------------
+# Configuration.
+config = tf.ConfigProto()
+#config.allow_soft_placement = True
+config.log_device_placement = True
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+# Create sessions.
+train_session = tf.Session(graph=train_graph, config=config)
+eval_session = tf.Session(graph=eval_graph, config=config)
+infer_session = tf.Session(graph=infer_graph, config=config)
+
+# Initialize.
 train_session.run(initializer)
 
-#--------------------
-with train_session as sess:
+#%%------------------------------------------------------------------
+with train_session.as_default() as sess:
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 
-with eval_session as sess:
+with eval_session.as_default() as sess:
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path)
 
-with infer_session as sess:
+with infer_session.as_default() as sess:
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
 	infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)

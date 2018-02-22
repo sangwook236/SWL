@@ -13,11 +13,11 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = 'D:/lib_repo/python'
-	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	#lib_home_dir_path = 'D:/lib_repo/python'
+	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+#sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
-#sys.path.append('../../../src')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
@@ -234,29 +234,17 @@ def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, ba
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 #%%------------------------------------------------------------------
-# Configure tensorflow.
-
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-#%%------------------------------------------------------------------
 # DenseNet models, sessions, and graphs.
 
 from keras import backend as K
 
+# Create graphs.
 train_graph = tf.Graph()
 eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
-train_session = tf.Session(graph=train_graph, config=config)
-eval_session = tf.Session(graph=eval_graph, config=config)
-infer_session = tf.Session(graph=infer_graph, config=config)
-
-with train_session:
-#with train_graph.as_default():
+with train_graph.as_default():
+#with train_session:
 	K.set_learning_phase(1)  # Set the learning phase to 'train'.
 
 	# Create a model.
@@ -267,13 +255,14 @@ with train_session:
 	initial_epoch = 0
 	nnTrainer = SimpleNeuralNetTrainer(denseNetModel, initial_epoch)
 
-	# Save a model every 2 hours and maximum 5 latest models are saved.
+	# Create a saver.
+	#	Save a model every 2 hours and maximum 5 latest models are saved.
 	train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 	initializer = tf.global_variables_initializer()
 
-with eval_session:
-#with eval_graph.as_default():
+with eval_graph.as_default():
+#with eval_session:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
 	# Create a model.
@@ -286,8 +275,8 @@ with eval_session:
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
-with infer_session:
-#with infer_graph.as_default():
+with infer_graph.as_default():
+#with infer_session:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
 	# Create a model.
@@ -300,27 +289,39 @@ with infer_session:
 	# Create a saver.
 	infer_saver = tf.train.Saver()
 
+#--------------------
+# Configuration.
+config = tf.ConfigProto()
+#config.allow_soft_placement = True
+config.log_device_placement = True
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+# Create sessions.
+train_session = tf.Session(graph=train_graph, config=config)
+eval_session = tf.Session(graph=eval_graph, config=config)
+infer_session = tf.Session(graph=infer_graph, config=config)
+
+# Initialize.
 train_session.run(initializer)
 
-#--------------------
+#%%------------------------------------------------------------------
 # FIXME [restore] >>
 #batch_size = 12  # Number of samples per gradient update.
 batch_size = 5  # Number of samples per gradient update.
 num_epochs = 2  # Number of times to iterate over training data.
 
-with train_session as sess:
+with train_session.as_default() as sess:
 	K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 
-with eval_session as sess:
+with eval_session.as_default() as sess:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
 
-# FIXME [restore] >>
-#with infer_session as sess:
-if True:
+with infer_session.as_default() as sess:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	infer_by_neural_net(infer_session, nnInferrer, infer_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
 
@@ -373,7 +374,8 @@ def infer_label_using_image_patches(sess, img, num_classes, patch_height, patch_
 
 print('[SWL] Info: Start inferring for full-size images using patches...')
 
-with infer_session as sess:
+with infer_session.as_default() as sess:
+#with tf.Session(graph=infer_graph, config=config) as sess:
 	inferences = []
 	start_time = time.time()
 	for img in image_list:
@@ -455,7 +457,8 @@ global_variables = tf.global_variables()
 for var in global_variables:
 	print(var)
 
-with infer_session as sess:
+with infer_session.as_default() as sess:
+#with tf.Session(graph=infer_graph, config=config) as sess:
 	with tf.variable_scope('plant_fc_densenet', reuse=tf.AUTO_REUSE):
 		with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
 			filters = tf.get_variable('kernel')
@@ -465,7 +468,8 @@ with infer_session as sess:
 #%%------------------------------------------------------------------
 # Visualize activations(layer ouputs) in a convolutional layer.
 
-with infer_session as sess:
+with infer_session.as_default() as sess:
+#with tf.Session(graph=infer_graph, config=config) as sess:
 	layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
 	layer_after_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
 

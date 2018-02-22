@@ -158,27 +158,30 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 
 		"""
-		input_shape = input_tensor[0].shape
-		batch_size = input_shape[0]
-
-		# Decoder.
 		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
-		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32)  # Initial state.
-		dec_cell_output = tf.fill(tf.concat((batch_size, tf.constant([num_dec_hidden_units])), axis=-1), float(start_token))  # Initial input.
-		dec_cell_outputs = []
-		for outp in enc_cell_outputs:
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([outp, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([outp, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_outputs.append(dec_cell_output)
-		# Uses the last output of the encoder (context) as well as the previous output of the decoder.
-		context = enc_cell_outputs[-1]
+		cell_state = cell.zero_state(batch_size, tf.float32)  # Initial state.
+		cell_outputs = []
+		# Method #1: Uses only inputs of the cell.
+		for inp in cell_inputs:
+			cell_output, cell_state = cell(inp, cell_state, scope='cell')
+			cell_outputs.append(cell_output)
+		# Method #2: Uses only the previous output of the cell.
+		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
 		for _ in range(num_time_steps):
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_output, dec_cell_state = dec_cell(tf.concat([context, dec_cell_output], axis=-1), dec_cell_state, scope='dec')
-			dec_cell_output, dec_cell_state = dec_cell(dec_cell_output, tf.concat([context, dec_cell_state], axis=-1), scope='dec')
-			dec_cell_outputs.append(dec_cell_output)
+			cell_output, cell_state = cell(cell_input, cell_state, scope='cell')
+			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
+			cell_outputs.append(cell_input)
+			#cell_outputs.append(cell_output)
+		# Method #3: Uses both inputs and the previous output of the cell.
+		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
+		for inp in cell_inputs:
+			cell_output, cell_state = cell(tf.concat([inp, cell_input], axis=-1), cell_state, scope='cell')
+			#cell_output, cell_state = cell(cell_input, tf.concat([inp, cell_state], axis=-1), scope='cell')
+			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
+			cell_outputs.append(cell_input)
+			#cell_outputs.append(cell_output)
 		"""
+
 		# Uses the last output of the encoder only.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
 		enc_cell_outputs = [enc_cell_outputs[-1]] * num_time_steps

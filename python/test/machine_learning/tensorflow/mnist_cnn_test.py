@@ -203,15 +203,6 @@ def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, ba
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 #%%------------------------------------------------------------------
-# Configure tensorflow.
-
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-#%%------------------------------------------------------------------
 # CNN models, sessions, and graphs.
 
 #from keras import backend as K
@@ -224,16 +215,13 @@ def create_mnist_cnn(input_shape, output_shape):
 	#return MnistCnnUsingKeras(input_shape, output_shape, model_type)
 
 #--------------------
+# Create graphs.
 train_graph = tf.Graph()
 eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
-train_session = tf.Session(graph=train_graph, config=config)
-eval_session = tf.Session(graph=eval_graph, config=config)
-infer_session = tf.Session(graph=infer_graph, config=config)
-
-with train_session:
-#with train_graph.as_default():
+with train_graph.as_default():
+#with train_session:
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 
 	# Create a model.
@@ -244,13 +232,14 @@ with train_session:
 	initial_epoch = 0
 	nnTrainer = SimpleNeuralNetTrainer(cnnModel, initial_epoch)
 
-	# Save a model every 2 hours and maximum 5 latest models are saved.
+	# Create a saver.
+	#	Save a model every 2 hours and maximum 5 latest models are saved.
 	train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 	initializer = tf.global_variables_initializer()
 
-with eval_session:
-#with eval_graph.as_default():
+with eval_graph.as_default():
+#with eval_session:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
 	# Create a model.
@@ -263,8 +252,8 @@ with eval_session:
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
-with infer_session:
-#with infer_graph.as_default():
+with infer_graph.as_default():
+#with infer_session:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
 	# Create a model.
@@ -277,22 +266,36 @@ with infer_session:
 	# Create a saver.
 	infer_saver = tf.train.Saver()
 
+#--------------------
+# Configuration.
+config = tf.ConfigProto()
+#config.allow_soft_placement = True
+config.log_device_placement = True
+config.gpu_options.allow_growth = True
+#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+# Create sessions.
+train_session = tf.Session(graph=train_graph, config=config)
+eval_session = tf.Session(graph=eval_graph, config=config)
+infer_session = tf.Session(graph=infer_graph, config=config)
+
+# Initialize.
 train_session.run(initializer)
 
-#--------------------
+#%%------------------------------------------------------------------
 batch_size = 128  # Number of samples per gradient update.
 num_epochs = 20  # Number of times to iterate over training data.	
 
-with train_session as sess:
+with train_session.as_default() as sess:
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 
-with eval_session as sess:
+with eval_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
 
-with infer_session as sess:
+with infer_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
