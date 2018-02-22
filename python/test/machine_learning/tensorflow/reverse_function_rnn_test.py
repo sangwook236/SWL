@@ -1,15 +1,4 @@
-# REF [site] >> https://talbaumel.github.io/attention/ ==> Neural Attention Mechanism - Sequence To Sequence Attention Models In DyNet.pdf
-# REF [site] >> https://github.com/fchollet/keras/blob/master/examples/lstm_seq2seq.py
-# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 # REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-
-# REF [site] >> https://blog.heuritech.com/2016/01/20/attention-mechanism/
-# REF [site] >> https://github.com/philipperemy/keras-attention-mechanism
-
-# REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
-# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
-# REF [paper] >> "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention", ICML 2015.
 
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -100,7 +89,6 @@ def train_neural_net(session, nnTrainer, saver, train_input_seqs, train_output_s
 		print('[SWL] Info: Restored a model.')
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		start_time = time.time()
 		history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
@@ -122,7 +110,6 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_input_seqs, val_output_
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start evaluation...')
 
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	start_time = time.time()
 	val_loss, val_acc = nnEvaluator.evaluate(session, val_input_seqs, val_output_seqs, batch_size)
 	end_time = time.time()
@@ -143,7 +130,6 @@ def infer_by_neural_net(session, nnInferrer, saver, test_strs, batch_size, model
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start inferring...')
 
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	start_time = time.time()
 	inferences = nnInferrer.infer(session, test_data, batch_size)
 	end_time = time.time()
@@ -199,8 +185,6 @@ infer_graph = tf.Graph()
 
 with train_graph.as_default():
 #with train_session:
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-
 	# Create a model.
 	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
 	rnnModel.create_training_model()
@@ -217,8 +201,6 @@ with train_graph.as_default():
 
 with eval_graph.as_default():
 #with eval_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-
 	# Create a model.
 	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
 	rnnModel.create_evaluation_model()
@@ -231,8 +213,6 @@ with eval_graph.as_default():
 
 with infer_graph.as_default():
 #with infer_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-
 	# Create a model.
 	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
 	rnnModel.create_inference_model()
