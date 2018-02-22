@@ -149,9 +149,9 @@ def infer_by_neural_net(session, nnInferrer, saver, test_strs, batch_size, model
 	end_time = time.time()
 
 	# Numeric data -> character strings.
-	inferred_strs = dataset.to_char_strings(inferences)
+	inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
 
-	print('\tInferrence time = {}'.format(end_time - start_time))
+	print('\tInference time = {}'.format(end_time - start_time))
 	print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
 	print('[SWL] Info: End inferring...')
 
@@ -260,17 +260,35 @@ infer_session = tf.Session(graph=infer_graph, config=config)
 train_session.run(initializer)
 
 #%%------------------------------------------------------------------
+# Train.
+
+total_elapsed_time = time.time()
 with train_session.as_default() as sess:
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
+#%%------------------------------------------------------------------
+# Evaluate and infer.
+
+total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, model_dir_path)
+print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
+total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
 	infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
+print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+
+#%%------------------------------------------------------------------
+# Close sessions.
+
+train_session.close()
+eval_session.close()
+infer_session.close()

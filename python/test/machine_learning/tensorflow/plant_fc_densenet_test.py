@@ -13,8 +13,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 #sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
@@ -306,27 +306,36 @@ infer_session = tf.Session(graph=infer_graph, config=config)
 train_session.run(initializer)
 
 #%%------------------------------------------------------------------
-# FIXME [restore] >>
-#batch_size = 12  # Number of samples per gradient update.
-batch_size = 5  # Number of samples per gradient update.
-num_epochs = 2  # Number of times to iterate over training data.
+# Train.
 
+batch_size = 6  # Number of samples per gradient update.
+num_epochs = 50  # Number of times to iterate over training data.
+
+total_elapsed_time = time.time()
 with train_session.as_default() as sess:
 	K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
+#%%------------------------------------------------------------------
+# Evaluate and infer.
+
+total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
+print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
+total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	infer_by_neural_net(infer_session, nnInferrer, infer_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
+print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
-# Infer full-size images using patches.
+# Infer full-size images from patches.
 
 from PIL import Image
 import matplotlib.pyplot as plt
@@ -363,7 +372,7 @@ def infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInf
 	else:
 		return None, None, None, None
 
-def infer_label_using_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferror, batch_size=None):
+def infer_label_from_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferror, batch_size=None):
 	image_size = img.shape[:2]
 	inferred_label_patches, _, patch_regions, resized_size = infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
 	if resized_size is None:
@@ -376,10 +385,12 @@ print('[SWL] Info: Start inferring for full-size images using patches...')
 
 with infer_session.as_default() as sess:
 #with tf.Session(graph=infer_graph, config=config) as sess:
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
+
 	inferences = []
 	start_time = time.time()
 	for img in image_list:
-		inf = infer_label_using_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
+		inf = infer_label_from_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
 		if inf is not None:
 			inferences.append(inf)
 	end_time = time.time()
@@ -452,14 +463,15 @@ def compute_layer_activations(sess, layer_tensor, input_stimuli):
 #%%------------------------------------------------------------------
 # Visualize filters in a convolutional layer.
 
-global_variables = tf.global_variables()
-#print(global_variables)
-for var in global_variables:
-	print(var)
+#with infer_session.as_default() as sess:  # Error: No global variables.
+with tf.Session(graph=infer_graph, config=config) as sess:
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-with infer_session.as_default() as sess:
-#with tf.Session(graph=infer_graph, config=config) as sess:
-	with tf.variable_scope('plant_fc_densenet', reuse=tf.AUTO_REUSE):
+	print(tf.global_variables())
+
+	# FIXME [error] >> Not working.
+	#	A variable with name 'plant_fc_densenet_using_keras/conv2d_50/kernel:0' does not exist.
+	with tf.variable_scope('plant_fc_densenet_using_keras', reuse=tf.AUTO_REUSE):
 		with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
 			filters = tf.get_variable('kernel')
 			#plot_conv_filters(sess, filters)
@@ -470,8 +482,10 @@ with infer_session.as_default() as sess:
 
 with infer_session.as_default() as sess:
 #with tf.Session(graph=infer_graph, config=config) as sess:
-	layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-	layer_after_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
+
+	layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
+	layer_after_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
 
 	start_time = time.time()
 	#idx = 0
@@ -504,3 +518,10 @@ with infer_session.as_default() as sess:
 		idx += 1
 	end_time = time.time()
 	print('\tElapsed time = {}'.format(end_time - start_time))
+
+#%%------------------------------------------------------------------
+# Close sessions.
+
+train_session.close()
+eval_session.close()
+infer_session.close()

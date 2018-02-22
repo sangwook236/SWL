@@ -75,11 +75,11 @@ class ReverseFunctionDataset(object):
 		return keras.utils.to_categorical(num_data, self._VOCAB_SIZE).reshape(num_data.shape + (-1,))
 
 	# Numeric data -> character strings.
-	def to_char_strings(self, num_data):
+	def to_char_strings(self, num_data, has_start_token=True):
 		num_data = np.argmax(num_data, axis=-1)
 		char_strs = []
 		for dat in num_data:
-			char_strs.append(self._datum2str(dat))
+			char_strs.append(self._datum2str(dat, has_start_token))
 		return char_strs
 
 	def _sample_model(self, min_length, max_length):
@@ -97,11 +97,13 @@ class ReverseFunctionDataset(object):
 		return [self._char2int[ch] for ch in str]
 
 	# A numeric datum(numeric list) to a character string.
-	def _datum2str(self, datum):
+	def _datum2str(self, datum, has_start_token):
 		locs = np.where(self._char2int[self._EOS] == datum)
 		datum = datum[:locs[0][0]]
-		#return ''.join([self._int2char[no] for no in datum[:]])
-		return ''.join([self._int2char[no] for no in datum[1:]])
+		if has_start_token:
+			return ''.join([self._int2char[no] for no in datum[1:]])
+		else:
+			return ''.join([self._int2char[no] for no in datum[:]])
 
 	# Preprocessing function for character strings.
 	def _preprocess_string(self, str):

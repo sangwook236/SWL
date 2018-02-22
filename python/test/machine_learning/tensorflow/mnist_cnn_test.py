@@ -283,19 +283,37 @@ infer_session = tf.Session(graph=infer_graph, config=config)
 train_session.run(initializer)
 
 #%%------------------------------------------------------------------
+# Train.
+
 batch_size = 128  # Number of samples per gradient update.
 num_epochs = 20  # Number of times to iterate over training data.	
 
+total_elapsed_time = time.time()
 with train_session.as_default() as sess:
 	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 	shuffle = True
 	trainingMode = TrainingMode.START_TRAINING
 	train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
+#%%------------------------------------------------------------------
+# Evaluate and infer.
+
+total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
+print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
+total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
+print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+
+#%%------------------------------------------------------------------
+# Close sessions.
+
+train_session.close()
+eval_session.close()
+infer_session.close()

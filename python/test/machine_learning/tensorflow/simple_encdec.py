@@ -66,17 +66,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-			return fc1
+		return self._fc_layer(cell_outputs, num_classes)
 
 	def _create_dynamic_bidirectional_model(self, input_tensor, is_training, num_classes, is_time_major):
 		"""
@@ -119,17 +109,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-			return fc1
+		return self._fc_layer(cell_outputs, num_classes)
 
 	def _create_static_model(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 128
@@ -148,39 +128,11 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Encoder.
 		#enc_cell_outputs, enc_cell_state = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
 		enc_cell_outputs, _ = tf.nn.static_rnn(enc_cell, input_tensor, dtype=tf.float32, scope='enc')
-
-		"""
-		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
-		cell_state = cell.zero_state(batch_size, tf.float32)  # Initial state.
-		cell_outputs = []
-		# Method #1: Uses only inputs of the cell.
-		for inp in cell_inputs:
-			cell_output, cell_state = cell(inp, cell_state, scope='cell')
-			cell_outputs.append(cell_output)
-		# Method #2: Uses only the previous output of the cell.
-		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
-		for _ in range(num_time_steps):
-			cell_output, cell_state = cell(cell_input, cell_state, scope='cell')
-			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
-			cell_outputs.append(cell_input)
-			#cell_outputs.append(cell_output)
-		# Method #3: Uses both inputs and the previous output of the cell.
-		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
-		for inp in cell_inputs:
-			cell_output, cell_state = cell(tf.concat([inp, cell_input], axis=-1), cell_state, scope='cell')
-			#cell_output, cell_state = cell(cell_input, tf.concat([inp, cell_state], axis=-1), scope='cell')
-			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
-			cell_outputs.append(cell_input)
-			#cell_outputs.append(cell_output)
-		"""
 
 		# Uses the last output of the encoder only.
 		# TODO [check] >> Is it correct that the last output of the encoder enc_cell_outputs[-1] is used?
@@ -192,27 +144,14 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(dec_cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
+		cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-			return fc1
+		return self._fc_layer(cell_outputs, num_classes)
 
 	def _create_static_bidirectional_model(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
@@ -233,10 +172,7 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Encoder.
 		#enc_cell_outputs, enc_cell_state_fw, enc_cell_state_bw = tf.nn.static_bidirectional_rnn(enc_cell_fw, enc_cell_bw, input_tensor, dtype=tf.float32, scope='enc')
@@ -254,27 +190,14 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		dec_cell_outputs, _ = tf.nn.static_rnn(dec_cell, enc_cell_outputs, dtype=tf.float32, scope='dec')
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(dec_cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(dec_cell_outputs, axis=1)
+		cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('enc_dec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-			return fc1
+		return self._fc_layer(cell_outputs, num_classes)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -284,3 +207,15 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
 		#return tf.contrib.rnn.GRUCell(num_units)
+
+	def _fc_layer(self, cell_outputs, num_classes):
+		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+			if 1 == num_classes:
+				return tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#return tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			elif num_classes >= 2:
+				return tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#return tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
+				return None

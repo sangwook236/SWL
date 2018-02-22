@@ -195,10 +195,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Defines a cell.
 		cell = self._create_unit_cell(num_hidden_units)
@@ -230,10 +227,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(cell_outputs, axis=1)
+		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -301,20 +295,14 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		stacked_cell = tf.contrib.rnn.DropoutWrapper(stacked_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(stacked_cell, input_tensor, dtype=tf.float32)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(cell_outputs, axis=1)
+		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -348,10 +336,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(cell_fw, cell_bw, input_tensor, dtype=tf.float32)
@@ -360,10 +345,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_state_fw.c, cell_state_bw.c), axis=-1), tf.concat((cell_state_fw.h, cell_state_bw.h), axis=-1))
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(cell_outputs, axis=1)
+		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
@@ -399,10 +381,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		stacked_cell_bw = tf.contrib.rnn.DropoutWrapper(stacked_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-		if is_time_major:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0)
-		else:
-			input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
+		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Gets cell outputs.
 		#cell_outputs, cell_state_fw, cell_state_bw = tf.nn.static_bidirectional_rnn(stacked_cell_fw, stacked_cell_bw, input_tensor, dtype=tf.float32)
@@ -411,10 +390,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_state_fw.c, cell_state_bw.c), axis=-1), tf.concat((cell_state_fw.h, cell_state_bw.h), axis=-1))
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		if is_time_major:
-			cell_outputs = tf.stack(cell_outputs, axis=0)
-		else:
-			cell_outputs = tf.stack(cell_outputs, axis=1)
+		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
 		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob

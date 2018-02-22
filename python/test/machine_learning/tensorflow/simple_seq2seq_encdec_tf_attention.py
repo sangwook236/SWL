@@ -4,8 +4,8 @@ from simple_neural_net import SimpleSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 
-class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
-	def __init__(self, input_shape, encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token,end_token, is_bidirectional=True, is_time_major=False):
+class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
+	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional=True, is_time_major=False):
 		self._encoder_input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='encoder_input_seq_lens_ph')
 		self._decoder_output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='decoder_output_seq_lens_ph')
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
@@ -42,13 +42,18 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		return feed_dict
 
 	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
-		with tf.variable_scope('simple_tf_seq2seq_encdec_attention', reuse=tf.AUTO_REUSE):
-			num_classes = decoder_output_shape[-1]
+		with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
+			# TODO [improve] >> It is not good to use num_time_steps.
+			#num_classes = decoder_output_shape[-1]
+			if self._is_time_major:
+				num_time_steps, num_classes = decoder_output_shape[0], decoder_output_shape[-1]
+			else:
+				num_time_steps, num_classes = decoder_output_shape[1], decoder_output_shape[-1]
 			if self._is_bidirectional:
-				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 				#return self._create_dynamic_bidirectional_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 			else:
-				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 				#return self._create_dynamic_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 
 	def _get_loss(self, y, t):
@@ -63,14 +68,14 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
-			masks = tf.sequence_mask(self._output_seq_lens_ph, tf.reduce_max(self._output_seq_lens_ph), dtype=tf.float32)
+			masks = tf.sequence_mask(self._decoder_output_seq_lens_ph, tf.reduce_max(self._decoder_output_seq_lens_ph), dtype=tf.float32)
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
 			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	# REF [function] >> SimpleSeq2SeqEncoderDecoder._create_dynamic_model() in ./simple_seq2seq_encdec.py.
-	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 128
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -112,21 +117,10 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
-		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state), time_major=is_time_major, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state), time_major=is_time_major, dtype=tf.float32, scope='dec')
-
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-		return fc1
+		if is_training:
+			return self._get_output_for_training(dec_cell, enc_cell_state, decoder_input_tensor, batch_size, num_time_steps, num_classes, is_time_major)
+		else:
+			return self._get_output_for_inference(dec_cell, enc_cell_state, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_dynamic_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 128
@@ -180,26 +174,24 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 
 		# FIXME [fix] >> Not correctly working.
 		#	TrainingHelper & GreedyEmbeddingHelper are suitable to word representation/embedding. (?)
-		def get_training_helper():
-			return tf.contrib.seq2seq.TrainingHelper(inputs=decoder_input_tensor, sequence_length=encoder_input_seq_lens, time_major=is_time_major)
-		def get_testing_helper():
-			#return tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
-			return tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.file(batch_size, self._start_token), end_token=self._end_token)
-		def get_decoder_outputs(helper):
-			decoder = tf.contrib.seq2seq.BasicDecoder(
-				dec_cell, helper=helper,
-				#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
-				initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state),  # tf.contrib.seq2seq.AttentionWrapperState.
-				output_layer=output_layer)
-			#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
-			decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
-			return decoder_outputs
-		decoder_outputs = get_decoder_outputs(get_training_helper()) if is_training else get_decoder_outputs(get_testing_helper())
+		if is_training:
+			helper = tf.contrib.seq2seq.TrainingHelper(inputs=decoder_input_tensor, sequence_length=encoder_input_seq_lens, time_major=is_time_major)
+		else:
+			#helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
+			helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.file(batch_size, self._start_token), end_token=self._end_token)
+
+		decoder = tf.contrib.seq2seq.BasicDecoder(
+			dec_cell, helper=helper,
+			#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
+			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state),  # tf.contrib.seq2seq.AttentionWrapperState.
+			output_layer=output_layer)
+		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
+		decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 
 		return decoder_outputs.rnn_output
 
 	# REF [function] >> SimpleSeq2SeqEncoderDecoder._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec.py.
-	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
+	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
 		num_dec_hidden_units = 128
 		keep_prob = 1.0
@@ -247,21 +239,11 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
-		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states), time_major=is_time_major, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states), time_major=is_time_major, dtype=tf.float32, scope='dec')
-
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-		return fc1
+		# NOTICE [info] {important} >> The same model has to be used in training and inference steps.
+		if is_training:
+			return self._get_output_for_training(dec_cell, enc_cell_states, decoder_input_tensor, batch_size, num_time_steps, num_classes, is_time_major)
+		else:
+			return self._get_output_for_inference(dec_cell, enc_cell_states, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_dynamic_bidirectional_model_using_tf_decoder(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_classes, is_time_major):
 		num_enc_hidden_units = 64
@@ -321,21 +303,19 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 
 		# FIXME [fix] >> Not correctly working.
 		#	TrainingHelper & GreedyEmbeddingHelper are suitable to word representation/embedding. (?)
-		def get_training_helper():
-			return tf.contrib.seq2seq.TrainingHelper(inputs=decoder_input_tensor, sequence_length=encoder_input_seq_lens, time_major=is_time_major)
-		def get_testing_helper():
-			#return tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
-			return tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.fill(batch_size, self._start_token), end_token=self._end_token)
-		def get_decoder_outputs(helper):
-			decoder = tf.contrib.seq2seq.BasicDecoder(
-				dec_cell, helper=helper,
-				#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
-				initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states),  # tf.contrib.seq2seq.AttentionWrapperState.
-				output_layer=output_layer)
-			#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
-			decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
-			return decoder_outputs
-		decoder_outputs = get_decoder_outputs(get_training_helper()) if is_training else get_decoder_outputs(get_testing_helper())
+		if is_training:
+			helper = tf.contrib.seq2seq.TrainingHelper(inputs=decoder_input_tensor, sequence_length=encoder_input_seq_lens, time_major=is_time_major)
+		else:
+			#helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.tile([self._start_token], batch_size), end_token=self._end_token)
+			helper = tf.contrib.seq2seq.GreedyEmbeddingHelper(embedding=decoder_input_tensor, start_tokens=tf.fill(batch_size, self._start_token), end_token=self._end_token)
+
+		decoder = tf.contrib.seq2seq.BasicDecoder(
+			dec_cell, helper=helper,
+			#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
+			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states),  # tf.contrib.seq2seq.AttentionWrapperState.
+			output_layer=output_layer)
+		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
+		decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 
 		return decoder_outputs.rnn_output
 
@@ -347,3 +327,52 @@ class SimpleTfSeq2SeqEncoderDecoderWithAttention(SimpleSeq2SeqNeuralNet):
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
 		#return tf.contrib.rnn.GRUCell(num_units)
+
+	def _fc_layer(self, dec_cell_outputs, num_classes):
+		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+			if 1 == num_classes:
+				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			elif num_classes >= 2:
+				return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
+				return None
+
+	def _get_output_for_training(self, dec_cell, initial_cell_state, decoder_input_tensor, batch_size, num_time_steps, num_classes, is_time_major):
+		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+		#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states), time_major=is_time_major, dtype=tf.float32, scope='dec')
+		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states), time_major=is_time_major, dtype=tf.float32, scope='dec')
+
+		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
+		decoder_input_tensor = tf.unstack(decoder_input_tensor, num_time_steps, axis=0 if is_time_major else 1)
+
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=initial_cell_state)
+		dec_cell_outputs = []
+		for inp in decoder_input_tensor:
+			dec_cell_output, dec_cell_state = dec_cell(inp, dec_cell_state, scope='dec')
+			dec_cell_outputs.append(dec_cell_output)
+
+		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
+		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
+
+		fc1 = self._fc_layer(dec_cell_outputs, num_classes)
+
+		return fc1
+
+	def _get_output_for_inference(self, dec_cell, initial_cell_state, batch_size, num_time_steps, num_classes, is_time_major):
+		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=initial_cell_state)
+		dec_cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(self._start_token))  # Initial input.
+		fc_outputs = []
+		for _ in range(num_time_steps):
+			dec_cell_output, dec_cell_state = dec_cell(dec_cell_input, dec_cell_state, scope='dec')
+
+			#dec_cell_output = tf.reshape(dec_cell_output, [None, 1, num_dec_hidden_units])
+			dec_cell_input = self._fc_layer(dec_cell_output, num_classes)
+			fc_outputs.append(dec_cell_input)
+		
+		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
+		fc_outputs = tf.stack(fc_outputs, axis=0 if is_time_major else 1)
+		
+		return fc_outputs

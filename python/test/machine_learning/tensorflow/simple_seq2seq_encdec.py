@@ -104,22 +104,44 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
+		"""
+		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
+
+		# Method #1: Uses only inputs of the cell.
+		cell_state = cell.zero_state(batch_size, tf.float32)  # Initial state.
+		cell_outputs = []
+		for inp in cell_inputs:
+			cell_output, cell_state = cell(inp, cell_state, scope='cell')
+			cell_outputs.append(cell_output)
+
+		# Method #2: Uses only the previous output of the cell.
+		cell_state = cell.zero_state(batch_size, tf.float32)  # Initial state.
+		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
+		cell_outputs = []
+		for _ in range(num_time_steps):
+			cell_output, cell_state = cell(cell_input, cell_state, scope='cell')
+			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
+			cell_outputs.append(cell_input)
+			#cell_outputs.append(cell_output)
+
+		# Method #3: Uses both inputs and the previous output of the cell.
+		cell_state = cell.zero_state(batch_size, tf.float32)  # Initial state.
+		cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(start_token))  # Initial input.
+		cell_outputs = []
+		for inp in cell_inputs:
+			cell_output, cell_state = cell(tf.concat([inp, cell_input], axis=-1), cell_state, scope='cell')
+			#cell_output, cell_state = cell(cell_input, tf.concat([inp, cell_state], axis=-1), scope='cell')
+			cell_input = f(cell_output)  # TODO [implement] >> e.g.) num_dec_hidden_units -> num_classes.
+			cell_outputs.append(cell_input)
+			#cell_outputs.append(cell_output)
+		"""
+
 		# Decoder.
-		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-		#cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_state, time_major=is_time_major, dtype=tf.float32, scope='dec')
-		cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_state, time_major=is_time_major, dtype=tf.float32, scope='dec')
-
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-			else:
-				assert num_classes > 0, 'Invalid number of classes.'
-
-		return fc1
+		# NOTICE [info] {important} >> The same model has to be used in training and inference steps.
+		if is_training:
+			return self._get_output_for_training(dec_cell, enc_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
+		else:
+			return self._get_output_for_inference(dec_cell, enc_cell_state, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
@@ -159,62 +181,12 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		def fc_layer(dec_cell_outputs, num_classes):
-			with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-				if 1 == num_classes:
-					return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='fc')
-					#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-				elif num_classes >= 2:
-					return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-					#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
-				else:
-					assert num_classes > 0, 'Invalid number of classes.'
-					return None
-
 		# Decoder.
 		# NOTICE [info] {important} >> The same model has to be used in training and inference steps.
 		if is_training:
-			# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
-			#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
-			#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
-
-			# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
-			if is_time_major:
-				decoder_input_tensor = tf.unstack(decoder_input_tensor, num_time_steps, axis=0)
-			else:
-				decoder_input_tensor = tf.unstack(decoder_input_tensor, num_time_steps, axis=1)
-			dec_cell_state = enc_cell_states  # Initial state.
-			dec_cell_outputs = []
-			for inp in decoder_input_tensor:
-				dec_cell_output, dec_cell_state = dec_cell(inp, dec_cell_state, scope='dec')
-				dec_cell_outputs.append(dec_cell_output)
-			# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-			if is_time_major:
-				dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0)
-			else:
-				dec_cell_outputs = tf.stack(dec_cell_outputs, axis=1)
-
-			fc1 = fc_layer(dec_cell_outputs, num_classes)
-
-			return fc1
+			return self._get_output_for_training(dec_cell, enc_cell_states, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
 		else:
-			dec_cell_state = enc_cell_states  # Initial state.
-			dec_cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(self._start_token))  # Initial input.
-			fc_outputs = []
-			for _ in range(num_time_steps):
-				dec_cell_output, dec_cell_state = dec_cell(dec_cell_input, dec_cell_state, scope='dec')
-
-				#dec_cell_output = tf.reshape(dec_cell_output, [None, 1, num_dec_hidden_units])
-				dec_cell_input = fc_layer(dec_cell_output, num_classes)
-				fc_outputs.append(dec_cell_input)
-			
-			# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-			if is_time_major:
-				fc_outputs = tf.stack(fc_outputs, axis=0)
-			else:
-				fc_outputs = tf.stack(fc_outputs, axis=1)
-			
-			return fc_outputs
+			return self._get_output_for_inference(dec_cell, enc_cell_states, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -224,3 +196,52 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
 
 		#return tf.contrib.rnn.GRUCell(num_units)
+
+	def _fc_layer(self, dec_cell_outputs, num_classes):
+		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+			if 1 == num_classes:
+				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			elif num_classes >= 2:
+				return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+			else:
+				assert num_classes > 0, 'Invalid number of classes.'
+				return None
+
+	def _get_output_for_training(self, dec_cell, initial_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major):
+		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
+		#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
+		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
+
+		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
+		decoder_input_tensor = tf.unstack(decoder_input_tensor, num_time_steps, axis=0 if is_time_major else 1)
+
+		dec_cell_state = initial_cell_state
+		dec_cell_outputs = []
+		for inp in decoder_input_tensor:
+			dec_cell_output, dec_cell_state = dec_cell(inp, dec_cell_state, scope='dec')
+			dec_cell_outputs.append(dec_cell_output)
+
+		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
+		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
+
+		fc1 = self._fc_layer(dec_cell_outputs, num_classes)
+
+		return fc1
+
+	def _get_output_for_inference(self, dec_cell, initial_cell_state, batch_size, num_time_steps, num_classes, is_time_major):
+		dec_cell_state = initial_cell_state
+		dec_cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(self._start_token))  # Initial input.
+		fc_outputs = []
+		for _ in range(num_time_steps):
+			dec_cell_output, dec_cell_state = dec_cell(dec_cell_input, dec_cell_state, scope='dec')
+
+			#dec_cell_output = tf.reshape(dec_cell_output, [None, 1, num_dec_hidden_units])
+			dec_cell_input = self._fc_layer(dec_cell_output, num_classes)
+			fc_outputs.append(dec_cell_input)
+		
+		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
+		fc_outputs = tf.stack(fc_outputs, axis=0 if is_time_major else 1)
+		
+		return fc_outputs
