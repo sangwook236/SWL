@@ -1,15 +1,4 @@
-# REF [site] >> https://talbaumel.github.io/attention/ ==> Neural Attention Mechanism - Sequence To Sequence Attention Models In DyNet.pdf
-# REF [site] >> https://github.com/fchollet/keras/blob/master/examples/lstm_seq2seq.py
-# REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 # REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-
-# REF [site] >> https://blog.heuritech.com/2016/01/20/attention-mechanism/
-# REF [site] >> https://github.com/philipperemy/keras-attention-mechanism
-
-# REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
-# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
-# REF [paper] >> "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention", ICML 2015.
 
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -227,7 +216,6 @@ with eval_graph.as_default():
 
 with infer_graph.as_default():
 	#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
-
 	# Create a model.
 	rnnModelForInference = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
 	rnnModelForInference.create_inference_model()
