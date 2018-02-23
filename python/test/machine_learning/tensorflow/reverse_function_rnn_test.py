@@ -51,10 +51,11 @@ output_dir_prefix = 'reverse_function_rnn'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
-model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
-inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output_dir_suffix)
-train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
-val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
+output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
+model_dir_path = '{}/model'.format(output_dir_path)
+inference_dir_path = '{}/inference'.format(output_dir_path)
+train_summary_dir_path = '{}/train_log'.format(output_dir_path)
+val_summary_dir_path = '{}/val_log'.format(output_dir_path)
 
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
@@ -100,7 +101,6 @@ def train_neural_net(session, nnTrainer, saver, train_input_seqs, train_output_s
 		print('[SWL] Info: Restored a model.')
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		start_time = time.time()
 		history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 		end_time = time.time()
@@ -122,7 +122,6 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_input_seqs, val_output_
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start evaluation...')
 
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	start_time = time.time()
 	val_loss, val_acc = nnEvaluator.evaluate(session, val_input_seqs, val_output_seqs, batch_size)
 	end_time = time.time()
@@ -143,7 +142,6 @@ def infer_by_neural_net(session, nnInferrer, saver, test_strs, batch_size, model
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start inferring...')
 
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	start_time = time.time()
 	inferences = nnInferrer.infer(session, test_data, batch_size)
 	end_time = time.time()
@@ -198,16 +196,15 @@ eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
 with train_graph.as_default():
-#with train_session:
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+	#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 	# Create a model.
-	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-	rnnModel.create_training_model()
+	rnnModelForTraining = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+	rnnModelForTraining.create_training_model()
 
 	# Create a trainer.
 	initial_epoch = 0
-	nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
 
 	# Create a saver.
 	#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -216,29 +213,27 @@ with train_graph.as_default():
 	initializer = tf.global_variables_initializer()
 
 with eval_graph.as_default():
-#with eval_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 	# Create a model.
-	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-	rnnModel.create_evaluation_model()
+	rnnModelForEvaluation = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+	rnnModelForEvaluation.create_evaluation_model()
 
 	# Create an evaluator.
-	nnEvaluator = NeuralNetEvaluator(rnnModel)
+	nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
 
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
 with infer_graph.as_default():
-#with infer_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 	# Create a model.
-	rnnModel = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-	rnnModel.create_inference_model()
+	rnnModelForInference = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+	rnnModelForInference.create_inference_model()
 
 	# Create an inferrer.
-	nnInferrer = NeuralNetInferrer(rnnModel)
+	nnInferrer = NeuralNetInferrer(rnnModelForInference)
 
 	# Create a saver.
 	infer_saver = tf.train.Saver()
@@ -264,10 +259,12 @@ train_session.run(initializer)
 
 total_elapsed_time = time.time()
 with train_session.as_default() as sess:
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-	shuffle = True
-	trainingMode = TrainingMode.START_TRAINING
-	train_neural_net(sess, nnTrainer, train_saver, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+		shuffle = True
+		trainingMode = TrainingMode.START_TRAINING
+		train_neural_net(sess, nnTrainer, train_saver, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -275,20 +272,27 @@ print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		evaluate_neural_net(sess, nnEvaluator, eval_saver, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+		infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
 # Close sessions.
 
 train_session.close()
+train_session = None
 eval_session.close()
+eval_session = None
 infer_session.close()
+infer_session = None

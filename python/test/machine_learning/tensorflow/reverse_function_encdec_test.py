@@ -51,10 +51,11 @@ output_dir_prefix = 'reverse_function_encdec'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
-model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
-inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output_dir_suffix)
-train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
-val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
+output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
+model_dir_path = '{}/model'.format(output_dir_path)
+inference_dir_path = '{}/inference'.format(output_dir_path)
+train_summary_dir_path = '{}/train_log'.format(output_dir_path)
+val_summary_dir_path = '{}/val_log'.format(output_dir_path)
 
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
@@ -198,14 +199,13 @@ eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
 with train_graph.as_default():
-#with train_session:
 	# Create a model.
-	rnnModel = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-	rnnModel.create_training_model()
+	rnnModelForTraining = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+	rnnModelForTraining.create_training_model()
 
 	# Create a trainer.
 	initial_epoch = 0
-	nnTrainer = SimpleNeuralNetTrainer(rnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
 
 	# Create a saver.
 	#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -214,25 +214,23 @@ with train_graph.as_default():
 	initializer = tf.global_variables_initializer()
 
 with eval_graph.as_default():
-#with eval_session:
 	# Create a model.
-	rnnModel = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-	rnnModel.create_evaluation_model()
+	rnnModelForEvaluation = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+	rnnModelForEvaluation.create_evaluation_model()
 
 	# Create an evaluator.
-	nnEvaluator = NeuralNetEvaluator(rnnModel)
+	nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
 
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
 with infer_graph.as_default():
-#with infer_session:
 	# Create a model.
-	rnnModel = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-	rnnModel.create_inference_model()
+	rnnModelForInference = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+	rnnModelForInference.create_inference_model()
 
 	# Create an inferrer.
-	nnInferrer = NeuralNetInferrer(rnnModel)
+	nnInferrer = NeuralNetInferrer(rnnModelForInference)
 
 	# Create a saver.
 	infer_saver = tf.train.Saver()
@@ -258,9 +256,10 @@ train_session.run(initializer)
 
 total_elapsed_time = time.time()
 with train_session.as_default() as sess:
-	shuffle = True
-	trainingMode = TrainingMode.START_TRAINING
-	train_neural_net(sess, nnTrainer, train_saver, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	with sess.graph.as_default():
+		shuffle = True
+		trainingMode = TrainingMode.START_TRAINING
+		train_neural_net(sess, nnTrainer, train_saver, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -268,18 +267,23 @@ print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
-	evaluate_neural_net(sess, nnEvaluator, eval_saver, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		evaluate_neural_net(sess, nnEvaluator, eval_saver, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
-	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+		infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
 # Close sessions.
 
 train_session.close()
+train_session = None
 eval_session.close()
+eval_session = None
 infer_session.close()
+infer_session = None

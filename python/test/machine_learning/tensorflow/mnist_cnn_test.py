@@ -40,10 +40,11 @@ output_dir_prefix = 'mnist'
 output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 #output_dir_suffix = '20180116T212902'
 
-model_dir_path = './result/{}_model_{}'.format(output_dir_prefix, output_dir_suffix)
-inference_dir_path = './result/{}_inference_{}'.format(output_dir_prefix, output_dir_suffix)
-train_summary_dir_path = './log/{}_train_{}'.format(output_dir_prefix, output_dir_suffix)
-val_summary_dir_path = './log/{}_val_{}'.format(output_dir_prefix, output_dir_suffix)
+output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
+model_dir_path = '{}/model'.format(output_dir_path)
+inference_dir_path = '{}/inference'.format(output_dir_path)
+train_summary_dir_path = '{}/train_log'.format(output_dir_path)
+val_summary_dir_path = '{}/val_log'.format(output_dir_path)
 
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
@@ -221,16 +222,15 @@ eval_graph = tf.Graph()
 infer_graph = tf.Graph()
 
 with train_graph.as_default():
-#with train_session:
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+	#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 	# Create a model.
-	cnnModel = create_mnist_cnn(input_shape, output_shape)
-	cnnModel.create_training_model()
+	cnnModelForTraining = create_mnist_cnn(input_shape, output_shape)
+	cnnModelForTraining.create_training_model()
 
 	# Create a trainer.
 	initial_epoch = 0
-	nnTrainer = SimpleNeuralNetTrainer(cnnModel, initial_epoch)
+	nnTrainer = SimpleNeuralNetTrainer(cnnModelForTraining, initial_epoch)
 
 	# Create a saver.
 	#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -239,29 +239,27 @@ with train_graph.as_default():
 	initializer = tf.global_variables_initializer()
 
 with eval_graph.as_default():
-#with eval_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 	# Create a model.
-	cnnModel = create_mnist_cnn(input_shape, output_shape)
-	cnnModel.create_evaluation_model()
+	cnnModelForEvaluation = create_mnist_cnn(input_shape, output_shape)
+	cnnModelForEvaluation.create_evaluation_model()
 
 	# Create an evaluator.
-	nnEvaluator = NeuralNetEvaluator(cnnModel)
+	nnEvaluator = NeuralNetEvaluator(cnnModelForEvaluation)
 
 	# Create a saver.
 	eval_saver = tf.train.Saver()
 
 with infer_graph.as_default():
-#with infer_session:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+	#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 	# Create a model.
-	cnnModel = create_mnist_cnn(input_shape, output_shape)
-	cnnModel.create_inference_model()
+	cnnModelForInference = create_mnist_cnn(input_shape, output_shape)
+	cnnModelForInference.create_inference_model()
 
 	# Create an inferrer.
-	nnInferrer = NeuralNetInferrer(cnnModel)
+	nnInferrer = NeuralNetInferrer(cnnModelForInference)
 
 	# Create a saver.
 	infer_saver = tf.train.Saver()
@@ -290,10 +288,12 @@ num_epochs = 20  # Number of times to iterate over training data.
 
 total_elapsed_time = time.time()
 with train_session.as_default() as sess:
-	#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-	shuffle = True
-	trainingMode = TrainingMode.START_TRAINING
-	train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+		shuffle = True
+		trainingMode = TrainingMode.START_TRAINING
+		train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -301,19 +301,26 @@ print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
-	#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-	infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
+	with sess.graph.as_default():
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+		infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
 # Close sessions.
 
 train_session.close()
+train_session = None
 eval_session.close()
+eval_session = None
 infer_session.close()
+infer_session = None
