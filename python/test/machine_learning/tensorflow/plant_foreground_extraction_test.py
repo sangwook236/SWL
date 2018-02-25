@@ -13,8 +13,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 #sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
@@ -275,8 +275,8 @@ train_session.run(initializer)
 #%%------------------------------------------------------------------
 # Train.
 
-batch_size = 2  # Number of samples per gradient update.
-num_epochs = 2  # Number of times to iterate over training data.
+batch_size = 6  # Number of samples per gradient update.
+num_epochs = 50  # Number of times to iterate over training data.
 
 total_elapsed_time = time.time()
 with train_session.as_default() as sess:
