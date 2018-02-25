@@ -84,7 +84,7 @@ train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, v
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, saver, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if TrainingMode.START_TRAINING == trainingMode:
 		print('[SWL] Info: Start training...')
 	elif TrainingMode.RESUME_TRAINING == trainingMode:
@@ -115,11 +115,12 @@ def train_neural_net(session, nnTrainer, saver, train_encoder_input_seqs, train_
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, saver, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path):
-	# Load a model.
-	ckpt = tf.train.get_checkpoint_state(model_dir_path)
-	saver.restore(session, ckpt.model_checkpoint_path)
-	#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+def evaluate_neural_net(session, nnEvaluator, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, saver=None, model_dir_path=None):
+	if saver is not None and model_dir_path is not None:
+		# Load a model.
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start evaluation...')
@@ -132,14 +133,15 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_encoder_input_seqs, val
 	print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
-def infer_by_neural_net(session, nnInferrer, saver, test_strs, batch_size, model_dir_path):
+def infer_by_neural_net(session, nnInferrer, test_strs, batch_size, saver=None, model_dir_path=None):
 	# Character strings -> numeric data.
 	test_data = dataset.to_numeric_data(test_strs)
 
-	# Load a model.
-	ckpt = tf.train.get_checkpoint_state(model_dir_path)
-	saver.restore(session, ckpt.model_checkpoint_path)
-	#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+	if saver is not None and model_dir_path is not None:
+		# Load a model.
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 	print('[SWL] Info: Loaded a model.')
 	print('[SWL] Info: Start inferring...')
@@ -262,7 +264,7 @@ with train_session.as_default() as sess:
 	with sess.graph.as_default():
 		shuffle = True
 		trainingMode = TrainingMode.START_TRAINING
-		train_neural_net(sess, nnTrainer, train_saver, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+		train_neural_net(sess, nnTrainer, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -271,14 +273,14 @@ print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 total_elapsed_time = time.time()
 with eval_session.as_default() as sess:
 	with sess.graph.as_default():
-		evaluate_neural_net(sess, nnEvaluator, eval_saver, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, model_dir_path)
+		evaluate_neural_net(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
 with infer_session.as_default() as sess:
 	with sess.graph.as_default():
 		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-		infer_by_neural_net(sess, nnInferrer, infer_saver, test_strs, batch_size, model_dir_path)
+		infer_by_neural_net(sess, nnInferrer, test_strs, batch_size, infer_saver, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------

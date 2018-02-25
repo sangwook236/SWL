@@ -13,8 +13,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = 'D:/lib_repo/python'
-	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	#lib_home_dir_path = 'D:/lib_repo/python'
+	lib_home_dir_path = 'D:/lib_repo/python/rnd'
 #sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
@@ -24,7 +24,7 @@ sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segment
 #--------------------
 import numpy as np
 import tensorflow as tf
-from plant_fc_densenet import PlantFcDenseNet
+from fc_densenet_keras import FcDenseNetUsingKeras
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
@@ -88,7 +88,7 @@ train_image_patches, test_image_patches, train_label_patches, test_label_patches
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, saver, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if TrainingMode.START_TRAINING == trainingMode:
 		print('[SWL] Info: Start training...')
 	elif TrainingMode.RESUME_TRAINING == trainingMode:
@@ -119,18 +119,18 @@ def train_neural_net(session, nnTrainer, saver, train_images, train_labels, val_
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, saver, val_images, val_labels, batch_size, model_dir_path):
+def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
 		if val_images.shape[0] == val_labels.shape[0]:
 			num_val_examples = val_images.shape[0]
 
 	if num_val_examples > 0:
-		# Load a model.
-		# FIXME [restore] >>
-		#ckpt = tf.train.get_checkpoint_state(model_dir_path)
-		#saver.restore(session, ckpt.model_checkpoint_path)
-		##saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		if saver is not None and model_dir_path is not None:
+			# Load a model.
+			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			saver.restore(session, ckpt.model_checkpoint_path)
+			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start evaluation...')
@@ -145,18 +145,18 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_images, val_labels, bat
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, batch_size, model_dir_path):
+def infer_by_neural_net(session, nnInferrer, test_images, test_labels, batch_size, saver=None, model_dir_path=None):
 	num_inf_examples = 0
 	if test_images is not None and test_labels is not None:
 		if test_images.shape[0] == test_labels.shape[0]:
 			num_inf_examples = test_images.shape[0]
 
 	if num_inf_examples > 0:
-		# Load a model.
-		# FIXME [restore] >>
-		#ckpt = tf.train.get_checkpoint_state(model_dir_path)
-		#saver.restore(session, ckpt.model_checkpoint_path)
-		##saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		if saver is not None and model_dir_path is not None:
+			# Load a model.
+			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			saver.restore(session, ckpt.model_checkpoint_path)
+			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start inferring...')
@@ -185,10 +185,12 @@ def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, ba
 from keras import backend as K
 
 # Create graphs.
-# FIXME [recover] >>
-#train_graph = tf.Graph()
-#eval_graph = tf.Graph()
-#infer_graph = tf.Graph()
+"""
+train_graph = tf.Graph()
+eval_graph = tf.Graph()
+infer_graph = tf.Graph()
+"""
+train_graph = tf.get_default_graph()
 
 #--------------------
 # Configuration.
@@ -199,11 +201,11 @@ config.gpu_options.allow_growth = True
 #config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 # Create sessions.
-# FIXME [recover] >>
-#train_session = tf.Session(graph=train_graph, config=config)
-#eval_session = tf.Session(graph=eval_graph, config=config)
-#infer_session = tf.Session(graph=infer_graph, config=config)
-train_session = tf.Session(config=config)
+train_session = tf.Session(graph=train_graph, config=config)
+"""
+eval_session = tf.Session(graph=eval_graph, config=config)
+infer_session = tf.Session(graph=infer_graph, config=config)
+"""
 eval_session = train_session
 infer_session = train_session
 
@@ -214,22 +216,12 @@ with train_session.as_default() as sess:
 		K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 		# Create a model.
-		denseNetModelForTraining = PlantFcDenseNet(input_shape, output_shape)
+		denseNetModelForTraining = FcDenseNetUsingKeras(input_shape, output_shape)
 		denseNetModelForTraining.create_training_model()
 
 		# Create a trainer.
 		initial_epoch = 0
 		nnTrainer = SimpleNeuralNetTrainer(denseNetModelForTraining, initial_epoch)
-
-		# FIXME [delete] >>
-		# Create an evaluator.
-		nnEvaluator = NeuralNetEvaluator(denseNetModelForTraining)
-		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(denseNetModelForTraining)
-		# Create a saver.
-		eval_saver = tf.train.Saver()
-		# Create a saver.
-		infer_saver = tf.train.Saver()
 
 		# Create a saver.
 		#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -237,8 +229,6 @@ with train_session.as_default() as sess:
 
 		initializer = tf.global_variables_initializer()
 
-# FIXME [uncommnet] >>
-"""
 #with eval_graph.as_default():
 with eval_session.as_default() as sess:
 	with sess.graph.as_default():
@@ -246,14 +236,18 @@ with eval_session.as_default() as sess:
 		K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		denseNetModelForEvaluation = PlantFcDenseNet(input_shape, output_shape)
+		"""
+		denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
 		denseNetModelForEvaluation.create_evaluation_model()
+		"""
+		denseNetModelForEvaluation = denseNetModelForTraining
 
 		# Create an evaluator.
 		nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
 
 		# Create a saver.
-		eval_saver = tf.train.Saver()
+		#eval_saver = tf.train.Saver()
+		eval_saver = None
 
 #with infer_graph.as_default():
 with infer_session.as_default() as sess:
@@ -262,15 +256,18 @@ with infer_session.as_default() as sess:
 		K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		denseNetModelForInference = PlantFcDenseNet(input_shape, output_shape)
+		"""
+		denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
 		denseNetModelForInference.create_inference_model()
+		"""
+		denseNetModelForInference = denseNetModelForTraining
 
 		# Create an inferrer.
 		nnInferrer = NeuralNetInferrer(denseNetModelForInference)
 
 		# Create a saver.
-		infer_saver = tf.train.Saver()
-"""
+		#infer_saver = tf.train.Saver()
+		infer_saver = None
 
 # Initialize.
 train_session.run(initializer)
@@ -278,8 +275,8 @@ train_session.run(initializer)
 #%%------------------------------------------------------------------
 # Train.
 
-batch_size = 6  # Number of samples per gradient update.
-num_epochs = 5  # Number of times to iterate over training data.
+batch_size = 2  # Number of samples per gradient update.
+num_epochs = 2  # Number of times to iterate over training data.
 
 total_elapsed_time = time.time()
 with train_session.as_default() as sess:
@@ -288,7 +285,7 @@ with train_session.as_default() as sess:
 		K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		shuffle = True
 		trainingMode = TrainingMode.START_TRAINING
-		train_neural_net(sess, nnTrainer, train_saver, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+		train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -299,7 +296,7 @@ with eval_session.as_default() as sess:
 	with sess.graph.as_default():
 		K.set_session(sess)
 		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		evaluate_neural_net(sess, nnEvaluator, eval_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
+		evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
@@ -307,7 +304,7 @@ with infer_session.as_default() as sess:
 	with sess.graph.as_default():
 		K.set_session(sess)
 		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		infer_by_neural_net(infer_session, nnInferrer, infer_saver, test_image_patches, test_label_patches, batch_size, model_dir_path)
+		infer_by_neural_net(infer_session, nnInferrer, test_image_patches, test_label_patches, batch_size, infer_saver, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -446,9 +443,9 @@ with infer_session.as_default() as sess:  # Error: No global variables.
 		#print(tf.global_variables())
 
 		# FIXME [error] >> Not working.
-		#	A variable with name 'plant_fc_densenet_using_keras/conv2d_50/kernel:0' does not exist.
+		#	A variable with name 'fc_densenet_using_keras/conv2d_50/kernel:0' does not exist.
 		#	The variable might be created by tf.Variable(), not tf.get_variable().
-		with tf.variable_scope('plant_fc_densenet_using_keras', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc_densenet_using_keras', reuse=tf.AUTO_REUSE):
 			with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
 				filters = tf.get_variable('kernel')
 				#plot_conv_filters(sess, filters)
@@ -462,8 +459,8 @@ with infer_session.as_default() as sess:
 		K.set_session(sess)
 		K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-		layer_before_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-		layer_after_concat_tensor = sess.graph.get_tensor_by_name('plant_fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
+		layer_before_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
+		layer_after_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
 
 		start_time = time.time()
 		#idx = 0

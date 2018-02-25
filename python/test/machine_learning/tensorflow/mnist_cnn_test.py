@@ -108,7 +108,7 @@ train_images, train_labels, test_images, test_labels = load_data(data_dir_path, 
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, saver, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if TrainingMode.START_TRAINING == trainingMode:
 		print('[SWL] Info: Start training...')
 	elif TrainingMode.RESUME_TRAINING == trainingMode:
@@ -141,19 +141,20 @@ def train_neural_net(session, nnTrainer, saver, train_images, train_labels, val_
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, saver, val_images, val_labels, batch_size, model_dir_path):
+def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
 		if val_images.shape[0] == val_labels.shape[0]:
 			num_val_examples = val_images.shape[0]
 
 	if num_val_examples > 0:
-		# Load a model.
-		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		if saver is not None and model_dir_path is not None:
+			# Load a model.
+			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			saver.restore(session, ckpt.model_checkpoint_path)
+			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start evaluation...')
@@ -168,19 +169,20 @@ def evaluate_neural_net(session, nnEvaluator, saver, val_images, val_labels, bat
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, saver, test_images, test_labels, batch_size, model_dir_path):
+def infer_by_neural_net(session, nnInferrer, test_images, test_labels, batch_size, saver=None, model_dir_path=None):
 	num_inf_examples = 0
 	if test_images is not None and test_labels is not None:
 		if test_images.shape[0] == test_labels.shape[0]:
 			num_inf_examples = test_images.shape[0]
 
 	if num_inf_examples > 0:
-		# Load a model.
-		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		if saver is not None and model_dir_path is not None:
+			# Load a model.
+			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			saver.restore(session, ckpt.model_checkpoint_path)
+			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 
 		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start inferring...')
@@ -293,7 +295,7 @@ with train_session.as_default() as sess:
 		#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		shuffle = True
 		trainingMode = TrainingMode.START_TRAINING
-		train_neural_net(sess, nnTrainer, train_saver, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+		train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
@@ -304,7 +306,7 @@ with eval_session.as_default() as sess:
 	with sess.graph.as_default():
 		#K.set_session(sess)
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		evaluate_neural_net(sess, nnEvaluator, eval_saver, test_images, test_labels, batch_size, model_dir_path)
+		evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, model_dir_path)
 print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 total_elapsed_time = time.time()
@@ -312,7 +314,7 @@ with infer_session.as_default() as sess:
 	with sess.graph.as_default():
 		#K.set_session(sess)
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		infer_by_neural_net(sess, nnInferrer, infer_saver, test_images, test_labels, batch_size, model_dir_path)
+		infer_by_neural_net(sess, nnInferrer, test_images, test_labels, batch_size, infer_saver, model_dir_path)
 print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 #%%------------------------------------------------------------------
