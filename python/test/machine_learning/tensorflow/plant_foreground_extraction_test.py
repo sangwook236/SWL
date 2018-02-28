@@ -33,59 +33,6 @@ from swl.image_processing.util import generate_image_patch_list, stitch_label_pa
 from rda_plant_util import RdaPlantDataset
 import time
 
-#np.random.seed(7)
-
-#%%------------------------------------------------------------------
-# Prepare directories.
-
-import datetime
-
-output_dir_prefix = 'fc_densenet'
-output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-#output_dir_suffix = '20180117T135317'
-
-output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
-model_dir_path = '{}/model'.format(output_dir_path)
-inference_dir_path = '{}/inference'.format(output_dir_path)
-train_summary_dir_path = '{}/train_log'.format(output_dir_path)
-val_summary_dir_path = '{}/val_log'.format(output_dir_path)
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as exception:
-			if os.errno.EEXIST != exception.errno:
-				raise
-make_dir(model_dir_path)
-make_dir(inference_dir_path)
-make_dir(train_summary_dir_path)
-make_dir(val_summary_dir_path)
-
-#%%------------------------------------------------------------------
-# Prepare data.
-
-if 'posix' == os.name:
-	#data_home_dir_path = '/home/sangwook/my_dataset'
-	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
-else:
-	data_home_dir_path = 'D:/dataset'
-
-image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
-label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
-
-image_suffix = ''
-image_extension = 'png'
-label_suffix = '_foreground'
-label_extension = 'png'
-patch_height, patch_width = 224, 224
-
-num_classes = 2
-input_shape = (None, patch_height, patch_width, 3)
-output_shape = (None, patch_height, patch_width, num_classes)
-
-train_image_patches, test_image_patches, train_label_patches, test_label_patches, image_list, label_list = RdaPlantDataset.load_data(image_dir_path, image_suffix, image_extension, label_dir_path, label_suffix, label_extension, num_classes, patch_height, patch_width)
-
 #%%------------------------------------------------------------------
 
 def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
@@ -145,7 +92,7 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_images, test_labels, batch_size, saver=None, model_dir_path=None):
+def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_classes, batch_size, saver=None, model_dir_path=None):
 	num_inf_examples = 0
 	if test_images is not None and test_labels is not None:
 		if test_images.shape[0] == test_labels.shape[0]:
@@ -180,134 +127,6 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, batch_siz
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 #%%------------------------------------------------------------------
-# DenseNet models, sessions, and graphs.
-
-from keras import backend as K
-
-# Create graphs.
-"""
-train_graph = tf.Graph()
-eval_graph = tf.Graph()
-infer_graph = tf.Graph()
-"""
-train_graph = tf.get_default_graph()
-
-#--------------------
-# Configuration.
-config = tf.ConfigProto()
-#config.allow_soft_placement = True
-config.log_device_placement = True
-config.gpu_options.allow_growth = True
-#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-# Create sessions.
-train_session = tf.Session(graph=train_graph, config=config)
-"""
-eval_session = tf.Session(graph=eval_graph, config=config)
-infer_session = tf.Session(graph=infer_graph, config=config)
-"""
-eval_session = train_session
-infer_session = train_session
-
-#with train_graph.as_default():
-with train_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
-
-		# Create a model.
-		denseNetModelForTraining = FcDenseNetUsingKeras(input_shape, output_shape)
-		denseNetModelForTraining.create_training_model()
-
-		# Create a trainer.
-		initial_epoch = 0
-		nnTrainer = SimpleNeuralNetTrainer(denseNetModelForTraining, initial_epoch)
-
-		# Create a saver.
-		#	Save a model every 2 hours and maximum 5 latest models are saved.
-		train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
-
-		initializer = tf.global_variables_initializer()
-
-#with eval_graph.as_default():
-with eval_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
-
-		# Create a model.
-		"""
-		denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
-		denseNetModelForEvaluation.create_evaluation_model()
-		"""
-		denseNetModelForEvaluation = denseNetModelForTraining
-
-		# Create an evaluator.
-		nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
-
-		# Create a saver.
-		#eval_saver = tf.train.Saver()
-		eval_saver = None
-
-#with infer_graph.as_default():
-with infer_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
-
-		# Create a model.
-		"""
-		denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
-		denseNetModelForInference.create_inference_model()
-		"""
-		denseNetModelForInference = denseNetModelForTraining
-
-		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(denseNetModelForInference)
-
-		# Create a saver.
-		#infer_saver = tf.train.Saver()
-		infer_saver = None
-
-# Initialize.
-train_session.run(initializer)
-
-#%%------------------------------------------------------------------
-# Train.
-
-batch_size = 6  # Number of samples per gradient update.
-num_epochs = 50  # Number of times to iterate over training data.
-
-total_elapsed_time = time.time()
-with train_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(1)  # Set the learning phase to 'train'.
-		shuffle = True
-		trainingMode = TrainingMode.START_TRAINING
-		train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
-print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
-
-#%%------------------------------------------------------------------
-# Evaluate and infer.
-
-total_elapsed_time = time.time()
-with eval_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, model_dir_path)
-print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
-
-total_elapsed_time = time.time()
-with infer_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'.
-		infer_by_neural_net(infer_session, nnInferrer, test_image_patches, test_label_patches, batch_size, infer_saver, model_dir_path)
-print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
-
-#%%------------------------------------------------------------------
 # Infer full-size images from patches.
 
 from PIL import Image
@@ -325,7 +144,7 @@ def resize_image_and_label(img, lbl, patch_height, patch_width):
 	else:
 		return img, lbl, None
 
-def infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size=None):
+def infer_label_patches(sess, nnInferrer, img, patch_height, patch_width, num_classes, batch_size=None):
 	image_size = img.shape[:2]
 	if image_size[0] < patch_height or image_size[1] < patch_width:
 		ratio = max(patch_height / image_size[0], patch_width / image_size[1])
@@ -345,60 +164,57 @@ def infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInf
 	else:
 		return None, None, None, None
 
-def infer_label_from_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferror, batch_size=None):
+def infer_label_from_image_patches(sess, nnInferrer, img, num_classes, patch_height, patch_width, batch_size=None):
 	image_size = img.shape[:2]
-	inferred_label_patches, _, patch_regions, resized_size = infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
+	inferred_label_patches, _, patch_regions, resized_size = infer_label_patches(sess, nnInferrer, img, patch_height, patch_width, num_classes, batch_size)
 	if resized_size is None:
 		return stitch_label_patches(inferred_label_patches, np.array(patch_regions), image_size)
 	else:
 		inferred_label = stitch_label_patches(inferred_label_patches, np.array(patch_regions), resized_size)
 		return np.asarray(Image.fromarray(inferred_label).resize((image_size[1], image_size[0]), resample=Image.NEAREST))
 
-print('[SWL] Info: Start inferring for full-size images using patches...')
-with infer_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'.
+def infer_full_size_images_from_patche(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path):
+	K.set_session(sess)
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-		inferences = []
-		start_time = time.time()
-		for img in image_list:
-			inf = infer_label_from_image_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
-			if inf is not None:
-				inferences.append(inf)
-		end_time = time.time()
+	inferences = []
+	start_time = time.time()
+	for img in image_list:
+		inf = infer_label_from_image_patches(sess, nnInferrer, img, num_classes, patch_height, patch_width, batch_size)
+		if inf is not None:
+			inferences.append(inf)
+	end_time = time.time()
 
-		if len(inferences) == len(label_list):
-			total_correct_estimation_count = 0
-			total_pixel_count = 0
-			inference_accurary_rates = []
-			idx = 0
-			for (inf, lbl) in zip(inferences, label_list):
-				if inf is not None and lbl is not None and np.array_equal(inf.shape, lbl.shape):
-					correct_estimation_count = np.count_nonzero(np.equal(inf, lbl))
-					total_correct_estimation_count += correct_estimation_count
-					total_pixel_count += lbl.size
-					inference_accurary_rates.append(correct_estimation_count / lbl.size)
+	if len(inferences) == len(label_list):
+		total_correct_estimation_count = 0
+		total_pixel_count = 0
+		inference_accurary_rates = []
+		idx = 0
+		for (inf, lbl) in zip(inferences, label_list):
+			if inf is not None and lbl is not None and np.array_equal(inf.shape, lbl.shape):
+				correct_estimation_count = np.count_nonzero(np.equal(inf, lbl))
+				total_correct_estimation_count += correct_estimation_count
+				total_pixel_count += lbl.size
+				inference_accurary_rates.append(correct_estimation_count / lbl.size)
 
-					#plt.imsave((inference_dir_path + '/inference_{}.png').format(idx), inf * 255, cmap='gray')  # Saves images as 32-bit RGBA.
-					Image.fromarray(inf * 255).save((inference_dir_path + '/inference_{}.png').format(idx))  # Saves images as grayscale.
-					idx += 1
-				else:
-					print('[SWL] Error: Invalid image or label.')
+				#plt.imsave((inference_dir_path + '/inference_{}.png').format(idx), inf * 255, cmap='gray')  # Saves images as 32-bit RGBA.
+				Image.fromarray(inf * 255).save((inference_dir_path + '/inference_{}.png').format(idx))  # Saves images as grayscale.
+				idx += 1
+			else:
+				print('[SWL] Error: Invalid image or label.')
 
-			print('\tInference time = {}'.format(end_time - start_time))
-			print('\tAccurary = {} / {} = {}'.format(total_correct_estimation_count, total_pixel_count, total_correct_estimation_count / total_pixel_count))
-			print('\tMin accurary = {} at index {}, max accuracy = {} at index {}'.format(np.array(inference_accurary_rates).min(), np.argmin(np.array(inference_accurary_rates)), np.array(inference_accurary_rates).max(), np.argmax(np.array(inference_accurary_rates))))
-		else:
-			print('[SWL] Error: The number of test images is not equal to that of test labels.')
-print('[SWL] Info: End inferrig for full-size images using patches...')
+		print('\tInference time = {}'.format(end_time - start_time))
+		print('\tAccurary = {} / {} = {}'.format(total_correct_estimation_count, total_pixel_count, total_correct_estimation_count / total_pixel_count))
+		print('\tMin accurary = {} at index {}, max accuracy = {} at index {}'.format(np.array(inference_accurary_rates).min(), np.argmin(np.array(inference_accurary_rates)), np.array(inference_accurary_rates).max(), np.argmax(np.array(inference_accurary_rates))))
+	else:
+		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
-if False:
-	idx = 67
-	inf, lbl = inferences[idx], label_list[idx]
-	plt.imshow(inf, cmap='gray')
-	plt.imshow(lbl, cmap='gray')
-	plt.imshow(np.not_equal(inf, lbl), cmap='gray')
+	if False:
+		idx = 67
+		inf, lbl = inferences[idx], label_list[idx]
+		plt.imshow(inf, cmap='gray')
+		plt.imshow(lbl, cmap='gray')
+		plt.imshow(np.not_equal(inf, lbl), cmap='gray')
 
 #%%------------------------------------------------------------------
 
@@ -435,72 +251,275 @@ def compute_layer_activations(sess, layer_tensor, feed_dict):
 #%%------------------------------------------------------------------
 # Visualize filters in a convolutional layer.
 
-with infer_session.as_default() as sess:  # Error: No global variables.
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'.
+def visualize_filters(sess):
+	K.set_session(sess)
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-		#print(tf.global_variables())
+	#print(tf.global_variables())
 
-		# FIXME [error] >> Not working.
-		#	A variable with name 'fc_densenet_using_keras/conv2d_50/kernel:0' does not exist.
-		#	The variable might be created by tf.Variable(), not tf.get_variable().
-		with tf.variable_scope('fc_densenet_using_keras', reuse=tf.AUTO_REUSE):
-			with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
-				filters = tf.get_variable('kernel')
-				#plot_conv_filters(sess, filters)
-				print('**************************', filters.op)
+	# FIXME [error] >> Not working.
+	#	A variable with name 'fc_densenet_using_keras/conv2d_50/kernel:0' does not exist.
+	#	The variable might be created by tf.Variable(), not tf.get_variable().
+	with tf.variable_scope('fc_densenet_using_keras', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('conv2d_50', reuse=tf.AUTO_REUSE):
+			filters = tf.get_variable('kernel')
+			#plot_conv_filters(sess, filters)
+			print('**************************', filters.op)
 
 #%%------------------------------------------------------------------
 # Visualize activations(layer ouputs) in a convolutional layer.
 
-with infer_session.as_default() as sess:
-	with sess.graph.as_default():
-		K.set_session(sess)
-		K.set_learning_phase(0)  # Set the learning phase to 'test'.
+def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size):
+	K.set_session(sess)
+	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
-		layer_before_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-		layer_after_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
+	layer_before_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
+	layer_after_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
 
-		start_time = time.time()
-		#idx = 0
-		#for img in image_list:
-		if True:
-			idx = 3
-			img = image_list[idx]
-			#plt.imshow(img)
+	start_time = time.time()
+	#idx = 0
+	#for img in image_list:
+	if True:
+		idx = 3
+		img = image_list[idx]
+		#plt.imshow(img)
 
-			inferred_label_patches, image_patches, patch_regions, resized_size = infer_label_patches(sess, img, num_classes, patch_height, patch_width, nnInferrer, batch_size)
-			#inferred_label_patches = np.argmax(inferred_label_patches, -1)
-			if resized_size is None:
-				pat_idx = 0
-				for (img_pat, lbl_pat) in zip(image_patches, inferred_label_patches):
-					feed_dict = denseNetModelForInference.get_feed_dict(img_pat.reshape((-1,) + img_pat.shape), is_training=False)
-					activations_before_concat = compute_layer_activations(sess, layer_before_concat_tensor, feed_dict)
-					#plot_conv_activations(activations_before_concat, figsize=(40, 40))
-					activations_after_concat = compute_layer_activations(sess, layer_after_concat_tensor, feed_dict)
-					#plot_conv_activations(activations_after_concat, figsize=(40, 40))
+		inferred_label_patches, image_patches, patch_regions, resized_size = infer_label_patches(sess, nnInferrer, img, patch_height, patch_width, num_classes, batch_size)
+		#inferred_label_patches = np.argmax(inferred_label_patches, -1)
+		if resized_size is None:
+			pat_idx = 0
+			for (img_pat, lbl_pat) in zip(image_patches, inferred_label_patches):
+				feed_dict = denseNetModel.get_feed_dict(img_pat.reshape((-1,) + img_pat.shape), is_training=False)
+				activations_before_concat = compute_layer_activations(sess, layer_before_concat_tensor, feed_dict)
+				#plot_conv_activations(activations_before_concat, figsize=(40, 40))
+				activations_after_concat = compute_layer_activations(sess, layer_after_concat_tensor, feed_dict)
+				#plot_conv_activations(activations_after_concat, figsize=(40, 40))
 
-					np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
-					np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
-					np.save(('./npy/activations_before_concat_{}_{}.npy').format(idx, pat_idx), activations_before_concat)
-					np.save(('./npy/activations_after_concat_{}_{}.npy').format(idx, pat_idx), activations_after_concat)
+				np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
+				np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
+				np.save(('./npy/activations_before_concat_{}_{}.npy').format(idx, pat_idx), activations_before_concat)
+				np.save(('./npy/activations_after_concat_{}_{}.npy').format(idx, pat_idx), activations_after_concat)
 
-					pat_idx += 1
+				pat_idx += 1
 
-				np.save(('./npy/patch_ranges_{}.npy').format(idx), np.array(patch_regions))
-			else:
-				pass
-			idx += 1
-		end_time = time.time()
-		print('\tElapsed time = {}'.format(end_time - start_time))
+			np.save(('./npy/patch_ranges_{}.npy').format(idx), np.array(patch_regions))
+		else:
+			pass
+		idx += 1
+	end_time = time.time()
+	print('\tElapsed time = {}'.format(end_time - start_time))
 
 #%%------------------------------------------------------------------
-# Close sessions.
 
-train_session.close()
-train_session = None
-eval_session.close()
-eval_session = None
-infer_session.close()
-infer_session = None
+import datetime
+from keras import backend as K
+
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as exception:
+			if os.errno.EEXIST != exception.errno:
+				raise
+
+def main():
+	#np.random.seed(7)
+
+	#--------------------
+	# Prepare directories.
+
+	output_dir_prefix = 'fc_densenet'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20180117T135317'
+
+	output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
+	model_dir_path = '{}/model'.format(output_dir_path)
+	inference_dir_path = '{}/inference'.format(output_dir_path)
+	train_summary_dir_path = '{}/train_log'.format(output_dir_path)
+	val_summary_dir_path = '{}/val_log'.format(output_dir_path)
+
+	make_dir(model_dir_path)
+	make_dir(inference_dir_path)
+	make_dir(train_summary_dir_path)
+	make_dir(val_summary_dir_path)
+
+	#--------------------
+	# Prepare data.
+
+	if 'posix' == os.name:
+		#data_home_dir_path = '/home/sangwook/my_dataset'
+		data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	else:
+		data_home_dir_path = 'D:/dataset'
+
+	image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
+	label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
+
+	image_suffix = ''
+	image_extension = 'png'
+	label_suffix = '_foreground'
+	label_extension = 'png'
+	patch_height, patch_width = 224, 224
+
+	num_classes = 2
+	input_shape = (None, patch_height, patch_width, 3)
+	output_shape = (None, patch_height, patch_width, num_classes)
+
+	train_image_patches, test_image_patches, train_label_patches, test_label_patches, image_list, label_list = RdaPlantDataset.load_data(image_dir_path, image_suffix, image_extension, label_dir_path, label_suffix, label_extension, num_classes, patch_height, patch_width)
+
+	#--------------------
+	# DenseNet models, sessions, and graphs.
+
+	# Create graphs.
+	"""
+	train_graph = tf.Graph()
+	eval_graph = tf.Graph()
+	infer_graph = tf.Graph()
+	"""
+	train_graph = tf.get_default_graph()
+
+	#--------------------
+	# Configuration.
+	config = tf.ConfigProto()
+	#config.allow_soft_placement = True
+	config.log_device_placement = True
+	config.gpu_options.allow_growth = True
+	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+	# Create sessions.
+	train_session = tf.Session(graph=train_graph, config=config)
+	"""
+	eval_session = tf.Session(graph=eval_graph, config=config)
+	infer_session = tf.Session(graph=infer_graph, config=config)
+	"""
+	eval_session = train_session
+	infer_session = train_session
+
+	#with train_graph.as_default():
+	with train_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
+
+			# Create a model.
+			denseNetModelForTraining = FcDenseNetUsingKeras(input_shape, output_shape)
+			denseNetModelForTraining.create_training_model()
+
+			# Create a trainer.
+			initial_epoch = 0
+			nnTrainer = SimpleNeuralNetTrainer(denseNetModelForTraining, initial_epoch)
+
+			# Create a saver.
+			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+			initializer = tf.global_variables_initializer()
+
+	#with eval_graph.as_default():
+	with eval_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+
+			# Create a model.
+			"""
+			denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
+			denseNetModelForEvaluation.create_evaluation_model()
+			"""
+			denseNetModelForEvaluation = denseNetModelForTraining
+
+			# Create an evaluator.
+			nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
+
+			# Create a saver.
+			#eval_saver = tf.train.Saver()
+			eval_saver = None
+
+	#with infer_graph.as_default():
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+
+			# Create a model.
+			"""
+			denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
+			denseNetModelForInference.create_inference_model()
+			"""
+			denseNetModelForInference = denseNetModelForTraining
+
+			# Create an inferrer.
+			nnInferrer = NeuralNetInferrer(denseNetModelForInference)
+
+			# Create a saver.
+			#infer_saver = tf.train.Saver()
+			infer_saver = None
+
+	# Initialize.
+	train_session.run(initializer)
+
+	#%%------------------------------------------------------------------
+	# Train.
+
+	batch_size = 6  # Number of samples per gradient update.
+	num_epochs = 50  # Number of times to iterate over training data.
+
+	total_elapsed_time = time.time()
+	with train_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(1)  # Set the learning phase to 'train'.
+			shuffle = True
+			trainingMode = TrainingMode.START_TRAINING
+			train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+	print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+
+	#%%------------------------------------------------------------------
+	# Evaluate and infer.
+
+	total_elapsed_time = time.time()
+	with eval_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, model_dir_path)
+	print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+
+	total_elapsed_time = time.time()
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			infer_by_neural_net(infer_session, nnInferrer, test_image_patches, test_label_patches, num_classes, batch_size, infer_saver, model_dir_path)
+	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+
+	#%%------------------------------------------------------------------
+
+	print('[SWL] Info: Start inferring for full-size images using patches...')
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			infer_full_size_images_from_patche(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path)
+	print('[SWL] Info: End inferrig for full-size images using patches...')
+
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			visualize_filters(sess)
+
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			visualize_activations(sess, denseNetModelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size)
+
+	#--------------------
+	# Close sessions.
+
+	train_session.close()
+	train_session = None
+	eval_session.close()
+	eval_session = None
+	infer_session.close()
+	infer_session = None
+
+#%%------------------------------------------------------------------
+
+if '__main__' == __name__:
+	main()
