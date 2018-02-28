@@ -10,9 +10,9 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
+#sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/tflearn_github')
-#sys.path.append('../../../src')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 

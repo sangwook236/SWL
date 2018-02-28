@@ -1,3 +1,8 @@
+# REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
+# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+# REF [paper] >> "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention", ICML 2015.
+
 # REF [site] >> https://talbaumel.github.io/attention/ ==> Neural Attention Mechanism - Sequence To Sequence Attention Models In DyNet.pdf
 # REF [site] >> https://github.com/fchollet/keras/blob/master/examples/lstm_seq2seq.py
 # REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
@@ -5,11 +10,6 @@
 
 # REF [site] >> https://blog.heuritech.com/2016/01/20/attention-mechanism/
 # REF [site] >> https://github.com/philipperemy/keras-attention-mechanism
-
-# REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
-# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
-# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
-# REF [paper] >> "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention", ICML 2015.
 
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -196,7 +196,7 @@ def main():
 	is_bidirectional = True  # Uses a bidirectional model.
 	if is_attentive:
 		batch_size = 4  # Number of samples per gradient update.
-		num_epochs = 20  # Number of times to iterate over training data.
+		num_epochs = 10  # Number of times to iterate over training data.
 	else:
 		batch_size = 4  # Number of samples per gradient update.
 		num_epochs = 70  # Number of times to iterate over training data.
