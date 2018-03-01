@@ -76,15 +76,12 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
 		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
-
 		print('[SWL] Info: Restored a model.')
 
 	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
 		start_time = time.time()
 		history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-		end_time = time.time()
-
-		print('\tTraining time = {}'.format(end_time - start_time))
+		print('\tTraining time = {}'.format(time.time() - start_time))
 
 		# Display results.
 		nnTrainer.display_history(history)
@@ -106,15 +103,12 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 			ckpt = tf.train.get_checkpoint_state(model_dir_path)
 			saver.restore(session, ckpt.model_checkpoint_path)
 			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+			print('[SWL] Info: Loaded a model.')
 
-		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start evaluation...')
-
 		start_time = time.time()
 		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
-		end_time = time.time()
-
-		print('\tEvaluation time = {}'.format(end_time - start_time))
+		print('\tEvaluation time = {}'.format(time.time() - start_time))
 		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
@@ -134,23 +128,21 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_class
 			ckpt = tf.train.get_checkpoint_state(model_dir_path)
 			saver.restore(session, ckpt.model_checkpoint_path)
 			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+			print('[SWL] Info: Loaded a model.')
 
-		print('[SWL] Info: Loaded a model.')
 		print('[SWL] Info: Start inferring...')
-
 		start_time = time.time()
 		inferences = nnInferrer.infer(session, test_images, batch_size)
-		end_time = time.time()
+		print('\tInference time = {}'.format(time.time() - start_time))
 
-		if num_classes <= 2:
-			inferences = np.around(inferences)
-			groundtruths = test_labels
-		else:
+		if num_classes >= 2:
 			inferences = np.argmax(inferences, -1)
 			groundtruths = np.argmax(test_labels, -1)
+		else:
+			inferences = np.around(inferences)
+			groundtruths = test_labels
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
 
-		print('\tInference time = {}'.format(end_time - start_time))
 		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 		print('[SWL] Info: End inferring...')
 	else:
@@ -218,9 +210,8 @@ def main():
 	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 	#--------------------
-	# CNN models, sessions, and graphs.
+	# Models, sessions, and graphs.
 
-	#--------------------
 	# Create graphs.
 	train_graph = tf.Graph()
 	eval_graph = tf.Graph()
@@ -269,15 +260,13 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
-	#--------------------
-	# Configuration.
+	# Create sessions.
 	config = tf.ConfigProto()
 	#config.allow_soft_placement = True
 	config.log_device_placement = True
 	config.gpu_options.allow_growth = True
 	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	# Create sessions.
 	train_session = tf.Session(graph=train_graph, config=config)
 	eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
@@ -303,7 +292,7 @@ def main():
 
 	#%%------------------------------------------------------------------
 	# Evaluate and infer.
-	
+
 	total_elapsed_time = time.time()
 	with eval_session.as_default() as sess:
 		with sess.graph.as_default():
