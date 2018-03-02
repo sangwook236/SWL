@@ -25,39 +25,30 @@ from simple_rnn_keras import SimpleRnnUsingKeras
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 from reverse_function_util import ReverseFunctionDataset
 import time
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
-	if TrainingMode.START_TRAINING == trainingMode:
-		print('[SWL] Info: Start training...')
-	elif TrainingMode.RESUME_TRAINING == trainingMode:
+def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+	if does_resume_training:
 		print('[SWL] Info: Resume training...')
-	elif TrainingMode.USE_SAVED_MODEL == trainingMode:
-		print('[SWL] Info: Use a saved model.')
-	else:
-		assert False, '[SWL] Error: Invalid training mode.'
 
-	if TrainingMode.RESUME_TRAINING == trainingMode or TrainingMode.USE_SAVED_MODEL == trainingMode:
 		# Load a model.
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
 		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
 
-	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		start_time = time.time()
-		history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-		print('\tTraining time = {}'.format(time.time() - start_time))
+	start_time = time.time()
+	history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	print('\tTraining time = {}'.format(time.time() - start_time))
 
-		# Display results.
-		nnTrainer.display_history(history)
-
-	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		print('[SWL] Info: End training...')
+	# Display results.
+	nnTrainer.display_history(history)
+	print('[SWL] Info: End training...')
 
 def evaluate_neural_net(session, nnEvaluator, val_input_seqs, val_output_seqs, batch_size, saver=None, model_dir_path=None):
 	if saver is not None and model_dir_path is not None:
@@ -105,8 +96,8 @@ def make_dir(dir_path):
 	if not os.path.exists(dir_path):
 		try:
 			os.makedirs(dir_path)
-		except OSError as exception:
-			if os.errno.EEXIST != exception.errno:
+		except OSError as ex:
+			if os.errno.EEXIST != ex.errno:
 				raise
 
 # REF [site] >> https://talbaumel.github.io/attention/
@@ -116,6 +107,9 @@ def create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stack
 
 def main():
 	#np.random.seed(7)
+
+	does_need_training = True
+	does_resume_training = False
 
 	#--------------------
 	# Prepare directories.
@@ -164,7 +158,7 @@ def main():
 			output_shape = (None, dataset.max_token_len, dataset.vocab_size)
 
 	#--------------------
-	# Models, sessions, and graphs.
+	# Create models, sessions, and graphs.
 
 	is_bidirectional = True  # Uses a bidirectional model.
 	is_stacked = True  # Uses multiple layers.
@@ -174,28 +168,31 @@ def main():
 	else:
 		batch_size = 4  # Number of samples per gradient update.
 		num_epochs = 20  # Number of times to iterate over training data.
+	shuffle = True
 
 	# Create graphs.
-	train_graph = tf.Graph()
+	if does_need_training:
+		train_graph = tf.Graph()
 	eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
-	with train_graph.as_default():
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
+	if does_need_training:
+		with train_graph.as_default():
+			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
-		# Create a model.
-		rnnModelForTraining = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-		rnnModelForTraining.create_training_model()
+			# Create a model.
+			rnnModelForTraining = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+			rnnModelForTraining.create_training_model()
 
-		# Create a trainer.
-		initial_epoch = 0
-		nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
+			# Create a trainer.
+			initial_epoch = 0
+			nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
 
-		# Create a saver.
-		#	Save a model every 2 hours and maximum 5 latest models are saved.
-		train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+			# Create a saver.
+			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-		initializer = tf.global_variables_initializer()
+			initializer = tf.global_variables_initializer()
 
 	with eval_graph.as_default():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
@@ -230,25 +227,26 @@ def main():
 	config.gpu_options.allow_growth = True
 	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_session = tf.Session(graph=train_graph, config=config)
+	if does_need_training:
+		train_session = tf.Session(graph=train_graph, config=config)
 	eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
 
 	# Initialize.
-	train_session.run(initializer)
+	if does_need_training:
+		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
 	# Train.
 
-	total_elapsed_time = time.time()
-	with train_session.as_default() as sess:
-		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-			shuffle = True
-			trainingMode = TrainingMode.START_TRAINING
-			train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
-	print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+	if does_need_training:
+		total_elapsed_time = time.time()
+		with train_session.as_default() as sess:
+			with sess.graph.as_default():
+				#K.set_session(sess)
+				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
 	# Evaluate and infer.
@@ -273,8 +271,9 @@ def main():
 	#--------------------
 	# Close sessions.
 
-	train_session.close()
-	train_session = None
+	if does_need_training:
+		train_session.close()
+		train_session = None
 	eval_session.close()
 	eval_session = None
 	infer_session.close()

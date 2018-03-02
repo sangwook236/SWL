@@ -13,6 +13,7 @@ else:
 #sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/tflearn_github')
+sys.path.append(lib_home_dir_path + '/tf_cnnvis_github')
 
 #os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
 
@@ -26,7 +27,6 @@ from mnist_cnn_tf import MnistCnnUsingTF
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-from swl.machine_learning.tensorflow.neural_net_trainer import TrainingMode
 import time
 
 #%%------------------------------------------------------------------
@@ -59,17 +59,10 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, trainingMode, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
-	if TrainingMode.START_TRAINING == trainingMode:
-		print('[SWL] Info: Start training...')
-	elif TrainingMode.RESUME_TRAINING == trainingMode:
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+	if does_resume_training:
 		print('[SWL] Info: Resume training...')
-	elif TrainingMode.USE_SAVED_MODEL == trainingMode:
-		print('[SWL] Info: Use a saved model.')
-	else:
-		assert False, '[SWL] Error: Invalid training mode.'
 
-	if TrainingMode.RESUME_TRAINING == trainingMode or TrainingMode.USE_SAVED_MODEL == trainingMode:
 		# Load a model.
 		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
@@ -77,17 +70,16 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		saver.restore(session, ckpt.model_checkpoint_path)
 		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
 		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
 
-	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		start_time = time.time()
-		history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-		print('\tTraining time = {}'.format(time.time() - start_time))
+	start_time = time.time()
+	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	print('\tTraining time = {}'.format(time.time() - start_time))
 
-		# Display results.
-		nnTrainer.display_history(history)
-
-	if TrainingMode.START_TRAINING == trainingMode or TrainingMode.RESUME_TRAINING == trainingMode:
-		print('[SWL] Info: End training...')
+	# Display results.
+	nnTrainer.display_history(history)
+	print('[SWL] Info: End training...')
 
 def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
 	num_val_examples = 0
@@ -148,6 +140,29 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_class
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
+import tf_cnnvis
+
+def visualize_layer(session, input_tensor, feed_dict, output_dir_path):
+	layers = ['r', 'p', 'c']
+
+	print('[SWL] Info: Start activation visualization...')
+	start = time.time()
+	is_success = tf_cnnvis.activation_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
+			input_tensor=input_tensor, layers=layers,
+			path_logdir=os.path.join(output_dir_path, 'vis_log_activation'),
+			path_outdir=os.path.join(output_dir_path, 'vis'))
+	print('Total time = {}, succeeded? = {}'.format(time.time() - start, 'yes' if is_success else 'no'))
+	print('[SWL] Info: End activation visualization...')
+
+	print('[SWL] Info: Start deconvolution visualization...')
+	start = time.time()
+	is_success = tf_cnnvis.deconv_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
+			input_tensor=input_tensor, layers=layers,
+			path_logdir=os.path.join(output_dir_path, 'vis_log_deconv'),
+			path_outdir=os.path.join(output_dir_path, 'vis'))
+	print('Total time = {}, succeeded? = {}'.format(time.time() - start, 'yes' if is_success else 'no'))
+	print('[SWL] Info: End deconvolution visualization...')
+
 #%%------------------------------------------------------------------
 
 import datetime
@@ -157,12 +172,12 @@ def make_dir(dir_path):
 	if not os.path.exists(dir_path):
 		try:
 			os.makedirs(dir_path)
-		except OSError as exception:
-			if os.errno.EEXIST != exception.errno:
+		except OSError as ex:
+			if os.errno.EEXIST != ex.errno:
 				raise
 
 def create_mnist_cnn(input_shape, output_shape):
-	model_type = 0
+	model_type = 0  # {0, 1}.
 	return MnistCnnUsingTF(input_shape, output_shape, model_type)
 	#return MnistCnnUsingTfSlim(input_shape, output_shape)
 	#return MnistCnnUsingTfLearn(input_shape, output_shape)
@@ -171,12 +186,15 @@ def create_mnist_cnn(input_shape, output_shape):
 def main():
 	#np.random.seed(7)
 
+	does_need_training = True
+	does_resume_training = False
+
 	#--------------------
 	# Prepare directories.
 
-	output_dir_prefix = 'mnist'
+	output_dir_prefix = 'mnist_cnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180116T212902'
+	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
 	model_dir_path = '{}/model'.format(output_dir_path)
@@ -210,29 +228,31 @@ def main():
 	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 	#--------------------
-	# Models, sessions, and graphs.
+	# Create models, sessions, and graphs.
 
 	# Create graphs.
-	train_graph = tf.Graph()
+	if does_need_training:
+		train_graph = tf.Graph()
 	eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
-	with train_graph.as_default():
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
+	if does_need_training:
+		with train_graph.as_default():
+			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
-		# Create a model.
-		cnnModelForTraining = create_mnist_cnn(input_shape, output_shape)
-		cnnModelForTraining.create_training_model()
+			# Create a model.
+			cnnModelForTraining = create_mnist_cnn(input_shape, output_shape)
+			cnnModelForTraining.create_training_model()
 
-		# Create a trainer.
-		initial_epoch = 0
-		nnTrainer = SimpleNeuralNetTrainer(cnnModelForTraining, initial_epoch)
+			# Create a trainer.
+			initial_epoch = 0
+			nnTrainer = SimpleNeuralNetTrainer(cnnModelForTraining, initial_epoch)
 
-		# Create a saver.
-		#	Save a model every 2 hours and maximum 5 latest models are saved.
-		train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+			# Create a saver.
+			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-		initializer = tf.global_variables_initializer()
+			initializer = tf.global_variables_initializer()
 
 	with eval_graph.as_default():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
@@ -267,28 +287,30 @@ def main():
 	config.gpu_options.allow_growth = True
 	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_session = tf.Session(graph=train_graph, config=config)
+	if does_need_training:
+		train_session = tf.Session(graph=train_graph, config=config)
 	eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
 
 	# Initialize.
-	train_session.run(initializer)
+	if does_need_training:
+		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
 	# Train.
 
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.	
+	shuffle = True
 
-	total_elapsed_time = time.time()
-	with train_session.as_default() as sess:
-		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-			shuffle = True
-			trainingMode = TrainingMode.START_TRAINING
-			train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, trainingMode, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
-	print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+	if does_need_training:
+		total_elapsed_time = time.time()
+		with train_session.as_default() as sess:
+			with sess.graph.as_default():
+				#K.set_session(sess)
+				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
 	# Evaluate and infer.
@@ -309,11 +331,25 @@ def main():
 			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, model_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
+	#%%------------------------------------------------------------------
+	# Visualize.
+
+	with infer_session.as_default() as sess:
+		with sess.graph.as_default():
+			#K.set_session(sess)
+			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			feed_dict = cnnModelForInference.get_feed_dict(train_images[0:1], is_training=False)
+			#feed_dict = cnnModelForInference.get_feed_dict(train_images[0:1], train_labels[0:1], is_training=False)
+			input_tensor = None
+			#input_tensor = cnnModelForInference.input_tensor
+			visualize_layer(sess, input_tensor, feed_dict, output_dir_path)
+
 	#--------------------
 	# Close sessions.
 
-	train_session.close()
-	train_session = None
+	if does_need_training:
+		train_session.close()
+		train_session = None
 	eval_session.close()
 	eval_session = None
 	infer_session.close()

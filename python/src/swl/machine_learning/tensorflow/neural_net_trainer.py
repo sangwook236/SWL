@@ -1,15 +1,7 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import tensorflow as tf
+import matplotlib.pyplot as plt
 import time
-from enum import Enum
-
-#%%------------------------------------------------------------------
-
-class TrainingMode(Enum):
-	START_TRAINING = 0  # Start training.
-	RESUME_TRAINING = 1  # Resume training.
-	USE_SAVED_MODEL = 2  # Use a saved model.
 
 #%%------------------------------------------------------------------
 
