@@ -27,6 +27,7 @@ from mnist_cnn_tf import MnistCnnUsingTF
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
+import swl.machine_learning.util as swl_ml_util
 import time
 
 #%%------------------------------------------------------------------
@@ -59,7 +60,7 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -78,7 +79,9 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Display results.
-	nnTrainer.display_history(history)
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
 def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
@@ -309,7 +312,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -338,11 +341,14 @@ def main():
 		with sess.graph.as_default():
 			#K.set_session(sess)
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			feed_dict = cnnModelForInference.get_feed_dict(train_images[0:1], is_training=False)
-			#feed_dict = cnnModelForInference.get_feed_dict(train_images[0:1], train_labels[0:1], is_training=False)
+			vis_images = train_images[0:1]
+			feed_dict = cnnModelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
 			#input_tensor = cnnModelForInference.input_tensor
 			visualize_layer(sess, input_tensor, feed_dict, output_dir_path)
+
+			#import matplotlib.pyplot as plt
+			#plt.imsave(output_dir_path + '/viz.png', np.around(vis_images[0].reshape(vis_images[0].shape[:2]) * 255), cmap='gray')
 
 	#--------------------
 	# Close sessions.

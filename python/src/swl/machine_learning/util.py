@@ -1,6 +1,7 @@
 #import keras
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 
 def to_one_hot_encoding(label_indexes, num_classes=None):
 	if None == num_classes:
@@ -26,3 +27,57 @@ def time_based_learning_rate(epoch, initial_learning_rate, decay_rate):
 # REF [site] >> http://machinelearningmastery.com/using-learning-rate-schedules-deep-learning-models-python-keras/
 def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop):
 	return initial_learning_rate * math.pow(drop_rate, math.floor((1.0 + epoch) / epoch_drop))
+
+#%%------------------------------------------------------------------
+
+def display_train_history(history):
+	# List all data in history.
+	#print(history.keys())
+
+	# Summarize history for accuracy.
+	fig = plt.figure()
+	plt.plot(history['acc'])
+	plt.plot(history['val_acc'])
+	plt.title('model accuracy')
+	plt.xlabel('epochs')
+	plt.ylabel('accuracy')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
+	plt.close(fig)
+
+	# Summarize history for loss.
+	fig = plt.figure()
+	plt.plot(history['loss'])
+	plt.plot(history['val_loss'])
+	plt.title('model loss')
+	plt.xlabel('epochs')
+	plt.ylabel('loss')
+	plt.legend(['train', 'test'], loc='upper left')
+	plt.show()
+	plt.close(fig)
+
+def save_train_history(history, dir_path):
+	# List all data in history.
+	#print(history.keys())
+
+	# Summarize history for accuracy.
+	fig = plt.figure()
+	plt.plot(history['acc'])
+	plt.plot(history['val_acc'])
+	plt.title('model accuracy')
+	plt.xlabel('epochs')
+	plt.ylabel('accuracy')
+	plt.legend(['train', 'test'], loc='upper left')
+	fig.savefig(dir_path + '/accuracy.png')
+	plt.close(fig)
+
+	# Summarize history for loss.
+	fig = plt.figure()
+	plt.plot(history['loss'])
+	plt.plot(history['val_loss'])
+	plt.title('model loss')
+	plt.xlabel('epochs')
+	plt.ylabel('loss')
+	plt.legend(['train', 'test'], loc='upper left')
+	fig.savefig(dir_path + '/loss.png')
+	plt.close(fig)

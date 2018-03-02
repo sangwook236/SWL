@@ -25,12 +25,13 @@ from simple_rnn_keras import SimpleRnnUsingKeras
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
+import swl.machine_learning.util as swl_ml_util
 from reverse_function_util import ReverseFunctionDataset
 import time
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -47,7 +48,9 @@ def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, va
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Display results.
-	nnTrainer.display_history(history)
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
 def evaluate_neural_net(session, nnEvaluator, val_input_seqs, val_output_seqs, batch_size, saver=None, model_dir_path=None):
@@ -245,7 +248,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------

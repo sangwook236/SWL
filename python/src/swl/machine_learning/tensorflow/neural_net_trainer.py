@@ -1,6 +1,5 @@
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import time
 
 #%%------------------------------------------------------------------
@@ -306,32 +305,6 @@ class NeuralNetTrainer(object):
 			val_summary_writer.close()
 
 		return history
-
-	def display_history(self, history):
-		# List all data in history.
-		#print(history.keys())
-
-		# Summarize history for accuracy.
-		fig = plt.figure()
-		plt.plot(history['acc'])
-		plt.plot(history['val_acc'])
-		plt.title('model accuracy')
-		plt.xlabel('epochs')
-		plt.ylabel('accuracy')
-		plt.legend(['train', 'test'], loc='upper left')
-		plt.show()
-		plt.close(fig)
-
-		# Summarize history for loss.
-		plt.figure()
-		plt.plot(history['loss'])
-		plt.plot(history['val_loss'])
-		plt.title('model loss')
-		plt.xlabel('epochs')
-		plt.ylabel('loss')
-		plt.legend(['train', 'test'], loc='upper left')
-		plt.show()
-		plt.close(fig)
 
 	def _get_train_step(self, loss, global_step=None):
 		raise NotImplementedError

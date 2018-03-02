@@ -28,13 +28,14 @@ from fc_densenet_keras import FcDenseNetUsingKeras
 from simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-from swl.image_processing.util import generate_image_patch_list, stitch_label_patches
+import swl.machine_learning.util as swl_ml_util
+import swl.image_processing.util as swl_imgproc_util
 from rda_plant_util import RdaPlantDataset
 import time
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -51,7 +52,9 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Display results.
-	nnTrainer.display_history(history)
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
 def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
@@ -138,7 +141,7 @@ def infer_label_patches(sess, nnInferrer, img, patch_height, patch_width, num_cl
 	else:
 		resized_size = None
 
-	image_patches, _, patch_regions = generate_image_patch_list(img, None, patch_height, patch_width, None)
+	image_patches, _, patch_regions = swl_imgproc_util.generate_image_patch_list(img, None, patch_height, patch_width, None)
 	if image_patches is not None and patch_regions is not None and len(image_patches) == len(patch_regions):
 		image_patches, _ = RdaPlantDataset.preprocess_data(np.array(image_patches), None, num_classes)
 
@@ -151,9 +154,9 @@ def infer_label_from_image_patches(sess, nnInferrer, img, num_classes, patch_hei
 	image_size = img.shape[:2]
 	inferred_label_patches, _, patch_regions, resized_size = infer_label_patches(sess, nnInferrer, img, patch_height, patch_width, num_classes, batch_size)
 	if resized_size is None:
-		return stitch_label_patches(inferred_label_patches, np.array(patch_regions), image_size)
+		return swl_imgproc_util.stitch_label_patches(inferred_label_patches, np.array(patch_regions), image_size)
 	else:
-		inferred_label = stitch_label_patches(inferred_label_patches, np.array(patch_regions), resized_size)
+		inferred_label = swl_imgproc_util.stitch_label_patches(inferred_label_patches, np.array(patch_regions), resized_size)
 		return np.asarray(Image.fromarray(inferred_label).resize((image_size[1], image_size[0]), resample=Image.NEAREST))
 
 def infer_full_size_images_from_patche(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path):
@@ -463,7 +466,7 @@ def main():
 			with sess.graph.as_default():
 				K.set_session(sess)
 				K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, does_resume_training, train_saver, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
