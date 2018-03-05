@@ -321,7 +321,7 @@ def main():
 
 			#--------------------
 			idx = 0
-			vis_images = train_images[idx:(idx+1)]  # Recommend to use a single image.
+			vis_images = train_images[idx:(idx+1)]  # Recommend using a single image.
 			feed_dict = cnnModelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
 			#input_tensor = cnnModelForInference.input_tensor
