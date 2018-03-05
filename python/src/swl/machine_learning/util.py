@@ -1,6 +1,6 @@
 #import keras
 import numpy as np
-import math
+import os, math
 import matplotlib.pyplot as plt
 
 def to_one_hot_encoding(label_indexes, num_classes=None):
@@ -27,6 +27,84 @@ def time_based_learning_rate(epoch, initial_learning_rate, decay_rate):
 # REF [site] >> http://machinelearningmastery.com/using-learning-rate-schedules-deep-learning-models-python-keras/
 def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop):
 	return initial_learning_rate * math.pow(drop_rate, math.floor((1.0 + epoch) / epoch_drop))
+
+#%%------------------------------------------------------------------
+
+import tensorflow as tf
+import tf_cnnvis
+
+def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
+	layers = ['r', 'p', 'c']
+	return tf_cnnvis.activation_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
+			input_tensor=input_tensor, layers=layers,
+			path_logdir=os.path.join(output_dir_path, 'vis_log_activation'),
+			path_outdir=os.path.join(output_dir_path, 'vis'))
+
+def visualize_by_deconvolution(session, input_tensor, feed_dict, output_dir_path):
+	layers = ['r', 'p', 'c']
+	return tf_cnnvis.deconv_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
+			input_tensor=input_tensor, layers=layers,
+			path_logdir=os.path.join(output_dir_path, 'vis_log_deconv'),
+			path_outdir=os.path.join(output_dir_path, 'vis'))
+
+def visualize_by_partial_occlusion(session, nnInferrer, vis_images, vis_labels, grid_counts, grid_size, occlusion_color, num_classes, batch_size, saver=None, model_dir_path=None):
+	"""
+	:param grid_point_counts: the numbers of grid points in height and width.
+	"""
+
+	if vis_images.shape[0] <= 0:
+		return None
+
+	if saver is not None and model_dir_path is not None:
+		# Load a model.
+		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+
+	img_height, img_width = vis_images.shape[1:3]
+	num_grid_height, num_grid_width = grid_counts
+	grid_height, grid_width = math.ceil(img_height / num_grid_height), math.ceil(img_width / num_grid_width)
+	grid_half_occlusion_height = grid_size[0] * 0.5
+	grid_half_occlusion_width = grid_size[1] * 0.5
+
+	occluded_probilities = np.zeros(vis_images.shape[:-1])
+	for h in range(num_grid_height):
+		h_start = grid_height * h
+		h_end = grid_height * (h + 1)
+		h_pos = 0.5 * (h_start + h_end)
+		h_occlusion_start = math.floor(h_pos - grid_half_occlusion_height)
+		if h_occlusion_start < 0:
+			h_occlusion_start = 0
+		h_occlusion_end = math.ceil(h_pos + grid_half_occlusion_height)
+		if h_occlusion_end > img_height:
+			h_occlusion_end = img_height
+		for w in range(num_grid_width):
+			w_start = grid_width * w
+			w_end = grid_width * (w + 1)
+			w_pos = 0.5 * (w_start + w_end)
+			w_occlusion_start = math.floor(w_pos - grid_half_occlusion_width)
+			if w_occlusion_start < 0:
+				w_occlusion_start = 0
+			w_occlusion_end = math.ceil(w_pos + grid_half_occlusion_width)
+			if w_occlusion_end > img_width:
+				w_occlusion_end = img_width
+
+			images = np.copy(vis_images)  # Deep copy.
+			images[:,h_occlusion_start:h_occlusion_end,w_occlusion_start:w_occlusion_end,:] = occlusion_color
+
+			inferences = nnInferrer.infer(session, images, batch_size)
+
+			# Top-1 predicted probability.
+			if num_classes >= 2:
+				inferences = np.max(inferences * vis_labels, -1)
+			else:
+				inferences = np.max(inferences * vis_labels)
+
+			#occluded_probilities[:,h_start:h_end,w_start:w_end] = inferences
+			for (idx, prob) in enumerate(occluded_probilities):
+				prob[h_start:h_end,w_start:w_end] = inferences[idx]
+
+	return occluded_probilities
 
 #%%------------------------------------------------------------------
 
