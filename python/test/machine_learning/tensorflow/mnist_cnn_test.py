@@ -8,8 +8,8 @@ if 'posix' == os.name:
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+	lib_home_dir_path = 'D:/lib_repo/python'
+	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 #sys.path.append('../../../src')
 sys.path.append(swl_python_home_dir_path + '/src')
 sys.path.append(lib_home_dir_path + '/tflearn_github')
@@ -321,7 +321,7 @@ def main():
 
 			#--------------------
 			idx = 0
-			vis_images = train_images[idx:(idx+1)]
+			vis_images = train_images[idx:(idx+1)]  # Recommend to use a single image.
 			feed_dict = cnnModelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
 			#input_tensor = cnnModelForInference.input_tensor
@@ -338,31 +338,31 @@ def main():
 			print('\tVisualization time = {}, succeeded? = {}'.format(time.time() - start, 'yes' if is_succeeded else 'no'))
 			print('[SWL] Info: End visualizing by deconvolution...')
 
-			if False:
-				import matplotlib.pyplot as plt
-				plt.imsave(output_dir_path + '/vis.png', np.around(vis_images[0].reshape(vis_images[0].shape[:2]) * 255), cmap='gray')
+			#import matplotlib.pyplot as plt
+			#plt.imsave(output_dir_path + '/vis.png', np.around(vis_images[0].reshape(vis_images[0].shape[:2]) * 255), cmap='gray')
 
 			#--------------------
-			vis_images = train_images
-			vis_labels = train_labels
+			vis_images = train_images[0:10]
+			vis_labels = train_labels[0:10]
 
 			print('[SWL] Info: Start visualizing by partial occlusion...')
 			start_time = time.time()
 			grid_counts = (28, 28)  # (grid count in height, grid count in width).
-			grid_size = (7, 7)  # (grid height, grid width).
+			grid_size = (4, 4)  # (grid height, grid width).
 			occlusion_color = 0  # Black.
 			occluded_probilities = swl_ml_util.visualize_by_partial_occlusion(sess, nnInferrer, vis_images, vis_labels, grid_counts, grid_size, occlusion_color, num_classes, batch_size, infer_saver, model_dir_path)
 			print('\tVisualization time = {}'.format(time.time() - start_time))
 			print('[SWL] Info: End visualizing by partial occlusion...')
 
-			if True:
+			if occluded_probilities is not None:
 				import matplotlib.pyplot as plt
-				idx = 0
-				if occluded_probilities is not None:
-					plt.figure()
-					plt.imshow(1 - occluded_probilities[idx].reshape(occluded_probilities[idx].shape[:2]), cmap='gray')
-					plt.figure()
-					plt.imshow(train_images[idx].reshape(train_images[idx].shape[:2]), cmap='gray')
+				for (idx, prob) in enumerate(occluded_probilities):
+					#plt.figure()
+					#plt.imshow(1 - prob.reshape(prob.shape[:2]), cmap='gray')
+					#plt.figure()
+					#plt.imshow(vis_images[idx].reshape(vis_images[idx].shape[:2]), cmap='gray')
+					plt.imsave((output_dir_path + '/occluded_prob_{}.png').format(idx), np.around((1 - prob.reshape(prob.shape[:2])) * 255), cmap='gray')
+					plt.imsave((output_dir_path + '/vis_{}.png').format(idx), np.around(vis_images[idx].reshape(vis_images[idx].shape[:2]) * 255), cmap='gray')
 
 	#--------------------
 	# Close sessions.
