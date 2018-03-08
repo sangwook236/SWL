@@ -321,7 +321,8 @@ def main():
 
 			#--------------------
 			idx = 0
-			vis_images = train_images[idx:(idx+1)]  # Recommend using a single image.
+			#vis_images = train_images[idx:(idx+1)]  # Recommend using a single image.
+			vis_images = test_images[idx:(idx+1)]  # Recommend using a single image.
 			feed_dict = cnnModelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
 			#input_tensor = cnnModelForInference.input_tensor
@@ -342,8 +343,10 @@ def main():
 			#plt.imsave(output_dir_path + '/vis.png', np.around(vis_images[0].reshape(vis_images[0].shape[:2]) * 255), cmap='gray')
 
 			#--------------------
-			vis_images = train_images[0:10]
-			vis_labels = train_labels[0:10]
+			#vis_images = train_images[0:10]
+			#vis_labels = train_labels[0:10]
+			vis_images = test_images[0:100]
+			vis_labels = test_labels[0:100]
 
 			print('[SWL] Info: Start visualizing by partial occlusion...')
 			start_time = time.time()
