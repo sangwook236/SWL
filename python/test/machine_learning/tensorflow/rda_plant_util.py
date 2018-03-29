@@ -2,6 +2,8 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list
 from swl.machine_learning.util import to_one_hot_encoding
+import os, json
+from PIL import Image
 
 #%%------------------------------------------------------------------
 
@@ -67,3 +69,26 @@ class RdaPlantDataset(object):
 			labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
 
 		return data, labels
+
+	@staticmethod
+	def load_masks_from_json(data_dir_path, json_file_name):
+		with open(data_dir_path + json_file_name) as json_file:
+			plant_mask_filenames = json.load(json_file)
+
+		plant_mask_list = []
+		max_size = 0, 0
+		for pm_file in plant_mask_filenames:
+			filepath = os.path.join(data_dir_path, pm_file['plant'])
+			plant = np.asarray(Image.open(filepath))
+			height, width, _ = plant.shape
+			masks = []
+			for mask_file in pm_file['masks']:
+				filepath = os.path.join(data_dir_path, mask_file)
+				mask = np.asarray(Image.open(filepath))
+				# For checking.
+				mask_height, mask_width = mask.shape
+				assert height == mask_height and width == mask_width, 'The size of mask is not equal to that of image.'
+				masks.append(mask)
+			plant_mask_list.append([plant, masks])
+			max_size = max(max_size, (height, width))
+		return plant_mask_list, max_size

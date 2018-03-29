@@ -31,9 +31,9 @@ def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop
 #%%------------------------------------------------------------------
 
 import tensorflow as tf
-import tf_cnnvis
 
 def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
+	import tf_cnnvis
 	layers = ['r', 'p', 'c']
 	return tf_cnnvis.activation_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
 			input_tensor=input_tensor, layers=layers,
@@ -41,6 +41,7 @@ def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
 			path_outdir=os.path.join(output_dir_path, 'vis'))
 
 def visualize_by_deconvolution(session, input_tensor, feed_dict, output_dir_path):
+	import tf_cnnvis
 	layers = ['r', 'p', 'c']
 	return tf_cnnvis.deconv_visualization(sess_graph_path=session, value_feed_dict=feed_dict,
 			input_tensor=input_tensor, layers=layers,
