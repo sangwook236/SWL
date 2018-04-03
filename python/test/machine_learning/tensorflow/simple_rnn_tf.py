@@ -205,23 +205,20 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		"""
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
 		#cell_state = cell.zero_state(batch_size, tf.float32)
-		cell_state = tf.zeros([batch_size, cell.state_size])
-		cell_output_list = []
-		probabilities = []
+		cell_state = tf.contrib.rnn.LSTMStateTuple(tf.zeros([batch_size, cell.state_size[0].c]), tf.zeros([batch_size, cell.state_size[0].h]))
+		cell_outputs = []
 		loss = 0.0
 		for inp in input_tensor:
 			#cell_output, cell_state = cell(inp, cell_state)
-			cell_outputs, _ = cell(inp, cell_state)
-			cell_output_list.append(cell_outputs)
+			cell_output, _ = cell(inp, cell_state)
+			cell_outputs.append(cell_output)
 
-			#logits = tf.matmul(cell_output, weights) + biases
+			# Projection.
+			#logits = tf.matmul(cell_outputs[-1], weights) + biases
 			# TODO [check] >>
-			logits = tf.layers.dense(cell_output, 1024, activation=tf.nn.softmax, name='fc')
+			logits = tf.layers.dense(cell_outputs[-1], 1024, activation=tf.nn.softmax, name='fc')
 			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training, name='dropout')
-
-			probabilities.append(tf.nn.softmax(logits))
-			loss += loss_function(probabilities, output_tensor[:, i])
 		"""
 		#cell_outputs, cell_state = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
@@ -264,30 +261,26 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
 
 		# Gets cell outputs.
-		def run_stacked_cells(cells, cell_inputs, cell_state_list):
-			cell_outputs = cell_inputs
-			new_cell_state_list = []
-			for (cell, cell_state) in zip(cells, cell_state_list):
-				cell_outputs, cell_state = cell(cell_outputs, cell_state)
-				new_cell_state_list.append(cell_state)
-			return cell_outputs, new_cell_state_list
+		def run_stacked_cells(cells, cell_inputs, cell_states):
+			cell_output_list, cell_state_list = [], []
+			for (cell, cell_input, cell_state) in zip(cells, cell_inputs, cell_states):
+				cell_output, cell_state = cell(cell_input, cell_state)
+				cell_output_list.append(cell_output)
+				cell_state_list.append(cell_state)
+			return cell_output_list, cell_state_list
 
-		cell_state_list = tf.zeros([[batch_size, cell.state_size] for cell in cells])
-		cell_output_list = []
-		probabilities = []
-		loss = 0.0
+		cell_state_list = [tf.contrib.rnn.LSTMStateTuple(tf.zeros([batch_size, cell.state_size[0].c]), tf.zeros([batch_size, cell.state_size[0].h])) for cell in cells]
+		cell_outputs = []
 		for inp in input_tensor:
-			cell_output, cell_state_list = run_stacked_cells(stacked_cells, inp, cell_state_list)
-			cell_output_list.append(cell_output)
+			cell_output_list, cell_state_list = run_stacked_cells(stacked_cells, inp, cell_state_list)
+			cell_outputs.append(cell_output_list[-1])
 
-			#logits = tf.matmul(cell_output, weights) + biases
+			# Projection.
+			#logits = tf.matmul(cell_outputs[-1], weights) + biases
 			# TODO [check] >>
-			logits = tf.layers.dense(cell_output, 1024, activation=tf.nn.softmax, name='fc')
+			logits = tf.layers.dense(cell_outputs[-1], 1024, activation=tf.nn.softmax, name='fc')
 			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training, name='dropout')
-
-			probabilities.append(tf.nn.softmax(logits))
-			loss += loss_function(probabilities, output_tensor[:, i])
 		"""
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent

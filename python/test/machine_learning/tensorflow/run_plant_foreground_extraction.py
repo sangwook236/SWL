@@ -317,7 +317,7 @@ def main():
 	#--------------------
 	# Prepare directories.
 
-	output_dir_prefix = 'fc_densenet'
+	output_dir_prefix = 'plant_foreground_extraction'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180117T135317'
 
