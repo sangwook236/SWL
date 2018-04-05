@@ -203,7 +203,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Gets cell outputs.
 		"""
-		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
+		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
 		#cell_state = cell.zero_state(batch_size, tf.float32)
 		cell_state = tf.contrib.rnn.LSTMStateTuple(tf.zeros([batch_size, cell.state_size[0].c]), tf.zeros([batch_size, cell.state_size[0].h]))
 		cell_outputs = []
@@ -212,13 +212,6 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 			#cell_output, cell_state = cell(inp, cell_state)
 			cell_output, _ = cell(inp, cell_state)
 			cell_outputs.append(cell_output)
-
-			# Projection.
-			#logits = tf.matmul(cell_outputs[-1], weights) + biases
-			# TODO [check] >>
-			logits = tf.layers.dense(cell_outputs[-1], 1024, activation=tf.nn.softmax, name='fc')
-			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training, name='dropout')
 		"""
 		#cell_outputs, cell_state = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.static_rnn(cell, input_tensor, dtype=tf.float32)
@@ -253,7 +246,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		"""
-		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
+		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
 		# Defines cells.
 		stacked_cells = [self._create_unit_cell(num_hidden_units) for _ in range(num_layers)]
 
@@ -274,13 +267,6 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		for inp in input_tensor:
 			cell_output_list, cell_state_list = run_stacked_cells(stacked_cells, inp, cell_state_list)
 			cell_outputs.append(cell_output_list[-1])
-
-			# Projection.
-			#logits = tf.matmul(cell_outputs[-1], weights) + biases
-			# TODO [check] >>
-			logits = tf.layers.dense(cell_outputs[-1], 1024, activation=tf.nn.softmax, name='fc')
-			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-			logits = tf.layers.dropout(logits, rate=dropout_rate, training=is_training, name='dropout')
 		"""
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
