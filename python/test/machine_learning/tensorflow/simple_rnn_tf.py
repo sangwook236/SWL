@@ -205,7 +205,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		"""
 		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
 		#cell_state = cell.zero_state(batch_size, tf.float32)
+		#cell_state = cell.zero_state(tf.placeholder(tf.int32, (1,)), tf.float32)
 		cell_state = tf.contrib.rnn.LSTMStateTuple(tf.zeros([batch_size, cell.state_size[0].c]), tf.zeros([batch_size, cell.state_size[0].h]))
+		#cell_state = tf.contrib.rnn.LSTMStateTuple(tf.zeros([tf.placeholder(tf.int32, (1,)), cell.state_size[0].c]), tf.zeros([tf.placeholder(tf.int32, (1,)), cell.state_size[0].h]))
 		cell_outputs = []
 		loss = 0.0
 		for inp in input_tensor:
@@ -263,6 +265,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 			return cell_output_list, cell_state_list
 
 		cell_state_list = [tf.contrib.rnn.LSTMStateTuple(tf.zeros([batch_size, cell.state_size[0].c]), tf.zeros([batch_size, cell.state_size[0].h])) for cell in cells]
+		#cell_state_list = [tf.contrib.rnn.LSTMStateTuple(tf.zeros([tf.placeholder(tf.int32, (1,)), cell.state_size[0].c]), tf.zeros([tf.placeholder(tf.int32, (1,)), cell.state_size[0].h])) for cell in cells]
 		cell_outputs = []
 		for inp in input_tensor:
 			cell_output_list, cell_state_list = run_stacked_cells(stacked_cells, inp, cell_state_list)

@@ -110,12 +110,16 @@ def pad_image(img, target_height, target_width):
 
 	left_margin = (target_width - width) // 2
 	right_margin = target_width - width - left_margin
-	top_margin = (target_height - height) // 2
+	#top_margin = (target_height - height) // 2
+	#bottom_margin = target_height - height - top_margin
+	top_margin = target_height - height
 	bottom_margin = target_height - height - top_margin
 	if 2 == img.ndim:
-		return np.pad(img, ((bottom_margin, top_margin), (left_margin, right_margin)), 'edge')
+		return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin)), 'edge')
+		#return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin)), 'constant', constant_values=(0, 0))
 	else:
-		return np.pad(img, ((bottom_margin, top_margin), (left_margin, right_margin), (0, 0)), 'edge')
+		return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin), (0, 0)), 'edge')
+		#return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin), (0, 0)), 'constant', constant_values=(0, 0))
 
 def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset, is_time_major):
 	# Sequence-to-sequence encoder-decoder model w/o attention.
