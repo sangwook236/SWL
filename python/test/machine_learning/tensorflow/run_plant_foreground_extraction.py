@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # REF [paper] >> "Densely Connected Convolutional Networks", arXiv 2016.
 # REF [paper] >> "The One Hundred Layers Tiramisu: Fully Convolutional DenseNets for Semantic Segmentation", arXiv 2016.
 # REF [site] >> https://github.com/titu1994/Fully-Connected-DenseNets-Semantic-Segmentation

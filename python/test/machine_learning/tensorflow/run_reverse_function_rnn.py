@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # REF [site] >> https://www.tensorflow.org/tutorials/recurrent
 
 # Path to libcudnn.so.

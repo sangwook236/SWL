@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # REF [site] >> https://talbaumel.github.io/attention/ ==> Neural Attention Mechanism - Sequence To Sequence Attention Models In DyNet.pdf
 # REF [site] >> https://github.com/fchollet/keras/blob/master/examples/lstm_seq2seq.py
 # REF [site] >> https://www.tensorflow.org/tutorials/seq2seq

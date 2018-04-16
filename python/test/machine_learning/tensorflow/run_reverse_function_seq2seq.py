@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 # REF [paper] >> "Describing Multimedia Content Using Attention-Based Encoder-Decoder Networks", ToM 2015.
 # REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
 # REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
