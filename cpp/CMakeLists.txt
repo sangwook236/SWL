@@ -159,6 +159,8 @@ option(USE_CUDA "Compute Unified Device Architecture (CUDA) - a parallel computi
 
 #option(USE_QT4 "Qt4 - Coss-platform application framework" OFF)
 set(USE_QT4 OFF)
+#option(USE_QT5 "Qt5 - Coss-platform application framework" OFF)
+set(USE_QT5 OFF)
 
 option(USE_DOXYGEN "Doxygen - De facto standard tool for generating documentation from annotated C++ sources" ON)
 #set(USE_DOXYGEN ON)
@@ -199,35 +201,21 @@ endif(USE_GLUT)
 if(USE_BOOST)
 	# hints : BOOST_ROOT, BOOST_INCLUDEDIR, BOOST_LIBRARYDIR
 	# variables : Boost_FOUND, Boost_INCLUDE_DIRS, Boost_LIBRARY_DIRS, Boost_LIBRARIES, Boost_<C>_FOUND, Boost_<C>_LIBRARY, Boost_VERSION, Boost_LIB_VERSION, Boost_MAJOR_VERSION, Boost_MINOR_VERSION, Boost_SUBMINOR_VERSION
-	find_package(Boost 1.52 REQUIRED)
+	#find_package(Boost 1.62 REQUIRED)
+	find_package(Boost 1.62 REQUIRED thread unit_test_framework timer)
 	include_directories(${Boost_INCLUDE_DIRS})
 	link_directories(${Boost_LIBRARY_DIRS})
 
 	# FIXME [check] >>
 	if(Boost_FOUND)
-		if(NOT Boost_SYSTEM_FOUND AND "${Boost_SYSTEM_LIBRARY}" STREQUAL "")
-			set(Boost_SYSTEM_FOUND 1)
-			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-				set(Boost_SYSTEM_LIBRARY boost_system)
-			endif()
+		if(NOT Boost_THREAD_FOUND OR "${Boost_THREAD_LIBRARY}" STREQUAL "")
+			find_package(Boost COMPONENTS thread)
 		endif()
-		if(NOT Boost_THREAD_FOUND AND "${Boost_THREAD_LIBRARY}" STREQUAL "")
-			set(Boost_THREAD_FOUND 1)
-			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-				set(Boost_THREAD_LIBRARY boost_thread)
-			endif()
+		if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND OR "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}" STREQUAL "")
+			find_package(Boost COMPONENTS unit_test_framework)
 		endif()
-		if(NOT Boost_UNIT_TEST_FRAMEWORK_FOUND AND "${Boost_UNIT_TEST_FRAMEWORK_LIBRARY}" STREQUAL "")
-			set(Boost_UNIT_TEST_FRAMEWORK_FOUND 1)
-			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-				set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
-			endif()
-		endif()
-		if(NOT Boost_TIMER_FOUND AND "${Boost_TIMER_LIBRARY}" STREQUAL "")
-			set(Boost_TIMER_FOUND 1)
-			if(CMAKE_CXX_COMPILER_ID MATCHES GNU)
-				set(Boost_TIMER_LIBRARY boost_timer)
-			endif()
+		if(NOT Boost_TIMER_FOUND OR "${Boost_TIMER_LIBRARY}" STREQUAL "")
+			find_package(Boost COMPONENTS timer)
 		endif()
 	endif(Boost_FOUND)
 endif(USE_BOOST)
@@ -312,7 +300,7 @@ if(USE_OPENCV2)
 	# ${SWL_CPP_HOME}/cmake/FindOpenCV2cmake
 	# hints : OpenCV2_ROOT_DIR
 	# variables : OpenCV2_FOUND, OpenCV2_INCLUDE_DIRS, OpenCV2_LIBRARIES
-	find_package(OpenCV2 2.4.0 REQUIRED)
+	find_package(OpenCV2 3.2.0 REQUIRED)
 	include_directories(${OpenCV2_INCLUDE_DIRS})
 
 #	message(STATUS "[-- SWL-C++ --] OpenCV: ${OpenCV2_LIBRARIES}")
@@ -339,12 +327,25 @@ if(USE_CUDA)
 #	message(STATUS "[-- SWL-C++ --] CUDA: ${CUDA_LIBRARIES}")
 endif(USE_CUDA)
 
-if(USE_QT4)
-	# variables : QT_FOUND, Qt4_FOUND, QT4_FOUND, QT_VERSION_MAJOR, QT_VERSION_MINOR, QT_VERSION_PATCH, QT_INCLUDE_DIR, QT_LIBRARIES, QT_DEFINITIONS
-	find_package(Qt4 4.7.4 QUIETLY QtGui QtXml)  # target_link_libraries(myexe Qt4::QtGui Qt4::QtXml)
+#if(USE_QT4)
+#	# variables : QT_FOUND, Qt4_FOUND, QT_VERSION_MAJOR, QT_VERSION_MINOR, QT_VERSION_PATCH, QT_INCLUDE_DIR, QT_LIBRARIES, QT_DEFINITIONS
+#	find_package(Qt4 4.7.4 QUIETLY QtGui QtXml)  # target_link_libraries(myexe Qt4::QtGui Qt4::QtXml)
+#	include_directories(${QT_INCLUDE_DIR})
+#	add_definitions(${QT_DEFINITIONS})
+#endif(USE_QT4)
+if(USE_QT5)
+	# variables : QT_FOUND, Qt5_FOUND, QT_VERSION_MAJOR, QT_VERSION_MINOR, QT_VERSION_PATCH, QT_INCLUDE_DIR, QT_LIBRARIES, QT_DEFINITIONS
+	# variables : Qt5Core_INCLUDE_DIRS, Qt5Core_LIBRARIES
+	find_package(Qt5 COMPONENTS Core Gui Widgets Quick Qml Concurrent REQUIRED)  # target_link_libraries(myexe Qt5::Qt5Core Qt5::Qt5Widgets)
+	#find_package(Qt5Core REQUIRED)
+	#find_package(Qt5Gui REQUIRED)
+	#find_package(Qt5Widgets REQUIRED)
+	#find_package(Qt5Quick REQUIRED)
+	#find_package(Qt5Qml REQUIRED)
+	#find_package(Qt5Concurrent REQUIRED)
 	include_directories(${QT_INCLUDE_DIR})
 	add_definitions(${QT_DEFINITIONS})
-endif(USE_QT4)
+endif(USE_QT5)
 
 if(USE_DOXYGEN)
 	# variables : DOXYGEN_FOUND, DOXYGEN_VERSION, DOXYGEN_EXECUTABLE
