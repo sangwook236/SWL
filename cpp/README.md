@@ -39,6 +39,8 @@ SWL supports [Code::Blocks](http://www.codeblocks.org/) and [Visual Studio](http
 		* build_all.bat
 
 ## Document
+
+### Reference Manual
 Use the SWL's doxygen configuation file, doc/swl.doxy.
 * Change the directory to SWL-C++.
 * Change the directory to doc.

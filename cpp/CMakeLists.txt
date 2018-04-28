@@ -370,7 +370,7 @@ add_definitions(-D_UNICODE -DUNICODE)
 #link_directories(/usr/local/lib /usr/lib)
 
 ##
-## Set and add include and link paths for gdt/sw_dev & gdt/hw_dev.
+## Set and add include and link paths for swdt/sw_dev & swdt/hw_dev.
 ##
 if(WIN32 AND NOT CYGWIN)
 #	set(MY_USR_LOCAL_BIN D:/usr/local/bin)
@@ -380,9 +380,9 @@ if(WIN32 AND NOT CYGWIN)
 #	set(MY_USR_INCLUDE D:/usr/include)
 #	set(MY_USR_LIB D:/usr/lib)
 
-	set(MY_SW_DEV_EXT_HOME D:/work/gdt_github/sw_dev/cpp/ext)
-	set(MY_SW_DEV_RND_HOME D:/work/gdt_github/sw_dev/cpp/rnd)
-	set(MY_HW_DEV_EXT_HOME D:/work/gdt_github/hw_dev/ext)
+	set(MY_SW_DEV_EXT_HOME D:/work/swdt_github/sw_dev/cpp/ext)
+	set(MY_SW_DEV_RND_HOME D:/work/swdt_github/sw_dev/cpp/rnd)
+	set(MY_HW_DEV_EXT_HOME D:/work/swdt_github/hw_dev/ext)
 
 	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/inc)
 	set(MY_SW_DEV_EXT_LIB ${MY_SW_DEV_EXT_HOME}/lib)
@@ -411,9 +411,9 @@ else()
 #	set(MY_USR_INCLUDE $ENV{HOME}/my_usr/include)
 #	set(MY_USR_LIB $ENV{HOME}/my_usr/lib)
 
-	set(MY_SW_DEV_EXT_HOME $ENV{HOME}/work/gdt_github/sw_dev/cpp/ext)
-	set(MY_SW_DEV_RND_HOME $ENV{HOME}/work/gdt_github/sw_dev/cpp/rnd)
-	set(MY_HW_DEV_EXT_HOME $ENV{HOME}/work/gdt_github/hw_dev/ext)
+	set(MY_SW_DEV_EXT_HOME $ENV{HOME}/work/swdt_github/sw_dev/cpp/ext)
+	set(MY_SW_DEV_RND_HOME $ENV{HOME}/work/swdt_github/sw_dev/cpp/rnd)
+	set(MY_HW_DEV_EXT_HOME $ENV{HOME}/work/swdt_github/hw_dev/ext)
 
 	set(MY_SW_DEV_EXT_INCLUDE ${MY_SW_DEV_EXT_HOME}/inc)
 	set(MY_SW_DEV_EXT_LIB ${MY_SW_DEV_EXT_HOME}/lib)
