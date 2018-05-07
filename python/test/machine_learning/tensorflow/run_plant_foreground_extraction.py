@@ -161,7 +161,7 @@ def infer_label_from_image_patches(sess, nnInferrer, img, num_classes, patch_hei
 		inferred_label = swl_imgproc_util.stitch_label_patches(inferred_label_patches, np.array(patch_regions), resized_size)
 		return np.asarray(Image.fromarray(inferred_label).resize((image_size[1], image_size[0]), resample=Image.NEAREST))
 
-def infer_full_size_images_from_patche(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path):
+def infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path):
 	K.set_session(sess)
 	K.set_learning_phase(0)  # Set the learning phase to 'test'.
 
@@ -492,11 +492,11 @@ def main():
 
 	#%%------------------------------------------------------------------
 
-	print('[SWL] Info: Start inferring for full-size images using patches...')
+	print('[SWL] Info: Start inferring full-size images using patches...')
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			infer_full_size_images_from_patche(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path)
-	print('[SWL] Info: End inferrig for full-size images using patches...')
+			infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path)
+	print('[SWL] Info: End inferrig full-size images using patches...')
 
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
