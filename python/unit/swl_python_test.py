@@ -10,6 +10,8 @@ def suite():
 	#suite.addTest(AddTestCase())
 	return suite
 
+#%%------------------------------------------------------------------
+
 # Usage:
 #	python -m unittest swl_python_test
 #	python -m unittest swl_python_test.py
