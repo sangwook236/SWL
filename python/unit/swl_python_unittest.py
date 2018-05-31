@@ -13,8 +13,8 @@ def suite():
 #%%------------------------------------------------------------------
 
 # Usage:
-#	python -m unittest swl_python_test
-#	python -m unittest swl_python_test.py
+#	python -m unittest swl_python_unittest
+#	python -m unittest swl_python_unittest.py
 #
 #	python -m unittest discover -s project_directory -p "*_test.py"
 
