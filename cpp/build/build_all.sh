@@ -9,4 +9,3 @@ make -j4 test
 make -j4 doc
 
 #export LD_LIBRARY_PATH=../lib:$LD_LIBRARY_PATH
-
