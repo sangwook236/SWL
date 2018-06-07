@@ -35,6 +35,7 @@ def load_image_list_by_pil(dir_path, file_suffix, file_extension):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
@@ -48,6 +49,7 @@ def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
@@ -66,6 +68,7 @@ def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height
 	labels = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
@@ -82,6 +85,7 @@ def load_image_list_by_scipy(dir_path, file_suffix, file_extension):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
@@ -96,6 +100,7 @@ def load_images_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
@@ -113,6 +118,7 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 	labels = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
+			filenames.sort()
 			for filename in filenames:
 				if re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepath = os.path.join(root, filename)
