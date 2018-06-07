@@ -47,17 +47,16 @@ K.set_learning_phase(0)
 # Load data.
 
 if 'posix' == os.name:
-	#dataset_home_dir_path = '/home/sangwook/my_dataset'
-	dataset_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	data_home_dir_path = '/home/sangwook/my_dataset'
 else:
-	dataset_home_dir_path = 'D:/dataset'
+	data_home_dir_path = 'D:/dataset'
 
-train_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/train'
-train_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot'
-validation_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/val'
-validation_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/valannot'
-test_data_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/test'
-test_label_dir_path = dataset_home_dir_path + '/pattern_recognition/camvid/tmp/testannot'
+train_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/train'
+train_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot'
+validation_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/val'
+validation_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/valannot'
+test_data_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test'
+test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/testannot'
 
 output_dir_path = './result/fc_densenet'
 log_dir_path = './log/fc_densenet'

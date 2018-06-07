@@ -40,8 +40,7 @@ keras_backend = 'tf'
 # Load data.
 
 if 'posix' == os.name:
-	#data_home_dir_path = '/home/sangwook/my_dataset'
-	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	data_home_dir_path = '/home/sangwook/my_dataset'
 else:
 	data_home_dir_path = 'D:/dataset'
 

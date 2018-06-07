@@ -187,11 +187,10 @@ def main():
 	# Prepare data.
 
 	if 'posix' == os.name:
-		#data_home_dir_path = '/home/sangwook/my_dataset'
-		data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+		data_home_dir_path = '/home/sangwook/my_dataset'
 	else:
 		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/mnist/0_original'
+	data_dir_path = data_home_dir_path + '/pattern_recognition/machine_vision/mnist/0_original'
 
 	num_classes = 10
 	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
@@ -209,7 +208,7 @@ def main():
 	# Create graphs.
 	if does_need_training:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
 	if does_need_training:
@@ -230,18 +229,18 @@ def main():
 
 			initializer = tf.global_variables_initializer()
 
-	with eval_graph.as_default():
-		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+		with eval_graph.as_default():
+			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
-		# Create a model.
-		mlpModelForEvaluation = create_mnist_mlp(input_shape, output_shape)
-		mlpModelForEvaluation.create_evaluation_model()
+			# Create a model.
+			mlpModelForEvaluation = create_mnist_mlp(input_shape, output_shape)
+			mlpModelForEvaluation.create_evaluation_model()
 
-		# Create an evaluator.
-		nnEvaluator = NeuralNetEvaluator(mlpModelForEvaluation)
+			# Create an evaluator.
+			nnEvaluator = NeuralNetEvaluator(mlpModelForEvaluation)
 
-		# Create a saver.
-		eval_saver = tf.train.Saver()
+			# Create a saver.
+			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
@@ -265,7 +264,7 @@ def main():
 
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=config)
-	eval_session = tf.Session(graph=eval_graph, config=config)
+		eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
 
 	# Initialize.
@@ -273,7 +272,7 @@ def main():
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train.
+	# Train and evaluate.
 
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.	
@@ -288,16 +287,16 @@ def main():
 				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
-	#%%------------------------------------------------------------------
-	# Evaluate and infer.
+		total_elapsed_time = time.time()
+		with eval_session.as_default() as sess:
+			with sess.graph.as_default():
+				#K.set_session(sess)
+				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, model_dir_path)
+		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
-	total_elapsed_time = time.time()
-	with eval_session.as_default() as sess:
-		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, model_dir_path)
-	print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+	#%%------------------------------------------------------------------
+	# Infer.
 
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
@@ -313,8 +312,8 @@ def main():
 	if does_need_training:
 		train_session.close()
 		train_session = None
-	eval_session.close()
-	eval_session = None
+		eval_session.close()
+		eval_session = None
 	infer_session.close()
 	infer_session = None
 

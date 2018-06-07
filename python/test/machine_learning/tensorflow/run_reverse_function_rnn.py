@@ -178,7 +178,7 @@ def main():
 	# Create graphs.
 	if does_need_training:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
 	if does_need_training:
@@ -199,18 +199,18 @@ def main():
 
 			initializer = tf.global_variables_initializer()
 
-	with eval_graph.as_default():
-		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+		with eval_graph.as_default():
+			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
-		# Create a model.
-		rnnModelForEvaluation = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-		rnnModelForEvaluation.create_evaluation_model()
+			# Create a model.
+			rnnModelForEvaluation = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+			rnnModelForEvaluation.create_evaluation_model()
 
-		# Create an evaluator.
-		nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
+			# Create an evaluator.
+			nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
 
-		# Create a saver.
-		eval_saver = tf.train.Saver()
+			# Create a saver.
+			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
@@ -234,7 +234,7 @@ def main():
 
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=config)
-	eval_session = tf.Session(graph=eval_graph, config=config)
+		eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
 
 	# Initialize.
@@ -242,7 +242,7 @@ def main():
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train.
+	# Train and evaluate.
 
 	if does_need_training:
 		total_elapsed_time = time.time()
@@ -253,16 +253,16 @@ def main():
 				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
-	#%%------------------------------------------------------------------
-	# Evaluate and infer.
+		total_elapsed_time = time.time()
+		with eval_session.as_default() as sess:
+			with sess.graph.as_default():
+				#K.set_session(sess)
+				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+				evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, model_dir_path)
+		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
-	total_elapsed_time = time.time()
-	with eval_session.as_default() as sess:
-		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, model_dir_path)
-	print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+	#%%------------------------------------------------------------------
+	# Infer.
 
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
@@ -279,8 +279,8 @@ def main():
 	if does_need_training:
 		train_session.close()
 		train_session = None
-	eval_session.close()
-	eval_session = None
+		eval_session.close()
+		eval_session = None
 	infer_session.close()
 	infer_session = None
 

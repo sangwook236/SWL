@@ -338,8 +338,7 @@ def main():
 	# Prepare data.
 
 	if 'posix' == os.name:
-		#data_home_dir_path = '/home/sangwook/my_dataset'
-		data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+		data_home_dir_path = '/home/sangwook/my_dataset'
 	else:
 		data_home_dir_path = 'D:/dataset'
 
@@ -365,7 +364,7 @@ def main():
 	"""
 	if does_need_training:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 	"""
 	default_graph = tf.get_default_graph()
@@ -380,14 +379,14 @@ def main():
 	"""
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=config)
-	eval_session = tf.Session(graph=eval_graph, config=config)
+		eval_session = tf.Session(graph=eval_graph, config=config)
 	infer_session = tf.Session(graph=infer_graph, config=config)
 	"""
 	#default_session = tf.get_default_session()
 	default_session = tf.Session(graph=default_graph, config=config)
 	if does_need_training:
 		train_session = default_session
-	eval_session = default_session
+		eval_session = default_session
 	infer_session = default_session
 
 	if does_need_training:
@@ -411,25 +410,27 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
-	#with eval_graph.as_default():
-	with eval_session.as_default() as sess:
-		with sess.graph.as_default():
-			K.set_session(sess)
-			K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+		#with eval_graph.as_default():
+		with eval_session.as_default() as sess:
+			with sess.graph.as_default():
+				K.set_session(sess)
+				K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
-			# Create a model.
-			"""
-			denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
-			denseNetModelForEvaluation.create_evaluation_model()
-			"""
-			denseNetModelForEvaluation = denseNetModelForTraining
+				# Create a model.
+				"""
+				denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
+				denseNetModelForEvaluation.create_evaluation_model()
+				"""
+				denseNetModelForEvaluation = denseNetModelForTraining
 
-			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
+				# Create an evaluator.
+				nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
 
-			# Create a saver.
-			#eval_saver = tf.train.Saver()
-			eval_saver = None
+				# Create a saver.
+				#eval_saver = tf.train.Saver()
+				eval_saver = None  # Do not load a model.
+	else:
+		denseNetModelForTraining = None
 
 	#with infer_graph.as_default():
 	with infer_session.as_default() as sess:
@@ -438,25 +439,27 @@ def main():
 			K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			"""
-			denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
-			denseNetModelForInference.create_inference_model()
-			"""
-			denseNetModelForInference = denseNetModelForTraining
+			if does_need_training:
+				denseNetModelForInference = denseNetModelForTraining
+			else:
+				denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
+				denseNetModelForInference.create_inference_model()
 
 			# Create an inferrer.
 			nnInferrer = NeuralNetInferrer(denseNetModelForInference)
 
 			# Create a saver.
-			#infer_saver = tf.train.Saver()
-			infer_saver = None
+			if does_need_training:
+				infer_saver = None  # Do not load a model.
+			else:
+				infer_saver = tf.train.Saver()
 
 	# Initialize.
 	if does_need_training:
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train.
+	# Train and evaluate.
 
 	batch_size = 6  # Number of samples per gradient update.
 	num_epochs = 50  # Number of times to iterate over training data.
@@ -471,16 +474,16 @@ def main():
 				train_neural_net(sess, nnTrainer, train_image_patches, train_label_patches, test_image_patches, test_label_patches, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
-	#%%------------------------------------------------------------------
-	# Evaluate and infer.
+		total_elapsed_time = time.time()
+		with eval_session.as_default() as sess:
+			with sess.graph.as_default():
+				K.set_session(sess)
+				K.set_learning_phase(0)  # Set the learning phase to 'test'.
+				evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, model_dir_path)
+		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
-	total_elapsed_time = time.time()
-	with eval_session.as_default() as sess:
-		with sess.graph.as_default():
-			K.set_session(sess)
-			K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, model_dir_path)
-	print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+	#%%------------------------------------------------------------------
+	# Infer.
 
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
@@ -513,8 +516,8 @@ def main():
 	if does_need_training:
 		train_session.close()
 		train_session = None
-	eval_session.close()
-	eval_session = None
+		eval_session.close()
+		eval_session = None
 	infer_session.close()
 	infer_session = None
 	"""
