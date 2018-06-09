@@ -283,14 +283,14 @@ def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_hei
 				activations_after_concat = compute_layer_activations(sess, layer_after_concat_tensor, feed_dict)
 				#plot_conv_activations(activations_after_concat, figsize=(40, 40))
 
-				np.save(('./npy/image_patch_{}_{}.npy').format(idx, pat_idx), img_pat)
-				np.save(('./npy/label_patch_{}_{}.npy').format(idx, pat_idx), lbl_pat)
-				np.save(('./npy/activations_before_concat_{}_{}.npy').format(idx, pat_idx), activations_before_concat)
-				np.save(('./npy/activations_after_concat_{}_{}.npy').format(idx, pat_idx), activations_after_concat)
+				np.save('./npy/image_patch_{}_{}.npy'.format(idx, pat_idx), img_pat)
+				np.save('./npy/label_patch_{}_{}.npy'.format(idx, pat_idx), lbl_pat)
+				np.save('./npy/activations_before_concat_{}_{}.npy'.format(idx, pat_idx), activations_before_concat)
+				np.save('./npy/activations_after_concat_{}_{}.npy'.format(idx, pat_idx), activations_after_concat)
 
 				pat_idx += 1
 
-			np.save(('./npy/patch_ranges_{}.npy').format(idx), np.array(patch_regions))
+			np.save('./npy/patch_ranges_{}.npy'.format(idx), np.array(patch_regions))
 		else:
 			pass
 		idx += 1
@@ -501,10 +501,11 @@ def main():
 			infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path)
 	print('[SWL] Info: End inferrig full-size images using patches...')
 
-	with infer_session.as_default() as sess:
-		with sess.graph.as_default():
-			visualize_filters(sess)
+	#with infer_session.as_default() as sess:
+	#	with sess.graph.as_default():
+	#		visualize_filters(sess)
 
+	make_dir('npy')
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			visualize_activations(sess, denseNetModelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size)

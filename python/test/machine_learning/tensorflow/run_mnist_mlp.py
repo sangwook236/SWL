@@ -257,6 +257,7 @@ def main():
 
 	# Create sessions.
 	config = tf.ConfigProto()
+	#config = tf.ConfigProto(device_count={'GPU': 2})
 	#config.allow_soft_placement = True
 	config.log_device_placement = True
 	config.gpu_options.allow_growth = True
