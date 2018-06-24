@@ -374,11 +374,11 @@ def main():
 
 	if does_need_training:
 		train_session.close()
-		train_session = None
+		del train_session
 		eval_session.close()
-		eval_session = None
+		del eval_session
 	infer_session.close()
-	infer_session = None
+	del infer_session
 
 #%%------------------------------------------------------------------
 

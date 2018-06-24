@@ -162,9 +162,6 @@ def infer_label_from_image_patches(sess, nnInferrer, img, num_classes, patch_hei
 		return np.asarray(Image.fromarray(inferred_label).resize((image_size[1], image_size[0]), resample=Image.NEAREST))
 
 def infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path):
-	K.set_session(sess)
-	K.set_learning_phase(0)  # Set the learning phase to 'test'.
-
 	inferences = []
 	start_time = time.time()
 	for img in image_list:
@@ -240,9 +237,6 @@ def compute_layer_activations(sess, layer_tensor, feed_dict):
 # Visualize filters in a convolutional layer.
 
 def visualize_filters(sess):
-	K.set_session(sess)
-	K.set_learning_phase(0)  # Set the learning phase to 'test'.
-
 	#print(tf.global_variables())
 
 	# FIXME [error] >> Not working.
@@ -257,12 +251,10 @@ def visualize_filters(sess):
 #%%------------------------------------------------------------------
 # Visualize activations(layer ouputs) in a convolutional layer.
 
-def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size):
-	K.set_session(sess)
-	K.set_learning_phase(0)  # Set the learning phase to 'test'.
-
+def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size, npy_dir_path):
+	# TODO [check] >> Check tensors' names.
 	layer_before_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/up_sampling2d_5/ResizeNearestNeighbor:0')  # Shape = (?, 224, 224, 64).
-	layer_after_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/merge_50/concat:0')  # Shape = (?, 224, 224, 176).
+	layer_after_concat_tensor = sess.graph.get_tensor_by_name('fc_densenet_using_keras/fcn-densenet/concatenate_50/concat:0')  # Shape = (?, 224, 224, 176).
 
 	start_time = time.time()
 	#idx = 0
@@ -283,14 +275,14 @@ def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_hei
 				activations_after_concat = compute_layer_activations(sess, layer_after_concat_tensor, feed_dict)
 				#plot_conv_activations(activations_after_concat, figsize=(40, 40))
 
-				np.save('./npy/image_patch_{}_{}.npy'.format(idx, pat_idx), img_pat)
-				np.save('./npy/label_patch_{}_{}.npy'.format(idx, pat_idx), lbl_pat)
-				np.save('./npy/activations_before_concat_{}_{}.npy'.format(idx, pat_idx), activations_before_concat)
-				np.save('./npy/activations_after_concat_{}_{}.npy'.format(idx, pat_idx), activations_after_concat)
+				np.save('{}/image_patch_{}_{}.npy'.format(npy_dir_path, idx, pat_idx), img_pat)
+				np.save('{}/label_patch_{}_{}.npy'.format(npy_dir_path, idx, pat_idx), lbl_pat)
+				np.save('{}/activations_before_concat_{}_{}.npy'.format(npy_dir_path, idx, pat_idx), activations_before_concat)
+				np.save('{}/activations_after_concat_{}_{}.npy'.format(npy_dir_path, idx, pat_idx), activations_after_concat)
 
 				pat_idx += 1
 
-			np.save('./npy/patch_ranges_{}.npy'.format(idx), np.array(patch_regions))
+			np.save('{}/patch_ranges_{}.npy'.format(npy_dir_path, idx), np.array(patch_regions))
 		else:
 			pass
 		idx += 1
@@ -328,11 +320,13 @@ def main():
 	inference_dir_path = '{}/inference'.format(output_dir_path)
 	train_summary_dir_path = '{}/train_log'.format(output_dir_path)
 	val_summary_dir_path = '{}/val_log'.format(output_dir_path)
+	npy_dir_path = '{}/npy'.format(output_dir_path)
 
 	make_dir(model_dir_path)
 	make_dir(inference_dir_path)
 	make_dir(train_summary_dir_path)
 	make_dir(val_summary_dir_path)
+	make_dir(npy_dir_path)
 
 	#--------------------
 	# Prepare data.
@@ -490,7 +484,7 @@ def main():
 		with sess.graph.as_default():
 			K.set_session(sess)
 			K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			infer_by_neural_net(infer_session, nnInferrer, test_image_patches, test_label_patches, num_classes, batch_size, infer_saver, model_dir_path)
+			infer_by_neural_net(sess, nnInferrer, test_image_patches, test_label_patches, num_classes, batch_size, infer_saver, model_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -498,17 +492,26 @@ def main():
 	print('[SWL] Info: Start inferring full-size images using patches...')
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'.
 			infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list, patch_height, patch_width, num_classes, batch_size, inference_dir_path)
 	print('[SWL] Info: End inferrig full-size images using patches...')
 
+	#print('[SWL] Info: Start visualizing filters...')
 	#with infer_session.as_default() as sess:
 	#	with sess.graph.as_default():
+	#		K.set_session(sess)
+	#		K.set_learning_phase(0)  # Set the learning phase to 'test'.
 	#		visualize_filters(sess)
+	#print('[SWL] Info: End visualizing filters...')
 
-	make_dir('npy')
+	print('[SWL] Info: Start visualizing activations...')
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			visualize_activations(sess, denseNetModelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size)
+			K.set_session(sess)
+			K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			visualize_activations(sess, denseNetModelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size, npy_dir_path)
+	print('[SWL] Info: End visualizing activations...')
 
 	#--------------------
 	# Close sessions.
@@ -516,14 +519,14 @@ def main():
 	"""
 	if does_need_training:
 		train_session.close()
-		train_session = None
+		del train_session
 		eval_session.close()
-		eval_session = None
+		del eval_session
 	infer_session.close()
-	infer_session = None
+	del infer_session
 	"""
 	default_session.close()
-	default_session = None
+	del default_session
 
 #%%------------------------------------------------------------------
 
