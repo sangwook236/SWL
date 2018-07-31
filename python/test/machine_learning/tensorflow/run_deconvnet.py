@@ -7,9 +7,9 @@ if 'posix' == os.name:
 	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-sys.path.append(swl_python_home_dir_path + '/src')
+sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 
-#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+#os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
 import numpy as np

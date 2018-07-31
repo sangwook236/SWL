@@ -18,10 +18,10 @@ else:
 	lib_home_dir_path = 'D:/lib_repo/python'
 	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
 #sys.path.append('../../../src')
-sys.path.append(swl_python_home_dir_path + '/src')
-sys.path.append(lib_home_dir_path + '/Fully-Connected-DenseNets-Semantic-Segmentation_github')
+sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
+sys.path.append(os.path.join(lib_home_dir_path, 'Fully-Connected-DenseNets-Semantic-Segmentation_github'))
 
-#os.chdir(swl_python_home_dir_path + '/test/machine_learning/tensorflow')
+#os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
 import numpy as np
@@ -34,6 +34,7 @@ import swl.machine_learning.util as swl_ml_util
 import swl.image_processing.util as swl_imgproc_util
 from rda_plant_util import RdaPlantDataset
 import time
+import traceback
 
 #%%------------------------------------------------------------------
 
@@ -531,4 +532,12 @@ def main():
 #%%------------------------------------------------------------------
 
 if '__main__' == __name__:
-	main()
+	try:
+		main()
+	except:
+		#ex = sys.exc_info()  # (type, exception object, traceback).
+		##print('{} raised: {}.'.format(ex[0], ex[1]))
+		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
+		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
+		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
+		traceback.print_exc(limit=None, file=sys.stdout)
