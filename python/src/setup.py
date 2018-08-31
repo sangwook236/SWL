@@ -7,8 +7,11 @@
 #		This command generate two files in the dist directory.
 #	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 #		Run Twine to upload all of the archives under dist.
+#
+#	pip install swl_python-???.whl
 #	pip install --index-url https://test.pypi.org/simple/ swl_python
 #		Install the package from TestPyPI.
+#	pip uninstall swl-python
 #
 #	python -c "import swl"
 
