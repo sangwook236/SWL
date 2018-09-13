@@ -141,11 +141,11 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180222T144236'
 
-	output_dir_path = './{}_{}'.format(output_dir_prefix, output_dir_suffix)
-	model_dir_path = '{}/model'.format(output_dir_path)
-	inference_dir_path = '{}/inference'.format(output_dir_path)
-	train_summary_dir_path = '{}/train_log'.format(output_dir_path)
-	val_summary_dir_path = '{}/val_log'.format(output_dir_path)
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	model_dir_path = os.path.join(output_dir_path, 'model')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
 	make_dir(model_dir_path)
 	make_dir(inference_dir_path)
