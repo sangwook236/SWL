@@ -61,7 +61,7 @@ test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test
 output_dir_path = './result/fc_densenet'
 log_dir_path = './log/fc_densenet'
 
-model_dir_path = output_dir_path + '/model'
+checkpoint_dir_path = output_dir_path + '/checkpoint'
 prediction_dir_path = output_dir_path + '/prediction'
 train_summary_dir_path = log_dir_path + '/train'
 test_summary_dir_path = log_dir_path + '/test'
@@ -73,7 +73,7 @@ def make_dir(dir_path):
 		except OSError as exception:
 			if os.errno.EEXIST != exception.errno:
 				raise
-make_dir(model_dir_path)
+make_dir(checkpoint_dir_path)
 make_dir(prediction_dir_path)
 make_dir(train_summary_dir_path)
 make_dir(test_summary_dir_path)
@@ -346,10 +346,10 @@ with sess.as_default():
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 		print('Restore a FC-DenseNet model.')
 
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(sess, ckpt.model_checkpoint_path)
-		#saver.restore(sess, tf.train.latest_checkpoint(model_dir_path))
-		print('Model restored from directory:', model_dir_path)
+		#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('Model restored from directory:', checkpoint_dir_path)
 
 	if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 		for epoch in range(1, num_epochs + 1):
@@ -376,7 +376,7 @@ with sess.as_default():
 
 			# Save the model.
 			if 0 == epoch % 10:
-				model_saved_path = saver.save(sess, model_dir_path + '/fc_densenet.ckpt', global_step=global_step)
+				model_saved_path = saver.save(sess, checkpoint_dir_path + '/tf_ckpt', global_step=global_step)
 				print('Model saved in file:', model_saved_path)
 
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:

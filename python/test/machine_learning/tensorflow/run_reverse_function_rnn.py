@@ -34,20 +34,20 @@ import traceback
 
 #%%------------------------------------------------------------------
 
-def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
 		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Restored a model.')
 	else:
 		print('[SWL] Info: Start training...')
 
 	start_time = time.time()
-	history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	history = nnTrainer.train(session, train_input_seqs, train_output_seqs, val_input_seqs, val_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Display results.
@@ -56,12 +56,12 @@ def train_neural_net(session, nnTrainer, train_input_seqs, train_output_seqs, va
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_input_seqs, val_output_seqs, batch_size, saver=None, model_dir_path=None):
-	if saver is not None and model_dir_path is not None:
+def evaluate_neural_net(session, nnEvaluator, val_input_seqs, val_output_seqs, batch_size, saver=None, checkpoint_dir_path=None):
+	if saver is not None and checkpoint_dir_path is not None:
 		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
 	print('[SWL] Info: Start evaluation...')
@@ -71,15 +71,15 @@ def evaluate_neural_net(session, nnEvaluator, val_input_seqs, val_output_seqs, b
 	print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
-def infer_by_neural_net(session, nnInferrer, dataset, test_strs, batch_size, saver=None, model_dir_path=None):
+def infer_by_neural_net(session, nnInferrer, dataset, test_strs, batch_size, saver=None, checkpoint_dir_path=None):
 	# Character strings -> numeric data.
 	test_data = dataset.to_numeric_data(test_strs)
 
-	if saver is not None and model_dir_path is not None:
+	if saver is not None and checkpoint_dir_path is not None:
 		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
 	print('[SWL] Info: Start inferring...')
@@ -125,12 +125,12 @@ def main():
 	#output_dir_suffix = '20180116T212902'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	model_dir_path = os.path.join(output_dir_path, 'model')
+	checkpoint_dir_path = os.path.join(output_dir_path, 'checkpoint')
 	inference_dir_path = os.path.join(output_dir_path, 'inference')
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(model_dir_path)
+	make_dir(checkpoint_dir_path)
 	make_dir(inference_dir_path)
 	make_dir(train_summary_dir_path)
 	make_dir(val_summary_dir_path)
@@ -251,7 +251,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
@@ -259,7 +259,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-				evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, model_dir_path)
+				evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -271,7 +271,7 @@ def main():
 			#K.set_session(sess)
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 			test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-			infer_by_neural_net(sess, nnInferrer, dataset, test_strs, batch_size, infer_saver, model_dir_path)
+			infer_by_neural_net(sess, nnInferrer, dataset, test_strs, batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#--------------------

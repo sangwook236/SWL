@@ -63,22 +63,22 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
 		# Load a model.
 		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		ckpt = tf.train.get_checkpoint_state(model_dir_path)
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Restored a model.')
 	else:
 		print('[SWL] Info: Start training...')
 
 	start_time = time.time()
-	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=model_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Save a graph.
@@ -96,20 +96,20 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, model_dir_path=None):
+def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None):
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
 		if val_images.shape[0] == val_labels.shape[0]:
 			num_val_examples = val_images.shape[0]
 
 	if num_val_examples > 0:
-		if saver is not None and model_dir_path is not None:
+		if saver is not None and checkpoint_dir_path is not None:
 			# Load a model.
 			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			saver.restore(session, ckpt.model_checkpoint_path)
-			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 			print('[SWL] Info: Loaded a model.')
 
 		print('[SWL] Info: Start evaluation...')
@@ -121,20 +121,20 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_classes, batch_size, saver=None, model_dir_path=None):
+def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_classes, batch_size, saver=None, checkpoint_dir_path=None):
 	num_inf_examples = 0
 	if test_images is not None and test_labels is not None:
 		if test_images.shape[0] == test_labels.shape[0]:
 			num_inf_examples = test_images.shape[0]
 
 	if num_inf_examples > 0:
-		if saver is not None and model_dir_path is not None:
+		if saver is not None and checkpoint_dir_path is not None:
 			# Load a model.
 			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(model_dir_path)
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			saver.restore(session, ckpt.model_checkpoint_path)
-			#saver.restore(session, tf.train.latest_checkpoint(model_dir_path))
+			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 			print('[SWL] Info: Loaded a model.')
 
 		print('[SWL] Info: Start inferring...')
@@ -178,6 +178,8 @@ def create_mnist_cnn(input_shape, output_shape):
 def main():
 	#np.random.seed(7)
 
+	print('*********************************')
+
 	does_need_training = True
 	does_resume_training = False
 
@@ -189,12 +191,12 @@ def main():
 	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	model_dir_path = os.path.join(output_dir_path, 'model')
+	checkpoint_dir_path = os.path.join(output_dir_path, 'checkpoint')
 	inference_dir_path = os.path.join(output_dir_path, 'inference')
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(model_dir_path)
+	make_dir(checkpoint_dir_path)
 	make_dir(inference_dir_path)
 	make_dir(train_summary_dir_path)
 	make_dir(val_summary_dir_path)
@@ -301,7 +303,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, model_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
@@ -309,7 +311,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, model_dir_path)
+				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -320,7 +322,7 @@ def main():
 		with sess.graph.as_default():
 			#K.set_session(sess)
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, model_dir_path)
+			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -365,7 +367,7 @@ def main():
 			grid_counts = (28, 28)  # (grid count in height, grid count in width).
 			grid_size = (4, 4)  # (grid height, grid width).
 			occlusion_color = 0  # Black.
-			occluded_probilities = swl_ml_util.visualize_by_partial_occlusion(sess, nnInferrer, vis_images, vis_labels, grid_counts, grid_size, occlusion_color, num_classes, batch_size, infer_saver, model_dir_path)
+			occluded_probilities = swl_ml_util.visualize_by_partial_occlusion(sess, nnInferrer, vis_images, vis_labels, grid_counts, grid_size, occlusion_color, num_classes, batch_size, infer_saver, checkpoint_dir_path)
 			print('\tVisualization time = {}'.format(time.time() - start_time))
 			print('[SWL] Info: End visualizing by partial occlusion...')
 
