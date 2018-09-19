@@ -178,8 +178,6 @@ def create_mnist_cnn(input_shape, output_shape):
 def main():
 	#np.random.seed(7)
 
-	print('*********************************')
-
 	does_need_training = True
 	does_resume_training = False
 
@@ -294,7 +292,7 @@ def main():
 	# Train and evaluate.
 
 	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.	
+	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
 
 	if does_need_training:
