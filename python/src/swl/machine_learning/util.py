@@ -30,6 +30,29 @@ def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop
 
 #%%------------------------------------------------------------------
 
+# REF [site] >> https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
+def compute_intersection_over_union_of_aabb(aabb1, aabb2):
+	# Axis-aligned bounding box = [x_min, y_min, x_max, y_max].
+
+	# Determine the (x, y)-coordinates of the intersection rectangle.
+	xA = max(aabb1[0], aabb2[0])
+	yA = max(aabb1[1], aabb2[1])
+	xB = min(aabb1[2], aabb2[2])
+	yB = min(aabb1[3], aabb2[3])
+
+	# Compute the area of intersection rectangle.
+	interArea = max(0, xB - xA + 1) * max(0, yB - yA + 1)
+
+	# Compute the area of both the prediction and ground-truth rectangles.
+	aabb1Area = (aabb1[2] - aabb1[0] + 1) * (aabb1[3] - aabb1[1] + 1)
+	aabb2Area = (aabb2[2] - aabb2[0] + 1) * (aabb2[3] - aabb2[1] + 1)
+
+	# Compute the intersection over union by taking the intersection area and
+	#	dividing it by the sum of prediction + ground-truth areas - the interesection area.
+	return interArea / float(aabb1Area + aabb2Area - interArea)
+
+#%%------------------------------------------------------------------
+
 import tensorflow as tf
 
 def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
