@@ -1,6 +1,6 @@
 % [ref] http://www.mathworks.com/matlabcentral/fileexchange/9896-2d-histogram-calculation
 
-%addpath('D:\working_copy\swl_https\matlab\src\statistical_analysis');
+%addpath('D:\working_copy\swl_https\matlab\src\statistics');
 
 events = 1000000; 
 x1 = sqrt(0.05) * randn(events, 1) - 0.5;

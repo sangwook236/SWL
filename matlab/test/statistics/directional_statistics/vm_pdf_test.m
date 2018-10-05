@@ -1,4 +1,4 @@
-%addpath('D:\work\sw_dev\matlab\rnd\src\statistical_analysis\circstat\CircStat2012a');
+%addpath('../../../src/statistics/circstat/CircStat2012a');
 
 mean_dir = 0.0;
 

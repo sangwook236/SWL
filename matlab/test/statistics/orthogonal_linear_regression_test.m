@@ -1,4 +1,4 @@
-%addpath('D:/work/SWL_github/matlab/src/statistical_analysis');
+%addpath('D:/work/SWL_github/matlab/src/statistics');
 
 x = [0:0.1:10]';
 y = 2 + 7 * x + 6 * randn(size(x));

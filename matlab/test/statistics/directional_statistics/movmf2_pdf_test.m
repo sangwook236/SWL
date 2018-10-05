@@ -1,4 +1,4 @@
-%addpath('../../../src/statistical_analysis/directional_statistics');
+%addpath('../../../src/statistics/directional_statistics');
 
 % plot a mixture of von Mises-Fisher distributions on the 2-dimensional sphere in the 3-dimensional space
 
@@ -13,4 +13,4 @@ end;
 kappa = [ 200 200 20 ];
 alpha = [ 0.2 0.3 0.5 ];
 
-ezsurf(@(theta, phi) movmf_pdf_2d(theta, phi, mu, kappa, alpha), [ 0 pi 0 2*pi ]);
+ezsurf(@(theta, phi) movmf2_pdf(theta, phi, mu, kappa, alpha), [ 0 pi 0 2*pi ])

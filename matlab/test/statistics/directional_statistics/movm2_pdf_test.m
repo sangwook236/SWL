@@ -1,4 +1,4 @@
-%addpath('../../../src/statistical_analysis/directional_statistics');
+%addpath('../../../src/statistics/directional_statistics');
 
 % plot a mixture of bivariate von Mises distributions on the torus in the 3-dimensional space
 % [ref] http://en.wikipedia.org/wiki/Bivariate_von_Mises_distribution

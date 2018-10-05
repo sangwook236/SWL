@@ -1,4 +1,4 @@
-%addpath('../../../src/statistical_analysis/directional_statistics');
+%addpath('../../../src/statistics/directional_statistics');
 
 % plot a mixture of von Mises distributions
 mean_dir = [ 2*pi/18 2*pi/4 2*pi*2/3 ];
