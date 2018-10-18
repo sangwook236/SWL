@@ -191,7 +191,7 @@ def main():
 		data_home_dir_path = '/home/sangwook/my_dataset'
 	else:
 		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/machine_vision/mnist/0_download'
+	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
 	num_classes = 10
 	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
