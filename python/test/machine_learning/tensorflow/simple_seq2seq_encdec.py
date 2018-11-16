@@ -67,6 +67,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
 			masks = tf.sequence_mask(self._decoder_output_seq_lens_ph, tf.reduce_max(self._decoder_output_seq_lens_ph), dtype=tf.float32)
+			# Weighted cross-entropy loss for a sequence of logits.
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
 			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
 			tf.summary.scalar('loss', loss)
