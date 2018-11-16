@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from simple_neural_net import SimpleSeq2SeqNeuralNet
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 
@@ -96,10 +96,10 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		enc_cell_outputs, enc_cell_state = tf.nn.dynamic_rnn(enc_cell, encoder_input_tensor, sequence_length=encoder_input_seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
 
 		# Attention.
-		# REF [function] >> SimpleTfSeq2SeqEncoderDecoderWithAttention._create_dynamic_model() in ./simple_tf_seq2seq_encdec_attention.py.
+		# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_model() in ./simple_seq2seq_encdec_tf_attention.py.
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('seq2seq_encdec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -139,9 +139,9 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		# Decoder.
 		# NOTICE [info] {important} >> The same model has to be used in training and inference steps.
 		if is_training:
-			return self._get_output_for_training(dec_cell, enc_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
+			return self._get_decoder_output_for_training(dec_cell, enc_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
 		else:
-			return self._get_output_for_inference(dec_cell, enc_cell_state, batch_size, num_time_steps, num_classes, is_time_major)
+			return self._get_decoder_output_for_inference(dec_cell, enc_cell_state, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_dynamic_bidirectional_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
 		num_enc_hidden_units = 64
@@ -173,10 +173,10 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
 		# Attention.
-		# REF [function] >> SimpleTfSeq2SeqEncoderDecoderWithAttention._create_dynamic_bidirectional_model() in ./simple_tf_seq2seq_encdec_attention.py.
+		# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec_tf_attention.py.
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('seq2seq_encdec', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -184,9 +184,9 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		# Decoder.
 		# NOTICE [info] {important} >> The same model has to be used in training and inference steps.
 		if is_training:
-			return self._get_output_for_training(dec_cell, enc_cell_states, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
+			return self._get_decoder_output_for_training(dec_cell, enc_cell_states, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
 		else:
-			return self._get_output_for_inference(dec_cell, enc_cell_states, batch_size, num_time_steps, num_classes, is_time_major)
+			return self._get_decoder_output_for_inference(dec_cell, enc_cell_states, batch_size, num_time_steps, num_classes, is_time_major)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -197,19 +197,19 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 
 		#return tf.contrib.rnn.GRUCell(num_units)
 
-	def _fc_layer(self, dec_cell_outputs, num_classes):
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+	def _create_fc_layer(self, dec_cell_outputs, num_classes):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='dense')
+				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			elif num_classes >= 2:
-				return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='dense')
+				#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 				return None
 
-	def _get_output_for_training(self, dec_cell, initial_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major):
+	def _get_decoder_output_for_training(self, dec_cell, initial_cell_state, decoder_input_tensor, num_time_steps, num_classes, is_time_major):
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
 		#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, decoder_input_tensor, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
@@ -226,11 +226,11 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
-		fc1 = self._fc_layer(dec_cell_outputs, num_classes)
+		fc_outputs = self._create_fc_layer(dec_cell_outputs, num_classes)
 
-		return fc1
+		return fc_outputs
 
-	def _get_output_for_inference(self, dec_cell, initial_cell_state, batch_size, num_time_steps, num_classes, is_time_major):
+	def _get_decoder_output_for_inference(self, dec_cell, initial_cell_state, batch_size, num_time_steps, num_classes, is_time_major):
 		dec_cell_state = initial_cell_state
 		dec_cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(self._start_token))  # Initial input.
 		fc_outputs = []
@@ -238,10 +238,10 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			dec_cell_output, dec_cell_state = dec_cell(dec_cell_input, dec_cell_state, scope='dec')
 
 			#dec_cell_output = tf.reshape(dec_cell_output, [None, 1, num_dec_hidden_units])
-			dec_cell_input = self._fc_layer(dec_cell_output, num_classes)
+			dec_cell_input = self._create_fc_layer(dec_cell_output, num_classes)
 			fc_outputs.append(dec_cell_input)
-		
+
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		fc_outputs = tf.stack(fc_outputs, axis=0 if is_time_major else 1)
-		
+
 		return fc_outputs

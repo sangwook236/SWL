@@ -35,7 +35,7 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import tensorflow as tf
 from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
 from simple_seq2seq_encdec_tf_attention import SimpleSeq2SeqEncoderDecoderWithTfAttention
-from simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
+from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util

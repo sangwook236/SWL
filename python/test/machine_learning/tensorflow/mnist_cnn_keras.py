@@ -3,7 +3,7 @@ from keras.layers import Input, Dense, Dropout, Flatten
 from keras.layers import Conv2D, MaxPooling2D
 #from keras import optimizers, callbacks
 import tensorflow as tf
-from simple_neural_net import SimpleNeuralNet
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 

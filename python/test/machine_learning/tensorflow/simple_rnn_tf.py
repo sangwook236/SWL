@@ -58,22 +58,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_dynamic_stacked_rnn(self, input_tensor, is_training, num_classes, is_time_major):
 		num_layers = 2
@@ -93,22 +93,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		#cell_outputs, cell_state = tf.nn.dynamic_rnn(stacked_cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 		cell_outputs, _ = tf.nn.dynamic_rnn(stacked_cell, input_tensor, time_major=is_time_major, dtype=tf.float32)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_dynamic_birnn(self, input_tensor, is_training, num_classes, is_time_major):
 		"""
@@ -130,22 +130,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_outputs = tf.concat(cell_outputs, axis=-1)
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_dynamic_stacked_birnn(self, input_tensor, is_training, num_classes, is_time_major):
 		num_layers = 2
@@ -169,22 +169,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		cell_outputs = tf.concat(cell_outputs, axis=-1)
 		#cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((cell_states[0].c, cell_states[1].c), axis=-1), tf.concat((cell_states[0].h, cell_states[1].h), axis=-1))
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_static_rnn(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		"""
@@ -221,22 +221,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_static_stacked_rnn(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_layers = 2
@@ -286,22 +286,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_static_birnn(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		"""
@@ -329,22 +329,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_static_stacked_birnn(self, input_tensor, is_training, num_time_steps, num_classes, is_time_major):
 		num_layers = 2
@@ -374,22 +374,22 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		cell_outputs = tf.stack(cell_outputs, axis=0 if is_time_major else 1)
 
-		#with tf.variable_scope('rnn_tf', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_rnn_tf', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
-		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='dense')
+				#fc_outputs = tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			elif num_classes >= 2:
-				fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc1 = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='dense')
+				#fc_outputs = tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
-			return fc1
+			return fc_outputs
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)

@@ -1,6 +1,6 @@
 import tflearn
 import tensorflow as tf
-from simple_neural_net import SimpleNeuralNet
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 

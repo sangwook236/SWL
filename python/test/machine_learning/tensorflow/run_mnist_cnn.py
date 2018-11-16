@@ -26,7 +26,7 @@ from mnist_cnn_tf import MnistCnnUsingTF
 #from mnist_cnn_tf_slim import MnistCnnUsingTfSlim
 #from mnist_cnn_keras import MnistCnnUsingKeras
 #from mnist_cnn_tflearn import MnistCnnUsingTfLearn
-from simple_neural_net_trainer import SimpleNeuralNetTrainer
+from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
