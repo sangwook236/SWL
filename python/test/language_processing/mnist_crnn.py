@@ -5,14 +5,14 @@ from swl.machine_learning.tensorflow.simple_neural_net import BasicSeq2SeqNeural
 #%%------------------------------------------------------------------
 
 class MnistCRNN(BasicSeq2SeqNeuralNet):
-	def __init__(self, input_shape, output_shape, is_time_major=False, has_decoder=True):
+	def __init__(self, input_shape, output_shape, is_sparse_output, is_time_major=False, has_decoder=True):
 		self._input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
 		self._output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._is_time_major = is_time_major
 		self._has_decoder = has_decoder
-		super().__init__(input_shape, output_shape)
+		super().__init__(input_shape, output_shape, is_sparse_output)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		#input_seq_lens = tf.constant(max_time_steps, tf.int32, shape=[batch_size])
@@ -184,7 +184,7 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 
 class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_time_major, has_decoder=True)
+		super().__init__(input_shape, output_shape, is_sparse_output=False, is_time_major=is_time_major, has_decoder=True)
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
@@ -203,7 +203,7 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 
 class MnistCrnnWithCtcLoss(MnistCRNN):
 	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_time_major, has_decoder=True)
+		super().__init__(input_shape, output_shape, is_sparse_output=True, is_time_major=is_time_major, has_decoder=True)
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
@@ -220,7 +220,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 
 class MnistCrnnWithCtcBeamSearchDecoding(MnistCRNN):
 	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_time_major, has_decoder=False)
+		super().__init__(input_shape, output_shape, is_sparse_output=True, is_time_major=is_time_major, has_decoder=False)
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):

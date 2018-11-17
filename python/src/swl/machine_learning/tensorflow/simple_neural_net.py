@@ -4,8 +4,8 @@ from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet, T
 #%%------------------------------------------------------------------
 
 class SimpleNeuralNet(TensorFlowNeuralNet):
-	def __init__(self, input_shape, output_shape):
-		super().__init__(input_shape, output_shape)
+	def __init__(self, input_shape, output_shape, is_sparse_output=False):
+		super().__init__(input_shape, output_shape, is_sparse_output)
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, True, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
@@ -62,8 +62,8 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 #%%------------------------------------------------------------------
 
 class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
-	def __init__(self, input_shape, output_shape):
-		super().__init__(input_shape, output_shape)
+	def __init__(self, input_shape, output_shape, is_sparse_output=False):
+		super().__init__(input_shape, output_shape, is_sparse_output)
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, self._output_tensor_ph, True, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
@@ -120,8 +120,8 @@ class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
 #%%------------------------------------------------------------------
 
 class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
-	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):
-		super().__init__(encoder_input_shape, decoder_input_shape, decoder_output_shape)
+	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_sparse_output=False):
+		super().__init__(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_sparse_output)
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, True, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
