@@ -174,7 +174,7 @@ def main():
 	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'checkpoint')
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 	inference_dir_path = os.path.join(output_dir_path, 'inference')
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')

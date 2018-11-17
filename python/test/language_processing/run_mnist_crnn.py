@@ -32,7 +32,7 @@ import traceback
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride):
+def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride, use_variable_length_output):
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
@@ -62,10 +62,15 @@ def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride
 		train_sliced_labels[:,step,:] = train_labels
 		test_sliced_labels[:,step,:] = test_labels
 
-	train_dense_label_matrix = np.argmax(train_sliced_labels, axis=-1)
-	test_dense_label_matrix = np.argmax(test_sliced_labels, axis=-1)
-
-	return train_sliced_images, train_sliced_labels, train_dense_label_matrix, test_sliced_images, test_sliced_labels, test_dense_label_matrix
+	if use_variable_length_output:
+		# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
+		train_sliced_dense_labels = np.argmax(train_sliced_labels, axis=-1)
+		test_sliced_dense_labels = np.argmax(test_sliced_labels, axis=-1)
+		train_sliced_dense_labels = tf.contrib.layers.dense_to_sparse(train_sliced_dense_labels, eos_token=-1)
+		test_sliced_dense_labels = tf.contrib.layers.dense_to_sparse(test_sliced_dense_labels, eos_token=-1)
+		return train_sliced_images, train_sliced_dense_labels, test_sliced_images, test_sliced_dense_labels
+	else:
+		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
 
 def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
@@ -188,11 +193,14 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def create_crnn(input_shape, output_shape):
-	is_time_major = False
-	return MnistCrnnWithCrossEntropyLoss(input_shape, output_shape, is_time_major=is_time_major)
-	#return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major)
-	#return MnistCrnnWithCtcBeamSearchDecoding(input_shape, output_shape, is_time_major=is_time_major)
+def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding):
+	if use_variable_length_output:
+		if use_beam_search_decoding:
+			return MnistCrnnWithCtcBeamSearchDecoding(input_shape, output_shape, is_time_major=is_time_major)
+		else:
+			return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major)
+	else:
+		return MnistCrnnWithCrossEntropyLoss(input_shape, output_shape, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)
@@ -203,12 +211,12 @@ def main():
 	#--------------------
 	# Prepare directories.
 
-	output_dir_prefix = 'mnist_rcnn'
+	output_dir_prefix = 'mnist_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'checkpoint')
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 	inference_dir_path = os.path.join(output_dir_path, 'inference')
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
@@ -227,6 +235,9 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
+	use_variable_length_output = False
+	use_beam_search_decoding = False
+
 	is_time_major = False
 	max_time_steps = 3
 	image_height, image_width = 28, 28
@@ -236,7 +247,7 @@ def main():
 	input_shape = (None, max_time_steps, image_height, slice_width, 1)
 	output_shape = (None, max_time_steps, num_classes)
 
-	train_images, train_labels, train_dense_label_matrix, test_images, test_labels, test_dense_label_matrix = load_data(data_dir_path, (image_height, image_width, 1), num_classes, slice_width, slice_stride)
+	train_images, train_labels, test_images, test_labels = load_data(data_dir_path, (image_height, image_width, 1), num_classes, slice_width, slice_stride, use_variable_length_output)
 
 	# Pre-process.
 	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
@@ -256,7 +267,7 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			cnnModelForTraining = create_crnn(input_shape, output_shape)
+			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -273,7 +284,7 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			cnnModelForEvaluation = create_crnn(input_shape, output_shape)
+			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -286,7 +297,7 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		cnnModelForInference = create_crnn(input_shape, output_shape)
+		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.

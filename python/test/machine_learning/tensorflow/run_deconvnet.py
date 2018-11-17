@@ -54,7 +54,7 @@ test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test
 output_dir_path = './result/deconvnet'
 log_dir_path = './log/deconvnet'
 
-checkpoint_dir_path = output_dir_path + '/checkpoint'
+checkpoint_dir_path = output_dir_path + '/tf_checkpoint'
 prediction_dir_path = output_dir_path + '/prediction'
 train_summary_dir_path = log_dir_path + '/train'
 test_summary_dir_path = log_dir_path + '/test'

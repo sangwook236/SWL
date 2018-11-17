@@ -54,40 +54,43 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 
 		#--------------------
 		# CNN.
-		cnn_output = self._get_cnn_output(input_tensor, num_time_steps, num_classes, is_time_major)
+		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
+			cnn_output = self._get_cnn_output(input_tensor, num_time_steps, num_classes, is_time_major)
 
 		#--------------------
-		# Encoder.
-		num_enc_hidden_units = 256
-		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
-		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
-		#enc_cell_fw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_fw, attention_window_len, state_is_tuple=True)
-		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
-		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
-		#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
-
-		enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=input_seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
-		enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
-		enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
-
-		if self._has_decoder:
+		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			#--------------------
-			# Attention.
-			# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec_tf_attention.py.
-
-			#--------------------
-			# Decoder.
-			num_dec_hidden_units = 512
-			dec_cell = self._create_unit_cell(num_dec_hidden_units)
-			dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+			# Encoder.
+			num_enc_hidden_units = 256
+			enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
+			enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
-			#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
+			#enc_cell_fw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_fw, attention_window_len, state_is_tuple=True)
+			enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
+			enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+			#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
 
-			return self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, num_classes, is_time_major)
-		else:
-			return enc_cell_outputs
+			enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=input_seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
+			enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
+			enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
+
+			if self._has_decoder:
+				#--------------------
+				# Attention.
+				# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec_tf_attention.py.
+
+				#--------------------
+				# Decoder.
+				num_dec_hidden_units = 512
+				dec_cell = self._create_unit_cell(num_dec_hidden_units)
+				dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+				# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+				#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
+
+				return self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, num_classes, is_time_major)
+			else:
+				return enc_cell_outputs
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -204,7 +207,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
-			# Variable-length outputs.
+			# Variable-length outputs: sparse tensor.
 			# Decoder is required.
 
 			# Connectionist temporal classification (CTC) loss.
@@ -221,7 +224,7 @@ class MnistCrnnWithCtcBeamSearchDecoding(MnistCRNN):
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
-			# Variable-length outputs.
+			# Variable-length outputs: sparse tensor.
 			# No decoder is required.
 
 			dims = list(range(len(y.shape.as_list())))
