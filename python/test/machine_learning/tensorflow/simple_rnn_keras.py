@@ -11,7 +11,7 @@ class SimpleRnnUsingKeras(SimpleNeuralNet):
 		self._is_bidirectional = is_bidirectional
 		self._is_stacked = is_stacked
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		# In Keras, K.set_learning_phase(1) or K.set_learning_phase(0) has to be used to set the learning phase, 'train' or 'test' before defining a model.
 		#	K.set_learning_phase(1)  # Set the learning phase to 'train'.
 		#	K.set_learning_phase(0)  # Set the learning phase to 'test'.

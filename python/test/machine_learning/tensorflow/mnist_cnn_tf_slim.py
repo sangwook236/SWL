@@ -8,7 +8,7 @@ class MnistCnnUsingTfSlim(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		# REF [site] >> https://github.com/tensorflow/tensorflow/tree/master/tensorflow/contrib/slim
 
 		keep_prob = 0.25 if is_training else 1.0

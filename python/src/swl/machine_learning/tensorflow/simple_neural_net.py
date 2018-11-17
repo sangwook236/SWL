@@ -8,24 +8,24 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 		super().__init__(input_shape, output_shape, is_sparse_output)
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, True, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
 
 		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
 		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		raise NotImplementedError
 
 	def _get_loss(self, y, t):
@@ -66,24 +66,24 @@ class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
 		super().__init__(input_shape, output_shape, is_sparse_output)
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._output_tensor_ph, True, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
 
 		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._output_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
 		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._output_tensor_ph, False, self._input_tensor_ph.shape.as_list(), self._output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		raise NotImplementedError
 
 	def _get_loss(self, y, t):
@@ -124,24 +124,24 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 		super().__init__(encoder_input_shape, decoder_input_shape, decoder_output_shape, is_sparse_output)
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, True, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, True)
 
 		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, False, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, False)
 
 		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._decoder_output_tensor_ph, False, self._encoder_input_tensor_ph.shape.as_list(), self._decoder_input_tensor_ph.shape.as_list(), self._decoder_output_tensor_ph.shape.as_list())
+		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_training):
 		raise NotImplementedError
 
 	def _get_loss(self, y, t):

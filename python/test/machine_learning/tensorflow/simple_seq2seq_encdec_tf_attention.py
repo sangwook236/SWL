@@ -41,7 +41,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		return feed_dict
 
-	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, decoder_output_tensor, is_training, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_training):
 		with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
 			# TODO [improve] >> It is not good to use num_time_steps.
 			#num_classes = decoder_output_shape[-1]

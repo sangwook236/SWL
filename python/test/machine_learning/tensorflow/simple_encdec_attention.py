@@ -12,8 +12,8 @@ class SimpleEncoderDecoderWithAttention(SimpleNeuralNet):
 		self._is_bidirectional = is_bidirectional
 		self._is_time_major = is_time_major
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
-		with tf.variable_scope('simple_encdec_attention', reuse=tf.AUTO_REUSE):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
+		with tf.variable_scope('simple_encdec_with_attention', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]
 				if self._is_bidirectional:

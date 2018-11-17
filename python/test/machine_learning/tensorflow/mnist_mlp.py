@@ -11,7 +11,7 @@ class MnistMLP(SimpleNeuralNet):
 		self._model_type = model_type
 		self._max_neuron_count = max_neuron_count
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_mlp', reuse=tf.AUTO_REUSE):
 			if 1 == self._model_type:  # A wide and shallow MLP with a single hidden layer.
@@ -35,11 +35,11 @@ class MnistMLP(SimpleNeuralNet):
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='fc')
-				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='dense')
+				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			elif num_classes >= 2:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='dense')
+				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 

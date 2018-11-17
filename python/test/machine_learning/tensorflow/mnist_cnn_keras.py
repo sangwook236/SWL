@@ -13,7 +13,7 @@ class MnistCnnUsingKeras(SimpleNeuralNet):
 
 		self._model_type = model_type
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		# REF [site] >> https://keras.io/getting-started/functional-api-guide
 		# REF [site] >> https://keras.io/models/model/
 		# REF [site] >> https://blog.keras.io/keras-as-a-simplified-interface-to-tensorflow-tutorial.html

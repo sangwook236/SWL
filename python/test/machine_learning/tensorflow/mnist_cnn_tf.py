@@ -9,7 +9,7 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 
 		self._model_type = model_type
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_cnn_using_tf', reuse=tf.AUTO_REUSE):
 			if 0 == self._model_type:

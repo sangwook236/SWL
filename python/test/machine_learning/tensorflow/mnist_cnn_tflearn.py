@@ -10,7 +10,7 @@ class MnistCnnUsingTfLearn(SimpleNeuralNet):
 
 		#tflearn.init_graph(num_cores=8, gpu_memory_fraction=0.5)
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		# REF [site] >> http://tflearn.org/getting_started/
 
 		keep_prob = 0.25 if is_training else 1.0

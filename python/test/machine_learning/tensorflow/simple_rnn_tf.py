@@ -12,7 +12,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		self._is_stacked = is_stacked
 		self._is_time_major = is_time_major
 
-	def _create_single_model(self, input_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		with tf.variable_scope('simple_rnn_using_tf', reuse=tf.AUTO_REUSE):
 			if self._is_dynamic:
 				num_classes = output_shape[-1]

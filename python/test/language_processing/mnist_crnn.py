@@ -38,7 +38,7 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
 		return feed_dict
 
-	def _create_single_model(self, input_tensor, output_tensor, is_training, input_shape, output_shape):
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
 			# TODO [improve] >> It is not good to use num_time_steps.
 			#num_classes = output_shape[-1]
