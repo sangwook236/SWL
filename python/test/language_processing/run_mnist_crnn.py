@@ -21,7 +21,7 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import time, math
 import numpy as np
 import tensorflow as tf
-from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss, MnistCrnnWithCtcBeamSearchDecoding
+from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
@@ -48,9 +48,7 @@ def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride
 	# TODO [improve] >> A more efficient way may exist.
 	# (samples, time-steps, features).
 	train_sliced_images = np.zeros((train_images.shape[0], min_time_steps, image_height, slice_width, train_images.shape[-1]))
-	train_sliced_labels = np.zeros((train_labels.shape[0], min_time_steps, train_labels.shape[-1]))
 	test_sliced_images = np.zeros((test_images.shape[0], min_time_steps, image_height, slice_width, test_images.shape[-1]))
-	test_sliced_labels = np.zeros((test_labels.shape[0], min_time_steps, test_labels.shape[-1]))
 	for step in range(min_time_steps):
 		start_idx, end_idx = step*slice_stride, step*slice_stride+slice_width
 		if end_idx > image_width:
@@ -59,17 +57,15 @@ def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride
 		else:
 			train_sliced_images[:,step,:,:,:] = train_images[:,:,start_idx:end_idx,:]
 			test_sliced_images[:,step,:,:,:] = test_images[:,:,start_idx:end_idx,:]
-		train_sliced_labels[:,step,:] = train_labels
-		test_sliced_labels[:,step,:] = test_labels
 
 	if use_variable_length_output:
-		# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
-		train_sliced_dense_labels = np.argmax(train_sliced_labels, axis=-1)
-		test_sliced_dense_labels = np.argmax(test_sliced_labels, axis=-1)
-		train_sliced_dense_labels = tf.contrib.layers.dense_to_sparse(train_sliced_dense_labels, eos_token=-1)
-		test_sliced_dense_labels = tf.contrib.layers.dense_to_sparse(test_sliced_dense_labels, eos_token=-1)
-		return train_sliced_images, train_sliced_dense_labels, test_sliced_images, test_sliced_dense_labels
+		return train_sliced_images, np.reshape(train_labels, (-1, 1, train_labels.shape[-1])), test_sliced_images, np.reshape(test_labels, (-1, 1, test_labels.shape[-1]))
 	else:
+		train_sliced_labels = np.zeros((train_labels.shape[0], min_time_steps, train_labels.shape[-1]))
+		test_sliced_labels = np.zeros((test_labels.shape[0], min_time_steps, test_labels.shape[-1]))
+		for step in range(min_time_steps):
+			train_sliced_labels[:,step,:] = train_labels
+			test_sliced_labels[:,step,:] = test_labels
 		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
 
 def preprocess_data(data, labels, num_classes, axis=0):
@@ -193,12 +189,9 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding):
+def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output):
 	if use_variable_length_output:
-		if use_beam_search_decoding:
-			return MnistCrnnWithCtcBeamSearchDecoding(input_shape, output_shape, is_time_major=is_time_major)
-		else:
-			return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major)
+		return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major)
 	else:
 		return MnistCrnnWithCrossEntropyLoss(input_shape, output_shape, is_time_major=is_time_major)
 
@@ -235,9 +228,7 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
-	use_variable_length_output = False
-	use_beam_search_decoding = False
-
+	use_variable_length_output = True
 	is_time_major = False
 	max_time_steps = 3
 	image_height, image_width = 28, 28
@@ -245,7 +236,9 @@ def main():
 	num_classes = 11  # num_classes = num_labels + 1. The largest value (num_classes - 1) is reserved for the blank label.
 	# (samples, time-steps, features).
 	input_shape = (None, max_time_steps, image_height, slice_width, 1)
-	output_shape = (None, max_time_steps, num_classes)
+	# The shape of network model output = (None, max_time_steps, num_classes)
+	# The shape of ground truth = (None, ?, num_classes)
+	output_shape = (None, 1, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
 
 	train_images, train_labels, test_images, test_labels = load_data(data_dir_path, (image_height, image_width, 1), num_classes, slice_width, slice_stride, use_variable_length_output)
 
@@ -267,7 +260,7 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
+			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -284,7 +277,7 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
+			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -297,7 +290,7 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, use_beam_search_decoding)
+		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.
@@ -327,7 +320,7 @@ def main():
 	# Train and evaluate.
 
 	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
+	num_epochs = 500  # Number of times to iterate over training data.
 	shuffle = True
 
 	if does_need_training:

@@ -91,7 +91,7 @@ class NeuralNetTrainer(object):
 							#batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 							#batch_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 							batch_loss, batch_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
-	
+
 							# TODO [check] >> Is train_loss or train_acc correct?
 							train_loss += batch_loss * batch_indices.size
 							train_acc += batch_acc * batch_indices.size
@@ -108,6 +108,8 @@ class NeuralNetTrainer(object):
 				"""
 				data_batch, label_batch = val_data, val_labels
 				if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+					if self._neuralNet.is_sparse_output:
+						label_batch = tf.contrib.layers.dense_to_sparse(label_batch, eos_token=-1)
 					#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 					#val_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 					#val_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
@@ -132,7 +134,7 @@ class NeuralNetTrainer(object):
 							summary, batch_loss, batch_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
 							if val_summary_writer is not None:
 								val_summary_writer.add_summary(summary, epoch)
-	
+
 							# TODO [check] >> Is val_loss or val_acc correct?
 							val_loss += batch_loss * batch_indices.size
 							val_acc += batch_acc * batch_indices.size
@@ -236,7 +238,7 @@ class NeuralNetTrainer(object):
 							#batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 							#batch_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 							batch_loss, batch_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
-	
+
 							# TODO [check] >> Is train_loss or train_acc correct?
 							train_loss += batch_loss * batch_indices.size
 							train_acc += batch_acc * batch_indices.size
@@ -278,7 +280,7 @@ class NeuralNetTrainer(object):
 							summary, batch_loss, batch_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 							if val_summary_writer is not None:
 								val_summary_writer.add_summary(summary, epoch)
-	
+
 							# TODO [check] >> Is val_loss or val_acc correct?
 							val_loss += batch_loss * batch_indices.size
 							val_acc += batch_acc * batch_indices.size

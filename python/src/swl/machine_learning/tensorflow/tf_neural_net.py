@@ -3,16 +3,13 @@ import tensorflow as tf
 #%%------------------------------------------------------------------
 
 class TensorFlowNeuralNet(object):
-	def __init__(self, input_shape, output_shape, is_sparse_output=False):
+	def __init__(self, input_shape, output_shape):
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 
 		self._input_tensor_ph = tf.placeholder(tf.float32, shape=input_shape, name='input_tensor_ph')
-		if is_sparse_output:
-			self._output_tensor_ph = tf.sparse_placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
-			#self._output_tensor_ph = tf.sparse_placeholder(tf.float32, name='output_tensor_ph')
-		else:
-			self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
+		#self._output_tensor_ph = tf.placeholder(tf.int32, shape=output_shape, name='output_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
 		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and inference steps.
@@ -65,16 +62,13 @@ class TensorFlowNeuralNet(object):
 #%%------------------------------------------------------------------
 
 class TensorFlowBasicSeq2SeqNeuralNet(object):
-	def __init__(self, input_shape, output_shape, is_sparse_output=False):
+	def __init__(self, input_shape, output_shape):
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 
 		self._input_tensor_ph = tf.placeholder(tf.float32, shape=input_shape, name='input_tensor_ph')
-		if is_sparse_output:
-			self._output_tensor_ph = tf.sparse_placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
-			#self._output_tensor_ph = tf.sparse_placeholder(tf.float32, name='output_tensor_ph')
-		else:
-			self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
+		#self._output_tensor_ph = tf.placeholder(tf.int32, shape=output_shape, name='output_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
 		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and prediction steps.
@@ -83,6 +77,18 @@ class TensorFlowBasicSeq2SeqNeuralNet(object):
 		# Loss and accuracy are used in training and evaluation steps.
 		self._loss = None
 		self._accuracy = None
+
+	@property
+	def input_shape(self):
+		if self._input_shape is None:
+			raise TypeError
+		return self._input_shape
+
+	@property
+	def output_shape(self):
+		if self._output_shape is None:
+			raise TypeError
+		return self._output_shape
 
 	@property
 	def model_output(self):
@@ -127,18 +133,15 @@ class TensorFlowBasicSeq2SeqNeuralNet(object):
 #%%------------------------------------------------------------------
 
 class TensorFlowSeq2SeqNeuralNet(object):
-	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_sparse_output=False):
+	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		self._encoder_input_shape = encoder_input_shape
 		self._decoder_input_shape = decoder_input_shape
 		self._decoder_output_shape = decoder_output_shape
 
 		self._encoder_input_tensor_ph = tf.placeholder(tf.float32, shape=encoder_input_shape, name='encoder_input_tensor_ph')
 		self._decoder_input_tensor_ph = tf.placeholder(tf.float32, shape=decoder_input_shape, name='decoder_input_tensor_ph')
-		if is_sparse_output:
-			self._decoder_output_tensor_ph = tf.sparse_placeholder(tf.float32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
-			#self._decoder_output_tensor_ph = tf.sparse_placeholder(tf.float32, name='decoder_output_tensor_ph')
-		else:
-			self._decoder_output_tensor_ph = tf.placeholder(tf.float32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
+		#self._decoder_output_tensor_ph = tf.placeholder(tf.int32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
+		self._decoder_output_tensor_ph = tf.placeholder(tf.float32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
 		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and prediction steps.
@@ -147,6 +150,24 @@ class TensorFlowSeq2SeqNeuralNet(object):
 		# Loss and accuracy are used in training and evaluation steps.
 		self._loss = None
 		self._accuracy = None
+
+	@property
+	def encoder_input_shape(self):
+		if self._encoder_input_shape is None:
+			raise TypeError
+		return self._encoder_input_shape
+
+	@property
+	def decoder_input_shape(self):
+		if self._decoder_input_shape is None:
+			raise TypeError
+		return self._decoder_input_shape
+
+	@property
+	def decoder_output_shape(self):
+		if self._decoder_output_shape is None:
+			raise TypeError
+		return self._decoder_output_shape
 
 	@property
 	def model_output(self):

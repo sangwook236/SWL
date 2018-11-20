@@ -5,14 +5,13 @@ from swl.machine_learning.tensorflow.simple_neural_net import BasicSeq2SeqNeural
 #%%------------------------------------------------------------------
 
 class MnistCRNN(BasicSeq2SeqNeuralNet):
-	def __init__(self, input_shape, output_shape, is_sparse_output, is_time_major=False, has_decoder=True):
+	def __init__(self, input_shape, output_shape, is_time_major=False):
 		self._input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
 		self._output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._is_time_major = is_time_major
-		self._has_decoder = has_decoder
-		super().__init__(input_shape, output_shape, is_sparse_output)
+		super().__init__(input_shape, output_shape)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		#input_seq_lens = tf.constant(max_time_steps, tf.int32, shape=[batch_size])
@@ -22,14 +21,16 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			if outputs is None:
 				output_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
 			else:
-				output_seq_lens = np.full(outputs.shape[1], outputs.shape[0], np.int32)
+				output_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
+				#output_seq_lens = np.full(outputs.shape[1], outputs.shape[0], np.int32)
 			batch_size = [inputs.shape[1]]
 		else:
 			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
 			if outputs is None:
 				output_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
 			else:
-				output_seq_lens = np.full(outputs.shape[0], outputs.shape[1], np.int32)
+				output_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
+				#output_seq_lens = np.full(outputs.shape[0], outputs.shape[1], np.int32)
 			batch_size = [inputs.shape[0]]
 
 		if outputs is None:
@@ -43,9 +44,11 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			# TODO [improve] >> It is not good to use num_time_steps.
 			#num_classes = output_shape[-1]
 			if self._is_time_major:
-				num_time_steps, num_classes = output_shape[0], output_shape[-1]
+				num_time_steps, num_classes = input_shape[0], output_shape[-1]
+				#num_time_steps, num_classes = output_shape[0], output_shape[-1]
 			else:
-				num_time_steps, num_classes = output_shape[1], output_shape[-1]
+				num_time_steps, num_classes = input_shape[1], output_shape[-1]
+				#num_time_steps, num_classes = output_shape[1], output_shape[-1]
 			return self._create_dynamic_bidirectional_model(input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
 
 	def _create_dynamic_bidirectional_model(self, input_tensor, is_training, input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
@@ -75,22 +78,19 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
 			enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
-			if self._has_decoder:
-				#--------------------
-				# Attention.
-				# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec_tf_attention.py.
+			#--------------------
+			# Attention.
+			# REF [function] >> SimpleSeq2SeqEncoderDecoderWithTfAttention._create_dynamic_bidirectional_model() in ./simple_seq2seq_encdec_tf_attention.py.
 
-				#--------------------
-				# Decoder.
-				num_dec_hidden_units = 512
-				dec_cell = self._create_unit_cell(num_dec_hidden_units)
-				dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-				# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
-				#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
+			#--------------------
+			# Decoder.
+			num_dec_hidden_units = 512
+			dec_cell = self._create_unit_cell(num_dec_hidden_units)
+			dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
+			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
+			#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
-				return self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, num_classes, is_time_major)
-			else:
-				return enc_cell_outputs
+			return self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, num_classes, is_time_major)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -184,7 +184,7 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 
 class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_sparse_output=False, is_time_major=is_time_major, has_decoder=True)
+		super().__init__(input_shape, output_shape, is_time_major=is_time_major)
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
@@ -203,40 +203,39 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 
 class MnistCrnnWithCtcLoss(MnistCRNN):
 	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_sparse_output=True, is_time_major=is_time_major, has_decoder=True)
+		super().__init__(input_shape, output_shape, is_time_major=is_time_major)
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
 			# Variable-length outputs: sparse tensor.
-			# Decoder is required.
+
+			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
+			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=-1)
 
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, sequence_length=self._output_seq_lens_ph, ctc_merge_repeated=True, time_major=self._is_time_major))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=self._output_seq_lens_ph, ctc_merge_repeated=True, time_major=self._is_time_major))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-#%%------------------------------------------------------------------
-
-class MnistCrnnWithCtcBeamSearchDecoding(MnistCRNN):
-	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_sparse_output=True, is_time_major=is_time_major, has_decoder=False)
-
-	def _get_loss(self, y, t):
-		with tf.name_scope('loss'):
+	def _get_accuracy(self, y, t):
+		with tf.name_scope('accuracy'):
 			# Variable-length outputs: sparse tensor.
-			# No decoder is required.
 
-			dims = list(range(len(y.shape.as_list())))
-			y_time_major = y if self._is_time_major else tf.transpose(y, [1, 0] + dims[2:])  # Time-major.
+			if not self._is_time_major:
+				y = tf.transpose(y, (1, 0, 2))
 
-			# Beam search decoding on the logits given in input.
-			#	Slower but get better results.
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(y_time_major, sequence_length=self._output_seq_lens_ph, beam_width=100, top_paths=1, merge_repeated=True)
-			decoded, log_prob = tf.nn.ctc_greedy_decoder(y_time_major, sequence_length=self._output_seq_lens_ph, merge_repeated=True)
+			# y: Time-major.
+			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, beam_width=100, top_paths=1, merge_repeated=True)
+			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, merge_repeated=True)
+
+			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
+			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=-1)
 
 			# Inaccuracy: label error rate.
-			loss = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
 
-			tf.summary.scalar('loss', loss)
-			return loss
+			tf.summary.scalar('accuracy', ler)
+			return ler
