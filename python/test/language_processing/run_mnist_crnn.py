@@ -18,9 +18,10 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 #os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
-import time, math
+import time, math, random
 import numpy as np
 import tensorflow as tf
+from PIL import Image
 from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -32,11 +33,77 @@ import traceback
 
 from tensorflow.examples.tutorials.mnist import input_data
 
-def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride, use_variable_length_output):
+def visualize_dataset(images, labels, max_example_count=0):
+	print('Image shape = {}, label shape = {}'.format(images.shape, labels.shape))
+	num_examples, max_time_steps = images.shape[:2]
+	for idx in range(num_examples if 0 >= max_example_count else min(num_examples, max_example_count)):
+		"""
+		for step in range(max_time_steps):
+			img_arr = images[idx,step,:,:,0]
+			lbl = np.argmax(labels[idx,step,:], axis=-1)
+			#img = Image.fromarray((img_arr * 255).astype(np.uint8), mode='L')
+			#img.save('./img_I{}_T{}_L{}.png'.format(idx, step, lbl))
+			img = Image.fromarray(img_arr.astype(np.float32), mode='F')
+			img.save('./img_I{}_T{}_L{}.tif'.format(idx, step, lbl))
+		"""
+
+		comp_img = np.zeros((images.shape[2], images.shape[3] * max_time_steps))
+		lbl_list = list()
+		for step in range(max_time_steps):
+			comp_img[:,step*images.shape[3]:(step+1)*images.shape[3]] = images[idx,step,:,:,0]
+			lbl_list.append(np.argmax(labels[idx,step,:], axis=-1))
+		#img = Image.fromarray((comp_img * 255).astype(np.uint8), mode='L')
+		#img.save('./data_I{}_L{}.png'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
+		img = Image.fromarray(comp_img.astype(np.float32), mode='F')
+		img.save('./data_I{}_L{}.tif'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
+
+def composite_dataset(images, labels, min_digit_count, max_digit_count):
+	indices = list(range(images.shape[0]))
+	random.shuffle(indices)
+	num_examples = len(indices)
+
+	start_idx = 0
+	image_list, label_list = list(), list()
+	while start_idx < num_examples:
+		#end_idx = min(start_idx + random.randint(min_digit_count, max_digit_count), num_examples)
+		end_idx = start_idx + random.randint(min_digit_count, max_digit_count)
+		example_indices = indices[start_idx:end_idx]
+
+		comp_image = np.zeros((max_digit_count,) + images.shape[1:])
+		comp_label = np.zeros((max_digit_count,) + labels.shape[1:])
+		comp_label[:,-1] = 1
+		for i, idx in enumerate(example_indices):
+			comp_image[i,:,:,:] = images[idx,:,:,:]
+			comp_label[i,:] = labels[idx,:]
+
+		image_list.append(comp_image)
+		label_list.append(comp_label)
+
+		start_idx = end_idx
+
+	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
+
+def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count):
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
-	min_time_steps = math.ceil((image_width - slice_width) / slice_stride) + 1
+
+	train_images = np.reshape(mnist.train.images, (-1,) + image_shape)
+	train_labels = np.round(mnist.train.labels).astype(np.int)
+	train_labels = np.pad(train_labels, ((0, 0), (0, num_classes - train_labels.shape[1])), 'constant', constant_values=0)
+	test_images = np.reshape(mnist.test.images, (-1,) + image_shape)
+	test_labels = np.round(mnist.test.labels).astype(np.int)
+	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
+
+	train_images, train_labels = composite_dataset(train_images, train_labels, min_digit_count, max_digit_count)
+	test_images, test_labels = composite_dataset(test_images, test_labels, min_digit_count, max_digit_count)
+
+	return train_images, train_labels, test_images, test_labels
+
+def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output):
+	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
+
+	image_height, image_width, _ = image_shape
 
 	train_images = np.reshape(mnist.train.images, (-1,) + image_shape)
 	train_labels = np.round(mnist.train.labels).astype(np.int)
@@ -47,9 +114,9 @@ def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride
 
 	# TODO [improve] >> A more efficient way may exist.
 	# (samples, time-steps, features).
-	train_sliced_images = np.zeros((train_images.shape[0], min_time_steps, image_height, slice_width, train_images.shape[-1]))
-	test_sliced_images = np.zeros((test_images.shape[0], min_time_steps, image_height, slice_width, test_images.shape[-1]))
-	for step in range(min_time_steps):
+	train_sliced_images = np.zeros((train_images.shape[0], max_time_steps, image_height, slice_width, train_images.shape[-1]))
+	test_sliced_images = np.zeros((test_images.shape[0], max_time_steps, image_height, slice_width, test_images.shape[-1]))
+	for step in range(max_time_steps):
 		start_idx, end_idx = step*slice_stride, step*slice_stride+slice_width
 		if end_idx > image_width:
 			train_sliced_images[:,step,:,:image_width-start_idx,:] = train_images[:,:,start_idx:end_idx,:]
@@ -61,9 +128,9 @@ def load_data(data_dir_path, image_shape, num_classes, slice_width, slice_stride
 	if use_variable_length_output:
 		return train_sliced_images, np.reshape(train_labels, (-1, 1, train_labels.shape[-1])), test_sliced_images, np.reshape(test_labels, (-1, 1, test_labels.shape[-1]))
 	else:
-		train_sliced_labels = np.zeros((train_labels.shape[0], min_time_steps, train_labels.shape[-1]))
-		test_sliced_labels = np.zeros((test_labels.shape[0], min_time_steps, test_labels.shape[-1]))
-		for step in range(min_time_steps):
+		train_sliced_labels = np.zeros((train_labels.shape[0], max_time_steps, train_labels.shape[-1]))
+		test_sliced_labels = np.zeros((test_labels.shape[0], max_time_steps, test_labels.shape[-1]))
+		for step in range(max_time_steps):
 			train_sliced_labels[:,step,:] = train_labels
 			test_sliced_labels[:,step,:] = test_labels
 		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
@@ -164,8 +231,8 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_class
 		print('\tInference time = {}'.format(time.time() - start_time))
 
 		if num_classes >= 2:
-			inferences = np.argmax(inferences, -1)
-			groundtruths = np.argmax(test_labels, -1)
+			inferences = np.argmax(inferences, axis=-1)
+			groundtruths = np.argmax(test_labels, axis=-1)
 		else:
 			inferences = np.around(inferences)
 			groundtruths = test_labels
@@ -189,9 +256,9 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output):
+def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token):
 	if use_variable_length_output:
-		return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major)
+		return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major, eos_token=label_eos_token)
 	else:
 		return MnistCrnnWithCrossEntropyLoss(input_shape, output_shape, is_time_major=is_time_major)
 
@@ -229,22 +296,47 @@ def main():
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
 	use_variable_length_output = True
-	is_time_major = False
-	max_time_steps = 3
-	image_height, image_width = 28, 28
-	slice_width, slice_stride = 14, 7
-	num_classes = 11  # num_classes = num_labels + 1. The largest value (num_classes - 1) is reserved for the blank label.
-	# (samples, time-steps, features).
-	input_shape = (None, max_time_steps, image_height, slice_width, 1)
-	# The shape of network model output = (None, max_time_steps, num_classes)
-	# The shape of ground truth = (None, ?, num_classes)
-	output_shape = (None, 1, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
 
-	train_images, train_labels, test_images, test_labels = load_data(data_dir_path, (image_height, image_width, 1), num_classes, slice_width, slice_stride, use_variable_length_output)
+	image_height, image_width = 28, 28
+	num_labels = 10
+	label_eos_token = -1
+
+	is_time_major = False
+	num_classes = num_labels + 1  # num_classes = num_labels + 1. The largest value (num_classes - 1) is reserved for the blank label.
+
+	if False:
+		slice_width, slice_stride = 14, 7
+		min_time_steps = math.ceil((image_width - slice_width) / slice_stride) + 1
+		max_time_steps = min_time_steps  # max_time_steps .= min_time_steps.
+
+		# (samples, time-steps, features).
+		input_shape = (None, max_time_steps, image_height, slice_width, 1)
+		# The shape of network model output = (None, max_time_steps, num_classes)
+		# The shape of ground truth = (None, 1, num_classes) if variable-length output is used.
+		#                             (None, max_time_steps, num_classes) otherwise.
+		output_shape = (None, 1, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
+
+		train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output)
+	else:
+		min_digit_count, max_digit_count = 3, 5
+		max_time_steps = max_digit_count  # max_time_steps >= max_digit_count.
+
+		# (samples, time-steps, features).
+		input_shape = (None, max_time_steps, image_height, image_width, 1)
+		# The shape of network model output = (None, max_time_steps, num_classes)
+		# The shape of ground truth = (None, max_digit_count, num_classes) if variable-length output is used.
+		#                             (None, max_time_steps, num_classes) otherwise.
+		output_shape = (None, max_digit_count, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
+
+		train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, min_digit_count, max_digit_count)
 
 	# Pre-process.
 	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
 	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+
+	# Visualize dataset.
+	#visualize_dataset(train_images, train_labels, 3)
+	#visualize_dataset(test_images, test_labels, 0)
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -260,7 +352,7 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
+			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -277,7 +369,7 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
+			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -290,7 +382,7 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output)
+		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.

@@ -202,8 +202,9 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 #%%------------------------------------------------------------------
 
 class MnistCrnnWithCtcLoss(MnistCRNN):
-	def __init__(self, input_shape, output_shape, is_time_major=False):
+	def __init__(self, input_shape, output_shape, is_time_major=False, eos_token=-1):
 		super().__init__(input_shape, output_shape, is_time_major=is_time_major)
+		self._eos_token = eos_token
 
 	def _get_loss(self, y, t):
 		with tf.name_scope('loss'):
@@ -211,7 +212,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 
 			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
 			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=-1)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			# Connectionist temporal classification (CTC) loss.
 			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=self._output_seq_lens_ph, ctc_merge_repeated=True, time_major=self._is_time_major))
@@ -226,13 +227,13 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			if not self._is_time_major:
 				y = tf.transpose(y, (1, 0, 2))
 
-			# y: Time-major.
+			# y: time-major.
 			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, beam_width=100, top_paths=1, merge_repeated=True)
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, merge_repeated=True)
 
 			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
 			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=-1)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
