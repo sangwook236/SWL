@@ -20,6 +20,7 @@ sys.path.append(os.path.join(lib_home_dir_path, 'tf_cnnvis_github'))
 #os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
+import time
 import numpy as np
 import tensorflow as tf
 from mnist_cnn_tf import MnistCnnUsingTF
@@ -30,7 +31,6 @@ from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeur
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
-import time
 import traceback
 
 #%%------------------------------------------------------------------

@@ -6,16 +6,11 @@
 #--------------------
 import os, sys
 if 'posix' == os.name:
-	swl_python_home_dir_path = '/home/sangwook/work/SWL_github/python'
 	lib_home_dir_path = '/home/sangwook/lib_repo/python'
 else:
-	swl_python_home_dir_path = 'D:/work/SWL_github/python'
-	lib_home_dir_path = 'D:/lib_repo/python'
-	#lib_home_dir_path = 'D:/lib_repo/python/rnd'
-#sys.path.append('../../../src')
-sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
-
-#os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
+	#lib_home_dir_path = 'D:/lib_repo/python'
+	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+sys.path.append('../../src')
 
 #--------------------
 import time, math, random
@@ -38,6 +33,7 @@ def visualize_dataset(images, labels, max_example_count=0):
 	num_examples, max_time_steps = images.shape[:2]
 	for idx in range(num_examples if 0 >= max_example_count else min(num_examples, max_example_count)):
 		"""
+		# Saves each digit.
 		for step in range(max_time_steps):
 			img_arr = images[idx,step,:,:,0]
 			lbl = np.argmax(labels[idx,step,:], axis=-1)
@@ -47,6 +43,7 @@ def visualize_dataset(images, labels, max_example_count=0):
 			img.save('./img_I{}_T{}_L{}.tif'.format(idx, step, lbl))
 		"""
 
+		# Saves each datum with multiple digits.
 		comp_img = np.zeros((images.shape[2], images.shape[3] * max_time_steps))
 		lbl_list = list()
 		for step in range(max_time_steps):
@@ -57,7 +54,7 @@ def visualize_dataset(images, labels, max_example_count=0):
 		img = Image.fromarray(comp_img.astype(np.float32), mode='F')
 		img.save('./data_I{}_L{}.tif'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
 
-def composite_dataset(images, labels, min_digit_count, max_digit_count):
+def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps):
 	indices = list(range(images.shape[0]))
 	random.shuffle(indices)
 	num_examples = len(indices)
@@ -69,7 +66,7 @@ def composite_dataset(images, labels, min_digit_count, max_digit_count):
 		end_idx = start_idx + random.randint(min_digit_count, max_digit_count)
 		example_indices = indices[start_idx:end_idx]
 
-		comp_image = np.zeros((max_digit_count,) + images.shape[1:])
+		comp_image = np.zeros((max_time_steps,) + images.shape[1:])
 		comp_label = np.zeros((max_digit_count,) + labels.shape[1:])
 		comp_label[:,-1] = 1
 		for i, idx in enumerate(example_indices):
@@ -83,7 +80,8 @@ def composite_dataset(images, labels, min_digit_count, max_digit_count):
 
 	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
 
-def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count):
+def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps):
+	# pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
@@ -95,12 +93,13 @@ def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, 
 	test_labels = np.round(mnist.test.labels).astype(np.int)
 	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
-	train_images, train_labels = composite_dataset(train_images, train_labels, min_digit_count, max_digit_count)
-	test_images, test_labels = composite_dataset(test_images, test_labels, min_digit_count, max_digit_count)
+	train_images, train_labels = composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps)
+	test_images, test_labels = composite_dataset(test_images, test_labels, min_digit_count, max_digit_count, max_time_steps)
 
 	return train_images, train_labels, test_images, test_labels
 
 def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output):
+	# pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
@@ -319,7 +318,7 @@ def main():
 		train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output)
 	else:
 		min_digit_count, max_digit_count = 3, 5
-		max_time_steps = max_digit_count  # max_time_steps >= max_digit_count.
+		max_time_steps = max_digit_count + 2  # max_time_steps >= max_digit_count.
 
 		# (samples, time-steps, features).
 		input_shape = (None, max_time_steps, image_height, image_width, 1)
@@ -328,15 +327,15 @@ def main():
 		#                             (None, max_time_steps, num_classes) otherwise.
 		output_shape = (None, max_digit_count, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
 
-		train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, min_digit_count, max_digit_count)
+		train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, min_digit_count, max_digit_count, max_time_steps)
 
 	# Pre-process.
 	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
 	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
 	# Visualize dataset.
-	#visualize_dataset(train_images, train_labels, 3)
-	#visualize_dataset(test_images, test_labels, 0)
+	#visualize_dataset(train_images, train_labels, 5)
+	#visualize_dataset(test_images, test_labels, 5)
 
 	#--------------------
 	# Create models, sessions, and graphs.
