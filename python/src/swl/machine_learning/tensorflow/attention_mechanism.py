@@ -1,9 +1,11 @@
+import abc
 import tensorflow as tf
 
 #%%------------------------------------------------------------------
 
 # REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
-class AttentionMechanism(object):
+class AttentionMechanism(abc.ABC):
+	@abc.abstractmethod
 	def __call__(self, source_states, target_state):
 		raise NotImplementedError
 

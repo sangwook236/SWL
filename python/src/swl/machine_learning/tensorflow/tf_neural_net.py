@@ -1,9 +1,12 @@
+import abc
 import tensorflow as tf
 
 #%%------------------------------------------------------------------
 
-class TensorFlowNeuralNet(object):
+class TensorFlowNeuralNet(abc.ABC):
 	def __init__(self, input_shape, output_shape):
+		super().__init__()
+
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 
@@ -44,24 +47,29 @@ class TensorFlowNeuralNet(object):
 			feed_dict = {self._input_tensor_ph: data, self._output_tensor_ph: labels}
 		return feed_dict
 
+	@abc.abstractmethod
 	def create_training_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_evaluation_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_inference_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_loss(self, y, t):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_accuracy(self, y, t):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
 
-class TensorFlowBasicSeq2SeqNeuralNet(object):
+class TensorFlowBasicSeq2SeqNeuralNet(abc.ABC):
 	def __init__(self, input_shape, output_shape):
 		self._input_shape = input_shape
 		self._output_shape = output_shape
@@ -109,30 +117,35 @@ class TensorFlowBasicSeq2SeqNeuralNet(object):
 		return self._accuracy
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		if inputs is None or outputs is None:
+		if outputs is None:
 			feed_dict = {self._input_tensor_ph: inputs}
 		else:
 			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs}
 		return feed_dict
 
+	@abc.abstractmethod
 	def create_training_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_evaluation_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_inference_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_loss(self, y, t):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_accuracy(self, y, t):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
 
-class TensorFlowSeq2SeqNeuralNet(object):
+class TensorFlowSeq2SeqNeuralNet(abc.ABC):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):
 		self._encoder_input_shape = encoder_input_shape
 		self._decoder_input_shape = decoder_input_shape
@@ -194,17 +207,22 @@ class TensorFlowSeq2SeqNeuralNet(object):
 			feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs}
 		return feed_dict
 
+	@abc.abstractmethod
 	def create_training_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_evaluation_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def create_inference_model(self):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_loss(self, y, t):
 		raise NotImplementedError
 
+	@abc.abstractmethod
 	def _get_accuracy(self, y, t):
 		raise NotImplementedError
