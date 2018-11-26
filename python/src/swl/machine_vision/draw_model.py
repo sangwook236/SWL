@@ -16,8 +16,8 @@ class DRAW(object):
 
 		self._read_n = 5  # Read glimpse grid width/height.
 		self._write_n = 5  # Write glimpse grid width/height.
-		#self._read_size = 2 * self._read_n * self._read_n if use_read_attention else 2 * self._img_size.
-		self._write_size = self._write_n * self._write_n if use_write_attenion else self._img_size.
+		#self._read_size = 2 * self._read_n * self._read_n if use_read_attention else 2 * self._img_size
+		self._write_size = self._write_n * self._write_n if use_write_attenion else self._img_size
 
 		self._read_op = self._read_with_attention if use_read_attenion else self._read_without_attention
 		self._write_op = self._write_with_attention if use_write_attenion else self._write_without_attention
