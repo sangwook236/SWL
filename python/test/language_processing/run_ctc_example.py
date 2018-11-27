@@ -40,9 +40,8 @@ class SimpleRnn(object):
 		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
 		# Here we use sparse_placeholder that will generate a SparseTensor required by ctc_loss op.
 		#self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
-		# FIXME [fix] >> 52 -> ?
-		self._output_tensor_ph = tf.placeholder(tf.int32, [None, 52, 1], name='output_tensor_ph')
-		# 1d array of size [batch_size].
+		self._output_tensor_ph = tf.placeholder(tf.int32, [None, None], name='output_tensor_ph')
+		# 1D array of size [batch_size].
 		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
 		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
@@ -74,15 +73,13 @@ class SimpleRnn(object):
 			raise TypeError
 		return self._accuracy
 
-	def get_feed_dict(self, inputs, seq_lens, outputs=None, **kwargs):
-		"""
+	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		if self._is_time_major:
-			seq_lens = tf.fill(inputs.shape[1], inputs.shape[0])
-			batch_size = [inputs.shape[1]]
+			seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
+			#batch_size = [inputs.shape[1]]
 		else:
-			seq_lens = tf.fill(inputs.shape[0], inputs.shape[1])
-			batch_size = [inputs.shape[0]]
-		"""
+			seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
+			#batch_size = [inputs.shape[0]]
 
 		if outputs is None:
 			#feed_dict = {self._input_tensor_ph: inputs, self._seq_lens_ph: seq_lens, self._batch_size_ph: batch_size}
@@ -148,30 +145,32 @@ class SimpleRnn(object):
 		# Reshaping back to the original shape.
 		logits = tf.reshape(logits, [batch_size, -1, num_classes])
 
-		# Time major.
-		logits = tf.transpose(logits, (1, 0, 2))
+		if self._is_time_major:
+			logits = tf.transpose(logits, (1, 0, 2))
 
 		return logits
 
 	def _get_loss(self, y, t, seq_lens):
-		# y is time-major & t is a dense tensor.
 		with tf.name_scope('loss'):
-			shape = tf.shape(y)
+			if not self._is_time_major:
+				y = tf.transpose(y, (1, 0, 2))
+			shape = y.shape
 			max_time_steps, batch_size = shape[0], shape[1]
 			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
 
-			print('******************', type(t))
 			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t)
 
 			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
-			
+
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	def _get_accuracy(self, y, t, seq_lens):
-		# y is time-major & t is a dense tensor.
 		with tf.name_scope('accuracy'):
+			if not self._is_time_major:
+				y = tf.transpose(y, (1, 0, 2))
+
 			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
 
@@ -179,10 +178,11 @@ class SimpleRnn(object):
 			t = tf.contrib.layers.dense_to_sparse(t)
 
 			# Inaccuracy: label error rate.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			accuracy = 1.0 - ler
 
-			tf.summary.scalar('accuracy', ler)
-			return ler
+			tf.summary.scalar('accuracy', accuracy)
+			return accuracy
 
 #%%------------------------------------------------------------------
 
@@ -279,18 +279,13 @@ def infer_by_neural_net(session, nnInferrer, test_inputs, test_targets, num_clas
 		inferences = nnInferrer.infer(session, test_inputs, batch_size)
 		print('\tInference time = {}'.format(time.time() - start_time))
 
-		if num_classes >= 2:
-			inferences = np.argmax(inferences, axis=-1)
-			groundtruths = np.argmax(test_targets, axis=-1)
-		else:
-			inferences = np.around(inferences)
-			groundtruths = test_targets
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-
-		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 		print('[SWL] Info: End inferring...')
+
+		return inferences
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+
+		return None
 
 #%%------------------------------------------------------------------
 
@@ -328,15 +323,15 @@ def create_rnn(num_features, num_classes, is_time_major=False):
 def main():
 	#np.random.seed(7)
 
-	does_need_training = True
+	does_need_training = False
 	does_resume_training = False
 
 	#--------------------
 	# Prepare directories.
 
 	output_dir_prefix = 'mnist_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
+	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	output_dir_suffix = '20181128T021602'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -392,20 +387,18 @@ def main():
 		targets = original.replace(' ', '  ')
 		targets = targets.split(' ')
 
-	# Adding blank label.
+	# Add blank label.
 	targets = np.hstack([SPACE_TOKEN if x == '' else list(x) for x in targets])
 
 	# Transform char into index.
 	targets = np.asarray([SPACE_INDEX if x == SPACE_TOKEN else ord(x) - FIRST_INDEX for x in targets])
 
-	# Creating sparse representation to feed the placeholder.
+	# Create sparse representation to feed the placeholder.
 	train_targets = sparse_tuple_from([targets])
 	#train_targets = tf.SparseTensor(*train_targets)
 	train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1])
 	with tf.Session() as sess:
 		train_targets = train_targets.eval(session=sess)
-	train_targets = np.reshape(train_targets, train_targets.shape + (-1,))
-	print('++++++++++++++++++++', train_targets.shape)
 
 	# We don't have a validation dataset.
 	val_inputs, val_targets, val_seq_len = train_inputs, train_targets, train_seq_len
@@ -501,7 +494,21 @@ def main():
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path)
+			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path)
+
+			seq_lens = np.full(inferences.shape[1], inferences.shape[0], np.int32)
+			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=inferences, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=inferences, sequence_length=seq_lens, merge_repeated=True)
+			decoded_best = sess.run(decoded[0])
+
+			str_decoded = ''.join([chr(x) for x in np.asarray(decoded_best[1]) + FIRST_INDEX])
+			# Replaces blank label to none.
+			str_decoded = str_decoded.replace(chr(ord('z') + 1), '')
+			# Replaces space label to space.
+			str_decoded = str_decoded.replace(chr(ord('a') - 1), ' ')
+
+			print('Original:\n%s' % original)
+			print('Decoded:\n%s' % str_decoded)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#--------------------

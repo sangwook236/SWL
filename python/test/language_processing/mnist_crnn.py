@@ -14,8 +14,6 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 		super().__init__(input_shape, output_shape)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		#input_seq_lens = tf.constant(max_time_steps, tf.int32, shape=[batch_size])
-		#output_seq_lens = tf.constant(max_time_steps, tf.int32, shape=[batch_size])
 		if self._is_time_major:
 			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
 			if outputs is None:
@@ -211,7 +209,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			# Variable-length outputs: sparse tensor.
 
 			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
-			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
+			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			# Connectionist temporal classification (CTC) loss.
@@ -232,11 +230,12 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, merge_repeated=True)
 
 			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
-			# NOTE [info] >> These dense label tensors has to be converted into sparse tensors.
+			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			# Inaccuracy: label error rate.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			accuracy = 1.0 - ler
 
-			tf.summary.scalar('accuracy', ler)
-			return ler
+			tf.summary.scalar('accuracy', accuracy)
+			return accuracy

@@ -22,10 +22,10 @@ class NeuralNetInferrer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch = test_data[batch_indices,]
+					data_batch = test_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						batch_inference = self._neuralNet.model_output.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
-	
+
 						if inferences.size > 0:  # If inferences is non-empty.
 							inferences = np.concatenate((inferences, batch_inference), axis=0)
 						else:
@@ -35,3 +35,6 @@ class NeuralNetInferrer(object):
 
 	def infer_seq2seq(self, session, test_encoder_inputs, batch_size=None):
 		return self.infer(session, test_encoder_inputs, batch_size)
+
+	def infer_unsupervisedly(self, session, test_data, batch_size=None):
+		return self.infer(session, test_data, batch_size)

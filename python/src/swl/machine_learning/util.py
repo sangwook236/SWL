@@ -163,21 +163,29 @@ def save_train_history(history, dir_path):
 	#print(history.keys())
 
 	# Summarize history for accuracy.
-	fig = plt.figure()
-	plt.plot(history['acc'])
-	plt.plot(history['val_acc'])
-	plt.title('model accuracy')
-	plt.xlabel('epochs')
-	plt.ylabel('accuracy')
-	plt.legend(['train', 'test'], loc='upper left')
-	fig.savefig(dir_path + '/accuracy.png')
-	plt.close(fig)
+	if history['acc'] is not None or history['val_acc'] is not None:
+		fig = plt.figure()
+		if history['acc'] is not None:
+			plt.plot(history['acc'])
+		if history['val_acc'] is not None:
+			plt.plot(history['val_acc'])
+		plt.title('Model accuracy')
+		plt.xlabel('epochs')
+		plt.ylabel('accuracy')
+		if history['acc'] is None:
+			plt.legend(['test'], loc='upper left')
+		elif history['val_acc'] is None:
+			plt.legend(['train'], loc='upper left')
+		else:
+			plt.legend(['train', 'test'], loc='upper left')
+		fig.savefig(dir_path + '/accuracy.png')
+		plt.close(fig)
 
 	# Summarize history for loss.
 	fig = plt.figure()
 	plt.plot(history['loss'])
 	plt.plot(history['val_loss'])
-	plt.title('model loss')
+	plt.title('Model loss')
 	plt.xlabel('epochs')
 	plt.ylabel('loss')
 	plt.legend(['train', 'test'], loc='upper left')
