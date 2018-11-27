@@ -39,10 +39,12 @@ class SimpleRnn(object):
 		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
 		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
 		# Here we use sparse_placeholder that will generate a SparseTensor required by ctc_loss op.
-		self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		#self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		# FIXME [fix] >> 52 -> ?
+		self._output_tensor_ph = tf.placeholder(tf.int32, [None, 52, 1], name='output_tensor_ph')
 		# 1d array of size [batch_size].
 		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
-		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._num_classes = num_classes
 		self._is_time_major = is_time_major
@@ -72,13 +74,15 @@ class SimpleRnn(object):
 			raise TypeError
 		return self._accuracy
 
-	def get_feed_dict(self, inputs, outputs=None, **kwargs):
+	def get_feed_dict(self, inputs, seq_lens, outputs=None, **kwargs):
+		"""
 		if self._is_time_major:
 			seq_lens = tf.fill(inputs.shape[1], inputs.shape[0])
-			#batch_size = [inputs.shape[1]]
+			batch_size = [inputs.shape[1]]
 		else:
 			seq_lens = tf.fill(inputs.shape[0], inputs.shape[1])
-			#batch_size = [inputs.shape[0]]
+			batch_size = [inputs.shape[0]]
+		"""
 
 		if outputs is None:
 			#feed_dict = {self._input_tensor_ph: inputs, self._seq_lens_ph: seq_lens, self._batch_size_ph: batch_size}
@@ -150,11 +154,15 @@ class SimpleRnn(object):
 		return logits
 
 	def _get_loss(self, y, t, seq_lens):
-		# y is time-major & t is a sparse tensor.
+		# y is time-major & t is a dense tensor.
 		with tf.name_scope('loss'):
 			shape = tf.shape(y)
 			max_time_steps, batch_size = shape[0], shape[1]
 			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
+
+			print('******************', type(t))
+			# Dense tensor -> sparse tensor.
+			t = tf.contrib.layers.dense_to_sparse(t)
 
 			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
 			
@@ -162,10 +170,13 @@ class SimpleRnn(object):
 			return loss
 
 	def _get_accuracy(self, y, t, seq_lens):
-		# y is time-major & t is a sparse tensor.
+		# y is time-major & t is a dense tensor.
 		with tf.name_scope('accuracy'):
 			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
+
+			# Dense tensor -> sparse tensor.
+			t = tf.contrib.layers.dense_to_sparse(t)
 
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t))
@@ -391,6 +402,10 @@ def main():
 	train_targets = sparse_tuple_from([targets])
 	#train_targets = tf.SparseTensor(*train_targets)
 	train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1])
+	with tf.Session() as sess:
+		train_targets = train_targets.eval(session=sess)
+	train_targets = np.reshape(train_targets, train_targets.shape + (-1,))
+	print('++++++++++++++++++++', train_targets.shape)
 
 	# We don't have a validation dataset.
 	val_inputs, val_targets, val_seq_len = train_inputs, train_targets, train_seq_len

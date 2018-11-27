@@ -61,7 +61,10 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch, label_batch = train_data[batch_indices,], train_labels[batch_indices,]
+					print('*******************111', batch_indices, train_data.shape, train_labels.shape)
+					print('*******************222', train_data[batch_indices].shape)
+					print('*******************333', train_labels[batch_indices].shape)
+					data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
@@ -80,7 +83,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch, label_batch = train_data[batch_indices,], train_labels[batch_indices,]
+					data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						if self._accuracy is None:
 							train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
@@ -94,7 +97,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
-						data_batch, label_batch = train_data[batch_indices,], train_labels[batch_indices,]
+						data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 						if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 							if self._accuracy is None:
 								batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
@@ -141,7 +144,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
-						data_batch, label_batch = val_data[batch_indices,], val_labels[batch_indices,]
+						data_batch, label_batch = val_data[batch_indices], val_labels[batch_indices]
 						if data_batch.size > 0 and label_batch.size > 0:  # If batch_indices and label_batch are non-empty.
 							if self._accuracy is None:
 								summary, batch_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
@@ -222,7 +225,7 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices,], train_decoder_inputs[batch_indices,], train_decoder_outputs[batch_indices,]
+					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=True))
@@ -241,7 +244,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices,], train_decoder_inputs[batch_indices,], train_decoder_outputs[batch_indices,]
+					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 						if self._accuracy is None:
 							train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
@@ -255,7 +258,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
-						enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices,], train_decoder_inputs[batch_indices,], train_decoder_outputs[batch_indices,]
+						enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 						if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 							if self._accuracy is None:
 								batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
@@ -279,7 +282,7 @@ class NeuralNetTrainer(object):
 			if num_val_examples > 0:
 				"""
 				data_batch, label_batch = val_data, val_labels
-				enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices,], val_decoder_inputs[batch_indices,], val_decoder_outputs[batch_indices,]
+				enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices], val_decoder_inputs[batch_indices], val_decoder_outputs[batch_indices]
 				if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 					if self._accuracy is None:
 						summary, val_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
@@ -301,7 +304,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
-						enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices,], val_decoder_inputs[batch_indices,], val_decoder_outputs[batch_indices,]
+						enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices], val_decoder_inputs[batch_indices], val_decoder_outputs[batch_indices]
 						if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 							if self._accuracy is None:
 								summary, batch_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
@@ -371,7 +374,7 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch = train_data[batch_indices,]
+					data_batch = train_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=True))
@@ -390,7 +393,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					data_batch = train_data[batch_indices,]
+					data_batch = train_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
 				"""
@@ -399,7 +402,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
-						data_batch = train_data[batch_indices,]
+						data_batch = train_data[batch_indices]
 						if data_batch.size > 0:  # If data_batch is non-empty.
 							batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
 
