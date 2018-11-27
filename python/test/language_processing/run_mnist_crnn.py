@@ -13,16 +13,30 @@ else:
 sys.path.append('../../src')
 
 #--------------------
-import time, math, random
+import time, datetime, math, random
 import numpy as np
 import tensorflow as tf
 from PIL import Image
 from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
-from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
 import traceback
+
+#%%------------------------------------------------------------------
+
+class SimpleCrnnTrainer(NeuralNetTrainer):
+	def __init__(self, neuralNet, initial_epoch=0):
+		with tf.name_scope('learning_rate'):
+			learning_rate = 1e-2
+			tf.summary.scalar('learning_rate', learning_rate)
+		with tf.name_scope('optimizer'):
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+
+		super().__init__(neuralNet, optimizer, initial_epoch)
 
 #%%------------------------------------------------------------------
 
@@ -81,7 +95,7 @@ def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time
 	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
 
 def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps):
-	# pixel value: [0, 1].
+	# Pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
@@ -99,7 +113,7 @@ def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, 
 	return train_images, train_labels, test_images, test_labels
 
 def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output):
-	# pixel value: [0, 1].
+	# Pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
 	image_height, image_width, _ = image_shape
@@ -244,9 +258,6 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_class
 
 #%%------------------------------------------------------------------
 
-import datetime
-#from keras import backend as K
-
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
 		try:
@@ -348,15 +359,13 @@ def main():
 
 	if does_need_training:
 		with train_graph.as_default():
-			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
-
 			# Create a model.
 			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
 			initial_epoch = 0
-			nnTrainer = SimpleNeuralNetTrainer(cnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleCrnnTrainer(cnnModelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -365,8 +374,6 @@ def main():
 			initializer = tf.global_variables_initializer()
 
 		with eval_graph.as_default():
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
-
 			# Create a model.
 			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 			cnnModelForEvaluation.create_evaluation_model()
@@ -378,8 +385,6 @@ def main():
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
-		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
-
 		# Create a model.
 		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
 		cnnModelForInference.create_inference_model()
@@ -418,16 +423,12 @@ def main():
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				#K.set_session(sess)
-				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				#K.set_session(sess)
-				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
@@ -437,8 +438,6 @@ def main():
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 

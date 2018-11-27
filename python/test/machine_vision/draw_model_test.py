@@ -17,14 +17,14 @@ import time, datetime
 import numpy as np
 import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
-from swl.machine_learning.tensorflow.simple_neural_net_trainer import BasicGradientClippingNeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import GradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
 from swl.machine_vision.draw_model import DRAW
 
 #%%------------------------------------------------------------------
 
-class MnistDrawTrainer(BasicGradientClippingNeuralNetTrainer):
+class SimpleDrawTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
 			learning_rate = 1e-3
@@ -120,9 +120,9 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def create_mnist_draw(image_height, image_width, max_time_steps, eps=1e-8):
+def create_mnist_draw(image_height, image_width, num_time_steps, eps=1e-8):
 	use_read_attention, use_write_attention = True, True
-	return DRAW(image_height, image_width, max_time_steps, use_read_attention, use_write_attention, eps=eps)
+	return DRAW(image_height, image_width, num_time_steps, use_read_attention, use_write_attention, eps=eps)
 
 def main():
 	#np.random.seed(7)
@@ -164,7 +164,7 @@ def main():
 	#test_images = preprocess_data(test_images)
 
 	image_height, image_width = 28, 28
-	max_time_steps = 10  # MNIST generation sequence length.
+	num_time_steps = 10  # MNIST generation sequence length.
 	eps = 1e-8  # Epsilon for numerical stability.
 
 	#--------------------
@@ -178,12 +178,12 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			drawModelForTraining = create_mnist_draw(image_height, image_width, max_time_steps, eps)
+			drawModelForTraining = create_mnist_draw(image_height, image_width, num_time_steps, eps)
 			drawModelForTraining.create_training_model()
 
 			# Create a trainer.
 			initial_epoch = 0
-			nnTrainer = MnistDrawTrainer(drawModelForTraining, initial_epoch)
+			nnTrainer = SimpleDrawTrainer(drawModelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -193,7 +193,7 @@ def main():
 
 	with infer_graph.as_default():
 		# Create a model.
-		drawModelForInference = create_mnist_draw(image_height, image_width, max_time_steps, eps)
+		drawModelForInference = create_mnist_draw(image_height, image_width, num_time_steps, eps)
 		drawModelForInference.create_inference_model()
 
 		# Create an inferrer.

@@ -1,3 +1,4 @@
+import abc
 import tensorflow as tf
 from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet, TensorFlowBasicSeq2SeqNeuralNet, TensorFlowSeq2SeqNeuralNet
 
@@ -25,6 +26,7 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 		self._loss = None
 		self._accuracy = None
 
+	@abc.abstractmethod
 	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
 		raise NotImplementedError
 
@@ -141,6 +143,7 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 		self._loss = None
 		self._accuracy = None
 
+	@abc.abstractmethod
 	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_training):
 		raise NotImplementedError
 
