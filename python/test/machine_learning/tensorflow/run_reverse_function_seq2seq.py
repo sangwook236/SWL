@@ -61,6 +61,7 @@ def train_neural_net(session, nnTrainer, train_encoder_input_seqs, train_decoder
 	history = nnTrainer.train_seq2seq(session, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
+	#--------------------
 	# Display results.
 	#swl_ml_util.display_train_history(history)
 	if output_dir_path is not None:

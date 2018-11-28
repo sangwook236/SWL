@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-# REF [site] >>
-#	https://github.com/igormq/ctc_tensorflow_example/blob/master/ctc_tensorflow_example.py
-#	https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
+# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/ctc_tensorflow_example.py
 
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
@@ -17,7 +15,7 @@ else:
 sys.path.append('../../../src')
 
 #--------------------
-import time, datetime, math, random
+import abc, time, datetime, math, random
 import numpy as np
 import tensorflow as tf
 import scipy.io.wavfile as wav
@@ -31,19 +29,9 @@ import traceback
 
 #%%------------------------------------------------------------------
 
-class SimpleRnn(object):
-	def __init__(self, num_features, num_classes, is_time_major=False):
+class SimpleRnnBase(abc.ABC):
+	def __init__(self, num_classes, is_time_major=False):
 		super().__init__()
-
-		# e.g: log filter bank or MFCC features.
-		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
-		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
-		# Here we use sparse_placeholder that will generate a SparseTensor required by ctc_loss op.
-		#self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, [None, None], name='output_tensor_ph')
-		# 1D array of size [batch_size].
-		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
-		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._num_classes = num_classes
 		self._is_time_major = is_time_major
@@ -150,6 +138,30 @@ class SimpleRnn(object):
 
 		return logits
 
+	@abc.abstractmethod
+	def _get_loss(self, y, t, seq_lens):
+		raise NotImplementedError
+
+	@abc.abstractmethod
+	def _get_accuracy(self, y, t, seq_lens):
+		raise NotImplementedError
+
+#%%------------------------------------------------------------------
+
+class SimpleRnnWithDenseLabel(SimpleRnnBase):
+	def __init__(self, num_features, num_classes, eos_token, is_time_major=False):
+		super().__init__(num_classes, is_time_major)
+
+		self._eos_token = eos_token
+
+		# e.g: log filter bank or MFCC features.
+		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
+		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.int32, [None, None], name='output_tensor_ph')
+		# 1D array of size [batch_size].
+		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
+		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
 	def _get_loss(self, y, t, seq_lens):
 		with tf.name_scope('loss'):
 			if not self._is_time_major:
@@ -159,7 +171,7 @@ class SimpleRnn(object):
 			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
 
 			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
 
@@ -175,7 +187,50 @@ class SimpleRnn(object):
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
 
 			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
+
+			# Inaccuracy: label error rate.
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			accuracy = 1.0 - ler
+
+			tf.summary.scalar('accuracy', accuracy)
+			return accuracy
+
+#%%------------------------------------------------------------------
+
+class SimpleRnnWithSparseLabel(SimpleRnnBase):
+	def __init__(self, num_features, num_classes, is_time_major=False):
+		super().__init__(num_classes, is_time_major)
+
+		# e.g: log filter bank or MFCC features.
+		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
+		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
+		# Here we use sparse_placeholder that will generate a SparseTensor required by ctc_loss op.
+		self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		# 1D array of size [batch_size].
+		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
+		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
+	def _get_loss(self, y, t, seq_lens):
+		with tf.name_scope('loss'):
+			if not self._is_time_major:
+				y = tf.transpose(y, (1, 0, 2))
+			shape = y.shape
+			max_time_steps, batch_size = shape[0], shape[1]
+			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
+
+			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
+
+			tf.summary.scalar('loss', loss)
+			return loss
+
+	def _get_accuracy(self, y, t, seq_lens):
+		with tf.name_scope('accuracy'):
+			if not self._is_time_major:
+				y = tf.transpose(y, (1, 0, 2))
+
+			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
 
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
@@ -200,7 +255,7 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 
 #%%------------------------------------------------------------------
 
-def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
+def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_sparse_label):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -225,14 +280,23 @@ def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, v
 		'val_loss': []
 	}
 
+	best_val_acc = 0.0
 	start_time = time.time()
-	train_acc, train_loss, val_acc, val_loss = nnTrainer.train_by_batch(session, train_inputs, train_targets, val_inputs, val_targets, train_summary_writer=train_summary_writer, val_summary_writer=val_summary_writer)
-	print('\tTraining time = {}'.format(time.time() - start_time))
+	for epoch in range(1, num_epochs + 1):
+		print('Epoch {}/{}'.format(epoch, num_epochs))
+		train_acc, train_loss, val_acc, val_loss = nnTrainer.train_by_batch(session, train_inputs, train_targets, val_inputs, val_targets, train_summary_writer=train_summary_writer, val_summary_writer=val_summary_writer, is_sparse_label=is_sparse_label)
 
-	# Save a model.
-	if saver is not None and model_save_dir_path is not None:
-		saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
-		print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+		history['loss'].append(train_loss)
+		history['acc'].append(train_acc)
+		history['val_loss'].append(val_loss)
+		history['val_acc'].append(val_acc)
+
+		# Save a model.
+		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			best_val_acc = val_acc
+			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -290,11 +354,14 @@ def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_inputs, val_targets, batch_size, saver=None, checkpoint_dir_path=None):
+def evaluate_neural_net(session, nnEvaluator, val_inputs, val_targets, batch_size, saver=None, checkpoint_dir_path=None, is_sparse_label=False):
 	num_val_examples = 0
 	if val_inputs is not None and val_targets is not None:
-		if val_inputs.shape[0] == val_targets.shape[0]:
+		if is_sparse_label:
 			num_val_examples = val_inputs.shape[0]
+		else:
+			if val_inputs.shape[0] == val_targets.shape[0]:
+				num_val_examples = val_inputs.shape[0]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -315,11 +382,14 @@ def evaluate_neural_net(session, nnEvaluator, val_inputs, val_targets, batch_siz
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_inputs, test_targets, num_classes, batch_size, saver=None, checkpoint_dir_path=None):
+def infer_by_neural_net(session, nnInferrer, test_inputs, test_targets, num_classes, batch_size, saver=None, checkpoint_dir_path=None, is_sparse_label=False):
 	num_inf_examples = 0
 	if test_inputs is not None and test_targets is not None:
-		if test_inputs.shape[0] == test_targets.shape[0]:
+		if is_sparse_label:
 			num_inf_examples = test_inputs.shape[0]
+		else:
+			if test_inputs.shape[0] == test_targets.shape[0]:
+				num_inf_examples = test_inputs.shape[0]
 
 	if num_inf_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -354,6 +424,7 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
+# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
 def sparse_tuple_from(sequences, dtype=np.int32):
 	"""Create a sparse representention of x.
 	Args:
@@ -374,21 +445,24 @@ def sparse_tuple_from(sequences, dtype=np.int32):
 
 	return indices, values, shape
 
-def create_rnn(num_features, num_classes, is_time_major=False):
-	return SimpleRnn(num_features, num_classes, is_time_major=is_time_major)
+def create_rnn(num_features, num_classes, eos_token, is_time_major=False, is_sparse_label=True):
+	if is_sparse_label:
+		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
+	else:
+		return SimpleRnnWithDenseLabel(num_features, num_classes, eos_token, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)
 
-	does_need_training = False
+	does_need_training = True
 	does_resume_training = False
 
 	#--------------------
 	# Prepare directories.
 
 	output_dir_prefix = 'ctc_example'
-	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	output_dir_suffix = '20181128T021602'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20181128T125537'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -417,6 +491,8 @@ def main():
 
 	# Some configs.
 	is_time_major = False
+	is_sparse_label = False
+	eos_token = -1
 	num_features = 13
 	# Accounting the 0th indice +  space + blank label = 28 characters.
 	num_classes = ord('z') - ord('a') + 1 + 1 + 1
@@ -436,7 +512,7 @@ def main():
 
 	# Readings targets.
 	with open(target_filepath, 'r') as f:
-		#Only the last line is necessary.
+		# Only the last line is necessary.
 		line = f.readlines()[-1]
 
 		# Get only the words between [a-z] and replace period for none.
@@ -445,17 +521,17 @@ def main():
 		targets = targets.split(' ')
 
 	# Add blank label.
-	targets = np.hstack([SPACE_TOKEN if x == '' else list(x) for x in targets])
+	targets = np.hstack([SPACE_TOKEN if '' == x else list(x) for x in targets])
 
 	# Transform char into index.
-	targets = np.asarray([SPACE_INDEX if x == SPACE_TOKEN else ord(x) - FIRST_INDEX for x in targets])
+	targets = np.asarray([SPACE_INDEX if SPACE_TOKEN == x else ord(x) - FIRST_INDEX for x in targets])
 
 	# Create sparse representation to feed the placeholder.
-	train_targets = sparse_tuple_from([targets])
-	#train_targets = tf.SparseTensor(*train_targets)
-	train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1])
-	with tf.Session() as sess:
-		train_targets = train_targets.eval(session=sess)
+	train_targets = sparse_tuple_from([targets])  # A tuple (indices, values, shape) for a sparse tensor.
+	if not is_sparse_label:
+		train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1], default_value=eos_token)
+		with tf.Session() as sess:
+			train_targets = train_targets.eval(session=sess)
 
 	# We don't have a validation dataset.
 	val_inputs, val_targets, val_seq_len = train_inputs, train_targets, train_seq_len
@@ -472,7 +548,7 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			cnnModelForTraining = create_rnn(num_features, num_classes, is_time_major)
+			cnnModelForTraining = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -487,7 +563,7 @@ def main():
 
 		with eval_graph.as_default():
 			# Create a model.
-			cnnModelForEvaluation = create_rnn(num_features, num_classes, is_time_major)
+			cnnModelForEvaluation = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -498,7 +574,7 @@ def main():
 
 	with infer_graph.as_default():
 		# Create a model.
-		cnnModelForInference = create_rnn(num_features, num_classes, is_time_major)
+		cnnModelForInference = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.
@@ -536,14 +612,14 @@ def main():
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net_by_batch(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net_by_batch(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_sparse_label)
 				#train_neural_net(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, val_inputs, val_targets, batch_size, eval_saver, checkpoint_dir_path)
+				evaluate_neural_net(sess, nnEvaluator, val_inputs, val_targets, batch_size, eval_saver, checkpoint_dir_path, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -552,13 +628,12 @@ def main():
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path)
+			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path, is_sparse_label)
 
 			seq_lens = np.full(inferences.shape[1], inferences.shape[0], np.int32)
 			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=inferences, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=inferences, sequence_length=seq_lens, merge_repeated=True)
-			#decoded_best = sess.run(decoded[0])
-			decoded_best = decoded[0].eval(session=sess)
+			decoded_best = sess.run(decoded[0])  # Type = tf.SparseTensorValue.
 
 			str_decoded = ''.join([chr(x) for x in np.asarray(decoded_best[1]) + FIRST_INDEX])
 			# Replaces blank label to none.

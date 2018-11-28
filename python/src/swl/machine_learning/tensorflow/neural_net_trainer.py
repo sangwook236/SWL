@@ -20,22 +20,32 @@ class NeuralNetTrainer(object):
 		# Merge all the summaries.
 		self._merged_summary = tf.summary.merge_all()
 
-	def train_by_batch(self, session, train_data, train_labels, val_data=None, val_labels=None, train_summary_writer=None, val_summary_writer=None):
+	@property
+	def global_step(self):
+		return self._global_step
+
+	def train_by_batch(self, session, train_data, train_labels, val_data=None, val_labels=None, train_summary_writer=None, val_summary_writer=None, is_sparse_label=False):
 		num_train_examples = 0
 		if train_data is not None and train_labels is not None:
-			if train_data.shape[0] == train_labels.shape[0]:
+			if is_sparse_label:
 				num_train_examples = train_data.shape[0]
+			else:
+				if train_data.shape[0] == train_labels.shape[0]:
+					num_train_examples = train_data.shape[0]
 		num_val_examples = 0
 		if val_data is not None and val_labels is not None:
-			if val_data.shape[0] == val_labels.shape[0]:
+			if is_sparse_label:
 				num_val_examples = val_data.shape[0]
+			else:
+				if val_data.shape[0] == val_labels.shape[0]:
+					num_val_examples = val_data.shape[0]
 
 		train_loss, train_acc, val_loss, val_acc = None, None, None, None
 		start_time = time.time()
 
 		if num_train_examples > 0:
 			# Train.
-			if train_data.size > 0 and train_labels.size > 0:  # If train_data and train_labels are non-empty.
+			if train_data.size > 0 and (is_sparse_label or train_labels.size > 0):  # If train_data and train_labels are non-empty.
 				#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
 				#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
 				summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
@@ -44,7 +54,7 @@ class NeuralNetTrainer(object):
 
 			# Evaluate training.
 			if True:
-				if train_data.size > 0 and train_labels.size > 0:  # If train_data and train_labels are non-empty.
+				if train_data.size > 0 and (is_sparse_label or train_labels.size > 0):  # If train_data and train_labels are non-empty.
 					if self._accuracy is None:
 						train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
 						#train_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
@@ -55,7 +65,7 @@ class NeuralNetTrainer(object):
 		# Validate.
 		#if val_data is not None and val_labels is not None:
 		if num_val_examples > 0:
-			if val_data.size > 0 and val_labels.size > 0:  # If val_data and val_labels are non-empty.
+			if val_data.size > 0 and (is_sparse_label or val_labels.size > 0):  # If val_data and val_labels are non-empty.
 				if self._accuracy is None:
 					summary, val_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(val_data, val_labels, is_training=False))
 					val_acc = -1.0

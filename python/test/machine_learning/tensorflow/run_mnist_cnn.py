@@ -81,6 +81,7 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
+	#--------------------
 	# Save a graph.
 	#tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_cnn_graph.pb', as_text=False)
 	##tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_cnn_graph.pbtxt', as_text=True)
