@@ -165,16 +165,16 @@ def save_train_history(history, dir_path):
 	# Summarize history for accuracy.
 	if history['acc'] is not None or history['val_acc'] is not None:
 		fig = plt.figure()
-		if history['acc'] is not None:
+		if 'acc' in history:
 			plt.plot(history['acc'])
-		if history['val_acc'] is not None:
+		if 'val_acc' in history:
 			plt.plot(history['val_acc'])
 		plt.title('Model accuracy')
 		plt.xlabel('epochs')
 		plt.ylabel('accuracy')
-		if history['acc'] is None:
+		if not 'acc' in history:
 			plt.legend(['test'], loc='upper left')
-		elif history['val_acc'] is None:
+		elif not 'val_acc' in history:
 			plt.legend(['train'], loc='upper left')
 		else:
 			plt.legend(['train', 'test'], loc='upper left')

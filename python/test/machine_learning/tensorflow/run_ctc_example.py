@@ -14,7 +14,7 @@ if 'posix' == os.name:
 else:
 	#lib_home_dir_path = 'D:/lib_repo/python'
 	lib_home_dir_path = 'D:/lib_repo/python/rnd'
-sys.path.append('../../src')
+sys.path.append('../../../src')
 
 #--------------------
 import time, datetime, math, random
@@ -200,6 +200,62 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 
 #%%------------------------------------------------------------------
 
+def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	# Create writers to write all the summaries out to a directory.
+	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+	val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
+
+	history = {
+		'acc': [],
+		'loss': [],
+		'val_acc': [],
+		'val_loss': []
+	}
+
+	start_time = time.time()
+	train_acc, train_loss, val_acc, val_loss = nnTrainer.train_by_batch(session, train_inputs, train_targets, val_inputs, val_targets, train_summary_writer=train_summary_writer, val_summary_writer=val_summary_writer)
+	print('\tTraining time = {}'.format(time.time() - start_time))
+
+	# Save a model.
+	if saver is not None and model_save_dir_path is not None:
+		saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+		print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+
+	# Close writers.
+	if train_summary_writer is not None:
+		train_summary_writer.close()
+	if val_summary_writer is not None:
+		val_summary_writer.close()
+
+	#--------------------
+	# Save a graph.
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pb', as_text=False)
+	##tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	#builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	#builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	#builder.save(as_text=False)
+
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
 def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
@@ -218,6 +274,7 @@ def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs
 	history = nnTrainer.train(session, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
+	#--------------------
 	# Save a graph.
 	#tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pb', as_text=False)
 	##tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pbtxt', as_text=True)
@@ -329,7 +386,7 @@ def main():
 	#--------------------
 	# Prepare directories.
 
-	output_dir_prefix = 'mnist_crnn'
+	output_dir_prefix = 'ctc_example'
 	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	output_dir_suffix = '20181128T021602'
 
@@ -366,8 +423,8 @@ def main():
 	num_examples = 1
 
 	# Loading the data.
-	audio_filepath = '../../data/language_processing/LDC93S1.wav'
-	target_filepath = '../../data/language_processing/LDC93S1.txt'
+	audio_filepath = '../../../data/machine_learning/LDC93S1.wav'
+	target_filepath = '../../../data/machine_learning/LDC93S1.txt'
 
 	fs, audio = wav.read(audio_filepath)
 
@@ -479,7 +536,8 @@ def main():
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+				train_neural_net_by_batch(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+				#train_neural_net(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
@@ -499,7 +557,8 @@ def main():
 			seq_lens = np.full(inferences.shape[1], inferences.shape[0], np.int32)
 			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=inferences, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
 			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=inferences, sequence_length=seq_lens, merge_repeated=True)
-			decoded_best = sess.run(decoded[0])
+			#decoded_best = sess.run(decoded[0])
+			decoded_best = decoded[0].eval(session=sess)
 
 			str_decoded = ''.join([chr(x) for x in np.asarray(decoded_best[1]) + FIRST_INDEX])
 			# Replaces blank label to none.
