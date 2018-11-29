@@ -30,6 +30,59 @@ def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop
 
 #%%------------------------------------------------------------------
 
+# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
+def generate_sparse_tuple(sequences, eos_token=0, dtype=np.int32):
+	"""Create a sparse representention of x.
+	Args:
+		sequences: A list of lists of type dtype where each element is a sequence.
+		eos_token: An integer. It is part of the target label that signifies the end of a sentence.
+	Returns:
+		A tuple with (indices, values, shape).
+	"""
+	indices = []
+	values = []
+
+	for n, seq in enumerate(sequences):
+		eos_indices = np.where(seq == eos_token)[0]
+		if 0 != eos_indices.size:
+			seq = seq[:eos_indices[0]]
+		indices.extend(zip([n] * len(seq), range(len(seq))))
+		values.extend(seq)
+
+	indices = np.asarray(indices, dtype=np.int64)
+	values = np.asarray(values, dtype=dtype)
+	shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
+
+	return indices, values, shape
+
+def generate_batch_list(data, labels, batch_size, shuffle=True, is_time_major=False, is_sparse_label=False, eos_token=0):
+	batch_dim = 1 if is_time_major else 0
+
+	num_examples = 0
+	if data is not None and labels is not None:
+		if data.shape[batch_dim] == labels.shape[batch_dim]:
+			num_examples = data.shape[batch_dim]
+		num_steps = ((num_examples - 1) // batch_size + 1) if num_examples > 0 else 0
+
+	data_batch_list, label_batch_list = list(), list()
+	#if data is not None and labels is not None:
+	if num_examples > 0:
+		indices = np.arange(num_examples)
+		if shuffle:
+			np.random.shuffle(indices)
+
+		for step in range(num_steps):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				data_batch_list.append(data[batch_indices])
+				label_batch_list.append(generate_sparse_tuple(labels[batch_indices], eos_token=eos_token) if is_sparse_label else labels[batch_indices])
+
+	return data_batch_list, label_batch_list
+
+#%%------------------------------------------------------------------
+
 # REF [site] >> https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
 def compute_intersection_over_union_of_aabb(aabb1, aabb2):
 	# Axis-aligned bounding box = [x_min, y_min, x_max, y_max].

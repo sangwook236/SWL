@@ -121,7 +121,7 @@ class SimpleRnnBase(abc.ABC):
 		# The second output is the last state and we will no use that.
 		outputs, _ = tf.nn.dynamic_rnn(stack, input_tensor, seq_lens, dtype=tf.float32, time_major=False)
 
-		# Reshaping to apply the same weights over the timesteps.
+		# Reshape to apply the same weights over the timesteps.
 		outputs = tf.reshape(outputs, [-1, num_hidden])
 
 		# Truncated normal with mean 0 and stdev=0.1.
@@ -132,10 +132,10 @@ class SimpleRnnBase(abc.ABC):
 		# Tip: Is tf.zeros_initializer the same?
 		b = tf.Variable(tf.constant(0., shape=[num_classes]))
 
-		# Doing the affine projection.
+		# Do the affine projection.
 		logits = tf.matmul(outputs, W) + b
 
-		# Reshaping back to the original shape.
+		# Reshape back to the original shape.
 		logits = tf.reshape(logits, [-1, batch_size, num_classes])  # Time-major.
 
 		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
@@ -462,27 +462,6 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
-def sparse_tuple_from(sequences, dtype=np.int32):
-	"""Create a sparse representention of x.
-	Args:
-		sequences: a list of lists of type dtype where each element is a sequence.
-	Returns:
-		A tuple with (indices, values, shape).
-	"""
-	indices = []
-	values = []
-
-	for n, seq in enumerate(sequences):
-		indices.extend(zip([n] * len(seq), range(len(seq))))
-		values.extend(seq)
-
-	indices = np.asarray(indices, dtype=np.int64)
-	values = np.asarray(values, dtype=dtype)
-	shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
-
-	return indices, values, shape
-
 def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, is_sparse_label=True):
 	if is_sparse_label:
 		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
@@ -507,7 +486,7 @@ def main():
 	label_eos_token = -1
 
 	num_features = 13
-	# Accounting the 0th indice +  space + blank label = 28 characters.
+	# Account the 0th indice + space + blank label = 28 characters.
 	num_classes = ord('z') - ord('a') + 1 + 1 + 1
 	num_examples = 1
 
@@ -544,7 +523,7 @@ def main():
 	SPACE_INDEX = 0
 	FIRST_INDEX = ord('a') - 1  # 0 is reserved to space.
 
-	# Loading the data.
+	# Load the data.
 	audio_filepath = '../../../data/machine_learning/LDC93S1.wav'
 	target_filepath = '../../../data/machine_learning/LDC93S1.txt'
 
@@ -556,7 +535,7 @@ def main():
 	train_inputs = (train_inputs - np.mean(train_inputs)) / np.std(train_inputs)
 	train_seq_len = [train_inputs.shape[1]]
 
-	# Readings targets.
+	# Read targets.
 	with open(target_filepath, 'r') as f:
 		# Only the last line is necessary.
 		line = f.readlines()[-1]
@@ -571,16 +550,20 @@ def main():
 
 	# Transform char into index.
 	targets = np.asarray([SPACE_INDEX if SPACE_TOKEN == x else ord(x) - FIRST_INDEX for x in targets])
+	print('*******************************1', targets)
 
-	# Create sparse representation to feed the placeholder.
-	train_outputs = sparse_tuple_from([targets])  # NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
-	if not is_sparse_label:
-		train_outputs = tf.sparse_to_dense(train_outputs[0], train_outputs[2], train_outputs[1], default_value=label_eos_token)
-		with tf.Session() as sess:
-			train_outputs = train_outputs.eval(session=sess)
+	if is_sparse_label:
+		# Create sparse representation to feed the placeholder.
+		# NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
+		train_outputs = swl_ml_util.generate_sparse_tuple([targets], eos_token=-1)
+		#train_outputs = swl_ml_util.generate_sparse_tuple([targets, targets], eos_token=-1)
+		#train_outputs = swl_ml_util.generate_sparse_tuple(np.vstack([targets, targets]), eos_token=-1)
+	else:
+		train_outputs = targets
 
 	# We don't have a validation dataset.
 	val_inputs, val_outputs, val_seq_len = train_inputs, train_outputs, train_seq_len
+	print('*******************************1', train_outputs)
 
 	#--------------------
 	# Create models, sessions, and graphs.

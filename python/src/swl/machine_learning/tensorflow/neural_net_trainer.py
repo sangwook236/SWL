@@ -25,7 +25,7 @@ class NeuralNetTrainer(object):
 		return self._global_step
 
 	# Supports dense and sparse labels.
-	def train_by_batch(self, session, train_data, train_labels, train_summary_writer=None, is_time_major = False, is_sparse_label=False):
+	def train_by_batch(self, session, train_data, train_labels, train_summary_writer=None, is_time_major=False, is_sparse_label=False):
 		batch_dim = 1 if is_time_major else 0
 
 		num_train_examples = 0
@@ -59,7 +59,7 @@ class NeuralNetTrainer(object):
 		return train_acc, train_loss
 
 	# Supports dense and sparse labels.
-	def evaluate_training_by_batch(self, session, val_data, val_labels, val_summary_writer=None, is_time_major = False, is_sparse_label=False):
+	def evaluate_training_by_batch(self, session, val_data, val_labels, val_summary_writer=None, is_time_major=False, is_sparse_label=False):
 		batch_dim = 1 if is_time_major else 0
 
 		num_val_examples = 0

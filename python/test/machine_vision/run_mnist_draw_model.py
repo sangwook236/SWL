@@ -130,15 +130,26 @@ def create_mnist_draw(image_height, image_width, num_time_steps, eps=1e-8):
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
-
-	#--------------------
-	# Prepare directories.
 
 	output_dir_prefix = 'mnist_draw'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180302T155710'
+
+	image_height, image_width = 28, 28
+	num_time_steps = 10  # MNIST generation sequence length.
+	eps = 1e-8  # Epsilon for numerical stability.
+
+	batch_size = 100  # Number of samples per gradient update.
+	num_epochs = 1000  # Number of times to iterate over training data.
+	shuffle = True
+
+	#--------------------
+	# Prepare directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -165,10 +176,6 @@ def main():
 	# Pre-process.
 	#train_images = preprocess_data(train_images)
 	#test_images = preprocess_data(test_images)
-
-	image_height, image_width = 28, 28
-	num_time_steps = 10  # MNIST generation sequence length.
-	eps = 1e-8  # Epsilon for numerical stability.
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -223,10 +230,6 @@ def main():
 
 	#%%------------------------------------------------------------------
 	# Train.
-
-	batch_size = 100  # Number of samples per gradient update.
-	num_epochs = 1000  # Number of times to iterate over training data.
-	shuffle = True
 
 	if does_need_training:
 		total_elapsed_time = time.time()
