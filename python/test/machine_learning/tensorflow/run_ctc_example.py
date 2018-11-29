@@ -78,19 +78,19 @@ class SimpleRnnBase(abc.ABC):
 		return feed_dict
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, True)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, True)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
+		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
 
 		self._loss = None
 		self._accuracy = None
@@ -131,12 +131,16 @@ class SimpleRnnBase(abc.ABC):
 		logits = tf.matmul(outputs, W) + b
 
 		# Reshaping back to the original shape.
-		logits = tf.reshape(logits, [batch_size, -1, num_classes])
+		logits = tf.reshape(logits, [-1, batch_size, num_classes])  # Time-major.
 
-		if self._is_time_major:
+		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+		decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits, sequence_length=seq_lens, merge_repeated=True)
+		decoded_best = decoded[0]  # tf.SparseTensor.
+
+		if not self._is_time_major:
 			logits = tf.transpose(logits, (1, 0, 2))
 
-		return logits
+		return decoded_best, logits
 
 	@abc.abstractmethod
 	def _get_loss(self, y, t, seq_lens):
@@ -162,35 +166,26 @@ class SimpleRnnWithDenseLabel(SimpleRnnBase):
 		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
 		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
-	def _get_loss(self, y, t, seq_lens):
+	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
 			if not self._is_time_major:
-				y = tf.transpose(y, (1, 0, 2))
-			shape = y.shape
-			max_time_steps, batch_size = shape[0], shape[1]
-			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
+				y_for_loss = tf.transpose(y_for_loss, (1, 0, 2))
 
 			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
-			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, time_major=True))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	def _get_accuracy(self, y, t, seq_lens):
 		with tf.name_scope('accuracy'):
-			if not self._is_time_major:
-				y = tf.transpose(y, (1, 0, 2))
-
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
-
 			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
 
 			# Inaccuracy: label error rate.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
 			accuracy = 1.0 - ler
 
 			tf.summary.scalar('accuracy', accuracy)
@@ -211,29 +206,20 @@ class SimpleRnnWithSparseLabel(SimpleRnnBase):
 		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
 		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
-	def _get_loss(self, y, t, seq_lens):
+	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
 			if not self._is_time_major:
-				y = tf.transpose(y, (1, 0, 2))
-			shape = y.shape
-			max_time_steps, batch_size = shape[0], shape[1]
-			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
+				y_for_loss = tf.transpose(y_for_loss, (1, 0, 2))
 
-			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y, seq_lens, time_major=True))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, time_major=True))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	def _get_accuracy(self, y, t, seq_lens):
 		with tf.name_scope('accuracy'):
-			if not self._is_time_major:
-				y = tf.transpose(y, (1, 0, 2))
-
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=seq_lens, merge_repeated=True)
-
 			# Inaccuracy: label error rate.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
 			accuracy = 1.0 - ler
 
 			tf.summary.scalar('accuracy', accuracy)
@@ -462,7 +448,7 @@ def main():
 
 	output_dir_prefix = 'ctc_example'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20181128T125537'
+	#output_dir_suffix = '20181129T122700'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -491,7 +477,7 @@ def main():
 
 	# Some configs.
 	is_time_major = False
-	is_sparse_label = False
+	is_sparse_label = True
 	eos_token = -1
 	num_features = 13
 	# Accounting the 0th indice +  space + blank label = 28 characters.
@@ -628,14 +614,10 @@ def main():
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
+			# type(inferences) = tf.SparseTensorValue.
 			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path, is_sparse_label)
 
-			seq_lens = np.full(inferences.shape[1], inferences.shape[0], np.int32)
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=inferences, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=inferences, sequence_length=seq_lens, merge_repeated=True)
-			decoded_best = sess.run(decoded[0])  # Type = tf.SparseTensorValue.
-
-			str_decoded = ''.join([chr(x) for x in np.asarray(decoded_best[1]) + FIRST_INDEX])
+			str_decoded = ''.join([chr(x) for x in np.asarray(inferences.values) + FIRST_INDEX])
 			# Replaces blank label to none.
 			str_decoded = str_decoded.replace(chr(ord('z') + 1), '')
 			# Replaces space label to space.
