@@ -6,8 +6,9 @@ class NeuralNetInferrer(object):
 	def __init__(self, neuralNet):
 		self._neuralNet = neuralNet
 
-	def infer(self, session, test_data, batch_size=None):
-		num_inf_examples = test_data.shape[0]
+	def infer(self, session, test_data, batch_size=None, is_time_major=False):
+		batch_dim = 1 if is_time_major else 0
+		num_inf_examples = test_data.shape[batch_dim]
 
 		if batch_size is None or num_inf_examples <= batch_size:
 			inferences = self._neuralNet.model_output.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(test_data, is_training=False))
@@ -33,8 +34,8 @@ class NeuralNetInferrer(object):
 
 		return inferences
 
-	def infer_seq2seq(self, session, test_encoder_inputs, batch_size=None):
-		return self.infer(session, test_encoder_inputs, batch_size)
+	def infer_seq2seq(self, session, test_encoder_inputs, batch_size=None, is_time_major=False):
+		return self.infer(session, test_encoder_inputs, batch_size, is_time_major)
 
-	def infer_unsupervisedly(self, session, test_data, batch_size=None):
-		return self.infer(session, test_data, batch_size)
+	def infer_unsupervisedly(self, session, test_data, batch_size=None, is_time_major=False):
+		return self.infer(session, test_data, batch_size, is_time_major)

@@ -1,62 +1,98 @@
+import abc
 import numpy as np
 import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import BasicSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 
-class MnistCRNN(BasicSeq2SeqNeuralNet):
-	def __init__(self, input_shape, output_shape, is_time_major=False):
-		self._input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
-		self._output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
-		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+class MnistCRNN(abc.ABC):
+	def __init__(self, input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
+		super().__init__()
 
+		self._input_tensor_ph = input_tensor_ph
+		self._output_tensor_ph = output_tensor_ph
+		self._input_seq_lens_ph = input_seq_lens_ph
+		self._output_seq_lens_ph = output_seq_lens_ph
+		#self._batch_size_ph = batch_size_ph
+
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
+		self._num_time_steps = num_time_steps
 		self._is_time_major = is_time_major
-		super().__init__(input_shape, output_shape)
+
+		# model_output is used in training, evaluation, and inference steps.
+		self._model_output = None
+
+		# Loss and accuracy are used in training and evaluation steps.
+		self._loss = None
+		self._accuracy = None
+
+	@property
+	def model_output(self):
+		if self._model_output is None:
+			raise TypeError
+		return self._model_output
+
+	@property
+	def loss(self):
+		if self._loss is None:
+			raise TypeError
+		return self._loss
+
+	@property
+	def accuracy(self):
+		if self._loss is None:
+			raise TypeError
+		return self._accuracy
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		if self._is_time_major:
 			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
-			if outputs is None:
-				output_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
-			else:
-				output_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
-				#output_seq_lens = np.full(outputs.shape[1], outputs.shape[0], np.int32)
-			batch_size = [inputs.shape[1]]
+			output_seq_lens = None if outputs is None else np.full(outputs.shape[1], outputs.shape[0], np.int32)
+			#batch_size = [inputs.shape[1]]
 		else:
 			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
-			if outputs is None:
-				output_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
-			else:
-				output_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
-				#output_seq_lens = np.full(outputs.shape[0], outputs.shape[1], np.int32)
-			batch_size = [inputs.shape[0]]
+			output_seq_lens = None if outputs is None else np.full(outputs.shape[0], outputs.shape[1], np.int32)
+			#batch_size = [inputs.shape[0]]
 
 		if outputs is None:
-			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
+			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
 		else:
-			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
+			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
 		return feed_dict
 
-	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
-		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
-			# TODO [improve] >> It is not good to use num_time_steps.
-			#num_classes = output_shape[-1]
-			if self._is_time_major:
-				num_time_steps, num_classes = input_shape[0], output_shape[-1]
-				#num_time_steps, num_classes = output_shape[0], output_shape[-1]
-			else:
-				num_time_steps, num_classes = input_shape[1], output_shape[-1]
-				#num_time_steps, num_classes = output_shape[1], output_shape[-1]
-			return self._create_dynamic_bidirectional_model(input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+	def create_training_model(self):
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
 
-	def _create_dynamic_bidirectional_model(self, input_tensor, is_training, input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_evaluation_model(self):
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_inference_model(self):
+		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+
+		self._loss = None
+		self._accuracy = None
+
+	def _create_single_model(self, input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training):
+		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
+			return self._create_crnn_model(input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training)
+
+	def _create_crnn_model(self, input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training):
 		keep_prob = 1.0
 		#keep_prob = 0.5
 
 		#--------------------
 		# CNN.
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
-			cnn_output = self._get_cnn_output(input_tensor, num_time_steps, num_classes, is_time_major)
+			cnn_output = self._get_cnn_output(input_tensor, num_classes, is_time_major)
 
 		#--------------------
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
@@ -72,7 +108,7 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 			#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
 
-			enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=input_seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
+			enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
 			enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
 			enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
@@ -88,7 +124,9 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 			#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
-			return self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, num_classes, is_time_major)
+			dec_outputs = self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, seq_lens, num_classes, num_time_steps, is_time_major)
+
+			return self._get_final_output(dec_outputs, seq_lens)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -127,19 +165,19 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 
 			return conv5
 
-	def _create_fc_layer(self, dec_cell_outputs, num_classes):
-		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
+	def _create_projection_layer(self, cell_outputs, num_classes):
+		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='dense')
-				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+				return tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='dense')
+				#return tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			elif num_classes >= 2:
-				return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, name='dense')
-				#return tf.layers.dense(dec_cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+				return tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, name='dense')
+				#return tf.layers.dense(cell_outputs, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 				return None
 
-	def _get_cnn_output(self, input_tensor, num_time_steps, num_classes, is_time_major):
+	def _get_cnn_output(self, input_tensor, num_classes, is_time_major):
 		# (samples, time-steps, features) -> (time-steps, samples, features).
 		if is_time_major:
 			input_tensor_time_major = input_tensor
@@ -157,7 +195,7 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 
 		return cnn_output
 
-	def _get_decoder_output(self, dec_cell, initial_cell_state, enc_cell_outputs, num_time_steps, num_classes, is_time_major):
+	def _get_decoder_output(self, dec_cell, initial_cell_state, enc_cell_outputs, seq_lens, num_classes, num_time_steps, is_time_major):
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
 		#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
@@ -174,68 +212,93 @@ class MnistCRNN(BasicSeq2SeqNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
-		fc_outputs = self._create_fc_layer(dec_cell_outputs, num_classes)
+		return self._create_projection_layer(dec_cell_outputs, num_classes)
 
-		return fc_outputs
+	@abc.abstractmethod
+	def _get_loss(self, y_for_loss, t, seq_lens):
+		raise NotImplementedError
+
+	@abc.abstractmethod
+	def _get_accuracy(self, y, t):
+		raise NotImplementedError
+
+	@abc.abstractmethod
+	def _get_final_output(self, logits, seq_lens):
+		raise NotImplementedError
 
 #%%------------------------------------------------------------------
 
 class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
-	def __init__(self, input_shape, output_shape, is_time_major=False):
-		super().__init__(input_shape, output_shape, is_time_major=is_time_major)
+	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
+		input_tensor_ph = tf.placeholder(tf.float32, [None, None, image_height, image_width, image_channel], name='input_tensor_ph')
+		output_tensor_ph = tf.placeholder(tf.int32, [None, None, num_classes], name='output_tensor_ph')
+		# 1D array of size [batch_size].
+		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
+		output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
+		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
-	def _get_loss(self, y, t):
+		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+
+	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
-			# Fixed-length outputs.
-			# Decoder is required, 
-
-			masks = tf.sequence_mask(self._output_seq_lens_ph, tf.reduce_max(self._output_seq_lens_ph), dtype=tf.float32)
+			masks = tf.sequence_mask(seq_lens, tf.reduce_max(seq_lens), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
-			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
-			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
-
-			tf.summary.scalar('loss', loss)
-			return loss
-
-#%%------------------------------------------------------------------
-
-class MnistCrnnWithCtcLoss(MnistCRNN):
-	def __init__(self, input_shape, output_shape, is_time_major=False, eos_token=-1):
-		super().__init__(input_shape, output_shape, is_time_major=is_time_major)
-		self._eos_token = eos_token
-
-	def _get_loss(self, y, t):
-		with tf.name_scope('loss'):
-			# Variable-length outputs: sparse tensor.
-
-			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
-			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
-
-			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=self._output_seq_lens_ph, ctc_merge_repeated=True, time_major=self._is_time_major))
+			#loss = tf.contrib.seq2seq.sequence_loss(logits=y_for_loss, targets=t, weights=masks)
+			loss = tf.contrib.seq2seq.sequence_loss(logits=y_for_loss, targets=tf.argmax(t, axis=-1), weights=masks)
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	def _get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
-			# Variable-length outputs: sparse tensor.
+			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
+			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-			if not self._is_time_major:
-				y = tf.transpose(y, (1, 0, 2))
+			tf.summary.scalar('accuracy', accuracy)
+			return accuracy
 
-			# y: time-major.
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, beam_width=100, top_paths=1, merge_repeated=True)
-			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=self._output_seq_lens_ph, merge_repeated=True)
+	def _get_final_output(self, logits, seq_lens):
+		return logits, logits
 
-			t = tf.cast(tf.argmax(t, axis=-1), tf.int32)
-			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
+#%%------------------------------------------------------------------
 
+class MnistCrnnWithCtcLoss(MnistCRNN):
+	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False, eos_token=-1):
+		input_tensor_ph = tf.placeholder(tf.float32, [None, None, image_height, image_width, image_channel], name='input_tensor_ph')
+		output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		# 1D array of size [batch_size].
+		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
+		output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
+		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
+		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+
+		self._eos_token = eos_token
+
+	def _get_loss(self, y_for_loss, t, seq_lens):
+		with tf.name_scope('loss'):
+			# Connectionist temporal classification (CTC) loss.
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, ctc_merge_repeated=True, time_major=self._is_time_major))
+
+			tf.summary.scalar('loss', loss)
+			return loss
+
+	def _get_accuracy(self, y, t):
+		with tf.name_scope('accuracy'):
 			# Inaccuracy: label error rate.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(decoded[0], tf.int32), t, normalize=True))
+			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
 			accuracy = 1.0 - ler
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
+
+	def _get_final_output(self, logits, seq_lens):
+		logits_time_major = logits if self._is_time_major else tf.transpose(logits, (1, 0, 2))
+
+		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits_time_major, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+		decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits_time_major, sequence_length=seq_lens, merge_repeated=True)
+		decoded_best = decoded[0]  # tf.SparseTensor.
+
+		return decoded_best, logits

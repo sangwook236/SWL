@@ -30,8 +30,13 @@ import traceback
 #%%------------------------------------------------------------------
 
 class SimpleRnnBase(abc.ABC):
-	def __init__(self, num_classes, is_time_major=False):
+	def __init__(self, input_tensor_ph, output_tensor_ph, seq_lens_ph, num_classes, is_time_major=False):
 		super().__init__()
+
+		self._input_tensor_ph = input_tensor_ph
+		self._output_tensor_ph = output_tensor_ph
+		self._seq_lens_ph = seq_lens_ph
+		#self._batch_size_ph = batch_size_ph
 
 		self._num_classes = num_classes
 		self._is_time_major = is_time_major
@@ -81,13 +86,13 @@ class SimpleRnnBase(abc.ABC):
 		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, True)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._seq_lens_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
 		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._seq_lens_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph, self._seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
 		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._seq_lens_ph, self._num_classes, False)
@@ -143,28 +148,27 @@ class SimpleRnnBase(abc.ABC):
 		return decoded_best, logits
 
 	@abc.abstractmethod
-	def _get_loss(self, y, t, seq_lens):
+	def _get_loss(self, y_for_loss, t, seq_lens):
 		raise NotImplementedError
 
 	@abc.abstractmethod
-	def _get_accuracy(self, y, t, seq_lens):
+	def _get_accuracy(self, y, t):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
-
 class SimpleRnnWithDenseLabel(SimpleRnnBase):
-	def __init__(self, num_features, num_classes, eos_token, is_time_major=False):
-		super().__init__(num_classes, is_time_major)
-
-		self._eos_token = eos_token
-
+	def __init__(self, num_features, num_classes, label_eos_token, is_time_major=False):
 		# e.g: log filter bank or MFCC features.
 		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
-		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, [None, None], name='output_tensor_ph')
+		input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
+		output_tensor_ph = tf.placeholder(tf.int32, [None, None], name='output_tensor_ph')
 		# 1D array of size [batch_size].
-		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
-		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+		seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
+		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
+		#super().__init__(input_tensor_ph, output_tensor_ph, seq_lens_ph, batch_size_ph, num_classes, is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, seq_lens_ph, num_classes, is_time_major)
+
+		self._label_eos_token = label_eos_token
 
 	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
@@ -172,17 +176,17 @@ class SimpleRnnWithDenseLabel(SimpleRnnBase):
 				y_for_loss = tf.transpose(y_for_loss, (1, 0, 2))
 
 			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._label_eos_token)
 
 			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, time_major=True))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t, seq_lens):
+	def _get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
 			# Dense tensor -> sparse tensor.
-			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._eos_token)
+			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._label_eos_token)
 
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
@@ -191,32 +195,29 @@ class SimpleRnnWithDenseLabel(SimpleRnnBase):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-#%%------------------------------------------------------------------
-
 class SimpleRnnWithSparseLabel(SimpleRnnBase):
 	def __init__(self, num_features, num_classes, is_time_major=False):
-		super().__init__(num_classes, is_time_major)
-
 		# e.g: log filter bank or MFCC features.
 		# Has size [batch_size, time_steps, num_features], but the batch_size and max_stepsize can vary along each step.
-		self._input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
+		input_tensor_ph = tf.placeholder(tf.float32, [None, None, num_features], name='input_tensor_ph')
 		# Here we use sparse_placeholder that will generate a SparseTensor required by ctc_loss op.
-		self._output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
 		# 1D array of size [batch_size].
-		self._seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
-		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+		seq_lens_ph = tf.placeholder(tf.int32, [None], name='seq_lens_ph')
+		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
+		#super().__init__(input_tensor_ph, output_tensor_ph, seq_lens_ph, batch_size_ph, num_classes, is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, seq_lens_ph, num_classes, is_time_major)
 
 	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
-			if not self._is_time_major:
-				y_for_loss = tf.transpose(y_for_loss, (1, 0, 2))
-
-			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, time_major=True))
+			# Connectionist temporal classification (CTC) loss.
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, ctc_merge_repeated=True, time_major=self._is_time_major))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t, seq_lens):
+	def _get_accuracy(self, y, t):
 		with tf.name_scope('accuracy'):
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
@@ -241,7 +242,12 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 
 #%%------------------------------------------------------------------
 
-def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_sparse_label):
+# Supports lists of dense and sparse labels.
+def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
+	num_train_batches, num_val_batches = len(train_inputs_list), len(val_inputs_list)
+	if len(train_outputs_list) != num_train_batches or len(val_outputs_list) != num_val_batches:
+		raise ValueError('Invalid parameter length')
+
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -266,23 +272,70 @@ def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, v
 		'val_loss': []
 	}
 
+	batch_dim = 1 if is_time_major else 0
+
 	best_val_acc = 0.0
-	start_time = time.time()
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch {}/{}'.format(epoch, num_epochs))
-		train_acc, train_loss, val_acc, val_loss = nnTrainer.train_by_batch(session, train_inputs, train_targets, val_inputs, val_targets, train_summary_writer=train_summary_writer, val_summary_writer=val_summary_writer, is_sparse_label=is_sparse_label)
 
-		history['loss'].append(train_loss)
+		start_time = time.time()
+
+		indices = np.arange(num_train_batches)
+		if shuffle:
+			np.random.shuffle(indices)
+
+		print('>-', sep='', end='')
+		processing_ratio = 0.05
+		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
+		for step in indices:
+			train_inputs, train_outputs = train_inputs_list[step], train_outputs_list[step]
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_label)
+
+			# TODO [check] >> Are these calculation correct?
+			batch_size = train_inputs.shape[batch_dim]
+			train_acc += batch_acc * batch_size
+			train_loss += batch_loss * batch_size
+			num_train_examples += batch_size
+
+			if step / num_train_batches >= processing_ratio:
+				print('-', sep='', end='')
+				processing_ratio = round(step / num_train_batches, 2) + 0.05
+		print('<')
+
+		train_acc /= num_train_examples
+		train_loss /= num_train_examples
+
+		#--------------------
+		indices = np.arange(num_val_batches)
+		np.random.shuffle(indices)
+
+		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+		for step in indices:
+			val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_label)
+
+			# TODO [check] >> Are these calculation correct?
+			batch_size = val_inputs.shape[batch_dim]
+			val_acc += batch_acc * batch_size
+			val_loss += batch_loss * batch_size
+			num_val_examples += batch_size
+
+		val_acc /= num_val_examples
+		val_loss /= num_val_examples
+
 		history['acc'].append(train_acc)
-		history['val_loss'].append(val_loss)
+		history['loss'].append(train_loss)
 		history['val_acc'].append(val_acc)
+		history['val_loss'].append(val_loss)
 
 		# Save a model.
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
-	print('\tTraining time = {}'.format(time.time() - start_time))
+
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -306,7 +359,8 @@ def train_neural_net_by_batch(session, nnTrainer, train_inputs, train_targets, v
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
+# Supports a dense label only.
+def train_neural_net(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -321,7 +375,7 @@ def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs
 		print('[SWL] Info: Start training...')
 
 	start_time = time.time()
-	history = nnTrainer.train(session, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	history = nnTrainer.train(session, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
 	#--------------------
@@ -340,14 +394,16 @@ def train_neural_net(session, nnTrainer, train_inputs, train_targets, val_inputs
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_inputs, val_targets, batch_size, saver=None, checkpoint_dir_path=None, is_sparse_label=False):
+def evaluate_neural_net(session, nnEvaluator, val_inputs, val_outputs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+	batch_dim = 1 if is_time_major else 0
+
 	num_val_examples = 0
-	if val_inputs is not None and val_targets is not None:
+	if val_inputs is not None and val_outputs is not None:
 		if is_sparse_label:
-			num_val_examples = val_inputs.shape[0]
+			num_val_examples = val_inputs.shape[batch_dim]
 		else:
-			if val_inputs.shape[0] == val_targets.shape[0]:
-				num_val_examples = val_inputs.shape[0]
+			if val_inputs.shape[batch_dim] == val_outputs.shape[batch_dim]:
+				num_val_examples = val_inputs.shape[batch_dim]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -361,21 +417,19 @@ def evaluate_neural_net(session, nnEvaluator, val_inputs, val_targets, batch_siz
 
 		print('[SWL] Info: Start evaluation...')
 		start_time = time.time()
-		val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_targets, batch_size)
+		val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, batch_size)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
 		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_inputs, test_targets, num_classes, batch_size, saver=None, checkpoint_dir_path=None, is_sparse_label=False):
+def infer_by_neural_net(session, nnInferrer, test_inputs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	batch_dim = 1 if is_time_major else 0
+
 	num_inf_examples = 0
-	if test_inputs is not None and test_targets is not None:
-		if is_sparse_label:
-			num_inf_examples = test_inputs.shape[0]
-		else:
-			if test_inputs.shape[0] == test_targets.shape[0]:
-				num_inf_examples = test_inputs.shape[0]
+	if test_inputs is not None:
+		num_inf_examples = test_inputs.shape[batch_dim]
 
 	if num_inf_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -391,13 +445,11 @@ def infer_by_neural_net(session, nnInferrer, test_inputs, test_targets, num_clas
 		start_time = time.time()
 		inferences = nnInferrer.infer(session, test_inputs, batch_size)
 		print('\tInference time = {}'.format(time.time() - start_time))
-
 		print('[SWL] Info: End inferring...')
 
 		return inferences
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
-
 		return None
 
 #%%------------------------------------------------------------------
@@ -431,24 +483,41 @@ def sparse_tuple_from(sequences, dtype=np.int32):
 
 	return indices, values, shape
 
-def create_rnn(num_features, num_classes, eos_token, is_time_major=False, is_sparse_label=True):
+def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, is_sparse_label=True):
 	if is_sparse_label:
 		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
 	else:
-		return SimpleRnnWithDenseLabel(num_features, num_classes, eos_token, is_time_major=is_time_major)
+		return SimpleRnnWithDenseLabel(num_features, num_classes, label_eos_token, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
-
-	#--------------------
-	# Prepare directories.
 
 	output_dir_prefix = 'ctc_example'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181129T122700'
+
+	is_sparse_label = True
+	is_time_major = False
+	label_eos_token = -1
+
+	num_features = 13
+	# Accounting the 0th indice +  space + blank label = 28 characters.
+	num_classes = ord('z') - ord('a') + 1 + 1 + 1
+	num_examples = 1
+
+	batch_size = 1  # Number of samples per gradient update.
+	num_epochs = 200  # Number of times to iterate over training data.
+	#num_batches_per_epoch = int(num_examples / batch_size)
+	shuffle = True
+
+	#--------------------
+	# Prepare directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -474,15 +543,6 @@ def main():
 	SPACE_TOKEN = '<space>'
 	SPACE_INDEX = 0
 	FIRST_INDEX = ord('a') - 1  # 0 is reserved to space.
-
-	# Some configs.
-	is_time_major = False
-	is_sparse_label = True
-	eos_token = -1
-	num_features = 13
-	# Accounting the 0th indice +  space + blank label = 28 characters.
-	num_classes = ord('z') - ord('a') + 1 + 1 + 1
-	num_examples = 1
 
 	# Loading the data.
 	audio_filepath = '../../../data/machine_learning/LDC93S1.wav'
@@ -513,14 +573,14 @@ def main():
 	targets = np.asarray([SPACE_INDEX if SPACE_TOKEN == x else ord(x) - FIRST_INDEX for x in targets])
 
 	# Create sparse representation to feed the placeholder.
-	train_targets = sparse_tuple_from([targets])  # NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
+	train_outputs = sparse_tuple_from([targets])  # NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
 	if not is_sparse_label:
-		train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1], default_value=eos_token)
+		train_outputs = tf.sparse_to_dense(train_outputs[0], train_outputs[2], train_outputs[1], default_value=label_eos_token)
 		with tf.Session() as sess:
-			train_targets = train_targets.eval(session=sess)
+			train_outputs = train_outputs.eval(session=sess)
 
 	# We don't have a validation dataset.
-	val_inputs, val_targets, val_seq_len = train_inputs, train_targets, train_seq_len
+	val_inputs, val_outputs, val_seq_len = train_inputs, train_outputs, train_seq_len
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -534,7 +594,7 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			cnnModelForTraining = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
+			cnnModelForTraining = create_rnn(num_features, num_classes, label_eos_token, is_time_major, is_sparse_label)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -549,7 +609,7 @@ def main():
 
 		with eval_graph.as_default():
 			# Create a model.
-			cnnModelForEvaluation = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
+			cnnModelForEvaluation = create_rnn(num_features, num_classes, label_eos_token, is_time_major, is_sparse_label)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -560,7 +620,7 @@ def main():
 
 	with infer_graph.as_default():
 		# Create a model.
-		cnnModelForInference = create_rnn(num_features, num_classes, eos_token, is_time_major, is_sparse_label)
+		cnnModelForInference = create_rnn(num_features, num_classes, label_eos_token, is_time_major, is_sparse_label)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.
@@ -589,33 +649,30 @@ def main():
 	#%%------------------------------------------------------------------
 	# Train and evaluate.
 
-	batch_size = 1  # Number of samples per gradient update.
-	num_epochs = 200  # Number of times to iterate over training data.
-	#num_batches_per_epoch = int(num_examples / batch_size)
-	shuffle = True
-
 	if does_need_training:
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net_by_batch(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_sparse_label)
-				#train_neural_net(sess, nnTrainer, train_inputs, train_targets, val_inputs, val_targets, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+				# Supports lists of dense and sparse labels.
+				train_neural_net_by_batch_lists(sess, nnTrainer, [train_inputs], [train_outputs], [val_inputs], [val_outputs], num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+				# Supports a dense label only.
+				#train_neural_net(sess, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, val_inputs, val_targets, batch_size, eval_saver, checkpoint_dir_path, is_sparse_label)
-		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+				evaluate_neural_net(sess, nnEvaluator, val_inputs, val_outputs, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infer.
 
-	total_elapsed_time = time.time()
+	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			# type(inferences) = tf.SparseTensorValue.
-			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, val_targets, num_classes, batch_size, infer_saver, checkpoint_dir_path, is_sparse_label)
+			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
 
 			str_decoded = ''.join([chr(x) for x in np.asarray(inferences.values) + FIRST_INDEX])
 			# Replaces blank label to none.
@@ -625,7 +682,7 @@ def main():
 
 			print('Original:\n%s' % original)
 			print('Decoded:\n%s' % str_decoded)
-	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	#--------------------
 	# Close sessions.

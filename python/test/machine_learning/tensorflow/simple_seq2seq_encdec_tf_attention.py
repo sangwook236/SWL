@@ -165,7 +165,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
-		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
 				output_layer = tf.layers.Dense(1, use_bias=True)
 			elif num_classes >= 2:
@@ -294,7 +294,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
 
 		# Decoder.
-		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
 				output_layer = tf.layers.Dense(1, use_bias=True)
 			elif num_classes >= 2:
@@ -329,8 +329,8 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 
 		#return tf.contrib.rnn.GRUCell(num_units)
 
-	def _create_fc_layer(self, dec_cell_outputs, num_classes):
-		with tf.variable_scope('fc', reuse=tf.AUTO_REUSE):
+	def _create_projection_layer(self, dec_cell_outputs, num_classes):
+		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
 				return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, name='dense')
 				#return tf.layers.dense(dec_cell_outputs, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
@@ -358,22 +358,18 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
-		fc_outputs = self._create_fc_layer(dec_cell_outputs, num_classes)
-
-		return fc_outputs
+		return self._create_projection_layer(dec_cell_outputs, num_classes)
 
 	def _get_decoder_output_for_inference(self, dec_cell, initial_cell_state, batch_size, num_time_steps, num_classes, is_time_major):
 		dec_cell_state = dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=initial_cell_state)
 		dec_cell_input = tf.fill(tf.concat((batch_size, tf.constant([num_classes])), axis=-1), float(self._start_token))  # Initial input.
-		fc_outputs = []
+		projection_outputs = []
 		for _ in range(num_time_steps):
 			dec_cell_output, dec_cell_state = dec_cell(dec_cell_input, dec_cell_state, scope='dec')
 
 			#dec_cell_output = tf.reshape(dec_cell_output, [None, 1, num_dec_hidden_units])
-			dec_cell_input = self._create_fc_layer(dec_cell_output, num_classes)
-			fc_outputs.append(dec_cell_input)
+			dec_cell_input = self._create_projection_layer(dec_cell_output, num_classes)
+			projection_outputs.append(dec_cell_input)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		fc_outputs = tf.stack(fc_outputs, axis=0 if is_time_major else 1)
-
-		return fc_outputs
+		return tf.stack(projection_outputs, axis=0 if is_time_major else 1)

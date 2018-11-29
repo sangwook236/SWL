@@ -17,11 +17,11 @@ import time, datetime, math, random
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 import traceback
 
 #%%------------------------------------------------------------------
@@ -68,7 +68,7 @@ def visualize_dataset(images, labels, max_example_count=0):
 		img = Image.fromarray(comp_img.astype(np.float32), mode='F')
 		img.save('./data_I{}_L{}.tif'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
 
-def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps):
+def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label):
 	indices = list(range(images.shape[0]))
 	random.shuffle(indices)
 	num_examples = len(indices)
@@ -81,7 +81,7 @@ def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time
 		example_indices = indices[start_idx:end_idx]
 
 		comp_image = np.zeros((max_time_steps,) + images.shape[1:])
-		comp_label = np.zeros((max_digit_count,) + labels.shape[1:])
+		comp_label = np.zeros((max_digit_count if is_sparse_label else max_time_steps,) + labels.shape[1:])
 		comp_label[:,-1] = 1
 		for i, idx in enumerate(example_indices):
 			comp_image[i,:,:,:] = images[idx,:,:,:]
@@ -94,7 +94,7 @@ def composite_dataset(images, labels, min_digit_count, max_digit_count, max_time
 
 	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
 
-def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps):
+def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps, is_sparse_label):
 	# Pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
@@ -107,12 +107,12 @@ def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, 
 	test_labels = np.round(mnist.test.labels).astype(np.int)
 	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
-	train_images, train_labels = composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps)
-	test_images, test_labels = composite_dataset(test_images, test_labels, min_digit_count, max_digit_count, max_time_steps)
+	train_images, train_labels = composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
+	test_images, test_labels = composite_dataset(test_images, test_labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
 
 	return train_images, train_labels, test_images, test_labels
 
-def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output):
+def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label):
 	# Pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
@@ -138,7 +138,7 @@ def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, ma
 			train_sliced_images[:,step,:,:,:] = train_images[:,:,start_idx:end_idx,:]
 			test_sliced_images[:,step,:,:,:] = test_images[:,:,start_idx:end_idx,:]
 
-	if use_variable_length_output:
+	if is_sparse_label:
 		return train_sliced_images, np.reshape(train_labels, (-1, 1, train_labels.shape[-1])), test_sliced_images, np.reshape(test_labels, (-1, 1, test_labels.shape[-1]))
 	else:
 		train_sliced_labels = np.zeros((train_labels.shape[0], max_time_steps, train_labels.shape[-1]))
@@ -164,6 +164,170 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
+#%%------------------------------------------------------------------
+
+# Supports lists of dense and sparse labels.
+def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
+	num_train_batches, num_val_batches = len(train_inputs_list), len(val_inputs_list)
+	if len(train_outputs_list) != num_train_batches or len(val_outputs_list) != num_val_batches:
+		raise ValueError('Invalid parameter length')
+
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	# Create writers to write all the summaries out to a directory.
+	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+	val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
+
+	history = {
+		'acc': [],
+		'loss': [],
+		'val_acc': [],
+		'val_loss': []
+	}
+
+	batch_dim = 1 if is_time_major else 0
+
+	best_val_acc = 0.0
+	for epoch in range(1, num_epochs + 1):
+		print('Epoch {}/{}'.format(epoch, num_epochs))
+
+		start_time = time.time()
+
+		indices = np.arange(num_train_batches)
+		if shuffle:
+			np.random.shuffle(indices)
+
+		print('>-', sep='', end='')
+		processing_ratio = 0.05
+		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
+		for step in indices:
+			train_inputs, train_outputs = train_inputs_list[step], train_outputs_list[step]
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_label)
+
+			# TODO [check] >> Are these calculation correct?
+			batch_size = train_inputs.shape[batch_dim]
+			train_acc += batch_acc * batch_size
+			train_loss += batch_loss * batch_size
+			num_train_examples += batch_size
+
+			if step / num_train_batches >= processing_ratio:
+				print('-', sep='', end='')
+				processing_ratio = round(step / num_train_batches, 2) + 0.05
+		print('<')
+
+		train_acc /= num_train_examples
+		train_loss /= num_train_examples
+
+		#--------------------
+		indices = np.arange(num_val_batches)
+		np.random.shuffle(indices)
+
+		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+		for step in indices:
+			val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_label)
+
+			# TODO [check] >> Are these calculation correct?
+			batch_size = val_inputs.shape[batch_dim]
+			val_acc += batch_acc * batch_size
+			val_loss += batch_loss * batch_size
+			num_val_examples += batch_size
+
+		val_acc /= num_val_examples
+		val_loss /= num_val_examples
+
+		history['acc'].append(train_acc)
+		history['loss'].append(train_loss)
+		history['val_acc'].append(val_acc)
+		history['val_loss'].append(val_loss)
+
+		# Save a model.
+		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			best_val_acc = val_acc
+			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
+
+	# Close writers.
+	if train_summary_writer is not None:
+		train_summary_writer.close()
+	if val_summary_writer is not None:
+		val_summary_writer.close()
+
+	#--------------------
+	# Save a graph.
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pb', as_text=False)
+	##tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	#builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	#builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	#builder.save(as_text=False)
+
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
+# Supports a dense label only.
+def train_neural_net_by_batches(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
+	batch_dim = 1 if is_time_major else 0
+
+	num_train_examples = 0
+	if train_inputs is not None and train_outputs is not None:
+		if train_inputs.shape[batch_dim] == train_outputs.shape[batch_dim]:
+			num_train_examples = train_inputs.shape[batch_dim]
+		num_train_steps = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
+	num_val_examples = 0
+	if val_inputs is not None and val_outputs is not None:
+		if val_inputs.shape[batch_dim] == val_outputs.shape[batch_dim]:
+			num_val_examples = val_inputs.shape[batch_dim]
+		num_val_steps = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
+
+	indices = np.arange(num_train_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	train_inputs_list, train_outputs_list = list(), list()
+	for step in range(num_train_steps):
+		start = step * batch_size
+		end = start + batch_size
+		batch_indices = indices[start:end]
+		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			train_inputs_list.append(train_inputs[batch_indices])
+			train_outputs_list.append(train_outputs[batch_indices])
+
+	#--------------------
+	indices = np.arange(num_val_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	val_inputs_list, val_outputs_list = list(), list()
+	for step in range(num_val_steps):
+		start = step * batch_size
+		end = start + batch_size
+		batch_indices = indices[start:end]
+		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			val_inputs_list.append(val_inputs[batch_indices])
+			val_outputs_list.append(val_outputs[batch_indices])
+
+	train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, False)
+
+# Supports a dense label only.
 def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
@@ -197,11 +361,13 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None):
+def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	batch_dim = 1 if is_time_major else 0
+
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
-		if val_images.shape[0] == val_labels.shape[0]:
-			num_val_examples = val_images.shape[0]
+		if val_images.shape[batch_dim] == val_labels.shape[batch_dim]:
+			num_val_examples = val_images.shape[batch_dim]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -222,11 +388,12 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_classes, batch_size, saver=None, checkpoint_dir_path=None):
+def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	batch_dim = 1 if is_time_major else 0
+
 	num_inf_examples = 0
-	if test_images is not None and test_labels is not None:
-		if test_images.shape[0] == test_labels.shape[0]:
-			num_inf_examples = test_images.shape[0]
+	if test_images is not None:
+		num_inf_examples = test_images.shape[batch_dim]
 
 	if num_inf_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -242,19 +409,12 @@ def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_class
 		start_time = time.time()
 		inferences = nnInferrer.infer(session, test_images, batch_size)
 		print('\tInference time = {}'.format(time.time() - start_time))
-
-		if num_classes >= 2:
-			inferences = np.argmax(inferences, axis=-1)
-			groundtruths = np.argmax(test_labels, axis=-1)
-		else:
-			inferences = np.around(inferences)
-			groundtruths = test_labels
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-
-		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 		print('[SWL] Info: End inferring...')
+
+		return inferences
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+		return None
 
 #%%------------------------------------------------------------------
 
@@ -266,24 +426,39 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token):
-	if use_variable_length_output:
-		return MnistCrnnWithCtcLoss(input_shape, output_shape, is_time_major=is_time_major, eos_token=label_eos_token)
+def create_crnn(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major, is_sparse_label, label_eos_token):
+	if is_sparse_label:
+		return MnistCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major, eos_token=label_eos_token)
 	else:
-		return MnistCrnnWithCrossEntropyLoss(input_shape, output_shape, is_time_major=is_time_major)
+		return MnistCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)
 
-	does_need_training = True
+	#--------------------
+	# Parameters.
+
+	does_need_training = False
 	does_resume_training = False
+
+	output_dir_prefix = 'mnist_crnn'
+	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	output_dir_suffix = '20181129T175810'
+
+	is_sparse_label = False
+	is_time_major = False
+	label_eos_token = -1
+
+	image_height, image_width, image_channel = 28, 28, 1
+	num_labels = 10
+	num_classes = num_labels + 1  # num_classes = num_labels + 1. The largest value (num_classes - 1) is reserved for the blank label.
+
+	batch_size = 128  # Number of samples per gradient update.
+	num_epochs = 200  # Number of times to iterate over training data.
+	shuffle = True
 
 	#--------------------
 	# Prepare directories.
-
-	output_dir_prefix = 'mnist_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -305,40 +480,17 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
-	use_variable_length_output = True
-
-	image_height, image_width = 28, 28
-	num_labels = 10
-	label_eos_token = -1
-
-	is_time_major = False
-	num_classes = num_labels + 1  # num_classes = num_labels + 1. The largest value (num_classes - 1) is reserved for the blank label.
-
 	if False:
 		slice_width, slice_stride = 14, 7
 		min_time_steps = math.ceil((image_width - slice_width) / slice_stride) + 1
-		max_time_steps = min_time_steps  # max_time_steps .= min_time_steps.
+		max_time_steps = min_time_steps  # max_time_steps >= min_time_steps.
 
-		# (samples, time-steps, features).
-		input_shape = (None, max_time_steps, image_height, slice_width, 1)
-		# The shape of network model output = (None, max_time_steps, num_classes)
-		# The shape of ground truth = (None, 1, num_classes) if variable-length output is used.
-		#                             (None, max_time_steps, num_classes) otherwise.
-		output_shape = (None, 1, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
-
-		train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, max_time_steps, slice_width, slice_stride, use_variable_length_output)
+		train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
 	else:
 		min_digit_count, max_digit_count = 3, 5
 		max_time_steps = max_digit_count + 2  # max_time_steps >= max_digit_count.
 
-		# (samples, time-steps, features).
-		input_shape = (None, max_time_steps, image_height, image_width, 1)
-		# The shape of network model output = (None, max_time_steps, num_classes)
-		# The shape of ground truth = (None, max_digit_count, num_classes) if variable-length output is used.
-		#                             (None, max_time_steps, num_classes) otherwise.
-		output_shape = (None, max_digit_count, num_classes) if use_variable_length_output else (None, max_time_steps, num_classes)
-
-		train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, 1), num_classes, min_digit_count, max_digit_count, max_time_steps)
+		train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
 
 	# Pre-process.
 	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
@@ -360,7 +512,7 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			cnnModelForTraining = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
+			cnnModelForTraining = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
@@ -375,7 +527,7 @@ def main():
 
 		with eval_graph.as_default():
 			# Create a model.
-			cnnModelForEvaluation = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
+			cnnModelForEvaluation = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
 			cnnModelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
@@ -386,7 +538,7 @@ def main():
 
 	with infer_graph.as_default():
 		# Create a model.
-		cnnModelForInference = create_crnn(input_shape, output_shape, is_time_major, use_variable_length_output, label_eos_token)
+		cnnModelForInference = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
 		cnnModelForInference.create_inference_model()
 
 		# Create an inferrer.
@@ -415,31 +567,44 @@ def main():
 	#%%------------------------------------------------------------------
 	# Train and evaluate.
 
-	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 500  # Number of times to iterate over training data.
-	shuffle = True
-
 	if does_need_training:
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+				# Supports lists of dense and sparse labels.
+				#train_neural_net_by_batch_lists(sess, nnTrainer, train_images, train_labels, test_images, test_labels, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+				# Supports a dense label only.
+				train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+				# Supports a dense label only.
+				#train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
-		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
+		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infer.
 
-	total_elapsed_time = time.time()
+	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, checkpoint_dir_path)
-	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+			inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+
+			if num_classes >= 2:
+				inferences = np.argmax(inferences, axis=-1)
+				groundtruths = np.argmax(test_labels, axis=-1)
+			else:
+				inferences = np.around(inferences)
+				groundtruths = test_labels
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
+			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
+
+			for i in range(10):
+				print(inferences[i], groundtruths[i])
+	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	#--------------------
 	# Close sessions.

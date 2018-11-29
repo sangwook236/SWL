@@ -6,10 +6,11 @@ class NeuralNetEvaluator(object):
 	def __init__(self, neuralNet):
 		self._neuralNet = neuralNet
 
-	def evaluate(self, session, val_data, val_labels, batch_size=None):
+	def evaluate(self, session, val_data, val_labels, batch_size=None, is_time_major=False):
 		loss, accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 
-		num_val_examples = val_data.shape[0]
+		batch_dim = 1 if is_time_major else 0
+		num_val_examples = val_data.shape[batch_dim]
 
 		if batch_size is None or num_val_examples <= batch_size:
 			#val_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(val_data, val_labels, is_training=False))
@@ -42,10 +43,11 @@ class NeuralNetEvaluator(object):
 
 		return val_loss, val_acc
 
-	def evaluate_seq2seq(self, session, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None):
+	def evaluate_seq2seq(self, session, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None, is_time_major=False):
 		loss, accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 
-		num_val_examples = test_encoder_inputs.shape[0]
+		batch_dim = 1 if is_time_major else 0
+		num_val_examples = test_encoder_inputs.shape[batch_dim]
 
 		if batch_size is None or num_val_examples <= batch_size:
 			#val_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
@@ -78,10 +80,11 @@ class NeuralNetEvaluator(object):
 
 		return val_loss, val_acc
 
-	def evaluate_unsupervisedly(self, session, val_data, batch_size=None):
+	def evaluate_unsupervisedly(self, session, val_data, batch_size=None, is_time_major=False):
 		loss = self._neuralNet.loss
 
-		num_val_examples = val_data.shape[0]
+		batch_dim = 1 if is_time_major else 0
+		num_val_examples = val_data.shape[batch_dim]
 
 		if batch_size is None or num_val_examples <= batch_size:
 			val_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(val_data, is_training=False))
