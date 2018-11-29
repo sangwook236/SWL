@@ -53,7 +53,9 @@ def preprocess_data(data, axis=0):
 
 	return data
 
-def train_neural_net(session, nnTrainer, train_images, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path):
+#%%------------------------------------------------------------------
+
+def train_neural_net(session, nnTrainer, train_images, val_images, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -68,9 +70,10 @@ def train_neural_net(session, nnTrainer, train_images, batch_size, num_epochs, s
 		print('[SWL] Info: Start training...')
 
 	start_time = time.time()
-	history = nnTrainer.train_unsupervisedly(session, train_images, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path)
+	history = nnTrainer.train_unsupervisedly(session, train_images, val_images, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
+	#--------------------
 	# Save a graph.
 	#tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pb', as_text=False)
 	##tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pbtxt', as_text=True)
@@ -229,7 +232,7 @@ def main():
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net(sess, nnTrainer, train_images, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path)
+				train_neural_net(sess, nnTrainer, train_images, test_images, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------

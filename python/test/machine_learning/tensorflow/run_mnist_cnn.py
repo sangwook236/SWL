@@ -63,6 +63,8 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
+#%%------------------------------------------------------------------
+
 def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')

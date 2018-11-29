@@ -527,7 +527,7 @@ def main():
 	targets = np.asarray([SPACE_INDEX if SPACE_TOKEN == x else ord(x) - FIRST_INDEX for x in targets])
 
 	# Create sparse representation to feed the placeholder.
-	train_targets = sparse_tuple_from([targets])  # A tuple (indices, values, shape) for a sparse tensor.
+	train_targets = sparse_tuple_from([targets])  # NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
 	if not is_sparse_label:
 		train_targets = tf.sparse_to_dense(train_targets[0], train_targets[2], train_targets[1], default_value=eos_token)
 		with tf.Session() as sess:
