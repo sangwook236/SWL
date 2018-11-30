@@ -70,7 +70,7 @@ def visualize_dataset(images, labels, max_example_count=0):
 		img = Image.fromarray(comp_img.astype(np.float32), mode='F')
 		img.save('./data_I{}_L{}.tif'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
 
-def generate_composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label):
+def generate_composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label):
 	num_spaces = 3000
 	num_examples = images.shape[0]
 	total_count = num_examples + num_spaces
@@ -80,9 +80,8 @@ def generate_composite_dataset(images, labels, min_digit_count, max_digit_count,
 	image_shape = (max_time_steps,) + images.shape[1:]
 	label_shape = (max_digit_count if is_sparse_label else max_time_steps,) + labels.shape[1:]
 	space_image = np.zeros(images.shape[1:])
-	space_label_idx = 10
-	space_label = np.zeros(labels.shape[1])
-	space_label[space_label_idx] = 1
+	space_label_arr = np.zeros(labels.shape[1])
+	space_label_arr[space_label] = 1
 
 	image_list, label_list = list(), list()
 	start_idx = 0
@@ -97,7 +96,7 @@ def generate_composite_dataset(images, labels, min_digit_count, max_digit_count,
 		for i, idx in enumerate(example_indices):
 			if idx >= num_examples:
 				comp_image[i,:,:,:] = space_image
-				comp_label[i,:] = space_label
+				comp_label[i,:] = space_label_arr
 			else:
 				comp_image[i,:,:,:] = images[idx,:,:,:]
 				comp_label[i,:] = labels[idx,:]
@@ -109,7 +108,7 @@ def generate_composite_dataset(images, labels, min_digit_count, max_digit_count,
 
 	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
 
-def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps, is_sparse_label):
+def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label):
 	# Pixel value: [0, 1].
 	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
 
@@ -122,8 +121,8 @@ def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, 
 	test_labels = np.round(mnist.test.labels).astype(np.int)
 	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
-	train_images, train_labels = generate_composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
-	test_images, test_labels = generate_composite_dataset(test_images, test_labels, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
+	train_images, train_labels = generate_composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
+	test_images, test_labels = generate_composite_dataset(test_images, test_labels, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
 
 	return train_images, train_labels, test_images, test_labels
 
@@ -469,7 +468,7 @@ def main():
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	# 0~9 + space + blank label.
 	num_classes = num_labels + 1 + 1
-	#space_label = num_classes - 2
+	space_label = num_classes - 2
 	blank_label = num_classes - 1
 
 	batch_size = 128  # Number of samples per gradient update.
@@ -509,7 +508,7 @@ def main():
 	min_digit_count, max_digit_count = 3, 5
 	max_time_steps = max_digit_count + 2  # max_time_steps >= max_digit_count.
 
-	train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, is_sparse_label)
+	train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
 
 	# Pre-process.
 	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
@@ -520,6 +519,7 @@ def main():
 	#visualize_dataset(test_images, test_labels, 5)
 
 	train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, np.argmax(train_labels, axis=-1) if is_sparse_label else train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, np.argmax(test_labels, axis=-1) if is_sparse_label else test_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -599,7 +599,7 @@ def main():
 					# Supports lists of dense and sparse labels.
 					#train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 					# Supports a dense label only.
-					train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+					train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
 					#train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 

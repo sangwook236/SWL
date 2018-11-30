@@ -550,20 +550,18 @@ def main():
 
 	# Transform char into index.
 	targets = np.asarray([SPACE_INDEX if SPACE_TOKEN == x else ord(x) - FIRST_INDEX for x in targets])
-	print('*******************************1', targets)
 
 	if is_sparse_label:
 		# Create sparse representation to feed the placeholder.
-		# NOTE [info] {important} >> A tuple (indices, values, shape) for a sparse tensor, not tf.SparseTensor.
-		train_outputs = swl_ml_util.generate_sparse_tuple([targets], eos_token=-1)
-		#train_outputs = swl_ml_util.generate_sparse_tuple([targets, targets], eos_token=-1)
-		#train_outputs = swl_ml_util.generate_sparse_tuple(np.vstack([targets, targets]), eos_token=-1)
+		# NOTE [info] {important} >> A tuple (indices, values, dense_shape) for a sparse tensor, not tf.SparseTensor.
+		train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences([targets])
+		#train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences([targets, targets])
+		#train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences(np.vstack([targets, targets]))
 	else:
-		train_outputs = targets
+		train_outputs = targets.reshape((-1,) + targets.shape)
 
 	# We don't have a validation dataset.
 	val_inputs, val_outputs, val_seq_len = train_inputs, train_outputs, train_seq_len
-	print('*******************************1', train_outputs)
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -636,11 +634,13 @@ def main():
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				# Supports lists of dense and sparse labels.
-				train_neural_net_by_batch_lists(sess, nnTrainer, [train_inputs], [train_outputs], [val_inputs], [val_outputs], num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
-				# Supports a dense label only.
-				#train_neural_net(sess, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - start_time))
+				if is_sparse_label:
+					# Supports lists of dense and sparse labels.
+					train_neural_net_by_batch_lists(sess, nnTrainer, [train_inputs], [train_outputs], [val_inputs], [val_outputs], num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+				else:
+					# Supports a dense label only.
+					train_neural_net(sess, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+			print('\tTotal training time = {}'.format(time.time() - start_time))
 
 		start_time = time.time()
 		with eval_session.as_default() as sess:

@@ -45,47 +45,33 @@ class MnistCRNN(abc.ABC):
 			raise TypeError
 		return self._accuracy
 
+	@abc.abstractmethod
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		if self._is_time_major:
-			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
-			output_seq_lens = None if outputs is None else np.full(outputs.shape[1], outputs.shape[0], np.int32)
-			#batch_size = [inputs.shape[1]]
-		else:
-			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
-			output_seq_lens = None if outputs is None else np.full(outputs.shape[0], outputs.shape[1], np.int32)
-			#batch_size = [inputs.shape[0]]
-
-		if outputs is None:
-			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
-			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
-		else:
-			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
-			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
-		return feed_dict
+		raise NotImplementedError
 
 	def create_training_model(self):
-		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training):
+	def _create_single_model(self, input_tensor, input_seq_lens, output_seq_lens, num_classes, num_time_steps, is_time_major, is_training):
 		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
-			return self._create_crnn_model(input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training)
+			return self._create_crnn_model(input_tensor, input_seq_lens, output_seq_lens, num_classes, num_time_steps, is_time_major, is_training)
 
-	def _create_crnn_model(self, input_tensor, seq_lens, num_classes, num_time_steps, is_time_major, is_training):
+	def _create_crnn_model(self, input_tensor, input_seq_lens, output_seq_lens, num_classes, num_time_steps, is_time_major, is_training):
 		keep_prob = 1.0
 		#keep_prob = 0.5
 
@@ -108,7 +94,7 @@ class MnistCRNN(abc.ABC):
 			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 			#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
 
-			enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
+			enc_cell_outputs, enc_cell_states = tf.nn.bidirectional_dynamic_rnn(enc_cell_fw, enc_cell_bw, cnn_output, sequence_length=input_seq_lens, time_major=is_time_major, dtype=tf.float32, scope='enc')
 			enc_cell_outputs = tf.concat(enc_cell_outputs, axis=-1)
 			enc_cell_states = tf.contrib.rnn.LSTMStateTuple(tf.concat((enc_cell_states[0].c, enc_cell_states[1].c), axis=-1), tf.concat((enc_cell_states[0].h, enc_cell_states[1].h), axis=-1))
 
@@ -124,9 +110,10 @@ class MnistCRNN(abc.ABC):
 			# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 			#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
 
-			dec_outputs = self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, seq_lens, num_classes, num_time_steps, is_time_major)
+			dec_cell_outputs = self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, is_time_major)
+			proj_outputs = self._get_projection_output(dec_cell_outputs, num_classes)
 
-			return self._get_final_output(dec_outputs, seq_lens)
+			return self._get_final_output(proj_outputs, output_seq_lens)
 
 	def _create_unit_cell(self, num_units):
 		#return tf.contrib.rnn.BasicRNNCell(num_units)
@@ -165,7 +152,8 @@ class MnistCRNN(abc.ABC):
 
 			return conv5
 
-	def _create_projection_layer(self, cell_outputs, num_classes):
+	# Projection layer.
+	def _get_projection_output(self, cell_outputs, num_classes):
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
 				return tf.layers.dense(cell_outputs, 1, activation=tf.sigmoid, name='dense')
@@ -195,7 +183,7 @@ class MnistCRNN(abc.ABC):
 
 		return cnn_output
 
-	def _get_decoder_output(self, dec_cell, initial_cell_state, enc_cell_outputs, seq_lens, num_classes, num_time_steps, is_time_major):
+	def _get_decoder_output(self, dec_cell, initial_cell_state, enc_cell_outputs, num_time_steps, is_time_major):
 		# dec_cell_state is an instance of LSTMStateTuple, which stores (c, h), where c is the hidden state and h is the output.
 		#dec_cell_outputs, dec_cell_state = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
 		#dec_cell_outputs, _ = tf.nn.dynamic_rnn(dec_cell, enc_cell_outputs, initial_state=enc_cell_states, time_major=is_time_major, dtype=tf.float32, scope='dec')
@@ -210,9 +198,7 @@ class MnistCRNN(abc.ABC):
 			dec_cell_outputs.append(dec_cell_output)
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
-		dec_cell_outputs = tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
-
-		return self._create_projection_layer(dec_cell_outputs, num_classes)
+		return tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
 	@abc.abstractmethod
 	def _get_loss(self, y_for_loss, t, seq_lens):
@@ -239,6 +225,24 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 
 		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, output_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+
+	def get_feed_dict(self, inputs, outputs=None, **kwargs):
+		if self._is_time_major:
+			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
+			output_seq_lens = None if outputs is None else np.full(outputs.shape[1], outputs.shape[0], np.int32)
+			#batch_size = [inputs.shape[1]]
+		else:
+			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
+			output_seq_lens = None if outputs is None else np.full(outputs.shape[0], outputs.shape[1], np.int32)
+			#batch_size = [inputs.shape[0]]
+
+		if outputs is None:
+			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
+		else:
+			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
+		return feed_dict
 
 	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
@@ -277,6 +281,25 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 
 		self._eos_token = eos_token
 
+	def get_feed_dict(self, inputs, outputs=None, **kwargs):
+		output_shape = None if outputs is None else outputs[2]
+		if self._is_time_major:
+			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
+			output_seq_lens = None if outputs is None else np.full(output_shape[1], output_shape[0], np.int32)
+			#batch_size = [inputs.shape[1]]
+		else:
+			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
+			output_seq_lens = None if outputs is None else np.full(output_shape[0], output_shape[1], np.int32)
+			#batch_size = [inputs.shape[0]]
+
+		if outputs is None:
+			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
+		else:
+			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
+		return feed_dict
+
 	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
 			# Connectionist temporal classification (CTC) loss.
@@ -295,10 +318,8 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			return accuracy
 
 	def _get_final_output(self, logits, seq_lens):
-		logits_time_major = logits if self._is_time_major else tf.transpose(logits, (1, 0, 2))
-
-		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits_time_major, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
-		decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits_time_major, sequence_length=seq_lens, merge_repeated=True)
+		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits if self._is_time_major else tf.transpose(logits, (1, 0, 2)), sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+		decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits if self._is_time_major else tf.transpose(logits, (1, 0, 2)), sequence_length=seq_lens, merge_repeated=True)
 		decoded_best = decoded[0]  # tf.SparseTensor.
 
 		return decoded_best, logits
