@@ -4,10 +4,11 @@ from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet, T
 #%%------------------------------------------------------------------
 
 class DRAW(object):
-	def __init__(self, image_height, image_width, num_time_steps, use_read_attention, use_write_attention, eps=1e-8):
+	def __init__(self, image_height, image_width, batch_size, num_time_steps, use_read_attention, use_write_attention, eps=1e-8):
 		super().__init__()
 
 		self._image_height, self._image_width = image_height, image_width
+		self._batch_size = batch_size
 		self._num_time_steps = num_time_steps
 		#self._reuse = None
 		self._reuse = tf.AUTO_REUSE
@@ -24,11 +25,7 @@ class DRAW(object):
 		self._write_op = self._write_with_attention if use_write_attention else self._write_without_attention
 
 		#--------------------
-		# FIXME [recover] >>
-		#self._input_shape = (batch_size, self._img_size)
-		self._input_shape = (100, self._img_size)
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')  # (batch_size * image_size).
-		# TODO [implement] >>
+		self._input_tensor_ph = tf.placeholder(tf.float32, shape=(self._batch_size, self._img_size), name='input_tensor_ph')  # (batch_size * image_size).
 		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
@@ -60,8 +57,7 @@ class DRAW(object):
 		return feed_dict
 
 	def create_training_model(self):
-		batch_size = self._input_shape[0]
-		self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, True)
+		self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_tensor_ph, self._batch_size, self._num_time_steps, True)
 
 		self._loss = self._get_loss(self._model_output, self._input_tensor_ph, mus, logsigmas, sigmas)
 		self._accuracy = None
@@ -70,8 +66,7 @@ class DRAW(object):
 		raise NotImplementedError
 
 	def create_inference_model(self):
-		batch_size = self._input_shape[0]
-		self._model_output, _, _, _ = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, False)
+		self._model_output, _, _, _ = self._create_single_model(self._input_tensor_ph, self._batch_size, self._num_time_steps, False)
 
 		self._loss = None
 		self._accuracy = None
@@ -132,6 +127,7 @@ class DRAW(object):
 			KL = tf.add_n(kl_terms)  # This is 1 x minibatch, corresponding to summing kl_terms from 1:num_time_steps.
 			Lz = tf.reduce_mean(KL)  # Average over minibatches.
 
+			# Total loss.
 			loss = Lx + Lz
 
 			tf.summary.scalar('loss', loss)
@@ -232,11 +228,10 @@ class DRAW(object):
 	def _write_with_attention(self, h_dec):
 		with tf.variable_scope('write_with_attention', reuse=self._reuse):
 			w = DRAW._linear_transform(h_dec, self._write_size)  # batch_size x (write_n * write_n).
-		batch_size = self._input_shape[0]
-		w = tf.reshape(w, [batch_size, self._write_n, self._write_n])
+		w = tf.reshape(w, [self._batch_size, self._write_n, self._write_n])
 		Fx, Fy, gamma = self._attention_window('write_attention', h_dec, self._write_n)
 		Fyt = tf.transpose(Fy, perm=[0, 2, 1])
 		wr = tf.matmul(Fyt, tf.matmul(w, Fx))
-		wr = tf.reshape(wr, [batch_size, self._image_height * self._image_width])
+		wr = tf.reshape(wr, [self._batch_size, self._image_height * self._image_width])
 		#gamma = tf.tile(gamma, [1, self._image_height * self._image_width])
 		return wr * tf.reshape(1.0 / gamma, [-1, 1])
