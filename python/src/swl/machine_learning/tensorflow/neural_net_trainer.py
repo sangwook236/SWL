@@ -59,6 +59,7 @@ class NeuralNetTrainer(object):
 		return train_acc, train_loss
 
 	# Supports dense and sparse labels.
+	# REF [function] >> NeuralNetEvaluator.evaluate_by_batch() in neural_net_evaluator.py
 	def evaluate_training_by_batch(self, session, val_data, val_labels, val_summary_writer=None, is_time_major=False, is_sparse_label=False):
 		batch_dim = 1 if is_time_major else 0
 

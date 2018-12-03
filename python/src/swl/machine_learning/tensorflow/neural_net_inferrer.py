@@ -12,11 +12,13 @@ class NeuralNetInferrer(object):
 
 		if batch_size is None or num_inf_examples <= batch_size:
 			#inferences = self._neuralNet.model_output.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(test_data, is_training=False))
-			inferences = session.run(self._neuralNet.model_output, feed_dict=self._neuralNet.get_feed_dict(test_data, is_training=False))  # Can support a model output as a list.
+			inferences = session.run(self._neuralNet.model_output, feed_dict=self._neuralNet.get_feed_dict(test_data, is_training=False))  # Can support a model output of list type.
 		else:
 			inf_steps_per_epoch = (num_inf_examples - 1) // batch_size + 1
 
 			indices = np.arange(num_inf_examples)
+			#if shuffle:
+			#	np.random.shuffle(indices)
 
 			inferences = np.array([])
 			for step in range(inf_steps_per_epoch):
@@ -27,7 +29,7 @@ class NeuralNetInferrer(object):
 					data_batch = test_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						#batch_inference = self._neuralNet.model_output.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
-						batch_inference = session.run(self._neuralNet.model_output, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))  # Can support a model output as a list.
+						batch_inference = session.run(self._neuralNet.model_output, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))  # Can support a model output of list type.
 
 						#if inferences.size > 0:  # If inferences is non-empty.
 						if len(inferences) > 0:  # If inferences is non-empty.

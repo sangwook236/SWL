@@ -245,7 +245,8 @@ def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train
 
 		#--------------------
 		indices = np.arange(num_val_batches)
-		np.random.shuffle(indices)
+		#if shuffle:
+		#	np.random.shuffle(indices)
 
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 		for step in indices:
@@ -375,13 +376,58 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False):
+# Supports lists of dense or sparse labels.
+def evaluate_neural_net_by_batch_lists(session, nnEvaluator, val_inputs_list, val_outputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+	num_val_batches = len(val_inputs_list)
+	if len(val_outputs_list) != num_val_batches:
+		raise ValueError('Invalid parameter length')
+
+	batch_dim = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	print('[SWL] Info: Start evaluation...')
+	start_time = time.time()
+	indices = np.arange(num_val_batches)
+	#if shuffle:
+	#	np.random.shuffle(indices)
+
+	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+	for step in indices:
+		val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_label)
+
+		# TODO [check] >> Are these calculations correct?
+		batch_size = val_inputs.shape[batch_dim]
+		val_acc += batch_acc * batch_size
+		val_loss += batch_loss * batch_size
+		num_val_examples += batch_size
+
+	val_acc /= num_val_examples
+	val_loss /= num_val_examples
+	print('\tEvaluation time = {}'.format(time.time() - start_time))
+	print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
+	print('[SWL] Info: End evaluation...')
+
+# Supports lists of dense or sparse labels.
+# But when labels are sparse, all dataset is processed at once.
+def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
 	batch_dim = 1 if is_time_major else 0
 
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
-		if val_images.shape[batch_dim] == val_labels.shape[batch_dim]:
+		if is_sparse_label:
 			num_val_examples = val_images.shape[batch_dim]
+		else:
+			if val_images.shape[batch_dim] == val_labels.shape[batch_dim]:
+				num_val_examples = val_images.shape[batch_dim]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -395,7 +441,8 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 
 		print('[SWL] Info: Start evaluation...')
 		start_time = time.time()
-		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
+		#val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
+		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, num_val_examples if is_sparse_label else batch_size)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
 		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
@@ -452,12 +499,12 @@ def main():
 	#--------------------
 	# Parameters.
 
-	does_need_training = True
+	does_need_training = False
 	does_resume_training = False
 
 	output_dir_prefix = 'mnist_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20181129T175810'
+	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	output_dir_suffix = '20181203T163958'
 
 	is_sparse_label = True
 	is_time_major = False
@@ -606,7 +653,16 @@ def main():
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
+				if is_sparse_label:
+					# Supports lists of dense or sparse labels.
+					evaluate_neural_net_by_batch_lists(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+
+					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
+					# Supports lists of dense or sparse labels.
+					#evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+				else:
+					# Supports lists of dense or sparse labels.
+					evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
@@ -615,14 +671,14 @@ def main():
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
+			groundtruths = np.argmax(test_labels, axis=-1)
 			inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
-
-			if num_classes >= 2:
-				inferences = np.argmax(inferences, axis=-1)
-				groundtruths = np.argmax(test_labels, axis=-1)
+			if is_sparse_label:
+				#inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=label_eos_token))
+				inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=blank_label))
 			else:
-				inferences = np.around(inferences)
-				groundtruths = test_labels
+				inferences = np.argmax(inferences, axis=-1)
+
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
 			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 
