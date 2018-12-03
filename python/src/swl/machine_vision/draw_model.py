@@ -60,23 +60,21 @@ class DRAW(object):
 		return feed_dict
 
 	def create_training_model(self):
-		with tf.variable_scope('swl_training', reuse=tf.AUTO_REUSE):
-			batch_size = self._input_shape[0]
-			self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, True)
+		batch_size = self._input_shape[0]
+		self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, True)
 
-			self._loss = self._get_loss(self._model_output, self._input_tensor_ph, mus, logsigmas, sigmas)
-			self._accuracy = None
+		self._loss = self._get_loss(self._model_output, self._input_tensor_ph, mus, logsigmas, sigmas)
+		self._accuracy = None
 
 	def create_evaluation_model(self):
 		raise NotImplementedError
 
 	def create_inference_model(self):
-		with tf.variable_scope('swl_inference', reuse=tf.AUTO_REUSE):
-			batch_size = self._input_shape[0]
-			self._model_output, _, _, _ = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, False)
+		batch_size = self._input_shape[0]
+		self._model_output, _, _, _ = self._create_single_model(self._input_tensor_ph, batch_size, self._num_time_steps, False)
 
-			self._loss = None
-			self._accuracy = None
+		self._loss = None
+		self._accuracy = None
 
 	def _create_single_model(self, x, batch_size, num_time_steps, is_training):
 		with tf.variable_scope('draw_model', reuse=tf.AUTO_REUSE):
@@ -115,7 +113,7 @@ class DRAW(object):
 		return canvases, mus, logsigmas, sigmas
 
 	def _get_loss(self, canvases, x, mus, logsigmas, sigmas):
-		with tf.name_scope('loss'):
+		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Reconstruction loss.
 			# Reconstruction term appears to have been collapsed down to a single scalar value (rather than one per item in minibatch).
 			x_recons = tf.nn.sigmoid(canvases[-1])
@@ -134,7 +132,6 @@ class DRAW(object):
 			KL = tf.add_n(kl_terms)  # This is 1 x minibatch, corresponding to summing kl_terms from 1:num_time_steps.
 			Lz = tf.reduce_mean(KL)  # Average over minibatches.
 
-			# Total loss.
 			loss = Lx + Lz
 
 			tf.summary.scalar('loss', loss)

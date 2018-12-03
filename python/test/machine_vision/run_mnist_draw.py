@@ -16,6 +16,7 @@ sys.path.append('../../src')
 import time, datetime
 import numpy as np
 import tensorflow as tf
+import matplotlib.pyplot as plt
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 from swl.machine_learning.tensorflow.neural_net_trainer import GradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
@@ -108,10 +109,12 @@ def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None
 		start_time = time.time()
 		inferences = nnInferrer.infer(session, test_images, batch_size)
 		print('\tInference time = {}'.format(time.time() - start_time))
-
 		print('[SWL] Info: End inferring...')
+
+		return inferences
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+		return None
 
 #%%------------------------------------------------------------------
 
@@ -138,7 +141,7 @@ def main():
 
 	output_dir_prefix = 'mnist_draw'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
+	#output_dir_suffix = '20181203T135011'
 
 	image_height, image_width = 28, 28
 	num_time_steps = 10  # MNIST generation sequence length.
@@ -242,10 +245,46 @@ def main():
 	#%%------------------------------------------------------------------
 	# Infer.
 
+	# REF [site] >> https://github.com/ericjang/draw/blob/master/plot_data.py
+	def xrecons_grid(X, B, A):
+		"""
+		plots canvas for single time step
+		X is x_recons, (batch_size x img_size)
+		assumes features = BxA images
+		batch is assumed to be a square number
+		"""
+		padsize, padval = 1, 0.5
+		ph, pw = B + 2 * padsize, A + 2 * padsize
+		batch_size = X.shape[0]
+		N = int(np.sqrt(batch_size))
+		X = X.reshape((N, N, B, A))
+		img = np.ones((N * ph, N * pw)) * padval
+		for i in range(N):
+			for j in range(N):
+				startr = i * ph + padsize
+				endr = startr + B
+				startc = j * pw + padsize
+				endc = startc + A
+				img[startr:endr,startc:endc]=X[i,j,:,:]
+		return img
+
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
+			inferences = infer_by_neural_net(sess, nnInferrer, test_images[:100], batch_size, infer_saver, checkpoint_dir_path)
+
+			# Reconstruct.
+			canvases = np.array(inferences)  # time_steps x batch_size x image_size.
+			T, batch_size, img_size = canvases.shape
+			X = 1.0 / (1.0 + np.exp(-canvases))  # x_recons = sigmoid(canvas).
+			#image_height = image_width = int(np.sqrt(img_size))
+
+			for t in range(T):
+				img = xrecons_grid(X[t,:,:], image_height, image_width)
+				plt.matshow(img, cmap=plt.cm.gray)
+				img_filepath = os.path.join(inference_dir_path, '{}_{}.png'.format('mnist_draw', t))  # You can merge using imagemagick, i.e. convert -delay 10 -loop 0 *.png mnist.gif.
+				plt.savefig(img_filepath)
+				print(img_filepath)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#--------------------
@@ -256,38 +295,6 @@ def main():
 		del train_session
 	infer_session.close()
 	del infer_session
-
-	"""
-	#--------------------
-	fetches = []
-	fetches.extend([Lx, Lz, train_op])
-	Lxs = [0] * train_iters
-	Lzs = [0] * train_iters
-
-	#saver.restore(sess, '/tmp/draw/drawmodel.ckpt')  # To restore from model, uncomment this line.
-
-	for i in range(train_iters):
-		xtrain, _ = train_images.next_batch(batch_size)  # xtrain is (batch_size x image_size).
-		feed_dict = {x: xtrain}
-		results = sess.run(fetches, feed_dict)
-		Lxs[i], Lzs[i], _ = results
-		if 0 == i % 100:
-			print('iter=%d : Lx: %f Lz: %f' % (i, Lxs[i], Lzs[i]))
-
-	#--------------------
-	# Training finished.
-	canvases = sess.run(cs, feed_dict)  # Generate some examples.
-	canvases = np.array(canvases)  # T x batch x image_size.
-
-	out_file = os.path.join(FLAGS.data_dir, 'draw_data.npy')
-	np.save(out_file, [canvases, Lxs, Lzs])
-	print('Outputs saved in file: %s' % out_file)
-
-	ckpt_file = os.path.join(FLAGS.data_dir, 'drawmodel.ckpt')
-	print('Model saved in file: %s' % saver.save(sess, ckpt_file))
-
-	sess.close()
-	"""
 
 #%%------------------------------------------------------------------
 

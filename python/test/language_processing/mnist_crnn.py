@@ -50,25 +50,22 @@ class MnistCRNN(abc.ABC):
 		raise NotImplementedError
 
 	def create_training_model(self):
-		with tf.variable_scope('swl_training', reuse=tf.AUTO_REUSE):
-			self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
 
-			self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
-			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		with tf.variable_scope('swl_evaluation', reuse=tf.AUTO_REUSE):
-			self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
-			self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
-			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._output_seq_lens_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		with tf.variable_scope('swl_inference', reuse=tf.AUTO_REUSE):
-			self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._output_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
-			self._loss = None
-			self._accuracy = None
+		self._loss = None
+		self._accuracy = None
 
 	def _create_single_model(self, input_tensor, input_seq_lens, output_seq_lens, num_classes, num_time_steps, is_time_major, is_training):
 		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
@@ -245,7 +242,7 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 		return feed_dict
 
 	def _get_loss(self, y_for_loss, t, seq_lens):
-		with tf.name_scope('loss'):
+		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			masks = tf.sequence_mask(seq_lens, tf.reduce_max(seq_lens), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y_for_loss, targets=t, weights=masks)
@@ -255,7 +252,7 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 			return loss
 
 	def _get_accuracy(self, y, t):
-		with tf.name_scope('accuracy'):
+		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
 			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
@@ -301,7 +298,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 		return feed_dict
 
 	def _get_loss(self, y_for_loss, t, seq_lens):
-		with tf.name_scope('loss'):
+		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
 			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, ctc_merge_repeated=True, time_major=self._is_time_major))
 
@@ -309,7 +306,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			return loss
 
 	def _get_accuracy(self, y, t):
-		with tf.name_scope('accuracy'):
+		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# Inaccuracy: label error rate.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))
 			accuracy = 1.0 - ler
