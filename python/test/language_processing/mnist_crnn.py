@@ -78,6 +78,7 @@ class MnistCRNN(abc.ABC):
 				cnn_output = self._get_cnn_output(input_tensor, num_classes, is_time_major)
 
 			#--------------------
+			# RNN.
 			with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 				#--------------------
 				# Encoder.
@@ -198,7 +199,7 @@ class MnistCRNN(abc.ABC):
 		return tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
 
 	@abc.abstractmethod
-	def _get_loss(self, y_for_loss, t, seq_lens):
+	def _get_loss(self, y, t, seq_lens):
 		raise NotImplementedError
 
 	@abc.abstractmethod
@@ -241,12 +242,12 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
 		return feed_dict
 
-	def _get_loss(self, y_for_loss, t, seq_lens):
+	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			masks = tf.sequence_mask(seq_lens, tf.reduce_max(seq_lens), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
-			#loss = tf.contrib.seq2seq.sequence_loss(logits=y_for_loss, targets=t, weights=masks)
-			loss = tf.contrib.seq2seq.sequence_loss(logits=y_for_loss, targets=tf.argmax(t, axis=-1), weights=masks)
+			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
+			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
 
 			tf.summary.scalar('loss', loss)
 			return loss
@@ -297,10 +298,11 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._output_seq_lens_ph: output_seq_lens}
 		return feed_dict
 
-	def _get_loss(self, y_for_loss, t, seq_lens):
+	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, ctc_merge_repeated=True, time_major=self._is_time_major))
+			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=seq_lens, preprocess_collapse_repeated=True, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=self._is_time_major))
 
 			tf.summary.scalar('loss', loss)
 			return loss

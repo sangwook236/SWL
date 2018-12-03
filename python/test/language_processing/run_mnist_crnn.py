@@ -180,7 +180,7 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 #%%------------------------------------------------------------------
 
-# Supports lists of dense and sparse labels.
+# Supports lists of dense or sparse labels.
 def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
 	num_train_batches, num_val_batches = len(train_inputs_list), len(val_inputs_list)
 	if len(train_outputs_list) != num_train_batches or len(val_outputs_list) != num_val_batches:
@@ -229,7 +229,7 @@ def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train
 			train_inputs, train_outputs = train_inputs_list[step], train_outputs_list[step]
 			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_label)
 
-			# TODO [check] >> Are these calculation correct?
+			# TODO [check] >> Are these calculations correct?
 			batch_size = train_inputs.shape[batch_dim]
 			train_acc += batch_acc * batch_size
 			train_loss += batch_loss * batch_size
@@ -252,7 +252,7 @@ def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train
 			val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
 			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_label)
 
-			# TODO [check] >> Are these calculation correct?
+			# TODO [check] >> Are these calculations correct?
 			batch_size = val_inputs.shape[batch_dim]
 			val_acc += batch_acc * batch_size
 			val_loss += batch_loss * batch_size
@@ -593,10 +593,10 @@ def main():
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
 				if is_sparse_label:
-					# Supports lists of dense and sparse labels.
+					# Supports lists of dense or sparse labels.
 					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
-					# Supports lists of dense and sparse labels.
+					# Supports lists of dense or sparse labels.
 					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 					# Supports a dense label only.
 					#train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
