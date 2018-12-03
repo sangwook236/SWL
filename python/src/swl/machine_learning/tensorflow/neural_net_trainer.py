@@ -1,4 +1,4 @@
-import time
+import sys, time
 import numpy as np
 import tensorflow as tf
 
@@ -454,9 +454,7 @@ class NeuralNetTrainer(object):
 
 		return history
 
-	def train_unsupervisedly_by_batch(self, session, train_data, val_data=None, train_summary_writer=None, val_summary_writer=None):
-		# TODO [update] >>
-		is_time_major = False
+	def train_unsupervisedly_by_batch(self, session, train_data, val_data=None, train_summary_writer=None, val_summary_writer=None, is_time_major=False):
 		batch_dim = 1 if is_time_major else 0
 
 		num_train_examples = 0
@@ -494,9 +492,7 @@ class NeuralNetTrainer(object):
 
 		return train_loss, val_loss
 
-	def train_unsupervisedly(self, session, train_data, val_data, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None):
-		# TODO [update] >>
-		is_time_major = False
+	def train_unsupervisedly(self, session, train_data, val_data, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
 		batch_dim = 1 if is_time_major else 0
 
 		# Create writers to write all the summaries out to a directory.
@@ -525,7 +521,7 @@ class NeuralNetTrainer(object):
 
 			start_time = time.time()
 
-			train_loss, val_loss = 0.0, 0.0, 0.0, 0.0
+			train_loss, val_loss = 0.0, 0.0
 			#if train_data is not None:
 			if num_train_examples > 0:
 				indices = np.arange(num_train_examples)
@@ -630,7 +626,7 @@ class NeuralNetTrainer(object):
 		return history
 
 	def _get_train_operation(self, loss, global_step=None):
-		with tf.name_scope('train'):
+		with tf.name_scope('train_op'):
 			train_op = self._optimizer.minimize(loss, global_step=global_step)
 			return train_op
 
@@ -642,7 +638,7 @@ class GradientClippingNeuralNetTrainer(NeuralNetTrainer):
 		super().__init__(neuralNet, optimizer, initial_epoch)
 
 	def _get_train_operation(self, loss, global_step=None):
-		with tf.name_scope('train'):
+		with tf.name_scope('train_op'):
 			# Method 1.
 			gradients = self._optimizer.compute_gradients(loss)
 			for i, (g, v) in enumerate(gradients):

@@ -474,6 +474,14 @@ def main():
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 200  # Number of times to iterate over training data.
 	shuffle = True
+	initial_epoch = 0
+
+	sess_config = tf.ConfigProto()
+	#sess_config.device_count = {'GPU': 2}
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
 	# Prepare directories.
@@ -537,7 +545,6 @@ def main():
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			nnTrainer = SimpleCrnnTrainer(cnnModelForTraining, initial_epoch)
 
 			# Create a saver.
@@ -569,17 +576,10 @@ def main():
 		infer_saver = tf.train.Saver()
 
 	# Create sessions.
-	config = tf.ConfigProto()
-	#config.device_count = {'GPU': 2}
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initialize.
 	if does_need_training:
@@ -597,9 +597,9 @@ def main():
 					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
 					# Supports lists of dense and sparse labels.
-					#train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 					# Supports a dense label only.
-					train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+					#train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
 					#train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 

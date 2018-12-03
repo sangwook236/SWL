@@ -9,22 +9,25 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 		super().__init__(input_shape, output_shape)
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
+		with tf.variable_scope('swl_training', reuse=tf.AUTO_REUSE):
+			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+			self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		with tf.variable_scope('swl_evaluation', reuse=tf.AUTO_REUSE):
+			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+			self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		with tf.variable_scope('swl_inference', reuse=tf.AUTO_REUSE):
+			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
-		self._loss = None
-		self._accuracy = None
+			self._loss = None
+			self._accuracy = None
 
 	@abc.abstractmethod
 	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
