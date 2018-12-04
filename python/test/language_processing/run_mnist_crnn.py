@@ -181,7 +181,7 @@ def preprocess_data(data, labels, num_classes, axis=0):
 #%%------------------------------------------------------------------
 
 # Supports lists of dense or sparse labels.
-def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
+def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
 	num_train_batches, num_val_batches = len(train_inputs_list), len(val_inputs_list)
 	if len(train_outputs_list) != num_train_batches or len(val_outputs_list) != num_val_batches:
 		raise ValueError('Invalid parameter length')
@@ -299,7 +299,7 @@ def train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train
 	print('[SWL] Info: End training...')
 
 # Supports a dense label only.
-def train_neural_net_by_batches(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
+def train_neural_net_after_generating_batch_list(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
 	batch_dim = 1 if is_time_major else 0
 
 	num_train_examples = 0
@@ -340,7 +340,7 @@ def train_neural_net_by_batches(session, nnTrainer, train_inputs, train_outputs,
 			val_inputs_list.append(val_inputs[batch_indices])
 			val_outputs_list.append(val_outputs[batch_indices])
 
-	train_neural_net_by_batch_lists(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, False)
+	train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, False)
 
 # Supports a dense label only.
 def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
@@ -377,7 +377,7 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 	print('[SWL] Info: End training...')
 
 # Supports lists of dense or sparse labels.
-def evaluate_neural_net_by_batch_lists(session, nnEvaluator, val_inputs_list, val_outputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val_outputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
 	num_val_batches = len(val_inputs_list)
 	if len(val_outputs_list) != num_val_batches:
 		raise ValueError('Invalid parameter length')
@@ -641,12 +641,12 @@ def main():
 			with sess.graph.as_default():
 				if is_sparse_label:
 					# Supports lists of dense or sparse labels.
-					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+					train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
 					# Supports lists of dense or sparse labels.
-					train_neural_net_by_batch_lists(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+					train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 					# Supports a dense label only.
-					#train_neural_net_by_batches(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+					#train_neural_net_after_generating_batch_list(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
 					#train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
@@ -655,7 +655,7 @@ def main():
 			with sess.graph.as_default():
 				if is_sparse_label:
 					# Supports lists of dense or sparse labels.
-					evaluate_neural_net_by_batch_lists(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 
 					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
 					# Supports lists of dense or sparse labels.

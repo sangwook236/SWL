@@ -1,8 +1,9 @@
 import tensorflow as tf
-from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet, TensorFlowBasicSeq2SeqNeuralNet, TensorFlowSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 
+# REF [paper] >> "DRAW: A Recurrent Neural Network For Image Generation", arXiv 2015
+#	REF [site] >> https://github.com/ericjang/draw
 class DRAW(object):
 	def __init__(self, image_height, image_width, batch_size, num_time_steps, use_read_attention, use_write_attention, eps=1e-8):
 		super().__init__()

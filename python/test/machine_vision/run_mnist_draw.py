@@ -249,7 +249,7 @@ def main():
 	def xrecons_grid(X, B, A):
 		"""
 		plots canvas for single time step
-		X is x_recons, (batch_size x img_size)
+		X is x_recons, (batch_size * img_size)
 		assumes features = BxA images
 		batch is assumed to be a square number
 		"""
@@ -274,8 +274,8 @@ def main():
 			inferences = infer_by_neural_net(sess, nnInferrer, test_images[:batch_size], batch_size, infer_saver, checkpoint_dir_path)
 
 			# Reconstruct.
-			canvases = np.array(inferences)  # time_steps x batch_size x image_size.
-			T, batch_size, img_size = canvases.shape
+			canvases = np.array(inferences)  # time_steps * batch_size * image_size.
+			T, batch_size, img_size = canvases.shape  # T = num_time_steps * num_test_images / 100.
 			X = 1.0 / (1.0 + np.exp(-canvases))  # x_recons = sigmoid(canvas).
 			#image_height = image_width = int(np.sqrt(img_size))
 
