@@ -14,11 +14,11 @@ namespace swl {
 	std::vector<double> dists;
 	dists.reserve(refHistograms.size());
 	for (std::vector<histogram_type>::const_iterator it = refHistograms.begin(); it != refHistograms.end(); ++it)
-		// correlation: CV_COMP_CORREL
-		// chi-square statistic: CV_COMP_CHISQR
-		// intersection: CV_COMP_INTERSECT
-		// Bhattacharyya distance: CV_COMP_BHATTACHARYYA
-		dists.push_back(cv::compareHist(hist, *it, CV_COMP_BHATTACHARYYA));
+		// Correlation: cv::HISTCMP_CORREL.
+		// Chi-square statistic: cv::HISTCMP_CHISQR.
+		// Intersection: cv::HISTCMP_INTERSECT.
+		// Bhattacharyya distance: cv::HISTCMP_BHATTACHARYYA.
+		dists.push_back(cv::compareHist(hist, *it, cv::HISTCMP_BHATTACHARYYA));
 
 	std::vector<double>::iterator itMin = std::min_element(dists.begin(), dists.end());
 	minDist = *itMin;

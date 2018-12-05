@@ -39,10 +39,10 @@ namespace swl {
 Log::StaticInitializer::StaticInitializer()
 {
 	// Open a settings file.
-	std::ifstream settings("./data/swl_log.settings");
+	std::ifstream settings("./swl_log.settings");
 	if (!settings.is_open())
 	{
-		throw std::runtime_error("Could not open ./data/swl_log.settings file");
+		throw std::runtime_error("Could not open ./swl_log.settings file");
 		return;
 	}
 

@@ -11,6 +11,7 @@
 
 int main(int argc, char *argv[])
 {
+	void convolution_test();
 	void image_filter_test();
 	void scale_space_test();
 
@@ -32,7 +33,11 @@ int main(int argc, char *argv[])
 		else
 			std::cout << "GPU not found ..." << std::endl;
 #endif
-		
+
+		//-----------------------------------------------------------
+		// Convolution & image filtering.
+		convolution_test();
+
 		//-----------------------------------------------------------
 		// Image filter.
 		//image_filter_test();
@@ -45,7 +50,7 @@ int main(int argc, char *argv[])
 		// Application.
 
 		// Boundary extraction and weighting.
-		boundary_extraction();
+		//boundary_extraction();
 	}
 	catch (const cv::Exception &ex)
 	{

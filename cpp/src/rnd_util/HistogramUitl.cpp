@@ -77,7 +77,7 @@ namespace swl {
 				histImg,
 				cv::Point(h*horzBinSize, v*vertBinSize), cv::Point((h+1)*horzBinSize - 1, (v+1)*vertBinSize - 1),
 				*binPtr > maxVal ? cv::Scalar(CV_RGB(255, 0, 0)) : cv::Scalar::all(cvRound(*binPtr * 255.0 / maxVal)),
-				CV_FILLED
+				cv::FILLED
 			);
 		}
 #endif

@@ -170,6 +170,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BoundaryExtractionTest.cpp" />
+    <ClCompile Include="ConvolutionTest.cpp" />
     <ClCompile Include="ImageFilterTest.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ScaleSpaceTest.cpp" />

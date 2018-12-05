@@ -22,8 +22,8 @@ namespace local {
 
 void very_simple_example()
 {
-	const std::string img_filename("./data/machine_vision/box_256x256_1.png");
-	//const std::string img_filename("./data/machine_vision/box_256x256_2.png");
+	const std::string img_filename("../data/machine_vision/box_256x256_1.png");
+	//const std::string img_filename("../data/machine_vision/box_256x256_2.png");
 
 	// Load an image.
 	const cv::Mat img(cv::imread(img_filename, cv::IMREAD_GRAYSCALE));

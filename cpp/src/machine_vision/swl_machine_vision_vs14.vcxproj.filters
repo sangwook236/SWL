@@ -45,6 +45,9 @@
     <ClInclude Include="..\..\inc\swl\machine_vision\BoundaryExtraction.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\inc\swl\machine_vision\Convolution.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImageRectificationUsingOpenCV.cpp">

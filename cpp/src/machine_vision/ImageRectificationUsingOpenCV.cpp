@@ -39,8 +39,8 @@ ImageRectificationUsingOpenCV::~ImageRectificationUsingOpenCV()
 // [ref] rectify_images_using_opencv() in ${CPP_RND_HOME}/test/machine_vision/opencv/opencv_image_rectification.cpp
 void ImageRectificationUsingOpenCV::rectify(const cv::Mat &input_image_left, const cv::Mat &input_image_right, cv::Mat &output_image_left, cv::Mat &output_image_right) const
 {
-	cv::remap(input_image_left, output_image_left, rmap_left_[0], rmap_left_[1], CV_INTER_LINEAR);
-	cv::remap(input_image_right, output_image_right, rmap_right_[0], rmap_right_[1], CV_INTER_LINEAR);
+	cv::remap(input_image_left, output_image_left, rmap_left_[0], rmap_left_[1], cv::INTER_LINEAR);
+	cv::remap(input_image_right, output_image_right, rmap_right_[0], rmap_right_[1], cv::INTER_LINEAR);
 }
 
 }  // namespace swl

@@ -178,6 +178,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\..\inc\swl\machine_vision\BoundaryExtraction.h" />
+    <ClInclude Include="..\..\inc\swl\machine_vision\Convolution.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\DerivativesOfGaussian.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ExportMachineVision.h" />
     <ClInclude Include="..\..\inc\swl\machine_vision\ImageFilter.h" />
