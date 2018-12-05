@@ -401,11 +401,10 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 	for step in indices:
-		val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
-		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_label)
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs_list[step], val_outputs_list[step], is_time_major, is_sparse_label)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs.shape[batch_dim]
+		batch_size = val_inputs_list[step].shape[batch_dim]
 		val_acc += batch_acc * batch_size
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
@@ -416,7 +415,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 	print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
-# Supports lists of dense or sparse labels.
+# Supports dense or sparse labels.
 # But when labels are sparse, all dataset is processed at once.
 def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
 	batch_dim = 1 if is_time_major else 0
@@ -449,7 +448,39 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 	else:
 		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
 
-def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False):
+# Supports lists of dense or sparse labels.
+def infer_from_batch_list_by_neural_net(session, nnInferrer, inf_inputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	num_inf_batches = len(inf_inputs_list)
+
+	batch_dim = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	print('[SWL] Info: Start inferring...')
+	start_time = time.time()
+	indices = np.arange(num_inf_batches)
+	#if shuffle:
+	#	np.random.shuffle(indices)
+
+	inf_outputs_list = list()
+	for step in indices:
+		batch_outputs = nnInferrer.infer_by_batch(session, inf_inputs_list[step], is_time_major)
+		inf_outputs_list.append(batch_outputs)
+	print('\tInference time = {}'.format(time.time() - start_time))
+	print('[SWL] Info: End inferring...')
+
+	return inf_outputs_list
+
+# Supports dense or sparse labels.
+# But when labels are sparse, all dataset is processed at once.
+def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
 	batch_dim = 1 if is_time_major else 0
 
 	num_inf_examples = 0
@@ -468,7 +499,8 @@ def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None
 
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
-		inferences = nnInferrer.infer(session, test_images, batch_size)
+		#inferences = nnInferrer.infer(session, test_images, batch_size)
+		inferences = nnInferrer.infer(session, test_images, num_inf_examples if is_sparse_label else batch_size)
 		print('\tInference time = {}'.format(time.time() - start_time))
 		print('[SWL] Info: End inferring...')
 
@@ -499,12 +531,12 @@ def main():
 	#--------------------
 	# Parameters.
 
-	does_need_training = False
+	does_need_training = True
 	does_resume_training = False
 
 	output_dir_prefix = 'mnist_crnn'
-	#output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	output_dir_suffix = '20181203T163958'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20181203T162507'
 
 	is_sparse_label = True
 	is_time_major = False
@@ -519,7 +551,10 @@ def main():
 	blank_label = num_classes - 1
 
 	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 200  # Number of times to iterate over training data.
+	if is_sparse_label:
+		num_epochs = 500  # Number of times to iterate over training data.
+	else:
+		num_epochs = 200  # Number of times to iterate over training data.
 	shuffle = True
 	initial_epoch = 0
 
@@ -574,7 +609,7 @@ def main():
 	#visualize_dataset(test_images, test_labels, 5)
 
 	train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, np.argmax(train_labels, axis=-1) if is_sparse_label else train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
-	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, np.argmax(test_labels, axis=-1) if is_sparse_label else test_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, np.argmax(test_labels, axis=-1) if is_sparse_label else test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -658,10 +693,10 @@ def main():
 					evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 
 					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
-					# Supports lists of dense or sparse labels.
+					# Supports dense or sparse labels.
 					#evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				else:
-					# Supports lists of dense or sparse labels.
+					# Supports dense or sparse labels.
 					evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
@@ -671,19 +706,25 @@ def main():
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			groundtruths = np.argmax(test_labels, axis=-1)
-			inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+			ground_truths = np.argmax(test_labels, axis=-1)
 			if is_sparse_label:
-				#inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=label_eos_token))
-				inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=blank_label))
+				# Supports lists of dense or sparse labels.
+				inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
+				inferences = None
+				for inf in inferences_list:
+					#inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=label_eos_token))
+					inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=blank_label))
+					inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
 			else:
+				# Supports dense or sparse labels.
+				inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				inferences = np.argmax(inferences, axis=-1)
 
-			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 
 			for i in range(10):
-				print(inferences[i], groundtruths[i])
+				print(inferences[i], ground_truths[i])
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	#--------------------
