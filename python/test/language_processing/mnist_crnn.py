@@ -1,7 +1,6 @@
 import abc
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow.simple_neural_net import BasicSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 
@@ -12,6 +11,7 @@ class MnistCRNN(abc.ABC):
 		self._input_tensor_ph = input_tensor_ph
 		self._output_tensor_ph = output_tensor_ph
 		self._input_seq_lens_ph = input_seq_lens_ph
+		#self._output_seq_lens_ph = output_seq_lens_ph
 		#self._batch_size_ph = batch_size_ph
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel

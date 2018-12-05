@@ -96,12 +96,12 @@ class NeuralNetTrainer(object):
 		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
 		val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
 
-		num_train_examples = 0
+		num_train_examples, train_steps_per_epoch = 0, 0
 		if train_data is not None and train_labels is not None:
 			if train_data.shape[batch_dim] == train_labels.shape[batch_dim]:
 				num_train_examples = train_data.shape[batch_dim]
 			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
-		num_val_examples = 0
+		num_val_examples, val_steps_per_epoch = 0, 0
 		if val_data is not None and val_labels is not None:
 			if val_data.shape[batch_dim] == val_labels.shape[batch_dim]:
 				num_val_examples = val_data.shape[batch_dim]

@@ -302,12 +302,12 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 def train_neural_net_after_generating_batch_list(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
 	batch_dim = 1 if is_time_major else 0
 
-	num_train_examples = 0
+	num_train_examples, num_train_steps = 0, 0
 	if train_inputs is not None and train_outputs is not None:
 		if train_inputs.shape[batch_dim] == train_outputs.shape[batch_dim]:
 			num_train_examples = train_inputs.shape[batch_dim]
 		num_train_steps = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
-	num_val_examples = 0
+	num_val_examples, num_val_steps = 0, 0
 	if val_inputs is not None and val_outputs is not None:
 		if val_inputs.shape[batch_dim] == val_outputs.shape[batch_dim]:
 			num_val_examples = val_inputs.shape[batch_dim]

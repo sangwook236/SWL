@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 def find_most_frequent_value(arr):
@@ -31,3 +32,11 @@ def bottom_k_indices(iterable, k):
 	return sorted(range(len(iterable)), key=lambda i: iterable[i])[:k]  # Bottom-k indices.
 	# In descending order.
 	#return sorted(range(len(iterable)), key=lambda i: iterable[i], reverse=True)[-k:]  # Bottom-k indices.
+
+def make_dir(dir_path):
+	if not os.path.exists(dir_path):
+		try:
+			os.makedirs(dir_path)
+		except OSError as ex:
+			if os.errno.EEXIST != ex.errno:
+				raise
