@@ -351,7 +351,7 @@ void image_erosion_example()
 		std::cout << "Image not found: " << img_filepath << std::endl;
 		return;
 	}
-	src.convertTo(src, CV_32FC1);
+	src.convertTo(src, CV_32FC1, 1.0f / 255.0f);
 	
 	const cv::Size kernelSize(3, 3);
 
