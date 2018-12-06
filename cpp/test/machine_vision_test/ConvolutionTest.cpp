@@ -148,10 +148,10 @@ void simple_convolution2d_example()
 
 	//--------------------
 	{
-		std::vector<cv::Point> points;
+		std::vector<cv::Point> roi_points;
 		for (int c = 0; c < src.cols; ++c)
 			for (int r = 0; r < src.rows; ++r)
-				points.push_back(cv::Point(r, c));
+				roi_points.push_back(cv::Point(r, c));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		// REF [site] >>
@@ -159,7 +159,7 @@ void simple_convolution2d_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)points.size()), ParallelLoopConvolve2D(src, dst, kernel, points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
 		}
 		std::cout << "Convolution Result 2 =\n" << dst << std::endl;
 	}
@@ -167,7 +167,7 @@ void simple_convolution2d_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0;
+		const double delta = 0.0;
 		const int ddepth = -1;
 
 		cv::Mat dst;
@@ -182,7 +182,7 @@ void simple_convolution2d_example()
 void image_convolution2d_example()
 {
 	const std::string img_filepath("../data/machine_vision/lena.jpg");
-	cv::Mat src = cv::imread(img_filepath, cv::IMREAD_GRAYSCALE);
+	cv::Mat src(cv::imread(img_filepath, cv::IMREAD_GRAYSCALE));
 	if (src.empty())
 	{
 		std::cout << "Image not found: " << img_filepath << std::endl;
@@ -237,7 +237,7 @@ void image_convolution2d_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0;
+		const double delta = 0.0;
 		const int ddepth = -1;
 
 		cv::Mat dst;
@@ -254,7 +254,7 @@ void image_convolution2d_example()
 void image_roi_convolution2d_example()
 {
 	const std::string img_filepath("../data/machine_vision/lena.jpg");
-	cv::Mat src = cv::imread(img_filepath, cv::IMREAD_GRAYSCALE);
+	cv::Mat src(cv::imread(img_filepath, cv::IMREAD_GRAYSCALE));
 	if (src.empty())
 	{
 		std::cout << "Image not found: " << img_filepath << std::endl;
@@ -324,7 +324,7 @@ void image_roi_convolution2d_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0;
+		const double delta = 0.0;
 		const int ddepth = -1;
 
 		cv::Mat dst_roi;
@@ -345,7 +345,7 @@ void image_roi_convolution2d_example()
 void image_erosion_example()
 {
 	const std::string img_filepath("../data/machine_vision/box_256x256_1.png");
-	cv::Mat src = cv::imread(img_filepath, cv::IMREAD_GRAYSCALE);
+	cv::Mat src(cv::imread(img_filepath, cv::IMREAD_GRAYSCALE));
 	if (src.empty())
 	{
 		std::cout << "Image not found: " << img_filepath << std::endl;
@@ -357,10 +357,10 @@ void image_erosion_example()
 
 	//--------------------
 	{
-		std::vector<cv::Point> points;
+		std::vector<cv::Point> roi_points;
 		for (int c = 0; c < src.cols; ++c)
 			for (int r = 0; r < src.rows; ++r)
-				points.push_back(cv::Point(r, c));
+				roi_points.push_back(cv::Point(r, c));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		// REF [site] >>
@@ -368,7 +368,7 @@ void image_erosion_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)points.size()), ParallelLoopErode(src, dst, kernelSize, points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode(src, dst, kernelSize, roi_points));
 		}
 		cv::imshow("Erosion Result 1", dst);
 	}
@@ -376,13 +376,14 @@ void image_erosion_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0;
-		const int ddepth = -1;
+		const double delta = 0.0;
+		const cv::Mat kernel(cv::getStructuringElement(cv::MORPH_RECT, kernelSize, anchor));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
+			//cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
+			cv::erode(src, dst, kernel, anchor, delta, cv::BORDER_DEFAULT);
 		}
 		cv::imshow("Erosion Result 2", dst);
 	}
