@@ -386,7 +386,7 @@ def main():
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			ground_truths = np.argmax(test_labels, axis=-1)
-			if is_sparse_label:
+			if True:
 				# Supports lists of dense or sparse labels.
 				inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
 				inferences = None

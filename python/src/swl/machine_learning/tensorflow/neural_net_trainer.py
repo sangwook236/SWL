@@ -47,14 +47,12 @@ class NeuralNetTrainer(object):
 			if train_summary_writer is not None:
 				train_summary_writer.add_summary(summary)
 
-		# Evaluate training.
-		if True:
-			if train_data.size > 0 and (is_sparse_label or train_labels.size > 0):  # If train_data and train_labels are non-empty.
-				if self._accuracy is None:
-					train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
-					#train_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
-				else:
-					train_loss, train_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
+			# Evaluate training.
+			if self._accuracy is None:
+				train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
+				#train_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
+			else:
+				train_loss, train_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=False))
 
 		return train_acc, train_loss
 

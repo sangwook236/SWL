@@ -189,7 +189,7 @@ class MnistCRNN(abc.ABC):
 		enc_cell_outputs = tf.unstack(enc_cell_outputs, num_time_steps, axis=0 if is_time_major else 1)
 
 		dec_cell_state = initial_cell_state
-		dec_cell_outputs = []
+		dec_cell_outputs = list()
 		for inp in enc_cell_outputs:
 			dec_cell_output, dec_cell_state = dec_cell(inp, dec_cell_state, scope='dec')
 			dec_cell_outputs.append(dec_cell_output)
@@ -217,6 +217,7 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 		output_tensor_ph = tf.placeholder(tf.int32, [None, None, num_classes], name='output_tensor_ph')
 		# 1D array of size [batch_size].
 		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
+		#output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
 		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
@@ -267,6 +268,7 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 		output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
 		# 1D array of size [batch_size].
 		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
+		#output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
 		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
