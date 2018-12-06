@@ -13,11 +13,11 @@ class ImgaugBatchManager(BatchManager):
 		self._augseq = augseq
 		self._batch_size = batch_size
 		self._shuffle = shuffle
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		self._num_examples, self._num_steps = 0, 0
 		if self._images is not None:
-			self._num_examples = self._images.shape[batch_dim]
+			self._num_examples = self._images.shape[batch_axis]
 			self._num_steps = ((self._num_examples - 1) // batch_size + 1) if self._num_examples > 0 else 0
 		#if self._images is None:
 		if self._num_examples <= 0:
@@ -126,12 +126,12 @@ class ImgaugFileBatchManager(FileBatchManager):
 				yield batch_images, batch_labels
 
 	def putBatches(self, dir_path, filename_pairs, shuffle, *args, **kwargs):
-		batch_dim = 1 if self._is_time_major else 0
+		batch_axis = 1 if self._is_time_major else 0
 		num_steps = len(filename_pairs)
 
 		num_examples, batch_size = 0, 0
 		if self._images is not None:
-			num_examples = self._images.shape[batch_dim]
+			num_examples = self._images.shape[batch_axis]
 			batch_size = (num_examples // num_steps + 1) if num_examples > 0 else 0
 		#if self._images is None:
 		if num_examples <= 0:

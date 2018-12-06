@@ -7,11 +7,11 @@ class NeuralNetInferrer(object):
 		self._neuralNet = neuralNet
 
 	def infer_by_batch(self, session, test_data, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_inf_examples = 0
 		if test_data is not None:
-			num_inf_examples = test_data.shape[batch_dim]
+			num_inf_examples = test_data.shape[batch_axis]
 		#if test_data is None:
 		if num_inf_examples <= 0:
 			return None
@@ -25,11 +25,11 @@ class NeuralNetInferrer(object):
 		return inferences
 
 	def infer(self, session, test_data, batch_size=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_inf_examples = 0
 		if test_data is not None:
-			num_inf_examples = test_data.shape[batch_dim]
+			num_inf_examples = test_data.shape[batch_axis]
 		#if test_data is None:
 		if num_inf_examples <= 0:
 			return None

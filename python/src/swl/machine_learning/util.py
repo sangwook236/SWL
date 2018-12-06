@@ -77,12 +77,12 @@ def generate_sparse_tuple_from_numpy_array(np_arr, eos_token=0, dtype=np.int32):
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
 def generate_batch_list(data, labels, batch_size, shuffle=True, is_time_major=False, is_sparse_label=False, eos_token=0):
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	num_examples = 0
 	if data is not None and labels is not None:
-		if data.shape[batch_dim] == labels.shape[batch_dim]:
-			num_examples = data.shape[batch_dim]
+		if data.shape[batch_axis] == labels.shape[batch_axis]:
+			num_examples = data.shape[batch_axis]
 		num_steps = ((num_examples - 1) // batch_size + 1) if num_examples > 0 else 0
 
 	data_batch_list, label_batch_list = list(), list()

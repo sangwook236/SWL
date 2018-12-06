@@ -38,7 +38,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		'val_loss': []
 	}
 
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	best_val_acc = 0.0
 	for epoch in range(1, num_epochs + 1):
@@ -58,7 +58,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_label)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = train_inputs.shape[batch_dim]
+			batch_size = train_inputs.shape[batch_axis]
 			train_acc += batch_acc * batch_size
 			train_loss += batch_loss * batch_size
 			num_train_examples += batch_size
@@ -82,7 +82,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_label)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = val_inputs.shape[batch_dim]
+			batch_size = val_inputs.shape[batch_axis]
 			val_acc += batch_acc * batch_size
 			val_loss += batch_loss * batch_size
 			num_val_examples += batch_size
@@ -128,17 +128,17 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 
 # Supports a dense label only.
 def train_neural_net_after_generating_batch_list(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	num_train_examples, num_train_steps = 0, 0
 	if train_inputs is not None and train_outputs is not None:
-		if train_inputs.shape[batch_dim] == train_outputs.shape[batch_dim]:
-			num_train_examples = train_inputs.shape[batch_dim]
+		if train_inputs.shape[batch_axis] == train_outputs.shape[batch_axis]:
+			num_train_examples = train_inputs.shape[batch_axis]
 		num_train_steps = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
 	num_val_examples, num_val_steps = 0, 0
 	if val_inputs is not None and val_outputs is not None:
-		if val_inputs.shape[batch_dim] == val_outputs.shape[batch_dim]:
-			num_val_examples = val_inputs.shape[batch_dim]
+		if val_inputs.shape[batch_axis] == val_outputs.shape[batch_axis]:
+			num_val_examples = val_inputs.shape[batch_axis]
 		num_val_steps = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
 
 	indices = np.arange(num_train_examples)
@@ -210,7 +210,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 	if len(val_outputs_list) != num_val_batches:
 		raise ValueError('Invalid parameter length')
 
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	if saver is not None and checkpoint_dir_path is not None:
 		# Load a model.
@@ -232,7 +232,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs_list[step], val_outputs_list[step], is_time_major, is_sparse_label)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs_list[step].shape[batch_dim]
+		batch_size = val_inputs_list[step].shape[batch_axis]
 		val_acc += batch_acc * batch_size
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
@@ -246,15 +246,15 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 # Supports dense or sparse labels.
 # But when labels are sparse, all dataset is processed at once.
 def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	num_val_examples = 0
 	if val_images is not None and val_labels is not None:
 		if is_sparse_label:
-			num_val_examples = val_images.shape[batch_dim]
+			num_val_examples = val_images.shape[batch_axis]
 		else:
-			if val_images.shape[batch_dim] == val_labels.shape[batch_dim]:
-				num_val_examples = val_images.shape[batch_dim]
+			if val_images.shape[batch_axis] == val_labels.shape[batch_axis]:
+				num_val_examples = val_images.shape[batch_axis]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -280,7 +280,7 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 def infer_from_batch_list_by_neural_net(session, nnInferrer, inf_inputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False):
 	num_inf_batches = len(inf_inputs_list)
 
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	if saver is not None and checkpoint_dir_path is not None:
 		# Load a model.
@@ -309,11 +309,11 @@ def infer_from_batch_list_by_neural_net(session, nnInferrer, inf_inputs_list, sa
 # Supports dense or sparse labels.
 # But when labels are sparse, all dataset is processed at once.
 def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
-	batch_dim = 1 if is_time_major else 0
+	batch_axis = 1 if is_time_major else 0
 
 	num_inf_examples = 0
 	if test_images is not None:
-		num_inf_examples = test_images.shape[batch_dim]
+		num_inf_examples = test_images.shape[batch_axis]
 
 	if num_inf_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:

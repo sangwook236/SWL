@@ -26,15 +26,15 @@ class NeuralNetTrainer(object):
 
 	# Supports dense and sparse labels.
 	def train_by_batch(self, session, train_data, train_labels, train_summary_writer=None, is_time_major=False, is_sparse_label=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_train_examples = 0
 		if train_data is not None and train_labels is not None:
 			if is_sparse_label:
-				num_train_examples = train_data.shape[batch_dim]
+				num_train_examples = train_data.shape[batch_axis]
 			else:
-				if train_data.shape[batch_dim] == train_labels.shape[batch_dim]:
-					num_train_examples = train_data.shape[batch_dim]
+				if train_data.shape[batch_axis] == train_labels.shape[batch_axis]:
+					num_train_examples = train_data.shape[batch_axis]
 		#if train_data is None or train_labels is None:
 		if num_train_examples <= 0:
 			return None, None
@@ -61,15 +61,15 @@ class NeuralNetTrainer(object):
 	# Supports dense and sparse labels.
 	# REF [function] >> NeuralNetEvaluator.evaluate_by_batch() in neural_net_evaluator.py
 	def evaluate_training_by_batch(self, session, val_data, val_labels, val_summary_writer=None, is_time_major=False, is_sparse_label=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_val_examples = 0
 		if val_data is not None and val_labels is not None:
 			if is_sparse_label:
-				num_val_examples = val_data.shape[batch_dim]
+				num_val_examples = val_data.shape[batch_axis]
 			else:
-				if val_data.shape[batch_dim] == val_labels.shape[batch_dim]:
-					num_val_examples = val_data.shape[batch_dim]
+				if val_data.shape[batch_axis] == val_labels.shape[batch_axis]:
+					num_val_examples = val_data.shape[batch_axis]
 		#if val_data is None or val_labels is None:
 		if num_val_examples <= 0:
 			return None, None
@@ -90,7 +90,7 @@ class NeuralNetTrainer(object):
 
 	# Supports a dense label only.
 	def train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		# Create writers to write all the summaries out to a directory.
 		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
@@ -98,8 +98,8 @@ class NeuralNetTrainer(object):
 
 		num_train_examples, train_steps_per_epoch = 0, 0
 		if train_data is not None and train_labels is not None:
-			if train_data.shape[batch_dim] == train_labels.shape[batch_dim]:
-				num_train_examples = train_data.shape[batch_dim]
+			if train_data.shape[batch_axis] == train_labels.shape[batch_axis]:
+				num_train_examples = train_data.shape[batch_axis]
 			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
 		#if train_data is None or train_labels is None:
 		if num_train_examples <= 0:
@@ -107,8 +107,8 @@ class NeuralNetTrainer(object):
 
 		num_val_examples, val_steps_per_epoch = 0, 0
 		if val_data is not None and val_labels is not None:
-			if val_data.shape[batch_dim] == val_labels.shape[batch_dim]:
-				num_val_examples = val_data.shape[batch_dim]
+			if val_data.shape[batch_axis] == val_labels.shape[batch_axis]:
+				num_val_examples = val_data.shape[batch_axis]
 			val_steps_per_epoch = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
 
 		history = {
@@ -251,20 +251,20 @@ class NeuralNetTrainer(object):
 		return history
 
 	def train_seq2seq_by_batch(self, session, train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, val_encoder_inputs=None, val_decoder_inputs=None, val_decoder_outputs=None, train_summary_writer=None, val_summary_writer=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_train_examples = 0
 		if train_encoder_inputs is not None and train_decoder_inputs is not None and train_decoder_outputs is not None:
-			if train_encoder_inputs.shape[batch_dim] == train_decoder_inputs.shape[batch_dim] and train_encoder_inputs.shape[batch_dim] == train_decoder_outputs.shape[batch_dim]:
-				num_train_examples = train_encoder_inputs.shape[batch_dim]
+			if train_encoder_inputs.shape[batch_axis] == train_decoder_inputs.shape[batch_axis] and train_encoder_inputs.shape[batch_axis] == train_decoder_outputs.shape[batch_axis]:
+				num_train_examples = train_encoder_inputs.shape[batch_axis]
 		#if train_encoder_inputs is None or train_decoder_inputs is None or train_decoder_inputs is None:
 		if num_train_examples <= 0:
 			return None
 
 		num_val_examples = 0
 		if val_encoder_inputs is not None and val_decoder_inputs is not None and val_decoder_outputs is not None:
-			if val_encoder_inputs.shape[batch_dim] == val_decoder_inputs.shape[batch_dim] and val_encoder_inputs.shape[batch_dim] == val_decoder_outputs.shape[batch_dim]:
-				num_val_examples = val_encoder_inputs.shape[batch_dim]
+			if val_encoder_inputs.shape[batch_axis] == val_decoder_inputs.shape[batch_axis] and val_encoder_inputs.shape[batch_axis] == val_decoder_outputs.shape[batch_axis]:
+				num_val_examples = val_encoder_inputs.shape[batch_axis]
 
 		train_loss, train_acc, val_loss, val_acc = None, None, None, None
 		# Train.
@@ -301,7 +301,7 @@ class NeuralNetTrainer(object):
 		return train_acc, train_loss, val_acc, val_loss
 
 	def train_seq2seq(self, session, train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, val_encoder_inputs, val_decoder_inputs, val_decoder_outputs, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		# Create writers to write all the summaries out to a directory.
 		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
@@ -309,8 +309,8 @@ class NeuralNetTrainer(object):
 
 		num_train_examples, train_steps_per_epoch = 0, 0
 		if train_encoder_inputs is not None and train_decoder_inputs is not None and train_decoder_outputs is not None:
-			if train_encoder_inputs.shape[batch_dim] == train_decoder_inputs.shape[batch_dim] and train_encoder_inputs.shape[batch_dim] == train_decoder_outputs.shape[batch_dim]:
-				num_train_examples = train_encoder_inputs.shape[batch_dim]
+			if train_encoder_inputs.shape[batch_axis] == train_decoder_inputs.shape[batch_axis] and train_encoder_inputs.shape[batch_axis] == train_decoder_outputs.shape[batch_axis]:
+				num_train_examples = train_encoder_inputs.shape[batch_axis]
 			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
 		#if train_encoder_inputs is None or train_decoder_inputs is None or train_decoder_inputs is None:
 		if num_train_examples <= 0:
@@ -318,8 +318,8 @@ class NeuralNetTrainer(object):
 
 		num_val_examples, val_steps_per_epoch = 0, 0
 		if val_encoder_inputs is not None and val_decoder_inputs is not None and val_decoder_outputs is not None:
-			if val_encoder_inputs.shape[batch_dim] == val_decoder_inputs.shape[batch_dim] and val_encoder_inputs.shape[batch_dim] == val_decoder_outputs.shape[batch_dim]:
-				num_val_examples = val_encoder_inputs.shape[batch_dim]
+			if val_encoder_inputs.shape[batch_axis] == val_decoder_inputs.shape[batch_axis] and val_encoder_inputs.shape[batch_axis] == val_decoder_outputs.shape[batch_axis]:
+				num_val_examples = val_encoder_inputs.shape[batch_axis]
 			val_steps_per_epoch = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
 
 		history = {
@@ -462,18 +462,18 @@ class NeuralNetTrainer(object):
 		return history
 
 	def train_unsupervisedly_by_batch(self, session, train_data, val_data=None, train_summary_writer=None, val_summary_writer=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		num_train_examples = 0
 		if train_data is not None:
-			num_train_examples = train_data.shape[batch_dim]
+			num_train_examples = train_data.shape[batch_axis]
 		#if train_data is None:
 		if num_train_examples <= 0:
 			return None, None
 
 		num_val_examples = 0
 		if val_data is not None:
-			num_val_examples = val_data.shape[batch_dim]
+			num_val_examples = val_data.shape[batch_axis]
 
 		train_loss, val_loss = None, None
 		# Train.
@@ -502,7 +502,7 @@ class NeuralNetTrainer(object):
 		return train_loss, val_loss
 
 	def train_unsupervisedly(self, session, train_data, val_data, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
-		batch_dim = 1 if is_time_major else 0
+		batch_axis = 1 if is_time_major else 0
 
 		# Create writers to write all the summaries out to a directory.
 		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None

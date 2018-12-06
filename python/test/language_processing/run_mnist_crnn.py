@@ -215,6 +215,16 @@ def main():
 	label_eos_token = -1
 
 	image_height, image_width, image_channel = 28, 28, 1
+	"""
+	# For prepare_single_character_dataset().
+	slice_width, slice_stride = 14, 7
+	min_time_steps = math.ceil((image_width - slice_width) / slice_stride) + 1
+	max_time_steps = min_time_steps  # max_time_steps >= min_time_steps.
+	"""
+	# For prepare_multiple_character_dataset().
+	min_digit_count, max_digit_count = 3, 5
+	max_time_steps = max_digit_count + 2  # max_time_steps >= max_digit_count.
+
 	num_labels = 10
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	# 0~9 + space label + blank label.
@@ -260,16 +270,7 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
-	"""
-	slice_width, slice_stride = 14, 7
-	min_time_steps = math.ceil((image_width - slice_width) / slice_stride) + 1
-	max_time_steps = min_time_steps  # max_time_steps >= min_time_steps.
-
-	train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
-	"""
-	min_digit_count, max_digit_count = 3, 5
-	max_time_steps = max_digit_count + 2  # max_time_steps >= max_digit_count.
-
+	#train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
 	# Images: (samples, time-steps, height, width, channels), labels: (samples, num_digits, one-hot encoding).
 	train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
 
@@ -281,8 +282,13 @@ def main():
 	#visualize_dataset(train_images, train_labels, 5)
 	#visualize_dataset(test_images, test_labels, 5)
 
-	train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, np.argmax(train_labels, axis=-1) if is_sparse_label else train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
-	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, np.argmax(test_labels, axis=-1) if is_sparse_label else test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+	if is_sparse_label:
+		train_labels = np.argmax(train_labels, axis=-1)
+		test_labels = np.argmax(test_labels, axis=-1)
+	print('Train images = {}, train labels = {}, test images = {}, test labels = {}'.format(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape))
+
+	train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
 
 	#--------------------
 	# Create models, sessions, and graphs.
