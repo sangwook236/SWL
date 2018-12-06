@@ -13,6 +13,10 @@ namespace swl {
 //--------------------------------------------------------------------------
 // 2D Convolution.
 
+// A DFT-based convolution of two 2D real arrays.
+//	Much faster.
+//	REF [site] >> https://docs.opencv.org/4.0.0/d2/de8/group__core__array.html
+
 template<typename SrcType, typename DstType = SrcType>
 bool convolve2d(const cv::Mat &src, cv::Mat &dst, const cv::Mat &kernel, int borderType = cv::BORDER_CONSTANT, cv::Scalar borderVal = cv::Scalar::all(0))
 {

@@ -20,6 +20,7 @@ namespace local {
 // REF [file] >> FilterEngine in ${OPENCV_HOME}/modules/imagproc/src/filter.cpp
 // REF [site] >> https://docs.opencv.org/2.4/modules/imgproc/doc/filtering.html
 
+// Convolve with a kernel arbitrary regions in an image described by points, not just retangular regions.
 class ParallelLoopConvolve2D : public cv::ParallelLoopBody
 {
 public:
@@ -65,6 +66,7 @@ private:
 	const size_t num_points_;
 };
 
+// Erode arbitrary regions in an image described by points, not just retangular regions.
 class ParallelLoopErode : public cv::ParallelLoopBody
 {
 public:
@@ -109,7 +111,7 @@ private:
 void simple_convolution2d_example()
 {
 	const int kernel_size = 3;
-	cv::Mat kernel = cv::Mat::zeros(kernel_size, kernel_size, CV_32F);
+	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
 	kernel.at<float>(0, 0) = -1.0f;
 	kernel.at<float>(1, 0) = 0.0f;
 	kernel.at<float>(2, 0) = 1.0f;
@@ -120,7 +122,7 @@ void simple_convolution2d_example()
 	kernel.at<float>(1, 2) = 0.0f;
 	kernel.at<float>(2, 2) = 1.0f;
 
-	cv::Mat src = cv::Mat::zeros(kernel_size, kernel_size, CV_32F);
+	cv::Mat src(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
 	src.at<float>(0, 0) = 1.0f;
 	src.at<float>(1, 0) = 4.0f;
 	src.at<float>(2, 0) = 7.0f;
@@ -132,43 +134,49 @@ void simple_convolution2d_example()
 	src.at<float>(2, 2) = 9.0f;
 
 	//--------------------
-	cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
-	bool retval = false;
 	{
-		boost::timer::auto_cpu_timer timer;
-		retval = swl::convolve2d<float, float>(src, dst, kernel);
+		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
+		bool retval = false;
+		{
+			boost::timer::auto_cpu_timer timer;
+			retval = swl::convolve2d<float, float>(src, dst, kernel);
+		}
+		if (retval)
+			std::cout << "Convolution Result 1 =\n" << dst << std::endl;
+		else std::cerr << "Convolution failed." << std::endl;
 	}
-	if (retval)
-		std::cout << "Result 1 =\n" << dst << std::endl;
-	else std::cerr << "Convolvution failed." << std::endl;
 
 	//--------------------
-	std::vector<cv::Point> points;
-	for (int c = 0; c < src.cols; ++c)
-		for (int r = 0; r < src.rows; ++r)
-			points.push_back(cv::Point(r, c));
-
-	dst = cv::Mat::zeros(src.size(), src.type());
-	// REF [site] >>
-	//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
-	//	https://laonple.blog.me/220866708835
 	{
-		boost::timer::auto_cpu_timer timer;
-		cv::parallel_for_(cv::Range(0, (int)points.size()), ParallelLoopConvolve2D(src, dst, kernel, points));
+		std::vector<cv::Point> points;
+		for (int c = 0; c < src.cols; ++c)
+			for (int r = 0; r < src.rows; ++r)
+				points.push_back(cv::Point(r, c));
+
+		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
+		// REF [site] >>
+		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
+		//	https://laonple.blog.me/220866708835
+		{
+			boost::timer::auto_cpu_timer timer;
+			cv::parallel_for_(cv::Range(0, (int)points.size()), ParallelLoopConvolve2D(src, dst, kernel, points));
+		}
+		std::cout << "Convolution Result 2 =\n" << dst << std::endl;
 	}
-	std::cout << "Result 2 =\n" << dst << std::endl;
 
 	//--------------------
-	const cv::Point anchor(-1, -1);
-	const double delta = 0;
-	const int ddepth = -1;
-
-	dst = cv::Mat::zeros(src.size(), src.type());
 	{
-		boost::timer::auto_cpu_timer timer;
-		cv::filter2D(src, dst, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
+		const cv::Point anchor(-1, -1);
+		const double delta = 0;
+		const int ddepth = -1;
+
+		cv::Mat dst;
+		{
+			boost::timer::auto_cpu_timer timer;
+			cv::filter2D(src, dst, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
+		}
+		std::cout << "Convolution Result 3 =\n" << dst << std::endl;
 	}
-	std::cout << "Result 3 =\n" << dst << std::endl;
 }
 
 void image_convolution2d_example()
@@ -180,10 +188,10 @@ void image_convolution2d_example()
 		std::cout << "Image not found: " << img_filepath << std::endl;
 		return;
 	}
-	src.convertTo(src, CV_32FC1);
+	src.convertTo(src, CV_32FC1, 1.0f / 255.0f);
 
 	const int kernel_size = 3;
-	cv::Mat kernel = cv::Mat::zeros(kernel_size, kernel_size, CV_32F);
+	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
 	kernel.at<float>(0, 0) = -1.0f;
 	kernel.at<float>(1, 0) = 0.0f;
 	kernel.at<float>(2, 0) = 1.0f;
@@ -196,7 +204,7 @@ void image_convolution2d_example()
 
 	//--------------------
 	{
-		cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
+		cv::Mat dst(src.size(), src.type());
 		bool retval = false;
 		{
 			boost::timer::auto_cpu_timer timer;
@@ -209,18 +217,19 @@ void image_convolution2d_example()
 
 	//--------------------
 	{
-		std::vector<cv::Point> points;
+		std::vector<cv::Point> roi_points;
+		roi_points.reserve(src.cols * src.rows);
 		for (int c = 0; c < src.cols; ++c)
 			for (int r = 0; r < src.rows; ++r)
-				points.push_back(cv::Point(r, c));
+				roi_points.push_back(cv::Point(r, c));
 
-		cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
+		cv::Mat dst(src.size(), src.type());
 		// REF [site] >>
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)points.size()), ParallelLoopConvolve2D(src, dst, kernel, points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
 		}
 		cv::imshow("Convolution Result 2", dst);
 	}
@@ -231,12 +240,103 @@ void image_convolution2d_example()
 		const double delta = 0;
 		const int ddepth = -1;
 
-		cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
+		cv::Mat dst;
 		{
 			boost::timer::auto_cpu_timer timer;
 			cv::filter2D(src, dst, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
 		}
 		cv::imshow("Convolution Result 3", dst);
+	}
+
+	cv::waitKey(0);
+}
+
+void image_roi_convolution2d_example()
+{
+	const std::string img_filepath("../data/machine_vision/lena.jpg");
+	cv::Mat src = cv::imread(img_filepath, cv::IMREAD_GRAYSCALE);
+	if (src.empty())
+	{
+		std::cout << "Image not found: " << img_filepath << std::endl;
+		return;
+	}
+	src.convertTo(src, CV_32FC1, 1.0f / 255.0f);
+
+	const cv::Mat src_roi(src, cv::Rect(100, 50, 200, 300));
+	std::vector<cv::Point> roi_points;
+	roi_points.reserve(src_roi.cols * src_roi.rows);
+	for (int c = 100; c < 300; ++c)
+		for (int r = 50; r < 350; ++r)
+			roi_points.push_back(cv::Point(r, c));
+
+	cv::Size wholeSize;
+	cv::Point offsetPt;
+	src_roi.locateROI(wholeSize, offsetPt);
+	std::cout << "Offset point = " << offsetPt << std::endl;
+	std::cout << "Whole size = " << wholeSize << std::endl;
+
+	const int kernel_size = 3;
+	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
+	kernel.at<float>(0, 0) = -1.0f;
+	kernel.at<float>(1, 0) = 0.0f;
+	kernel.at<float>(2, 0) = 1.0f;
+	kernel.at<float>(0, 1) = -2.0f;
+	kernel.at<float>(1, 1) = 0.0f;
+	kernel.at<float>(2, 1) = 2.0f;
+	kernel.at<float>(0, 2) = -1.0f;
+	kernel.at<float>(1, 2) = 0.0f;
+	kernel.at<float>(2, 2) = 1.0f;
+
+	//--------------------
+	{
+		cv::Mat dst_roi(src_roi.size(), src_roi.type());
+		bool retval = false;
+		{
+			boost::timer::auto_cpu_timer timer;
+			retval = swl::convolve2d<float, float>(src_roi, dst_roi, kernel);
+		}
+		if (!retval)
+		{
+			std::cerr << "Convolution ROI failed." << std::endl;
+			return;
+		}
+
+		//cv::imshow("Convolution ROI Result 1", dst_roi);
+		cv::Mat dst;  src.copyTo(dst);
+		dst_roi.copyTo(dst(cv::Rect(offsetPt.x, offsetPt.y, dst_roi.cols, dst_roi.rows)));
+		cv::imshow("Convolution ROI Result 1", dst);
+	}
+
+	//--------------------
+	{
+		//cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
+		cv::Mat dst;  src.copyTo(dst);
+		// REF [site] >>
+		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
+		//	https://laonple.blog.me/220866708835
+		{
+			boost::timer::auto_cpu_timer timer;
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
+		}
+		cv::imshow("Convolution ROI Result 2", dst);
+	}
+
+	//--------------------
+	{
+		const cv::Point anchor(-1, -1);
+		const double delta = 0;
+		const int ddepth = -1;
+
+		cv::Mat dst_roi;
+		{
+			boost::timer::auto_cpu_timer timer;
+			cv::filter2D(src_roi, dst_roi, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
+		}
+
+		//cv::imshow("Convolution ROI Result 3", dst_roi);
+		cv::Mat dst;  src.copyTo(dst);
+		dst_roi.copyTo(dst(cv::Rect(offsetPt.x, offsetPt.y, dst_roi.cols, dst_roi.rows)));
+		cv::imshow("Convolution ROI Result 3", dst);
 	}
 
 	cv::waitKey(0);
@@ -262,7 +362,7 @@ void image_erosion_example()
 			for (int r = 0; r < src.rows; ++r)
 				points.push_back(cv::Point(r, c));
 
-		cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
+		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		// REF [site] >>
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
@@ -279,7 +379,7 @@ void image_erosion_example()
 		const double delta = 0;
 		const int ddepth = -1;
 
-		cv::Mat dst = cv::Mat::zeros(src.size(), src.type());
+		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
 			boost::timer::auto_cpu_timer timer;
 			cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
@@ -298,6 +398,7 @@ void convolution_test()
 	local::simple_convolution2d_example();
 
 	// Examples of parallel processing based on cv::parallel_for_() & cv::ParallelLoopBody.
-	//local::image_convolution2d_example();
+	local::image_convolution2d_example();
+	local::image_roi_convolution2d_example();
 	local::image_erosion_example();
 }
