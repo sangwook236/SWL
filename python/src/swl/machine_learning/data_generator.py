@@ -3,7 +3,7 @@ import threading
 
 def create_dataset_generator_from_array(X, Y, batch_size, shuffle=False):
 	num_steps = np.ceil(len(X) / batch_size).astype(np.int)
-	if shuffle is True:
+	if shuffle:
 		indexes = np.arange(len(X))
 		np.random.shuffle(indexes)
 		for idx in range(num_steps):
@@ -18,7 +18,7 @@ def create_dataset_generator_from_array(X, Y, batch_size, shuffle=False):
 			#yield({'input': batch_x}, {'output': batch_y})
 			yield(batch_x, batch_y)
 
-# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use ThreadSafeGenerator.
+# NOTICE [info] >> This is not thread-safe. To make it thread-safe, use swl.util.threading.ThreadSafeGenerator.
 def create_dataset_generator_using_imgaug(seq, X, Y, batch_size, shuffle=True, dataset_preprocessing_function=None, num_classes=None):
 	while True:
 		seq_det = seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
@@ -31,7 +31,7 @@ def create_dataset_generator_using_imgaug(seq, X, Y, batch_size, shuffle=True, d
 
 		num_steps = np.ceil(len(X_aug) / batch_size).astype(np.int)
 		#num_steps = len(X_aug) // batch_size + (0 if len(X_aug) % batch_size == 0 else 1)
-		if shuffle is True:
+		if shuffle:
 			indexes = np.arange(len(X_aug))
 			np.random.shuffle(indexes)
 			for idx in range(num_steps):
@@ -79,13 +79,13 @@ class DatasetGeneratorUsingImgaug:
 					self.X_aug, self.Y_aug = self.dataset_preprocessing_function(self.X_aug, self.Y_aug, self.num_classes)
 
 				indexes = np.arange(len(self.X_aug))
-				if self.shuffle is True:
+				if self.shuffle:
 					np.random.shuffle(indexes)
 
 			if self.X_aug is None or self.Y_aug is None:
 				assert False, 'Both X_aug and Y_aug are not None.'
 
-			if self.shuffle is True:
+			if self.shuffle:
 				batch_x = self.X_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
 				batch_y = self.Y_aug[indexes[self.idx*self.batch_size:(self.idx+1)*self.batch_size]]
 			else:

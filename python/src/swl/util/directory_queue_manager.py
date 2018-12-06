@@ -1,8 +1,7 @@
-import os, abc
-import queue
+import os, queue
 import swl.util.util as swl_util
 
-class DirectoryQueueManager(abc.ABC):
+class DirectoryQueueManager(object):
 	def __init__(self, maxsize, base_dir_path):
 		super().__init__()
 

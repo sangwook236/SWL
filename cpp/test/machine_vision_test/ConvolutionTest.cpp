@@ -110,8 +110,8 @@ private:
 
 void simple_convolution2d_example()
 {
-	const int kernel_size = 3;
-	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
+	const cv::Size kernelSize(3, 3);
+	cv::Mat kernel(kernelSize, CV_32F, cv::Scalar::all(0));
 	kernel.at<float>(0, 0) = -1.0f;
 	kernel.at<float>(1, 0) = 0.0f;
 	kernel.at<float>(2, 0) = 1.0f;
@@ -122,7 +122,7 @@ void simple_convolution2d_example()
 	kernel.at<float>(1, 2) = 0.0f;
 	kernel.at<float>(2, 2) = 1.0f;
 
-	cv::Mat src(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
+	cv::Mat src(kernelSize, CV_32F, cv::Scalar::all(0));
 	src.at<float>(0, 0) = 1.0f;
 	src.at<float>(1, 0) = 4.0f;
 	src.at<float>(2, 0) = 7.0f;
@@ -190,8 +190,8 @@ void image_convolution2d_example()
 	}
 	src.convertTo(src, CV_32FC1, 1.0f / 255.0f);
 
-	const int kernel_size = 3;
-	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
+	const cv::Size kernelSize(3, 3);
+	cv::Mat kernel(kernelSize, CV_32F, cv::Scalar::all(0));
 	kernel.at<float>(0, 0) = -1.0f;
 	kernel.at<float>(1, 0) = 0.0f;
 	kernel.at<float>(2, 0) = 1.0f;
@@ -275,8 +275,8 @@ void image_roi_convolution2d_example()
 	std::cout << "Offset point = " << offsetPt << std::endl;
 	std::cout << "Whole size = " << wholeSize << std::endl;
 
-	const int kernel_size = 3;
-	cv::Mat kernel(kernel_size, kernel_size, CV_32F, cv::Scalar::all(0));
+	const cv::Size kernelSize(3, 3);
+	cv::Mat kernel(kernelSize, CV_32F, cv::Scalar::all(0));
 	kernel.at<float>(0, 0) = -1.0f;
 	kernel.at<float>(1, 0) = 0.0f;
 	kernel.at<float>(2, 0) = 1.0f;
