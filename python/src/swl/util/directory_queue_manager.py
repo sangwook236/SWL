@@ -2,13 +2,13 @@ import os, queue
 import swl.util.util as swl_util
 
 class DirectoryQueueManager(object):
-	def __init__(self, maxsize, base_dir_path):
+	def __init__(self, base_dir_path, num_dirs):
 		super().__init__()
 
-		self._available_dir_queue = queue.Queue(maxsize=maxsize)
+		self._available_dir_queue = queue.Queue(maxsize=num_dirs)
 		self._busy_dir_set = set()
 
-		for idx in range(maxsize):
+		for idx in range(num_dirs):
 			dir_path = '{}_{}'.format(base_dir_path, idx)
 			swl_util.make_dir(dir_path)
 			self._available_dir_queue.put(dir_path)
