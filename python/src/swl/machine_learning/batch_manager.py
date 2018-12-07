@@ -6,7 +6,7 @@ class BatchManager(abc.ABC):
 		super().__init__()
 
 	@abc.abstractmethod
-	def getBatches(self, num_epoches, *args, **kwargs):
+	def getBatches(self, *args, **kwargs):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
@@ -17,9 +17,5 @@ class FileBatchManager(BatchManager):
 		super().__init__()
 
 	@abc.abstractmethod
-	def getBatches(self, dir_path, filename_pairs, num_epoches, *args, **kwargs):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def putBatches(self, dir_path, filename_pairs, shuffle, *args, **kwargs):
+	def putBatches(self, *args, **kwargs):
 		raise NotImplementedError
