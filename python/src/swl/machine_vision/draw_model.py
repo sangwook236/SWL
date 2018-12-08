@@ -124,8 +124,8 @@ class DRAW(object):
 				mu2 = tf.square(mus[t])
 				sigma2 = tf.square(sigmas[t])
 				logsigma = logsigmas[t]
-				kl_terms[t] = 0.5 * tf.reduce_sum(mu2 + sigma2 - 2 * logsigma, 1) - 0.5  # Each kl term is (1 x minibatch).
-			KL = tf.add_n(kl_terms)  # This is 1 x minibatch, corresponding to summing kl_terms from 1:num_time_steps.
+				kl_terms[t] = 0.5 * tf.reduce_sum(mu2 + sigma2 - 2 * logsigma, 1) - 0.5  # Each kl term is (1 * minibatch).
+			KL = tf.add_n(kl_terms)  # This is 1 * minibatch, corresponding to summing kl_terms from 1:num_time_steps.
 			Lz = tf.reduce_mean(KL)  # Average over minibatches.
 
 			# Total loss.
@@ -158,7 +158,7 @@ class DRAW(object):
 		mu_y = tf.reshape(mu_y, [-1, N, 1])
 		sigma2 = tf.reshape(sigma2, [-1, 1, 1])
 		Fx = tf.exp(-tf.square(a - mu_x) / (2 * sigma2))
-		Fy = tf.exp(-tf.square(b - mu_y) / (2 * sigma2))  # batch_size x N x image_height.
+		Fy = tf.exp(-tf.square(b - mu_y) / (2 * sigma2))  # batch_size * N * image_height.
 		# Normalize, sum over image_width and image_height dims.
 		Fx = Fx / tf.maximum(tf.reduce_sum(Fx, 2, keep_dims=True), self._eps)
 		Fy = Fy / tf.maximum(tf.reduce_sum(Fy, 2, keep_dims=True), self._eps)
@@ -172,8 +172,8 @@ class DRAW(object):
 		gx = (self._image_width + 1) / 2 * (gx_tilde + 1)
 		gy = (self._image_height + 1) / 2 * (gy_tilde + 1)
 		sigma2 = tf.exp(log_sigma2)
-		delta = (max(self._image_width, self._image_height) - 1) / (N - 1) * tf.exp(log_delta)  # batch_size x N.
-		return self._filterbank(gx, gy, sigma2, delta, N) + (tf.exp(log_gamma),)
+		delta = (max(self._image_width, self._image_height) - 1) / (N - 1) * tf.exp(log_delta)  # batch_size * N.
+		return self._filterbank(gx, gy, sigma2, delta, N) + (tf.exp(log_gamma),)  # Fx, Fy, gamma.
 
 	# Reader.
 	def _read_without_attention(self, x, x_hat, h_dec_prev):
@@ -188,7 +188,7 @@ class DRAW(object):
 
 	def _read_with_attention(self, x, x_hat, h_dec_prev):
 		Fx, Fy, gamma = self._attention_window('read_attention', h_dec_prev, self._read_n)
-		x = self._filter_image(x, Fx, Fy, gamma, self._read_n)  # batch_size x (read_n * read_n).
+		x = self._filter_image(x, Fx, Fy, gamma, self._read_n)  # batch_size * (read_n * read_n).
 		x_hat = self._filter_image(x_hat, Fx, Fy, gamma, self._read_n)
 		return tf.concat([x, x_hat], 1)  # Concat along feature axis.
 
@@ -222,13 +222,13 @@ class DRAW(object):
 			return lstm_dec(input, state)
 
 	# Writer.
-	def _write_with_attention(self, h_dec):
+	def _write_without_attention(self, h_dec):
 		with tf.variable_scope('write_without_attention', reuse=self._reuse):
 			return DRAW._linear_transform(h_dec, self._img_size)
 
 	def _write_with_attention(self, h_dec):
 		with tf.variable_scope('write_with_attention', reuse=self._reuse):
-			w = DRAW._linear_transform(h_dec, self._write_size)  # batch_size x (write_n * write_n).
+			w = DRAW._linear_transform(h_dec, self._write_size)  # batch_size * (write_n * write_n).
 		w = tf.reshape(w, [self._batch_size, self._write_n, self._write_n])
 		Fx, Fy, gamma = self._attention_window('write_attention', h_dec, self._write_n)
 		Fyt = tf.transpose(Fy, perm=[0, 2, 1])
