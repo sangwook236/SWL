@@ -19,6 +19,7 @@ sys.path.append(os.path.join(lib_home_dir_path, 'tf_cnnvis_github'))
 #os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
+import time
 import numpy as np
 import tensorflow as tf
 from mnist_mlp import MnistMLP
@@ -26,7 +27,7 @@ from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeur
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
-import time
+from util import train_neural_net, evaluate_neural_net, infer_by_neural_net
 import traceback
 
 #%%------------------------------------------------------------------
@@ -58,92 +59,6 @@ def preprocess_data(data, labels, num_classes, axis=0):
 		pass
 
 	return data, labels
-
-#%%------------------------------------------------------------------
-
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
-	if does_resume_training:
-		print('[SWL] Info: Resume training...')
-
-		# Load a model.
-		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Restored a model.')
-	else:
-		print('[SWL] Info: Start training...')
-
-	start_time = time.time()
-	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-	print('\tTraining time = {}'.format(time.time() - start_time))
-
-	#--------------------
-	# Display results.
-	#swl_ml_util.display_train_history(history)
-	if output_dir_path is not None:
-		swl_ml_util.save_train_history(history, output_dir_path)
-	print('[SWL] Info: End training...')
-
-def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None):
-	num_val_examples = 0
-	if val_images is not None and val_labels is not None:
-		if val_images.shape[0] == val_labels.shape[0]:
-			num_val_examples = val_images.shape[0]
-
-	if num_val_examples > 0:
-		if saver is not None and checkpoint_dir_path is not None:
-			# Load a model.
-			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-			saver.restore(session, ckpt.model_checkpoint_path)
-			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-			print('[SWL] Info: Loaded a model.')
-
-		print('[SWL] Info: Start evaluation...')
-		start_time = time.time()
-		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
-		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
-		print('[SWL] Info: End evaluation...')
-	else:
-		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
-
-def infer_by_neural_net(session, nnInferrer, test_images, test_labels, num_classes, batch_size, saver=None, checkpoint_dir_path=None):
-	num_inf_examples = 0
-	if test_images is not None and test_labels is not None:
-		if test_images.shape[0] == test_labels.shape[0]:
-			num_inf_examples = test_images.shape[0]
-
-	if num_inf_examples > 0:
-		if saver is not None and checkpoint_dir_path is not None:
-			# Load a model.
-			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-			saver.restore(session, ckpt.model_checkpoint_path)
-			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-			print('[SWL] Info: Loaded a model.')
-
-		print('[SWL] Info: Start inferring...')
-		start_time = time.time()
-		inferences = nnInferrer.infer(session, test_images, batch_size)
-		print('\tInference time = {}'.format(time.time() - start_time))
-
-		if num_classes >= 2:
-			inferences = np.argmax(inferences, -1)
-			groundtruths = np.argmax(test_labels, -1)
-		else:
-			inferences = np.around(inferences)
-			groundtruths = test_labels
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-
-		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
-		print('[SWL] Info: End inferring...')
-	else:
-		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 
 #%%------------------------------------------------------------------
 
@@ -308,7 +223,17 @@ def main():
 		with sess.graph.as_default():
 			#K.set_session(sess)
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			infer_by_neural_net(sess, nnInferrer, test_images, test_labels, num_classes, batch_size, infer_saver, checkpoint_dir_path)
+			inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
+
+			if num_classes >= 2:
+				inferences = np.argmax(inferences, -1)
+				groundtruths = np.argmax(test_labels, -1)
+			else:
+				inferences = np.around(inferences)
+				groundtruths = test_labels
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
+
+			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#--------------------

@@ -31,6 +31,7 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 #os.chdir(os.path.join(swl_python_home_dir_path, 'test/machine_learning/tensorflow'))
 
 #--------------------
+import time, datetime
 #import numpy as np
 import tensorflow as tf
 from simple_encdec import SimpleEncoderDecoder
@@ -39,75 +40,11 @@ from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeur
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+from util import train_neural_net, evaluate_neural_net, infer_by_neural_net
 from reverse_function_util import ReverseFunctionDataset
-import time
 import traceback
 
 #%%------------------------------------------------------------------
-
-def train_neural_net(session, nnTrainer, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
-	if does_resume_training:
-		print('[SWL] Info: Resume training...')
-
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Restored a model.')
-	else:
-		print('[SWL] Info: Start training...')
-
-	start_time = time.time()
-	history = nnTrainer.train(session, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-	print('\tTraining time = {}'.format(time.time() - start_time))
-
-	#--------------------
-	# Display results.
-	#swl_ml_util.display_train_history(history)
-	if output_dir_path is not None:
-		swl_ml_util.save_train_history(history, output_dir_path)
-	print('[SWL] Info: End training...')
-
-def evaluate_neural_net(session, nnEvaluator, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, saver=None, checkpoint_dir_path=None):
-	if saver is not None and checkpoint_dir_path is not None:
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Loaded a model.')
-
-	print('[SWL] Info: Start evaluation...')
-	start_time = time.time()
-	val_loss, val_acc = nnEvaluator.evaluate(session, val_encoder_input_seqs, val_decoder_output_seqs, batch_size)
-	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
-	print('[SWL] Info: End evaluation...')
-
-def infer_by_neural_net(session, nnInferrer, dataset, test_strs, batch_size, saver=None, checkpoint_dir_path=None):
-	# Character strings -> numeric data.
-	test_data = dataset.to_numeric_data(test_strs)
-
-	if saver is not None and checkpoint_dir_path is not None:
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Loaded a model.')
-
-	print('[SWL] Info: Start inferring...')
-	start_time = time.time()
-	inferences = nnInferrer.infer(session, test_data, batch_size)
-	print('\tInference time = {}'.format(time.time() - start_time))
-
-	# Numeric data -> character strings.
-	inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
-
-	print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
-	print('[SWL] Info: End inferring...')
-
-#%%------------------------------------------------------------------
-
-import datetime
 
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
@@ -265,7 +202,7 @@ def main():
 		total_elapsed_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, checkpoint_dir_path)
+				evaluate_neural_net(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -275,7 +212,15 @@ def main():
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-			infer_by_neural_net(sess, nnInferrer, dataset, test_strs, batch_size, infer_saver, checkpoint_dir_path)
+			# Character strings -> numeric data.
+			test_data = dataset.to_numeric_data(test_strs)
+
+			inferences = infer_by_neural_net(sess, nnInferrer, test_strs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+
+			# Numeric data -> character strings.
+			inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
+
+			print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 
 	#--------------------
