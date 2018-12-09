@@ -34,25 +34,18 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import time, datetime
 #import numpy as np
 import tensorflow as tf
-from simple_encdec import SimpleEncoderDecoder
-from simple_encdec_attention import SimpleEncoderDecoderWithAttention
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+import swl.util.util as swl_util
 from util import train_neural_net, evaluate_neural_net, infer_by_neural_net
 from reverse_function_util import ReverseFunctionDataset
+from simple_encdec import SimpleEncoderDecoder
+from simple_encdec_attention import SimpleEncoderDecoderWithAttention
 import traceback
 
 #%%------------------------------------------------------------------
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
 
 # REF [site] >> https://talbaumel.github.io/attention/
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
@@ -67,8 +60,33 @@ def create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, 
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
+
+	characters = list('abcd')
+	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
+	is_time_major = False
+
+	is_dynamic = False
+	is_attentive = True  # Uses attention mechanism.
+	is_bidirectional = True  # Uses a bidirectional model.
+	if is_attentive:
+		batch_size = 4  # Number of samples per gradient update.
+		num_epochs = 150  # Number of times to iterate over training data.
+	else:
+		batch_size = 4  # Number of samples per gradient update.
+		num_epochs = 150  # Number of times to iterate over training data.
+	shuffle = True
+
+	# Create sessions.
+	sess_config = tf.ConfigProto()
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
 	# Prepare directories.
@@ -83,23 +101,19 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
 
-	characters = list('abcd')
 	dataset = ReverseFunctionDataset(characters)
 
-	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
-	is_time_major = False
 	train_encoder_input_seqs, train_decoder_output_seqs, _, val_encoder_input_seqs, val_decoder_output_seqs, _ = dataset.generate_dataset(is_time_major)
 	#train_encoder_input_seqs, _, train_decoder_output_seqs, val_encoder_input_seqs, _, val_decoder_output_seqs = dataset.generate_dataset(is_time_major)
 
-	is_dynamic = False
 	if is_dynamic:
 		# Dynamic RNNs use variable-length dataset.
 		# TODO [improve] >> Training & validation datasets are still fixed-length (static).
@@ -118,16 +132,6 @@ def main():
 
 	#--------------------
 	# Create models, sessions, and graphs.
-
-	is_attentive = True  # Uses attention mechanism.
-	is_bidirectional = True  # Uses a bidirectional model.
-	if is_attentive:
-		batch_size = 4  # Number of samples per gradient update.
-		num_epochs = 150  # Number of times to iterate over training data.
-	else:
-		batch_size = 4  # Number of samples per gradient update.
-		num_epochs = 150  # Number of times to iterate over training data.
-	shuffle = True
 
 	# Create graphs.
 	if does_need_training:
@@ -173,17 +177,10 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
-	config = tf.ConfigProto()
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initialize.
 	if does_need_training:
@@ -219,7 +216,6 @@ def main():
 
 			# Numeric data -> character strings.
 			inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
-
 			print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 

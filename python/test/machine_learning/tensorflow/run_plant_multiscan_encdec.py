@@ -21,87 +21,18 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import time, datetime
 import numpy as np
 import tensorflow as tf
-from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
-from simple_seq2seq_encdec_tf_attention import SimpleSeq2SeqEncoderDecoderWithTfAttention
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+import swl.util.util as swl_util
 from util import train_neural_net_with_decoder_input, evaluate_neural_net_with_decoder_input, infer_by_neural_net
 from rda_plant_util import RdaPlantDataset
+from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
+from simple_seq2seq_encdec_tf_attention import SimpleSeq2SeqEncoderDecoderWithTfAttention
 import traceback
 
 #%%------------------------------------------------------------------
-
-def train_neural_net(session, nnTrainer, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
-	if does_resume_training:
-		print('[SWL] Info: Resume training...')
-
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Restored a model.')
-	else:
-		print('[SWL] Info: Start training...')
-
-	start_time = time.time()
-	history = nnTrainer.train_seq2seq(session, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
-	print('\tTraining time = {}'.format(time.time() - start_time))
-
-	#--------------------
-	# Display results.
-	#swl_ml_util.display_train_history(history)
-	if output_dir_path is not None:
-		swl_ml_util.save_train_history(history, output_dir_path)
-	print('[SWL] Info: End training...')
-
-def evaluate_neural_net(session, nnEvaluator, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, saver=None, checkpoint_dir_path=None):
-	if saver is not None and checkpoint_dir_path is not None:
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Loaded a model.')
-
-	print('[SWL] Info: Start evaluation...')
-	start_time = time.time()
-	val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
-	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
-	print('[SWL] Info: End evaluation...')
-
-def infer_by_neural_net(session, nnInferrer, dataset, test_strs, batch_size, saver=None, checkpoint_dir_path=None):
-	# Character strings -> numeric data.
-	test_data = dataset.to_numeric_data(test_strs)
-
-	if saver is not None and checkpoint_dir_path is not None:
-		# Load a model.
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Loaded a model.')
-
-	print('[SWL] Info: Start inferring...')
-	start_time = time.time()
-	inferences = nnInferrer.infer(session, test_data, batch_size)
-	print('\tInference time = {}'.format(time.time() - start_time))
-
-	# Numeric data -> character strings.
-	inferred_strs = dataset.to_char_strings(inferences, has_start_token=False)
-
-	print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
-	print('[SWL] Info: End inferring...')
-
-#%%------------------------------------------------------------------
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
 
 def pad_image(img, target_height, target_width):
 	if 2 == img.ndim:
@@ -131,8 +62,22 @@ def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, dec
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
+
+	batch_size = 4  # Number of samples per gradient update.
+	num_epochs = 70  # Number of times to iterate over training data.
+	shuffle = True
+
+	# Create sessions.
+	sess_config = tf.ConfigProto()
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
 	# Prepare directories.
@@ -147,10 +92,10 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
@@ -174,10 +119,6 @@ def main():
 
 	#--------------------
 	# Create models, sessions, and graphs.
-
-	batch_size = 4  # Number of samples per gradient update.
-	num_epochs = 70  # Number of times to iterate over training data.
-	shuffle = True
 
 	# Create graphs.
 	if does_need_training:
@@ -224,17 +165,10 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
-	config = tf.ConfigProto()
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initialize.
 	if does_need_training:
@@ -270,7 +204,6 @@ def main():
 
 			# Numeric data -> character strings.
 			inferred_strs = dataset.to_char_strings(inferences, has_start_token=False)
-
 			print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 

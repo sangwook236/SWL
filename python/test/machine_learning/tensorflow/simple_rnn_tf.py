@@ -1,5 +1,5 @@
 import tensorflow as tf
-from simple_neural_net import SimpleNeuralNet
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Defines a cell.
-		cell = self._create_unit_cell(num_hidden_units)
+		cell = self._create_unit_cell(num_hidden_units, 'unit_cell')
 		cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Gets cell outputs.
@@ -76,7 +76,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)
+		stacked_cell = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'unit_cell_{}'.format(idx)) for idx in range(num_layers)])
 		stacked_cell = tf.contrib.rnn.DropoutWrapper(stacked_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Gets cell outputs.
@@ -99,9 +99,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Defines cells.
-		cell_fw = self._create_unit_cell(num_hidden_units)  # Forward cell.
+		cell_fw = self._create_unit_cell(num_hidden_units, 'fw_unit_cell')  # Forward cell.
 		cell_fw = tf.contrib.rnn.DropoutWrapper(cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		cell_bw = self._create_unit_cell(num_hidden_units)  # Backward cell.
+		cell_bw = self._create_unit_cell(num_hidden_units, 'bw_unit_cell')  # Backward cell.
 		cell_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Gets cell outputs.
@@ -128,9 +128,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell_fw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)  # Forward cell.
+		stacked_cell_fw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'fw_unit_cell_{}'.format(idx)) for idx in range(num_layers)])  # Forward cell.
 		stacked_cell_fw = tf.contrib.rnn.DropoutWrapper(stacked_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		stacked_cell_bw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)  # Backward cell.
+		stacked_cell_bw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'bw_unit_cel_{}'.format(idx)) for idx in range(num_layers)])  # Backward cell.
 		stacked_cell_bw = tf.contrib.rnn.DropoutWrapper(stacked_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Gets cell outputs.
@@ -158,7 +158,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=0 if is_time_major else 1)
 
 		# Defines a cell.
-		cell = self._create_unit_cell(num_hidden_units)
+		cell = self._create_unit_cell(num_hidden_units, 'unit_cell')
 		cell = tf.contrib.rnn.DropoutWrapper(cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Gets cell outputs.
@@ -200,7 +200,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		"""
 		# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/nn/static_rnn
 		# Defines cells.
-		stacked_cells = [self._create_unit_cell(num_hidden_units) for _ in range(num_layers)]
+		stacked_cells = [self._create_unit_cell(num_hidden_units, 'unit_cell_{}'.format(idx)) for idx in range(num_layers)]
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
 		input_tensor = tf.unstack(input_tensor, num_time_steps, axis=1)
@@ -223,7 +223,7 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		"""
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)
+		stacked_cell = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'unit_cell_{}'.format(idx)) for idx in range(num_layers)])
 		stacked_cell = tf.contrib.rnn.DropoutWrapper(stacked_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -252,9 +252,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Defines cells.
-		cell_fw = self._create_unit_cell(num_hidden_units)  # Forward cell.
+		cell_fw = self._create_unit_cell(num_hidden_units, 'fw_unit_cell')  # Forward cell.
 		cell_fw = tf.contrib.rnn.DropoutWrapper(cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		cell_bw = self._create_unit_cell(num_hidden_units)  # Backward cell.
+		cell_bw = self._create_unit_cell(num_hidden_units, 'bw_unit_cell')  # Backward cell.
 		cell_bw = tf.contrib.rnn.DropoutWrapper(cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -287,9 +287,9 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		# Defines cells.
 		# REF [site] >> https://www.tensorflow.org/tutorials/recurrent
-		stacked_cell_fw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)  # Forward cell.
+		stacked_cell_fw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'fw_unit_cell_{}'.format(idx)) for idx in range(num_layers)])  # Forward cell.
 		stacked_cell_fw = tf.contrib.rnn.DropoutWrapper(stacked_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		stacked_cell_bw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units)] * num_layers)  # Backward cell.
+		stacked_cell_bw = tf.contrib.rnn.MultiRNNCell([self._create_unit_cell(num_hidden_units, 'bw_unit_cell_{}'.format(idx)) for idx in range(num_layers)])  # Backward cell.
 		stacked_cell_bw = tf.contrib.rnn.DropoutWrapper(stacked_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -311,15 +311,6 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 
 		return self._create_projection_layer(cell_outputs, num_classes)
 
-	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units)
-		#return tf.contrib.rnn.RNNCell(num_units)
-
-		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
-
-		#return tf.contrib.rnn.GRUCell(num_units)
-
 	def _create_projection_layer(self, cell_outputs, num_classes):
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -331,3 +322,8 @@ class SimpleRnnUsingTF(SimpleNeuralNet):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 				return None
+
+	def _create_unit_cell(self, num_units, name):
+		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
+		return tf.nn.rnn_cell.LSTMCell(num_units, forget_bias=1.0, name=name)
+		#return tf.nn.rnn_cell.GRUCell(num_units, name=name)

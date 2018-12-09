@@ -1,6 +1,6 @@
 import tensorflow as tf
-from keras.layers import LSTM, Dense, Bidirectional
-from simple_neural_net import SimpleNeuralNet
+from tf.keras.layers import LSTM, Dense, Bidirectional
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
 #%%------------------------------------------------------------------
 

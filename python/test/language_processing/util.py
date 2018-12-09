@@ -8,8 +8,8 @@ import swl.machine_learning.util as swl_ml_util
 
 #%%------------------------------------------------------------------
 
-# Supports lists of dense or sparse labels.
-def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label):
+# Supports lists of dense or sparse outputs.
+def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	num_train_batches, num_val_batches = len(train_inputs_list), len(val_inputs_list)
 	if len(train_outputs_list) != num_train_batches or len(val_outputs_list) != num_val_batches:
 		raise ValueError('Invalid parameter length')
@@ -55,7 +55,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
 		for step in indices:
 			train_inputs, train_outputs = train_inputs_list[step], train_outputs_list[step]
-			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_label)
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
 			batch_size = train_inputs.shape[batch_axis]
@@ -79,7 +79,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 		for step in indices:
 			val_inputs, val_outputs = val_inputs_list[step], val_outputs_list[step]
-			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_label)
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
 			batch_size = val_inputs.shape[batch_axis]
@@ -111,22 +111,24 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		val_summary_writer.close()
 
 	#--------------------
-	# Save a graph.
-	#tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pb', as_text=False)
-	##tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pbtxt', as_text=True)
-
-	# Save a serving model.
-	#builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
-	#builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
-	#builder.save(as_text=False)
-
 	# Display results.
 	#swl_ml_util.display_train_history(history)
 	if output_dir_path is not None:
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-# Supports a dense label only.
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
+# Supports a dense output only.
 def train_neural_net_after_generating_batch_list(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major):
 	batch_axis = 1 if is_time_major else 0
 
@@ -170,8 +172,8 @@ def train_neural_net_after_generating_batch_list(session, nnTrainer, train_input
 
 	train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_outputs_list, val_inputs_list, val_outputs_list, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, False)
 
-# Supports a dense label only.
-def train_neural_net(session, nnTrainer, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
+# Supports a dense output only.
+def train_neural_net(session, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -186,26 +188,65 @@ def train_neural_net(session, nnTrainer, train_images, train_labels, val_images,
 		print('[SWL] Info: Start training...')
 
 	start_time = time.time()
-	history = nnTrainer.train(session, train_images, train_labels, val_images, val_labels, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	history = nnTrainer.train(session, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
 	print('\tTraining time = {}'.format(time.time() - start_time))
 
-	# Save a graph.
-	#tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pb', as_text=False)
-	##tf.train.write_graph(session.graph_def, output_dir_path, 'crnn_graph.pbtxt', as_text=True)
-
-	# Save a serving model.
-	#builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
-	#builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
-	#builder.save(as_text=False)
-
+	#--------------------
 	# Display results.
 	#swl_ml_util.display_train_history(history)
 	if output_dir_path is not None:
 		swl_ml_util.save_train_history(history, output_dir_path)
 	print('[SWL] Info: End training...')
 
-# Supports lists of dense or sparse labels.
-def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val_outputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
+def train_neural_net_with_decoder_input(session, nnTrainer, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path):
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	start_time = time.time()
+	history = nnTrainer.train_seq2seq(session, train_encoder_input_seqs, train_decoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path, val_summary_dir_path=val_summary_dir_path)
+	print('\tTraining time = {}'.format(time.time() - start_time))
+
+	#--------------------
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
+#%%------------------------------------------------------------------
+
+# Supports lists of dense or sparse outputs.
+def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val_outputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
 	num_val_batches = len(val_inputs_list)
 	if len(val_outputs_list) != num_val_batches:
 		raise ValueError('Invalid parameter length')
@@ -229,7 +270,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 	for step in indices:
-		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs_list[step], val_outputs_list[step], is_time_major, is_sparse_label)
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs_list[step], val_outputs_list[step], is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
 		batch_size = val_inputs_list[step].shape[batch_axis]
@@ -243,18 +284,18 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 	print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
-# Supports dense or sparse labels.
-# But when labels are sparse, all dataset is processed at once.
-def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+# Supports dense or sparse outputs.
+# But when outputs are sparse, all dataset is processed at once.
+def evaluate_neural_net(session, nnEvaluator, val_inputs, val_outputs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
 	batch_axis = 1 if is_time_major else 0
 
 	num_val_examples = 0
-	if val_images is not None and val_labels is not None:
-		if is_sparse_label:
-			num_val_examples = val_images.shape[batch_axis]
+	if val_inputs is not None and val_outputs is not None:
+		if is_sparse_output:
+			num_val_examples = val_inputs.shape[batch_axis]
 		else:
-			if val_images.shape[batch_axis] == val_labels.shape[batch_axis]:
-				num_val_examples = val_images.shape[batch_axis]
+			if val_inputs.shape[batch_axis] == val_outputs.shape[batch_axis]:
+				num_val_examples = val_inputs.shape[batch_axis]
 
 	if num_val_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -268,17 +309,48 @@ def evaluate_neural_net(session, nnEvaluator, val_images, val_labels, batch_size
 
 		print('[SWL] Info: Start evaluation...')
 		start_time = time.time()
-		#val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, batch_size)
-		val_loss, val_acc = nnEvaluator.evaluate(session, val_images, val_labels, num_val_examples if is_sparse_label else batch_size)
+		#val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, batch_size)
+		val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
 		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
-		print('[SWL] Error: The number of validation images is not equal to that of validation labels.')
+		print('[SWL] Error: The number of validation inputs is not equal to that of validation outputs.')
 
-# Supports lists of dense or sparse labels.
-def infer_from_batch_list_by_neural_net(session, nnInferrer, inf_inputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False):
-	num_inf_batches = len(inf_inputs_list)
+def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
+	batch_axis = 1 if is_time_major else 0
+
+	num_val_examples = 0
+	if val_encoder_input_seqs is not None and val_decoder_input_seqs is not None and val_decoder_output_seqs is not None:
+		if is_sparse_output:
+			num_val_examples = val_encoder_input_seqs.shape[batch_axis]
+		else:
+			if val_encoder_input_seqs.shape[batch_axis] == val_decoder_input_seqs.shape[batch_axis] and val_encoder_input_seqs.shape[batch_axis] == val_decoder_output_seqs.shape[batch_axis]:
+				num_val_examples = val_encoder_input_seqs.shape[batch_axis]
+
+	if num_val_examples > 0:
+		if saver is not None and checkpoint_dir_path is not None:
+			# Load a model.
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			saver.restore(session, ckpt.model_checkpoint_path)
+			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+			print('[SWL] Info: Loaded a model.')
+
+		print('[SWL] Info: Start evaluation...')
+		start_time = time.time()
+		#val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
+		val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
+		print('\tEvaluation time = {}'.format(time.time() - start_time))
+		print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
+		print('[SWL] Info: End evaluation...')
+	else:
+		print('[SWL] Error: The numbers of validation inputs and outputs are not equal.')
+
+#%%------------------------------------------------------------------
+
+# Supports lists of dense or sparse outputs.
+def infer_from_batch_list_by_neural_net(session, nnInferrer, test_inputs_list, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	num_inf_batches = len(test_inputs_list)
 
 	batch_axis = 1 if is_time_major else 0
 
@@ -299,21 +371,21 @@ def infer_from_batch_list_by_neural_net(session, nnInferrer, inf_inputs_list, sa
 
 	inf_outputs_list = list()
 	for step in indices:
-		batch_outputs = nnInferrer.infer_by_batch(session, inf_inputs_list[step], is_time_major)
+		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs_list[step], is_time_major)
 		inf_outputs_list.append(batch_outputs)
 	print('\tInference time = {}'.format(time.time() - start_time))
 	print('[SWL] Info: End inferring...')
 
 	return inf_outputs_list
 
-# Supports dense or sparse labels.
-# But when labels are sparse, all dataset is processed at once.
-def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_label=False):
+# Supports dense or sparse outputs.
+# But when outputs are sparse, all dataset is processed at once.
+def infer_by_neural_net(session, nnInferrer, test_inputs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
 	batch_axis = 1 if is_time_major else 0
 
 	num_inf_examples = 0
-	if test_images is not None:
-		num_inf_examples = test_images.shape[batch_axis]
+	if test_inputs is not None:
+		num_inf_examples = test_inputs.shape[batch_axis]
 
 	if num_inf_examples > 0:
 		if saver is not None and checkpoint_dir_path is not None:
@@ -327,12 +399,15 @@ def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None
 
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
-		#inferences = nnInferrer.infer(session, test_images, batch_size)
-		inferences = nnInferrer.infer(session, test_images, num_inf_examples if is_sparse_label else batch_size)
+		#inferences = nnInferrer.infer(session, test_inputs, batch_size)
+		inferences = nnInferrer.infer(session, test_inputs, num_inf_examples if is_sparse_output else batch_size, is_time_major)
 		print('\tInference time = {}'.format(time.time() - start_time))
 		print('[SWL] Info: End inferring...')
 
 		return inferences
 	else:
-		print('[SWL] Error: The number of test images is not equal to that of test labels.')
+		print('[SWL] Error: Invalid test inputs.')
 		return None
+
+def infer_by_neural_net_with_decoder_input(session, nnInferrer, dataset, test_inputs, batch_size, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
+	return infer_by_neural_net(session, nnInferrer, test_inputs, batch_size, saver, checkpoint_dir_path, is_time_major, is_sparse_output)

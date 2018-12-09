@@ -84,11 +84,11 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		"""
 
 		# Defines cells.
-		enc_cell = self._create_unit_cell(num_enc_hidden_units)
+		enc_cell = self._create_unit_cell(num_enc_hidden_units, 'enc_unit_cell')
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#enc_cell = tf.contrib.rnn.AttentionCellWrapper(enc_cell, attention_window_len, state_is_tuple=True)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
@@ -155,15 +155,15 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 		"""
 
 		# Defines cells.
-		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
+		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units, 'enc_fw_unit_cell')  # Forward cell.
 		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#enc_cell_fw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_fw, attention_window_len, state_is_tuple=True)
-		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
+		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units, 'enc_bw_unit_cell')  # Backward cell.
 		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 		# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 		#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
@@ -188,15 +188,6 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 			return self._get_decoder_output_for_training(dec_cell, enc_cell_states, decoder_input_tensor, num_time_steps, num_classes, is_time_major)
 		else:
 			return self._get_decoder_output_for_inference(dec_cell, enc_cell_states, batch_size, num_time_steps, num_classes, is_time_major)
-
-	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units)
-		#return tf.contrib.rnn.RNNCell(num_units)
-
-		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
-
-		#return tf.contrib.rnn.GRUCell(num_units)
 
 	def _create_projection_layer(self, dec_cell_outputs, num_classes):
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
@@ -242,3 +233,8 @@ class SimpleSeq2SeqEncoderDecoder(SimpleSeq2SeqNeuralNet):
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		return tf.stack(projection_outputs, axis=0 if is_time_major else 1)
+
+	def _create_unit_cell(self, num_units, name):
+		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
+		return tf.nn.rnn_cell.LSTMCell(num_units, forget_bias=1.0, name=name)
+		#return tf.nn.rnn_cell.GRUCell(num_units, name=name)

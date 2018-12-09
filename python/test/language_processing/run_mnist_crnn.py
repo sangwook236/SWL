@@ -21,10 +21,11 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
-from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
+import swl.util.util as swl_util
 from util import train_neural_net_by_batch_list, train_neural_net_after_generating_batch_list, train_neural_net
 from util import evaluate_neural_net_by_batch_list, evaluate_neural_net
 from util import infer_from_batch_list_by_neural_net, infer_by_neural_net
+from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 import traceback
 
 #%%------------------------------------------------------------------
@@ -42,8 +43,6 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 		super().__init__(neuralNet, optimizer, initial_epoch)
 
 #%%------------------------------------------------------------------
-
-from tensorflow.examples.tutorials.mnist import input_data
 
 def visualize_dataset(images, labels, max_example_count=0):
 	print('Image shape = {}, label shape = {}'.format(images.shape, labels.shape))
@@ -72,6 +71,22 @@ def visualize_dataset(images, labels, max_example_count=0):
 		#img.save('./data_I{}_L{}.png'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
 		img = Image.fromarray(comp_img.astype(np.float32), mode='F')
 		img.save('./data_I{}_L{}.tif'.format(idx, '-'.join(str(lbl) for lbl in lbl_list)))
+
+def preprocess_data(data, labels, num_classes, axis=0):
+	if data is not None:
+		# Preprocessing (normalization, standardization, etc.).
+		#data = data.astype(np.float32)
+		#data /= 255.0
+		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
+		#data = np.reshape(data, data.shape + (1,))
+		pass
+
+	if labels is not None:
+		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
+		#labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
+		pass
+
+	return data, labels
 
 def generate_composite_dataset(images, labels, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label):
 	num_spaces = 3000
@@ -111,17 +126,22 @@ def generate_composite_dataset(images, labels, min_digit_count, max_digit_count,
 
 	return np.reshape(image_list, (-1,) + image_list[0].shape), np.reshape(label_list, (-1,) + label_list[0].shape)
 
-def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label):
-	# Pixel value: [0, 1].
-	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
+def prepare_multiple_character_dataset(image_shape, num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label):
+	# Pixel value: [0, 255].
+	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
-	image_height, image_width, _ = image_shape
+	train_images = train_images / 255.0
+	train_images = np.reshape(train_images, (-1,) + image_shape)
+	train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
+	test_images = test_images / 255.0
+	test_images = np.reshape(test_images, (-1,) + image_shape)
+	test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
 
-	train_images = np.reshape(mnist.train.images, (-1,) + image_shape)
-	train_labels = np.round(mnist.train.labels).astype(np.int)
+	# Pre-process.
+	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+
 	train_labels = np.pad(train_labels, ((0, 0), (0, num_classes - train_labels.shape[1])), 'constant', constant_values=0)
-	test_images = np.reshape(mnist.test.images, (-1,) + image_shape)
-	test_labels = np.round(mnist.test.labels).astype(np.int)
 	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
 	train_images, train_labels = generate_composite_dataset(train_images, train_labels, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
@@ -129,18 +149,25 @@ def prepare_multiple_character_dataset(data_dir_path, image_shape, num_classes, 
 
 	return train_images, train_labels, test_images, test_labels
 
-def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label):
-	# Pixel value: [0, 1].
-	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
+def prepare_single_character_dataset(image_shape, num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label):
+	# Pixel value: [0, 255].
+	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+
+	train_images = train_images / 255.0
+	train_images = np.reshape(train_images, (-1,) + image_shape)
+	train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
+	test_images = test_images / 255.0
+	test_images = np.reshape(test_images, (-1,) + image_shape)
+	test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
+
+	# Pre-process.
+	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+
+	train_labels = np.pad(train_labels, ((0, 0), (0, num_classes - train_labels.shape[1])), 'constant', constant_values=0)
+	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
 	image_height, image_width, _ = image_shape
-
-	train_images = np.reshape(mnist.train.images, (-1,) + image_shape)
-	train_labels = np.round(mnist.train.labels).astype(np.int)
-	train_labels = np.pad(train_labels, ((0, 0), (0, num_classes - train_labels.shape[1])), 'constant', constant_values=0)
-	test_images = np.reshape(mnist.test.images, (-1,) + image_shape)
-	test_labels = np.round(mnist.test.labels).astype(np.int)
-	test_labels = np.pad(test_labels, ((0, 0), (0, num_classes - test_labels.shape[1])), 'constant', constant_values=0)
 
 	# TODO [improve] >> A more efficient way may exist.
 	# (samples, time-steps, features).
@@ -165,31 +192,7 @@ def prepare_single_character_dataset(data_dir_path, image_shape, num_classes, ma
 			test_sliced_labels[:,step,:] = test_labels
 		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
 
-def preprocess_data(data, labels, num_classes, axis=0):
-	if data is not None:
-		# Preprocessing (normalization, standardization, etc.).
-		#data = data.astype(np.float32)
-		#data /= 255.0
-		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
-		#data = np.reshape(data, data.shape + (1,))
-		pass
-
-	if labels is not None:
-		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
-		pass
-
-	return data, labels
-
 #%%------------------------------------------------------------------
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
 
 def create_crnn(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major, is_sparse_label, label_eos_token):
 	if is_sparse_label:
@@ -256,27 +259,17 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
 
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
-
-	#train_images, train_labels, test_images, test_labels = prepare_single_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
+	#train_images, train_labels, test_images, test_labels = prepare_single_character_dataset((image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
 	# Images: (samples, time-steps, height, width, channels), labels: (samples, num_digits, one-hot encoding).
-	train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset(data_dir_path, (image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
-
-	# Pre-process.
-	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
-	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+	train_images, train_labels, test_images, test_labels = prepare_multiple_character_dataset((image_height, image_width, image_channel), num_classes, min_digit_count, max_digit_count, max_time_steps, space_label, is_sparse_label)
 
 	# Visualize dataset.
 	#visualize_dataset(train_images, train_labels, 5)

@@ -27,16 +27,17 @@ sys.path.append(os.path.join(lib_home_dir_path, 'Fully-Connected-DenseNets-Seman
 import math, time, datetime
 import numpy as np
 import tensorflow as tf
-from fc_densenet_keras import FcDenseNetUsingKeras
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
 import swl.image_processing.util as swl_imgproc_util
+import swl.util.util as swl_util
 from util import train_neural_net_by_batch_list, train_neural_net_after_generating_batch_list, train_neural_net
 from util import evaluate_neural_net_by_batch_list, evaluate_neural_net
 from util import infer_from_batch_list_by_neural_net, infer_by_neural_net
 from rda_plant_util import RdaPlantDataset
+from fc_densenet_keras import FcDenseNetUsingKeras
 import traceback
 
 #%%------------------------------------------------------------------
@@ -216,19 +217,35 @@ def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_hei
 
 from keras import backend as K
 
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
-
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
+
+	image_suffix = ''
+	image_extension = 'png'
+	label_suffix = '_foreground'
+	label_extension = 'png'
+	patch_height, patch_width = 224, 224
+
+	num_classes = 2
+	input_shape = (None, patch_height, patch_width, 3)
+	output_shape = (None, patch_height, patch_width, num_classes)
+
+	batch_size = 6  # Number of samples per gradient update.
+	num_epochs = 50  # Number of times to iterate over training data.
+	shuffle = True
+
+	# Create sessions.
+	sess_config = tf.ConfigProto()
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
 	# Prepare directories.
@@ -244,11 +261,11 @@ def main():
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 	npy_dir_path = os.path.joint(output_dir_path, 'npy')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
-	make_dir(npy_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
+	swl_util.make_dir(npy_dir_path)
 
 	#--------------------
 	# Prepare data.
@@ -260,16 +277,6 @@ def main():
 
 	image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
 	label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
-
-	image_suffix = ''
-	image_extension = 'png'
-	label_suffix = '_foreground'
-	label_extension = 'png'
-	patch_height, patch_width = 224, 224
-
-	num_classes = 2
-	input_shape = (None, patch_height, patch_width, 3)
-	output_shape = (None, patch_height, patch_width, num_classes)
 
 	train_image_patches, test_image_patches, train_label_patches, test_label_patches, image_list, label_list = RdaPlantDataset.load_data(image_dir_path, image_suffix, image_extension, label_dir_path, label_suffix, label_extension, num_classes, patch_height, patch_width)
 
@@ -285,21 +292,14 @@ def main():
 	"""
 	default_graph = tf.get_default_graph()
 
-	# Create sessions.
-	config = tf.ConfigProto()
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
 	"""
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 	"""
 	#default_session = tf.get_default_session()
-	default_session = tf.Session(graph=default_graph, config=config)
+	default_session = tf.Session(graph=default_graph, config=sess_config)
 	if does_need_training:
 		train_session = default_session
 		eval_session = default_session
@@ -377,10 +377,6 @@ def main():
 	#%%------------------------------------------------------------------
 	# Train and evaluate.
 
-	batch_size = 6  # Number of samples per gradient update.
-	num_epochs = 50  # Number of times to iterate over training data.
-	shuffle = True
-
 	if does_need_training:
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
@@ -415,7 +411,6 @@ def main():
 				inferences = np.around(inferences)
 				groundtruths = test_labels
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-
 			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 

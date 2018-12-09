@@ -241,10 +241,14 @@ class NeuralNetTrainer(object):
 			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
 
 		# Close writers.
+		"""
 		if train_summary_writer is not None:
+			# FIXME [error] >>Segmentation fault (core dumped).
 			train_summary_writer.close()
 		if val_summary_writer is not None:
+			# FIXME [error] >>Segmentation fault (core dumped).
 			val_summary_writer.close()
+		"""
 
 		return history
 

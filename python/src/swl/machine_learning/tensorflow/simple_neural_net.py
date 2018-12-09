@@ -9,25 +9,22 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 		super().__init__(input_shape, output_shape)
 
 	def create_training_model(self):
-		with tf.variable_scope('swl_training', reuse=tf.AUTO_REUSE):
-			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
 
-			self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		with tf.variable_scope('swl_evaluation', reuse=tf.AUTO_REUSE):
-			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
-			self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-			self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		with tf.variable_scope('swl_inference', reuse=tf.AUTO_REUSE):
-			self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
 
-			self._loss = None
-			self._accuracy = None
+		self._loss = None
+		self._accuracy = None
 
 	@abc.abstractmethod
 	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
@@ -41,11 +38,11 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 			elif num_classes >= 2:
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y), reduction_indices=[1]))
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), reduction_indices=[1]))
-				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
-			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			tf.summary.scalar('loss', loss)
 			return loss
 
@@ -99,11 +96,11 @@ class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
 			elif num_classes >= 2:
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y), reduction_indices=[1]))
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), reduction_indices=[1]))
-				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
-			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			tf.summary.scalar('loss', loss)
 			return loss
 
@@ -158,11 +155,11 @@ class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 			elif num_classes >= 2:
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(y), reduction_indices=[1]))
 				#loss = tf.reduce_mean(-tf.reduce_sum(t * tf.log(tf.clip_by_value(y, 1e-10, 1.0)), reduction_indices=[1]))
-				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+				loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
-			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(labels=t, logits=y))
+			loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=t, logits=y))
 			tf.summary.scalar('loss', loss)
 			return loss
 

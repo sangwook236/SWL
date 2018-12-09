@@ -25,6 +25,7 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+import swl.util.util as swl_util
 from util import train_neural_net_by_batch_list, train_neural_net, evaluate_neural_net, infer_by_neural_net
 import traceback
 
@@ -243,14 +244,6 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 
 #%%------------------------------------------------------------------
 
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
-
 def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, is_sparse_label=True):
 	if is_sparse_label:
 		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
@@ -293,19 +286,13 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
-
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
 	# Constants.
 	SPACE_TOKEN = '<space>'
@@ -451,7 +438,6 @@ def main():
 			str_decoded = str_decoded.replace(chr(ord('z') + 1), '')
 			# Replaces space label to space.
 			str_decoded = str_decoded.replace(chr(ord('a') - 1), ' ')
-
 			print('Original:\n%s' % original)
 			print('Decoded:\n%s' % str_decoded)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))

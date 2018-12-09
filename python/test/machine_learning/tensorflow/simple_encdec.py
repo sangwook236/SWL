@@ -40,9 +40,9 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell = self._create_unit_cell(num_enc_hidden_units)
+		enc_cell = self._create_unit_cell(num_enc_hidden_units, 'enc_unit_cell')
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Encoder.
@@ -79,11 +79,11 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		keep_prob = 0.5
 
 		# Defines cells.
-		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
+		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units, 'enc_fw_unit_cell')  # Forward cell.
 		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
+		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units, 'enc_bw_unit_cell')  # Backward cell.
 		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Encoder.
@@ -122,9 +122,9 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		"""
 
 		# Defines cells.
-		enc_cell = self._create_unit_cell(num_enc_hidden_units)
+		enc_cell = self._create_unit_cell(num_enc_hidden_units, 'enc_unit_cell')
 		enc_cell = tf.contrib.rnn.DropoutWrapper(enc_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -164,11 +164,11 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 		"""
 
 		# Defines cells.
-		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
+		enc_cell_fw = self._create_unit_cell(num_enc_hidden_units, 'enc_fw_unit_cell')  # Forward cell.
 		enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
+		enc_cell_bw = self._create_unit_cell(num_enc_hidden_units, 'end_bw_unit_cell')  # Backward cell.
 		enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
-		dec_cell = self._create_unit_cell(num_dec_hidden_units)
+		dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 		dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
 		# Unstack: a tensor of shape (samples, time-steps, features) -> a list of 'time-steps' tensors of shape (samples, features).
@@ -199,15 +199,6 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 
 		return self._create_projection_layer(cell_outputs, num_classes)
 
-	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units)
-		#return tf.contrib.rnn.RNNCell(num_units)
-
-		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
-
-		#return tf.contrib.rnn.GRUCell(num_units)
-
 	def _create_projection_layer(self, cell_outputs, num_classes):
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
@@ -219,3 +210,8 @@ class SimpleEncoderDecoder(SimpleNeuralNet):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 				return None
+
+	def _create_unit_cell(self, num_units, name):
+		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
+		return tf.nn.rnn_cell.LSTMCell(num_units, forget_bias=1.0, name=name)
+		#return tf.nn.rnn_cell.GRUCell(num_units, name=name)

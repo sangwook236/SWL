@@ -23,30 +23,19 @@ sys.path.append(os.path.join(lib_home_dir_path, 'tf_cnnvis_github'))
 import time, datetime
 import numpy as np
 import tensorflow as tf
-from mnist_cnn_tf import MnistCnnUsingTF
-#from mnist_cnn_tf_slim import MnistCnnUsingTfSlim
-#from mnist_cnn_keras import MnistCnnUsingKeras
-#from mnist_cnn_tflearn import MnistCnnUsingTfLearn
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
+import swl.util.util as swl_util
 from util import train_neural_net, evaluate_neural_net, infer_by_neural_net
+from mnist_cnn_tf import MnistCnnUsingTF
+#from mnist_cnn_tf_slim import MnistCnnUsingTfSlim
+#from mnist_cnn_keras import MnistCnnUsingKeras
+#from mnist_cnn_tflearn import MnistCnnUsingTfLearn
 import traceback
 
 #%%------------------------------------------------------------------
-
-from tensorflow.examples.tutorials.mnist import input_data
-
-def load_data(data_dir_path, shape):
-	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
-
-	train_images = np.reshape(mnist.train.images, (-1,) + shape)
-	train_labels = np.round(mnist.train.labels).astype(np.int)
-	test_images = np.reshape(mnist.test.images, (-1,) + shape)
-	test_labels = np.round(mnist.test.labels).astype(np.int)
-
-	return train_images, train_labels, test_images, test_labels
 
 def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
@@ -64,17 +53,26 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	return data, labels
 
+def load_data(image_shape):
+	# Pixel value: [0, 255].
+	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+
+	train_images = train_images / 255.0
+	train_images = np.reshape(train_images, (-1,) + image_shape)
+	train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
+	test_images = test_images / 255.0
+	test_images = np.reshape(test_images, (-1,) + image_shape)
+	test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
+
+	# Pre-process.
+	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+
+	return train_images, train_labels, test_images, test_labels
+
 #%%------------------------------------------------------------------
 
 #from keras import backend as K
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
 
 def create_mnist_cnn(input_shape, output_shape):
 	model_type = 0  # {0, 1}.
@@ -86,8 +84,27 @@ def create_mnist_cnn(input_shape, output_shape):
 def main():
 	#np.random.seed(7)
 
+	#--------------------
+	# Parameters.
+
 	does_need_training = True
 	does_resume_training = False
+
+	num_classes = 10
+	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
+	output_shape = (None, num_classes)
+
+	batch_size = 128  # Number of samples per gradient update.
+	num_epochs = 20  # Number of times to iterate over training data.
+	shuffle = True
+
+	# Create sessions.
+	sess_config = tf.ConfigProto()
+	#sess_config.device_count = {'GPU': 2}
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
 	# Prepare directories.
@@ -102,29 +119,15 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
 
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
-
-	num_classes = 10
-	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
-	output_shape = (None, num_classes)
-
-	train_images, train_labels, test_images, test_labels = load_data(data_dir_path, input_shape[1:])
-
-	# Pre-process.
-	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
-	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -179,18 +182,14 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
-	config = tf.ConfigProto()
-	#config.device_count = {'GPU': 2}
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+	print('***************************************** 1')
 
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
+
+	print('***************************************** 2')
 
 	# Initialize.
 	if does_need_training:
@@ -198,10 +197,6 @@ def main():
 
 	#%%------------------------------------------------------------------
 	# Train and evaluate.
-
-	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
-	shuffle = True
 
 	if does_need_training:
 		total_elapsed_time = time.time()
@@ -237,7 +232,6 @@ def main():
 				inferences = np.around(inferences)
 				groundtruths = test_labels
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-
 			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
 

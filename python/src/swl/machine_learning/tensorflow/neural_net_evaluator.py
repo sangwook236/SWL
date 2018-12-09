@@ -33,7 +33,7 @@ class NeuralNetEvaluator(object):
 
 		return val_acc, val_loss
 
-	def evaluate(self, session, val_data, val_labels, batch_size=None, is_time_major=False):
+	def evaluate(self, session, val_data, val_labels, batch_size=None, is_time_major=False, is_sparse_label=False):
 		loss, accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 		batch_axis = 1 if is_time_major else 0
 
@@ -79,7 +79,7 @@ class NeuralNetEvaluator(object):
 
 		return val_loss, val_acc
 
-	def evaluate_seq2seq(self, session, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None, is_time_major=False):
+	def evaluate_seq2seq(self, session, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None, is_time_major=False, is_sparse_label=False):
 		loss, accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 		batch_axis = 1 if is_time_major else 0
 
