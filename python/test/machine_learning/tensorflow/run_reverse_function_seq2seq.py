@@ -34,11 +34,11 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import time, datetime
 #import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
+from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleGradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-import swl.machine_learning.util as swl_util
-import swl.util.util as swl_ml_util
+import swl.machine_learning.util as swl_ml_util
+import swl.util.util as swl_util
 from util import train_neural_net_with_decoder_input, evaluate_neural_net_with_decoder_input, infer_by_neural_net
 from reverse_function_util import ReverseFunctionDataset
 from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
@@ -64,10 +64,14 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
+	output_dir_prefix = 'reverse_function_seq2seq'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20181210T003513'
+
 	characters = list('abcd')
+
 	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
 	is_time_major = False
-
 	is_dynamic = False
 	is_attentive = True  # Uses attention mechanism.
 	is_bidirectional = True  # Uses a bidirectional model.
@@ -79,6 +83,9 @@ def main():
 		num_epochs = 70  # Number of times to iterate over training data.
 	shuffle = True
 
+	max_gradient_norm = 5
+	initial_epoch = 0
+
 	# Create sessions.
 	sess_config = tf.ConfigProto()
 	#sess_config.allow_soft_placement = True
@@ -88,10 +95,6 @@ def main():
 
 	#--------------------
 	# Prepare directories.
-
-	output_dir_prefix = 'reverse_function_seq2seq'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180222T144236'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -149,9 +152,8 @@ def main():
 			rnnModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			#nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
-			nnTrainer = SimpleNeuralNetGradientTrainer(rnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleGradientClippingNeuralNetTrainer(rnnModelForTraining, max_gradient_norm, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -216,7 +218,7 @@ def main():
 			# Character strings -> numeric data.
 			test_data = dataset.to_numeric_data(test_strs)
 
-			inferences = infer_by_neural_net(sess, nnInferrer, test_strs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+			inferences = infer_by_neural_net(sess, nnInferrer, test_data, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
 
 			# Numeric data -> character strings.
 			inferred_strs = dataset.to_char_strings(inferences, has_start_token=False)

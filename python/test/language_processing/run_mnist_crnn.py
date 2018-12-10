@@ -37,8 +37,8 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
 		super().__init__(neuralNet, optimizer, initial_epoch)
 
@@ -241,6 +241,7 @@ def main():
 	else:
 		num_epochs = 200  # Number of times to iterate over training data.
 	shuffle = True
+
 	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()

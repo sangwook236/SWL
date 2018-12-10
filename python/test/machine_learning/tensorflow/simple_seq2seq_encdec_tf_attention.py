@@ -1,6 +1,6 @@
 import numpy as np
 import tensorflow as tf
-from simple_neural_net import SimpleSeq2SeqNeuralNet
+from swl.machine_learning.tensorflow.simple_neural_net import SimpleSeq2SeqNeuralNet
 
 #%%------------------------------------------------------------------
 

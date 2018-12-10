@@ -79,25 +79,25 @@ class NeuralNetEvaluator(object):
 
 		return val_loss, val_acc
 
-	def evaluate_seq2seq(self, session, test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, batch_size=None, is_time_major=False, is_sparse_label=False):
+	def evaluate_seq2seq(self, session, val_encoder_inputs, val_decoder_inputs, val_decoder_outputs, batch_size=None, is_time_major=False, is_sparse_label=False):
 		loss, accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 		batch_axis = 1 if is_time_major else 0
 
 		num_val_examples = 0
-		if val_data is not None and val_labels is not None:
+		if val_encoder_inputs is not None and val_decoder_inputs is not None and val_decoder_outputs is not None:
 			if is_sparse_label:
-				num_val_examples = val_data.shape[batch_axis]
+				num_val_examples = val_encoder_inputs.shape[batch_axis]
 			else:
-				if val_data.shape[batch_axis] == val_labels.shape[batch_axis]:
-					num_val_examples = val_data.shape[batch_axis]
-		#if val_data is None or val_labels is None:
+				if val_encoder_inputs.shape[batch_axis] == val_decoder_inputs.shape[batch_axis] and val_encoder_inputs.shape[batch_axis] == val_decoder_outputs.shape[batch_axis]:
+					num_val_examples = val_encoder_inputs.shape[batch_axis]
+		#if val_encoder_inputs is None or val_decoder_inputs is None or val_decoder_outputs is None:
 		if num_val_examples <= 0:
 			return None, None
 
 		if batch_size is None or num_val_examples <= batch_size:
-			#val_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
-			#val_acc = accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
-			val_loss, val_acc = session.run([loss, accuracy], feed_dict=self._neuralNet.get_feed_dict(test_encoder_inputs, test_decoder_inputs, test_decoder_outputs, is_training=False))
+			#val_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(val_encoder_inputs, val_decoder_inputs, val_decoder_outputs, is_training=False))
+			#val_acc = accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(val_encoder_inputs, val_decoder_inputs, val_decoder_outputs, is_training=False))
+			val_loss, val_acc = session.run([loss, accuracy], feed_dict=self._neuralNet.get_feed_dict(val_encoder_inputs, val_decoder_inputs, val_decoder_outputs, is_training=False))
 		else:
 			val_steps_per_epoch = (num_val_examples - 1) // batch_size + 1
 
@@ -111,7 +111,7 @@ class NeuralNetEvaluator(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					enc_input_batch, dec_input_batch, dec_output_batch = test_encoder_inputs[batch_indices], test_decoder_inputs[batch_indices], test_decoder_outputs[batch_indices]
+					enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices], val_decoder_inputs[batch_indices], val_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 						#batch_loss = loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))
 						#batch_acc = accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=False))

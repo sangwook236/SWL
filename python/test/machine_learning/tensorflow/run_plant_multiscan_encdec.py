@@ -21,7 +21,7 @@ sys.path.append(os.path.join(swl_python_home_dir_path, 'src'))
 import time, datetime
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetGradientTrainer
+from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleGradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
@@ -68,9 +68,16 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
+	output_dir_prefix = 'reverse_function_seq2seq'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20180222T144236'
+
 	batch_size = 4  # Number of samples per gradient update.
 	num_epochs = 70  # Number of times to iterate over training data.
 	shuffle = True
+
+	max_gradient_norm = 5
+	initial_epoch = 0
 
 	# Create sessions.
 	sess_config = tf.ConfigProto()
@@ -81,10 +88,6 @@ def main():
 
 	#--------------------
 	# Prepare directories.
-
-	output_dir_prefix = 'reverse_function_seq2seq'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180222T144236'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -133,9 +136,8 @@ def main():
 			rnnModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			#nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
-			nnTrainer = SimpleNeuralNetGradientTrainer(rnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleGradientClippingNeuralNetTrainer(rnnModelForTraining, max_gradient_norm, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.

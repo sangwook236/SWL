@@ -314,7 +314,7 @@ class NeuralNetTrainer(object):
 			if train_encoder_inputs.shape[batch_axis] == train_decoder_inputs.shape[batch_axis] and train_encoder_inputs.shape[batch_axis] == train_decoder_outputs.shape[batch_axis]:
 				num_train_examples = train_encoder_inputs.shape[batch_axis]
 			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
-		#if train_encoder_inputs is None or train_decoder_inputs is None or train_decoder_inputs is None:
+		#if train_encoder_inputs is None or train_decoder_inputs is None or train_decoder_outputs is None:
 		if num_train_examples <= 0:
 			return None
 

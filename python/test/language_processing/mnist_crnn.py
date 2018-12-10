@@ -82,11 +82,11 @@ class MnistCRNN(abc.ABC):
 				#--------------------
 				# Encoder.
 				num_enc_hidden_units = 256
-				enc_cell_fw = self._create_unit_cell(num_enc_hidden_units)  # Forward cell.
+				enc_cell_fw = self._create_unit_cell(num_enc_hidden_units, 'enc_fw_unit_cell')  # Forward cell.
 				enc_cell_fw = tf.contrib.rnn.DropoutWrapper(enc_cell_fw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 				# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 				#enc_cell_fw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_fw, attention_window_len, state_is_tuple=True)
-				enc_cell_bw = self._create_unit_cell(num_enc_hidden_units)  # Backward cell.
+				enc_cell_bw = self._create_unit_cell(num_enc_hidden_units, 'enc_bw_unit_cell')  # Backward cell.
 				enc_cell_bw = tf.contrib.rnn.DropoutWrapper(enc_cell_bw, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 				# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 				#enc_cell_bw = tf.contrib.rnn.AttentionCellWrapper(enc_cell_bw, attention_window_len, state_is_tuple=True)
@@ -102,7 +102,7 @@ class MnistCRNN(abc.ABC):
 				#--------------------
 				# Decoder.
 				num_dec_hidden_units = 512
-				dec_cell = self._create_unit_cell(num_dec_hidden_units)
+				dec_cell = self._create_unit_cell(num_dec_hidden_units, 'dec_unit_cell')
 				dec_cell = tf.contrib.rnn.DropoutWrapper(dec_cell, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 				# REF [paper] >> "Long Short-Term Memory-Networks for Machine Reading", arXiv 2016.
 				#dec_cell = tf.contrib.rnn.AttentionCellWrapper(dec_cell, attention_window_len, state_is_tuple=True)
@@ -111,15 +111,6 @@ class MnistCRNN(abc.ABC):
 				proj_outputs = self._get_projection_output(dec_cell_outputs, num_classes)
 
 				return self._get_final_output(proj_outputs, input_seq_lens)
-
-	def _create_unit_cell(self, num_units):
-		#return tf.contrib.rnn.BasicRNNCell(num_units)
-		#return tf.contrib.rnn.RNNCell(num_units)
-
-		return tf.contrib.rnn.BasicLSTMCell(num_units, forget_bias=1.0)
-		#return tf.contrib.rnn.LSTMCell(num_units, forget_bias=1.0)
-
-		#return tf.contrib.rnn.GRUCell(num_units)
 
 	def _create_cnn_model(self, sliced_input_tensor, num_classes):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
@@ -196,6 +187,11 @@ class MnistCRNN(abc.ABC):
 
 		# Stack: a list of 'time-steps' tensors of shape (samples, features) -> a tensor of shape (samples, time-steps, features).
 		return tf.stack(dec_cell_outputs, axis=0 if is_time_major else 1)
+
+	def _create_unit_cell(self, num_units, name):
+		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
+		return tf.nn.rnn_cell.LSTMCell(num_units, forget_bias=1.0, name=name)
+		#return tf.nn.rnn_cell.GRUCell(num_units, name=name)
 
 	@abc.abstractmethod
 	def _get_loss(self, y, t, seq_lens):

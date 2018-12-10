@@ -52,10 +52,14 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
+	output_dir_prefix = 'reverse_function_rnn'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20180116T212902'
+
 	characters = list('abcd')
+
 	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
 	is_time_major = False
-
 	is_dynamic = False
 	is_bidirectional = True  # Uses a bidirectional model.
 	is_stacked = True  # Uses multiple layers.
@@ -67,6 +71,8 @@ def main():
 		num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
 
+	initial_epoch = 0
+
 	# Create sessions.
 	sess_config = tf.ConfigProto()
 	#sess_config.allow_soft_placement = True
@@ -76,10 +82,6 @@ def main():
 
 	#--------------------
 	# Prepare directories.
-
-	output_dir_prefix = 'reverse_function_rnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180116T212902'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -134,7 +136,6 @@ def main():
 			rnnModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
 
 			# Create a saver.

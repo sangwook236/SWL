@@ -84,6 +84,10 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
+	output_dir_prefix = 'mnist_mlp'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20180302T155710'
+
 	num_classes = 10
 	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
 	output_shape = (None, num_classes)
@@ -91,6 +95,8 @@ def main():
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
+
+	initial_epoch = 0
 
 	# Create sessions.
 	sess_config = tf.ConfigProto()
@@ -102,10 +108,6 @@ def main():
 
 	#--------------------
 	# Prepare directories.
-
-	output_dir_prefix = 'mnist_mlp'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -141,7 +143,6 @@ def main():
 			mlpModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			nnTrainer = SimpleNeuralNetTrainer(mlpModelForTraining, initial_epoch)
 
 			# Create a saver.

@@ -277,6 +277,16 @@ def main():
 	#num_batches_per_epoch = int(num_examples / batch_size)
 	shuffle = True
 
+	initial_epoch = 0
+
+	# Create sessions.
+	sess_config = tf.ConfigProto()
+	#sess_config.device_count = {'GPU': 2}
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
 	#--------------------
 	# Prepare directories.
 
@@ -355,7 +365,6 @@ def main():
 			cnnModelForTraining.create_training_model()
 
 			# Create a trainer.
-			initial_epoch = 0
 			nnTrainer = SimpleRnnTrainer(cnnModelForTraining, initial_epoch)
 
 			# Create a saver.
@@ -386,18 +395,10 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
-	config = tf.ConfigProto()
-	#config.device_count = {'GPU': 2}
-	#config.allow_soft_placement = True
-	config.log_device_placement = True
-	config.gpu_options.allow_growth = True
-	#config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
 	if does_need_training:
-		train_session = tf.Session(graph=train_graph, config=config)
-		eval_session = tf.Session(graph=eval_graph, config=config)
-	infer_session = tf.Session(graph=infer_graph, config=config)
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initialize.
 	if does_need_training:
