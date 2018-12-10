@@ -98,7 +98,6 @@ def main():
 
 	initial_epoch = 0
 
-	# Create sessions.
 	sess_config = tf.ConfigProto()
 	#sess_config = tf.ConfigProto(device_count={'GPU': 2})
 	#sess_config.allow_soft_placement = True
@@ -177,6 +176,7 @@ def main():
 		# Create a saver.
 		infer_saver = tf.train.Saver()
 
+	# Create sessions.
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
 		eval_session = tf.Session(graph=eval_graph, config=sess_config)
