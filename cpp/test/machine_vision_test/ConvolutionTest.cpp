@@ -21,6 +21,7 @@ namespace local {
 // REF [site] >> https://docs.opencv.org/2.4/modules/imgproc/doc/filtering.html
 
 // Convolve with a kernel arbitrary regions in an image described by points, not just retangular regions.
+template<typename T>
 class ParallelLoopConvolve2D : public cv::ParallelLoopBody
 {
 public:
@@ -47,12 +48,12 @@ public:
 		for (int i = r.start; i < r.end && i < num_points_; ++i)
 		{
 			const cv::Point &pt = points_[i];
-			float sum = 0.0f;
+			T sum = (T)0;
 			for (int kc = 0; kc < kernel_flip_.cols; ++kc)
 				for (int kr = 0; kr < kernel_flip_.rows; ++kr)
-					sum += kernel_flip_.at<float>(kr, kc) * src_ex_.at<float>(pt.x + kr, pt.y + kc);
+					sum += kernel_flip_.at<T>(kr, kc) * src_ex_.at<T>(pt.x + kr, pt.y + kc);
 
-			dst_.at<float>(pt.x, pt.y) = sum;
+			dst_.at<T>(pt.x, pt.y) = sum;
 		}
 	}
 
@@ -67,6 +68,7 @@ private:
 };
 
 // Erode arbitrary regions in an image described by points, not just retangular regions.
+template<typename T>
 class ParallelLoopErode : public cv::ParallelLoopBody
 {
 public:
@@ -89,12 +91,12 @@ public:
 		for (int i = r.start; i < r.end && i < num_points_; ++i)
 		{
 			const cv::Point &pt = points_[i];
-			float min = std::numeric_limits<float>::max();
+			T min = std::numeric_limits<T>::max();
 			for (int kc = 0; kc < kernelSize_.height; ++kc)
 				for (int kr = 0; kr < kernelSize_.width; ++kr)
-					min = std::min(min, src_ex_.at<float>(pt.x + kr, pt.y + kc));
+					min = std::min(min, src_ex_.at<T>(pt.x + kr, pt.y + kc));
 
-			dst_.at<float>(pt.x, pt.y) = min;
+			dst_.at<T>(pt.x, pt.y) = min;
 		}
 	}
 
@@ -159,7 +161,7 @@ void simple_convolution2d_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points));
 		}
 		std::cout << "Convolution Result 2 =\n" << dst << std::endl;
 	}
@@ -229,7 +231,7 @@ void image_convolution2d_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points));
 		}
 		cv::imshow("Convolution Result 2", dst);
 	}
@@ -268,6 +270,19 @@ void image_roi_convolution2d_example()
 	for (int c = 100; c < 300; ++c)
 		for (int r = 50; r < 350; ++r)
 			roi_points.push_back(cv::Point(r, c));
+
+	std::vector<cv::Point> roi_boundary_points;
+	roi_boundary_points.reserve(2 * (src_roi.cols + src_roi.rows));
+	for (int c = 100; c < 300; ++c)
+	{
+		roi_boundary_points.push_back(cv::Point(50, c));
+		roi_boundary_points.push_back(cv::Point(340, c));
+	}
+	for (int r = 50; r < 350; ++r)
+	{
+		roi_boundary_points.push_back(cv::Point(r, 100));
+		roi_boundary_points.push_back(cv::Point(r, 299));
+	}
 
 	cv::Size wholeSize;
 	cv::Point offsetPt;
@@ -316,9 +331,20 @@ void image_roi_convolution2d_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D(src, dst, kernel, roi_points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points));
 		}
 		cv::imshow("Convolution ROI Result 2", dst);
+	}
+
+	//--------------------
+	{
+		//cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
+		cv::Mat dst;  src.copyTo(dst);
+		{
+			boost::timer::auto_cpu_timer timer;
+			cv::parallel_for_(cv::Range(0, (int)roi_boundary_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_boundary_points));
+		}
+		cv::imshow("Convolution ROI Result 3", dst);
 	}
 
 	//--------------------
@@ -336,7 +362,7 @@ void image_roi_convolution2d_example()
 		//cv::imshow("Convolution ROI Result 3", dst_roi);
 		cv::Mat dst;  src.copyTo(dst);
 		dst_roi.copyTo(dst(cv::Rect(offsetPt.x, offsetPt.y, dst_roi.cols, dst_roi.rows)));
-		cv::imshow("Convolution ROI Result 3", dst);
+		cv::imshow("Convolution ROI Result 4", dst);
 	}
 
 	cv::waitKey(0);
@@ -368,7 +394,7 @@ void image_erosion_example()
 		//	https://laonple.blog.me/220866708835
 		{
 			boost::timer::auto_cpu_timer timer;
-			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode(src, dst, kernelSize, roi_points));
+			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<float>(src, dst, kernelSize, roi_points));
 		}
 		cv::imshow("Erosion Result 1", dst);
 	}
@@ -399,7 +425,7 @@ void convolution_test()
 	local::simple_convolution2d_example();
 
 	// Examples of parallel processing based on cv::parallel_for_() & cv::ParallelLoopBody.
-	local::image_convolution2d_example();
+	//local::image_convolution2d_example();
 	local::image_roi_convolution2d_example();
-	local::image_erosion_example();
+	//local::image_erosion_example();
 }
