@@ -24,7 +24,7 @@ template<typename T>
 class ParallelLoopErode : public cv::ParallelLoopBody
 {
 public:
-	ParallelLoopErode(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_CONSTANT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	ParallelLoopErode(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
 	: src_ex_(), dst_(dst), points_(points), kernelSize_(kernelSize), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
 	{
 		if (0 == kernelSize_.width % 2 || 0 == kernelSize_.height % 2)
@@ -43,12 +43,16 @@ public:
 		for (int i = r.start; i < r.end && i < num_points_; ++i)
 		{
 			const cv::Point &pt = points_[i];
+#if false
+			const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernelSize_.width, kernelSize_.height));
+			dst_.at<T>(pt.y, pt.x) = *std::min_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
+#else
 			T min = std::numeric_limits<T>::max();
-			for (int kc = 0; kc < kernelSize_.height; ++kc)
-				for (int kr = 0; kr < kernelSize_.width; ++kr)
-					min = std::min(min, src_ex_.at<T>(pt.x + kr, pt.y + kc));
-
-			dst_.at<T>(pt.x, pt.y) = min;
+			for (int kr = 0; kr < kernelSize_.height; ++kr)
+				for (int kc = 0; kc < kernelSize_.width; ++kc)
+					min = std::min(min, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+			dst_.at<T>(pt.y, pt.x) = min;
+#endif
 		}
 	}
 
@@ -70,7 +74,7 @@ template<typename T>
 class ParallelLoopDilate : public cv::ParallelLoopBody
 {
 public:
-	ParallelLoopDilate(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_CONSTANT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	ParallelLoopDilate(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
 	: src_ex_(), dst_(dst), points_(points), kernelSize_(kernelSize), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
 	{
 		if (0 == kernelSize_.width % 2 || 0 == kernelSize_.height % 2)
@@ -89,12 +93,16 @@ public:
 		for (int i = r.start; i < r.end && i < num_points_; ++i)
 		{
 			const cv::Point &pt = points_[i];
+#if false
+			const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernelSize_.width, kernelSize_.height));
+			dst_.at<T>(pt.y, pt.x) = *std::max_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
+#else
 			T max = std::numeric_limits<T>::min();
-			for (int kc = 0; kc < kernelSize_.height; ++kc)
-				for (int kr = 0; kr < kernelSize_.width; ++kr)
-					max = std::max(max, src_ex_.at<T>(pt.x + kr, pt.y + kc));
-
-			dst_.at<T>(pt.x, pt.y) = max;
+			for (int kr = 0; kr < kernelSize_.height; ++kr)
+				for (int kc = 0; kc < kernelSize_.width; ++kc)
+					max = std::max(max, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+			dst_.at<T>(pt.y, pt.x) = max;
+#endif
 		}
 	}
 
@@ -123,9 +131,10 @@ void image_erosion_example()
 	//--------------------
 	{
 		std::vector<cv::Point> roi_points;
+		roi_points.reserve(src.cols * src.rows);
 		for (int c = 0; c < src.cols; ++c)
 			for (int r = 0; r < src.rows; ++r)
-				roi_points.push_back(cv::Point(r, c));
+				roi_points.push_back(cv::Point(c, r));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		// REF [site] >>
@@ -145,13 +154,13 @@ void image_erosion_example()
 		roi_boundary_points.reserve(2 * (128 + 128));
 		for (int c = 65; c < 192; ++c)
 		{
-			roi_boundary_points.push_back(cv::Point(65, c));
-			//roi_boundary_points.push_back(cv::Point(191, c));
+			roi_boundary_points.push_back(cv::Point(c, 65));
+			//roi_boundary_points.push_back(cv::Point(c, 191));
 		}
 		for (int r = 65; r < 192; ++r)
 		{
-			//roi_boundary_points.push_back(cv::Point(r, 65));
-			roi_boundary_points.push_back(cv::Point(r, 191));
+			//roi_boundary_points.push_back(cv::Point(65, r));
+			roi_boundary_points.push_back(cv::Point(191, r));
 		}
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
@@ -183,14 +192,14 @@ void image_erosion_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0.0;
+		const int iterations = 1;
 		const cv::Mat kernel(cv::getStructuringElement(cv::MORPH_RECT, kernelSize, anchor));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
 			boost::timer::auto_cpu_timer timer;
 			//cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
-			cv::erode(src, dst, kernel, anchor, delta, cv::BORDER_DEFAULT);
+			cv::erode(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
 		}
 		cv::imshow("Erosion Result 3", dst);
 	}
@@ -213,9 +222,10 @@ void image_dilation_example()
 	//--------------------
 	{
 		std::vector<cv::Point> roi_points;
+		roi_points.reserve(src.cols * src.rows);
 		for (int c = 0; c < src.cols; ++c)
 			for (int r = 0; r < src.rows; ++r)
-				roi_points.push_back(cv::Point(r, c));
+				roi_points.push_back(cv::Point(c, r));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		// REF [site] >>
@@ -235,13 +245,13 @@ void image_dilation_example()
 		roi_boundary_points.reserve(2 * (128 + 128));
 		for (int c = 65; c < 192; ++c)
 		{
-			roi_boundary_points.push_back(cv::Point(65, c));
-			//roi_boundary_points.push_back(cv::Point(191, c));
+			roi_boundary_points.push_back(cv::Point(c, 65));
+			//roi_boundary_points.push_back(cv::Point(c, 191));
 		}
 		for (int r = 65; r < 192; ++r)
 		{
-			//roi_boundary_points.push_back(cv::Point(r, 65));
-			roi_boundary_points.push_back(cv::Point(r, 191));
+			//roi_boundary_points.push_back(cv::Point(65, r));
+			roi_boundary_points.push_back(cv::Point(191, r));
 		}
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
@@ -274,14 +284,14 @@ void image_dilation_example()
 	//--------------------
 	{
 		const cv::Point anchor(-1, -1);
-		const double delta = 0.0;
+		const int iterations = 1;
 		const cv::Mat kernel(cv::getStructuringElement(cv::MORPH_RECT, kernelSize, anchor));
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
 			boost::timer::auto_cpu_timer timer;
-			//cv::dilate(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
-			cv::dilate(src, dst, kernel, anchor, delta, cv::BORDER_DEFAULT);
+			//cv::dilate(src, dst, cv::Mat(), anchor, iterations, cv::BORDER_DEFAULT);
+			cv::dilate(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
 		}
 		cv::imshow("Dilation Result 3", dst);
 	}
