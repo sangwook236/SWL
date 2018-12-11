@@ -24,42 +24,72 @@ template<typename T>
 class ParallelLoopErode : public cv::ParallelLoopBody
 {
 public:
-	ParallelLoopErode(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
-	: src_ex_(), dst_(dst), points_(points), kernelSize_(kernelSize), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
+	typedef cv::ParallelLoopBody base_type;
+
+public:
+	ParallelLoopErode(const cv::Mat &src, cv::Mat &dst, const cv::Mat &kernel, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	: isRectangularKernel_(false), src_ex_(), dst_(dst), kernel_(kernel), points_(points), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
 	{
-		if (0 == kernelSize_.width % 2 || 0 == kernelSize_.height % 2)
+		if (0 == kernel_.cols % 2 || 0 == kernel_.rows % 2)
 		{
 			std::cerr << "Invalid kernel size." << std::endl;
 			return;
 		}
 
-		const int border_x = kernelSize_.width / 2;
-		const int border_y = kernelSize_.height / 2;
+		const int border_x = kernel_.cols / 2;
+		const int border_y = kernel_.rows / 2;
+		cv::copyMakeBorder(src, src_ex_, border_y, border_y, border_x, border_x, borderType_, borderVal_);
+	}
+	ParallelLoopErode(const cv::Mat &src, cv::Mat &dst, const cv::Size &kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	: isRectangularKernel_(true), src_ex_(), dst_(dst), kernel_(cv::Mat::ones(kernelSize, src.type())), points_(points), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
+	{
+		if (0 == kernel_.cols % 2 || 0 == kernel_.rows % 2)
+		{
+			std::cerr << "Invalid kernel size." << std::endl;
+			return;
+		}
+
+		const int border_x = kernel_.cols / 2;
+		const int border_y = kernel_.rows / 2;
 		cv::copyMakeBorder(src, src_ex_, border_y, border_y, border_x, border_x, borderType_, borderVal_);
 	}
 
+public:
 	/*virtual*/ void operator()(const cv::Range &r) const
 	{
-		for (int i = r.start; i < r.end && i < num_points_; ++i)
-		{
-			const cv::Point &pt = points_[i];
+		if (isRectangularKernel_)
+			for (int i = r.start; i < r.end && i < num_points_; ++i)
+			{
+				const cv::Point &pt = points_[i];
 #if false
-			const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernelSize_.width, kernelSize_.height));
-			dst_.at<T>(pt.y, pt.x) = *std::min_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
+				const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernel_.cols, kernel_.rows));
+				dst_.at<T>(pt.y, pt.x) = *std::min_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
 #else
-			T min = std::numeric_limits<T>::max();
-			for (int kr = 0; kr < kernelSize_.height; ++kr)
-				for (int kc = 0; kc < kernelSize_.width; ++kc)
-					min = std::min(min, src_ex_.at<T>(pt.y + kr, pt.x + kc));
-			dst_.at<T>(pt.y, pt.x) = min;
+				T min = std::numeric_limits<T>::max();
+				for (int kr = 0; kr < kernel_.rows; ++kr)
+					for (int kc = 0; kc < kernel_.cols; ++kc)
+						min = std::min(min, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+				dst_.at<T>(pt.y, pt.x) = min;
 #endif
-		}
+			}
+		else
+			for (int i = r.start; i < r.end && i < num_points_; ++i)
+			{
+				const cv::Point &pt = points_[i];
+				T min = std::numeric_limits<T>::max();
+				for (int kr = 0; kr < kernel_.rows; ++kr)
+					for (int kc = 0; kc < kernel_.cols; ++kc)
+						if (kernel_.at<T>(kr, kc) > (T)0)
+							min = std::min(min, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+				dst_.at<T>(pt.y, pt.x) = min;
+			}
 	}
 
 private:
 	cv::Mat src_ex_;
 	cv::Mat &dst_;
-	const cv::Size kernelSize_;
+	const bool isRectangularKernel_;
+	const cv::Mat &kernel_;
 	const std::vector<cv::Point> &points_;
 	const int borderType_;
 	const cv::Scalar &borderVal_;
@@ -74,42 +104,85 @@ template<typename T>
 class ParallelLoopDilate : public cv::ParallelLoopBody
 {
 public:
-	ParallelLoopDilate(const cv::Mat &src, cv::Mat &dst, const cv::Size kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
-	: src_ex_(), dst_(dst), points_(points), kernelSize_(kernelSize), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
+	ParallelLoopDilate(const cv::Mat &src, cv::Mat &dst, const cv::Mat &kernel, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	: isRectangularKernel_(false), src_ex_(), dst_(dst), kernel_(kernel), points_(points), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
 	{
-		if (0 == kernelSize_.width % 2 || 0 == kernelSize_.height % 2)
+		if (0 == kernel_.cols % 2 || 0 == kernel_.rows % 2)
 		{
 			std::cerr << "Invalid kernel size." << std::endl;
 			return;
 		}
 
-		const int border_x = kernelSize_.width / 2;
-		const int border_y = kernelSize_.height / 2;
+		const int border_x = kernel_.cols / 2;
+		const int border_y = kernel_.rows / 2;
+		cv::copyMakeBorder(src, src_ex_, border_y, border_y, border_x, border_x, borderType_, borderVal_);
+	}
+	ParallelLoopDilate(const cv::Mat &src, cv::Mat &dst, const cv::Size &kernelSize, const std::vector<cv::Point> &points, const int borderType = cv::BORDER_DEFAULT, const cv::Scalar &borderVal = cv::Scalar::all(0))
+	: isRectangularKernel_(true), src_ex_(), dst_(dst), kernel_(cv::Mat::ones(kernelSize, src.type())), points_(points), borderType_(borderType), borderVal_(borderVal), num_points_(points.size())
+	{
+		if (0 == kernel_.cols % 2 || 0 == kernel_.rows % 2)
+		{
+			std::cerr << "Invalid kernel size." << std::endl;
+			return;
+		}
+
+		const int border_x = kernel_.cols / 2;
+		const int border_y = kernel_.rows / 2;
 		cv::copyMakeBorder(src, src_ex_, border_y, border_y, border_x, border_x, borderType_, borderVal_);
 	}
 
+public:
 	/*virtual*/ void operator()(const cv::Range &r) const
 	{
 		for (int i = r.start; i < r.end && i < num_points_; ++i)
 		{
 			const cv::Point &pt = points_[i];
 #if false
-			const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernelSize_.width, kernelSize_.height));
+			const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernel_.cols, kernel_.rows));
 			dst_.at<T>(pt.y, pt.x) = *std::max_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
 #else
 			T max = std::numeric_limits<T>::min();
-			for (int kr = 0; kr < kernelSize_.height; ++kr)
-				for (int kc = 0; kc < kernelSize_.width; ++kc)
+			for (int kr = 0; kr < kernel_.rows; ++kr)
+				for (int kc = 0; kc < kernel_.cols; ++kc)
 					max = std::max(max, src_ex_.at<T>(pt.y + kr, pt.x + kc));
 			dst_.at<T>(pt.y, pt.x) = max;
 #endif
 		}
+		return;
+
+		if (isRectangularKernel_)
+			for (int i = r.start; i < r.end && i < num_points_; ++i)
+			{
+				const cv::Point &pt = points_[i];
+#if false
+				const cv::Mat src_ex_roi(src_ex_, cv::Rect(pt.x, pt.y, kernel_.cols, kernel_.rows));
+				dst_.at<T>(pt.y, pt.x) = *std::max_element(src_ex_roi.begin<T>(), src_ex_roi.end<T>());
+#else
+				T max = std::numeric_limits<T>::min();
+				for (int kr = 0; kr < kernel_.rows; ++kr)
+					for (int kc = 0; kc < kernel_.cols; ++kc)
+						max = std::max(max, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+				dst_.at<T>(pt.y, pt.x) = max;
+#endif
+			}
+		else
+			for (int i = r.start; i < r.end && i < num_points_; ++i)
+			{
+				const cv::Point &pt = points_[i];
+				T max = std::numeric_limits<T>::min();
+				for (int kr = 0; kr < kernel_.rows; ++kr)
+					for (int kc = 0; kc < kernel_.cols; ++kc)
+						if (kernel_.at<T>(kr, kc) >(T)0)
+							max = std::max(max, src_ex_.at<T>(pt.y + kr, pt.x + kc));
+				dst_.at<T>(pt.y, pt.x) = max;
+			}
 	}
 
 private:
 	cv::Mat src_ex_;
 	cv::Mat &dst_;
-	const cv::Size kernelSize_;
+	const bool isRectangularKernel_;
+	const cv::Mat &kernel_;
 	const std::vector<cv::Point> &points_;
 	const int borderType_;
 	const cv::Scalar &borderVal_;
@@ -143,6 +216,7 @@ void image_erosion_example()
 		{
 			boost::timer::auto_cpu_timer timer;
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_points));
+			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
 		}
 		cv::imshow("Erosion Result 1", dst);
 	}
@@ -184,6 +258,7 @@ void image_erosion_example()
 
 			// Erode.
 			cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_ext_boundary_points));
+			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
 		}
 		//cv::imshow("Erosion Result 2", dst);
 		cv::imshow("Erosion Result 2", src - dst > 0);
@@ -234,6 +309,7 @@ void image_dilation_example()
 		{
 			boost::timer::auto_cpu_timer timer;
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, kernelSize, roi_points));
+			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
 		}
 		cv::imshow("Dilation Result 1", dst);
 	}
@@ -276,6 +352,7 @@ void image_dilation_example()
 
 			// Dilate.
 			cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopDilate<uint8_t>(src, dst, kernelSize, roi_ext_boundary_points));
+			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
 		}
 		//cv::imshow("Dilation Result 2", dst);
 		cv::imshow("Dilation Result 2", src + dst > 0);
