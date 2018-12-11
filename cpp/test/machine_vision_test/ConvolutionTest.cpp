@@ -464,11 +464,6 @@ void image_erosion_example()
 			//roi_boundary_points.push_back(cv::Point(r, 65));
 			roi_boundary_points.push_back(cv::Point(r, 191));
 		}
-		for (int i = 65; i < 192; ++i)
-		{
-			roi_boundary_points.push_back(cv::Point(i, i));
-			roi_boundary_points.push_back(cv::Point(i, i));
-		}
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
@@ -492,8 +487,8 @@ void image_erosion_example()
 			// Erode.
 			cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_ext_boundary_points));
 		}
-		cv::imshow("Erosion Result 2", dst);
-		//cv::imshow("Erosion Result 2", src - dst > 0);
+		//cv::imshow("Erosion Result 2", dst);
+		cv::imshow("Erosion Result 2", src - dst > 0);
 	}
 
 	//--------------------
@@ -559,11 +554,6 @@ void image_dilation_example()
 			//roi_boundary_points.push_back(cv::Point(r, 65));
 			roi_boundary_points.push_back(cv::Point(r, 191));
 		}
-		for (int i = 65; i < 192; ++i)
-		{
-			roi_boundary_points.push_back(cv::Point(i, i));
-			roi_boundary_points.push_back(cv::Point(i, i));
-		}
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
@@ -622,5 +612,5 @@ void convolution_test()
 	//local::image_roi_convolution2d_example();
 
 	local::image_erosion_example();
-	//local::image_dilation_example();
+	local::image_dilation_example();
 }
