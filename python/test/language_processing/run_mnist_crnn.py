@@ -17,7 +17,7 @@ import time, datetime, math, random
 import numpy as np
 import tensorflow as tf
 from PIL import Image
-from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer, GradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
@@ -41,6 +41,18 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
 		super().__init__(neuralNet, optimizer, initial_epoch)
+
+class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
+	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
+		with tf.name_scope('learning_rate'):
+			learning_rate = 1e-5
+			tf.summary.scalar('learning_rate', learning_rate)
+		with tf.name_scope('optimizer'):
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+
+		super().__init__(neuralNet, optimizer, max_gradient_norm, initial_epoch)
 
 #%%------------------------------------------------------------------
 
@@ -211,9 +223,9 @@ def main():
 
 	output_dir_prefix = 'mnist_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20181203T162507'
+	#output_dir_suffix = '20181211T125130'
 
-	is_sparse_label = True
+	is_sparse_label = False
 	is_time_major = False
 	label_eos_token = -1
 
@@ -242,6 +254,7 @@ def main():
 		num_epochs = 200  # Number of times to iterate over training data.
 	shuffle = True
 
+	#max_gradient_norm = 5
 	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
@@ -301,6 +314,7 @@ def main():
 
 			# Create a trainer.
 			nnTrainer = SimpleCrnnTrainer(cnnModelForTraining, initial_epoch)
+			#nnTrainer = SimpleCrnnGradientClippingTrainer(cnnModelForTraining, max_gradient_norm, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -379,20 +393,33 @@ def main():
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			ground_truths = np.argmax(test_labels, axis=-1)
-			if True:
-				# Supports lists of dense or sparse labels.
-				inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
-				inferences = None
-				for inf in inferences_list:
-					#inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=label_eos_token))
-					inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=blank_label))
-					inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
+			if is_sparse_label:
+				ground_truths = test_labels
+				if True:
+					# Supports lists of dense or sparse labels.
+					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
+					inferences = None
+					for inf in inferences_list:
+						#inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=label_eos_token))
+						inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=blank_label))
+						inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
+				else:
+					# Supports dense or sparse labels.
+					inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 			else:
-				# Supports dense or sparse labels.
-				inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+				ground_truths = np.argmax(test_labels, axis=-1)
+				if True:
+					# Supports lists of dense or sparse labels.
+					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
+					inferences = None
+					for inf in inferences_list:
+						inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
+				else:
+					# Supports dense or sparse labels.
+					inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				inferences = np.argmax(inferences, axis=-1)
 
+			# TODO [check] >> Is it correct?
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
 			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 
