@@ -12,6 +12,7 @@
 int main(int argc, char *argv[])
 {
 	void convolution_test();
+	void morphology_test();
 	void image_filter_test();
 	void scale_space_test();
 
@@ -37,6 +38,7 @@ int main(int argc, char *argv[])
 		//-----------------------------------------------------------
 		// Convolution & image filtering.
 		convolution_test();
+		morphology_test();
 
 		//-----------------------------------------------------------
 		// Image filter.

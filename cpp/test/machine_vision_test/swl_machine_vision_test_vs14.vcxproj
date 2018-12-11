@@ -173,6 +173,7 @@
     <ClCompile Include="ConvolutionTest.cpp" />
     <ClCompile Include="ImageFilterTest.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MorphologyTest.cpp" />
     <ClCompile Include="ScaleSpaceTest.cpp" />
   </ItemGroup>
   <ItemGroup>

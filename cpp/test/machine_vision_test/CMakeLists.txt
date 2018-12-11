@@ -5,6 +5,7 @@ set(SRCS
 	BoundaryExtractionTest.cpp
 	ConvolutionTest.cpp
 	ImageFilterTest.cpp
+	MorphologyTest.cpp
 	ScaleSpaceTest.cpp
 )
 set(LIBS
