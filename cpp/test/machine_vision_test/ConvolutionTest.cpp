@@ -149,9 +149,10 @@ void simple_convolution2d_example()
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		bool retval = false;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			retval = swl::convolve2d<float, float>(src, dst, kernel, cv::BORDER_CONSTANT);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		if (retval)
 			std::cout << "Convolution Result 1 =\n" << dst << std::endl;
@@ -168,12 +169,13 @@ void simple_convolution2d_example()
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			// REF [site] >>
 			//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 			//	https://laonple.blog.me/220866708835
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points, cv::BORDER_CONSTANT));
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		std::cout << "Convolution Result 2 =\n" << dst << std::endl;
 	}
@@ -186,9 +188,10 @@ void simple_convolution2d_example()
 
 		cv::Mat dst;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::filter2D(src, dst, ddepth, kernel, anchor, delta, cv::BORDER_CONSTANT);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		std::cout << "Convolution Result 3 =\n" << dst << std::endl;
 	}
@@ -222,9 +225,10 @@ void image_convolution2d_example()
 		cv::Mat dst(src.size(), src.type());
 		bool retval = false;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			retval = swl::convolve2d<float, float>(src, dst, kernel);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		if (retval)
 			cv::imshow("Convolution Result 1", dst);
@@ -244,9 +248,10 @@ void image_convolution2d_example()
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points));
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		cv::imshow("Convolution Result 2", dst);
 	}
@@ -259,9 +264,10 @@ void image_convolution2d_example()
 
 		cv::Mat dst;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::filter2D(src, dst, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		cv::imshow("Convolution Result 3", dst);
 	}
@@ -323,9 +329,10 @@ void image_roi_convolution2d_example()
 		cv::Mat dst_roi(src_roi.size(), src_roi.type());
 		bool retval = false;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			retval = swl::convolve2d<float, float>(src_roi, dst_roi, kernel);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		if (!retval)
 		{
@@ -347,9 +354,10 @@ void image_roi_convolution2d_example()
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_points));
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		cv::imshow("Convolution ROI Result 2", dst);
 	}
@@ -359,9 +367,10 @@ void image_roi_convolution2d_example()
 		//cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		cv::Mat dst;  src.copyTo(dst);
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::parallel_for_(cv::Range(0, (int)roi_boundary_points.size()), ParallelLoopConvolve2D<float>(src, dst, kernel, roi_boundary_points));
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 		cv::imshow("Convolution ROI Result 3", dst);
 	}
@@ -374,9 +383,10 @@ void image_roi_convolution2d_example()
 
 		cv::Mat dst_roi;
 		{
-			const auto start = std::chrono::high_resolution_clock::now();
+			const auto startTime(std::chrono::high_resolution_clock::now());
 			cv::filter2D(src_roi, dst_roi, ddepth, kernel, anchor, delta, cv::BORDER_DEFAULT);
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
+			const auto endTime(std::chrono::high_resolution_clock::now());
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
 
 		//cv::imshow("Convolution ROI Result 3", dst_roi);
