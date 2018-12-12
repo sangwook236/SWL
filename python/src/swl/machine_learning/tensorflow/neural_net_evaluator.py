@@ -131,13 +131,9 @@ class NeuralNetEvaluator(object):
 		batch_axis = 1 if is_time_major else 0
 
 		num_val_examples = 0
-		if val_data is not None and val_labels is not None:
-			if is_sparse_label:
-				num_val_examples = val_data.shape[batch_axis]
-			else:
-				if val_data.shape[batch_axis] == val_labels.shape[batch_axis]:
-					num_val_examples = val_data.shape[batch_axis]
-		#if val_data is None or val_labels is None:
+		if val_data is not None:
+			num_val_examples = val_data.shape[batch_axis]
+		#if val_data is None:
 		if num_val_examples <= 0:
 			return None, None
 
