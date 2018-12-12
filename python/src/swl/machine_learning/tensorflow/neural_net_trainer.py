@@ -238,7 +238,8 @@ class NeuralNetTrainer(object):
 					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
-			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
+			print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+			print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 		# Close writers.
 		"""
@@ -453,7 +454,8 @@ class NeuralNetTrainer(object):
 					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
-			print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
+			print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+			print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 		# Close writers.
 		if train_summary_writer is not None:
@@ -628,7 +630,8 @@ class NeuralNetTrainer(object):
 					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
-			print('\tLoss = {}, validation loss = {}'.format(train_loss, val_loss))
+			print('\tTraining:   loss = {}'.format(train_loss))
+			print('\tValidation: loss = {}'.format(val_loss))
 
 		# Close writers.
 		if train_summary_writer is not None:
