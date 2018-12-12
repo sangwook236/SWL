@@ -1,10 +1,11 @@
 #include "swl/Config.h"
 #define CV_NO_BACKWARD_COMPATIBILITY
 #include <opencv2/opencv.hpp>
-#include <boost/timer/timer.hpp>
 #include <iostream>
 #include <vector>
 #include <string>
+#include <chrono>
+//#include <execution>
 
 
 #if defined(_DEBUG) && defined(__SWL_CONFIG__USE_DEBUG_NEW)
@@ -214,9 +215,10 @@ void image_erosion_example()
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		cv::imshow("Erosion Result 1", dst);
 	}
@@ -239,7 +241,7 @@ void image_erosion_example()
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 
 			// Find pixels which can be operated with boundary points.
 			cv::Mat mask(src.size(), src.type(), cv::Scalar::all(0));
@@ -259,6 +261,8 @@ void image_erosion_example()
 			// Erode.
 			cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_ext_boundary_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
+
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		//cv::imshow("Erosion Result 2", dst);
 		cv::imshow("Erosion Result 2", src - dst > 0);
@@ -272,9 +276,10 @@ void image_erosion_example()
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 			//cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
 			cv::erode(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		cv::imshow("Erosion Result 3", dst);
 	}
@@ -307,9 +312,10 @@ void image_dilation_example()
 		//	https://docs.opencv.org/4.0.0/db/de0/group__core__utils.html
 		//	https://laonple.blog.me/220866708835
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, kernelSize, roi_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		cv::imshow("Dilation Result 1", dst);
 	}
@@ -332,7 +338,7 @@ void image_dilation_example()
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 
 			// Find pixels which can be operated with boundary points.
 			cv::Mat mask(src.size(), src.type(), cv::Scalar::all(0));
@@ -353,6 +359,8 @@ void image_dilation_example()
 			// Dilate.
 			cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopDilate<uint8_t>(src, dst, kernelSize, roi_ext_boundary_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
+
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		//cv::imshow("Dilation Result 2", dst);
 		cv::imshow("Dilation Result 2", src + dst > 0);
@@ -366,9 +374,10 @@ void image_dilation_example()
 
 		cv::Mat dst(src.size(), src.type(), cv::Scalar::all(0));
 		{
-			boost::timer::auto_cpu_timer timer;
+			const auto start = std::chrono::high_resolution_clock::now();
 			//cv::dilate(src, dst, cv::Mat(), anchor, iterations, cv::BORDER_DEFAULT);
 			cv::dilate(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
+			std::cout << "Took " << std::chrono::duration<double, std::milli>(std::chrono::high_resolution_clock::now() - start).count() << " ms." << std::endl;
 		}
 		cv::imshow("Dilation Result 3", dst);
 	}
