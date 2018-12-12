@@ -6,7 +6,6 @@ The goal of SWL is to develop a general-purpose library/framework for a variety 
 
 Programming languages supported by SWL are as follows:
 * C/C++
-* C#
 * Java
 * Python
 * Matlab
