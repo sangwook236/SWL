@@ -102,7 +102,8 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
-		print('\tLoss = {}, accuracy = {}, validation loss = {}, validation accurary = {}'.format(train_loss, train_acc, val_loss, val_acc))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -281,7 +282,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # Supports dense or sparse outputs.
@@ -312,7 +313,7 @@ def evaluate_neural_net(session, nnEvaluator, val_inputs, val_outputs, batch_siz
 		#val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, batch_size)
 		val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValidation loss = {}, validation accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The number of validation inputs is not equal to that of validation outputs.')
@@ -341,7 +342,7 @@ def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_inp
 		#val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
 		val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tTest loss = {}, test accurary = {}'.format(val_loss, val_acc))
+		print('\tValication: loss = {}, accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The numbers of validation inputs and outputs are not equal.')

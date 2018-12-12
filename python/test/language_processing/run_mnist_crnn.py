@@ -33,24 +33,32 @@ import traceback
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-2
+			learning_rate = 1e-8
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
-			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
+			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
+			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
 		super().__init__(neuralNet, optimizer, initial_epoch)
 
 class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-5
+			learning_rate = 1e-7
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
+			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
+			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
 		super().__init__(neuralNet, optimizer, max_gradient_norm, initial_epoch)
 
@@ -223,11 +231,14 @@ def main():
 
 	output_dir_prefix = 'mnist_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20181211T125130'
+	#output_dir_suffix = '20181211T172200'
 
-	is_sparse_label = False
-	is_time_major = False
-	label_eos_token = -1
+	is_time_major = False  # Fixed.
+	is_sparse_label = True
+	if is_sparse_label:
+		use_batch_list = True  # Fixed.
+	else:
+		use_batch_list = True
 
 	image_height, image_width, image_channel = 28, 28, 1
 	"""
@@ -246,6 +257,7 @@ def main():
 	num_classes = num_labels + 1 + 1
 	space_label = num_classes - 2
 	blank_label = num_classes - 1
+	label_eos_token = -1
 
 	batch_size = 128  # Number of samples per gradient update.
 	if is_sparse_label:
@@ -294,8 +306,9 @@ def main():
 		test_labels = np.argmax(test_labels, axis=-1)
 	print('Train images = {}, train labels = {}, test images = {}, test labels = {}'.format(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape))
 
-	train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
-	test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+	if use_batch_list:
+		train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+		test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -320,7 +333,16 @@ def main():
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
 			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-			initializer = tf.global_variables_initializer()
+			#initializer = tf.global_variables_initializer()
+			initializer = tf.variables_initializer(tf.global_variables())
+			#initializer = tf.glorot_normal_initializer(tf.global_variables())  # Xavier normal initializer.
+			#initializer = tf.glorot_uniform_initializer(tf.global_variables())  # Xavier uniform initializer.
+			#initializer = tf.uniform_unit_scaling_initializer(tf.global_variables())
+			#initializer = tf.variance_scaling_initializer(tf.global_variables())
+			#initializer = tf.orthogonal_initializer(tf.global_variables())
+			#initializer = tf.truncated_normal_initializer(tf.global_variables())
+			#initializer = tf.random_normal_initializer(tf.global_variables())
+			#initializer = tf.random_uniform_initializer(tf.global_variables())
 
 		with eval_graph.as_default():
 			# Create a model.
@@ -361,28 +383,25 @@ def main():
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				if is_sparse_label:
+				if use_batch_list:
 					# Supports lists of dense or sparse labels.
 					train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
-					# Supports lists of dense or sparse labels.
-					train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 					# Supports a dense label only.
 					#train_neural_net_after_generating_batch_list(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
-					#train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+					train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				if is_sparse_label:
+				if use_batch_list:
 					# Supports lists of dense or sparse labels.
 					evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
-
+				else:
 					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
 					# Supports dense or sparse labels.
 					#evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
-				else:
 					# Supports dense or sparse labels.
 					evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
@@ -395,7 +414,7 @@ def main():
 		with sess.graph.as_default():
 			if is_sparse_label:
 				ground_truths = test_labels
-				if True:
+				if use_batch_list:
 					# Supports lists of dense or sparse labels.
 					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
 					inferences = None
@@ -406,9 +425,11 @@ def main():
 				else:
 					# Supports dense or sparse labels.
 					inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					#inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=label_eos_token))
+					inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=blank_label))
 			else:
 				ground_truths = np.argmax(test_labels, axis=-1)
-				if True:
+				if use_batch_list:
 					# Supports lists of dense or sparse labels.
 					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
 					inferences = None
