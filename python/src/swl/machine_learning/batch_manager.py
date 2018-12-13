@@ -1,4 +1,5 @@
-import abc
+import os, abc
+import numpy as np
 
 #%%------------------------------------------------------------------
 # BatchManager.

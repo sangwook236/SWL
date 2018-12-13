@@ -9,11 +9,10 @@ sys.path.append('../../src')
 
 #--------------------
 import numpy as np
-from imgaug import augmenters as iaa
-from swl.machine_learning.imgaug_batch_manager import ImgaugBatchManager, ImgaugBatchManagerWithFileInput, ImgaugFileBatchManager, ImgaugFileBatchManagerWithFileInput
+from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleBatchManagerWithFileInput, SimpleFileBatchManager, SimpleFileBatchManagerWithFileInput
 from swl.util.directory_queue_manager import DirectoryQueueManager
 
-def imgaug_batch_manager_example():
+def simple_batch_manager_example():
 	num_examples = 100
 	images = np.random.rand(num_examples, 64, 64, 1)
 	labels = np.random.randint(2, size=(num_examples, 5))
@@ -22,12 +21,7 @@ def imgaug_batch_manager_example():
 	shuffle = True
 	is_time_major = False
 
-	augmenter = iaa.Sequential([
-		iaa.Fliplr(0.5),
-		iaa.CoarseDropout(p=0.1, size_percent=0.1)
-	])
-
-	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
+	batchMgr = SimpleBatchManager(images, labels, batch_size, shuffle, is_time_major)
 	for epoch in range(num_epoches):
 		print('>>>>> Epoch {}.'.format(epoch))
 
@@ -36,25 +30,19 @@ def imgaug_batch_manager_example():
 			# Train with batch (images & labels).
 			print(idx, batch[0].shape, batch[1].shape)
 
-def imgaug_file_batch_manager_example():
+def simple_file_batch_manager_example():
 	num_examples = 100
 	batch_size = 15
 	num_epoches = 2
 	shuffle = True
-	is_label_augmented = False
 	is_time_major = False
 
-	if is_label_augmented:
+	if True:
 		images = np.random.rand(num_examples, 64, 64, 1)
 		labels = np.random.rand(num_examples, 64, 64, 1)
 	else:
 		images = np.random.rand(num_examples, 64, 64, 1)
 		labels = np.random.randint(2, size=(num_examples, 5))
-
-	augmenter = iaa.Sequential([
-		iaa.Fliplr(0.5),
-		iaa.CoarseDropout(p=0.1, size_percent=0.1)
-	])
 
 	base_dir_path = './batch_dir'
 	num_dirs = 5
@@ -70,7 +58,7 @@ def imgaug_file_batch_manager_example():
 
 		print('>>>>> Directory {}.'.format(dir_id))
 
-		batchMgr = ImgaugFileBatchManager(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
+		batchMgr = SimpleFileBatchManager(images, labels, dir_path, batch_size, shuffle, is_time_major)
 		batchMgr.putBatches()
 
 		for epoch in range(num_epoches):
@@ -85,12 +73,11 @@ def imgaug_file_batch_manager_example():
 
 		dir_id += 1
 
-def imgaug_file_batch_manager_with_file_input_example():
+def simple_file_batch_manager_with_file_input_example():
 	num_examples = 100
 	batch_size = 12
 	num_epoches = 2
 	shuffle = True
-	is_label_augmented = False
 	is_time_major = False
 
 	npy_filepath_pairs = np.array([
@@ -108,11 +95,6 @@ def imgaug_file_batch_manager_with_file_input_example():
 	total_num_file_pairs = len(npy_filepath_pairs)
 	num_file_pairs = 4
 	num_steps = ((total_num_file_pairs - 1) // num_file_pairs + 1) if total_num_file_pairs > 0 else 0
-
-	augmenter = iaa.Sequential([
-		iaa.Fliplr(0.5),
-		iaa.CoarseDropout(p=0.1, size_percent=0.1)
-	])
 
 	base_dir_path = './batch_dir'
 	num_dirs = 5
@@ -141,7 +123,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 			if file_pair_indices.size > 0:  # If file_pair_indices is non-empty.
 				sub_filepath_pairs = npy_filepath_pairs[file_pair_indices]
 				if sub_filepath_pairs.size > 0:  # If sub_filepath_pairs is non-empty.
-					batchMgr = ImgaugFileBatchManagerWithFileInput(augmenter, sub_filepath_pairs, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
+					batchMgr = SimpleFileBatchManagerWithFileInput(sub_filepath_pairs, dir_path, batch_size, shuffle, is_time_major)
 					batchMgr.putBatches()
 
 					for epoch in range(num_epoches):
@@ -157,10 +139,10 @@ def imgaug_file_batch_manager_with_file_input_example():
 		dir_id += 1
 
 def main():
-	#imgaug_batch_manager_example()
+	simple_batch_manager_example()
 
-	#imgaug_file_batch_manager_example()
-	imgaug_file_batch_manager_with_file_input_example()
+	#simple_file_batch_manager_example()
+	#simple_file_batch_manager_with_file_input_example()
 
 #%%------------------------------------------------------------------
 
