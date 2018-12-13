@@ -1,9 +1,6 @@
 import time
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
-from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
-from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
 
 #%%------------------------------------------------------------------
@@ -159,8 +156,8 @@ def train_neural_net_after_generating_batch_list(session, nnTrainer, train_input
 
 	#--------------------
 	indices = np.arange(num_val_examples)
-	if shuffle:
-		np.random.shuffle(indices)
+	#if shuffle:
+	#	np.random.shuffle(indices)
 
 	val_inputs_list, val_outputs_list = list(), list()
 	for step in range(num_val_steps):
@@ -342,7 +339,7 @@ def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_inp
 		#val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
 		val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValication: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The numbers of validation inputs and outputs are not equal.')

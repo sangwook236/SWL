@@ -201,8 +201,8 @@ class NeuralNetTrainer(object):
 						val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
-				if shuffle:
-					np.random.shuffle(indices)
+				#if shuffle:
+				#	np.random.shuffle(indices)
 
 				for step in range(val_steps_per_epoch):
 					start = step * batch_size
@@ -242,14 +242,10 @@ class NeuralNetTrainer(object):
 			print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 		# Close writers.
-		"""
 		if train_summary_writer is not None:
-			# FIXME [error] >>Segmentation fault (core dumped).
 			train_summary_writer.close()
 		if val_summary_writer is not None:
-			# FIXME [error] >>Segmentation fault (core dumped).
 			val_summary_writer.close()
-		"""
 
 		return history
 
@@ -417,8 +413,8 @@ class NeuralNetTrainer(object):
 						val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
-				if shuffle:
-					np.random.shuffle(indices)
+				#if shuffle:
+				#	np.random.shuffle(indices)
 
 				for step in range(val_steps_per_epoch):
 					start = step * batch_size
@@ -600,8 +596,8 @@ class NeuralNetTrainer(object):
 						val_summary_writer.add_summary(summary, epoch)
 				"""
 				indices = np.arange(num_val_examples)
-				if shuffle:
-					np.random.shuffle(indices)
+				#if shuffle:
+				#	np.random.shuffle(indices)
 
 				for step in range(val_steps_per_epoch):
 					start = step * batch_size

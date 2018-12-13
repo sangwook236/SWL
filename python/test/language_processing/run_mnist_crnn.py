@@ -20,11 +20,9 @@ from PIL import Image
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer, GradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-import swl.machine_learning.util as swl_ml_util
 import swl.util.util as swl_util
-from util import train_neural_net_by_batch_list, train_neural_net_after_generating_batch_list, train_neural_net
-from util import evaluate_neural_net_by_batch_list, evaluate_neural_net
-from util import infer_from_batch_list_by_neural_net, infer_by_neural_net
+import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 import traceback
 
@@ -385,11 +383,11 @@ def main():
 			with sess.graph.as_default():
 				if use_batch_list:
 					# Supports lists of dense or sparse labels.
-					train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+					swl_tf_util.train_neural_net_by_batch_list(sess, nnTrainer, train_images_list, train_labels_list, test_images_list, test_labels_list, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
 					# Supports a dense label only.
-					#train_neural_net_after_generating_batch_list(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
-					train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+					#swl_tf_util.train_neural_net_after_generating_batch_list(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+					swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 		start_time = time.time()
@@ -397,13 +395,13 @@ def main():
 			with sess.graph.as_default():
 				if use_batch_list:
 					# Supports lists of dense or sparse labels.
-					evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					swl_tf_util.evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				else:
 					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
 					# Supports dense or sparse labels.
-					#evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					#swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 					# Supports dense or sparse labels.
-					evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
@@ -416,7 +414,7 @@ def main():
 				ground_truths = test_labels
 				if use_batch_list:
 					# Supports lists of dense or sparse labels.
-					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
+					inferences_list = swl_tf_util.infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
 					inferences = None
 					for inf in inferences_list:
 						#inf = sess.run(tf.sparse_to_dense(inf[0], inf[2], inf[1], default_value=label_eos_token))
@@ -424,20 +422,20 @@ def main():
 						inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
 				else:
 					# Supports dense or sparse labels.
-					inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 					#inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=label_eos_token))
 					inferences = sess.run(tf.sparse_to_dense(inferences[0], inferences[2], inferences[1], default_value=blank_label))
 			else:
 				ground_truths = np.argmax(test_labels, axis=-1)
 				if use_batch_list:
 					# Supports lists of dense or sparse labels.
-					inferences_list = infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
+					inferences_list = swl_tf_util.infer_from_batch_list_by_neural_net(sess, nnInferrer, test_images_list, infer_saver, checkpoint_dir_path, is_time_major)
 					inferences = None
 					for inf in inferences_list:
 						inferences = inf if inferences is None else np.concatenate((inferences, inf), axis=0)
 				else:
 					# Supports dense or sparse labels.
-					inferences = infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+					inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				inferences = np.argmax(inferences, axis=-1)
 
 			# TODO [check] >> Is it correct?
