@@ -24,9 +24,9 @@ from python_speech_features import mfcc
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-import swl.machine_learning.util as swl_ml_util
 import swl.util.util as swl_util
-from util import train_neural_net_by_batch_list, train_neural_net, evaluate_neural_net, infer_by_neural_net
+import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.tensorflow.util as swl_tf_util
 import traceback
 
 #%%------------------------------------------------------------------
@@ -413,16 +413,16 @@ def main():
 			with sess.graph.as_default():
 				if is_sparse_label:
 					# Supports lists of dense and sparse labels.
-					train_neural_net_by_batch_list(sess, nnTrainer, [train_inputs], [train_outputs], [val_inputs], [val_outputs], num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
+					swl_tf_util.train_neural_net_by_batch_list(sess, nnTrainer, [train_inputs], [train_outputs], [val_inputs], [val_outputs], num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_label)
 				else:
 					# Supports a dense label only.
-					train_neural_net(sess, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+					swl_tf_util.train_neural_net(sess, nnTrainer, train_inputs, train_outputs, val_inputs, val_outputs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				evaluate_neural_net(sess, nnEvaluator, val_inputs, val_outputs, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
+				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, val_inputs, val_outputs, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
@@ -432,7 +432,7 @@ def main():
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			# type(inferences) = tf.SparseTensorValue.
-			inferences = infer_by_neural_net(sess, nnInferrer, val_inputs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, val_inputs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
 
 			str_decoded = ''.join([chr(x) for x in np.asarray(inferences.values) + FIRST_INDEX])
 			# Replaces blank label to none.

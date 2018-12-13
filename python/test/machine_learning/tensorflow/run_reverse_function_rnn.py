@@ -26,9 +26,9 @@ import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-import swl.machine_learning.util as swl_ml_util
 import swl.util.util as swl_util
-from util import train_neural_net, evaluate_neural_net, infer_by_neural_net
+import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.tensorflow.util as swl_tf_util
 from reverse_function_util import ReverseFunctionDataset
 from simple_rnn_tf import SimpleRnnUsingTF
 #from simple_rnn_keras import SimpleRnnUsingKeras
@@ -188,7 +188,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
-				train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
+				swl_tf_util.train_neural_net(sess, nnTrainer, train_rnn_input_seqs, train_rnn_output_seqs, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 		total_elapsed_time = time.time()
@@ -196,7 +196,7 @@ def main():
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
-				evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
+				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, val_rnn_input_seqs, val_rnn_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -211,7 +211,7 @@ def main():
 			# Character strings -> numeric data.
 			test_data = dataset.to_numeric_data(test_strs)
 
-			inferences = infer_by_neural_net(sess, nnInferrer, test_data, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_data, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
 
 			# Numeric data -> character strings.
 			inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)

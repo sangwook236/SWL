@@ -1,9 +1,6 @@
 import time
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
-from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
-from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.machine_learning.util as swl_ml_util
 
 #%%------------------------------------------------------------------

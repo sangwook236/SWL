@@ -3,7 +3,9 @@ import numpy as np
 import imgaug as ia
 from swl.machine_learning.batch_manager import BatchManager, FileBatchManager
 
-# Augment batches using imgaug library in background processes.
+#%%------------------------------------------------------------------
+# ImgaugBatchManager.
+#	Augment batches using imgaug library in background processes.
 class ImgaugBatchManager(BatchManager):
 	def __init__(self, augmenter, images, labels, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False):
 		super().__init__()
@@ -95,8 +97,9 @@ class ImgaugBatchManager(BatchManager):
 					yield ia.Batch(images=batch_images, keypoints=batch_labels)
 
 #%%------------------------------------------------------------------
-
-# Augment batches from multiple npy files using imgaug library in background processes.
+# ImgaugBatchManagerWithFileInput.
+#	Load dataset from multiple npy files.
+#	Augment batches using imgaug library in background processes.
 class ImgaugBatchManagerWithFileInput(ImgaugBatchManager):
 	def __init__(self, augmenter, npy_filepath_pairs, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False):
 		images, labels = None, None
@@ -109,8 +112,8 @@ class ImgaugBatchManagerWithFileInput(ImgaugBatchManager):
 		super().__init__(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
 
 #%%------------------------------------------------------------------
-
-# Save, load, and augment batches as npy files using imgaug library .
+# ImgaugFileBatchManager.
+#	Generate, augment, save, and load batches through npy files using imgaug library.
 class ImgaugFileBatchManager(FileBatchManager):
 	def __init__(self, augmenter, images, labels, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False):
 		super().__init__()
@@ -139,14 +142,6 @@ class ImgaugFileBatchManager(FileBatchManager):
 		for step in range(self._num_steps):
 			batch_images = np.load(os.path.join(self._dir_path, self._image_file_format.format(step)))
 			batch_labels = np.load(os.path.join(self._dir_path, self._label_file_format.format(step)))
-
-			if self._is_label_augmented:
-				augseq_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-				batch_images = augseq_det.augment_images(batch_images)
-				batch_labels = augseq_det.augment_images(batch_labels)
-			else:
-				batch_images = self._augmenter.augment_images(batch_images)
-
 			yield batch_images, batch_labels
 
 	def putBatches(self, *args, **kwargs):
@@ -162,12 +157,20 @@ class ImgaugFileBatchManager(FileBatchManager):
 				batch_images = self._images[batch_indices]
 				batch_labels = self._labels[batch_indices]
 				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
+					if self._is_label_augmented:
+						augseq_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+						batch_images = augseq_det.augment_images(batch_images)
+						batch_labels = augseq_det.augment_images(batch_labels)
+					else:
+						batch_images = self._augmenter.augment_images(batch_images)
+
 					np.save(os.path.join(self._dir_path, self._image_file_format.format(step)), batch_images)
 					np.save(os.path.join(self._dir_path, self._label_file_format.format(step)), batch_labels)
 
 #%%------------------------------------------------------------------
-
-# Save, augment, and load batches as npy files from multiple npy files using imgaug library .
+# ImgaugFileBatchManagerWithFileInput.
+#	Load dataset from multiple npy files.
+#	Generate, augment, save, and load batches through npy files using imgaug library.
 class ImgaugFileBatchManagerWithFileInput(ImgaugFileBatchManager):
 	def __init__(self, augmenter, npy_filepath_pairs, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False):
 		images, labels = None, None

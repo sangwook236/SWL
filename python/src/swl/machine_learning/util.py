@@ -1,6 +1,7 @@
-#import keras
-import numpy as np
 import os, math
+import numpy as np
+import tensorflow as tf
+#import keras
 import matplotlib.pyplot as plt
 
 def to_one_hot_encoding(label_indexes, num_classes=None):
@@ -126,8 +127,6 @@ def compute_intersection_over_union_of_aabb(aabb1, aabb2):
 	return interArea / float(aabb1Area + aabb2Area - interArea)
 
 #%%------------------------------------------------------------------
-
-import tensorflow as tf
 
 def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
 	import tf_cnnvis
