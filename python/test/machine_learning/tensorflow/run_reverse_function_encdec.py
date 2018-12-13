@@ -57,6 +57,8 @@ def create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, 
 		# Encoder-decoder model w/o attention.
 		return SimpleEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
+#%%------------------------------------------------------------------
+
 def main():
 	#np.random.seed(7)
 

@@ -32,16 +32,17 @@ import swl.machine_learning.tensorflow.util as swl_tf_util
 from reverse_function_util import ReverseFunctionDataset
 from simple_rnn_tf import SimpleRnnUsingTF
 #from simple_rnn_keras import SimpleRnnUsingKeras
+#from keras import backend as K
 import traceback
 
 #%%------------------------------------------------------------------
-
-#from keras import backend as K
 
 # REF [site] >> https://talbaumel.github.io/attention/
 def create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major):
 	return SimpleRnnUsingTF(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_stacked=is_stacked, is_time_major=is_time_major)
 	#return SimpleRnnUsingKeras(input_shape, output_shape, is_bidirectional=False, is_stacked=is_stacked)
+
+#%%------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)

@@ -33,7 +33,17 @@ from mnist_cnn_tf import MnistCnnUsingTF
 #from mnist_cnn_tf_slim import MnistCnnUsingTfSlim
 #from mnist_cnn_keras import MnistCnnUsingKeras
 #from mnist_cnn_tflearn import MnistCnnUsingTfLearn
+#from keras import backend as K
 import traceback
+
+#%%------------------------------------------------------------------
+
+def create_mnist_cnn(input_shape, output_shape):
+	model_type = 0  # {0, 1}.
+	return MnistCnnUsingTF(input_shape, output_shape, model_type)
+	#return MnistCnnUsingTfSlim(input_shape, output_shape)
+	#return MnistCnnUsingTfLearn(input_shape, output_shape)
+	#return MnistCnnUsingKeras(input_shape, output_shape, model_type)
 
 #%%------------------------------------------------------------------
 
@@ -71,15 +81,6 @@ def load_data(image_shape):
 	return train_images, train_labels, test_images, test_labels
 
 #%%------------------------------------------------------------------
-
-#from keras import backend as K
-
-def create_mnist_cnn(input_shape, output_shape):
-	model_type = 0  # {0, 1}.
-	return MnistCnnUsingTF(input_shape, output_shape, model_type)
-	#return MnistCnnUsingTfSlim(input_shape, output_shape)
-	#return MnistCnnUsingTfLearn(input_shape, output_shape)
-	#return MnistCnnUsingKeras(input_shape, output_shape, model_type)
 
 def main():
 	#np.random.seed(7)

@@ -29,7 +29,15 @@ import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_mlp import MnistMLP
+#from keras import backend as K
 import traceback
+
+#%%------------------------------------------------------------------
+
+def create_mnist_mlp(input_shape, output_shape):
+	model_type = 4  # {1, 4}.
+	max_neuron_count = 200000
+	return MnistMLP(input_shape, output_shape, model_type, max_neuron_count)
 
 #%%------------------------------------------------------------------
 
@@ -67,13 +75,6 @@ def load_data(image_shape):
 	return train_images, train_labels, test_images, test_labels
 
 #%%------------------------------------------------------------------
-
-#from keras import backend as K
-
-def create_mnist_mlp(input_shape, output_shape):
-	model_type = 4  # {1, 4}.
-	max_neuron_count = 200000
-	return MnistMLP(input_shape, output_shape, model_type, max_neuron_count)
 
 def main():
 	#np.random.seed(7)

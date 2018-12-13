@@ -28,6 +28,14 @@ import traceback
 
 #%%------------------------------------------------------------------
 
+def create_crnn(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major, is_sparse_label, label_eos_token):
+	if is_sparse_label:
+		return MnistCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major, eos_token=label_eos_token)
+	else:
+		return MnistCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+
+#%%------------------------------------------------------------------
+
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
@@ -211,12 +219,6 @@ def prepare_single_character_dataset(image_shape, num_classes, max_time_steps, s
 		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
 
 #%%------------------------------------------------------------------
-
-def create_crnn(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major, is_sparse_label, label_eos_token):
-	if is_sparse_label:
-		return MnistCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major, eos_token=label_eos_token)
-	else:
-		return MnistCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)

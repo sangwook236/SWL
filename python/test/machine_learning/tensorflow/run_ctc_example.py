@@ -228,6 +228,12 @@ class SimpleRnnWithSparseLabel(SimpleRnnBase):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
+def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, is_sparse_label=True):
+	if is_sparse_label:
+		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
+	else:
+		return SimpleRnnWithDenseLabel(num_features, num_classes, label_eos_token, is_time_major=is_time_major)
+
 #%%------------------------------------------------------------------
 
 class SimpleRnnTrainer(NeuralNetTrainer):
@@ -243,12 +249,6 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 		super().__init__(neuralNet, optimizer, initial_epoch)
 
 #%%------------------------------------------------------------------
-
-def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, is_sparse_label=True):
-	if is_sparse_label:
-		return SimpleRnnWithSparseLabel(num_features, num_classes, is_time_major=is_time_major)
-	else:
-		return SimpleRnnWithDenseLabel(num_features, num_classes, label_eos_token, is_time_major=is_time_major)
 
 def main():
 	#np.random.seed(7)
