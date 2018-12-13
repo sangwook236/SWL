@@ -55,6 +55,8 @@ def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, dec
 		# Sequence-to-sequence encoder-decoder model w/o attention.
 		return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
+#%%------------------------------------------------------------------
+
 def main():
 	#np.random.seed(7)
 

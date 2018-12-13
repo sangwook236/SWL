@@ -34,6 +34,12 @@ import traceback
 
 #%%------------------------------------------------------------------
 
+def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset, is_time_major):
+	# Sequence-to-sequence encoder-decoder model w/o attention.
+	return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_time_major=is_time_major)
+
+#%%------------------------------------------------------------------
+
 def pad_image(img, target_height, target_width):
 	if 2 == img.ndim:
 		height, width = img.shape
@@ -55,9 +61,7 @@ def pad_image(img, target_height, target_width):
 		return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin), (0, 0)), 'edge')
 		#return np.pad(img, ((top_margin, bottom_margin), (left_margin, right_margin), (0, 0)), 'constant', constant_values=(0, 0))
 
-def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset, is_time_major):
-	# Sequence-to-sequence encoder-decoder model w/o attention.
-	return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_time_major=is_time_major)
+#%%------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)

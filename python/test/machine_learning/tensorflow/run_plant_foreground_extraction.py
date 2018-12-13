@@ -36,6 +36,7 @@ import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from rda_plant_util import RdaPlantDataset
 from fc_densenet_keras import FcDenseNetUsingKeras
+from keras import backend as K
 import traceback
 
 #%%------------------------------------------------------------------
@@ -212,8 +213,6 @@ def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_hei
 	print('\tElapsed time = {}'.format(end_time - start_time))
 
 #%%------------------------------------------------------------------
-
-from keras import backend as K
 
 def main():
 	#np.random.seed(7)
