@@ -39,23 +39,7 @@ def create_crnn(image_height, image_width, image_channel, num_classes, num_time_
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-8
-			tf.summary.scalar('learning_rate', learning_rate)
-		with tf.name_scope('optimizer'):
-			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
-			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
-			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
-			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-			optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
-
-		super().__init__(neuralNet, optimizer, initial_epoch)
-
-class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
-	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
-		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-7
+			learning_rate = 1e-3
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
@@ -63,8 +47,24 @@ class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
 			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-			optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+
+		super().__init__(neuralNet, optimizer, initial_epoch)
+
+class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
+	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
+		with tf.name_scope('learning_rate'):
+			learning_rate = 1e-3
+			tf.summary.scalar('learning_rate', learning_rate)
+		with tf.name_scope('optimizer'):
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
+			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
+			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
 		super().__init__(neuralNet, optimizer, max_gradient_norm, initial_epoch)
 
@@ -179,10 +179,10 @@ def prepare_single_character_dataset(image_shape, num_classes, max_time_steps, s
 	# Pixel value: [0, 255].
 	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
-	train_images = train_images / 255.0
+	train_images /= 255.0
 	train_images = np.reshape(train_images, (-1,) + image_shape)
 	train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
-	test_images = test_images / 255.0
+	test_images /= 255.0
 	test_images = np.reshape(test_images, (-1,) + image_shape)
 	test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
 
@@ -234,11 +234,11 @@ def main():
 	#output_dir_suffix = '20181211T172200'
 
 	is_time_major = False  # Fixed.
-	is_sparse_label = True
+	is_sparse_label = False
 	if is_sparse_label:
 		use_batch_list = True  # Fixed.
 	else:
-		use_batch_list = True
+		use_batch_list = False
 
 	image_height, image_width, image_channel = 28, 28, 1
 	"""
@@ -304,11 +304,14 @@ def main():
 	if is_sparse_label:
 		train_labels = np.argmax(train_labels, axis=-1)
 		test_labels = np.argmax(test_labels, axis=-1)
-	print('Train images = {}, train labels = {}, test images = {}, test labels = {}'.format(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape))
 
 	if use_batch_list:
 		train_images_list, train_labels_list = swl_ml_util.generate_batch_list(train_images, train_labels, batch_size, shuffle=shuffle, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
 		test_images_list, test_labels_list = swl_ml_util.generate_batch_list(test_images, test_labels, batch_size, shuffle=False, is_time_major=is_time_major, is_sparse_label=is_sparse_label, eos_token=blank_label)
+
+	print('Train images = {}, train labels = {}, test images = {}, test labels = {}'.format(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape))
+	if use_batch_list:
+		print('Train images list = {}, train labels list = {}, test images list = {}, test labels list = {}'.format(len(train_images_list), len(train_labels_list), len(test_images_list), len(test_labels_list)))
 
 	#--------------------
 	# Create models, sessions, and graphs.
@@ -333,8 +336,8 @@ def main():
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
 			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-			#initializer = tf.global_variables_initializer()
-			initializer = tf.variables_initializer(tf.global_variables())
+			initializer = tf.global_variables_initializer()
+			#initializer = tf.variables_initializer(tf.global_variables())
 			#initializer = tf.glorot_normal_initializer(tf.global_variables())  # Xavier normal initializer.
 			#initializer = tf.glorot_uniform_initializer(tf.global_variables())  # Xavier uniform initializer.
 			#initializer = tf.uniform_unit_scaling_initializer(tf.global_variables())

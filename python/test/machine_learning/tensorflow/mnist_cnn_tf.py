@@ -32,17 +32,17 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			fc1 = tf.layers.flatten(conv2, name='flatten')
 
-			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='fc')
+			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='dense')
 			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='fc')
-				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='dense')
+				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			elif num_classes >= 2:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='fc')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='fc')
+				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='dense')
+				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
@@ -64,15 +64,15 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 		with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
 			fc1 = self._flatten_layer(conv2, 7 * 7 * 64, layer_name='flatten')
 
-			fc1 = self._fc_layer(fc1, 7 * 7 * 64, 1024, layer_name='fc', act=tf.nn.relu)
+			fc1 = self._fc_layer(fc1, 7 * 7 * 64, 1024, layer_name='dense', act=tf.nn.relu)
 			# NOTE [info] >> If keep_prob=1.0, dropout layer is not created.
 			fc1 = self._dropout_layer(fc1, keep_prob, 'dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				fc2 = self._fc_layer(fc1, 1024, 1, layer_name='fc', act=tf.sigmoid)
+				fc2 = self._fc_layer(fc1, 1024, 1, layer_name='dense', act=tf.sigmoid)
 			elif num_classes >= 2:
-				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='fc', act=tf.nn.softmax)
+				fc2 = self._fc_layer(fc1, 1024, num_classes, layer_name='dense', act=tf.nn.softmax)
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 

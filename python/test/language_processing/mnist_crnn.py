@@ -209,14 +209,12 @@ class MnistCRNN(abc.ABC):
 
 class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
-		input_tensor_ph = tf.placeholder(tf.float32, [None, None, image_height, image_width, image_channel], name='input_tensor_ph')
-		output_tensor_ph = tf.placeholder(tf.int32, [None, None, num_classes], name='output_tensor_ph')
+		input_tensor_ph = tf.placeholder(tf.float32, shape=[None, num_time_steps, image_height, image_width, image_channel], name='input_tensor_ph')
+		output_tensor_ph = tf.placeholder(tf.int32, shape=[None, num_time_steps, num_classes], name='output_tensor_ph')
 		# 1D array of size [batch_size].
-		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
-		#output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
-		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+		input_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='input_seq_lens_ph')
+		#output_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='output_seq_lens_ph')
 
-		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
@@ -260,17 +258,14 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 
 class MnistCrnnWithCtcLoss(MnistCRNN):
 	def __init__(self, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False, eos_token=-1):
-		input_tensor_ph = tf.placeholder(tf.float32, [None, None, image_height, image_width, image_channel], name='input_tensor_ph')
-		output_tensor_ph = tf.sparse_placeholder(tf.int32, name='output_tensor_ph')
+		input_tensor_ph = tf.placeholder(tf.float32, shape=[None, None, image_height, image_width, image_channel], name='input_tensor_ph')
+		output_tensor_ph = tf.sparse_placeholder(tf.int32, shape=[None, None], name='output_tensor_ph')
 		# 1D array of size [batch_size].
-		input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
-		#output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
-		#batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
-
-		#super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
-		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
-
+		input_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='input_seq_lens_ph')
+		#output_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='output_seq_lens_ph')
 		self._eos_token = eos_token
+
+		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		if self._is_time_major:

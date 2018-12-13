@@ -112,7 +112,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -159,7 +159,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -167,9 +167,9 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		# Decoder.
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				output_layer = tf.layers.Dense(1, use_bias=True)
+				proj_layer = tf.layers.Dense(1, use_bias=True)
 			elif num_classes >= 2:
-				output_layer = tf.layers.Dense(num_classes, use_bias=True)
+				proj_layer = tf.layers.Dense(num_classes, use_bias=True)
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
@@ -185,7 +185,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 			dec_cell, helper=helper,
 			#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
 			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_state),  # tf.contrib.seq2seq.AttentionWrapperState.
-			output_layer=output_layer)
+			output_layer=proj_layer)
 		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 		decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 
@@ -234,7 +234,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -288,7 +288,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		dec_cell = tf.contrib.seq2seq.AttentionWrapper(dec_cell, attention_mechanism, attention_layer_size=num_attention_units)
 
 		# FIXME [implement] >> How to add dropout?
-		#with tf.variable_scope('tf_seq2seq_encdec_attn', reuse=tf.AUTO_REUSE):
+		#with tf.variable_scope('simple_seq2seq_encdec_tf_attention', reuse=tf.AUTO_REUSE):
 		#	dropout_rate = 1 - keep_prob
 		#	# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
 		#	cell_outputs = tf.layers.dropout(cell_outputs, rate=dropout_rate, training=is_training, name='dropout')
@@ -296,9 +296,9 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 		# Decoder.
 		with tf.variable_scope('projection', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
-				output_layer = tf.layers.Dense(1, use_bias=True)
+				proj_layer = tf.layers.Dense(1, use_bias=True)
 			elif num_classes >= 2:
-				output_layer = tf.layers.Dense(num_classes, use_bias=True)
+				proj_layer = tf.layers.Dense(num_classes, use_bias=True)
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 
@@ -314,7 +314,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleSeq2SeqNeuralNet):
 			dec_cell, helper=helper,
 			#initial_state=enc_cell_state,  # tf.contrib.rnn.LSTMStateTuple if attention is not applied.
 			initial_state=dec_cell.zero_state(batch_size, tf.float32).clone(cell_state=enc_cell_states),  # tf.contrib.seq2seq.AttentionWrapperState.
-			output_layer=output_layer)
+			output_layer=proj_layer)
 		#decoder_outputs, decoder_state, decoder_seq_lens = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 		decoder_outputs, _, _ = tf.contrib.seq2seq.dynamic_decode(decoder, output_time_major=is_time_major, impute_finished=True, maximum_iterations=None if encoder_input_seq_lens is None else tf.reduce_max(encoder_input_seq_lens) * 2, scope='dec')
 
