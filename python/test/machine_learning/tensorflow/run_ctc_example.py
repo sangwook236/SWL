@@ -264,6 +264,8 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181129T122700'
 
+	initial_epoch = 0
+
 	is_sparse_label = True
 	is_time_major = False
 	label_eos_token = -1
@@ -277,8 +279,6 @@ def main():
 	num_epochs = 200  # Number of times to iterate over training data.
 	#num_batches_per_epoch = int(num_examples / batch_size)
 	shuffle = True
-
-	initial_epoch = 0
 
 	# Create sessions.
 	sess_config = tf.ConfigProto()

@@ -95,6 +95,8 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180302T155710'
 
+	initial_epoch = 0
+
 	num_classes = 10
 	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
 	output_shape = (None, num_classes)
@@ -102,8 +104,6 @@ def main():
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
-
-	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}

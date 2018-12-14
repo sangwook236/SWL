@@ -70,6 +70,9 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181210T003513'
 
+	max_gradient_norm = 5
+	initial_epoch = 0
+
 	characters = list('abcd')
 
 	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
@@ -84,9 +87,6 @@ def main():
 		batch_size = 4  # Number of samples per gradient update.
 		num_epochs = 70  # Number of times to iterate over training data.
 	shuffle = True
-
-	max_gradient_norm = 5
-	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
 	#sess_config.allow_soft_placement = True

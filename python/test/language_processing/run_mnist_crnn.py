@@ -255,6 +255,9 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181211T172200'
 
+	#max_gradient_norm = 5
+	initial_epoch = 0
+
 	is_time_major = False  # Fixed.
 	is_sparse_label = False
 	if is_sparse_label:
@@ -287,9 +290,6 @@ def main():
 	else:
 		num_epochs = 200  # Number of times to iterate over training data.
 	shuffle = True
-
-	#max_gradient_norm = 5
-	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}

@@ -227,6 +227,8 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180117T135317'
 
+	initial_epoch = 0
+
 	image_suffix = ''
 	image_extension = 'png'
 	label_suffix = '_foreground'
@@ -240,8 +242,6 @@ def main():
 	batch_size = 6  # Number of samples per gradient update.
 	num_epochs = 50  # Number of times to iterate over training data.
 	shuffle = True
-
-	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
 	#sess_config.allow_soft_placement = True
