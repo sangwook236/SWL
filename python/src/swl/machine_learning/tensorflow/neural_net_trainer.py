@@ -5,16 +5,17 @@ import tensorflow as tf
 #%%------------------------------------------------------------------
 
 class NeuralNetTrainer(object):
-	def __init__(self, neuralNet, optimizer, initial_epoch=0):
+	def __init__(self, neuralNet, optimizer, global_step=None):
 		super().__init__()
 
-		self._optimizer = optimizer
 		self._neuralNet = neuralNet
+		self._optimizer = optimizer
+		self._global_step = global_step
+
 		self._loss, self._accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 		if self._loss is None:
 			raise ValueError('Invalid loss')
 
-		self._global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		self._train_operation = self._get_train_operation(self._loss, self._global_step)
 
 		# Merge all the summaries.
@@ -645,9 +646,9 @@ class NeuralNetTrainer(object):
 #%%------------------------------------------------------------------
 
 class GradientClippingNeuralNetTrainer(NeuralNetTrainer):
-	def __init__(self, neuralNet, optimizer, max_gradient_norm, initial_epoch=0):
+	def __init__(self, neuralNet, optimizer, max_gradient_norm, global_step=None):
 		self._max_gradient_norm = max_gradient_norm
-		super().__init__(neuralNet, optimizer, initial_epoch)
+		super().__init__(neuralNet, optimizer, global_step)
 
 	def _get_train_operation(self, loss, global_step=None):
 		with tf.name_scope('train_op'):

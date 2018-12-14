@@ -38,6 +38,7 @@ def create_crnn(image_height, image_width, image_channel, num_classes, num_time_
 
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
+		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 1e-2
 			tf.summary.scalar('learning_rate', learning_rate)
@@ -50,10 +51,11 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
-		super().__init__(neuralNet, optimizer, initial_epoch)
+		super().__init__(neuralNet, optimizer, global_step)
 
 class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
+		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 1e-2
 			tf.summary.scalar('learning_rate', learning_rate)
@@ -66,7 +68,7 @@ class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
-		super().__init__(neuralNet, optimizer, max_gradient_norm, initial_epoch)
+		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step)
 
 #%%------------------------------------------------------------------
 
