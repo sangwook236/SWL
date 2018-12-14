@@ -40,16 +40,26 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-2
+			start_learning_rate = 1e-2
+			decay_steps = 10000
+			decay_rate = 0.96
+			#learning_rate = start_learning_rate
+			learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.inverse_time_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.natural_exp_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.cosine_decay(start_learning_rate, global_step, decay_steps, alpha=0.0)
+			#learning_rate = tf.train.linear_cosine_decay(start_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.noisy_linear_cosine_decay(start_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.polynomial_decay(start_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
-			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
-			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
-			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
-			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate, rho=0.95, epsilon=1e-8)
+			#optimizer = tf.train.AdagradDAOptimizer(learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
+			#optimizer = tf.train.AdagradOptimizer(learning_rate, initial_accumulator_value=0.1)
+			#optimizer = tf.train.AdamOptimizer(learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+			optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9, use_nesterov=False)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
 		super().__init__(neuralNet, optimizer, global_step)
 
@@ -57,16 +67,26 @@ class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-2
-			tf.summary.scalar('learning_rate', learning_rate)
+			start_learning_rate = 1e-2
+			decay_steps = 10000
+			decay_rate = 0.96
+			#learning_rate = start_learning_rate
+			learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.inverse_time_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.natural_exp_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.cosine_decay(start_learning_rate, global_step, decay_steps, alpha=0.0)
+			#learning_rate = tf.train.linear_cosine_decay(start_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.noisy_linear_cosine_decay(start_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.polynomial_decay(start_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
+			#tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
-			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
-			#optimizer = tf.train.AdagradDAOptimizer(learning_rate=learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
-			#optimizer = tf.train.AdagradOptimizer(learning_rate=learning_rate, initial_accumulator_value=0.1)
-			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			#optimizer = tf.train.AdadeltaOptimizer(learning_rate, rho=0.95, epsilon=1e-8)
+			#optimizer = tf.train.AdagradDAOptimizer(learning_rate, global_step=?, initial_gradient_squared_accumulator_value=0.1, l1_regularization_strength=0.0, l2_regularization_strength=0.0)
+			#optimizer = tf.train.AdagradOptimizer(learning_rate, initial_accumulator_value=0.1)
+			#optimizer = tf.train.AdamOptimizer(learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate)
+			optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9, use_nesterov=False)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
 
 		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step)
 
