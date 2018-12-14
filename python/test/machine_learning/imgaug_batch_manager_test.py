@@ -17,8 +17,9 @@ def imgaug_batch_manager_example():
 	num_examples = 100
 	images = np.random.rand(num_examples, 64, 64, 1)
 	labels = np.random.randint(2, size=(num_examples, 5))
-	batch_size = 15
-	num_epoches = 2
+
+	batch_size = 12
+	num_epoches = 7
 	shuffle = True
 	is_time_major = False
 
@@ -29,7 +30,7 @@ def imgaug_batch_manager_example():
 
 	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
 	for epoch in range(num_epoches):
-		print('>>>>> Epoch {}.'.format(epoch))
+		print('>>>>> Epoch #{}.'.format(epoch))
 
 		batches = batchMgr.getBatches()
 		for idx, batch in enumerate(batches):
@@ -38,18 +39,18 @@ def imgaug_batch_manager_example():
 
 def imgaug_file_batch_manager_example():
 	num_examples = 100
-	batch_size = 15
-	num_epoches = 2
-	shuffle = True
 	is_label_augmented = False
-	is_time_major = False
-
 	if is_label_augmented:
 		images = np.random.rand(num_examples, 64, 64, 1)
 		labels = np.random.rand(num_examples, 64, 64, 1)
 	else:
 		images = np.random.rand(num_examples, 64, 64, 1)
 		labels = np.random.randint(2, size=(num_examples, 5))
+
+	batch_size = 12
+	num_epoches = 7
+	shuffle = True
+	is_time_major = False
 
 	augmenter = iaa.Sequential([
 		iaa.Fliplr(0.5),
@@ -61,38 +62,27 @@ def imgaug_file_batch_manager_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	dir_id = 0
-	while True:
-		# Run in each thread or process.
+	for epoch in range(num_epoches):
+		print('>>>>> Epoch #{}.'.format(epoch))
+
 		dir_path = dirQueueMgr.getAvailableDirectory()
 		if dir_path is None:
 			break
 
-		print('>>>>> Directory {}.'.format(dir_id))
+		print('\t>>>>> Directory: {}.'.format(dir_path))
 
+		# Run in separate threads or processes.
 		batchMgr = ImgaugFileBatchManager(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
 		batchMgr.putBatches()
 
-		for epoch in range(num_epoches):
-			print('\t>>>>> Epoch {}.'.format(epoch))
+		for idx, batch in enumerate(batchMgr.getBatches()):
+			# Train with batch (images & labels).
+			print('\t', idx, batch[0].shape, batch[1].shape)
 
-			for idx, batch in enumerate(batchMgr.getBatches()):
-				# Train with batch (images & labels).
-				print('\t', idx, batch[0].shape, batch[1].shape)
-
-		# TODO [uncomment] >> Commented for test.
-		#dirQueueMgr.returnDirectory(dir_path)				
-
-		dir_id += 1
+		dirQueueMgr.returnDirectory(dir_path)				
 
 def imgaug_file_batch_manager_with_file_input_example():
-	num_examples = 100
-	batch_size = 12
-	num_epoches = 2
-	shuffle = True
-	is_label_augmented = False
-	is_time_major = False
-
+	#num_examples = 130
 	npy_filepath_pairs = np.array([
 		('./batches/images_0.npy', './batches/labels_0.npy'),
 		('./batches/images_1.npy', './batches/labels_1.npy'),
@@ -106,8 +96,14 @@ def imgaug_file_batch_manager_with_file_input_example():
 		('./batches/images_9.npy', './batches/labels_9.npy'),
 	])
 	total_num_file_pairs = len(npy_filepath_pairs)
-	num_file_pairs = 4
-	num_steps = ((total_num_file_pairs - 1) // num_file_pairs + 1) if total_num_file_pairs > 0 else 0
+	num_file_pairs = 3
+	num_file_pair_steps = ((total_num_file_pairs - 1) // num_file_pairs + 1) if total_num_file_pairs > 0 else 0
+
+	is_label_augmented = False
+	batch_size = 12
+	num_epoches = 7
+	shuffle = True
+	is_time_major = False
 
 	augmenter = iaa.Sequential([
 		iaa.Fliplr(0.5),
@@ -119,21 +115,22 @@ def imgaug_file_batch_manager_with_file_input_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	dir_id = 0
-	while True:
-		# Run in each thread or process.
+	for epoch in range(num_epoches):
+		print('>>>>> Epoch #{}.'.format(epoch))
+
 		dir_path = dirQueueMgr.getAvailableDirectory()
 		if dir_path is None:
 			break
 
-		print('>>>>> Directory {}.'.format(dir_id))
+		print('\t>>>>> Directory: {}.'.format(dir_path))
 		
+		# Run in separate threads or processes.
 		indices = np.arange(total_num_file_pairs)
 		if shuffle:
 			np.random.shuffle(indices)
 
-		for step in range(num_steps):
-			print('\t>>>>> File pairs {}.'.format(step))
+		for step in range(num_file_pair_steps):
+			print('\t\t>>>>> File pairs #{}.'.format(step))
 			
 			start = step * num_file_pairs
 			end = start + num_file_pairs
@@ -144,23 +141,17 @@ def imgaug_file_batch_manager_with_file_input_example():
 					batchMgr = ImgaugFileBatchManagerWithFileInput(augmenter, sub_filepath_pairs, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
 					batchMgr.putBatches()
 
-					for epoch in range(num_epoches):
-						print('\t\t>>>>> Epoch {}.'.format(epoch))
+					for idx, batch in enumerate(batchMgr.getBatches()):
+						# Train with batch (images & labels).
+						print('\t\t', idx, batch[0].shape, batch[1].shape)
 
-						for idx, batch in enumerate(batchMgr.getBatches()):
-							# Train with batch (images & labels).
-							print('\t\t', idx, batch[0].shape, batch[1].shape)
-
-		# TODO [uncomment] >> Commented for test.
-		#dirQueueMgr.returnDirectory(dir_path)
-
-		dir_id += 1
+		dirQueueMgr.returnDirectory(dir_path)
 
 def main():
-	#imgaug_batch_manager_example()
+	imgaug_batch_manager_example()
 
 	#imgaug_file_batch_manager_example()
-	imgaug_file_batch_manager_with_file_input_example()
+	#imgaug_file_batch_manager_with_file_input_example()
 
 #%%------------------------------------------------------------------
 
