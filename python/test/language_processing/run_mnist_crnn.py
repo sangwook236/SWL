@@ -39,7 +39,7 @@ def create_crnn(image_height, image_width, image_channel, num_classes, num_time_
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-3
+			learning_rate = 1e-2
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
@@ -55,7 +55,7 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1e-3
+			learning_rate = 1e-2
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-8)
