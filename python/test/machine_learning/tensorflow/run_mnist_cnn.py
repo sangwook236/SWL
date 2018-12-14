@@ -145,11 +145,11 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			cnnModelForTraining = create_mnist_cnn(input_shape, output_shape)
-			cnnModelForTraining.create_training_model()
+			modelForTraining = create_mnist_cnn(input_shape, output_shape)
+			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(cnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -161,11 +161,11 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			cnnModelForEvaluation = create_mnist_cnn(input_shape, output_shape)
-			cnnModelForEvaluation.create_evaluation_model()
+			modelForEvaluation = create_mnist_cnn(input_shape, output_shape)
+			modelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(cnnModelForEvaluation)
+			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 			# Create a saver.
 			eval_saver = tf.train.Saver()
@@ -174,11 +174,11 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		cnnModelForInference = create_mnist_cnn(input_shape, output_shape)
-		cnnModelForInference.create_inference_model()
+		modelForInference = create_mnist_cnn(input_shape, output_shape)
+		modelForInference.create_inference_model()
 
 		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(cnnModelForInference)
+		nnInferrer = NeuralNetInferrer(modelForInference)
 
 		# Create a saver.
 		infer_saver = tf.train.Saver()
@@ -245,9 +245,9 @@ def main():
 			idx = 0
 			#vis_images = train_images[idx:(idx+1)]  # Recommend using a single image.
 			vis_images = test_images[idx:(idx+1)]  # Recommend using a single image.
-			feed_dict = cnnModelForInference.get_feed_dict(vis_images, is_training=False)
+			feed_dict = modelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
-			#input_tensor = cnnModelForInference.input_tensor
+			#input_tensor = modelForInference.input_tensor
 
 			print('[SWL] Info: Start visualizing activation...')
 			start = time.time()

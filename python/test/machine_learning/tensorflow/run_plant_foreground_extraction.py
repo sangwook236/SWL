@@ -312,11 +312,11 @@ def main():
 				K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 				# Create a model.
-				denseNetModelForTraining = FcDenseNetUsingKeras(input_shape, output_shape)
-				denseNetModelForTraining.create_training_model()
+				modelForTraining = FcDenseNetUsingKeras(input_shape, output_shape)
+				modelForTraining.create_training_model()
 
 				# Create a trainer.
-				nnTrainer = SimpleNeuralNetTrainer(denseNetModelForTraining, initial_epoch)
+				nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 				# Create a saver.
 				#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -332,19 +332,19 @@ def main():
 
 				# Create a model.
 				"""
-				denseNetModelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
-				denseNetModelForEvaluation.create_evaluation_model()
+				modelForEvaluation = FcDenseNetUsingKeras(input_shape, output_shape)
+				modelForEvaluation.create_evaluation_model()
 				"""
-				denseNetModelForEvaluation = denseNetModelForTraining
+				modelForEvaluation = modelForTraining
 
 				# Create an evaluator.
-				nnEvaluator = NeuralNetEvaluator(denseNetModelForEvaluation)
+				nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 				# Create a saver.
 				#eval_saver = tf.train.Saver()
 				eval_saver = None  # Do not load a model.
 	else:
-		denseNetModelForTraining = None
+		modelForTraining = None
 
 	#with infer_graph.as_default():
 	with infer_session.as_default() as sess:
@@ -354,13 +354,13 @@ def main():
 
 			# Create a model.
 			if does_need_training:
-				denseNetModelForInference = denseNetModelForTraining
+				modelForInference = modelForTraining
 			else:
-				denseNetModelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
-				denseNetModelForInference.create_inference_model()
+				modelForInference = FcDenseNetUsingKeras(input_shape, output_shape)
+				modelForInference.create_inference_model()
 
 			# Create an inferrer.
-			nnInferrer = NeuralNetInferrer(denseNetModelForInference)
+			nnInferrer = NeuralNetInferrer(modelForInference)
 
 			# Create a saver.
 			if does_need_training:
@@ -435,7 +435,7 @@ def main():
 		with sess.graph.as_default():
 			K.set_session(sess)
 			K.set_learning_phase(0)  # Set the learning phase to 'test'.
-			visualize_activations(sess, denseNetModelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size, npy_dir_path)
+			visualize_activations(sess, modelForInference, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size, npy_dir_path)
 	print('[SWL] Info: End visualizing activations...')
 
 	#--------------------

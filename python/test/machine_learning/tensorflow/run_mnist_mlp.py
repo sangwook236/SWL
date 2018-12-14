@@ -139,11 +139,11 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			mlpModelForTraining = create_mnist_mlp(input_shape, output_shape)
-			mlpModelForTraining.create_training_model()
+			modelForTraining = create_mnist_mlp(input_shape, output_shape)
+			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(mlpModelForTraining, initial_epoch)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -155,11 +155,11 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			mlpModelForEvaluation = create_mnist_mlp(input_shape, output_shape)
-			mlpModelForEvaluation.create_evaluation_model()
+			modelForEvaluation = create_mnist_mlp(input_shape, output_shape)
+			modelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(mlpModelForEvaluation)
+			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 			# Create a saver.
 			eval_saver = tf.train.Saver()
@@ -168,11 +168,11 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		mlpModelForInference = create_mnist_mlp(input_shape, output_shape)
-		mlpModelForInference.create_inference_model()
+		modelForInference = create_mnist_mlp(input_shape, output_shape)
+		modelForInference.create_inference_model()
 
 		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(mlpModelForInference)
+		nnInferrer = NeuralNetInferrer(modelForInference)
 
 		# Create a saver.
 		infer_saver = tf.train.Saver()

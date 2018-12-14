@@ -145,11 +145,11 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			rnnModelForTraining = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-			rnnModelForTraining.create_training_model()
+			modelForTraining = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -159,22 +159,22 @@ def main():
 
 		with eval_graph.as_default():
 			# Create a model.
-			rnnModelForEvaluation = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-			rnnModelForEvaluation.create_evaluation_model()
+			modelForEvaluation = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+			modelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
+			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 			# Create a saver.
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
 		# Create a model.
-		rnnModelForInference = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
-		rnnModelForInference.create_inference_model()
+		modelForInference = create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, is_bidirectional, is_time_major)
+		modelForInference.create_inference_model()
 
 		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(rnnModelForInference)
+		nnInferrer = NeuralNetInferrer(modelForInference)
 
 		# Create a saver.
 		infer_saver = tf.train.Saver()

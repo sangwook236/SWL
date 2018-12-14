@@ -132,11 +132,11 @@ def main():
 			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
 
 			# Create a model.
-			rnnModelForTraining = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-			rnnModelForTraining.create_training_model()
+			modelForTraining = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(rnnModelForTraining, initial_epoch)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -148,11 +148,11 @@ def main():
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 			# Create a model.
-			rnnModelForEvaluation = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-			rnnModelForEvaluation.create_evaluation_model()
+			modelForEvaluation = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+			modelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(rnnModelForEvaluation)
+			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 			# Create a saver.
 			eval_saver = tf.train.Saver()
@@ -161,11 +161,11 @@ def main():
 		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
 
 		# Create a model.
-		rnnModelForInference = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
-		rnnModelForInference.create_inference_model()
+		modelForInference = create_rnn(input_shape, output_shape, is_dynamic, is_bidirectional, is_stacked, is_time_major)
+		modelForInference.create_inference_model()
 
 		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(rnnModelForInference)
+		nnInferrer = NeuralNetInferrer(modelForInference)
 
 		# Create a saver.
 		infer_saver = tf.train.Saver()

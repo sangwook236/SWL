@@ -347,12 +347,12 @@ def main():
 	if does_need_training:
 		with train_graph.as_default():
 			# Create a model.
-			cnnModelForTraining = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
-			cnnModelForTraining.create_training_model()
+			modelForTraining = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
+			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleCrnnTrainer(cnnModelForTraining, initial_epoch)
-			#nnTrainer = SimpleCrnnGradientClippingTrainer(cnnModelForTraining, max_gradient_norm, initial_epoch)
+			nnTrainer = SimpleCrnnTrainer(modelForTraining, initial_epoch)
+			#nnTrainer = SimpleCrnnGradientClippingTrainer(modelForTraining, max_gradient_norm, initial_epoch)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.
@@ -371,22 +371,22 @@ def main():
 
 		with eval_graph.as_default():
 			# Create a model.
-			cnnModelForEvaluation = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
-			cnnModelForEvaluation.create_evaluation_model()
+			modelForEvaluation = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
+			modelForEvaluation.create_evaluation_model()
 
 			# Create an evaluator.
-			nnEvaluator = NeuralNetEvaluator(cnnModelForEvaluation)
+			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
 			# Create a saver.
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
 		# Create a model.
-		cnnModelForInference = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
-		cnnModelForInference.create_inference_model()
+		modelForInference = create_crnn(image_height, image_width, image_channel, num_classes, max_time_steps, is_time_major, is_sparse_label, label_eos_token)
+		modelForInference.create_inference_model()
 
 		# Create an inferrer.
-		nnInferrer = NeuralNetInferrer(cnnModelForInference)
+		nnInferrer = NeuralNetInferrer(modelForInference)
 
 		# Create a saver.
 		infer_saver = tf.train.Saver()
