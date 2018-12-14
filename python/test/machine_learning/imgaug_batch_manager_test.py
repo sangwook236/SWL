@@ -37,6 +37,58 @@ def imgaug_batch_manager_example():
 			# Train with batch (images & labels).
 			print(idx, batch[0].shape, batch[1].shape)
 
+def imgaug_batch_manager_with_file_input_example():
+	#num_examples = 130
+	npy_filepath_pairs = np.array([
+		('./batches/images_0.npy', './batches/labels_0.npy'),
+		('./batches/images_1.npy', './batches/labels_1.npy'),
+		('./batches/images_2.npy', './batches/labels_2.npy'),
+		('./batches/images_3.npy', './batches/labels_3.npy'),
+		('./batches/images_4.npy', './batches/labels_4.npy'),
+		('./batches/images_5.npy', './batches/labels_5.npy'),
+		('./batches/images_6.npy', './batches/labels_6.npy'),
+		('./batches/images_7.npy', './batches/labels_7.npy'),
+		('./batches/images_8.npy', './batches/labels_8.npy'),
+		('./batches/images_9.npy', './batches/labels_9.npy'),
+	])
+	total_num_file_pairs = len(npy_filepath_pairs)
+	num_file_pairs = 3
+	num_file_pair_steps = ((total_num_file_pairs - 1) // num_file_pairs + 1) if total_num_file_pairs > 0 else 0
+
+	is_label_augmented = False
+	batch_size = 12
+	num_epoches = 7
+	shuffle = True
+	is_time_major = False
+
+	augmenter = iaa.Sequential([
+		iaa.Fliplr(0.5),
+		iaa.CoarseDropout(p=0.1, size_percent=0.1)
+	])
+
+	#--------------------
+	for epoch in range(num_epoches):
+		print('>>>>> Epoch #{}.'.format(epoch))
+		
+		# Run in separate threads or processes.
+		indices = np.arange(total_num_file_pairs)
+		if shuffle:
+			np.random.shuffle(indices)
+
+		for step in range(num_file_pair_steps):
+			print('\t>>>>> File pairs #{}.'.format(step))
+			
+			start = step * num_file_pairs
+			end = start + num_file_pairs
+			file_pair_indices = indices[start:end]
+			if file_pair_indices.size > 0:  # If file_pair_indices is non-empty.
+				sub_filepath_pairs = npy_filepath_pairs[file_pair_indices]
+				if sub_filepath_pairs.size > 0:  # If sub_filepath_pairs is non-empty.
+					batchMgr = ImgaugBatchManagerWithFileInput(augmenter, sub_filepath_pairs, batch_size, shuffle, is_label_augmented, is_time_major)
+					for idx, batch in enumerate(batchMgr.getBatches()):
+						# Train with batch (images & labels).
+						print('\t', idx, batch[0].shape, batch[1].shape)
+
 def imgaug_file_batch_manager_example():
 	num_examples = 100
 	is_label_augmented = False
@@ -149,6 +201,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 
 def main():
 	imgaug_batch_manager_example()
+	#imgaug_batch_manager_with_file_input_example()
 
 	#imgaug_file_batch_manager_example()
 	#imgaug_file_batch_manager_with_file_input_example()
