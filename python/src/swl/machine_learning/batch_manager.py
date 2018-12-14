@@ -15,7 +15,7 @@ class BatchManager(abc.ABC):
 
 #%%------------------------------------------------------------------
 # FileBatchManager.
-#	Load, save, and augment batches using files.
+#	Loads, saves, and augments batches using files.
 class FileBatchManager(BatchManager):
 	def __init__(self):
 		super().__init__()
@@ -26,7 +26,7 @@ class FileBatchManager(BatchManager):
 
 #%%------------------------------------------------------------------
 # SimpleBatchManager.
-#	Generate batches without augmentation.
+#	Generates batches without augmentation.
 class SimpleBatchManager(BatchManager):
 	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False):
 		super().__init__()
@@ -62,8 +62,8 @@ class SimpleBatchManager(BatchManager):
 
 #%%------------------------------------------------------------------
 # SimpleBatchManagerWithFileInput.
-#	Load dataset from multiple npy files.
-#	Generate batches without augmentation.
+#	Loads dataset from multiple npy files.
+#	Generates batches without augmentation.
 class SimpleBatchManagerWithFileInput(SimpleBatchManager):
 	def __init__(self, npy_filepath_pairs, batch_size, shuffle=True, is_time_major=False):
 		images, labels = None, None
@@ -77,7 +77,7 @@ class SimpleBatchManagerWithFileInput(SimpleBatchManager):
 
 #%%------------------------------------------------------------------
 # SimpleFileBatchManager.
-#	Generate, save, and load batches through npy files without augmentation.
+#	Generates, saves, and loads batches through npy files without augmentation.
 class SimpleFileBatchManager(FileBatchManager):
 	def __init__(self, images, labels, dir_path, batch_size, shuffle=True, is_time_major=False):
 		super().__init__()
@@ -124,8 +124,8 @@ class SimpleFileBatchManager(FileBatchManager):
 
 #%%------------------------------------------------------------------
 # SimpleFileBatchManagerWithFileInput.
-#	Load dataset from multiple npy files.
-#	Generate, save, and load batches through npy files without augmentation.
+#	Loads dataset from multiple npy files.
+#	Generates, saves, and loads batches through npy files without augmentation.
 class SimpleFileBatchManagerWithFileInput(SimpleFileBatchManager):
 	def __init__(self, npy_filepath_pairs, dir_path, batch_size, shuffle=True, is_time_major=False):
 		images, labels = None, None
