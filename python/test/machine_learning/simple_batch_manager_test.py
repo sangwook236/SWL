@@ -12,10 +12,22 @@ import numpy as np
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleBatchManagerWithFileInput, SimpleFileBatchManager, SimpleFileBatchManagerWithFileInput
 from swl.util.directory_queue_manager import DirectoryQueueManager
 
+def generate_dataset(num_examples, is_label_augmented=False):
+	if is_label_augmented:
+		images = np.zeros((num_examples, 2, 2, 1))
+		labels = np.zeros((num_examples, 2, 2, 1))
+	else:
+		images = np.zeros((num_examples, 2, 2, 1))
+		labels = np.zeros((num_examples, 1))
+
+	for idx in range(num_examples):
+		images[idx] = idx
+		labels[idx] = idx
+	return images, labels
+
 def simple_batch_manager_example():
 	num_examples = 100
-	images = np.random.rand(num_examples, 64, 64, 1)
-	labels = np.random.randint(2, size=(num_examples, 5))
+	images, labels = generate_dataset(num_examples)
 
 	batch_size = 12
 	num_epoches = 7
@@ -30,6 +42,7 @@ def simple_batch_manager_example():
 		for idx, batch in enumerate(batches):
 			# Train with batch (images & labels).
 			print(idx, batch[0].shape, batch[1].shape)
+			#print(idx, batch[0], batch[1])
 
 def simple_batch_manager_with_file_input_example():
 	#num_examples = 130
@@ -79,12 +92,7 @@ def simple_batch_manager_with_file_input_example():
 
 def simple_file_batch_manager_example():
 	num_examples = 100
-	if True:
-		images = np.random.rand(num_examples, 64, 64, 1)
-		labels = np.random.rand(num_examples, 64, 64, 1)
-	else:
-		images = np.random.rand(num_examples, 64, 64, 1)
-		labels = np.random.randint(2, size=(num_examples, 5))
+	images, labels = generate_dataset(num_examples)
 
 	batch_size = 12
 	num_epoches = 7

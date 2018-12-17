@@ -19,10 +19,23 @@ class IdentityAugmenter(object):
 		else:
 			return images, labels
 
+def generate_dataset(num_examples, is_label_augmented=False):
+	if is_label_augmented:
+		images = np.zeros((num_examples, 2, 2, 1))
+		labels = np.zeros((num_examples, 2, 2, 1))
+	else:
+		images = np.zeros((num_examples, 2, 2, 1))
+		labels = np.zeros((num_examples, 1))
+
+	for idx in range(num_examples):
+		images[idx] = idx
+		labels[idx] = idx
+	return images, labels
+
 def augmentation_batch_manager_example():
 	num_examples = 100
-	images = np.random.rand(num_examples, 64, 64, 1)
-	labels = np.random.randint(2, size=(num_examples, 5))
+	is_label_augmented = False
+	images, labels = generate_dataset(num_examples, is_label_augmented)
 
 	batch_size = 12
 	num_epoches = 7
@@ -31,7 +44,7 @@ def augmentation_batch_manager_example():
 
 	augmenter = IdentityAugmenter()
 
-	batchMgr = AugmentationBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
+	batchMgr = AugmentationBatchManager(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
 	for epoch in range(num_epoches):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
@@ -92,12 +105,7 @@ def augmentation_batch_manager_with_file_input_example():
 def augmentation_file_batch_manager_example():
 	num_examples = 100
 	is_label_augmented = False
-	if is_label_augmented:
-		images = np.random.rand(num_examples, 64, 64, 1)
-		labels = np.random.rand(num_examples, 64, 64, 1)
-	else:
-		images = np.random.rand(num_examples, 64, 64, 1)
-		labels = np.random.randint(2, size=(num_examples, 5))
+	images, labels = generate_dataset(num_examples, is_label_augmented)
 
 	batch_size = 12
 	num_epoches = 7
