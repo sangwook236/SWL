@@ -35,7 +35,7 @@ def imgaug_batch_manager_example():
 		batches = batchMgr.getBatches()
 		for idx, batch in enumerate(batches):
 			# Train with batch (images & labels).
-			print(idx, batch[0].shape, batch[1].shape)
+			print('{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 
 def imgaug_batch_manager_with_file_input_example():
 	#num_examples = 130
@@ -87,7 +87,7 @@ def imgaug_batch_manager_with_file_input_example():
 					batchMgr = ImgaugBatchManagerWithFileInput(augmenter, sub_filepath_pairs, batch_size, shuffle, is_label_augmented, is_time_major)
 					for idx, batch in enumerate(batchMgr.getBatches()):
 						# Train with batch (images & labels).
-						print('\t', idx, batch[0].shape, batch[1].shape)
+						print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 
 def imgaug_file_batch_manager_example():
 	num_examples = 100
@@ -129,7 +129,7 @@ def imgaug_file_batch_manager_example():
 
 		for idx, batch in enumerate(batchMgr.getBatches()):
 			# Train with batch (images & labels).
-			print('\t', idx, batch[0].shape, batch[1].shape)
+			print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 
 		dirQueueMgr.returnDirectory(dir_path)				
 
@@ -195,7 +195,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 
 					for idx, batch in enumerate(batchMgr.getBatches()):
 						# Train with batch (images & labels).
-						print('\t\t', idx, batch[0].shape, batch[1].shape)
+						print('\t\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 
 		dirQueueMgr.returnDirectory(dir_path)
 
