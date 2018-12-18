@@ -39,6 +39,7 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 
 		start_time = time.time()
 
+		#--------------------
 		print('>-', sep='', end='')
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
@@ -154,6 +155,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 
 		print('\tBatch directory: {}.'.format(dir_path))
 
+		#--------------------
 		trainFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 		print('>-', sep='', end='')
@@ -178,12 +180,10 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 		train_loss /= num_train_examples
 
 		#--------------------
-		print('\tBatch directory: {}.'.format(dir_path))
-
-		valFileBatchMgr.putBatches()  # Generates, augments, and saves batches.
+		valFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
-		batches = valFileBatchMgr.getBatches()  # Loads batches.
+		batches = valFileBatchMgr.getBatches(dir_path)  # Loads batches.
 		for val_inputs, val_outputs in batches:
 			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
 
@@ -275,6 +275,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 
 		start_time = time.time()
 
+		#--------------------
 		indices = np.arange(num_train_batches)
 		if shuffle:
 			np.random.shuffle(indices)
@@ -373,6 +374,7 @@ def train_neural_net_after_generating_batch_list(session, nnTrainer, train_input
 			num_val_examples = val_inputs.shape[batch_axis]
 		num_val_steps = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
 
+	#--------------------
 	indices = np.arange(num_train_examples)
 	if shuffle:
 		np.random.shuffle(indices)

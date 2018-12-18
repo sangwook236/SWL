@@ -288,7 +288,7 @@ def mnist_augmentation_file_batch_manager_example():
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+				swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	#--------------------
@@ -484,7 +484,7 @@ def mnist_imgaug_file_batch_manager_example():
 	start_time = time.time()
 	with train_session.as_default() as sess:
 		with sess.graph.as_default():
-			swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+			swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 	print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	#--------------------
@@ -494,10 +494,11 @@ def mnist_imgaug_file_batch_manager_example():
 	del train_session
 
 def main():
-	mnist_augmentation_batch_manager_example()
+	# NOTE [info] >> Too slow when using process pool.
+	#mnist_augmentation_batch_manager_example()
 	#mnist_augmentation_file_batch_manager_example()
 
-	#mnist_imgaug_batch_manager_example()
+	mnist_imgaug_batch_manager_example()
 	#mnist_imgaug_file_batch_manager_example()
 
 #%%------------------------------------------------------------------
