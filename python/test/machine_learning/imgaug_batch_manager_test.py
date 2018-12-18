@@ -57,7 +57,7 @@ def imgaug_batch_manager_example():
 		iaa.CoarseDropout(p=0.1, size_percent=0.1)
 	])
 
-	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
+	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
 	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 

@@ -115,7 +115,7 @@ class ImgaugBatchManagerWithFileInput(ImgaugBatchManager):
 # ImgaugFileBatchManager.
 #	Generates, augments, saves, and loads batches through npy files using imgaug library.
 class ImgaugFileBatchManager(FileBatchManager):
-	def __init__(self, augmenter, images, labels, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False):
+	def __init__(self, augmenter, images, labels, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False, image_file_format=None, label_file_format=None):
 		super().__init__()
 
 		self._augmenter = augmenter
@@ -126,8 +126,8 @@ class ImgaugFileBatchManager(FileBatchManager):
 		self._shuffle = shuffle
 		self._is_label_augmented = is_label_augmented
 
-		self._image_file_format = 'batch_images_{}.npy'
-		self._label_file_format = 'batch_labels_{}.npy'
+		self._image_file_format = 'batch_images_{}.npy' if image_file_format is None else image_file_format
+		self._label_file_format = 'batch_labels_{}.npy' if label_file_format is None else label_file_format
 
 		batch_axis = 1 if is_time_major else 0
 		self._num_examples, self._num_steps = 0, 0

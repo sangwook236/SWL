@@ -11,11 +11,12 @@ import tensorflow as tf
 from imgaug import augmenters as iaa
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
+from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleFileBatchManager
 from swl.machine_learning.augmentation_batch_manager import AugmentationBatchManager, AugmentationFileBatchManager
 from swl.machine_learning.imgaug_batch_manager import ImgaugBatchManager, ImgaugFileBatchManager
 from swl.util.directory_queue_manager import DirectoryQueueManager
 import swl.util.util as swl_util
-import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.tensorflow.util as swl_tf_util
 
 class MnistCnn(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):
@@ -153,8 +154,6 @@ def mnist_augmentation_batch_manager_example():
 	train_graph = tf.Graph()
 
 	with train_graph.as_default():
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
-
 		# Create a model.
 		modelForTraining = create_mnist_cnn(input_shape, output_shape)
 		modelForTraining.create_training_model()
@@ -177,63 +176,16 @@ def mnist_augmentation_batch_manager_example():
 	#--------------------
 	# Train.
 
-	augmenter = ImgaugAugmenter(image_height, image_width)
-
 	with mp.Pool() as pool:
-		batchMgr = AugmentationBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, pool)
+		augmenter = ImgaugAugmenter(image_height, image_width)
+		trainBatchMgr = AugmentationBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, pool)
+		valBatchMgr = SimpleBatchManager(test_images, test_labels, batch_size, False, is_time_major)
 
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				print('[SWL] Info: Start training...')
-
-				# Create writers to write all the summaries out to a directory.
-				train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph) if train_summary_dir_path is not None else None
-
-				history = {
-					'acc': [],
-					'loss': [],
-					'val_acc': None,
-					'val_loss': None
-				}
-				
-				batch_axis = 1 if is_time_major else 0
-				for epoch in range(1, num_epochs + 1):
-					print('Epoch {}/{}'.format(epoch, num_epochs))
-					start_time = time.time()
-
-					batches = batchMgr.getBatches()  # Generates and augments batches.
-					train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
-					for batch_images, batch_labels in batches:
-						# Train with each batch (images & labels).
-						batch_acc, batch_loss = nnTrainer.train_by_batch(sess, batch_images, batch_labels, train_summary_writer, is_time_major, is_sparse_output)
-
-						# TODO [check] >> Are these calculations correct?
-						batch_size = train_images.shape[batch_axis]
-						train_acc += batch_acc * batch_size
-						train_loss += batch_loss * batch_size
-						num_train_examples += batch_size
-
-					train_acc /= num_train_examples
-					train_loss /= num_train_examples
-
-					history['acc'].append(train_acc)
-					history['loss'].append(train_loss)
-
-					print('\tTraining time = {}'.format(time.time() - start_time))
-					print('\tTraining: loss = {}, accuracy = {}'.format(train_loss, train_acc))
-
-				# Close writers.
-				if train_summary_writer is not None:
-					train_summary_writer.close()
-
-				#--------------------
-				# Display results.
-				#swl_ml_util.display_train_history(history)
-				if output_dir_path is not None:
-					swl_ml_util.save_train_history(history, output_dir_path)
-				print('[SWL] Info: End training.')
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+				swl_tf_util.train_neural_net_by_batch_manager(sess, nnTrainer, trainBatchMgr, valBatchMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	#--------------------
 	# Close sessions.
@@ -296,8 +248,6 @@ def mnist_augmentation_file_batch_manager_example():
 	train_graph = tf.Graph()
 
 	with train_graph.as_default():
-		#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
-
 		# Create a model.
 		modelForTraining = create_mnist_cnn(input_shape, output_shape)
 		modelForTraining.create_training_model()
@@ -320,71 +270,20 @@ def mnist_augmentation_file_batch_manager_example():
 	#--------------------
 	# Train.
 
-	augmenter = ImgaugAugmenter(image_height, image_width)
+	base_dir_path = './batch_dir'
+	num_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	with mp.Pool() as pool:
-		total_elapsed_time = time.time()
+		augmenter = ImgaugAugmenter(image_height, image_width)
+		trainFileBatchMgr = AugmentationFileBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, pool, image_file_format='train_batch_images_{}.npy', label_file_format='train_batch_labels_{}.npy')
+		valFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
+
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				print('[SWL] Info: Start training...')
-
-				# Create writers to write all the summaries out to a directory.
-				train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, sess.graph) if train_summary_dir_path is not None else None
-
-				history = {
-					'acc': [],
-					'loss': [],
-					'val_acc': None,
-					'val_loss': None
-				}
-				
-				batch_axis = 1 if is_time_major else 0
-				for epoch in range(1, num_epochs + 1):
-					print('Epoch {}/{}'.format(epoch, num_epochs))
-					start_time = time.time()
-
-					dir_path = dirQueueMgr.getAvailableDirectory()
-					if dir_path is None:
-						break
-
-					print('\tBatch directory: {}.'.format(dir_path))
-
-					batchMgr = AugmentationFileBatchManager(augmenter, train_images, train_labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major, pool)
-					batchMgr.putBatches()  # Generates, augments, and saves batches.
-
-					batches = batchMgr.getBatches()  # Loads batches.
-					for batch_images, batch_labels in batches:
-						# Train with each batch (images & labels).
-						batch_acc, batch_loss = nnTrainer.train_by_batch(sess, batch_images, batch_labels, train_summary_writer, is_time_major, is_sparse_output)
-
-						# TODO [check] >> Are these calculations correct?
-						batch_size = train_images.shape[batch_axis]
-						train_acc += batch_acc * batch_size
-						train_loss += batch_loss * batch_size
-						num_train_examples += batch_size
-
-					dirQueueMgr.returnDirectory(dir_path)				
-
-					train_acc /= num_train_examples
-					train_loss /= num_train_examples
-
-					history['acc'].append(train_acc)
-					history['loss'].append(train_loss)
-
-					print('\tTraining time = {}'.format(time.time() - start_time))
-					print('\tTraining: loss = {}, accuracy = {}'.format(train_loss, train_acc))
-
-				# Close writers.
-				if train_summary_writer is not None:
-					train_summary_writer.close()
-
-				#--------------------
-				# Display results.
-				#swl_ml_util.display_train_history(history)
-				if output_dir_path is not None:
-					swl_ml_util.save_train_history(history, output_dir_path)
-				print('[SWL] Info: End training.')
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+				swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	#--------------------
 	# Close sessions.
@@ -393,6 +292,15 @@ def mnist_augmentation_file_batch_manager_example():
 	del train_session
 
 def mnist_imgaug_batch_manager_example():
+	#--------------------
+	# Parameters.
+
+	output_dir_prefix = 'mnist_cnn'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20181211T172200'
+
+	initial_epoch = 0
+
 	image_height, image_width = 28, 28
 	num_classes = 10
 	input_shape = (None, image_height, image_width, 1)
@@ -401,25 +309,92 @@ def mnist_imgaug_batch_manager_example():
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
+	is_label_augmented = False
 	is_time_major = False
+	is_sparse_output = False
+
+	sess_config = tf.ConfigProto()
+	#sess_config.device_count = {'GPU': 2}
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
+	# Prepare directories.
+
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
+
+	#--------------------
+	# Prepare data.
+
 	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
-	augmenter = get_imgaug_augmenter(image_height, image_width)
+	#--------------------
+	# Create models, sessions, and graphs.
+
+	# Create graphs.
+	train_graph = tf.Graph()
+
+	with train_graph.as_default():
+		# Create a model.
+		modelForTraining = create_mnist_cnn(input_shape, output_shape)
+		modelForTraining.create_training_model()
+
+		# Create a trainer.
+		nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+
+		# Create a saver.
+		#	Save a model every 2 hours and maximum 5 latest models are saved.
+		train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+		initializer = tf.global_variables_initializer()
+
+	# Create sessions.
+	train_session = tf.Session(graph=train_graph, config=sess_config)
+
+	# Initialize.
+	train_session.run(initializer)
 
 	#--------------------
-	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
-	for epoch in range(num_epoches):
-		print('>>>>> Epoch #{}.'.format(epoch))
+	# Train.
 
-		batches = batchMgr.getBatches()  # Generates and augments batches.
-		for idx, batch in enumerate(batches):
-			# Train with batch (images & labels).
-			#print('{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
-			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+	with mp.Pool() as pool:
+		augmenter = get_imgaug_augmenter(image_height, image_width)
+		trainBatchMgr = ImgaugBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, pool)
+		valBatchMgr = SimpleBatchManager(test_images, test_labels, batch_size, False, is_time_major)
+
+		start_time = time.time()
+		with train_session.as_default() as sess:
+			with sess.graph.as_default():
+				swl_tf_util.train_neural_net_by_batch_manager(sess, nnTrainer, trainBatchMgr, valBatchMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
+
+	#--------------------
+	# Close sessions.
+
+	train_session.close()
+	del train_session
 
 def mnist_imgaug_file_batch_manager_example():
+	#--------------------
+	# Parameters.
+
+	output_dir_prefix = 'mnist_cnn'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20181211T172200'
+
+	initial_epoch = 0
+
 	image_height, image_width = 28, 28
 	num_classes = 10
 	input_shape = (None, image_height, image_width, 1)
@@ -428,37 +403,85 @@ def mnist_imgaug_file_batch_manager_example():
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
+	is_label_augmented = False
 	is_time_major = False
+	is_sparse_output = False
+
+	sess_config = tf.ConfigProto()
+	#sess_config.device_count = {'GPU': 2}
+	#sess_config.allow_soft_placement = True
+	sess_config.log_device_placement = True
+	sess_config.gpu_options.allow_growth = True
+	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+	#--------------------
+	# Prepare directories.
+
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
+
+	#--------------------
+	# Prepare data.
+
+	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
+
+	#--------------------
+	# Create models, sessions, and graphs.
+
+	# Create graphs.
+	train_graph = tf.Graph()
+
+	with train_graph.as_default():
+		# Create a model.
+		modelForTraining = create_mnist_cnn(input_shape, output_shape)
+		modelForTraining.create_training_model()
+
+		# Create a trainer.
+		nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+
+		# Create a saver.
+		#	Save a model every 2 hours and maximum 5 latest models are saved.
+		train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+		initializer = tf.global_variables_initializer()
+
+	# Create sessions.
+	train_session = tf.Session(graph=train_graph, config=sess_config)
+
+	# Initialize.
+	train_session.run(initializer)
+
+	#--------------------
+	# Train.
 
 	base_dir_path = './batch_dir'
 	num_dirs = 5
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
+	with mp.Pool() as pool:
+		augmenter = get_imgaug_augmenter(image_height, image_width)
+		trainFileBatchMgr = ImgaugFileBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, pool, image_file_format='train_batch_images_{}.npy', label_file_format='train_batch_labels_{}.npy')
+		valFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
+
+		start_time = time.time()
+		with train_session.as_default() as sess:
+			with sess.graph.as_default():
+				swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+		print('\tTotal training time = {}'.format(time.time() - start_time))
+
 	#--------------------
-	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
+	# Close sessions.
 
-	augmenter = get_imgaug_augmenter(image_height, image_width)
-
-	#--------------------
-	for epoch in range(num_epoches):
-		print('>>>>> Epoch #{}.'.format(epoch))
-
-		dir_path = dirQueueMgr.getAvailableDirectory()
-		if dir_path is None:
-			break
-
-		print('\t>>>>> Directory: {}.'.format(dir_path))
-
-		batchMgr = ImgaugFileBatchManager(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
-		batchMgr.putBatches()  # Generates, augments, and saves batches.
-
-		batches = batchMgr.getBatches()  # Loads batches.
-		for idx, batch in enumerate(batches):
-			# Train with batch (images & labels).
-			#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
-			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
-
-		dirQueueMgr.returnDirectory(dir_path)				
+	train_session.close()
+	del train_session
 
 def main():
 	mnist_augmentation_batch_manager_example()

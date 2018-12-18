@@ -210,33 +210,49 @@ def display_train_history(history):
 	#print(history.keys())
 
 	# Summarize history for accuracy.
-	fig = plt.figure()
-	plt.plot(history['acc'])
-	plt.plot(history['val_acc'])
-	plt.title('model accuracy')
-	plt.xlabel('epochs')
-	plt.ylabel('accuracy')
-	plt.legend(['train', 'test'], loc='upper left')
-	plt.show()
-	plt.close(fig)
+	if ('acc' in history and history['acc'] is not None) or ('val_acc' in history and history['val_acc'] is not None):
+		fig = plt.figure()
+		if 'acc' in history:
+			plt.plot(history['acc'])
+		if 'val_acc' in history:
+			plt.plot(history['val_acc'])
+		plt.title('model accuracy')
+		plt.xlabel('epochs')
+		plt.ylabel('accuracy')
+		if not 'acc' in history:
+			plt.legend(['test'], loc='upper left')
+		elif not 'val_acc' in history:
+			plt.legend(['train'], loc='upper left')
+		else:
+			plt.legend(['train', 'test'], loc='upper left')
+		plt.show()
+		plt.close(fig)
 
 	# Summarize history for loss.
-	fig = plt.figure()
-	plt.plot(history['loss'])
-	plt.plot(history['val_loss'])
-	plt.title('model loss')
-	plt.xlabel('epochs')
-	plt.ylabel('loss')
-	plt.legend(['train', 'test'], loc='upper left')
-	plt.show()
-	plt.close(fig)
+	if ('loss' in history and history['loss'] is not None) or ('val_loss' in history and history['val_loss'] is not None):
+		fig = plt.figure()
+		if 'loss' in history:
+			plt.plot(history['loss'])
+		if 'val_loss' in history:
+			plt.plot(history['val_loss'])
+		plt.title('model loss')
+		plt.xlabel('epochs')
+		plt.ylabel('loss')
+		if not 'loss' in history:
+			plt.legend(['test'], loc='upper right')
+		elif not 'val_loss' in history:
+			plt.legend(['train'], loc='upper right')
+		else:
+			plt.legend(['train', 'test'], loc='upper right')
+		plt.show()
+		plt.close(fig)
 
 def save_train_history(history, dir_path):
 	# List all data in history.
 	#print(history.keys())
 
 	# Summarize history for accuracy.
-	if history['acc'] is not None or history['val_acc'] is not None:
+	if ('acc' in history and history['acc'] is not None) or ('val_acc' in history and history['val_acc'] is not None):
 		fig = plt.figure()
 		if 'acc' in history:
 			plt.plot(history['acc'])
@@ -255,12 +271,20 @@ def save_train_history(history, dir_path):
 		plt.close(fig)
 
 	# Summarize history for loss.
-	fig = plt.figure()
-	plt.plot(history['loss'])
-	plt.plot(history['val_loss'])
-	plt.title('Model loss')
-	plt.xlabel('epochs')
-	plt.ylabel('loss')
-	plt.legend(['train', 'test'], loc='upper left')
-	fig.savefig(dir_path + '/loss.png')
-	plt.close(fig)
+	if ('loss' in history and history['loss'] is not None) or ('val_loss' in history and history['val_loss'] is not None):
+		fig = plt.figure()
+		if 'loss' in history:
+			plt.plot(history['loss'])
+		if 'val_loss' in history:
+			plt.plot(history['val_loss'])
+		plt.title('Model loss')
+		plt.xlabel('epochs')
+		plt.ylabel('loss')
+		if not 'loss' in history:
+			plt.legend(['test'], loc='upper right')
+		elif not 'val_loss' in history:
+			plt.legend(['train'], loc='upper right')
+		else:
+			plt.legend(['train', 'test'], loc='upper right')
+		fig.savefig(dir_path + '/loss.png')
+		plt.close(fig)
