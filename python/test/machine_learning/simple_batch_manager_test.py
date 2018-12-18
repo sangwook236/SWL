@@ -46,12 +46,12 @@ def simple_batch_manager_example():
 	images, labels = generate_dataset(num_examples)
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
 	batchMgr = SimpleBatchManager(images, labels, batch_size, shuffle, is_time_major)
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		batches = batchMgr.getBatches()  # Generates batches.
@@ -73,12 +73,12 @@ def simple_batch_manager_with_file_input_example():
 	num_file_pair_steps = ((num_files - 1) // num_file_pairs + 1) if num_files > 0 else 0
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 		
 		indices = np.arange(num_files)
@@ -109,7 +109,7 @@ def simple_file_batch_manager_example():
 	images, labels = generate_dataset(num_examples)
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -118,7 +118,7 @@ def simple_file_batch_manager_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		dir_path = dirQueueMgr.getAvailableDirectory()
@@ -151,7 +151,7 @@ def simple_file_batch_manager_with_file_input_example():
 	num_file_pair_steps = ((num_files - 1) // num_file_pairs + 1) if num_files > 0 else 0
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -160,7 +160,7 @@ def simple_file_batch_manager_with_file_input_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		dir_path = dirQueueMgr.getAvailableDirectory()

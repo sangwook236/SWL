@@ -48,7 +48,7 @@ def imgaug_batch_manager_example():
 	images, labels = generate_dataset(num_examples, is_label_augmented)
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -58,12 +58,12 @@ def imgaug_batch_manager_example():
 	])
 
 	batchMgr = ImgaugBatchManager(augmenter, images, labels, batch_size, shuffle, is_time_major)
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		batches = batchMgr.getBatches()  # Generates and augments batches.
 		for idx, batch in enumerate(batches):
-			# Train with batch (images & labels).
+			# Train with each batch (images & labels).
 			#print('{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
@@ -79,7 +79,7 @@ def imgaug_batch_manager_with_file_input_example():
 	num_file_pair_steps = ((num_files - 1) // num_file_pairs + 1) if num_files > 0 else 0
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -89,7 +89,7 @@ def imgaug_batch_manager_with_file_input_example():
 	])
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 		
 		indices = np.arange(num_files)
@@ -109,7 +109,7 @@ def imgaug_batch_manager_with_file_input_example():
 
 					batches = batchMgr.getBatches()  # Generates and augments batches.
 					for idx, batch in enumerate(batches):
-						# Train with batch (images & labels).
+						# Train with each batch (images & labels).
 						#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 						print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
@@ -119,7 +119,7 @@ def imgaug_file_batch_manager_example():
 	images, labels = generate_dataset(num_examples, is_label_augmented)
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -133,7 +133,7 @@ def imgaug_file_batch_manager_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		dir_path = dirQueueMgr.getAvailableDirectory()
@@ -147,7 +147,7 @@ def imgaug_file_batch_manager_example():
 
 		batches = batchMgr.getBatches()  # Loads batches.
 		for idx, batch in enumerate(batches):
-			# Train with batch (images & labels).
+			# Train with each batch (images & labels).
 			#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
@@ -165,7 +165,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 	num_file_pair_steps = ((num_files - 1) // num_file_pairs + 1) if num_files > 0 else 0
 
 	batch_size = 12
-	num_epoches = 7
+	num_epochs = 7
 	shuffle = True
 	is_time_major = False
 
@@ -179,7 +179,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
 
 	#--------------------
-	for epoch in range(num_epoches):
+	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		dir_path = dirQueueMgr.getAvailableDirectory()
@@ -207,7 +207,7 @@ def imgaug_file_batch_manager_with_file_input_example():
 
 					batches = batchMgr.getBatches()  # Loads batches.
 					for idx, batch in enumerate(batches):
-						# Train with batch (images & labels).
+						# Train with each batch (images & labels).
 						#print('\t\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 						print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
