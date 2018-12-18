@@ -127,10 +127,10 @@ def simple_file_batch_manager_example():
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
-		batchMgr = SimpleFileBatchManager(images, labels, dir_path, batch_size, shuffle, is_time_major)
-		batchMgr.putBatches()  # Generates and saves batches.
+		batchMgr = SimpleFileBatchManager(images, labels, batch_size, shuffle, is_time_major)
+		batchMgr.putBatches(dir_path)  # Generates and saves batches.
 
-		batches = batchMgr.getBatches()  # Loads batches.
+		batches = batchMgr.getBatches(dir_path)  # Loads batches.
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (images & labels).
@@ -183,10 +183,10 @@ def simple_file_batch_manager_with_file_input_example():
 				sub_filepath_pairs = npy_filepath_pairs[file_pair_indices]
 				if sub_filepath_pairs.size > 0:  # If sub_filepath_pairs is non-empty.
 					# Can run in an individual thread or process.
-					batchMgr = SimpleFileBatchManagerWithFileInput(sub_filepath_pairs, dir_path, batch_size, shuffle, is_time_major)
-					batchMgr.putBatches()  # Generates and saves batches.
+					batchMgr = SimpleFileBatchManagerWithFileInput(sub_filepath_pairs, batch_size, shuffle, is_time_major)
+					batchMgr.putBatches(dir_path)  # Generates and saves batches.
 
-					batches = batchMgr.getBatches()  # Loads batches.
+					batches = batchMgr.getBatches(dir_path)  # Loads batches.
 					for idx, batch in enumerate(batches):
 						# Augment each batch (images & labels).
 						# Train with each batch (images & labels).

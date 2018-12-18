@@ -162,10 +162,10 @@ def augmentation_file_batch_manager_example():
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
-		batchMgr = AugmentationFileBatchManager(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
-		batchMgr.putBatches()  # Generates, augments, and saves batches.
+		batchMgr = AugmentationFileBatchManager(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
+		batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
-		batches = batchMgr.getBatches()  # Loads batches.
+		batches = batchMgr.getBatches(dir_path)  # Loads batches.
 		for idx, batch in enumerate(batches):
 			# Train with each batch (images & labels).
 			#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
@@ -219,10 +219,10 @@ def augmentation_file_batch_manager_with_file_input_example():
 				sub_filepath_pairs = npy_filepath_pairs[file_pair_indices]
 				if sub_filepath_pairs.size > 0:  # If sub_filepath_pairs is non-empty.
 					# Can run in an individual thread or process.
-					batchMgr = AugmentationFileBatchManagerWithFileInput(augmenter, sub_filepath_pairs, dir_path, batch_size, shuffle, is_label_augmented, is_time_major)
-					batchMgr.putBatches()  # Generates, augments, and saves batches.
+					batchMgr = AugmentationFileBatchManagerWithFileInput(augmenter, sub_filepath_pairs, batch_size, shuffle, is_label_augmented, is_time_major)
+					batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
-					batches = batchMgr.getBatches()  # Loads batches.
+					batches = batchMgr.getBatches(dir_path)  # Loads batches.
 					for idx, batch in enumerate(batches):
 						# Train with each batch (images & labels).
 						#print('\t\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
@@ -279,10 +279,10 @@ def sync_multiprocess_augmentation_file_batch_manager_example():
 
 			print('\t>>>>> Directory: {}.'.format(dir_path))
 
-			batchMgr = AugmentationFileBatchManager(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major, pool)
-			batchMgr.putBatches()  # Generates, augments, and saves batches.
+			batchMgr = AugmentationFileBatchManager(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major, pool)
+			batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
-			batches = batchMgr.getBatches()  # Loads batches.
+			batches = batchMgr.getBatches(dir_path)  # Loads batches.
 			for idx, batch in enumerate(batches):
 				# Train with each batch (images & labels).
 				#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))

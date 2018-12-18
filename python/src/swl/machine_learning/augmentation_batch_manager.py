@@ -85,13 +85,12 @@ class AugmentationBatchManagerWithFileInput(AugmentationBatchManager):
 #	Generates, augments, saves, and loads batches through npy files.
 #	An augmenter supports a function, augment(images, labels, is_label_augmented=False). 
 class AugmentationFileBatchManager(FileBatchManager):
-	def __init__(self, augmenter, images, labels, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False, process_pool=None, image_file_format=None, label_file_format=None):
+	def __init__(self, augmenter, images, labels, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False, process_pool=None, image_file_format=None, label_file_format=None):
 		super().__init__()
 
 		self._augmenter = augmenter
 		self._images = images
 		self._labels = labels
-		self._dir_path = dir_path
 		self._batch_size = batch_size
 		self._shuffle = shuffle
 		self._is_label_augmented = is_label_augmented
@@ -109,22 +108,22 @@ class AugmentationFileBatchManager(FileBatchManager):
 		if self._num_examples <= 0:
 			raise ValueError('Invalid argument')
 
-	def getBatches(self, *args, **kwargs):
+	def getBatches(self, dir_path, *args, **kwargs):
 		for step in range(self._num_steps):
-			batch_images = np.load(os.path.join(self._dir_path, self._image_file_format.format(step)))
-			batch_labels = np.load(os.path.join(self._dir_path, self._label_file_format.format(step)))
+			batch_images = np.load(os.path.join(dir_path, self._image_file_format.format(step)))
+			batch_labels = np.load(os.path.join(dir_path, self._label_file_format.format(step)))
 			yield batch_images, batch_labels
 
-	def putBatches(self, *args, **kwargs):
+	def putBatches(self, dir_path, *args, **kwargs):
 		indices = np.arange(self._num_examples)
 		if self._shuffle:
 			np.random.shuffle(indices)
 
 		if self._process_pool is None:
 			for step in range(self._num_steps):
-				AugmentationFileBatchManager._putBatches(self._augmenter, self._images, self._labels, self._dir_path, self._image_file_format, self._label_file_format, self._batch_size, self._is_label_augmented, indices, step)
+				AugmentationFileBatchManager._putBatches(self._augmenter, self._images, self._labels, dir_path, self._image_file_format, self._label_file_format, self._batch_size, self._is_label_augmented, indices, step)
 		else:
-			self._process_pool.map(partial(AugmentationFileBatchManager._putBatches, self._augmenter, self._images, self._labels, self._dir_path, self._image_file_format, self._label_file_format, self._batch_size, self._is_label_augmented, indices), range(self._num_steps))
+			self._process_pool.map(partial(AugmentationFileBatchManager._putBatches, self._augmenter, self._images, self._labels, dir_path, self._image_file_format, self._label_file_format, self._batch_size, self._is_label_augmented, indices), range(self._num_steps))
 
 	@staticmethod
 	def _putBatches(augmenter, images, labels, dir_path, image_file_format, label_file_format, batch_size, is_label_augmented, indices, step):
@@ -147,7 +146,7 @@ class AugmentationFileBatchManager(FileBatchManager):
 #	Generates, augments, saves, and loads batches through npy files.
 #	An augmenter supports a function, augment(images, labels, is_label_augmented=False). 
 class AugmentationFileBatchManagerWithFileInput(AugmentationFileBatchManager):
-	def __init__(self, augmenter, npy_filepath_pairs, dir_path, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False, process_pool=None):
+	def __init__(self, augmenter, npy_filepath_pairs, batch_size, shuffle=True, is_label_augmented=False, is_time_major=False, process_pool=None):
 		images, labels = None, None
 		for image_filepath, label_filepath in npy_filepath_pairs:
 			imgs = np.load(image_filepath)
@@ -155,4 +154,4 @@ class AugmentationFileBatchManagerWithFileInput(AugmentationFileBatchManager):
 			images = imgs if images is None else np.concatenate((images, imgs), axis=0)
 			labels = lbls if labels is None else np.concatenate((labels, lbls), axis=0)
 
-		super().__init__(augmenter, images, labels, dir_path, batch_size, shuffle, is_label_augmented, is_time_major, process_pool)
+		super().__init__(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major, process_pool)

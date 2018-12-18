@@ -154,12 +154,12 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 
 		print('\tBatch directory: {}.'.format(dir_path))
 
-		trainFileBatchMgr.putBatches()  # Generates, augments, and saves batches.
+		trainFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 		print('>-', sep='', end='')
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
-		batches = trainFileBatchMgr.getBatches()  # Loads batches.
+		batches = trainFileBatchMgr.getBatches(dir_path)  # Loads batches.
 		for train_inputs, train_outputs in batches:
 			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
 
@@ -497,7 +497,7 @@ def evaluate_neural_net_by_batch_manager(session, nnEvaluator, valBatchMgr, save
 		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs_list[step].shape[batch_axis]
+		batch_size = val_inputs.shape[batch_axis]
 		val_acc += batch_acc * batch_size
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
@@ -526,19 +526,20 @@ def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatch
 
 	dir_path = dirQueueMgr.getAvailableDirectory()
 	if dir_path is None:
-		break
+		print('[SWL] Error: No available directory.')
+		return
 
 	print('\tBatch directory: {}.'.format(dir_path))
 
-	valFileBatchMgr.putBatches()  # Generates, augments, and saves batches.
+	valFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
-	batches = valFileBatchMgr.getBatches()  # Loads batches.
+	batches = valFileBatchMgr.getBatches(dir_path)  # Loads batches.
 	for val_inputs, val_outputs in batches:
 		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs_list[step].shape[batch_axis]
+		batch_size = val_inputs.shape[batch_axis]
 		val_acc += batch_acc * batch_size
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
@@ -698,14 +699,15 @@ def infer_from_file_batch_manager_by_neural_net(session, nnInferrer, testFileBat
 
 	dir_path = dirQueueMgr.getAvailableDirectory()
 	if dir_path is None:
-		break
+		print('[SWL] Error: No available directory.')
+		return
 
 	print('\tBatch directory: {}.'.format(dir_path))
 
-	testFileBatchMgr.putBatches()  # Generates, augments, and saves batches.
+	testFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 	inf_outputs_list = list()
-	batches = testFileBatchMgr.getBatches()  # Loads batches.
+	batches = testFileBatchMgr.getBatches(dir_path)  # Loads batches.
 	for test_inputs, _ in batches:
 		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
 		inf_outputs_list.append(batch_outputs)
