@@ -55,7 +55,7 @@ def preprocess_data(data, axis=0):
 
 	return data
 
-def load_data(data_dir_path):
+def load_data(image_shape):
 	# Pixel value: [0, 255].
 	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
@@ -128,7 +128,7 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
 
-	train_images, test_images = load_data(data_dir_path)
+	train_images, test_images = load_data((image_height, image_width, 1))
 
 	# Pre-process.
 	#train_images = preprocess_data(train_images)
