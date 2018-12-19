@@ -128,9 +128,9 @@ def imgaug_file_batch_manager_example():
 		iaa.CoarseDropout(p=0.1, size_percent=0.1)
 	])
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -174,9 +174,9 @@ def imgaug_file_batch_manager_with_file_input_example():
 		iaa.CoarseDropout(p=0.1, size_percent=0.1)
 	])
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):

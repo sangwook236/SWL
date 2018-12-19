@@ -148,9 +148,9 @@ def augmentation_file_batch_manager_example():
 
 	augmenter = IdentityAugmenter()
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -191,9 +191,9 @@ def augmentation_file_batch_manager_with_file_input_example():
 
 	augmenter = IdentityAugmenter()
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -264,9 +264,9 @@ def sync_multiprocess_augmentation_file_batch_manager_example():
 
 	augmenter = IdentityAugmenter()
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	with mp.Pool() as pool:

@@ -113,9 +113,9 @@ def simple_file_batch_manager_example():
 	shuffle = True
 	is_time_major = False
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -155,9 +155,9 @@ def simple_file_batch_manager_with_file_input_example():
 	shuffle = True
 	is_time_major = False
 
-	base_dir_path = './batch_dir'
-	num_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_dir_path, num_dirs)
+	base_batch_dir_path = './batch_dir'
+	num_batch_dirs = 5
+	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):

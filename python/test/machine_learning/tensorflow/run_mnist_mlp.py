@@ -191,41 +191,44 @@ def main():
 	# Train and evaluate.
 
 	if does_need_training:
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
 				swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
 				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
-		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infer.
 
-	total_elapsed_time = time.time()
+	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			#K.set_session(sess)
 			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
 			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
+	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
-			if num_classes >= 2:
-				inferences = np.argmax(inferences, -1)
-				groundtruths = np.argmax(test_labels, -1)
-			else:
-				inferences = np.around(inferences)
-				groundtruths = test_labels
-			correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
-	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+	if inferences is not None:
+		if num_classes >= 2:
+			inferences = np.argmax(inferences, -1)
+			groundtruths = np.argmax(test_labels, -1)
+		else:
+			inferences = np.around(inferences)
+			groundtruths = test_labels
+		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
+		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
+	else:
+		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
 	# Close sessions.

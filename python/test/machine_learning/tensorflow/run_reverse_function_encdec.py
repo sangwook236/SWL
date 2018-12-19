@@ -193,34 +193,37 @@ def main():
 	# Train and evaluate.
 
 	if does_need_training:
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
 				swl_tf_util.train_neural_net(sess, nnTrainer, train_encoder_input_seqs, train_decoder_output_seqs, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
+		print('\tTotal training time = {}'.format(time.time() - start_time))
 
-		total_elapsed_time = time.time()
+		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
-		print('\tTotal evaluation time = {}'.format(time.time() - total_elapsed_time))
+		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infer.
 
-	total_elapsed_time = time.time()
+	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+	# Character strings -> numeric data.
+	test_data = dataset.to_numeric_data(test_strs)
+
+	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-			# Character strings -> numeric data.
-			test_data = dataset.to_numeric_data(test_strs)
-
 			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_strs, batch_size, infer_saver, checkpoint_dir_path, is_time_major)
+	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
-			# Numeric data -> character strings.
-			inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
-			print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
-	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+	if inferences is not None:
+		# Numeric data -> character strings.
+		inferred_strs = dataset.to_char_strings(inferences, has_start_token=True)
+		print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
+	else:
+		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
 	# Close sessions.
