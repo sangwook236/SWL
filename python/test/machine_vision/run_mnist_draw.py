@@ -20,8 +20,15 @@ import matplotlib.pyplot as plt
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 from swl.machine_learning.tensorflow.neural_net_trainer import GradientClippingNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-import swl.machine_learning.util as swl_ml_util
 from swl.machine_vision.draw_model import DRAW
+import swl.util.util as swl_util
+import swl.machine_learning.tensorflow.util as swl_tf_util
+
+#%%------------------------------------------------------------------
+
+def create_mnist_draw(image_height, image_width, batch_size, num_time_steps, eps=1e-8):
+	use_read_attention, use_write_attention = True, True
+	return DRAW(image_height, image_width, batch_size, num_time_steps, use_read_attention, use_write_attention, eps=eps)
 
 #%%------------------------------------------------------------------
 
@@ -37,12 +44,6 @@ class SimpleDrawTrainer(GradientClippingNeuralNetTrainer):
 
 #%%------------------------------------------------------------------
 
-from tensorflow.examples.tutorials.mnist import input_data
-
-def load_data(data_dir_path):
-	mnist = input_data.read_data_sets(data_dir_path, one_hot=True)
-	return mnist.train.images, mnist.test.images
-
 def preprocess_data(data, axis=0):
 	if data is not None:
 		# Preprocessing (normalization, standardization, etc.).
@@ -54,81 +55,24 @@ def preprocess_data(data, axis=0):
 
 	return data
 
-#%%------------------------------------------------------------------
+def load_data(data_dir_path):
+	# Pixel value: [0, 255].
+	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
-def train_neural_net(session, nnTrainer, train_images, val_images, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path):
-	if does_resume_training:
-		print('[SWL] Info: Resume training...')
+	train_images = train_images / 255.0
+	train_images = np.reshape(train_images, (-1,) + image_shape)
+	#train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
+	test_images = test_images / 255.0
+	test_images = np.reshape(test_images, (-1,) + image_shape)
+	#test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
 
-		# Load a model.
-		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-		saver.restore(session, ckpt.model_checkpoint_path)
-		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-		print('[SWL] Info: Restored a model.')
-	else:
-		print('[SWL] Info: Start training...')
+	# Pre-process.
+	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
+	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
 
-	start_time = time.time()
-	history = nnTrainer.train_unsupervisedly(session, train_images, val_images, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path)
-	print('\tTraining time = {}'.format(time.time() - start_time))
-
-	#--------------------
-	# Save a graph.
-	#tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pb', as_text=False)
-	##tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pbtxt', as_text=True)
-
-	# Save a serving model.
-	#builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
-	#builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
-	#builder.save(as_text=False)
-
-	# Display results.
-	#swl_ml_util.display_train_history(history)
-	if output_dir_path is not None:
-		swl_ml_util.save_train_history(history, output_dir_path)
-	print('[SWL] Info: End training...')
-
-def infer_by_neural_net(session, nnInferrer, test_images, batch_size, saver=None, checkpoint_dir_path=None):
-	num_inf_examples = 0
-	if test_images is not None:
-		num_inf_examples = test_images.shape[0]
-
-	if num_inf_examples > 0:
-		if saver is not None and checkpoint_dir_path is not None:
-			# Load a model.
-			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-			saver.restore(session, ckpt.model_checkpoint_path)
-			#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
-			print('[SWL] Info: Loaded a model.')
-
-		print('[SWL] Info: Start inferring...')
-		start_time = time.time()
-		inferences = nnInferrer.infer(session, test_images, batch_size)
-		print('\tInference time = {}'.format(time.time() - start_time))
-		print('[SWL] Info: End inferring...')
-
-		return inferences
-	else:
-		print('[SWL] Error: The number of test images is not equal to that of test labels.')
-		return None
+	return train_images, test_images
 
 #%%------------------------------------------------------------------
-
-def make_dir(dir_path):
-	if not os.path.exists(dir_path):
-		try:
-			os.makedirs(dir_path)
-		except OSError as ex:
-			if os.errno.EEXIST != ex.errno:
-				raise
-
-def create_mnist_draw(image_height, image_width, batch_size, num_time_steps, eps=1e-8):
-	use_read_attention, use_write_attention = True, True
-	return DRAW(image_height, image_width, batch_size, num_time_steps, use_read_attention, use_write_attention, eps=eps)
 
 def main():
 	#np.random.seed(7)
@@ -143,6 +87,9 @@ def main():
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181203T135011'
 
+	max_gradient_norm = 5
+	initial_epoch = 0
+
 	image_height, image_width = 28, 28
 	num_time_steps = 10  # MNIST generation sequence length.
 	eps = 1e-8  # Epsilon for numerical stability.
@@ -150,8 +97,6 @@ def main():
 	batch_size = 100  # Number of samples per gradient update.
 	num_epochs = 50  # Number of times to iterate over training data.
 	shuffle = True
-	max_gradient_norm = 5
-	initial_epoch = 0
 
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}
@@ -169,10 +114,10 @@ def main():
 	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 	#val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	make_dir(checkpoint_dir_path)
-	make_dir(inference_dir_path)
-	make_dir(train_summary_dir_path)
-	#make_dir(val_summary_dir_path)
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	#swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Prepare data.
@@ -239,7 +184,7 @@ def main():
 		total_elapsed_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				train_neural_net(sess, nnTrainer, train_images, test_images, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path)
+				swl_tf_util.train_neural_net_unsupervisedly(sess, nnTrainer, train_images, test_images, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - total_elapsed_time))
 
 	#%%------------------------------------------------------------------
@@ -271,21 +216,24 @@ def main():
 	total_elapsed_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			inferences = infer_by_neural_net(sess, nnInferrer, test_images[:batch_size], batch_size, infer_saver, checkpoint_dir_path)
-
-			# Reconstruct.
-			canvases = np.array(inferences)  # time_steps * batch_size * image_size.
-			T, batch_size, img_size = canvases.shape  # T = num_time_steps * num_test_images / 100.
-			X = 1.0 / (1.0 + np.exp(-canvases))  # x_recons = sigmoid(canvas).
-			#image_height = image_width = int(np.sqrt(img_size))
-
-			for t in range(T):
-				img = xrecons_grid(X[t,:,:], image_height, image_width)
-				plt.matshow(img, cmap=plt.cm.gray)
-				img_filepath = os.path.join(inference_dir_path, '{}_{}.png'.format('mnist_draw', t))  # You can merge using imagemagick, i.e. convert -delay 10 -loop 0 *.png mnist.gif.
-				plt.savefig(img_filepath)
-				print(img_filepath)
+			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images[:batch_size], batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - total_elapsed_time))
+
+	if inferences is not None:
+		# Reconstruct.
+		canvases = np.array(inferences)  # time_steps * batch_size * image_size.
+		T, batch_size, img_size = canvases.shape  # T = num_time_steps * num_test_images / 100.
+		X = 1.0 / (1.0 + np.exp(-canvases))  # x_recons = sigmoid(canvas).
+		#image_height = image_width = int(np.sqrt(img_size))
+
+		for t in range(T):
+			img = xrecons_grid(X[t,:,:], image_height, image_width)
+			plt.matshow(img, cmap=plt.cm.gray)
+			img_filepath = os.path.join(inference_dir_path, '{}_{}.png'.format('mnist_draw', t))  # You can merge using imagemagick, i.e. convert -delay 10 -loop 0 *.png mnist.gif.
+			plt.savefig(img_filepath)
+			print(img_filepath)
+	else:
+		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
 	# Close sessions.

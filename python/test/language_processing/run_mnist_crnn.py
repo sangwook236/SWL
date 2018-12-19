@@ -464,14 +464,17 @@ def main():
 					# Supports dense or sparse labels.
 					inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				inferences = np.argmax(inferences, axis=-1)
-
-			# TODO [check] >> Is it correct?
-			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
-
-			for i in range(10):
-				print(inferences[i], ground_truths[i])
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
+
+	if inferences is not None:
+		# TODO [check] >> Is it correct?
+		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+
+		for i in range(10):
+			print(inferences[i], ground_truths[i])
+	else:
+		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
 	# Close sessions.

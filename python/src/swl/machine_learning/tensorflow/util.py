@@ -475,6 +475,42 @@ def train_neural_net_with_decoder_input(session, nnTrainer, train_encoder_input_
 	builder.save(as_text=False)
 	"""
 
+def train_neural_net_unsupervisedly(session, nnTrainer, train_inputs, val_inputs, batch_size, num_epochs, shuffle, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path):
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	start_time = time.time()
+	history = nnTrainer.train_unsupervisedly(session, train_inputs, val_inputs, batch_size, num_epochs, shuffle, saver=saver, model_save_dir_path=checkpoint_dir_path, train_summary_dir_path=train_summary_dir_path)
+	print('\tTraining time = {}'.format(time.time() - start_time))
+
+	#--------------------
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'mnist_draw_graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
 #%%------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
