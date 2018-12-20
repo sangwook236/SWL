@@ -624,7 +624,7 @@ class NeuralNetTrainer(object):
 					saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
 					best_val_loss = val_loss
 
-					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+					print('[SWL] Info: Loss is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
 			print('\tTraining:   loss = {}'.format(train_loss))

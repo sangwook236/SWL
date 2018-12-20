@@ -34,13 +34,14 @@ def create_mnist_draw(image_height, image_width, batch_size, num_time_steps, eps
 
 class SimpleDrawTrainer(GradientClippingNeuralNetTrainer):
 	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
+		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 1e-3
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.5, beta2=0.999)
 
-		super().__init__(neuralNet, optimizer, max_gradient_norm, initial_epoch)
+		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step)
 
 #%%------------------------------------------------------------------
 
@@ -55,15 +56,15 @@ def preprocess_data(data, axis=0):
 
 	return data
 
-def load_data(image_shape):
+def load_data():
 	# Pixel value: [0, 255].
 	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
 
 	train_images = train_images / 255.0
-	train_images = np.reshape(train_images, (-1,) + image_shape)
+	train_images = np.reshape(train_images, (train_images.shape[0], -1))
 	#train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
 	test_images = test_images / 255.0
-	test_images = np.reshape(test_images, (-1,) + image_shape)
+	test_images = np.reshape(test_images, (test_images.shape[0], -1))
 	#test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
 
 	# Pre-process.
@@ -122,17 +123,7 @@ def main():
 	#--------------------
 	# Prepare data.
 
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mnist/0_download'
-
-	train_images, test_images = load_data((image_height, image_width, 1))
-
-	# Pre-process.
-	#train_images = preprocess_data(train_images)
-	#test_images = preprocess_data(test_images)
+	train_images, test_images = load_data()
 
 	#--------------------
 	# Create models, sessions, and graphs.
