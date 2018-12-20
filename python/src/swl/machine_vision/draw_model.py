@@ -145,8 +145,8 @@ class DRAW(object):
 
 	def _read_with_attention(self, x, x_hat, h_dec_prev):
 		Fx, Fy, gamma = DrawAttention.getAttentionParameters(h_dec_prev, self._image_width, self._image_height, self._read_n, 'read_attention', self._reuse, self._eps)
-		x = DrawAttention.filter(x, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n)  # batch_size * (read_n * read_n).
-		x_hat = DrawAttention.filter(x_hat, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n)
+		x = DrawAttention.filter(x, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n, self._read_n)  # batch_size * (read_n * read_n).
+		x_hat = DrawAttention.filter(x_hat, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n, self._read_n)
 		return tf.concat([x, x_hat], 1)  # Concat along feature axis.
 
 	# Encoder. 
@@ -184,4 +184,4 @@ class DRAW(object):
 			return DrawAttention.linear_transform(h_dec, self._img_size)
 
 	def _write_with_attention(self, h_dec):
-		return getWriteAttention(h_dec, self._batch_size, self._image_width, self._image_height, self._write_n, self._reuse, self._eps)
+		return DrawAttention.getWriteAttention(h_dec, self._batch_size, self._image_width, self._image_height, self._write_n, self._reuse, self._eps)

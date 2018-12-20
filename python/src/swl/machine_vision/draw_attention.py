@@ -1,10 +1,32 @@
+import math
 import tensorflow as tf
+
+#%%------------------------------------------------------------------
+
+class DrawAttentionBase(object):
+	@staticmethod
+	def filter(img, width, height, Fx, Fy, gamma, patch_width, patch_height):
+		Fxt = tf.transpose(Fx, perm=[0, 2, 1])
+		img = tf.reshape(img, [-1, height, width])
+		glimpse = tf.matmul(Fy, tf.matmul(img, Fxt))
+		glimpse = tf.reshape(glimpse, [-1, patch_width * patch_height])
+		return glimpse * tf.reshape(gamma, [-1, 1])
+
+	@staticmethod
+	def linear_transform(x, output_dim):
+		"""
+		Affine transformation W * x + b.
+		Assumes x.shape = (batch_size, num_features).
+		"""
+		W = tf.get_variable('W', [x.get_shape()[1], output_dim]) 
+		b = tf.get_variable('b', [output_dim], initializer=tf.constant_initializer(0.0))
+		return tf.matmul(x, W) + b
 
 #%%------------------------------------------------------------------
 
 # REF [paper] >> "DRAW: A Recurrent Neural Network For Image Generation", arXiv 2015
 #	REF [site] >> https://github.com/ericjang/draw
-class DrawAttention(object):
+class DrawAttention(DrawAttentionBase):
 	@staticmethod
 	def getWriteAttention(ctx, batch_size, width, height, patch_size, reuse=tf.AUTO_REUSE, eps=1.0e-8):
 		Fx, Fy, gamma = DrawAttention.getAttentionParameters(ctx, width, height, patch_size, 'draw_write_attention', reuse, eps)
@@ -41,24 +63,6 @@ class DrawAttention(object):
 		return DrawAttention._filterbank(width, height, gx, gy, sigma2, delta, patch_size, eps) + (tf.exp(log_gamma),)
 
 	@staticmethod
-	def filter(img, width, height, Fx, Fy, gamma, patch_width, patch_height):
-		Fxt = tf.transpose(Fx, perm=[0, 2, 1])
-		img = tf.reshape(img, [-1, height, width])
-		glimpse = tf.matmul(Fy, tf.matmul(img, Fxt))
-		glimpse = tf.reshape(glimpse, [-1, patch_width * patch_height])
-		return glimpse * tf.reshape(gamma, [-1, 1])
-
-	@staticmethod
-	def linear_transform(x, output_dim):
-		"""
-		Affine transformation W * x + b.
-		Assumes x.shape = (batch_size, num_features).
-		"""
-		W = tf.get_variable('W', [x.get_shape()[1], output_dim]) 
-		b = tf.get_variable('b', [output_dim], initializer=tf.constant_initializer(0.0))
-		return tf.matmul(x, W) + b
-
-	@staticmethod
 	def _filterbank(width, height, gx, gy, sigma2, delta, patch_size, eps=1.0e-8):
 		grid_i = tf.reshape(tf.cast(tf.range(patch_size), tf.float32), [1, -1])
 		mu_x = gx + (grid_i - patch_size / 2 - 0.5) * delta  # Eqn 19.
@@ -79,7 +83,7 @@ class DrawAttention(object):
 
 # REF [paper] >> "End-to-End Instance Segmentation with Recurrent Attention", arXiv 2017
 #	REF [site] >> https://github.com/renmengye/rec-attend-public
-class DrawRectangularAttention(object):
+class DrawRectangularAttention(DrawAttentionBase):
 	@staticmethod
 	def getWriteAttention(ctx, batch_size, width, height, patch_width, patch_height, reuse=tf.AUTO_REUSE, eps=1.0e-8):
 		Fx, Fy, gamma = DrawRectangularAttention.getAttentionParameters(ctx, width, height, patch_width, patch_height, 'draw_write_attention', reuse, eps)
@@ -116,24 +120,6 @@ class DrawRectangularAttention(object):
 
 		# Attention parameters: Fx, Fy, gamma.
 		return DrawRectangularAttention._filterbank(width, height, gx, gy, sigmax2, sigmay2, deltax, deltay, patch_width, patch_height, eps) + (tf.exp(log_gamma),)
-
-	@staticmethod
-	def filter(img, width, height, Fx, Fy, gamma, patch_width, patch_height):
-		Fxt = tf.transpose(Fx, perm=[0, 2, 1])
-		img = tf.reshape(img, [-1, height, width])
-		glimpse = tf.matmul(Fy, tf.matmul(img, Fxt))
-		glimpse = tf.reshape(glimpse, [-1, patch_width * patch_height])
-		return glimpse * tf.reshape(gamma, [-1, 1])
-
-	@staticmethod
-	def linear_transform(x, output_dim):
-		"""
-		Affine transformation W * x + b.
-		Assumes x.shape = (batch_size, num_features).
-		"""
-		W = tf.get_variable('W', [x.get_shape()[1], output_dim]) 
-		b = tf.get_variable('b', [output_dim], initializer=tf.constant_initializer(0.0))
-		return tf.matmul(x, W) + b
 
 	@staticmethod
 	def _filterbank(width, height, gx, gy, sigmax2, sigmay2, deltax, deltay, patch_width, patch_height, eps=1.0e-8):
