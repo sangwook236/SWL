@@ -1,4 +1,5 @@
 import tensorflow as tf
+from swl.machine_vision.draw_attention import DrawAttention
 
 #%%------------------------------------------------------------------
 
@@ -138,61 +139,14 @@ class DRAW(object):
 	def _binary_crossentropy(t, o, eps):
 		return -(t * tf.log(o + eps) + (1.0 - t) * tf.log(1.0 - o + eps))
 
-	@staticmethod
-	def _linear_transform(x, output_dim):
-		"""
-		Affine transformation W * x + b.
-		Assumes x.shape = (batch_size, num_features).
-		"""
-		W = tf.get_variable('W', [x.get_shape()[1], output_dim]) 
-		b = tf.get_variable('b', [output_dim], initializer=tf.constant_initializer(0.0))
-		return tf.matmul(x, W) + b
-
-	@staticmethod
-	def _filterbank(width, height, gx, gy, sigma2, delta, N, eps=1.0e-8):
-		grid_i = tf.reshape(tf.cast(tf.range(N), tf.float32), [1, -1])
-		mu_x = gx + (grid_i - N / 2 - 0.5) * delta  # Eqn 19.
-		mu_y = gy + (grid_i - N / 2 - 0.5) * delta  # Eqn 20.
-		a = tf.reshape(tf.cast(tf.range(width), tf.float32), [1, 1, -1])
-		b = tf.reshape(tf.cast(tf.range(height), tf.float32), [1, 1, -1])
-		mu_x = tf.reshape(mu_x, [-1, N, 1])
-		mu_y = tf.reshape(mu_y, [-1, N, 1])
-		sigma2 = tf.reshape(sigma2, [-1, 1, 1])
-		Fx = tf.exp(-tf.square(a - mu_x) / (2 * sigma2))
-		Fy = tf.exp(-tf.square(b - mu_y) / (2 * sigma2))  # batch_size * N * image_height.
-		# Normalize, sum over image_width and image_height dims.
-		Fx = Fx / tf.maximum(tf.reduce_sum(Fx, 2, keepdims=True), eps)
-		Fy = Fy / tf.maximum(tf.reduce_sum(Fy, 2, keepdims=True), eps)
-		return Fx, Fy
-
-	@staticmethod
-	def _attention_window(h_dec, width, height, N, scope, reuse, eps=1.0e-8):
-		with tf.variable_scope(scope, reuse=reuse):
-			params = DRAW._linear_transform(h_dec, 5)  # 5 parameters.
-		#gx_tilde, gy_tilde, log_sigma2, log_delta, log_gamma = tf.split(1, 5, params)
-		gx_tilde, gy_tilde, log_sigma2, log_delta, log_gamma = tf.split(params, 5, 1)
-		gx = (width + 1) / 2 * (gx_tilde + 1)
-		gy = (height + 1) / 2 * (gy_tilde + 1)
-		sigma2 = tf.exp(log_sigma2)
-		delta = (max(width, height) - 1) / (N - 1) * tf.exp(log_delta)  # batch_size * N.
-		return DRAW._filterbank(gx, gy, sigma2, delta, N) + (tf.exp(log_gamma),)  # Fx, Fy, gamma.
-
-	@staticmethod
-	def _filter_image(img, width, height, Fx, Fy, gamma, N):
-		Fxt = tf.transpose(Fx, perm=[0, 2, 1])
-		img = tf.reshape(img, [-1, self._image_height, self._image_width])
-		glimpse = tf.matmul(Fy, tf.matmul(img, Fxt))
-		glimpse = tf.reshape(glimpse, [-1, N * N])
-		return glimpse * tf.reshape(gamma, [-1, 1])
-
 	# Reader.
 	def _read_without_attention(self, x, x_hat, h_dec_prev):
 		return tf.concat([x, x_hat], 1)
 
 	def _read_with_attention(self, x, x_hat, h_dec_prev):
-		Fx, Fy, gamma = self._attention_window(h_dec_prev, self._image_width, self._image_height, self._read_n, 'read_attention', self._reuse, self._eps)
-		x = self._filter_image(x, Fx, Fy, gamma, self._read_n)  # batch_size * (read_n * read_n).
-		x_hat = DRAW._filter_image(x_hat, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n)
+		Fx, Fy, gamma = DrawAttention.getAttentionParameters(h_dec_prev, self._image_width, self._image_height, self._read_n, 'read_attention', self._reuse, self._eps)
+		x = DrawAttention.filter(x, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n)  # batch_size * (read_n * read_n).
+		x_hat = DrawAttention.filter(x_hat, self._image_width, self._image_height, Fx, Fy, gamma, self._read_n)
 		return tf.concat([x, x_hat], 1)  # Concat along feature axis.
 
 	# Encoder. 
@@ -213,9 +167,9 @@ class DRAW(object):
 		mu is (batch_size, z_size).
 		"""
 		with tf.variable_scope('mu', reuse=self._reuse):
-			mu = DRAW._linear_transform(h_enc, z_size)
+			mu = DrawAttention.linear_transform(h_enc, z_size)
 		with tf.variable_scope('sigma', reuse=self._reuse):
-			logsigma = DRAW._linear_transform(h_enc, z_size)
+			logsigma = DrawAttention.linear_transform(h_enc, z_size)
 			sigma = tf.exp(logsigma)
 		return (mu + sigma * e, mu, logsigma, sigma)
 
@@ -227,15 +181,7 @@ class DRAW(object):
 	# Writer.
 	def _write_without_attention(self, h_dec):
 		with tf.variable_scope('write_without_attention', reuse=self._reuse):
-			return DRAW._linear_transform(h_dec, self._img_size)
+			return DrawAttention.linear_transform(h_dec, self._img_size)
 
 	def _write_with_attention(self, h_dec):
-		with tf.variable_scope('write_with_attention', reuse=self._reuse):
-			w = DRAW._linear_transform(h_dec, self._write_size)  # batch_size * (write_n * write_n).
-		w = tf.reshape(w, [self._batch_size, self._write_n, self._write_n])
-		Fx, Fy, gamma = DRAW._attention_window(h_dec, self._image_width, self._image_height, self._write_n, 'write_attention', self._reuse, self._eps)
-		Fyt = tf.transpose(Fy, perm=[0, 2, 1])
-		wr = tf.matmul(Fyt, tf.matmul(w, Fx))
-		wr = tf.reshape(wr, [self._batch_size, self._image_height * self._image_width])
-		#gamma = tf.tile(gamma, [1, self._image_height * self._image_width])
-		return wr * tf.reshape(1.0 / gamma, [-1, 1])
+		return getWriteAttention(h_dec, self._batch_size, self._image_width, self._image_height, self._write_n, self._reuse, self._eps)
