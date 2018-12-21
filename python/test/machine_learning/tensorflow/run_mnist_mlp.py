@@ -107,6 +107,11 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
+	# Prepare data.
+
+	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
+
+	#--------------------
 	# Prepare directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
@@ -119,11 +124,6 @@ def main():
 	swl_util.make_dir(inference_dir_path)
 	swl_util.make_dir(train_summary_dir_path)
 	swl_util.make_dir(val_summary_dir_path)
-
-	#--------------------
-	# Prepare data.
-
-	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
 	# Create models, sessions, and graphs.

@@ -299,20 +299,6 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
-	# Prepare directories.
-
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	inference_dir_path = os.path.join(output_dir_path, 'inference')
-	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
-	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
-
-	swl_util.make_dir(checkpoint_dir_path)
-	swl_util.make_dir(inference_dir_path)
-	swl_util.make_dir(train_summary_dir_path)
-	swl_util.make_dir(val_summary_dir_path)
-
-	#--------------------
 	# Prepare data.
 
 	#train_images, train_labels, test_images, test_labels = prepare_single_character_dataset((image_height, image_width, image_channel), num_classes, max_time_steps, slice_width, slice_stride, is_sparse_label)
@@ -334,6 +320,20 @@ def main():
 	print('Train images = {}, train labels = {}, test images = {}, test labels = {}'.format(train_images.shape, train_labels.shape, test_images.shape, test_labels.shape))
 	if use_batch_list:
 		print('Train images list = {}, train labels list = {}, test images list = {}, test labels list = {}'.format(len(train_images_list), len(train_labels_list), len(test_images_list), len(test_labels_list)))
+
+	#--------------------
+	# Prepare directories.
+
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Create models, sessions, and graphs.
