@@ -5,14 +5,14 @@ import tensorflow as tf
 #%%------------------------------------------------------------------
 
 class MnistCRNN(abc.ABC):
-	def __init__(self, input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
+	def __init__(self, input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=False):
 		super().__init__()
 
 		self._input_tensor_ph = input_tensor_ph
 		self._output_tensor_ph = output_tensor_ph
 		self._input_seq_lens_ph = input_seq_lens_ph
 		#self._output_seq_lens_ph = output_seq_lens_ph
-		#self._batch_size_ph = batch_size_ph
+		self._batch_size_ph = batch_size_ph
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -49,24 +49,24 @@ class MnistCRNN(abc.ABC):
 		raise NotImplementedError
 
 	def create_training_model(self):
-		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._batch_size_ph, self._num_classes, self._num_time_steps, self._is_time_major, True)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._input_seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, model_output_for_loss = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._batch_size_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, self._input_seq_lens_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
+		self._model_output, _ = self._create_single_model(self._input_tensor_ph, self._input_seq_lens_ph, self._batch_size_ph, self._num_classes, self._num_time_steps, self._is_time_major, False)
 
 		self._loss = None
 		self._accuracy = None
 
-	def _create_single_model(self, input_tensor, input_seq_lens, num_classes, num_time_steps, is_time_major, is_training):
+	def _create_single_model(self, input_tensor, input_seq_lens, batch_size, num_classes, num_time_steps, is_time_major, is_training):
 		with tf.variable_scope('mnist_crnn', reuse=tf.AUTO_REUSE):
 			keep_prob = 1.0
 			#keep_prob = 0.5
@@ -110,6 +110,7 @@ class MnistCRNN(abc.ABC):
 				dec_cell_outputs = self._get_decoder_output(dec_cell, enc_cell_states, enc_cell_outputs, num_time_steps, is_time_major)
 				proj_outputs = self._get_projection_output(dec_cell_outputs, num_classes)
 
+				proj_seq_lens = tf.fill(batch_size, proj_outputs.shape[0 if is_time_major else 1])
 				return self._get_final_output(proj_outputs, input_seq_lens)
 
 	def _create_cnn_model(self, sliced_input_tensor, num_classes):
@@ -214,23 +215,24 @@ class MnistCrnnWithCrossEntropyLoss(MnistCRNN):
 		# 1D array of size [batch_size].
 		input_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='input_seq_lens_ph')
 		#output_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='output_seq_lens_ph')
+		batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
-		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		if self._is_time_major:
 			input_seq_lens = np.full(inputs.shape[1], inputs.shape[0], np.int32)
-			#batch_size = [inputs.shape[1]]
+			batch_size = [inputs.shape[1]]
 		else:
 			input_seq_lens = np.full(inputs.shape[0], inputs.shape[1], np.int32)
-			#batch_size = [inputs.shape[0]]
+			batch_size = [inputs.shape[0]]
 
 		if outputs is None:
-			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
-			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
+			feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
+			#feed_dict = {self._input_tensor_ph: inputs, self._input_seq_lens_ph: input_seq_lens}
 		else:
-			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
-			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens}
+			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens, self._batch_size_ph: batch_size}
+			#feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._input_seq_lens_ph: input_seq_lens}
 		return feed_dict
 
 	def _get_loss(self, y, t, seq_lens):
@@ -263,9 +265,10 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 		# 1D array of size [batch_size].
 		input_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='input_seq_lens_ph')
 		#output_seq_lens_ph = tf.placeholder(tf.int32, shape=[None], name='output_seq_lens_ph')
+		batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 		self._eos_token = eos_token
 
-		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
+		super().__init__(input_tensor_ph, output_tensor_ph, input_seq_lens_ph, batch_size_ph, image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		if self._is_time_major:
@@ -287,7 +290,8 @@ class MnistCrnnWithCtcLoss(MnistCRNN):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=seq_lens, preprocess_collapse_repeated=True, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=self._is_time_major))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=seq_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=self._is_time_major))
+			#loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=seq_lens, preprocess_collapse_repeated=True, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=self._is_time_major))
 
 			tf.summary.scalar('loss', loss)
 			return loss
