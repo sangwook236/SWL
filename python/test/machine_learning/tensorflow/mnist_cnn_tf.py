@@ -21,6 +21,8 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 				return None
 
 	def _create_model_1(self, input_tensor, is_training, num_classes):
+		dropout_prob = 0.75
+
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
@@ -34,7 +36,7 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 
 			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='dense')
 			# NOTE [info] >> If dropout_rate=0.0, dropout layer is not created.
-			fc1 = tf.layers.dropout(fc1, rate=0.75, training=is_training, name='dropout')
+			fc1 = tf.layers.dropout(fc1, rate=dropout_prob, training=is_training, name='dropout')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
 			if 1 == num_classes:
