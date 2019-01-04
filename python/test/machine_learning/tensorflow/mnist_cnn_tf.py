@@ -21,7 +21,7 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 				return None
 
 	def _create_model_1(self, input_tensor, is_training, num_classes):
-		dropout_prob = 0.75
+		dropout_prob = 0.25
 
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
@@ -53,7 +53,7 @@ class MnistCnnUsingTF(SimpleNeuralNet):
 	def _create_model_2(self, input_tensor, is_training, num_classes):
 		# FIXME [fix] >> Too slow and too low accuracy.
 
-		keep_prob = 0.25 if is_training else 1.0
+		keep_prob = 0.75 if is_training else 1.0
 
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = self._conv_layer(input_tensor, 32, (5, 5, 1), (1, 1, 1, 1), padding='SAME', layer_name='conv', act=tf.nn.relu)
