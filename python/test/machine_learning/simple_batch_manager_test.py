@@ -4,10 +4,11 @@ import sys
 sys.path.append('../../src')
 
 #--------------------
-import os
+import os, time
 import numpy as np
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleBatchManagerWithFileInput, SimpleFileBatchManager, SimpleFileBatchManagerWithFileInput
-from swl.util.directory_queue_manager import DirectoryQueueManager
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator, NpyFileBatchLoader
+from swl.util.working_directory_manager import SimpleWorkingDirectoryManager
 import swl.util.util as swl_util
 
 def generate_dataset(num_examples, is_label_augmented=False):
@@ -113,17 +114,20 @@ def simple_file_batch_manager_example():
 	shuffle = True
 	is_time_major = False
 
-	base_batch_dir_path = './batch_dir'
+	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
-		dir_path = dirQueueMgr.getAvailableDirectory()
-		if dir_path is None:
-			break
+		while True:
+			dir_path = dirMgr.requestAvailableDirectory()
+			if dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
@@ -138,7 +142,7 @@ def simple_file_batch_manager_example():
 			#print('\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 			print('\t{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
-		dirQueueMgr.returnDirectory(dir_path)				
+		dirMgr.returnDirectory(dir_path)				
 
 def simple_file_batch_manager_with_file_input_example():
 	num_examples = 300
@@ -155,17 +159,20 @@ def simple_file_batch_manager_with_file_input_example():
 	shuffle = True
 	is_time_major = False
 
-	base_batch_dir_path = './batch_dir'
+	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
-		dir_path = dirQueueMgr.getAvailableDirectory()
-		if dir_path is None:
-			break
+		while True:
+			dir_path = dirMgr.requestAvailableDirectory()
+			if dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 		
@@ -193,11 +200,11 @@ def simple_file_batch_manager_with_file_input_example():
 						#print('\t\t{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
 						print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
-		dirQueueMgr.returnDirectory(dir_path)
+		dirMgr.returnDirectory(dir_path)
 
 def main():
-	#simple_batch_manager_example()
-	simple_batch_manager_with_file_input_example()
+	simple_batch_manager_example()
+	#simple_batch_manager_with_file_input_example()
 
 	#simple_file_batch_manager_example()
 	#simple_file_batch_manager_with_file_input_example()

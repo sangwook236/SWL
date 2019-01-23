@@ -2,44 +2,54 @@ import os, abc
 import numpy as np
 
 #%%------------------------------------------------------------------
-# BatchManager.
-#	Abstract batch manager.
-class BatchManager(abc.ABC):
+# BatchGenerator.
+#	Generates batches.
+class BatchGenerator(abc.ABC):
 	def __init__(self):
 		super().__init__()
 
-	# Return a batch generator.
+	# Returns a batch generator.
 	@abc.abstractmethod
-	def getBatches(self, *args, **kwargs):
+	def generateBatches(self, *args, **kwargs):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
-# FileBatchManager.
-#	Loads, saves, and augments batches using files.
-class FileBatchManager(abc.ABC):
+# FileBatchGenerator.
+#	Generates and saves batches to files.
+class FileBatchGenerator(abc.ABC):
 	def __init__(self):
 		super().__init__()
 
-	# Return a batch generator.
+	# Returns a list of filepath pairs, (image filepath, label filepath).
 	@abc.abstractmethod
-	def getBatches(self, dir_path, *args, **kwargs):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def putBatches(self, dir_path, *args, **kwargs):
+	def saveBatches(self, dir_path, *args, **kwargs):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
-# SimpleBatchManager.
-#	Generates batches without augmentation.
-class SimpleBatchManager(BatchManager):
-	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False):
+# FileBatchLoader.
+#	Loads batches from files.
+class FileBatchLoader(abc.ABC):
+	def __init__(self):
+		super().__init__()
+
+	# Returns a batch generator.
+	@abc.abstractmethod
+	def loadBatches(self, filepath_pairs, *args, **kwargs):
+		raise NotImplementedError
+
+#%%------------------------------------------------------------------
+# SimpleBatchGenerator.
+#	Generates batches.
+class SimpleBatchGenerator(BatchGenerator):
+	# functor: images, labels = functor(images, labels).
+	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None):
 		super().__init__()
 
 		self._images = images
 		self._labels = labels
 		self._batch_size = batch_size
 		self._shuffle = shuffle
+		self._functor = functor
 
 		batch_axis = 1 if is_time_major else 0
 		self._num_examples, self._num_steps = 0, 0
@@ -50,7 +60,7 @@ class SimpleBatchManager(BatchManager):
 		if self._num_examples <= 0:
 			raise ValueError('Invalid argument')
 
-	def getBatches(self, *args, **kwargs):
+	def generateBatches(self, *args, **kwargs):
 		indices = np.arange(self._num_examples)
 		if self._shuffle:
 			np.random.shuffle(indices)
@@ -63,34 +73,23 @@ class SimpleBatchManager(BatchManager):
 				batch_images = self._images[batch_indices]
 				batch_labels = self._labels[batch_indices]
 				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
-					yield batch_images, batch_labels
+					if self._functor is None:
+						yield batch_images, batch_labels
+					else:
+						yield self._functor(batch_images, batch_labels)
 
 #%%------------------------------------------------------------------
-# SimpleBatchManagerWithFileInput.
-#	Loads dataset from multiple npy files.
-#	Generates batches without augmentation.
-class SimpleBatchManagerWithFileInput(SimpleBatchManager):
-	def __init__(self, npy_filepath_pairs, batch_size, shuffle=True, is_time_major=False):
-		images, labels = None, None
-		for image_filepath, label_filepath in npy_filepath_pairs:
-			imgs = np.load(image_filepath)
-			lbls = np.load(label_filepath)
-			images = imgs if images is None else np.concatenate((images, imgs), axis=0)
-			labels = lbls if labels is None else np.concatenate((labels, lbls), axis=0)
-
-		super().__init__(images, labels, batch_size, shuffle, is_time_major)
-
-#%%------------------------------------------------------------------
-# SimpleFileBatchManager.
-#	Generates, saves, and loads batches through npy files without augmentation.
-class SimpleFileBatchManager(FileBatchManager):
-	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, image_file_format=None, label_file_format=None):
+# NpyFileBatchGenerator.
+#	Generates and saves batches to npy files.
+class NpyFileBatchGenerator(FileBatchGenerator):
+	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None, image_file_format=None, label_file_format=None):
 		super().__init__()
 
 		self._images = images
 		self._labels = labels
 		self._batch_size = batch_size
 		self._shuffle = shuffle
+		self._functor = functor
 
 		self._image_file_format = 'batch_images_{}.npy' if image_file_format is None else image_file_format
 		self._label_file_format = 'batch_labels_{}.npy' if label_file_format is None else label_file_format
@@ -104,17 +103,12 @@ class SimpleFileBatchManager(FileBatchManager):
 		if self._num_examples <= 0:
 			raise ValueError('Invalid argument')
 
-	def getBatches(self, dir_path, *args, **kwargs):
-		for step in range(self._num_steps):
-			batch_images = np.load(os.path.join(dir_path, self._image_file_format.format(step)))
-			batch_labels = np.load(os.path.join(dir_path, self._label_file_format.format(step)))
-			yield batch_images, batch_labels
-
-	def putBatches(self, dir_path, *args, **kwargs):
+	def saveBatches(self, dir_path, *args, **kwargs):
 		indices = np.arange(self._num_examples)
 		if self._shuffle:
 			np.random.shuffle(indices)
 
+		npy_filepath_pairs = list()
 		for step in range(self._num_steps):
 			start = step * self._batch_size
 			end = start + self._batch_size
@@ -123,20 +117,23 @@ class SimpleFileBatchManager(FileBatchManager):
 				batch_images = self._images[batch_indices]
 				batch_labels = self._labels[batch_indices]
 				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
-					np.save(os.path.join(dir_path, self._image_file_format.format(step)), batch_images)
-					np.save(os.path.join(dir_path, self._label_file_format.format(step)), batch_labels)
+					if self._functor is not None:
+						batch_images, batch_labels = self._functor(batch_images, batch_labels)
+					image_filepath, label_filepath = os.path.join(dir_path, self._image_file_format.format(step)), os.path.join(dir_path, self._label_file_format.format(step))
+					np.save(image_filepath, batch_images)
+					np.save(label_filepath, batch_labels)
+					npy_filepath_pairs.append((image_filepath, label_filepath))
+		return npy_filepath_pairs
 
 #%%------------------------------------------------------------------
-# SimpleFileBatchManagerWithFileInput.
-#	Loads dataset from multiple npy files.
-#	Generates, saves, and loads batches through npy files without augmentation.
-class SimpleFileBatchManagerWithFileInput(SimpleFileBatchManager):
-	def __init__(self, npy_filepath_pairs, batch_size, shuffle=True, is_time_major=False):
-		images, labels = None, None
-		for image_filepath, label_filepath in npy_filepath_pairs:
-			imgs = np.load(image_filepath)
-			lbls = np.load(label_filepath)
-			images = imgs if images is None else np.concatenate((images, imgs), axis=0)
-			labels = lbls if labels is None else np.concatenate((labels, lbls), axis=0)
+# NpyFileBatchLoader.
+#	Loads batches from npy files.
+class NpyFileBatchLoader(FileBatchLoader):
+	def __init__(self):
+		super().__init__()
 
-		super().__init__(images, labels, batch_size, shuffle, is_time_major)
+	def loadBatches(self, npy_filepath_pairs, *args, **kwargs):
+		for image_filepath, label_filepath in npy_filepath_pairs:
+			batch_images = np.load(image_filepath)
+			batch_labels = np.load(label_filepath)
+			yield batch_images, batch_labels
