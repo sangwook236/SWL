@@ -1,4 +1,4 @@
-import os, abc
+import os, abc, csv
 import numpy as np
 
 #%%------------------------------------------------------------------
@@ -82,7 +82,7 @@ class SimpleBatchGenerator(BatchGenerator):
 # NpyFileBatchGenerator.
 #	Generates and saves batches to npy files.
 class NpyFileBatchGenerator(FileBatchGenerator):
-	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None, image_file_format=None, label_file_format=None):
+	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None, image_file_format=None, label_file_format=None, batch_info_csv_filename=None):
 		super().__init__()
 
 		self._images = images
@@ -93,6 +93,7 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 
 		self._image_file_format = 'batch_images_{}.npy' if image_file_format is None else image_file_format
 		self._label_file_format = 'batch_labels_{}.npy' if label_file_format is None else label_file_format
+		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
 
 		batch_axis = 1 if is_time_major else 0
 		self._num_examples, self._num_steps = 0, 0
@@ -108,32 +109,37 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 		if self._shuffle:
 			np.random.shuffle(indices)
 
-		npy_filepath_pairs = list()
-		for step in range(self._num_steps):
-			start = step * self._batch_size
-			end = start + self._batch_size
-			batch_indices = indices[start:end]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				batch_images = self._images[batch_indices]
-				batch_labels = self._labels[batch_indices]
-				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
-					if self._functor is not None:
-						batch_images, batch_labels = self._functor(batch_images, batch_labels)
-					image_filepath, label_filepath = os.path.join(dir_path, self._image_file_format.format(step)), os.path.join(dir_path, self._label_file_format.format(step))
-					np.save(image_filepath, batch_images)
-					np.save(label_filepath, batch_labels)
-					npy_filepath_pairs.append((image_filepath, label_filepath))
-		return npy_filepath_pairs
+		with open(os.path.join(dir_path, self._batch_info_csv_filename ), 'w', encoding='UTF8') as csvfile:
+			writer = csv.writer(csvfile)
+
+			for step in range(self._num_steps):
+				start = step * self._batch_size
+				end = start + self._batch_size
+				batch_indices = indices[start:end]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					batch_images = self._images[batch_indices]
+					batch_labels = self._labels[batch_indices]
+					if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
+						if self._functor is not None:
+							batch_images, batch_labels = self._functor(batch_images, batch_labels)
+						image_filepath, label_filepath = os.path.join(dir_path, self._image_file_format.format(step)), os.path.join(dir_path, self._label_file_format.format(step))
+						np.save(image_filepath, batch_images)
+						np.save(label_filepath, batch_labels)
+						writer.writerow((image_filepath, label_filepath))
 
 #%%------------------------------------------------------------------
 # NpyFileBatchLoader.
 #	Loads batches from npy files.
 class NpyFileBatchLoader(FileBatchLoader):
-	def __init__(self):
+	def __init__(self, batch_info_csv_filename=None):
 		super().__init__()
 
-	def loadBatches(self, npy_filepath_pairs, *args, **kwargs):
-		for image_filepath, label_filepath in npy_filepath_pairs:
-			batch_images = np.load(image_filepath)
-			batch_labels = np.load(label_filepath)
-			yield batch_images, batch_labels
+		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
+
+	def loadBatches(self, dir_path, *args, **kwargs):
+		with open(os.path.join(dir_path, self._batch_info_csv_filename), 'r', encoding='UTF8') as csvfile:
+			reader = csv.reader(csvfile)
+			for row in reader:
+				batch_images = np.load(row[0])
+				batch_labels = np.load(row[1])
+				yield batch_images, batch_labels
