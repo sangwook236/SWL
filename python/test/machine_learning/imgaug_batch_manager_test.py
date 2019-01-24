@@ -8,7 +8,7 @@ import os
 import numpy as np
 from imgaug import augmenters as iaa
 from swl.machine_learning.imgaug_batch_manager import ImgaugBatchManager, ImgaugBatchManagerWithFileInput, ImgaugFileBatchManager, ImgaugFileBatchManagerWithFileInput
-from swl.util.working_directory_manager import WorkingDirectoryManager
+from swl.util.working_directory_manager import SimpleWorkingDirectoryManager
 import swl.util.util as swl_util
 
 def generate_dataset(num_examples, is_label_augmented=False):
@@ -130,13 +130,13 @@ def imgaug_file_batch_manager_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
-		dir_path = dirMgr.getAvailableDirectory()
+		dir_path = dirMgr.requestAvailableDirectory()
 		if dir_path is None:
 			break
 
@@ -176,13 +176,13 @@ def imgaug_file_batch_manager_with_file_input_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
 		print('>>>>> Epoch #{}.'.format(epoch))
 
-		dir_path = dirMgr.getAvailableDirectory()
+		dir_path = dirMgr.requestAvailableDirectory()
 		if dir_path is None:
 			break
 
@@ -214,6 +214,8 @@ def imgaug_file_batch_manager_with_file_input_example():
 		dirMgr.returnDirectory(dir_path)
 
 def main():
+	# REF [info] >> Use batch generators and loaders.
+
 	imgaug_batch_manager_example()
 	#imgaug_batch_manager_with_file_input_example()
 

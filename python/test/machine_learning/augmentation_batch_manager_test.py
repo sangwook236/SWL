@@ -236,14 +236,11 @@ def augmentation_file_batch_manager_with_file_input_example():
 
 		dirMgr.returnDirectory(dir_path)
 
-def data_augmentation_worker(lock, dirMgr, batchMgr):
+def augmentation_worker_proc(lock, dirMgr, batchMgr):
 	print('\t{}: Request an available directory.'.format(os.getpid()))
 	while True:
-		lock.acquire()
-		try:
+		with lock:
 			dir_path = dirMgr.requestAvailableDirectory()
-		finally:
-			lock.release()
 
 		if dir_path is not None:
 			break
@@ -255,21 +252,15 @@ def data_augmentation_worker(lock, dirMgr, batchMgr):
 	batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
 	#--------------------
-	lock.acquire()
-	try:
+	with lock:
 		dirMgr.returnDirectoryAsReady(dir_path)
-	finally:
-		lock.release()
 	print('\t{}: Returned a directory as ready: {}.'.format(os.getpid(), dir_path))
 
-def training_worker(lock, dirMgr, batches):
+def training_worker_proc(lock, dirMgr, batches):
 	print('\t{}: Request a ready directory.'.format(os.getpid()))
 	while True:
-		lock.acquire()
-		try:
+		with lock:
 			dir_path = dirMgr.requestReadyDirectory()
-		finally:
-			lock.release()
 
 		if dir_path is not None:
 			break
@@ -285,11 +276,8 @@ def training_worker(lock, dirMgr, batches):
 		print('\t{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
 	#--------------------
-	lock.acquire()
-	try:
+	with lock:
 		dirMgr.returnDirectoryAsAvailable(dir_path)
-	finally:
-		lock.release()
 	print('\t{}: Returned a directory as available: {}.'.format(os.getpid(), dir_path))
 
 def augmentation_file_batch_manager_example_using_working_directory():
@@ -317,10 +305,10 @@ def augmentation_file_batch_manager_example_using_working_directory():
 		batchMgr = AugmentationFileBatchManager(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
 
 		# Runs preparation worker processes.
-		data_augmentation_worker(lock, dirMgr, batchMgr)
+		augmentation_worker_proc(lock, dirMgr, batchMgr)
 
 		# Runs main worker processes.
-		training_worker(lock, dirMgr, batchMgr)			
+		training_worker_proc(lock, dirMgr, batchMgr)			
 
 def sync_multiprocess_augmentation_batch_manager_example():
 	num_examples = 100
@@ -358,7 +346,7 @@ def sync_multiprocess_augmentation_file_batch_manager_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	with mp.Pool() as pool:
@@ -410,6 +398,8 @@ def async_multiprocess_augmentation_batch_manager_example():
 		pool.join()
 
 def main():
+	# REF [info] >> Use batch generators and loaders.
+
 	# AugmentationBatchManager + SimpleWorkingDirectoryManager.
 	#augmentation_batch_manager_example()
 	# AugmentationBatchManagerWithFileInput + SimpleWorkingDirectoryManager.

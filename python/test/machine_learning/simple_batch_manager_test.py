@@ -203,6 +203,8 @@ def simple_file_batch_manager_with_file_input_example():
 		dirMgr.returnDirectory(dir_path)
 
 def main():
+	# REF [info] >> Use batch generators and loaders.
+
 	simple_batch_manager_example()
 	#simple_batch_manager_with_file_input_example()
 
