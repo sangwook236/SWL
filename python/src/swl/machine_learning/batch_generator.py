@@ -20,7 +20,7 @@ class FileBatchGenerator(abc.ABC):
 	def __init__(self):
 		super().__init__()
 
-	# Returns a list of filepath pairs, (image filepath, label filepath).
+	# Returns a list of filepath pairs, (input filepath, output filepath).
 	@abc.abstractmethod
 	def saveBatches(self, dir_path, *args, **kwargs):
 		raise NotImplementedError
@@ -41,22 +41,22 @@ class FileBatchLoader(abc.ABC):
 # SimpleBatchGenerator.
 #	Generates batches.
 class SimpleBatchGenerator(BatchGenerator):
-	# functor: images, labels = functor(images, labels).
-	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None):
+	# functor: inputs, outputs = functor(inputs, outputs).
+	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, functor=None):
 		super().__init__()
 
-		self._images = images
-		self._labels = labels
+		self._inputs = inputs
+		self._outputs = outputs
 		self._batch_size = batch_size
 		self._shuffle = shuffle
 		self._functor = functor
 
 		batch_axis = 1 if is_time_major else 0
 		self._num_examples, self._num_steps = 0, 0
-		if self._images is not None:
-			self._num_examples = self._images.shape[batch_axis]
+		if self._inputs is not None:
+			self._num_examples = self._inputs.shape[batch_axis]
 			self._num_steps = ((self._num_examples - 1) // batch_size + 1) if self._num_examples > 0 else 0
-		#if self._images is None:
+		#if self._inputs is None:
 		if self._num_examples <= 0:
 			raise ValueError('Invalid argument')
 
@@ -70,37 +70,37 @@ class SimpleBatchGenerator(BatchGenerator):
 			end = start + self._batch_size
 			batch_indices = indices[start:end]
 			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				batch_images = self._images[batch_indices]
-				batch_labels = self._labels[batch_indices]
-				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
+				batch_inputs = self._inputs[batch_indices]
+				batch_outputs = self._outputs[batch_indices]
+				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 					if self._functor is None:
-						yield batch_images, batch_labels
+						yield batch_inputs, batch_outputs
 					else:
-						yield self._functor(batch_images, batch_labels)
+						yield self._functor(batch_inputs, batch_outputs)
 
 #%%------------------------------------------------------------------
 # NpyFileBatchGenerator.
 #	Generates and saves batches to npy files.
 class NpyFileBatchGenerator(FileBatchGenerator):
-	def __init__(self, images, labels, batch_size, shuffle=True, is_time_major=False, functor=None, image_file_format=None, label_file_format=None, batch_info_csv_filename=None):
+	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, functor=None, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
 		super().__init__()
 
-		self._images = images
-		self._labels = labels
+		self._inputs = inputs
+		self._outputs = outputs
 		self._batch_size = batch_size
 		self._shuffle = shuffle
 		self._functor = functor
 
-		self._image_file_format = 'batch_images_{}.npy' if image_file_format is None else image_file_format
-		self._label_file_format = 'batch_labels_{}.npy' if label_file_format is None else label_file_format
+		self._batch_input_filename_format = 'batch_input_{}.npy' if batch_input_filename_format is None else batch_input_filename_format
+		self._batch_output_filename_format = 'batch_output_{}.npy' if batch_output_filename_format is None else batch_output_filename_format
 		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
 
 		batch_axis = 1 if is_time_major else 0
 		self._num_examples, self._num_steps = 0, 0
-		if self._images is not None:
-			self._num_examples = self._images.shape[batch_axis]
+		if self._inputs is not None:
+			self._num_examples = self._inputs.shape[batch_axis]
 			self._num_steps = ((self._num_examples - 1) // self._batch_size + 1) if self._num_examples > 0 else 0
-		#if self._images is None:
+		#if self._inputs is None:
 		if self._num_examples <= 0:
 			raise ValueError('Invalid argument')
 
@@ -117,15 +117,15 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 				end = start + self._batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					batch_images = self._images[batch_indices]
-					batch_labels = self._labels[batch_indices]
-					if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
+					batch_inputs = self._inputs[batch_indices]
+					batch_outputs = self._outputs[batch_indices]
+					if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 						if self._functor is not None:
-							batch_images, batch_labels = self._functor(batch_images, batch_labels)
-						image_filepath, label_filepath = os.path.join(dir_path, self._image_file_format.format(step)), os.path.join(dir_path, self._label_file_format.format(step))
-						np.save(image_filepath, batch_images)
-						np.save(label_filepath, batch_labels)
-						writer.writerow((image_filepath, label_filepath))
+							batch_inputs, batch_outputs = self._functor(batch_inputs, batch_outputs)
+						input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename_format.format(step)), os.path.join(dir_path, self._batch_output_filename_format.format(step))
+						np.save(input_filepath, batch_inputs)
+						np.save(output_filepath, batch_outputs)
+						writer.writerow((input_filepath, output_filepath))
 
 #%%------------------------------------------------------------------
 # NpyFileBatchLoader.
@@ -140,6 +140,8 @@ class NpyFileBatchLoader(FileBatchLoader):
 		with open(os.path.join(dir_path, self._batch_info_csv_filename), 'r', encoding='UTF8') as csvfile:
 			reader = csv.reader(csvfile)
 			for row in reader:
-				batch_images = np.load(row[0])
-				batch_labels = np.load(row[1])
-				yield batch_images, batch_labels
+				if not row:
+					continue
+				batch_inputs = np.load(row[0])
+				batch_outputs = np.load(row[1])
+				yield batch_inputs, batch_outputs
