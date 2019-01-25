@@ -16,7 +16,7 @@ from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferre
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleFileBatchManager
 from swl.machine_learning.augmentation_batch_manager import AugmentationBatchManager, AugmentationFileBatchManager
 from swl.machine_learning.imgaug_batch_manager import ImgaugBatchManager, ImgaugFileBatchManager
-from swl.util.directory_queue_manager import DirectoryQueueManager
+from swl.util.working_directory_manager import SimpleWorkingDirectoryManager
 import swl.util.util as swl_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_cnn_tf import MnistCnnUsingTF
@@ -82,7 +82,7 @@ def mnist_batch_manager(method=0):
 	#np.random.seed(7)
 
 	#--------------------
-	# Parameters.
+	# Sets parameters.
 
 	does_need_training = True
 	does_resume_training = False
@@ -113,12 +113,12 @@ def mnist_batch_manager(method=0):
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
-	# Prepare data.
+	# Prepares data.
 
 	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
-	# Prepare directories.
+	# Prepares directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -132,9 +132,9 @@ def mnist_batch_manager(method=0):
 	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
-	# Create models, sessions, and graphs.
+	# Creates models, sessions, and graphs.
 
-	# Create graphs.
+	# Creates graphs.
 	if does_need_training:
 		train_graph = tf.Graph()
 		eval_graph = tf.Graph()
@@ -142,53 +142,53 @@ def mnist_batch_manager(method=0):
 
 	if does_need_training:
 		with train_graph.as_default():
-			# Create a model.
+			# Creates a model.
 			modelForTraining = create_mnist_cnn(input_shape, output_shape)
 			modelForTraining.create_training_model()
 
-			# Create a trainer.
+			# Creates a trainer.
 			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
-			# Create a saver.
-			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			# Creates a saver.
+			#	Saves a model every 2 hours and maximum 5 latest models are saved.
 			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			initializer = tf.global_variables_initializer()
 
 		with eval_graph.as_default():
-			# Create a model.
+			# Creates a model.
 			modelForEvaluation = create_mnist_cnn(input_shape, output_shape)
 			modelForEvaluation.create_evaluation_model()
 
-			# Create an evaluator.
+			# Creates an evaluator.
 			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
-			# Create a saver.
+			# Creates a saver.
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
-		# Create a model.
+		# Creates a model.
 		modelForInference = create_mnist_cnn(input_shape, output_shape)
 		modelForInference.create_inference_model()
 
-		# Create an inferrer.
+		# Creates an inferrer.
 		nnInferrer = NeuralNetInferrer(modelForInference)
 
-		# Create a saver.
+		# Creates a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
+	# Creates sessions.
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
 		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initialize.
+	# Initializes.
 	if does_need_training:
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train and evaluate.
+	# Trains and evaluates.
 
 	if does_need_training:
 		# Method #0: AugmentationBatchManager without process pool.
@@ -218,9 +218,9 @@ def mnist_batch_manager(method=0):
 				print('\tTotal training time = {}'.format(time.time() - start_time))
 		# Method #2: AugmentationFileBatchManager without process pool.
 		elif 2 == method:
-			base_batch_dir_path = './batch_dir'
+			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			#augmenter = IdentityAugmenter()
 			augmenter = ImgaugAugmenter(image_height, image_width)
@@ -230,13 +230,13 @@ def mnist_batch_manager(method=0):
 			start_time = time.time()
 			with train_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 		# Method #3: AugmentationFileBatchManager with process pool.
 		elif 3 == method:
-			base_batch_dir_path = './batch_dir'
+			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			with mp.Pool() as pool:
 				#augmenter = IdentityAugmenter()
@@ -247,7 +247,7 @@ def mnist_batch_manager(method=0):
 				start_time = time.time()
 				with train_session.as_default() as sess:
 					with sess.graph.as_default():
-						swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+						swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 				print('\tTotal training time = {}'.format(time.time() - start_time))
 		# Method #4: ImgaugBatchManager with background processes.
 		elif 4 == method:
@@ -262,9 +262,9 @@ def mnist_batch_manager(method=0):
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 		# Method #5: ImgaugFileBatchManager without background processes.
 		elif 5 == method:
-			base_batch_dir_path = './batch_dir'
+			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			augmenter = get_imgaug_augmenter(image_height, image_width)
 			trainFileBatchMgr = ImgaugFileBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, image_file_format='train_batch_images_{}.npy', label_file_format='train_batch_labels_{}.npy')
@@ -273,7 +273,7 @@ def mnist_batch_manager(method=0):
 			start_time = time.time()
 			with train_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.train_neural_net_by_file_batch_manager(sess, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 		else:
 			raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
@@ -288,22 +288,22 @@ def mnist_batch_manager(method=0):
 					swl_tf_util.evaluate_neural_net_by_batch_manager(sess, nnEvaluator, valBatchMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 		elif method in (2, 3, 5):
-			base_batch_dir_path = './batch_dir'
+			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			valFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
 
 			start_time = time.time()
 			with eval_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.evaluate_neural_net_by_file_batch_manager(sess, nnEvaluator, valFileBatchMgr, dirQueueMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.evaluate_neural_net_by_file_batch_manager(sess, nnEvaluator, valFileBatchMgr, dirMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 		else:
 			raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
 
 	#%%------------------------------------------------------------------
-	# Infer.
+	# Infers.
 
 	if method in (0, 1, 4):
 		testBatchMgr = SimpleBatchManager(test_images, test_labels, batch_size, False, is_time_major)
@@ -311,19 +311,19 @@ def mnist_batch_manager(method=0):
 		start_time = time.time()
 		with infer_session.as_default() as sess:
 			with sess.graph.as_default():
-				inferences = swl_tf_util.infer_from_batch_manager_by_neural_net(sess, nnInferrer, testBatchMgr, infer_saver, checkpoint_dir_path, is_time_major)
+				inferences = swl_tf_util.infer_by_neural_net_and_batch_manager(sess, nnInferrer, testBatchMgr, infer_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
 	elif method in (2, 3, 5):
-		base_batch_dir_path = './batch_dir'
+		batch_dir_path_prefix = './batch_dir'
 		num_batch_dirs = 5
-		dirQueueMgr = DirectoryQueueManager(base_batch_dir_path, num_batch_dirs)
+		dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 		testFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
 
 		start_time = time.time()
 		with infer_session.as_default() as sess:
 			with sess.graph.as_default():
-				inferences = swl_tf_util.infer_from_file_batch_manager_by_neural_net(sess, nnInferrer, testFileBatchMgr, dirQueueMgr, infer_saver, checkpoint_dir_path, is_time_major)
+				inferences = swl_tf_util.infer_by_neural_net_and_file_batch_manager(sess, nnInferrer, testFileBatchMgr, dirMgr, infer_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
 	else:
 		raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
@@ -342,7 +342,7 @@ def mnist_batch_manager(method=0):
 		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
-	# Close sessions.
+	# Closes sessions.
 
 	if does_need_training:
 		train_session.close()

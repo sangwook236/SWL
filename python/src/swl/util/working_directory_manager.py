@@ -13,10 +13,10 @@ class SimpleWorkingDirectoryManager(object):
 			swl_util.make_dir(dir_path)
 			self._available_dir_queue.put(dir_path)
 
-	def sizeAvailableDirectory(self):
+	def sizeDirectory(self):
 		return self._available_dir_queue.qsize()
 
-	def requestAvailableDirectory(self, block=True, timeout=None):
+	def requestDirectory(self, block=True, timeout=None):
 		if self._available_dir_queue.empty():
 			return None
 		else:
@@ -33,7 +33,7 @@ class SimpleWorkingDirectoryManager(object):
 			#raise ValueError('Invalid directory path: {}'.format(dir_path))
 			return False
 
-class WorkingDirectoryManager(object):
+class ReadyWorkingDirectoryManager(object):
 	def __init__(self, dir_path_prefix, num_dirs):
 		super().__init__()
 
@@ -48,13 +48,13 @@ class WorkingDirectoryManager(object):
 			swl_util.make_dir(dir_path)
 			self._available_dir_queue.put(dir_path)
 
-	def sizeAvailableDirectory(self):
+	def sizeDirectory(self):
 		return self._available_dir_queue.qsize()
 
 	def sizeReadyDirectory(self):
 		return self._ready_dir_queue.qsize()
 
-	def requestAvailableDirectory(self, block=True, timeout=None):
+	def requestDirectory(self, block=True, timeout=None):
 		if self._available_dir_queue.empty():
 			return None
 		else:
@@ -70,23 +70,13 @@ class WorkingDirectoryManager(object):
 			self._busy_dir_dict[dir_path] = True
 			return dir_path
 
-	def returnDirectoryAsAvailable(self, dir_path, block=True, timeout=None):
+	def returnDirectory(self, dir_path, block=True, timeout=None):
 		if dir_path in self._busy_dir_dict:
-			if not self._busy_dir_dict[dir_path]:  # dir_path was ready.
-				print('Invalid directory state: {} had to be ready, not available.'.format(dir_path))
+			if self._busy_dir_dict[dir_path]:  # dir_path was ready.
+				self._available_dir_queue.put(dir_path, block=block, timeout=timeout)
+			else:  # dir_path was available.
+				self._ready_dir_queue.put(dir_path, block=block, timeout=timeout)
 			self._busy_dir_dict.pop(dir_path)
-			self._available_dir_queue.put(dir_path, block=block, timeout=timeout)
-			return True
-		else:
-			#raise ValueError('Invalid directory path: {}'.format(dir_path))
-			return False
-
-	def returnDirectoryAsReady(self, dir_path, block=True, timeout=None):
-		if dir_path in self._busy_dir_dict:
-			if self._busy_dir_dict[dir_path]:  # dir_path was available.
-				print('Invalid directory state: {} had to be available, not ready.'.format(dir_path))
-			self._busy_dir_dict.pop(dir_path)
-			self._ready_dir_queue.put(dir_path, block=block, timeout=timeout)
 			return True
 		else:
 			#raise ValueError('Invalid directory path: {}'.format(dir_path))

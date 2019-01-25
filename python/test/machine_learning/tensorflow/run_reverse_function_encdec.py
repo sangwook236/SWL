@@ -89,6 +89,9 @@ def main():
 		num_epochs = 150  # Number of times to iterate over training data.
 	shuffle = True
 
+	augmenter = None
+	is_output_augmented = False
+
 	sess_config = tf.ConfigProto()
 	#sess_config.allow_soft_placement = True
 	sess_config.log_device_placement = True
@@ -149,7 +152,7 @@ def main():
 			modelForTraining.create_training_model()
 
 			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
 
 			# Create a saver.
 			#	Save a model every 2 hours and maximum 5 latest models are saved.

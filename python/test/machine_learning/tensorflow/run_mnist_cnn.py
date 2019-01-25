@@ -23,6 +23,7 @@ sys.path.append(os.path.join(lib_home_dir_path, 'tf_cnnvis_github'))
 import time, datetime
 import numpy as np
 import tensorflow as tf
+from imgaug import augmenters as iaa
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
@@ -46,6 +47,38 @@ def create_mnist_cnn(input_shape, output_shape):
 	#return MnistCnnUsingKeras(input_shape, output_shape, model_type)
 
 #%%------------------------------------------------------------------
+
+class ImgaugAugmenter(object):
+	def __init__(self):
+		self._augmenter = iaa.Sequential([
+			iaa.SomeOf(1, [
+				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
+				iaa.Fliplr(0.1),  # Horizontally flip 10% of the images.
+				iaa.Flipud(0.1),  # Vertically flip 10% of the images.
+				iaa.Sometimes(0.5, iaa.Affine(
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
+					shear=(-16, 16),  # Shear by -16 to +16 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				)),
+				iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
+			]),
+			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+		])
+
+	def __call__(self, inputs, outputs, is_output_augmented=False):
+		# Augments here.
+		if is_output_augmented:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+		else:
+			return self._augmenter.augment_images(inputs), outputs
 
 def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
@@ -86,7 +119,7 @@ def main():
 	#np.random.seed(7)
 
 	#--------------------
-	# Parameters.
+	# Sets parameters.
 
 	does_need_training = True
 	does_resume_training = False
@@ -105,6 +138,9 @@ def main():
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
 
+	augmenter = ImgaugAugmenter()
+	is_output_augmented = False
+
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}
 	#sess_config.allow_soft_placement = True
@@ -113,12 +149,12 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
-	# Prepare data.
+	# Prepares data.
 
 	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
-	# Prepare directories.
+	# Prepares directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -132,9 +168,9 @@ def main():
 	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
-	# Create models, sessions, and graphs.
+	# Creates models, sessions, and graphs.
 
-	# Create graphs.
+	# Creates graphs.
 	if does_need_training:
 		train_graph = tf.Graph()
 		eval_graph = tf.Graph()
@@ -142,66 +178,66 @@ def main():
 
 	if does_need_training:
 		with train_graph.as_default():
-			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
+			#K.set_learning_phase(1)  # Sets the learning phase to 'train'. (Required)
 
-			# Create a model.
+			# Creates a model.
 			modelForTraining = create_mnist_cnn(input_shape, output_shape)
 			modelForTraining.create_training_model()
 
-			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+			# Creates a trainer.
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
 
-			# Create a saver.
-			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			# Creates a saver.
+			#	Saves a model every 2 hours and maximum 5 latest models are saved.
 			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			initializer = tf.global_variables_initializer()
 
 		with eval_graph.as_default():
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+			#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
 
-			# Create a model.
+			# Creates a model.
 			modelForEvaluation = create_mnist_cnn(input_shape, output_shape)
 			modelForEvaluation.create_evaluation_model()
 
-			# Create an evaluator.
+			# Creates an evaluator.
 			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
-			# Create a saver.
+			# Creates a saver.
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
-		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+		#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
 
-		# Create a model.
+		# Creates a model.
 		modelForInference = create_mnist_cnn(input_shape, output_shape)
 		modelForInference.create_inference_model()
 
-		# Create an inferrer.
+		# Creates an inferrer.
 		nnInferrer = NeuralNetInferrer(modelForInference)
 
-		# Create a saver.
+		# Creates a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
+	# Creates sessions.
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
 		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initialize.
+	# Initializes.
 	if does_need_training:
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train and evaluate.
+	# Trains and evaluates.
 
 	if does_need_training:
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
-				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+				#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
 				swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
@@ -209,18 +245,18 @@ def main():
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
-				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+				#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
-	# Infer.
+	# Infers.
 
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
 			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
@@ -237,17 +273,17 @@ def main():
 		print('[SWL] Warning: Invalid inference results.')
 
 	#%%------------------------------------------------------------------
-	# Visualize.
+	# Visualizes.
 
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
 
 			#--------------------
 			idx = 0
-			#vis_images = train_images[idx:(idx+1)]  # Recommend using a single image.
-			vis_images = test_images[idx:(idx+1)]  # Recommend using a single image.
+			#vis_images = train_images[idx:(idx+1)]  # Recommends using a single image.
+			vis_images = test_images[idx:(idx+1)]  # Recommends using a single image.
 			feed_dict = modelForInference.get_feed_dict(vis_images, is_training=False)
 			input_tensor = None
 			#input_tensor = modelForInference.input_tensor
@@ -293,7 +329,7 @@ def main():
 					plt.imsave((output_dir_path + '/vis_{}.png').format(idx), np.around(vis_images[idx].reshape(vis_images[idx].shape[:2]) * 255), cmap='gray')
 
 	#--------------------
-	# Close sessions.
+	# Closes sessions.
 
 	if does_need_training:
 		train_session.close()

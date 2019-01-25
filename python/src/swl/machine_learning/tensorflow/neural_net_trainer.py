@@ -5,12 +5,14 @@ import tensorflow as tf
 #%%------------------------------------------------------------------
 
 class NeuralNetTrainer(object):
-	def __init__(self, neuralNet, optimizer, global_step=None):
+	def __init__(self, neuralNet, optimizer, global_step=None, augmenter=None, is_output_augmented=False):
 		super().__init__()
 
 		self._neuralNet = neuralNet
 		self._optimizer = optimizer
 		self._global_step = global_step
+		self._augmenter = augmenter
+		self._is_output_augmented = is_output_augmented
 
 		self._loss, self._accuracy = self._neuralNet.loss, self._neuralNet.accuracy
 		if self._loss is None:
@@ -42,6 +44,9 @@ class NeuralNetTrainer(object):
 
 		train_loss, train_acc = None, None
 		if train_data.size > 0 and (is_sparse_label or train_labels.size > 0):  # If train_data and train_labels are non-empty.
+			if self._augmenter is not None:
+				train_data, train_labels = self._augmenter(train_data, train_labels, self._is_output_augmented)
+
 			#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
 			#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
 			summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))
@@ -138,6 +143,9 @@ class NeuralNetTrainer(object):
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+						if self._augmenter is not None:
+							data_batch, label_batch = self._augmenter(data_batch, label_batch, self._is_output_augmented)
+
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
 						summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=True))
@@ -269,6 +277,9 @@ class NeuralNetTrainer(object):
 		train_loss, train_acc, val_loss, val_acc = None, None, None, None
 		# Train.
 		if train_encoder_inputs.size > 0 and train_decoder_inputs.size > 0 and train_decoder_outputs.size > 0:  # If train_encoder_inputs, train_decoder_inputs, and train_decoder_outputs are non-empty.
+			if self._augmenter is not None:
+				train_encoder_inputs, train_decoder_inputs, train_decoder_outputs = self._augmenter(train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, self._is_output_augmented)
+
 			#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, is_training=True))
 			#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, is_training=True))
 			summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, is_training=True))
@@ -350,6 +361,9 @@ class NeuralNetTrainer(object):
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
+						if self._augmenter is not None:
+							enc_input_batch, dec_input_batch, dec_output_batch = self._augmenter(enc_input_batch, dec_input_batch, dec_output_batch, self._is_output_augmented)
+
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=True))
 						summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(enc_input_batch, dec_input_batch, dec_output_batch, is_training=True))
@@ -479,6 +493,9 @@ class NeuralNetTrainer(object):
 		train_loss, val_loss = None, None
 		# Train.
 		if train_data.size > 0:  # If train_data is non-empty.
+			if self._augmenter is not None:
+				train_data, _ = self._augmenter(train_data, None, False)
+
 			#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, is_training=True))
 			#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, is_training=True))
 			summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(train_data, is_training=True))
@@ -550,6 +567,9 @@ class NeuralNetTrainer(object):
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
 					data_batch = train_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
+						if self._augmenter is not None:
+							data_batch, _ = self._augmenter(data_batch, None, False)
+
 						#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=True))
 						#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=True))
 						summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=True))
@@ -646,9 +666,9 @@ class NeuralNetTrainer(object):
 #%%------------------------------------------------------------------
 
 class GradientClippingNeuralNetTrainer(NeuralNetTrainer):
-	def __init__(self, neuralNet, optimizer, max_gradient_norm, global_step=None):
+	def __init__(self, neuralNet, optimizer, max_gradient_norm, global_step=None, augmenter=None, is_output_augmented=False):
 		self._max_gradient_norm = max_gradient_norm
-		super().__init__(neuralNet, optimizer, global_step)
+		super().__init__(neuralNet, optimizer, global_step, augmenter, is_output_augmented)
 
 	def _get_train_operation(self, loss, global_step=None):
 		with tf.name_scope('train_op'):

@@ -6,6 +6,247 @@ import swl.machine_learning.util as swl_ml_util
 #%%------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
+def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator, valBatchGenerator, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	# Create writers to write all the summaries out to a directory.
+	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+	val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
+
+	history = {
+		'acc': [],
+		'loss': [],
+		'val_acc': [],
+		'val_loss': []
+	}
+
+	batch_axis = 1 if is_time_major else 0
+
+	best_val_acc = 0.0
+	for epoch in range(1, num_epochs + 1):
+		print('Epoch {}/{}'.format(epoch, num_epochs))
+
+		start_time = time.time()
+
+		#--------------------
+		print('>-', sep='', end='')
+		step = 0
+		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
+		batches = trainBatchGenerator.generateBatches()  # Generates and augments batches.
+		for train_inputs, train_outputs in batches:
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
+
+			# TODO [check] >> Are these calculations correct?
+			batch_size = train_inputs.shape[batch_axis]
+			train_acc += batch_acc * batch_size
+			train_loss += batch_loss * batch_size
+			num_train_examples += batch_size
+
+			step += 1
+			if 0 == step % 10:
+				print('-', sep='', end='')
+		print('<')
+
+		train_acc /= num_train_examples
+		train_loss /= num_train_examples
+
+		#--------------------
+		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+		batches = valBatchGenerator.generateBatches()  # Generates and augments batches.
+		for val_inputs, val_outputs in batches:
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
+
+			# TODO [check] >> Are these calculations correct?
+			batch_size = val_inputs.shape[batch_axis]
+			val_acc += batch_acc * batch_size
+			val_loss += batch_loss * batch_size
+			num_val_examples += batch_size
+
+		val_acc /= num_val_examples
+		val_loss /= num_val_examples
+
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+
+		history['acc'].append(train_acc)
+		history['loss'].append(train_loss)
+		history['val_acc'].append(val_acc)
+		history['val_loss'].append(val_loss)
+
+		# Save a model.
+		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			best_val_acc = val_acc
+			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+
+	# Close writers.
+	if train_summary_writer is not None:
+		train_summary_writer.close()
+	if val_summary_writer is not None:
+		val_summary_writer.close()
+
+	#--------------------
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
+# Supports lists of dense or sparse outputs.
+def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+	if does_resume_training:
+		print('[SWL] Info: Resume training...')
+
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Restored a model.')
+	else:
+		print('[SWL] Info: Start training...')
+
+	# Create writers to write all the summaries out to a directory.
+	train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+	val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
+
+	history = {
+		'acc': [],
+		'loss': [],
+		'val_acc': [],
+		'val_loss': []
+	}
+
+	batch_axis = 1 if is_time_major else 0
+
+	best_val_acc = 0.0
+	for epoch in range(1, num_epochs + 1):
+		print('Epoch {}/{}'.format(epoch, num_epochs))
+
+		while True:
+			train_dir_path = trainDirMgr.requestReadyDirectory()
+			if train_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a train batch directory: {}.'.format(train_dir_path))
+
+		while True:
+			val_dir_path = valDirMgr.requestReadyDirectory()
+			if val_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
+		start_time = time.time()
+
+		#--------------------
+		print('>-', sep='', end='')
+		step = 0
+		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
+		batches = trainFileBatchLoader.loadBatches(train_dir_path)  # Loads batches.
+		for train_inputs, train_outputs in batches:
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
+
+			# TODO [check] >> Are these calculations correct?
+			batch_size = train_inputs.shape[batch_axis]
+			train_acc += batch_acc * batch_size
+			train_loss += batch_loss * batch_size
+			num_train_examples += batch_size
+
+			step += 1
+			if 0 == step % 10:
+				print('-', sep='', end='')
+		print('<')
+
+		trainDirMgr.returnDirectory(train_dir_path)				
+
+		train_acc /= num_train_examples
+		train_loss /= num_train_examples
+
+		#--------------------
+		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+		batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
+		for val_inputs, val_outputs in batches:
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
+
+			# TODO [check] >> Are these calculations correct?
+			batch_size = val_inputs.shape[batch_axis]
+			val_acc += batch_acc * batch_size
+			val_loss += batch_loss * batch_size
+			num_val_examples += batch_size
+
+		valDirMgr.returnDirectory(val_dir_path)				
+
+		val_acc /= num_val_examples
+		val_loss /= num_val_examples
+
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+
+		history['acc'].append(train_acc)
+		history['loss'].append(train_loss)
+		history['val_acc'].append(val_acc)
+		history['val_loss'].append(val_loss)
+
+		# Save a model.
+		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
+			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
+			best_val_acc = val_acc
+			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+
+	# Close writers.
+	if train_summary_writer is not None:
+		train_summary_writer.close()
+	if val_summary_writer is not None:
+		val_summary_writer.close()
+
+	#--------------------
+	# Display results.
+	#swl_ml_util.display_train_history(history)
+	if output_dir_path is not None:
+		swl_ml_util.save_train_history(history, output_dir_path)
+	print('[SWL] Info: End training...')
+
+	"""
+	# Save a graph.
+	tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pb', as_text=False)
+	#tf.train.write_graph(session.graph_def, output_dir_path, 'graph.pbtxt', as_text=True)
+
+	# Save a serving model.
+	builder = tf.saved_model.builder.SavedModelBuilder(output_dir_path + '/serving_model')
+	builder.add_meta_graph_and_variables(session, [tf.saved_model.tag_constants.SERVING], saver=saver)
+	builder.save(as_text=False)
+	"""
+
+# NOTE [info] >> Use train_neural_net_by_batch_generator().
+# Supports lists of dense or sparse outputs.
 def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatchMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
@@ -76,6 +317,10 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 		val_acc /= num_val_examples
 		val_loss /= num_val_examples
 
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
 		history['val_acc'].append(val_acc)
@@ -86,10 +331,6 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
-
-		print('\tTraining time = {}'.format(time.time() - start_time))
-		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -115,8 +356,9 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 	builder.save(as_text=False)
 	"""
 
+# NOTE [info] >> Use train_neural_net_by_file_batch_loader().
 # Supports lists of dense or sparse outputs.
-def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr, valFileBatchMgr, dirQueueMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr, valFileBatchMgr, trainDirMgr, valDirMgr, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	if does_resume_training:
 		print('[SWL] Info: Resume training...')
 
@@ -147,21 +389,31 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch {}/{}'.format(epoch, num_epochs))
 
+		while True:
+			train_dir_path = trainDirMgr.requestAvailableDirectory()
+			if train_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a train batch directory: {}.'.format(train_dir_path))
+
+		while True:
+			val_dir_path = valDirMgr.requestAvailableDirectory()
+			if val_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
 		start_time = time.time()
 
-		dir_path = dirQueueMgr.getAvailableDirectory()
-		if dir_path is None:
-			break
-
-		print('\tBatch directory: {}.'.format(dir_path))
-
 		#--------------------
-		trainFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
+		trainFileBatchMgr.putBatches(train_dir_path)  # Generates, augments, and saves batches.
 
 		print('>-', sep='', end='')
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
-		batches = trainFileBatchMgr.getBatches(dir_path)  # Loads batches.
+		batches = trainFileBatchMgr.getBatches(train_dir_path)  # Loads batches.
 		for train_inputs, train_outputs in batches:
 			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
 
@@ -176,14 +428,16 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 				print('-', sep='', end='')
 		print('<')
 
+		trainDirMgr.returnDirectory(train_dir_path)				
+
 		train_acc /= num_train_examples
 		train_loss /= num_train_examples
 
 		#--------------------
-		valFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
+		valFileBatchMgr.putBatches(val_dir_path)  # Generates, augments, and saves batches.
 
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
-		batches = valFileBatchMgr.getBatches(dir_path)  # Loads batches.
+		batches = valFileBatchMgr.getBatches(val_dir_path)  # Loads batches.
 		for val_inputs, val_outputs in batches:
 			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
 
@@ -193,10 +447,14 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 			val_loss += batch_loss * batch_size
 			num_val_examples += batch_size
 
+		valDirMgr.returnDirectory(val_dir_path)				
+
 		val_acc /= num_val_examples
 		val_loss /= num_val_examples
 
-		dirQueueMgr.returnDirectory(dir_path)				
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -208,10 +466,6 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
-
-		print('\tTraining time = {}'.format(time.time() - start_time))
-		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -320,6 +574,10 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		val_acc /= num_val_examples
 		val_loss /= num_val_examples
 
+		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
 		history['val_acc'].append(val_acc)
@@ -330,10 +588,6 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
 			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
-
-		print('\tTraining time = {}'.format(time.time() - start_time))
-		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -514,6 +768,85 @@ def train_neural_net_unsupervisedly(session, nnTrainer, train_inputs, val_inputs
 #%%------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
+def evaluate_neural_net_by_batch_generator(session, nnEvaluator, valBatchGenerator, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
+	batch_axis = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	print('[SWL] Info: Start evaluation...')
+	start_time = time.time()
+
+	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+	batches = valBatchGenerator.generateBatches()  # Generates and augments batches.
+	for val_inputs, val_outputs in batches:
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
+
+		# TODO [check] >> Are these calculations correct?
+		batch_size = val_inputs.shape[batch_axis]
+		val_acc += batch_acc * batch_size
+		val_loss += batch_loss * batch_size
+		num_val_examples += batch_size
+
+	val_acc /= num_val_examples
+	val_loss /= num_val_examples
+
+	print('\tEvaluation time = {}'.format(time.time() - start_time))
+	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('[SWL] Info: End evaluation...')
+
+# Supports lists of dense or sparse outputs.
+def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchLoader, valDirMgr, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
+	batch_axis = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	while True:
+		val_dir_path = valDirMgr.requestReadyDirectory()
+		if val_dir_path is not None:
+			break
+		else:
+			time.sleep(0.1)
+	print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
+	print('[SWL] Info: Start evaluation...')
+	start_time = time.time()
+
+	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
+	batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
+	for val_inputs, val_outputs in batches:
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
+
+		# TODO [check] >> Are these calculations correct?
+		batch_size = val_inputs.shape[batch_axis]
+		val_acc += batch_acc * batch_size
+		val_loss += batch_loss * batch_size
+		num_val_examples += batch_size
+
+	valDirMgr.returnDirectory(dir_path)				
+
+	val_acc /= num_val_examples
+	val_loss /= num_val_examples
+
+	print('\tEvaluation time = {}'.format(time.time() - start_time))
+	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('[SWL] Info: End evaluation...')
+
+# NOTE [info] >> Use evaluate_neural_net_by_batch_generator().
+# Supports lists of dense or sparse outputs.
 def evaluate_neural_net_by_batch_manager(session, nnEvaluator, valBatchMgr, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
 	batch_axis = 1 if is_time_major else 0
 
@@ -542,12 +875,14 @@ def evaluate_neural_net_by_batch_manager(session, nnEvaluator, valBatchMgr, save
 
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
+
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
 	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
+# NOTE [info] >> evaluate_neural_net_by_file_batch_loader().
 # Supports lists of dense or sparse outputs.
-def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatchMgr, dirQueueMgr, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
+def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatchMgr, dirMgr, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
 	batch_axis = 1 if is_time_major else 0
 
 	if saver is not None and checkpoint_dir_path is not None:
@@ -559,15 +894,14 @@ def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatch
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
-	print('[SWL] Info: Start evaluation...')
-	start_time = time.time()
-
-	dir_path = dirQueueMgr.getAvailableDirectory()
+	dir_path = dirMgr.requestAvailableDirectory()
 	if dir_path is None:
 		print('[SWL] Error: No available directory.')
 		return
+	print('\tGot a validation batch directory: {}.'.format(dir_path))
 
-	print('\tBatch directory: {}.'.format(dir_path))
+	print('[SWL] Info: Start evaluation...')
+	start_time = time.time()
 
 	valFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
@@ -582,10 +916,11 @@ def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatch
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
 
-	dirQueueMgr.returnDirectory(dir_path)				
+	dirMgr.returnDirectory(dir_path)				
 
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
+
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
 	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
@@ -694,7 +1029,71 @@ def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_inp
 #%%------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
-def infer_from_batch_manager_by_neural_net(session, nnInferrer, testBatchMgr, saver=None, checkpoint_dir_path=None, is_time_major=False):
+def infer_by_neural_net_and_batch_generator(session, nnInferrer, testBatchGenerator, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	batch_axis = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	print('[SWL] Info: Start inferring...')
+	start_time = time.time()
+
+	inf_outputs_list = list()
+	batches = testBatchGenerator.generateBatches()  # Generates and augments batches.
+	for test_inputs, _ in batches:
+		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
+		inf_outputs_list.append(batch_outputs)
+	print('\tInference time = {}'.format(time.time() - start_time))
+	print('[SWL] Info: End inferring...')
+
+	return inf_outputs_list
+
+# Supports lists of dense or sparse outputs.
+def infer_by_neural_net_and_file_batch_loader(session, nnInferrer, testFileBatchLoader, testDirMgr, saver=None, checkpoint_dir_path=None, is_time_major=False):
+	batch_axis = 1 if is_time_major else 0
+
+	if saver is not None and checkpoint_dir_path is not None:
+		# Load a model.
+		# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+		# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+		saver.restore(session, ckpt.model_checkpoint_path)
+		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('[SWL] Info: Loaded a model.')
+
+	while True:
+		inf_dir_path = testDirMgr.requestReadyDirectory()
+		if inf_dir_path is not None:
+			break
+		else:
+			time.sleep(0.1)
+	print('\tGot an inference batch directory: {}.'.format(inf_dir_path))
+
+	print('[SWL] Info: Start inferring...')
+	start_time = time.time()
+
+	inf_outputs_list = list()
+	batches = testFileBatchLoader.loadBatches(inf_dir_path)  # Loads batches.
+	for test_inputs, _ in batches:
+		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
+		inf_outputs_list.append(batch_outputs)
+
+	testDirMgr.returnDirectory(inf_dir_path)				
+
+	print('\tInference time = {}'.format(time.time() - start_time))
+	print('[SWL] Info: End inferring...')
+
+	return inf_outputs_list
+
+# NOTE [info] >> Use infer_by_neural_net_and_batch_generator().
+# Supports lists of dense or sparse outputs.
+def infer_by_neural_net_and_batch_manager(session, nnInferrer, testBatchMgr, saver=None, checkpoint_dir_path=None, is_time_major=False):
 	batch_axis = 1 if is_time_major else 0
 
 	if saver is not None and checkpoint_dir_path is not None:
@@ -719,8 +1118,9 @@ def infer_from_batch_manager_by_neural_net(session, nnInferrer, testBatchMgr, sa
 
 	return inf_outputs_list
 
+# NOTE [info] >> Use infer_by_neural_net_and_file_batch_loader().
 # Supports lists of dense or sparse outputs.
-def infer_from_file_batch_manager_by_neural_net(session, nnInferrer, testFileBatchMgr, dirQueueMgr, saver=None, checkpoint_dir_path=None, is_time_major=False):
+def infer_by_neural_net_and_file_batch_manager(session, nnInferrer, testFileBatchMgr, dirMgr, saver=None, checkpoint_dir_path=None, is_time_major=False):
 	batch_axis = 1 if is_time_major else 0
 
 	if saver is not None and checkpoint_dir_path is not None:
@@ -732,15 +1132,14 @@ def infer_from_file_batch_manager_by_neural_net(session, nnInferrer, testFileBat
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
-	print('[SWL] Info: Start inferring...')
-	start_time = time.time()
-
-	dir_path = dirQueueMgr.getAvailableDirectory()
+	dir_path = dirMgr.requestAvailableDirectory()
 	if dir_path is None:
 		print('[SWL] Error: No available directory.')
 		return
+	print('\tGot an inference batch directory: {}.'.format(dir_path))
 
-	print('\tBatch directory: {}.'.format(dir_path))
+	print('[SWL] Info: Start inferring...')
+	start_time = time.time()
 
 	testFileBatchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
 
@@ -750,7 +1149,7 @@ def infer_from_file_batch_manager_by_neural_net(session, nnInferrer, testFileBat
 		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
 		inf_outputs_list.append(batch_outputs)
 
-	dirQueueMgr.returnDirectory(dir_path)				
+	dirMgr.returnDirectory(dir_path)				
 
 	print('\tInference time = {}'.format(time.time() - start_time))
 	print('[SWL] Info: End inferring...')

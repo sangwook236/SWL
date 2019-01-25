@@ -80,7 +80,7 @@ def main():
 	#np.random.seed(7)
 
 	#--------------------
-	# Parameters.
+	# Sets parameters.
 
 	does_need_training = True
 	does_resume_training = False
@@ -99,6 +99,9 @@ def main():
 	num_epochs = 20  # Number of times to iterate over training data.
 	shuffle = True
 
+	augmenter = None
+	is_output_augmented = False
+
 	sess_config = tf.ConfigProto()
 	#sess_config = tf.ConfigProto(device_count={'GPU': 2})
 	#sess_config.allow_soft_placement = True
@@ -107,12 +110,12 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
-	# Prepare data.
+	# Prepares data.
 
 	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
-	# Prepare directories.
+	# Prepares directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -126,9 +129,9 @@ def main():
 	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
-	# Create models, sessions, and graphs.
+	# Creates models, sessions, and graphs.
 
-	# Create graphs.
+	# Creates graphs.
 	if does_need_training:
 		train_graph = tf.Graph()
 		eval_graph = tf.Graph()
@@ -136,66 +139,66 @@ def main():
 
 	if does_need_training:
 		with train_graph.as_default():
-			#K.set_learning_phase(1)  # Set the learning phase to 'train'. (Required)
+			#K.set_learning_phase(1)  # Sets the learning phase to 'train'. (Required)
 
-			# Create a model.
+			# Creates a model.
 			modelForTraining = create_mnist_mlp(input_shape, output_shape)
 			modelForTraining.create_training_model()
 
-			# Create a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+			# Creates a trainer.
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
 
-			# Create a saver.
-			#	Save a model every 2 hours and maximum 5 latest models are saved.
+			# Creates a saver.
+			#	Saves a model every 2 hours and maximum 5 latest models are saved.
 			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			initializer = tf.global_variables_initializer()
 
 		with eval_graph.as_default():
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+			#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
 
-			# Create a model.
+			# Creates a model.
 			modelForEvaluation = create_mnist_mlp(input_shape, output_shape)
 			modelForEvaluation.create_evaluation_model()
 
-			# Create an evaluator.
+			# Creates an evaluator.
 			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
 
-			# Create a saver.
+			# Creates a saver.
 			eval_saver = tf.train.Saver()
 
 	with infer_graph.as_default():
-		#K.set_learning_phase(0)  # Set the learning phase to 'test'. (Required)
+		#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
 
-		# Create a model.
+		# Creates a model.
 		modelForInference = create_mnist_mlp(input_shape, output_shape)
 		modelForInference.create_inference_model()
 
-		# Create an inferrer.
+		# Creates an inferrer.
 		nnInferrer = NeuralNetInferrer(modelForInference)
 
-		# Create a saver.
+		# Creates a saver.
 		infer_saver = tf.train.Saver()
 
-	# Create sessions.
+	# Creates sessions.
 	if does_need_training:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
 		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initialize.
+	# Initializes.
 	if does_need_training:
 		train_session.run(initializer)
 
 	#%%------------------------------------------------------------------
-	# Train and evaluate.
+	# Trains and evaluates.
 
 	if does_need_training:
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
-				#K.set_learning_phase(1)  # Set the learning phase to 'train'.
+				#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
 				swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
@@ -203,18 +206,18 @@ def main():
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				#K.set_session(sess)
-				#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+				#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
-	# Infer.
+	# Infers.
 
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Set the learning phase to 'test'.
+			#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
 			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
@@ -231,7 +234,7 @@ def main():
 		print('[SWL] Warning: Invalid inference results.')
 
 	#--------------------
-	# Close sessions.
+	# Closes sessions.
 
 	if does_need_training:
 		train_session.close()

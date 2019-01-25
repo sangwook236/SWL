@@ -4,7 +4,7 @@ from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer,
 #%%------------------------------------------------------------------
 
 class SimpleNeuralNetTrainer(NeuralNetTrainer):
-	def __init__(self, neuralNet, initial_epoch=0):
+	def __init__(self, neuralNet, initial_epoch=0, augmenter=None, is_output_augmented=False):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 0.001
@@ -15,10 +15,10 @@ class SimpleNeuralNetTrainer(NeuralNetTrainer):
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
-		super().__init__(neuralNet, optimizer, global_step)
+		super().__init__(neuralNet, optimizer, global_step, augmenter, is_output_augmented)
 
 class SimpleGradientClippingNeuralNetTrainer(GradientClippingNeuralNetTrainer):
-	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0):
+	def __init__(self, neuralNet, max_gradient_norm, initial_epoch=0, augmenter=None, is_output_augmented=False):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 0.001
@@ -29,4 +29,4 @@ class SimpleGradientClippingNeuralNetTrainer(GradientClippingNeuralNetTrainer):
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
-		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step)
+		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step, augmenter, is_output_augmented)
