@@ -6,6 +6,7 @@ sys.path.append('../../../src')
 #--------------------
 import os, time, datetime
 import multiprocessing as mp
+from multiprocessing.managers import BaseManager
 import numpy as np
 import tensorflow as tf
 from imgaug import augmenters as iaa
@@ -167,7 +168,7 @@ def main():
 
 	output_dir_prefix = 'mnist_cnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
+	#output_dir_suffix = '20190127T001424'
 
 	initial_epoch = 0
 
@@ -182,11 +183,11 @@ def main():
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
+	use_file_batch_loader = True
 	num_processes = 5
 	num_batch_dirs = 5
 	batch_dir_path_prefix = './batch_dir'
 	batch_info_csv_filename = 'batch_info.csv'
-	use_file_batch_loader = False
 
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}
@@ -210,9 +211,9 @@ def main():
 	lock = mp.Lock()
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
-	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+	#dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	#fileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	##fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------
 	# Prepares data.
@@ -297,11 +298,7 @@ def main():
 			batch_dir_path_prefix = './train_batch_dir'
 			num_batch_dirs = num_epochs
 			trainDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-			batch_dir_path_prefix = './val_batch_dir'
-			num_batch_dirs = 1
-			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
-			#--------------------
 			for _ in range(num_batch_dirs):
 				while True:
 					train_dir_path = trainDirMgr.requestDirectory()
@@ -311,10 +308,14 @@ def main():
 						time.sleep(0.1)
 				print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
-				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename=batch_info_csv_filename)
 				trainFileBatchGenerator.saveBatches(train_dir_path)  # Generates and saves batches.
 
 				trainDirMgr.returnDirectory(train_dir_path)				
+
+			batch_dir_path_prefix = './val_batch_dir'
+			num_batch_dirs = 1
+			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			while True:
 				val_dir_path = valDirMgr.requestDirectory()
@@ -324,10 +325,9 @@ def main():
 					time.sleep(0.1)
 			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
-			trainDirMgr.returnDirectory(train_dir_path)				
 			valDirMgr.returnDirectory(val_dir_path)				
 
 			#--------------------
@@ -337,16 +337,16 @@ def main():
 			start_time = time.time()
 			with train_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 		else:
-			trainBatchGenerator = SimpleBatchGenerator(train_images, train_labels, batch_size, shuffle, is_time_major, augmenter, is_output_augmented)
-			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
+			trainBatchGenerator = SimpleBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter, is_output_augmented)
+			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, False)
 
 			start_time = time.time()
 			with train_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.train_neural_net_by_batch_generator(sess, nnTrainer, trainBatchGenerator, valBatchGenerator, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.train_neural_net_by_batch_generator(sess, nnTrainer, trainBatchGenerator, valBatchGenerator, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
 
 		#--------------------
@@ -364,7 +364,7 @@ def main():
 					time.sleep(0.1)
 			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
 			valDirMgr.returnDirectory(val_dir_path)				
@@ -375,15 +375,15 @@ def main():
 			start_time = time.time()
 			with eval_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.evaluate_neural_net_by_file_batch_loader(sess, nnEvaluator, valFileBatchLoader, valDirMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.evaluate_neural_net_by_file_batch_loader(sess, nnEvaluator, valFileBatchLoader, valDirMgr, eval_saver, checkpoint_dir_path, False, False)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 		else:
-			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
+			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, False)
 
 			start_time = time.time()
 			with eval_session.as_default() as sess:
 				with sess.graph.as_default():
-					swl_tf_util.evaluate_neural_net_by_batch_generator(sess, nnEvaluator, valBatchGenerator, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
+					swl_tf_util.evaluate_neural_net_by_batch_generator(sess, nnEvaluator, valBatchGenerator, eval_saver, checkpoint_dir_path, False, False)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
@@ -396,14 +396,14 @@ def main():
 
 		#--------------------
 		while True:
-			inf_dir_path = testDirMgr.requestDirectory()
-			if inf_dir_path is not None:
+			test_dir_path = testDirMgr.requestDirectory()
+			if test_dir_path is not None:
 				break
 			else:
 				time.sleep(0.1)
-		print('\tGot an inference batch directory: {}.'.format(inf_dir_path))
+		print('\tGot a test batch directory: {}.'.format(test_dir_path))
 
-		testFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+		testFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 		testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
 
 		testDirMgr.returnDirectory(test_dir_path)				
@@ -414,18 +414,19 @@ def main():
 		start_time = time.time()
 		with infer_session.as_default() as sess:
 			with sess.graph.as_default():
-				inferences = swl_tf_util.infer_by_neural_net_and_file_batch_loader(sess, nnInferrer, testFileBatchLoader, testDirMgr, infer_saver, checkpoint_dir_path, is_time_major)
+				inferences = swl_tf_util.infer_by_neural_net_and_file_batch_loader(sess, nnInferrer, testFileBatchLoader, testDirMgr, infer_saver, checkpoint_dir_path, False)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
 	else:
-		testBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
+		testBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, False)
 
 		start_time = time.time()
 		with infer_session.as_default() as sess:
 			with sess.graph.as_default():
-				inferences = swl_tf_util.infer_by_neural_net_and_batch_generator(sess, nnInferrer, testBatchGenerator, infer_saver, checkpoint_dir_path, is_time_major)
+				inferences = swl_tf_util.infer_by_neural_net_and_batch_generator(sess, nnInferrer, testBatchGenerator, infer_saver, checkpoint_dir_path, False)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	if inferences is not None:
+		inferences = np.vstack(inferences)
 		if num_classes >= 2:
 			inferences = np.argmax(inferences, -1)
 			groundtruths = np.argmax(test_labels, -1)

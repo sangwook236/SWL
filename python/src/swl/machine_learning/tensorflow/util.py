@@ -170,7 +170,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
 		batches = trainFileBatchLoader.loadBatches(train_dir_path)  # Loads batches.
-		for train_inputs, train_outputs in batches:
+		for train_inputs, train_outputs, _ in batches:
 			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
@@ -192,7 +192,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		#--------------------
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 		batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
-		for val_inputs, val_outputs in batches:
+		for val_inputs, val_outputs, _ in batches:
 			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
@@ -829,7 +829,7 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 	batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
-	for val_inputs, val_outputs in batches:
+	for val_inputs, val_outputs, _ in batches:
 		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
@@ -838,7 +838,7 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 		val_loss += batch_loss * batch_size
 		num_val_examples += batch_size
 
-	valDirMgr.returnDirectory(dir_path)				
+	valDirMgr.returnDirectory(val_dir_path)				
 
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
@@ -1082,7 +1082,7 @@ def infer_by_neural_net_and_file_batch_loader(session, nnInferrer, testFileBatch
 
 	inf_outputs_list = list()
 	batches = testFileBatchLoader.loadBatches(inf_dir_path)  # Loads batches.
-	for test_inputs, _ in batches:
+	for test_inputs, _, _ in batches:
 		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
 		inf_outputs_list.append(batch_outputs)
 
