@@ -361,7 +361,7 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------
@@ -414,7 +414,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	fileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------

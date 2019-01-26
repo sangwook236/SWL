@@ -100,41 +100,26 @@ def initialize_lock(lock):
 	global global_lock
 	global_lock = lock
 
-#def training_worker_proc(dirMgr, fileBatchLoader, num_epochs):
-def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
+#def training_worker_proc(train_session, trainDirMgr, valDirMgr, trainFileBatchLoader, valFileBatchLoader, num_epochs):
+def training_worker_proc(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
-	for epoch in range(num_epochs):
-		print('\t{}: Request a working directory: epoch {}.'.format(os.getpid(), epoch))
-		while True:
-			with global_lock:
-				dir_path = dirMgr.requestDirectory()
+	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
-			if dir_path is not None:
-				break
-			else:
-				time.sleep(0.1)
-		print('\t{}: Got a working directory: {}.'.format(os.getpid(), dir_path))
-
-		#--------------------
-		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
-		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
-		for idx, batch in enumerate(batches):
-			# Train with each batch (inputs & outputs).
-			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
-			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
-
-		#--------------------
-		with global_lock:
-			dirMgr.returnDirectory(dir_path)
-		print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
+	#--------------------
+	start_time = time.time()
+	with train_session.as_default() as sess:
+		with sess.graph.as_default():
+			swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False)
+	print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	print('\t{}: End training worker process.'.format(os.getpid()))
 
 #def augmentation_worker_proc(dirMgr, fileBatchGenerator, epoch):
 def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-	print('\t{}: Request a preparatory directory.'.format(os.getpid()))
+	print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
 	while True:
 		with global_lock:
 			dir_path = dirMgr.requestDirectory(is_workable=False)
@@ -143,7 +128,7 @@ def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, out
 			break
 		else:
 			time.sleep(0.1)
-	print('\t{}: Got a preparatory directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
 	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
@@ -183,7 +168,9 @@ def main():
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
+	use_multiprocessing = True
 	use_file_batch_loader = True
+
 	num_processes = 5
 	num_batch_dirs = 5
 	batch_dir_path_prefix = './batch_dir'
@@ -199,21 +186,19 @@ def main():
 	#--------------------
 	# Prepares multiprocessing.
 
-	# set_start_method() should not be used more than once in the program.
-	#mp.set_start_method('spawn')
+	if use_multiprocessing:
+		# set_start_method() should not be used more than once in the program.
+		#mp.set_start_method('spawn')
 
-	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-	BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
-	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
-	manager = BaseManager()
-	manager.start()
+		BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
+		BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
+		BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
+		#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+		manager = BaseManager()
+		manager.start()
 
-	lock = mp.Lock()
-	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
-
-	#dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	#fileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-	##fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+		lock = mp.Lock()
+		#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	#--------------------
 	# Prepares data.
@@ -294,7 +279,40 @@ def main():
 	# Trains and evaluates.
 
 	if does_need_training:
-		if use_file_batch_loader:
+		if use_multiprocessing:
+			#--------------------
+			batch_dir_path_prefix = './val_batch_dir'
+			num_batch_dirs = 1
+			valDirMgr = manager.WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+
+			while True:
+				val_dir_path = valDirMgr.requestDirectory()
+				if val_dir_path is not None:
+					break
+				else:
+					time.sleep(0.1)
+			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
+			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
+
+			valDirMgr.returnDirectory(val_dir_path)				
+
+			#--------------------
+			trainDirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			#fileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+			#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+
+			#--------------------
+			#timeout = 10
+			timeout = None
+			with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+				training_results = pool.apply_async(training_worker_proc, args=(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs))
+				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, trainDirMgr, train_images, train_labels, batch_size, shuffle, is_time_major), [epoch for epoch in range(num_epochs)])
+
+				training_results.get(timeout)
+				data_augmentation_results.get(timeout)
+		elif use_file_batch_loader:
 			batch_dir_path_prefix = './train_batch_dir'
 			num_batch_dirs = num_epochs
 			trainDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
