@@ -8,7 +8,7 @@ import os, time
 import numpy as np
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleBatchManagerWithFileInput, SimpleFileBatchManager, SimpleFileBatchManagerWithFileInput
 from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator, NpyFileBatchLoader
-from swl.util.working_directory_manager import SimpleWorkingDirectoryManager
+from swl.util.working_directory_manager import WorkingDirectoryManager
 import swl.util.util as swl_util
 
 def generate_dataset(num_examples, is_label_augmented=False):
@@ -116,7 +116,7 @@ def simple_file_batch_manager_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -161,7 +161,7 @@ def simple_file_batch_manager_with_file_input_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):

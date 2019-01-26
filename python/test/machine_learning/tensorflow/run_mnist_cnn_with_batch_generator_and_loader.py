@@ -17,7 +17,7 @@ import swl.machine_learning.tensorflow.util as swl_tf_util
 from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator
 from swl.machine_learning.batch_loader import NpyFileBatchLoader
 import swl.util.util as swl_util
-from swl.util.working_directory_manager import ReadyWorkingDirectoryManager
+from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 from mnist_cnn_tf import MnistCnnUsingTF
 
 #%%------------------------------------------------------------------
@@ -104,16 +104,16 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
 	for epoch in range(num_epochs):
-		print('\t{}: Request a ready directory: epoch {}.'.format(os.getpid(), epoch))
+		print('\t{}: Request a working directory: epoch {}.'.format(os.getpid(), epoch))
 		while True:
 			with global_lock:
-				dir_path = dirMgr.requestReadyDirectory()
+				dir_path = dirMgr.requestDirectory()
 
 			if dir_path is not None:
 				break
 			else:
 				time.sleep(0.1)
-		print('\t{}: Got a ready directory: {}.'.format(os.getpid(), dir_path))
+		print('\t{}: Got a working directory: {}.'.format(os.getpid(), dir_path))
 
 		#--------------------
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
@@ -133,16 +133,16 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 #def augmentation_worker_proc(dirMgr, fileBatchGenerator, epoch):
 def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-	print('\t{}: Request a directory.'.format(os.getpid()))
+	print('\t{}: Request a preparatory directory.'.format(os.getpid()))
 	while True:
 		with global_lock:
-			dir_path = dirMgr.requestDirectory()
+			dir_path = dirMgr.requestDirectory(is_workable=False)
 
 		if dir_path is not None:
 			break
 		else:
 			time.sleep(0.1)
-	print('\t{}: Got a directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Got a preparatory directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
 	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
@@ -201,7 +201,7 @@ def main():
 	# set_start_method() should not be used more than once in the program.
 	#mp.set_start_method('spawn')
 
-	BaseManager.register('ReadyWorkingDirectoryManager', ReadyWorkingDirectoryManager)
+	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
 	BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
 	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
 	manager = BaseManager()
@@ -210,7 +210,7 @@ def main():
 	lock = mp.Lock()
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
-	dirMgr = manager.ReadyWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 	fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
@@ -293,23 +293,44 @@ def main():
 	# Trains and evaluates.
 
 	if does_need_training:
-		start_time = time.time()
-		with train_session.as_default() as sess:
-			with sess.graph.as_default():
-				swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - start_time))
 		if use_file_batch_loader:
 			batch_dir_path_prefix = './train_batch_dir'
-			num_batch_dirs = 5
-			trainDirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			num_batch_dirs = num_epochs
+			trainDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 			batch_dir_path_prefix = './val_batch_dir'
 			num_batch_dirs = 1
-			valDirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
-			trainFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+			#--------------------
+			for _ in range(num_batch_dirs):
+				while True:
+					train_dir_path = trainDirMgr.requestDirectory()
+					if train_dir_path is not None:
+						break
+					else:
+						time.sleep(0.1)
+				print('\tGot a train batch directory: {}.'.format(train_dir_path))
+
+				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
+				trainFileBatchGenerator.saveBatches(train_dir_path)  # Generates and saves batches.
+
+				trainDirMgr.returnDirectory(train_dir_path)				
+
+			while True:
+				val_dir_path = valDirMgr.requestDirectory()
+				if val_dir_path is not None:
+					break
+				else:
+					time.sleep(0.1)
+			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
 			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
-			trainFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
+
+			trainDirMgr.returnDirectory(train_dir_path)				
+			valDirMgr.returnDirectory(val_dir_path)				
+
+			#--------------------
 			trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
@@ -318,9 +339,6 @@ def main():
 				with sess.graph.as_default():
 					swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal training time = {}'.format(time.time() - start_time))
-
-			trainDirMgr.returnDirectory(train_dir_path)				
-			valDirMgr.returnDirectory(val_dir_path)				
 		else:
 			trainBatchGenerator = SimpleBatchGenerator(train_images, train_labels, batch_size, shuffle, is_time_major, augmenter, is_output_augmented)
 			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
@@ -335,10 +353,23 @@ def main():
 		if use_file_batch_loader:
 			batch_dir_path_prefix = './val_batch_dir'
 			num_batch_dirs = 1
-			valDirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+
+			#--------------------
+			while True:
+				val_dir_path = valDirMgr.requestDirectory()
+				if val_dir_path is not None:
+					break
+				else:
+					time.sleep(0.1)
+			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
 			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
+
+			valDirMgr.returnDirectory(val_dir_path)				
+
+			#--------------------
 			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
 			start_time = time.time()
@@ -346,8 +377,6 @@ def main():
 				with sess.graph.as_default():
 					swl_tf_util.evaluate_neural_net_by_file_batch_loader(sess, nnEvaluator, valFileBatchLoader, valDirMgr, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_output)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
-
-			valDirMgr.returnDirectory(val_dir_path)				
 		else:
 			valBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
 
@@ -363,10 +392,23 @@ def main():
 	if use_file_batch_loader:
 		batch_dir_path_prefix = './test_batch_dir'
 		num_batch_dirs = 1
-		testDirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+		testDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+
+		#--------------------
+		while True:
+			inf_dir_path = testDirMgr.requestDirectory()
+			if inf_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot an inference batch directory: {}.'.format(inf_dir_path))
 
 		testFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, is_time_major, batch_info_csv_filename=batch_info_csv_filename)
 		testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
+
+		testDirMgr.returnDirectory(test_dir_path)				
+
+		#--------------------
 		testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
 		start_time = time.time()
@@ -374,8 +416,6 @@ def main():
 			with sess.graph.as_default():
 				inferences = swl_tf_util.infer_by_neural_net_and_file_batch_loader(sess, nnInferrer, testFileBatchLoader, testDirMgr, infer_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal inference time = {}'.format(time.time() - start_time))
-
-		testDirMgr.returnDirectory(test_dir_path)				
 	else:
 		testBatchGenerator = SimpleBatchGenerator(test_images, test_labels, batch_size, False, is_time_major)
 

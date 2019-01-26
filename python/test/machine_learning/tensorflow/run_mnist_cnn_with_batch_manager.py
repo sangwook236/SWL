@@ -16,7 +16,7 @@ from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferre
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleFileBatchManager
 from swl.machine_learning.augmentation_batch_manager import AugmentationBatchManager, AugmentationFileBatchManager
 from swl.machine_learning.imgaug_batch_manager import ImgaugBatchManager, ImgaugFileBatchManager
-from swl.util.working_directory_manager import SimpleWorkingDirectoryManager
+from swl.util.working_directory_manager import WorkingDirectoryManager
 import swl.util.util as swl_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_cnn_tf import MnistCnnUsingTF
@@ -220,7 +220,7 @@ def mnist_batch_manager(method=0):
 		elif 2 == method:
 			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			#augmenter = IdentityAugmenter()
 			augmenter = ImgaugAugmenter(image_height, image_width)
@@ -236,7 +236,7 @@ def mnist_batch_manager(method=0):
 		elif 3 == method:
 			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			with mp.Pool() as pool:
 				#augmenter = IdentityAugmenter()
@@ -264,7 +264,7 @@ def mnist_batch_manager(method=0):
 		elif 5 == method:
 			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			augmenter = get_imgaug_augmenter(image_height, image_width)
 			trainFileBatchMgr = ImgaugFileBatchManager(augmenter, train_images, train_labels, batch_size, shuffle, is_label_augmented, is_time_major, image_file_format='train_batch_images_{}.npy', label_file_format='train_batch_labels_{}.npy')
@@ -290,7 +290,7 @@ def mnist_batch_manager(method=0):
 		elif method in (2, 3, 5):
 			batch_dir_path_prefix = './batch_dir'
 			num_batch_dirs = 5
-			dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 			valFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
 
@@ -316,7 +316,7 @@ def mnist_batch_manager(method=0):
 	elif method in (2, 3, 5):
 		batch_dir_path_prefix = './batch_dir'
 		num_batch_dirs = 5
-		dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+		dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 		testFileBatchMgr = SimpleFileBatchManager(test_images, test_labels, batch_size, False, is_time_major, image_file_format='val_batch_images_{}.npy', label_file_format='val_batch_labels_{}.npy')
 

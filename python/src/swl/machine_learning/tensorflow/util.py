@@ -148,7 +148,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		print('Epoch {}/{}'.format(epoch, num_epochs))
 
 		while True:
-			train_dir_path = trainDirMgr.requestReadyDirectory()
+			train_dir_path = trainDirMgr.requestDirectory()
 			if train_dir_path is not None:
 				break
 			else:
@@ -156,7 +156,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
 		while True:
-			val_dir_path = valDirMgr.requestReadyDirectory()
+			val_dir_path = valDirMgr.requestDirectory()
 			if val_dir_path is not None:
 				break
 			else:
@@ -639,6 +639,7 @@ def train_neural_net_after_generating_batch_list(session, nnTrainer, train_input
 		end = start + batch_size
 		batch_indices = indices[start:end]
 		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
 			train_inputs_list.append(train_inputs[batch_indices])
 			train_outputs_list.append(train_outputs[batch_indices])
 
@@ -653,6 +654,7 @@ def train_neural_net_after_generating_batch_list(session, nnTrainer, train_input
 		end = start + batch_size
 		batch_indices = indices[start:end]
 		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
 			val_inputs_list.append(val_inputs[batch_indices])
 			val_outputs_list.append(val_outputs[batch_indices])
 
@@ -815,7 +817,7 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 		print('[SWL] Info: Loaded a model.')
 
 	while True:
-		val_dir_path = valDirMgr.requestReadyDirectory()
+		val_dir_path = valDirMgr.requestDirectory()
 		if val_dir_path is not None:
 			break
 		else:
@@ -1068,7 +1070,7 @@ def infer_by_neural_net_and_file_batch_loader(session, nnInferrer, testFileBatch
 		print('[SWL] Info: Loaded a model.')
 
 	while True:
-		inf_dir_path = testDirMgr.requestReadyDirectory()
+		inf_dir_path = testDirMgr.requestDirectory()
 		if inf_dir_path is not None:
 			break
 		else:

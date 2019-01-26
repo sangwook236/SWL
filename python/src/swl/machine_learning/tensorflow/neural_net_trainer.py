@@ -141,6 +141,7 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						if self._augmenter is not None:
@@ -162,6 +163,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 						if self._accuracy is None:
@@ -175,6 +177,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
 						if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 							if self._accuracy is None:
@@ -218,6 +221,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						data_batch, label_batch = val_data[batch_indices], val_labels[batch_indices]
 						if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
 							if self._accuracy is None:
@@ -359,6 +363,7 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 						if self._augmenter is not None:
@@ -380,6 +385,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 					if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 						if self._accuracy is None:
@@ -393,6 +399,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						enc_input_batch, dec_input_batch, dec_output_batch = train_encoder_inputs[batch_indices], train_decoder_inputs[batch_indices], train_decoder_outputs[batch_indices]
 						if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 							if self._accuracy is None:
@@ -415,6 +422,7 @@ class NeuralNetTrainer(object):
 			#if val_data is not None and val_labels is not None:
 			if num_val_examples > 0:
 				"""
+				# FIXME [fix] >> Does not work correctly in time-major data.
 				enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices], val_decoder_inputs[batch_indices], val_decoder_outputs[batch_indices]
 				if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 					if self._accuracy is None:
@@ -436,6 +444,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						enc_input_batch, dec_input_batch, dec_output_batch = val_encoder_inputs[batch_indices], val_decoder_inputs[batch_indices], val_decoder_outputs[batch_indices]
 						if enc_input_batch.size > 0 and dec_input_batch.size > 0 and dec_output_batch.size > 0:  # If enc_input_batch, dec_input_batch, and dec_output_batch are non-empty.
 							if self._accuracy is None:
@@ -565,6 +574,7 @@ class NeuralNetTrainer(object):
 				end = start + batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					data_batch = train_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						if self._augmenter is not None:
@@ -585,6 +595,7 @@ class NeuralNetTrainer(object):
 				"""
 				batch_indices = indices[0:batch_size]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
 					data_batch = train_data[batch_indices]
 					if data_batch.size > 0:  # If data_batch is non-empty.
 						train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
@@ -594,6 +605,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						data_batch = train_data[batch_indices]
 						if data_batch.size > 0:  # If data_batch is non-empty.
 							batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))
@@ -625,6 +637,7 @@ class NeuralNetTrainer(object):
 					end = start + batch_size
 					batch_indices = indices[start:end]
 					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
 						data_batch = val_data[batch_indices]
 						if data_batch.size > 0:  # If data_batch is non-empty.
 							#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, is_training=False))

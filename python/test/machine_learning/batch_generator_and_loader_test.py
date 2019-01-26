@@ -12,7 +12,7 @@ import numpy as np
 from imgaug import augmenters as iaa
 from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator, NpyFileBatchGeneratorWithFileInput
 from swl.machine_learning.batch_loader import NpyFileBatchLoader
-from swl.util.working_directory_manager import SimpleWorkingDirectoryManager, ReadyWorkingDirectoryManager
+from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
 
 def augment_identically(inputs, outputs, is_output_augmented=False):
@@ -74,18 +74,21 @@ def generate_file_dataset(dir_path, num_examples, is_output_augmented=False):
 
 	swl_util.make_dir(dir_path)
 
+	input_filepaths, output_filepaths = list(), list()
 	idx, start_idx = 0, 0
 	while True:
 		end_idx = start_idx + np.random.randint(30, 50)
-		batch_inputs = inputs[start_idx:end_idx]
-		batch_outputs = outputs[start_idx:end_idx]
-		np.save(os.path.join(dir_path, 'inputs_{}.npy'.format(idx)), batch_inputs)
-		np.save(os.path.join(dir_path, 'outputs_{}.npy'.format(idx)), batch_outputs)
+		batch_inputs, batch_outputs = inputs[start_idx:end_idx], outputs[start_idx:end_idx]
+		input_filepath, output_filepath = os.path.join(dir_path, 'inputs_{}.npy'.format(idx)), os.path.join(dir_path, 'outputs_{}.npy'.format(idx))
+		np.save(input_filepath, batch_inputs)
+		np.save(output_filepath, batch_outputs)
+		input_filepaths.append(input_filepath)
+		output_filepaths.append(output_filepath)
 		if end_idx >= num_examples:
 			break;
 		start_idx = end_idx
 		idx += 1
-	return idx + 1  # The number of files.
+	return input_filepaths, output_filepaths
 
 def simple_batch_generator_example():
 	num_examples = 100
@@ -125,7 +128,7 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	batch_info_csv_filename = 'batch_info.csv'
 	#augmenter = augment_identically
@@ -152,6 +155,9 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
+
+		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
+
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
@@ -159,15 +165,11 @@ def simple_npy_file_batch_generator_and_loader_example():
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
-		dirMgr.returnDirectory(dir_path)				
+		dirMgr.returnDirectory(dir_path)
 
 def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 	num_examples = 300
-	num_files = generate_file_dataset('./batches', num_examples)
-	npy_input_filepaths, npy_output_filepaths = list(), list()
-	for idx in range(num_files):
-		npy_input_filepaths.append('./batches/inputs_{}.npy'.format(idx))
-		npy_output_filepaths.append('./batches/outputs_{}.npy'.format(idx))
+	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
 
@@ -178,7 +180,7 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	batch_info_csv_filename = 'batch_info.csv'
 	#augmenter = augment_identically
@@ -205,6 +207,9 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
+
+		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
+
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
@@ -212,7 +217,7 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
-		dirMgr.returnDirectory(dir_path)				
+		dirMgr.returnDirectory(dir_path)
 
 def initialize_lock(lock):
 	global global_lock
@@ -223,23 +228,23 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
 	for epoch in range(num_epochs):
-		print('\t{}: Request a ready directory: epoch {}.'.format(os.getpid(), epoch))
+		print('\t{}: Request a working directory: epoch {}.'.format(os.getpid(), epoch))
 		while True:
 			"""
 			global_lock.acquire()
 			try:
-				dir_path = dirMgr.requestReadyDirectory()
+				dir_path = dirMgr.requestDirectory()
 			finally:
 				global_lock.release()
 			"""
 			with global_lock:
-				dir_path = dirMgr.requestReadyDirectory()
+				dir_path = dirMgr.requestDirectory()
 
 			if dir_path is not None:
 				break
 			else:
 				time.sleep(0.1)
-		print('\t{}: Got a ready directory: {}.'.format(os.getpid(), dir_path))
+		print('\t{}: Got a working directory: {}.'.format(os.getpid(), dir_path))
 
 		#--------------------
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
@@ -266,16 +271,16 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 #def augmentation_worker_proc(dirMgr, fileBatchGenerator, epoch):
 def augmentation_worker_proc(dirMgr, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-	print('\t{}: Request a directory.'.format(os.getpid()))
+	print('\t{}: Request a preparatory directory.'.format(os.getpid()))
 	while True:
 		with global_lock:
-			dir_path = dirMgr.requestDirectory()
+			dir_path = dirMgr.requestDirectory(is_workable=False)
 
 		if dir_path is not None:
 			break
 		else:
 			time.sleep(0.1)
-	print('\t{}: Got a directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Got a preparatory directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
 	#augmenter = augment_identically
@@ -296,16 +301,16 @@ def augmentation_worker_proc(dirMgr, inputs, outputs, batch_size, shuffle, is_ti
 #def augmentation_with_file_input_worker_proc(dirMgr, fileBatchGenerator, epoch):
 def augmentation_with_file_input_worker_proc(dirMgr, npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-	print('\t{}: Request a directory.'.format(os.getpid()))
+	print('\t{}: Request a preparatory directory.'.format(os.getpid()))
 	while True:
 		with global_lock:
-			dir_path = dirMgr.requestDirectory()
+			dir_path = dirMgr.requestDirectory(is_workable=False)
 
 		if dir_path is not None:
 			break
 		else:
 			time.sleep(0.1)
-	print('\t{}: Got a directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Got a preparatory directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
 	#augmenter = augment_identically
@@ -346,7 +351,7 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 	batch_dir_path_prefix = './batch_dir'
 	batch_info_csv_filename = 'batch_info.csv'
 
-	BaseManager.register('ReadyWorkingDirectoryManager', ReadyWorkingDirectoryManager)
+	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
 	BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
 	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
 	manager = BaseManager()
@@ -355,7 +360,7 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 	lock = mp.Lock()
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
-	dirMgr = manager.ReadyWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 	fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
@@ -376,11 +381,7 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 
 def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example():
 	num_examples = 300
-	num_files = generate_file_dataset('./batches', num_examples)
-	npy_input_filepaths, npy_output_filepaths = list(), list()
-	for idx in range(num_files):
-		npy_input_filepaths.append('./batches/inputs_{}.npy'.format(idx))
-		npy_output_filepaths.append('./batches/outputs_{}.npy'.format(idx))
+	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
 
@@ -403,7 +404,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	batch_dir_path_prefix = './batch_dir'
 	batch_info_csv_filename = 'batch_info.csv'
 
-	BaseManager.register('ReadyWorkingDirectoryManager', ReadyWorkingDirectoryManager)
+	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
 	BaseManager.register('NpyFileBatchGeneratorWithFileInput', NpyFileBatchGeneratorWithFileInput)
 	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
 	manager = BaseManager()
@@ -412,7 +413,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	lock = mp.Lock()
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
-	dirMgr = manager.ReadyWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 	fileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
@@ -436,11 +437,11 @@ def main():
 	#simple_batch_generator_example()
 
 	# Batch generator and loader.
-	#simple_npy_file_batch_generator_and_loader_example()
+	simple_npy_file_batch_generator_and_loader_example()
 	#simple_npy_file_batch_generator_with_file_input_and_loader_example()
 
 	#multiprocessing_npy_file_batch_generator_and_loader_example()
-	multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example()
+	#multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example()
 
 #%%------------------------------------------------------------------
 

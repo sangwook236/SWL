@@ -76,8 +76,8 @@ class SimpleBatchGenerator(BatchGenerator):
 			end = start + self._batch_size
 			batch_indices = indices[start:end]
 			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				batch_inputs = self._inputs[batch_indices]
-				batch_outputs = self._outputs[batch_indices]
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				batch_inputs, batch_outputs = self._inputs[batch_indices], self._outputs[batch_indices]
 				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 					if self._augmenter is None:
 						yield batch_inputs, batch_outputs
@@ -144,8 +144,8 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 				end = start + self._batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					batch_inputs = self._inputs[batch_indices]
-					batch_outputs = self._outputs[batch_indices]
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_inputs, batch_outputs = self._inputs[batch_indices], self._outputs[batch_indices]
 					if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 						if self._augmenter is not None:
 							batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
@@ -186,6 +186,9 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		self._input_filepaths, self._output_filepaths = input_filepaths, output_filepaths
 		self._num_loaded_files = num_loaded_files
 		self._num_files = len(self._input_filepaths)
+		self._num_file_groups = ((self._num_files - 1) // self._num_loaded_files + 1) if self._num_files > 0 else 0
+		if self._num_file_groups <= 0:
+			raise ValueError('Invalid number of file groups')
 
 		self._batch_size = batch_size
 		self._shuffle = shuffle
@@ -202,12 +205,8 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		if self._shuffle:
 			np.random.shuffle(file_indices)
 
-		num_file_groups = ((self._num_files - 1) // self._num_loaded_files + 1) if self._num_files > 0 else 0
-		if num_file_groups <= 0:
-			raise ValueError('Invalid number of file groups')
-
 		start_file_index = 0
-		for gid in range(num_file_groups):
+		for gid in range(self._num_file_groups):
 			start = gid * self._num_loaded_files
 			end = start + self._num_loaded_files
 			sub_file_indices = file_indices[start:end]
@@ -239,8 +238,8 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 				end = start + self._batch_size
 				batch_indices = indices[start:end]
 				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					batch_inputs = inputs[batch_indices]
-					batch_outputs = outputs[batch_indices]
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_inputs, batch_outputs = inputs[batch_indices], outputs[batch_indices]
 					if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 						if self._augmenter is not None:
 							batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)

@@ -8,7 +8,7 @@ import os, time, random
 import multiprocessing as mp
 import numpy as np
 from swl.machine_learning.augmentation_batch_manager import AugmentationBatchManager, AugmentationBatchManagerWithFileInput, AugmentationFileBatchManager, AugmentationFileBatchManagerWithFileInput
-from swl.util.working_directory_manager import SimpleWorkingDirectoryManager, ReadyWorkingDirectoryManager
+from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
 
 class IdentityAugmenter(object):
@@ -150,7 +150,7 @@ def augmentation_file_batch_manager_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -196,7 +196,7 @@ def augmentation_file_batch_manager_with_file_input_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	for epoch in range(num_epochs):
@@ -237,7 +237,27 @@ def augmentation_file_batch_manager_with_file_input_example():
 		dirMgr.returnDirectory(dir_path)
 
 def augmentation_worker_proc(lock, dirMgr, batchMgr):
-	print('\t{}: Request an available directory.'.format(os.getpid()))
+	print('\t{}: Request a preparatory directory.'.format(os.getpid()))
+	while True:
+		with lock:
+			dir_path = dirMgr.requestDirectory(is_workable=False)
+
+		if dir_path is not None:
+			break
+		else:
+			time.sleep(0.1)
+	print('\t{}: Got a preparatory directory: {}.'.format(os.getpid(), dir_path))
+
+	#--------------------
+	batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
+
+	#--------------------
+	with lock:
+		dirMgr.returnDirectory(dir_path)
+	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
+
+def training_worker_proc(lock, dirMgr, batches):
+	print('\t{}: Request a working directory.'.format(os.getpid()))
 	while True:
 		with lock:
 			dir_path = dirMgr.requestDirectory()
@@ -246,27 +266,7 @@ def augmentation_worker_proc(lock, dirMgr, batchMgr):
 			break
 		else:
 			time.sleep(0.1)
-	print('\t{}: Got an available directory: {}.'.format(os.getpid(), dir_path))
-
-	#--------------------
-	batchMgr.putBatches(dir_path)  # Generates, augments, and saves batches.
-
-	#--------------------
-	with lock:
-		dirMgr.returnDirectory(dir_path)
-	print('\t{}: Returned a directory as ready: {}.'.format(os.getpid(), dir_path))
-
-def training_worker_proc(lock, dirMgr, batches):
-	print('\t{}: Request a ready directory.'.format(os.getpid()))
-	while True:
-		with lock:
-			dir_path = dirMgr.requestReadyDirectory()
-
-		if dir_path is not None:
-			break
-		else:
-			time.sleep(0.1)
-	print('\t{}: Got a ready directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Got a working directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
 	batches = batchMgr.getBatches(dir_path)  # Loads batches.
@@ -278,7 +278,7 @@ def training_worker_proc(lock, dirMgr, batches):
 	#--------------------
 	with lock:
 		dirMgr.returnDirectory(dir_path)
-	print('\t{}: Returned a directory as available: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
 
 def augmentation_file_batch_manager_example_using_working_directory():
 	num_examples = 100
@@ -294,7 +294,7 @@ def augmentation_file_batch_manager_example_using_working_directory():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = ReadyWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	lock = mp.Lock()
 
@@ -346,7 +346,7 @@ def sync_multiprocess_augmentation_file_batch_manager_example():
 
 	batch_dir_path_prefix = './batch_dir'
 	num_batch_dirs = 5
-	dirMgr = SimpleWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
 	#--------------------
 	with mp.Pool() as pool:
@@ -400,17 +400,17 @@ def async_multiprocess_augmentation_batch_manager_example():
 def main():
 	# REF [info] >> Use batch generators and loaders.
 
-	# AugmentationBatchManager + SimpleWorkingDirectoryManager.
+	# AugmentationBatchManager + WorkingDirectoryManager.
 	#augmentation_batch_manager_example()
-	# AugmentationBatchManagerWithFileInput + SimpleWorkingDirectoryManager.
+	# AugmentationBatchManagerWithFileInput + WorkingDirectoryManager.
 	#augmentation_batch_manager_with_file_input_example()
 
-	# AugmentationFileBatchManager + SimpleWorkingDirectoryManager.
+	# AugmentationFileBatchManager + WorkingDirectoryManager.
 	#augmentation_file_batch_manager_example()
-	# AugmentationFileBatchManagerWithFileInput + SimpleWorkingDirectoryManager.
+	# AugmentationFileBatchManagerWithFileInput + WorkingDirectoryManager.
 	#augmentation_file_batch_manager_with_file_input_example()
 
-	# AugmentationFileBatchManager + ReadyWorkingDirectoryManager.
+	# AugmentationFileBatchManager + TwoStepWorkingDirectoryManager.
 	augmentation_file_batch_manager_example_using_working_directory()
 
 	# Multiprocess.
