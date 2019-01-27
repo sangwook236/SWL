@@ -5,6 +5,7 @@ sys.path.append('../../../src')
 
 #--------------------
 import os, time, datetime
+from functools import partial
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import numpy as np
@@ -100,22 +101,28 @@ def initialize_lock(lock):
 	global global_lock
 	global_lock = lock
 
+# REF [function] >> training_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 #def training_worker_proc(train_session, trainDirMgr, valDirMgr, trainFileBatchLoader, valFileBatchLoader, num_epochs):
-def training_worker_proc(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs):
+#def training_worker_proc(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+def training_worker_proc(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
 	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
+	train_session = tf.Session()
+	train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
 	#--------------------
 	start_time = time.time()
 	with train_session.as_default() as sess:
 		with sess.graph.as_default():
-			swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False)
+			swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
 	print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	print('\t{}: End training worker process.'.format(os.getpid()))
 
+# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 #def augmentation_worker_proc(dirMgr, fileBatchGenerator, epoch):
 def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
@@ -131,7 +138,7 @@ def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, out
 	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
-	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
+	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -298,17 +305,23 @@ def main():
 
 			valDirMgr.returnDirectory(val_dir_path)				
 
+			#valFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+
 			#--------------------
+			batch_dir_path_prefix = './train_batch_dir'
+			num_batch_dirs = 5
 			trainDirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-			#fileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-			#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+
+			#trainFileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 			#--------------------
 			#timeout = 10
 			timeout = None
 			with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-				training_results = pool.apply_async(training_worker_proc, args=(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs))
-				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, trainDirMgr, train_images, train_labels, batch_size, shuffle, is_time_major), [epoch for epoch in range(num_epochs)])
+				#training_results = pool.apply_async(training_worker_proc, args=(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+				training_results = pool.apply_async(training_worker_proc, args=(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
 				training_results.get(timeout)
 				data_augmentation_results.get(timeout)
