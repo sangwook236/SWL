@@ -4,11 +4,6 @@ language:
   - python
   - cpp
 
-python:
-  - "2.7"
-  - "3.6"
-  - "3.7"
-
 # public repository on Travis CI
 install:
   - pip install codecov
