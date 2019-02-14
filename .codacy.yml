@@ -1,0 +1,11 @@
+exclude_paths:
+  - cpp/bin/*
+  - cpp/bin64/*
+  - cpp/build/*
+  - cpp/cmake/*
+  - cpp/data/*
+  - cpp/dist/*
+  - cpp/doc/*
+  - cpp/lib/*
+  - cpp/lib64/*
+  - python/data/*
