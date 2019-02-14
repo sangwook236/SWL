@@ -7,3 +7,10 @@ matrix:
     - os: linux
       dist: trusty
       env: PYTHON=3.6 PYTHONWARNINGS=ignore
+
+# public repository on Travis CI
+install:
+  - conda install -c conda-forge codecov
+
+after_success:
+  - codecov
