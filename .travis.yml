@@ -19,8 +19,8 @@ matrix:
       env: PYTHON=3.6 PYTHONWARNINGS=ignore
 
 # Public repository on Travis CI.
-install:
-  - pip install coverage codecov pytest-cov codacy-coverage
+#install:
+#  - pip install coverage codecov pytest-cov codacy-coverage
 
 after_success:
   - codecov
