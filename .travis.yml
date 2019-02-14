@@ -4,6 +4,10 @@ dist: trusty
 
 language: python
 
+env:
+  global:
+    - CODACY_PROJECT_TOKEN=0e69069567cb4873bfcd61a700901662
+
 cache:
   directories:
     - $HOME/.cache/pip
@@ -13,11 +17,7 @@ matrix:
     - python: 3.6
       env: KERAS_BACKEND=tensorflow PYTHONWARNINGS=ignore
 
-env:
-  global:
-    - CODACY_PROJECT_TOKEN=1370ce38e99e40af842d47a8dd721444
-
-# public repository on Travis CI
+# Public repository on Travis CI.
 install:
   - pip install coverage codecov pytest-cov codacy-coverage
 
