@@ -1,19 +1,28 @@
 sudo: required
 
-language:
-  - python
-  - cpp
+dist: trusty
 
-python:
-  - "3.6"
-  - "3.7"
+language: python
+
+cache:
+  directories:
+    - $HOME/.cache/pip
+
+matrix:
+  include:
+    - python: 3.6
+      env: KERAS_BACKEND=tensorflow PYTHONWARNINGS=ignore
+
+env:
+  global:
+    - CODACY_PROJECT_TOKEN=1370ce38e99e40af842d47a8dd721444
 
 # public repository on Travis CI
 install:
   - pip install coverage codecov pytest-cov codacy-coverage
 
 after_success:
-  - codecov
+  - codecov -t 93a0f199-a956-45d5-93e3-4fac677f1a03
   - coverage xml
   - python-codacy-coverage -r coverage.xml
   - coverage report
