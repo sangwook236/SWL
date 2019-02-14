@@ -4,9 +4,14 @@ language:
   - python
   - cpp
 
+python:
+  - "3.6"
+  - "3.7"
+
 # public repository on Travis CI
 install:
-  - pip install codecov
+  - pip install coverage codecov pytest-cov codacy-coverage
+  - pip install .
 
 after_success:
   - codecov
