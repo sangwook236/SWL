@@ -1,6 +1,6 @@
 sudo: required
 
-language: python
+language: generic
 
 env:
   global:
@@ -23,8 +23,8 @@ install:
   - pip install coverage codecov pytest-cov codacy-coverage
 
 after_success:
-  #- codecov -t 93a0f199-a956-45d5-93e3-4fac677f1a03
   - codecov
-  - coverage xml
-  - python-codacy-coverage -r coverage.xml
-  - coverage report
+  #- codecov -t 93a0f199-a956-45d5-93e3-4fac677f1a03
+  #- coverage xml
+  #- python-codacy-coverage -r coverage.xml
+  #- coverage report
