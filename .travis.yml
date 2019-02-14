@@ -1,16 +1,20 @@
 sudo: required
 
-language: generic
+language:
+  - python
+  - cpp
 
-matrix:
-  include:
-    - os: linux
-      dist: trusty
-      env: PYTHON=3.6 PYTHONWARNINGS=ignore
+python:
+  - "2.7"
+  - "3.6"
+  - "3.7"
 
 # public repository on Travis CI
 install:
-  - conda install -c conda-forge codecov
+  - pip install --user codecov
 
 after_success:
   - codecov
+  - coverage xml
+  - python-codacy-coverage -r coverage.xml
+  - coverage report
