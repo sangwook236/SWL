@@ -253,19 +253,6 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
-	# Prepare data.
-
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-
-	image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
-	label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
-
-	train_image_patches, test_image_patches, train_label_patches, test_label_patches, image_list, label_list = RdaPlantDataset.load_data(image_dir_path, image_suffix, image_extension, label_dir_path, label_suffix, label_extension, num_classes, patch_height, patch_width)
-
-	#--------------------
 	# Prepare directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
@@ -280,6 +267,19 @@ def main():
 	swl_util.make_dir(train_summary_dir_path)
 	swl_util.make_dir(val_summary_dir_path)
 	swl_util.make_dir(npy_dir_path)
+
+	#--------------------
+	# Prepare data.
+
+	if 'posix' == os.name:
+		data_home_dir_path = '/home/sangwook/my_dataset'
+	else:
+		data_home_dir_path = 'D:/dataset'
+
+	image_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants'
+	label_dir_path = data_home_dir_path + '/phenotyping/RDA/all_plants_foreground'
+
+	train_image_patches, test_image_patches, train_label_patches, test_label_patches, image_list, label_list = RdaPlantDataset.load_data(image_dir_path, image_suffix, image_extension, label_dir_path, label_suffix, label_extension, num_classes, patch_height, patch_width)
 
 	#--------------------
 	# Create models, sessions, and graphs.

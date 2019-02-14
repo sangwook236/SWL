@@ -93,6 +93,20 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
+	# Prepare directories.
+
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
+
+	#--------------------
 	# Prepare data.
 
 	if 'posix' == os.name:
@@ -111,20 +125,6 @@ def main():
 		for (idx, mask) in enumerate(pm_pair[1]):
 			#mask = pad_image(mask, max_len, max_len)  # Not correctly working.
 			pm_pair[1][idx] = pad_image(mask, max_len, max_len)
-
-	#--------------------
-	# Prepare directories.
-
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	inference_dir_path = os.path.join(output_dir_path, 'inference')
-	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
-	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
-
-	swl_util.make_dir(checkpoint_dir_path)
-	swl_util.make_dir(inference_dir_path)
-	swl_util.make_dir(train_summary_dir_path)
-	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Create models, sessions, and graphs.

@@ -208,11 +208,6 @@ def main():
 		#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	#--------------------
-	# Prepares data.
-
-	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
-
-	#--------------------
 	# Prepares directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
@@ -225,6 +220,11 @@ def main():
 	swl_util.make_dir(inference_dir_path)
 	swl_util.make_dir(train_summary_dir_path)
 	swl_util.make_dir(val_summary_dir_path)
+
+	#--------------------
+	# Prepares data.
+
+	train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
 
 	#--------------------
 	# Creates models, sessions, and graphs.
@@ -319,6 +319,8 @@ def main():
 			#timeout = 10
 			timeout = None
 			with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+				# FIXME [fix] >> This code does not work.
+				#	TensorFlow session and saver cannot be passed to a worker procedure in using multiprocessing.pool.apply_async().
 				#training_results = pool.apply_async(training_worker_proc, args=(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
 				training_results = pool.apply_async(training_worker_proc, args=(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
 				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
@@ -330,6 +332,8 @@ def main():
 			num_batch_dirs = num_epochs
 			trainDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
 
+			# TODO [improve] >> Not-so-good implementation.
+			#	Usaually training is performed for much more epochs, so too many batches have to be generated before training.
 			for _ in range(num_batch_dirs):
 				while True:
 					train_dir_path = trainDirMgr.requestDirectory()

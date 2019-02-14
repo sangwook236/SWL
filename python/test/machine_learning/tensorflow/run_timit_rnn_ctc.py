@@ -1,21 +1,13 @@
 #!/usr/bin/env python
 
-# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/ctc_tensorflow_example.py
-
-# Path to libcudnn.so.
-#export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
+# REF [site] >> https://github.com/igormq/ctc_tensorflow_example
 
 #--------------------
-import os, sys
-if 'posix' == os.name:
-	lib_home_dir_path = '/home/sangwook/lib_repo/python'
-else:
-	#lib_home_dir_path = 'D:/lib_repo/python'
-	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+import sys
 sys.path.append('../../../src')
 
 #--------------------
-import abc, time, datetime, math, random
+import os, abc, time, datetime, math, random
 import numpy as np
 import tensorflow as tf
 import scipy.io.wavfile as wav
@@ -103,51 +95,52 @@ class SimpleRnnBase(abc.ABC):
 		self._accuracy = None
 
 	def _create_single_model(self, input_tensor, seq_lens, num_classes, is_training):
-		num_hidden = 50
-		num_layers = 1
-		num_units=50  # Number of units in the LSTM cell.
+		with tf.variable_scope('timit_rnn_ctc', reuse=tf.AUTO_REUSE):
+			num_hidden = 50
+			num_layers = 1
+			num_units = 50  # Number of units in the LSTM cell.
 
-		if self._is_time_major:
-			input_tensor = tf.transpose(input_tensor, (1, 0, 2))
+			if self._is_time_major:
+				input_tensor = tf.transpose(input_tensor, (1, 0, 2))
 
-		shape = tf.shape(input_tensor)
-		batch_size, max_time_steps = shape[0], shape[1]
-		#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
+			shape = tf.shape(input_tensor)
+			batch_size, max_time_steps = shape[0], shape[1]
+			#seq_lens = tf.fill(batch_size, max_time_steps)  # Error.
 
-		cells = []
-		for _ in range(num_layers):
-			cell = tf.contrib.rnn.LSTMCell(num_units)   # Or LSTMCell(num_units).
-			cells.append(cell)
-		stack = tf.contrib.rnn.MultiRNNCell(cells)
+			cells = []
+			for _ in range(num_layers):
+				cell = tf.contrib.rnn.LSTMCell(num_units)  # Or LSTMCell(num_units).
+				cells.append(cell)
+			stack = tf.contrib.rnn.MultiRNNCell(cells)
 
-		# The second output is the last state and we will no use that.
-		outputs, _ = tf.nn.dynamic_rnn(stack, input_tensor, seq_lens, dtype=tf.float32, time_major=False)
+			# The second output is the last state and we will no use that.
+			outputs, _ = tf.nn.dynamic_rnn(stack, input_tensor, seq_lens, dtype=tf.float32, time_major=False)
 
-		# Reshape to apply the same weights over the timesteps.
-		outputs = tf.reshape(outputs, [-1, num_hidden])
+			# Reshape to apply the same weights over the timesteps.
+			outputs = tf.reshape(outputs, [-1, num_hidden])
 
-		# Truncated normal with mean 0 and stdev=0.1.
-		# Tip: Try another initialization.
-		# 	REF [site] >> https://www.tensorflow.org/versions/r0.9/api_docs/python/contrib.layers.html#initializers
-		W = tf.Variable(tf.truncated_normal([num_hidden, num_classes], stddev=0.1))
-		# Zero initialization.
-		# Tip: Is tf.zeros_initializer the same?
-		b = tf.Variable(tf.constant(0., shape=[num_classes]))
+			# Truncated normal with mean 0 and stdev=0.1.
+			# Tip: Try another initialization.
+			# 	REF [site] >> https://www.tensorflow.org/versions/r0.9/api_docs/python/contrib.layers.html#initializers
+			W = tf.Variable(tf.truncated_normal([num_hidden, num_classes], stddev=0.1))
+			# Zero initialization.
+			# Tip: Is tf.zeros_initializer the same?
+			b = tf.Variable(tf.constant(0.0, shape=[num_classes]))
 
-		# Do the affine projection.
-		logits = tf.matmul(outputs, W) + b
+			# Do the affine projection.
+			logits = tf.matmul(outputs, W) + b
 
-		# Reshape back to the original shape.
-		logits = tf.reshape(logits, [-1, batch_size, num_classes])  # Time-major.
+			# Reshape back to the original shape.
+			logits = tf.reshape(logits, [-1, batch_size, num_classes])  # Time-major.
 
-		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
-		decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits, sequence_length=seq_lens, merge_repeated=True)
-		decoded_best = decoded[0]  # tf.SparseTensor.
+			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_lens, beam_width=100, top_paths=1, merge_repeated=True)
+			decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits, sequence_length=seq_lens, merge_repeated=True)
+			decoded_best = decoded[0]  # tf.SparseTensor.
 
-		if not self._is_time_major:
-			logits = tf.transpose(logits, (1, 0, 2))
+			if not self._is_time_major:
+				logits = tf.transpose(logits, (1, 0, 2))
 
-		return decoded_best, logits
+			return decoded_best, logits
 
 	@abc.abstractmethod
 	def _get_loss(self, y_for_loss, t, seq_lens):
@@ -180,7 +173,7 @@ class SimpleRnnWithDenseLabel(SimpleRnnBase):
 			# Dense tensor -> sparse tensor.
 			t = tf.contrib.layers.dense_to_sparse(t, eos_token=self._label_eos_token)
 
-			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, time_major=True))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(t, y_for_loss, seq_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=True))
 
 			tf.summary.scalar('loss', loss)
 			return loss
@@ -214,7 +207,7 @@ class SimpleRnnWithSparseLabel(SimpleRnnBase):
 	def _get_loss(self, y_for_loss, t, seq_lens):
 		with tf.name_scope('loss'):
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, ctc_merge_repeated=True, time_major=self._is_time_major))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y_for_loss, sequence_length=seq_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=self._is_time_major))
 
 			tf.summary.scalar('loss', loss)
 			return loss
@@ -260,7 +253,7 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
-	output_dir_prefix = 'ctc_example'
+	output_dir_prefix = 'timit_rnn_ctc'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20181129T122700'
 
@@ -289,6 +282,20 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	#--------------------
+	# Prepare directories.
+
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = os.path.join(output_dir_path, 'inference')
+	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+	swl_util.make_dir(checkpoint_dir_path)
+	swl_util.make_dir(inference_dir_path)
+	swl_util.make_dir(train_summary_dir_path)
+	swl_util.make_dir(val_summary_dir_path)
+
+	#--------------------
 	# Prepare data.
 
 	# Constants.
@@ -309,9 +316,9 @@ def main():
 	train_seq_len = [train_inputs.shape[1]]
 
 	# Read targets.
-	with open(target_filepath, 'r') as f:
+	with open(target_filepath, 'r') as fd:
 		# Only the last line is necessary.
-		line = f.readlines()[-1]
+		line = fd.readlines()[-1]
 
 		# Get only the words between [a-z] and replace period for none.
 		original = ' '.join(line.strip().lower().split(' ')[2:]).replace('.', '')
@@ -335,20 +342,6 @@ def main():
 
 	# We don't have a validation dataset.
 	val_inputs, val_outputs, val_seq_len = train_inputs, train_outputs, train_seq_len
-
-	#--------------------
-	# Prepare directories.
-
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	inference_dir_path = os.path.join(output_dir_path, 'inference')
-	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
-	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
-
-	swl_util.make_dir(checkpoint_dir_path)
-	swl_util.make_dir(inference_dir_path)
-	swl_util.make_dir(train_summary_dir_path)
-	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
 	# Create models, sessions, and graphs.
