@@ -8,8 +8,10 @@ import os, time, datetime
 from functools import partial
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
+import threading
 import numpy as np
 import tensorflow as tf
+#import imgaug as ia
 from imgaug import augmenters as iaa
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
@@ -30,29 +32,32 @@ def create_mnist_cnn(input_shape, output_shape):
 
 #%%------------------------------------------------------------------
 
+def create_imgaug_augmenter():
+	return iaa.Sequential([
+		iaa.SomeOf(1, [
+			#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
+			iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
+			iaa.Fliplr(0.1),  # Horizontally flip 10% of the images.
+			iaa.Flipud(0.1),  # Vertically flip 10% of the images.
+			iaa.Sometimes(0.5, iaa.Affine(
+				scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+				translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
+				rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
+				shear=(-16, 16),  # Shear by -16 to +16 degrees.
+				#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+				order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+				#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+				#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			)),
+			iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
+		]),
+		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+	])
+
 class ImgaugAugmenter(object):
 	def __init__(self):
-		self._augmenter = iaa.Sequential([
-			iaa.SomeOf(1, [
-				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
-				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
-				iaa.Fliplr(0.1),  # Horizontally flip 10% of the images.
-				iaa.Flipud(0.1),  # Vertically flip 10% of the images.
-				iaa.Sometimes(0.5, iaa.Affine(
-					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
-					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
-					shear=(-16, 16),  # Shear by -16 to +16 degrees.
-					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				)),
-				iaa.Sometimes(0.5, iaa.GaussianBlur(sigma=(0, 3.0)))  # Blur images with a sigma of 0 to 3.0.
-			]),
-			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
-		])
+		self._augmenter = create_imgaug_augmenter()
 
 	def __call__(self, inputs, outputs, is_output_augmented=False):
 		# Augments here.
@@ -102,16 +107,12 @@ def initialize_lock(lock):
 	global_lock = lock
 
 # REF [function] >> training_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
-#def training_worker_proc(train_session, trainDirMgr, valDirMgr, trainFileBatchLoader, valFileBatchLoader, num_epochs):
-#def training_worker_proc(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
-def training_worker_proc(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+#def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, trainFileBatchLoader, valFileBatchLoader, num_epochs):
+def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
 	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
-
-	train_session = tf.Session()
-	train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 	#--------------------
 	start_time = time.time()
@@ -123,8 +124,8 @@ def training_worker_proc(trainDirMgr, valDirMgr, batch_info_csv_filename, num_ep
 	print('\t{}: End training worker process.'.format(os.getpid()))
 
 # REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
-#def augmentation_worker_proc(dirMgr, fileBatchGenerator, epoch):
-def augmentation_worker_proc(dirMgr, augmenter, is_output_augmented, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
+#def augmentation_worker_proc(augmenter, is_output_augmented, dirMgr, fileBatchGenerator, epoch):
+def augmentation_worker_proc(augmenter, is_output_augmented, dirMgr, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
 	print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
 	while True:
@@ -179,8 +180,8 @@ def main():
 	use_file_batch_loader = True
 
 	num_processes = 5
-	num_batch_dirs = 5
-	batch_dir_path_prefix = './batch_dir'
+	#num_batch_dirs = 5
+	#batch_dir_path_prefix = './batch_dir'
 	batch_info_csv_filename = 'batch_info.csv'
 
 	sess_config = tf.ConfigProto()
@@ -316,17 +317,34 @@ def main():
 			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 			#--------------------
-			#timeout = 10
-			timeout = None
-			with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+			if False:
+				# Multiprocessing only.
+
 				# FIXME [fix] >> This code does not work.
 				#	TensorFlow session and saver cannot be passed to a worker procedure in using multiprocessing.pool.apply_async().
-				#training_results = pool.apply_async(training_worker_proc, args=(train_session, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
-				training_results = pool.apply_async(training_worker_proc, args=(trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
-				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
-				training_results.get(timeout)
-				data_augmentation_results.get(timeout)
+				#timeout = 10
+				timeout = None
+				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+					training_results = pool.apply_async(training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+
+					training_results.get(timeout)
+					data_augmentation_results.get(timeout)
+			else:
+				# Multiprocessing (augmentation) + multithreading (training).				
+
+				training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+				training_worker_thread.start()
+
+				#timeout = 10
+				timeout = None
+				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+
+					data_augmentation_results.get(timeout)
+
+				training_worker_thread.join()
 		elif use_file_batch_loader:
 			batch_dir_path_prefix = './train_batch_dir'
 			num_batch_dirs = num_epochs

@@ -1,6 +1,8 @@
 import sys, time
 import numpy as np
 import tensorflow as tf
+import imgaug as ia
+from imgaug import augmenters as iaa
 
 #%%------------------------------------------------------------------
 
@@ -94,6 +96,14 @@ class NeuralNetTrainer(object):
 
 	# Supports a dense label only.
 	def train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
+		# TODO [check] >>
+		if isinstance(self._augmenter, iaa.Sequential):
+			# If imgaug augmenter is used, data are augmented in background augmentation processes. (faster)
+			return self._train_by_imgaug(session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle, saver, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+		else:
+			return self._train(session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle, saver, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major)
+
+	def _train(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
 		batch_axis = 1 if is_time_major else 0
 
 		# Create writers to write all the summaries out to a directory.
@@ -261,6 +271,179 @@ class NeuralNetTrainer(object):
 			val_summary_writer.close()
 
 		return history
+
+	@staticmethod
+	def _create_batch_generator(train_data, train_labels, is_output_augmented, indices, batch_size, train_steps_per_epoch):
+		for step in range(train_steps_per_epoch):
+			start = step * batch_size
+			end = start + batch_size
+			batch_indices = indices[start:end]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
+				if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+					# Add e.g. keypoints=... or bounding_boxes=... here to also augment keypoints / bounding boxes on these images.
+					if is_output_augmented:
+						yield ia.Batch(images=data_batch, heatmaps=label_batch)
+					else:
+						yield ia.Batch(images=data_batch, data=label_batch)
+
+	# Supports a dense label only.
+	def _train_by_imgaug(self, session, train_data, train_labels, val_data, val_labels, batch_size, num_epochs, shuffle=True, saver=None, model_save_dir_path=None, train_summary_dir_path=None, val_summary_dir_path=None, is_time_major=False):
+		batch_axis = 1 if is_time_major else 0
+
+		# Create writers to write all the summaries out to a directory.
+		train_summary_writer = tf.summary.FileWriter(train_summary_dir_path, session.graph) if train_summary_dir_path is not None else None
+		val_summary_writer = tf.summary.FileWriter(val_summary_dir_path) if val_summary_dir_path is not None else None
+
+		num_train_examples, train_steps_per_epoch = 0, 0
+		if train_data is not None and train_labels is not None:
+			if train_data.shape[batch_axis] == train_labels.shape[batch_axis]:
+				num_train_examples = train_data.shape[batch_axis]
+			train_steps_per_epoch = ((num_train_examples - 1) // batch_size + 1) if num_train_examples > 0 else 0
+		#if train_data is None or train_labels is None:
+		if num_train_examples <= 0:
+			return None
+
+		num_val_examples, val_steps_per_epoch = 0, 0
+		if val_data is not None and val_labels is not None:
+			if val_data.shape[batch_axis] == val_labels.shape[batch_axis]:
+				num_val_examples = val_data.shape[batch_axis]
+			val_steps_per_epoch = ((num_val_examples - 1) // batch_size + 1) if num_val_examples > 0 else 0
+
+		history = {
+			'acc': [],
+			'loss': [],
+			'val_acc': [],
+			'val_loss': []
+		}
+
+		with self._augmenter.pool(processes=-1, maxtasksperchild=20, seed=123) as pool:
+			best_val_acc = 0.0
+			for epoch in range(1, num_epochs + 1):
+				print('Epoch {}/{}'.format(epoch, num_epochs))
+
+				start_time = time.time()
+
+				train_loss, train_acc, val_loss, val_acc = None, None, None, None
+				indices = np.arange(num_train_examples)
+				if shuffle:
+					np.random.shuffle(indices)
+
+				# Train.
+				batch_gen = NeuralNetTrainer._create_batch_generator(train_data, train_labels, self._is_output_augmented, indices, batch_size, train_steps_per_epoch)
+				batch_aug_gen = pool.imap_batches(batch_gen, chunksize=10)
+				for batch_aug in batch_aug_gen:
+					#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(batch_aug.images_aug, batch_aug.heatmaps_aug if self._is_output_augmented else batch_aug.data, is_training=True))
+					#self._train_operation.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(batch_aug.images_aug, batch_aug.heatmaps_aug if self._is_output_augmented else batch_aug.data, is_training=True))
+					summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._neuralNet.get_feed_dict(batch_aug.images_aug, batch_aug.heatmaps_aug if self._is_output_augmented else batch_aug.data, is_training=True))
+					if train_summary_writer is not None:
+						train_summary_writer.add_summary(summary, epoch)
+
+				# Evaluate training.
+				train_loss, train_acc = 0.0, 0.0
+				if True:
+					"""
+					batch_indices = indices[0:batch_size]
+					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
+						data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
+						if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+							if self._accuracy is None:
+								train_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+								#train_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+							else:
+								train_loss, train_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+					"""
+					for step in range(train_steps_per_epoch):
+						start = step * batch_size
+						end = start + batch_size
+						batch_indices = indices[start:end]
+						if batch_indices.size > 0:  # If batch_indices is non-empty.
+							# FIXME [fix] >> Does not work correctly in time-major data.
+							data_batch, label_batch = train_data[batch_indices], train_labels[batch_indices]
+							if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+								if self._accuracy is None:
+									batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+									#batch_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+								else:
+									batch_loss, batch_acc = session.run([self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+
+								# TODO [check] >> Is train_loss or train_acc correct?
+								train_loss += batch_loss * batch_indices.size
+								train_acc += batch_acc * batch_indices.size
+					train_loss /= num_train_examples
+					train_acc /= num_train_examples
+
+					history['loss'].append(train_loss)
+					history['acc'].append(train_acc)
+
+				# Evaluate.
+				val_loss, val_acc = 0.0, 0.0
+				#if val_data is not None and val_labels is not None:
+				if num_val_examples > 0:
+					"""
+					data_batch, label_batch = val_data, val_labels
+					if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+						if self._accuracy is None:
+							summary, val_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+						else:
+							#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+							#val_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+							#val_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+							summary, val_loss, val_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+						if val_summary_writer is not None:
+							val_summary_writer.add_summary(summary, epoch)
+					"""
+					indices = np.arange(num_val_examples)
+					#if shuffle:
+					#	np.random.shuffle(indices)
+
+					for step in range(val_steps_per_epoch):
+						start = step * batch_size
+						end = start + batch_size
+						batch_indices = indices[start:end]
+						if batch_indices.size > 0:  # If batch_indices is non-empty.
+							# FIXME [fix] >> Does not work correctly in time-major data.
+							data_batch, label_batch = val_data[batch_indices], val_labels[batch_indices]
+							if data_batch.size > 0 and label_batch.size > 0:  # If data_batch and label_batch are non-empty.
+								if self._accuracy is None:
+									summary, batch_loss = session.run([self._merged_summary, self._loss], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+								else:
+									#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+									#batch_loss = self._loss.eval(session=session, feed_dict=self._neuralNet.get_feed_dict({data_batch, label_batch, is_training=False))
+									#batch_acc = self._accuracy.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+									summary, batch_loss, batch_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._neuralNet.get_feed_dict(data_batch, label_batch, is_training=False))
+								if val_summary_writer is not None:
+									val_summary_writer.add_summary(summary, epoch)
+
+								# TODO [check] >> Is val_loss or val_acc correct?
+								val_loss += batch_loss * batch_indices.size
+								val_acc += batch_acc * batch_indices.size
+					val_loss /= num_val_examples
+					val_acc /= num_val_examples
+
+					history['val_loss'].append(val_loss)
+					history['val_acc'].append(val_acc)
+
+					# Save a model.
+					if saver is not None and model_save_dir_path is not None and val_acc >= best_val_acc:
+						saved_model_path = saver.save(session, model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+						best_val_acc = val_acc
+
+						print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+
+				print('\tElapsed time = {}'.format(time.time() - start_time))
+				print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
+				print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+
+			# Close writers.
+			if train_summary_writer is not None:
+				train_summary_writer.close()
+			if val_summary_writer is not None:
+				val_summary_writer.close()
+
+			return history
 
 	def train_seq2seq_by_batch(self, session, train_encoder_inputs, train_decoder_inputs, train_decoder_outputs, val_encoder_inputs=None, val_decoder_inputs=None, val_decoder_outputs=None, train_summary_writer=None, val_summary_writer=None, is_time_major=False):
 		batch_axis = 1 if is_time_major else 0
