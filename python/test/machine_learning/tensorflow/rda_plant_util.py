@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.model_selection import train_test_split
-from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list
+from swl.machine_vision.util import load_image_list_by_pil, generate_image_patch_list
 from swl.machine_learning.util import to_one_hot_encoding
 import os, json
 from PIL import Image

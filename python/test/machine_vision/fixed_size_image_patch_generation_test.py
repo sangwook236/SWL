@@ -8,7 +8,7 @@ sys.path.append(swl_python_home_dir_path + '/src')
 
 #--------------------
 import numpy as np
-from swl.image_processing.util import load_image_list_by_pil, generate_image_patch_list
+from swl.machine_vision.util import load_image_list_by_pil, generate_image_patch_list
 
 #%%------------------------------------------------------------------
 

@@ -25,8 +25,8 @@ def draw_grid(img, grid_size):
 		cv2.line(img, (0, j), (img.shape[1], j), color=(255,))
 
 # Load images.
-img = cv2.imread("../../data/image_processing/em_train_00.tif", -1)
-mask = cv2.imread("../../data/image_processing/em_train_00_mask.tif", -1)
+img = cv2.imread("../../data/machine_vision/em_train_00.tif", -1)
+mask = cv2.imread("../../data/machine_vision/em_train_00_mask.tif", -1)
 
 # Draw grid lines.
 draw_grid(img, 50)
@@ -36,7 +36,7 @@ draw_grid(mask, 50)
 img_merged = np.concatenate((img[...,None], mask[...,None]), axis=2)
 
 # Apply transformation on image.
-img_merged_transformed = swl.image_processing.elastic_transform.elastic_transform(img_merged, img_merged.shape[1] * 2, img_merged.shape[1] * 0.08, img_merged.shape[1] * 0.08)
+img_merged_transformed = swl.machine_vision.elastic_transform.elastic_transform(img_merged, img_merged.shape[1] * 2, img_merged.shape[1] * 0.08, img_merged.shape[1] * 0.08)
 
 # Split image and mask.
 img_transformed = img_merged_transformed[...,0]

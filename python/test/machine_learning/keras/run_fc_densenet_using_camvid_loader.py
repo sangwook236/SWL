@@ -30,7 +30,7 @@ from keras import optimizers, callbacks
 import densenet_fc as dc
 import matplotlib.pyplot as plt
 from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset
-#from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
+#from swl.machine_vision.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ label_extension = 'png'
 #image_width, image_height = 480, 360
 image_width, image_height = 224, 224
 
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/util_test.py
 #train_images = load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
 #train_labels = load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 #val_images = load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)

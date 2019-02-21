@@ -15,7 +15,7 @@ from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
 from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
 from swl.machine_learning.data_generator import create_dataset_generator_using_imgaug, DatasetGeneratorUsingImgaug
-from swl.image_processing.util import load_images_by_pil, load_labels_by_pil
+from swl.machine_vision.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
 # Prepare dataset.
@@ -50,7 +50,7 @@ def preprocess_cvppp_dataset(X, Y, num_classes):
 #%%------------------------------------------------------------------
 # Load a CVPPP dataset.
 
-# REF [file] >> ${SWL_PYTHON_HOME}/test/image_processing/util_test.py
+# REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/util_test.py
 
 def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix='', data_extension='png', label_suffix='', label_extension='png', width=None, height=None):
 	# Method 1: Use load_images_by_pil().

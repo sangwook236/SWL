@@ -31,7 +31,7 @@ from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeur
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.util.util as swl_util
-import swl.image_processing.util as swl_imgproc_util
+import swl.machine_vision.util as swl_imgproc_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from rda_plant_util import RdaPlantDataset

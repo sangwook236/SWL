@@ -9,7 +9,7 @@ class DataLoader(object):
 		self.width = width
 		self.height = height
 
-	# REF [file] >> load_images_by_pil(), load_labels_by_pil(), load_images_by_scipy(), and load_labels_by_scipy() in ${SWL_PYTHON_HOME}/src/swl/image_processing/util.py
+	# REF [file] >> load_images_by_pil(), load_labels_by_pil(), load_images_by_scipy(), and load_labels_by_scipy() in ${SWL_PYTHON_HOME}/src/swl/machine_vision/util.py
 	def load(self, data_dir_path, label_dir_path=None, data_suffix='', data_extension='png', label_suffix='', label_extension='png'):
 		data = []
 		labels = []

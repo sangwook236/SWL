@@ -38,18 +38,18 @@ label_extension = 'png'
 #image_width, image_height = 480, 360
 image_width, image_height = 224, 224
 
-train_images = swl.image_processing.util.load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-train_labels = swl.image_processing.util.load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-val_images = swl.image_processing.util.load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-val_labels = swl.image_processing.util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-test_images = swl.image_processing.util.load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-test_labels = swl.image_processing.util.load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-#train_images = swl.image_processing.util.load_images_by_scipy(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#train_labels = swl.image_processing.util.load_labels_by_scipy(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-#val_images = swl.image_processing.util.load_images_by_scipy(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#val_labels = swl.image_processing.util.load_labels_by_scipy(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
-#test_images = swl.image_processing.util.load_images_by_scipy(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
-#test_labels = swl.image_processing.util.load_labels_by_scipy(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+train_images = swl.machine_vision.util.load_images_by_pil(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+train_labels = swl.machine_vision.util.load_labels_by_pil(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+val_images = swl.machine_vision.util.load_images_by_pil(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+val_labels = swl.machine_vision.util.load_labels_by_pil(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+test_images = swl.machine_vision.util.load_images_by_pil(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+test_labels = swl.machine_vision.util.load_labels_by_pil(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#train_images = swl.machine_vision.util.load_images_by_scipy(train_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#train_labels = swl.machine_vision.util.load_labels_by_scipy(train_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#val_images = swl.machine_vision.util.load_images_by_scipy(val_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#val_labels = swl.machine_vision.util.load_labels_by_scipy(val_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
+#test_images = swl.machine_vision.util.load_images_by_scipy(test_image_dir_path, image_suffix, image_extension, width=image_width, height=image_height)
+#test_labels = swl.machine_vision.util.load_labels_by_scipy(test_label_dir_path, label_suffix, label_extension, width=image_width, height=image_height)
 
 #%%------------------------------------------------------------------
 

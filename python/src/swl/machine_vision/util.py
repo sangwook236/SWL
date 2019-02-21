@@ -1,10 +1,10 @@
 # REF [site] >> https://github.com/fchollet/keras/issues/3338
 
-import math
+import os, re, math
 import numpy as np
 from PIL import Image
 from scipy import ndimage, misc
-import os, re
+import cv2
 
 #%%------------------------------------------------------------------
 
@@ -30,8 +30,51 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
 
 #%%------------------------------------------------------------------
 
+def load_images_from_files(image_filepaths, height, width):
+	images = list()
+	for filepath in image_filepaths:
+		img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+		if img is None:
+			print('Failed to load file:', filepath)
+			continue
+		if img.shape[0] != height or img.shape[1] != width:
+			img = cv2.resize(img, dsize=(height, width), interpolation=cv2.INTER_LINEAR)
+		images.append(img)
+	return np.array(images)
+	#return images
+
+def save_images_to_npy_files(image_filepaths, labels, image_height, image_width, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename):
+	if image_height is None or image_width is None or image_height <= 0 or image_width <= 0:
+		raise ValueError('Invalid image width or height')
+
+	num_files = len(image_filepaths)
+	if (num_files <= 0 or len(labels) != num_files)
+		raise ValueError('Invalid image filepaths or labels')
+
+	make_dir(save_dir_path)
+
+	with open(os.path.join(save_dir_path, npy_file_csv_filename), mode='w', encoding='UTF8', newline='') as csvfile:
+		writer = csv.writer(csvfile)
+
+		npy_file_idx = 0
+		for start_idx in range(0, num_files, num_files_loaded_at_a_time):
+			inputs = load_images_from_files(image_filepaths[start_idx:start_idx+num_files_loaded_at_a_time], image_height, image_width)
+			outputs = labels[start_idx:start_idx+num_files_loaded_at_a_time]
+			if len(inputs) != len(outputs):
+				print('The number of inputs is not equal to the number of outputs:', npy_file_idx)
+				continue
+
+			input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(npy_file_idx)), os.path.join(save_dir_path, output_filename_format.format(npy_file_idx))
+			np.save(input_filepath, inputs)
+			np.save(output_filepath, outputs)
+			writer.writerow((input_filepath, output_filepath, len(inputs)))
+
+			npy_file_idx += 1
+
+#%%------------------------------------------------------------------
+
 # Load images or label images as a list by PIL.
-def load_image_list_by_pil(dir_path, file_suffix, file_extension):
+def load_image_list_by_pil(dir_path, file_suffix, file_extension, is_recursive=False):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -41,11 +84,12 @@ def load_image_list_by_pil(dir_path, file_suffix, file_extension):
 					filepath = os.path.join(root, filename)
 					image = Image.open(filepath)
 					images.append(np.asarray(image))
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return images
 
 # Load images as numpy.array by PIL.
-def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height=None):
+def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height=None, is_recursive=False):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -60,11 +104,12 @@ def load_images_by_pil(dir_path, file_suffix, file_extension, width=None, height
 						images.append(np.asarray(image.resize((width, height), resample=Image.NEAREST)))
 					else:
 						images.append(np.asarray(image))
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return np.array(images)
 
 # Load label images as numpy.array by PIL.
-def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height=None):
+def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height=None, is_recursive=False):
 	labels = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -77,11 +122,12 @@ def load_labels_by_pil(dir_path, file_suffix, file_extension, width=None, height
 						labels.append(np.asarray(label.resize((width, height), resample=Image.NEAREST)))
 					else:
 						labels.append(np.asarray(label))
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return np.array(labels)
 
 # Load images or label images as a list by scipy.
-def load_image_list_by_scipy(dir_path, file_suffix, file_extension):
+def load_image_list_by_scipy(dir_path, file_suffix, file_extension, is_recursive=False):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -92,11 +138,12 @@ def load_image_list_by_scipy(dir_path, file_suffix, file_extension):
 					image = ndimage.imread(filepath, mode='RGB')  # RGB image.
 					#image = ndimage.imread(filepath)
 					images.append(image)
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return images
 
 # Load images as numpy.array by scipy.
-def load_images_by_scipy(dir_path, file_suffix, file_extension, width=None, height=None):
+def load_images_by_scipy(dir_path, file_suffix, file_extension, width=None, height=None, is_recursive=False):
 	images = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -110,11 +157,12 @@ def load_images_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 						images.append(misc.imresize(image, (height, width)))
 					else:
 						images.append(image)
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return np.array(images)
 
 # Load label images as numpy.array by scipy.
-def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, height=None):
+def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, height=None, is_recursive=False):
 	labels = []
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
@@ -129,7 +177,8 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 						labels.append(misc.imresize(label, (height, width), interp='nearest'))  # Do not correctly work.
 					else:
 						labels.append(label)
-			break  # Do not include subdirectories.
+			if not is_recursive:
+				break  # Do not include subdirectories.
 	return np.array(labels)
 
 #%%------------------------------------------------------------------

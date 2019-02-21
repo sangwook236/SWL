@@ -212,7 +212,7 @@ class NumpyArrayIteratorWithCrop(NumpyArrayIterator):
 			batch_y[i] = y
 		if self.save_to_dir:
 			for i in range(current_batch_size):
-				img = array_to_img(swl.image_processing.util.to_rgb(np.argmax(batch_y[i], axis=-1)), self.data_format, scale=True)
+				img = array_to_img(swl.machine_vision.util.to_rgb(np.argmax(batch_y[i], axis=-1)), self.data_format, scale=True)
 				fname = '{prefix}_{index}_{hash}.label.{format}'.format(prefix=self.save_prefix,
 						index=current_index + i,
 						hash=np.random.randint(1e4),

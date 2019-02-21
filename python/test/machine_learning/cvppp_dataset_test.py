@@ -10,8 +10,7 @@ from swl.machine_learning.cvppp_dataset import create_cvppp_generator_from_data_
 #%%------------------------------------------------------------------
 
 if 'posix' == os.name:
-	#data_home_dir_path = '/home/sangwook/my_dataset'
-	data_home_dir_path = '/home/HDD1/sangwook/my_dataset'
+	data_home_dir_path = '/home/sangwook/my_dataset'
 else:
 	data_home_dir_path = 'D:/dataset'
 
