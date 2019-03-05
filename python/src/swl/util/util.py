@@ -86,7 +86,7 @@ def load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis=0):
 
 def save_data_to_npy_files(inputs, outputs, num_files, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, batch_axis=0, start_file_index=0, mode='w'):
 	num_examples = inputs.shape[batch_axis]
-	if outputs.shape[batch_axis] != num_examples
+	if outputs.shape[batch_axis] != num_examples:
 		raise ValueError('The number of inputs is not equal to the number of outputs')
 	if num_examples <= 0:
 		raise ValueError('Invalid number of examples')

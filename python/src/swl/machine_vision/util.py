@@ -1,10 +1,11 @@
 # REF [site] >> https://github.com/fchollet/keras/issues/3338
 
-import os, re, math
+import os, re, math, csv
 import numpy as np
 from PIL import Image
 from scipy import ndimage, misc
 import cv2
+import swl.util.util as swl_util
 
 #%%------------------------------------------------------------------
 
@@ -48,10 +49,10 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 		raise ValueError('Invalid image width or height')
 
 	num_files = len(image_filepaths)
-	if (num_files <= 0 or len(labels) != num_files)
+	if num_files <= 0 or len(labels) != num_files:
 		raise ValueError('Invalid image filepaths or labels')
 
-	make_dir(save_dir_path)
+	swl_util.make_dir(save_dir_path)
 
 	with open(os.path.join(save_dir_path, npy_file_csv_filename), mode='w', encoding='UTF8', newline='') as csvfile:
 		writer = csv.writer(csvfile)
