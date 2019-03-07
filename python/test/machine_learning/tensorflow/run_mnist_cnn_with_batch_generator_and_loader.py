@@ -16,11 +16,11 @@ from imgaug import augmenters as iaa
 from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
+import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator
 from swl.machine_learning.batch_loader import NpyFileBatchLoader
-import swl.util.util as swl_util
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 from mnist_cnn_tf import MnistCnnUsingTF
 
@@ -176,8 +176,8 @@ def main():
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
-	use_multiprocessing = True
-	use_file_batch_loader = True
+	use_multiprocessing = True  # Batch generators & loaders can be used.
+	use_file_batch_loader = True  # Is not related to multiprocessing.
 
 	num_processes = 5
 	#num_batch_dirs = 5

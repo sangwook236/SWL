@@ -15,7 +15,7 @@ class BatchGenerator(abc.ABC):
 
 #%%------------------------------------------------------------------
 # FileBatchGenerator.
-#	Generates and saves batches to files.
+#	Generates batches and saves them to files.
 class FileBatchGenerator(abc.ABC):
 	def __init__(self):
 		super().__init__()
@@ -26,16 +26,17 @@ class FileBatchGenerator(abc.ABC):
 
 #%%------------------------------------------------------------------
 # SimpleBatchGenerator.
-#	Generates batches.
+#	Generates batches from numpy.array.
 class SimpleBatchGenerator(BatchGenerator):
 	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, input_filepaths=None, output_filepaths=None):
 		"""
-		inputs: Input data of type numpy.array. It can be None.
-		outputs: Output data of type numpy.array. It can be None.
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			inputs (numpy.array): Input data of type numpy.array. It can be None.
+			outputs (numpy.array): Output data of type numpy.array. It can be None.
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
@@ -86,17 +87,18 @@ class SimpleBatchGenerator(BatchGenerator):
 
 #%%------------------------------------------------------------------
 # NpyFileBatchGenerator.
-#	Generates and saves batches to npy files.
+#	Generates batches from numpy.array and saves them to npy files.
 class NpyFileBatchGenerator(FileBatchGenerator):
 	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None, input_filepaths=None, output_filepaths=None):
 		"""
-		inputs: Input data of type numpy.array. It can be None.
-		outputs: Output data of type numpy.array. It can be None.
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-			In this constructor, all data will be loaded from input and output npy files.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			inputs (numpy.array): Input data of type numpy.array. It can be None.
+			outputs (numpy.array): Output data of type numpy.array. It can be None.
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+				In this constructor, all data will be loaded from input and output npy files.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
@@ -156,16 +158,17 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 
 #%%------------------------------------------------------------------
 # NpyFileBatchGeneratorWithFileInput.
-#	Loads from npy files, generates batches and saves them to npy files.
+#	Loads data from npy files, generates their batches and saves them to npy files.
 class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 	def __init__(self, input_filepaths, output_filepaths, num_loaded_files, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
 		"""
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-			In this constructor, any data will not be loaded from input and output npy files.
-		num_loaded_files: The number of files that can be loaded at one time.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+				In this constructor, any data will not be loaded from input and output npy files.
+			num_loaded_files (int): The number of files that can be loaded at a time.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
