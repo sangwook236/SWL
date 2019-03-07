@@ -20,6 +20,10 @@ def preprocess_synth90k_dataset(inputs, outputs, *args, **kwargs):
 		#inputs = np.reshape(inputs, inputs.shape + (1,))
 
 	if outputs is not None:
+		max_label_len = 23  # Max length in lexicon.
+
+		# Label: 0~9 + a~z + A~Z.
+		#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 		# Label: 0~9 + a~z.
 		label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
 
@@ -29,20 +33,20 @@ def preprocess_synth90k_dataset(inputs, outputs, *args, **kwargs):
 		extended_label_list = list(label_characters) + [EOS]
 		#extended_label_list = list(label_characters)
 
+		#int2char = extended_label_list
+		char2int = {c:i for i, c in enumerate(extended_label_list)}
+
 		num_labels = len(extended_label_list)
 		num_classes = num_labels + 1  # extended labels + blank label.
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		blank_label = num_classes - 1
-		label_eos_token = num_classes - 2
-
-		#int2char = extended_label_list
-		char2int = {c:i for i, c in enumerate(extended_label_list)}
+		label_eos_token = char2int[EOS]
 
 		num_examples = len(outputs)
-		max_label_len = 0
-		for outp in outputs:
-			if len(outp) > max_label_len:
-				max_label_len = len(outp)
+		#max_label_len = 0
+		#for outp in outputs:
+		#	if len(outp) > max_label_len:
+		#		max_label_len = len(outp)
 
 		outputs2 = np.full((num_examples, max_label_len), label_eos_token, dtype=np.int)
 		for idx, outp in enumerate(outputs):
@@ -115,6 +119,12 @@ def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_
 		lexicon = [line.replace('\n', '') for line in fd.readlines()]
 	print('\tLexicon size =', len(lexicon))
 	print('End loading lexicon: {} secs.'.format(time.time() - start_time))
+
+	max_lexicon_len = 0
+	for lex in lexicon:
+		if len(lex) > max_lexicon_len:
+			max_lexicon_len = len(lex)
+	print('Max lexicon length =', max_lexicon_len)  # Max label length.
 
 	#--------------------
 	input_filename_format = 'input_{}.npy'

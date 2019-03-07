@@ -152,7 +152,13 @@ def main():
 	is_sparse_output = False
 	#is_time_major = False  # Fixed.
 
+	# NOTE [info] >> There are the same parameters in swl.language_processing.synth90k_dataset.preprocess_synth90k_dataset().
+
 	image_height, image_width, image_channel = 32, 128, 1
+	max_label_len = 23  # Max length in lexicon.
+
+	# Label: 0~9 + a~z + A~Z.
+	#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
 	# Label: 0~9 + a~z.
 	label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
 
@@ -162,14 +168,14 @@ def main():
 	extended_label_list = list(label_characters) + [EOS]
 	#extended_label_list = list(label_characters)
 
+	int2char = extended_label_list
+	char2int = {c:i for i, c in enumerate(extended_label_list)}
+
 	num_labels = len(extended_label_list)
 	num_classes = num_labels + 1  # extended labels + blank label.
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	blank_label = num_classes - 1
-	label_eos_token = num_classes - 2
-
-	int2char = extended_label_list
-	char2int = {c:i for i, c in enumerate(extended_label_list)}
+	label_eos_token = char2int[EOS]
 
 	batch_size = 256  # Number of samples per gradient update.
 	num_epochs = 100  # Number of times to iterate over training data.
@@ -183,9 +189,13 @@ def main():
 	use_file_batch_loader = True  # Is not related to multiprocessing.
 	num_loaded_files = 10
 
-	num_processes = 5
-	#num_batch_dirs = 5
-	#batch_dir_path_prefix = './batch_dir'
+	num_processes = 10
+	train_batch_dir_path_prefix = './train_batch_dir'
+	train_num_batch_dirs = 10
+	val_batch_dir_path_prefix = './val_batch_dir'
+	val_num_batch_dirs = 1
+	test_batch_dir_path_prefix = './test_batch_dir'
+	test_num_batch_dirs = 1
 	batch_info_csv_filename = 'batch_info.csv'
 
 	sess_config = tf.ConfigProto()
@@ -302,9 +312,7 @@ def main():
 	if does_need_training:
 		if use_multiprocessing:
 			#--------------------
-			batch_dir_path_prefix = './val_batch_dir'
-			num_batch_dirs = 1
-			valDirMgr = manager.WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			valDirMgr = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			while True:
 				val_dir_path = valDirMgr.requestDirectory()
@@ -322,9 +330,7 @@ def main():
 			#valFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 			#--------------------
-			batch_dir_path_prefix = './train_batch_dir'
-			num_batch_dirs = 5
-			trainDirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			trainDirMgr = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
 
 			#trainFileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
@@ -345,9 +351,7 @@ def main():
 			training_worker_thread.join()
 
 		#--------------------
-		batch_dir_path_prefix = './val_batch_dir'
-		num_batch_dirs = 1
-		valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+		valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 		while True:
 			val_dir_path = valDirMgr.requestDirectory()
@@ -374,9 +378,7 @@ def main():
 	#%%------------------------------------------------------------------
 	# Infers.
 
-	batch_dir_path_prefix = './test_batch_dir'
-	num_batch_dirs = 1
-	testDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+	testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, test_num_batch_dirs)
 
 	#--------------------
 	while True:

@@ -108,7 +108,7 @@ def show_image_in_npy():
 	else:
 		np_arr_list = list()
 		npy_filepaths = [
-			'./input_0.npy',
+			'./img.npy',
 		]
 		for filepath in npy_filepaths:
 			np_arr_list.append(np.load(filepath))

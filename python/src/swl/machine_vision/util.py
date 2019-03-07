@@ -73,12 +73,15 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 		npy_file_idx = 0
 		for start_idx in range(0, num_files, num_files_loaded_at_a_time):
 			inputs, valid_input_indices = load_images_from_files(image_filepaths[start_idx:start_idx+num_files_loaded_at_a_time], image_height, image_width, image_channels)
+			if valid_input_indices is None:
+				print('No valid data in npy file #{}.'.format(npy_file_idx))
+				continue
 			outputs = np.array(labels[start_idx:start_idx+num_files_loaded_at_a_time])
 
-			if valid_input_indices is None and len(valid_input_indices) != len(outputs):
+			if len(valid_input_indices) != len(outputs):
 				outputs = outputs[valid_input_indices]
 			if len(inputs) != len(outputs):
-				print('The number of inputs is not equal to the number of outputs: npy file ID =', npy_file_idx)
+				print('The number of inputs is not equal to that of outputs in npy file #{}: input size = {}, output shape = {}.'.format(npy_file_idx, inputs.shape, outputs.shape))
 				continue
 
 			if data_processing_proc:

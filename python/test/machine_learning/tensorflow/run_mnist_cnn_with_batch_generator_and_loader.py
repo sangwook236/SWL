@@ -289,9 +289,9 @@ def main():
 	if does_need_training:
 		if use_multiprocessing:
 			#--------------------
-			batch_dir_path_prefix = './val_batch_dir'
-			num_batch_dirs = 1
-			valDirMgr = manager.WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			val_batch_dir_path_prefix = './val_batch_dir'
+			val_num_batch_dirs = 1
+			valDirMgr = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			while True:
 				val_dir_path = valDirMgr.requestDirectory()
@@ -309,9 +309,9 @@ def main():
 			#valFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 			#--------------------
-			batch_dir_path_prefix = './train_batch_dir'
-			num_batch_dirs = 5
-			trainDirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			train_batch_dir_path_prefix = './train_batch_dir'
+			train_num_batch_dirs = 5
+			trainDirMgr = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
 
 			#trainFileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
@@ -346,13 +346,13 @@ def main():
 
 				training_worker_thread.join()
 		elif use_file_batch_loader:
-			batch_dir_path_prefix = './train_batch_dir'
-			num_batch_dirs = num_epochs
-			trainDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			train_batch_dir_path_prefix = './train_batch_dir'
+			train_num_batch_dirs = num_epochs
+			trainDirMgr = WorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
 
 			# TODO [improve] >> Not-so-good implementation.
 			#	Usaually training is performed for much more epochs, so too many batches have to be generated before training.
-			for _ in range(num_batch_dirs):
+			for _ in range(train_num_batch_dirs):
 				while True:
 					train_dir_path = trainDirMgr.requestDirectory()
 					if train_dir_path is not None:
@@ -366,9 +366,9 @@ def main():
 
 				trainDirMgr.returnDirectory(train_dir_path)				
 
-			batch_dir_path_prefix = './val_batch_dir'
-			num_batch_dirs = 1
-			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			val_batch_dir_path_prefix = './val_batch_dir'
+			val_num_batch_dirs = 1
+			valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			while True:
 				val_dir_path = valDirMgr.requestDirectory()
@@ -404,9 +404,9 @@ def main():
 
 		#--------------------
 		if use_file_batch_loader:
-			batch_dir_path_prefix = './val_batch_dir'
-			num_batch_dirs = 1
-			valDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+			val_batch_dir_path_prefix = './val_batch_dir'
+			val_num_batch_dirs = 1
+			valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			#--------------------
 			while True:
@@ -443,9 +443,9 @@ def main():
 	# Infers.
 
 	if use_file_batch_loader:
-		batch_dir_path_prefix = './test_batch_dir'
-		num_batch_dirs = 1
-		testDirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+		test_batch_dir_path_prefix = './test_batch_dir'
+		test_num_batch_dirs = 1
+		testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, test_num_batch_dirs)
 
 		#--------------------
 		while True:
