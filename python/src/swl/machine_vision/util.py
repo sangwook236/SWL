@@ -72,7 +72,7 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 				print('The number of inputs is not equal to the number of outputs: npy file ID =', npy_file_idx)
 				continue
 
-			if data_processing_func:
+			if data_processing_proc:
 				inputs, outputs = data_processing_proc(inputs, outputs)
 
 			input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(npy_file_idx)), os.path.join(save_dir_path, output_filename_format.format(npy_file_idx))

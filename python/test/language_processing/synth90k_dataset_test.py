@@ -16,7 +16,7 @@ def main():
 	#lexicon, train_data, val_data, test_data = synth90k_dataset.load_synth90k_dataset(data_dir_path)  # Error: out-of-memory.
 
 	base_save_dir_path = './synth90k_npy'  # base_save_dir_path/train, base_save_dir_path/val, base_save_dir_path/test.
-	image_height, image_width = 32, 128
+	image_height, image_width, image_channels = 32, 128, 1
 	num_files_loaded_at_a_time = 10000
 	synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, num_files_loaded_at_a_time)
 
