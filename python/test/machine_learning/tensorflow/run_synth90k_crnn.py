@@ -153,23 +153,23 @@ def main():
 	#is_time_major = False  # Fixed.
 
 	image_height, image_width, image_channel = 32, 128, 1
-	# Label: a~z + 0~9.
+	# Label: 0~9 + a~z.
 	label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-	#extended_label_characters = [SOS] + label_characters + [EOS]
-	extended_label_characters = label_characters + [EOS]
-	#extended_label_characters = label_characters
+	#extended_label_list = [SOS] + list(label_characters) + [EOS]
+	extended_label_list = list(label_characters) + [EOS]
+	#extended_label_list = list(label_characters)
 
-	num_labels = len(extended_label_characters)
-	num_classes = num_labels + 1  # extended_label_characters + blank label.
+	num_labels = len(extended_label_list)
+	num_classes = num_labels + 1  # extended labels + blank label.
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	blank_label = num_classes - 1
 	label_eos_token = num_classes - 2
 
-	int2char = list(extended_label_characters)
-	char2int = {c:i for i, c in enumerate(extended_label_characters)}
+	int2char = extended_label_list
+	char2int = {c:i for i, c in enumerate(extended_label_list)}
 
 	batch_size = 256  # Number of samples per gradient update.
 	num_epochs = 100  # Number of times to iterate over training data.
@@ -228,6 +228,8 @@ def main():
 
 	#--------------------
 	# Prepares data.
+
+	# NOTE [info] >> Generate synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
 
 	synth90k_base_dir_path = './synth90k_npy'
 	train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths = load_data(synth90k_base_dir_path)

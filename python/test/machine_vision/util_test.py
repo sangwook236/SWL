@@ -7,7 +7,9 @@ import os
 import numpy as np
 import cv2
 from PIL import Image
-import keras
+#import keras
+import swl.util.util as swl_util
+import swl.machine_learning.util as swl_ml_util
 import swl.machine_vision.util as swl_cv_util
 
 def load_images_test():
@@ -53,10 +55,16 @@ def load_images_test():
 
 	#--------------------
 
-	num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
-	train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
-	val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
-	test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+	if False:
+		num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
+		train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
+		val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
+		test_labels = np.uint8(keras.utils.to_categorical(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
+	else:
+		num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
+		train_labels = np.uint8(swl_ml_util.to_one_hot_encoding(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
+		val_labels = np.uint8(swl_ml_util.to_one_hot_encoding(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
+		test_labels = np.uint8(swl_ml_util.to_one_hot_encoding(test_labels, num_classes).reshape(test_labels.shape + (-1,)))
 
 	#--------------------
 	# Save a numpy.array to an npy file.
@@ -92,23 +100,42 @@ def load_images_test():
 		test_labels0 = np.load('camvid_data/test_labels.npz')
 
 def show_image_in_npy():
-	dir_path = './'
-	file_prefix = ''
-	file_suffix = ''
-	np_arr_list = swl_cv_util.load_npy_files_in_directory(dir_path, file_prefix, file_suffix)
+	if False:
+		npy_dir_path = './npy_files'
+		file_prefix = ''
+		file_suffix = ''
+		np_arr_list = swl_util.load_npy_files_in_directory(npy_dir_path, file_prefix, file_suffix)
+	else:
+		np_arr_list = list()
+		npy_filepaths = [
+			'./input_0.npy',
+		]
+		for filepath in npy_filepaths:
+			np_arr_list.append(np.load(filepath))
 
-	for arr in np_arr_list:
-		#cv2.imwrite('./img.png', arr)
-		#cv2.imshow('Image', arr)
-		#cv2.waitKey(0)
-		arr.save('./img.png')
-		arr = Image.fromarray(arr)
-		arr.show()
+	print('#loaded npy files =', len(np_arr_list))
+	for idx, arr in enumerate(np_arr_list):
+		print('#images in npy file {} = {}'.format(idx, len(arr)))
+		print('\tShape: {}, dtype: {}'.format(arr.shape, arr.dtype))
+		print('\tMin = {}, max = {}'.format(np.min(arr), np.max(arr)))
+		for img in arr:
+			#cv2.imwrite('./img.png', img)
+			cv2.imshow('Image', img)
+			key = cv2.waitKey(0)
+			if 27 == key:  # ESC.
+				break
+
+			#img.save('./img.png')
+			#img = Image.fromarray(img)
+			#img.show()
 
 	#cv2.destoryAllWindows()
 
 def main():
 	#load_images_test()
+
+	#--------------------
+	# Tool.
 
 	show_image_in_npy()
 

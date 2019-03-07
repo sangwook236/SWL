@@ -15,29 +15,28 @@ def preprocess_synth90k_dataset(inputs, outputs, *args, **kwargs):
 		#image_height, image_width, image_channel = 32, 128, 1
 
 		# Preprocessing (normalization, standardization, etc.).
-		#inputs = inputs.astype(np.float32)
-		inputs /= 255.0
+		inputs = inputs.astype(np.float32) / 255.0
 		#inputs = (inputs - np.mean(inputs, axis=axis)) / np.std(inputs, axis=axis)
 		#inputs = np.reshape(inputs, inputs.shape + (1,))
 
 	if outputs is not None:
-		# Label: a~z + 0~9.
+		# Label: 0~9 + a~z.
 		label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
 
 		SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-		#extended_label_characters = [SOS] + label_characters + [EOS]
-		extended_label_characters = label_characters + [EOS]
-		#extended_label_characters = label_characters
+		#extended_label_list = [SOS] + list(label_characters) + [EOS]
+		extended_label_list = list(label_characters) + [EOS]
+		#extended_label_list = list(label_characters)
 
-		num_labels = len(extended_label_characters)
-		num_classes = num_labels + 1  # extended_label_characters + blank label.
+		num_labels = len(extended_label_list)
+		num_classes = num_labels + 1  # extended labels + blank label.
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		blank_label = num_classes - 1
 		label_eos_token = num_classes - 2
 
-		#int2char = list(extended_label_characters)
-		char2int = {c:i for i, c in enumerate(extended_label_characters)}
+		#int2char = extended_label_list
+		char2int = {c:i for i, c in enumerate(extended_label_list)}
 
 		num_examples = len(outputs)
 		max_label_len = 0
@@ -102,7 +101,7 @@ def load_synth90k_dataset(data_dir_path):
 
 	return lexicon, train_data, val_data, test_data
 
-def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, num_files_loaded_at_a_time):
+def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time):
 	# filepath(filename: index_text_lexicon-idx) lexicon-idx.
 	all_data_filepath = data_dir_path + '/annotation.txt'  # 8,919,273 files.
 	train_data_filepath = data_dir_path + '/annotation_train.txt'  # 7,224,612 files.
@@ -139,5 +138,5 @@ def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_
 
 		print('Start saving {} data to npy files...'.format(learning_phase))
 		start_time = time.time()
-		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_proc)
+		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_proc)
 		print('End saving {} data to npy files: {} secs.'.format(learning_phase, time.time() - start_time))
