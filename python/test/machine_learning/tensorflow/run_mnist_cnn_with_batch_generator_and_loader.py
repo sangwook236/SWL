@@ -124,8 +124,8 @@ def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch
 	print('\t{}: End training worker process.'.format(os.getpid()))
 
 # REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
-#def augmentation_worker_proc(augmenter, is_output_augmented, dirMgr, fileBatchGenerator, epoch):
-def augmentation_worker_proc(augmenter, is_output_augmented, dirMgr, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
+#def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_filename, dirMgr, fileBatchGenerator, epoch):
+def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_filename, dirMgr, inputs, outputs, batch_size, shuffle, is_time_major, epoch):
 	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
 	print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
 	while True:
@@ -139,7 +139,7 @@ def augmentation_worker_proc(augmenter, is_output_augmented, dirMgr, inputs, out
 	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
-	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented)
+	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -302,7 +302,7 @@ def main():
 					time.sleep(0.1)
 			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename)
+			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
 			valDirMgr.returnDirectory(val_dir_path)				
@@ -327,7 +327,7 @@ def main():
 				timeout = None
 				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
 					training_results = pool.apply_async(training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
-					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, batch_info_csv_filename, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
 					training_results.get(timeout)
 					data_augmentation_results.get(timeout)
@@ -340,7 +340,7 @@ def main():
 				#timeout = 10
 				timeout = None
 				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, batch_info_csv_filename, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
 					data_augmentation_results.get(timeout)
 
@@ -360,7 +360,7 @@ def main():
 						time.sleep(0.1)
 				print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
-				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename)
+				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename=batch_info_csv_filename)
 				trainFileBatchGenerator.saveBatches(train_dir_path)  # Generates and saves batches.
 
 				trainDirMgr.returnDirectory(train_dir_path)				
