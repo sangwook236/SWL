@@ -155,7 +155,7 @@ def main():
 	# NOTE [info] >> There are the same parameters in swl.language_processing.synth90k_dataset.preprocess_synth90k_dataset().
 
 	image_height, image_width, image_channel = 32, 128, 1
-	max_label_len = 23  # Max length in lexicon.
+	max_label_len = 23  # Max length of words in lexicon.
 
 	# Label: 0~9 + a~z + A~Z.
 	#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -185,8 +185,8 @@ def main():
 	#augmenter = create_imgaug_augmenter()  # If imgaug augmenter is used, data are augmented in background augmentation processes. (faster)
 	is_output_augmented = False
 
-	use_multiprocessing = True  # Batch generators & loaders can be used.
-	use_file_batch_loader = True  # Is not related to multiprocessing.
+	#use_multiprocessing = True  # Fixed. Batch generators & loaders are used in case of multiprocessing.
+	#use_file_batch_loader = True  # Fixed. It is not related to multiprocessing.
 	num_loaded_files = 10
 
 	num_processes = 10
@@ -208,19 +208,18 @@ def main():
 	#--------------------
 	# Prepares multiprocessing.
 
-	if use_multiprocessing:
-		# set_start_method() should not be used more than once in the program.
-		#mp.set_start_method('spawn')
+	# set_start_method() should not be used more than once in the program.
+	#mp.set_start_method('spawn')
 
-		BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
-		BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-		BaseManager.register('NpyFileBatchGeneratorWithFileInput', NpyFileBatchGeneratorWithFileInput)
-		#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
-		manager = BaseManager()
-		manager.start()
+	BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
+	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
+	BaseManager.register('NpyFileBatchGeneratorWithFileInput', NpyFileBatchGeneratorWithFileInput)
+	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+	manager = BaseManager()
+	manager.start()
 
-		lock = mp.Lock()
-		#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
+	lock = mp.Lock()
+	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	#--------------------
 	# Prepares directories.
@@ -310,47 +309,6 @@ def main():
 	# Trains and evaluates.
 
 	if does_need_training:
-		if use_multiprocessing:
-			#--------------------
-			valDirMgr = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
-
-			while True:
-				val_dir_path = valDirMgr.requestDirectory()
-				if val_dir_path is not None:
-					break
-				else:
-					time.sleep(0.1)
-			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
-
-			valFileBatchGenerator = NpyFileBatchGeneratorWithFileInput(val_input_filepaths, val_output_filepaths, num_loaded_files, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
-			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
-
-			valDirMgr.returnDirectory(val_dir_path)				
-
-			#valFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
-
-			#--------------------
-			trainDirMgr = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
-
-			#trainFileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
-
-			#--------------------
-			# Multiprocessing (augmentation) + multithreading (training).				
-
-			training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
-			training_worker_thread.start()
-
-			#timeout = 10
-			timeout = None
-			with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-				data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr, train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
-
-				data_augmentation_results.get(timeout)
-
-			training_worker_thread.join()
-
-		#--------------------
 		valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 		while True:
@@ -361,10 +319,32 @@ def main():
 				time.sleep(0.1)
 		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-		valFileBatchGenerator = NpyFileBatchGeneratorWithFileInput(val_input_filepaths, val_output_filepaths, num_loaded_files, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+		valFileBatchGenerator = NpyFileBatchGeneratorWithFileInput(val_input_filepaths, val_output_filepaths, num_loaded_files, batch_size, False, False, batch_info_csv_filename)
 		valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
 		valDirMgr.returnDirectory(val_dir_path)				
+
+		#--------------------
+		# Multiprocessing (augmentation) + multithreading (training).				
+
+		trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
+		valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
+
+		#trainFileBatchGenerator_mp = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
+		#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
+
+		training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+		training_worker_thread.start()
+
+		#timeout = 10
+		timeout = None
+		with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+			data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+
+			data_augmentation_results.get(timeout)
+
+		training_worker_thread.join()
 
 		#--------------------
 		valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)

@@ -20,7 +20,7 @@ def preprocess_synth90k_dataset(inputs, outputs, *args, **kwargs):
 		#inputs = np.reshape(inputs, inputs.shape + (1,))
 
 	if outputs is not None:
-		max_label_len = 23  # Max length in lexicon.
+		max_label_len = 23  # Max length of words in lexicon.
 
 		# Label: 0~9 + a~z + A~Z.
 		#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -120,11 +120,14 @@ def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_
 	print('\tLexicon size =', len(lexicon))
 	print('End loading lexicon: {} secs.'.format(time.time() - start_time))
 
-	max_lexicon_len = 0
+	max_word_len_in_lexicon = 0
 	for lex in lexicon:
-		if len(lex) > max_lexicon_len:
-			max_lexicon_len = len(lex)
-	print('Max lexicon length =', max_lexicon_len)  # Max label length.
+		if len(lex) > max_word_len_in_lexicon:
+			max_word_len_in_lexicon = len(lex)
+	print('Max length of words in lexicon =', max_word_len_in_lexicon)  # Max label length.
+
+	label_characters = ''.join(sorted(set(''.join(lexicon))))
+	print('Label characeters in lexicon (count = {}) = {}.'.format(len(label_characters), label_characters))
 
 	#--------------------
 	input_filename_format = 'input_{}.npy'

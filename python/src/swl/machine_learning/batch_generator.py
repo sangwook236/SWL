@@ -186,7 +186,7 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 			outp = np.load(label_filepath)
 			if inp.shape[batch_axis] != outp.shape[batch_axis]:
 				raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
-		self._input_filepaths, self._output_filepaths = input_filepaths, output_filepaths
+		self._input_filepaths, self._output_filepaths = np.array(input_filepaths), np.array(output_filepaths)
 		self._num_loaded_files = num_loaded_files
 		self._num_files = len(self._input_filepaths)
 		self._num_file_groups = ((self._num_files - 1) // self._num_loaded_files + 1) if self._num_files > 0 else 0

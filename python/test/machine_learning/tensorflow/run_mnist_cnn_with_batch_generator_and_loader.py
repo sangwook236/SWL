@@ -176,12 +176,16 @@ def main():
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
-	use_multiprocessing = True  # Batch generators & loaders can be used.
+	use_multiprocessing = True  # Batch generators & loaders are used in case of multiprocessing.
 	use_file_batch_loader = True  # Is not related to multiprocessing.
 
 	num_processes = 5
-	#num_batch_dirs = 5
-	#batch_dir_path_prefix = './batch_dir'
+	train_batch_dir_path_prefix = './train_batch_dir'
+	#train_num_batch_dirs = 5
+	val_batch_dir_path_prefix = './val_batch_dir'
+	val_num_batch_dirs = 1
+	test_batch_dir_path_prefix = './test_batch_dir'
+	test_num_batch_dirs = 1
 	batch_info_csv_filename = 'batch_info.csv'
 
 	sess_config = tf.ConfigProto()
@@ -287,11 +291,8 @@ def main():
 	# Trains and evaluates.
 
 	if does_need_training:
-		if use_multiprocessing:
-			#--------------------
-			val_batch_dir_path_prefix = './val_batch_dir'
-			val_num_batch_dirs = 1
-			valDirMgr = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
+		if use_file_batch_loader or use_multiprocessing:
+			valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			while True:
 				val_dir_path = valDirMgr.requestDirectory()
@@ -301,20 +302,19 @@ def main():
 					time.sleep(0.1)
 			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
 			valDirMgr.returnDirectory(val_dir_path)				
 
-			#valFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
-
-			#--------------------
-			train_batch_dir_path_prefix = './train_batch_dir'
+		if use_multiprocessing:
 			train_num_batch_dirs = 5
-			trainDirMgr = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
+			trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
+			valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
-			#trainFileBatchGenerator = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-			#trainFileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+			#trainFileBatchGenerator_mp = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+			#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
+			#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
 
 			#--------------------
 			if False:
@@ -326,27 +326,26 @@ def main():
 				#timeout = 10
 				timeout = None
 				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-					training_results = pool.apply_async(training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
-					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+					training_results = pool.apply_async(training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
 					training_results.get(timeout)
 					data_augmentation_results.get(timeout)
 			else:
 				# Multiprocessing (augmentation) + multithreading (training).				
 
-				training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
+				training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
 				training_worker_thread.start()
 
 				#timeout = 10
 				timeout = None
 				with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+					data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_images, train_labels, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
 
 					data_augmentation_results.get(timeout)
 
 				training_worker_thread.join()
 		elif use_file_batch_loader:
-			train_batch_dir_path_prefix = './train_batch_dir'
 			train_num_batch_dirs = num_epochs
 			trainDirMgr = WorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
 
@@ -361,27 +360,10 @@ def main():
 						time.sleep(0.1)
 				print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
-				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename=batch_info_csv_filename)
+				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename)
 				trainFileBatchGenerator.saveBatches(train_dir_path)  # Generates and saves batches.
 
 				trainDirMgr.returnDirectory(train_dir_path)				
-
-			val_batch_dir_path_prefix = './val_batch_dir'
-			val_num_batch_dirs = 1
-			valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
-
-			while True:
-				val_dir_path = valDirMgr.requestDirectory()
-				if val_dir_path is not None:
-					break
-				else:
-					time.sleep(0.1)
-			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
-
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
-			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
-
-			valDirMgr.returnDirectory(val_dir_path)				
 
 			#--------------------
 			trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
@@ -404,25 +386,6 @@ def main():
 
 		#--------------------
 		if use_file_batch_loader:
-			val_batch_dir_path_prefix = './val_batch_dir'
-			val_num_batch_dirs = 1
-			valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
-
-			#--------------------
-			while True:
-				val_dir_path = valDirMgr.requestDirectory()
-				if val_dir_path is not None:
-					break
-				else:
-					time.sleep(0.1)
-			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
-
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
-			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
-
-			valDirMgr.returnDirectory(val_dir_path)				
-
-			#--------------------
 			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
 
 			start_time = time.time()
@@ -443,8 +406,6 @@ def main():
 	# Infers.
 
 	if use_file_batch_loader:
-		test_batch_dir_path_prefix = './test_batch_dir'
-		test_num_batch_dirs = 1
 		testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, test_num_batch_dirs)
 
 		#--------------------
