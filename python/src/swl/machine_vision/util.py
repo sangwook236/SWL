@@ -57,7 +57,7 @@ def load_images_from_files(image_filepaths, height, width, channels):
 	return np.array(images), (np.array(valid_indices, dtype=np.int) if valid_indices else None)
 	#return images, valid_indices
 
-def save_images_to_npy_files(image_filepaths, labels, image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_proc=None):
+def save_images_to_npy_files(image_filepaths, labels, image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None):
 	if image_height is None or image_width is None or image_height <= 0 or image_width <= 0:
 		raise ValueError('Invalid image width or height')
 
@@ -84,8 +84,8 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 				print('The number of inputs is not equal to that of outputs in npy file #{}: input size = {}, output shape = {}.'.format(npy_file_idx, inputs.shape, outputs.shape))
 				continue
 
-			if data_processing_proc:
-				inputs, outputs = data_processing_proc(inputs, outputs)
+			if data_processing_functor:
+				inputs, outputs = data_processing_functor(inputs, outputs)
 
 			input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(npy_file_idx)), os.path.join(save_dir_path, output_filename_format.format(npy_file_idx))
 			np.save(input_filepath, inputs)

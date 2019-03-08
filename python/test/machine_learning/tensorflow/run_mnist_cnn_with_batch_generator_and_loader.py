@@ -111,8 +111,8 @@ def initialize_lock(lock):
 def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
-	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
-	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 	#--------------------
 	start_time = time.time()
@@ -313,8 +313,8 @@ def main():
 			valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 			#trainFileBatchGenerator_mp = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-			#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
-			#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
+			#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			#--------------------
 			if False:
@@ -366,8 +366,8 @@ def main():
 				trainDirMgr.returnDirectory(train_dir_path)				
 
 			#--------------------
-			trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
-			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+			trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			start_time = time.time()
 			with train_session.as_default() as sess:
@@ -386,7 +386,7 @@ def main():
 
 		#--------------------
 		if use_file_batch_loader:
-			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			start_time = time.time()
 			with eval_session.as_default() as sess:
@@ -423,7 +423,7 @@ def main():
 		testDirMgr.returnDirectory(test_dir_path)				
 
 		#--------------------
-		testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+		testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 		start_time = time.time()
 		with infer_session.as_default() as sess:

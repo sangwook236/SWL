@@ -73,6 +73,34 @@ class ImgaugAugmenter(object):
 		else:
 			return self._augmenter.augment_images(inputs), outputs
 
+#%%------------------------------------------------------------------
+
+class Synth90kPreprocessor(object):
+	def __call__(self, inputs, outputs, *args, **kwargs):
+		"""
+		Inputs:
+			inputs (numpy.array): images of size (samples, height, width).
+			outputs (numpy.array): labels of size (samples, max_label_length).
+		Outputs:
+			inputs (numpy.array): images of size (samples, height, width, 1) and type float.
+			outputs (numpy.array): labels of size (samples, max_label_length) or (samples, max_label_length, num_labels) and type int.
+		"""
+
+		if inputs is not None:
+			# inputs' shape = (32, 128) -> (32, 128, 1).
+
+			# Preprocessing (normalization, standardization, etc.).
+			inputs = np.reshape(inputs.astype(np.float32) / 255.0, inputs.shape + (1,))
+			#inputs = (inputs - np.mean(inputs, axis=axis)) / np.std(inputs, axis=axis)
+
+		if outputs is not None:
+			if not is_sparse_output:
+				# One-hot encoding (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
+				#outputs = swl_ml_util.to_one_hot_encoding(outputs, num_classes).astype(np.int)
+				outputs = swl_ml_util.to_one_hot_encoding(outputs, num_labels).astype(np.int)
+
+		return inputs, outputs
+
 def load_data(synth90k_base_dir_path):
 	train_npy_file_csv_filepath = synth90k_base_dir_path + '/train/npy_file_info.csv'
 	val_npy_file_csv_filepath = synth90k_base_dir_path + '/val/npy_file_info.csv'
@@ -95,8 +123,8 @@ def initialize_lock(lock):
 def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
-	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
-	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
+	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
 
 	#--------------------
 	start_time = time.time()
@@ -152,7 +180,7 @@ def main():
 	is_sparse_output = False
 	#is_time_major = False  # Fixed.
 
-	# NOTE [info] >> There are the same parameters in swl.language_processing.synth90k_dataset.preprocess_synth90k_dataset().
+	# NOTE [info] >> There are the same parameters in class Synth90kLabelConverter of ${SWL_PYTHON_HOME}/test/language_processing/synth90k_dataset_test.py.
 
 	image_height, image_width, image_channel = 32, 128, 1
 	max_label_len = 23  # Max length of words in lexicon.
@@ -331,8 +359,8 @@ def main():
 		valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 		#trainFileBatchGenerator_mp = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-		#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
-		#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename)
+		#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
+		#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
 
 		training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, False))
 		training_worker_thread.start()
@@ -347,7 +375,7 @@ def main():
 		training_worker_thread.join()
 
 		#--------------------
-		valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+		valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
 
 		start_time = time.time()
 		with eval_session.as_default() as sess:
@@ -375,7 +403,7 @@ def main():
 	testDirMgr.returnDirectory(test_dir_path)				
 
 	#--------------------
-	testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename)
+	testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor())
 
 	start_time = time.time()
 	with infer_session.as_default() as sess:
