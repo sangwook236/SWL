@@ -30,11 +30,18 @@ class NpyFileBatchLoader(FileBatchLoader):
 				if not row:
 					continue
 				try:
-					batch_inputs = np.load(row[0])
-					batch_outputs = np.load(row[1])
+					batch_inputs_npzfile = np.load(row[0])
+					batch_outputs_npzfile = np.load(row[1])
 				except (IOError, ValueError) as ex:
 					continue
-				num_examples = int(row[2])
-				if self._data_processing_functor:
-					batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
-				yield batch_inputs, batch_outputs, num_examples
+				num_all_examples = int(row[2])
+
+				for ki, ko in zip(sorted(batch_inputs_npzfile.keys()), sorted(batch_outputs_npzfile.keys())):
+					if ki != ko:
+						print('Unmatched batch key name: {} != {}.'.format(ki, ko))
+						continue
+					batch_inputs, batch_outputs = batch_inputs_npzfile[ki], batch_outputs_npzfile[ko]
+					num_examples = len(batch_inputs) if len(batch_inputs) == len(batch_outputs) else -1
+					if self._data_processing_functor:
+						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
+					yield batch_inputs, batch_outputs, num_examples
