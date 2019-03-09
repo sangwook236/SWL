@@ -118,7 +118,7 @@ def simple_batch_generator_example():
 			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
 def simple_npy_file_batch_generator_and_loader_example():
-	num_examples = 100
+	num_examples = 3000
 	inputs, outputs = generate_dataset(num_examples)
 
 	num_epochs = 7
@@ -158,17 +158,20 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
+		total_sample_count = 0
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			total_sample_count += batch[2]
+		print('#examples =', total_sample_count)
 
 		dirMgr.returnDirectory(dir_path)
 
 def simple_npy_file_batch_generator_with_file_input_and_loader_example():
-	num_examples = 300
+	num_examples = 3000
 	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
@@ -210,12 +213,15 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
+		total_sample_count = 0
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			total_sample_count += batch[2]
+		print('#examples =', total_sample_count)
 
 		dirMgr.returnDirectory(dir_path)
 
