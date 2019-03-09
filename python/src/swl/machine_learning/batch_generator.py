@@ -161,6 +161,8 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 			writer = csv.writer(csvfile)
 			writer.writerow((input_filepath, output_filepath, num_saved_examples))
 
+		return num_saved_examples
+
 #%%------------------------------------------------------------------
 # NpyFileBatchGeneratorWithFileInput.
 #	Loads data from npy files, generates their batches and saves them to npy files.
@@ -219,7 +221,7 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		with open(os.path.join(dir_path, self._batch_info_csv_filename), mode='w', encoding='UTF8', newline='') as csvfile:
 			writer = csv.writer(csvfile)
 
-			file_idx = 0
+			total_saved_example_count, file_idx = 0, 0
 			for gid in range(self._num_file_groups):
 				start = gid * self._num_loaded_files
 				end = start + self._num_loaded_files
@@ -251,7 +253,11 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 								np.savez(output_filepath, **batch_outputs_dict)
 
 								writer.writerow((input_filepath, output_filepath, num_saved_examples))
+
+								total_saved_example_count += num_saved_examples
 								file_idx += 1
+
+		return total_saved_example_count
 
 	def _save_batches(self, inputs, outputs):
 		num_examples = inputs.shape[self._batch_axis]
