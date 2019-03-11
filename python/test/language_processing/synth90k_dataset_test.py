@@ -4,6 +4,7 @@ import sys
 sys.path.append('../../src')
 
 import os
+import numpy as np
 from swl.language_processing import synth90k_dataset
 
 class Synth90kLabelConverter(object):
@@ -25,7 +26,7 @@ class Synth90kLabelConverter(object):
 		self._char2int = {c:i for i, c in enumerate(extended_label_list)}
 
 		self._num_labels = len(extended_label_list)
-		self._num_classes = self._num_labels + 1  # extended labels + blank label.
+		self._num_classes = self._num_labels + 1  # Extended labels + blank label.
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._blank_label = self._num_classes - 1
 		self._label_eos_token = self._char2int[EOS]
@@ -33,15 +34,15 @@ class Synth90kLabelConverter(object):
 	def __call__(self, inputs, outputs, *args, **kwargs):
 		"""
 		Inputs:
-			inputs (numpy.array): images of size (samples, height, width).
+			inputs (numpy.array): images of size (samples, height, width) and type uint8.
 			outputs (numpy.array of strings): labels made up of digits (0~9) & alphabet (a~z) of size (samples,).
 		Outputs:
 			inputs (numpy.array): unchanged.
-			outputs (numpy.array): labels of size (samples, max_label_length) and type int.
+			outputs (numpy.array): labels of size (samples, max_label_length) and type uint8.
 		"""
 
 		if inputs is not None:
-			#image_height, image_width, image_channel = 32, 128, 1
+			# inputs' shape = (samples, image_height, image_width) = (?, 32, 128).
 
 			# Preprocessing (normalization, standardization, etc.).
 			#inputs = inputs.astype(np.float32) / 255.0
@@ -56,17 +57,17 @@ class Synth90kLabelConverter(object):
 			#	if len(outp) > self._max_label_len:
 			#		self._max_label_len = len(outp)
 
-			outputs2 = np.full((num_examples, self._max_label_len), self._label_eos_token, dtype=np.int)
+			outputs2 = np.full((num_examples, self._max_label_len), self._label_eos_token, dtype=np.uint8)
 			for idx, outp in enumerate(outputs):
 				outputs2[idx,:len(outp)] = [self._char2int[ch] for ch in outp]
 
 			# One-hot encoding (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
-			#outputs2 = swl_ml_util.to_one_hot_encoding(outputs2, self._num_classes).astype(np.int)
-			#outputs2 = swl_ml_util.to_one_hot_encoding(outputs2, self._num_labels).astype(np.int)
-		else:
-			outputs2 = outputs
+			#outputs2 = swl_ml_util.to_one_hot_encoding(outputs2, self._num_classes).astype(np.uint8)
+			#outputs2 = swl_ml_util.to_one_hot_encoding(outputs2, self._num_labels).astype(np.uint8)  # Error.
 
-		return inputs, outputs2
+			outputs = outputs2
+
+		return inputs, outputs
 
 def main():
 	if 'posix' == os.name:
@@ -80,7 +81,7 @@ def main():
 	#--------------------
 	base_save_dir_path = './synth90k_npy'  # base_save_dir_path/train, base_save_dir_path/val, base_save_dir_path/test.
 	image_height, image_width, image_channels = 32, 128, 1
-	num_files_loaded_at_a_time = 10000
+	num_files_loaded_at_a_time = 50000
 	input_filename_format = 'input_{}.npy'
 	output_filename_format = 'output_{}.npy'
 	npy_file_csv_filename = 'npy_file_info.csv'
