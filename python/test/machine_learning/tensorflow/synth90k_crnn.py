@@ -145,8 +145,6 @@ class Synth90kCrnn(abc.ABC):
 			outputs = tf.reshape(conv5, shape=[-1, conv5_shape[1], conv5_shape[2] * conv5_shape[3]], name='reshape')
 			outputs = tf.layers.dense(outputs, 64, activation=tf.nn.relu, kernel_initializer=tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal'), name='dense')
 
-			print('*************** 1', outputs.shape)
-
 			return outputs
 
 	def _create_recurrent_layer(self, inputs):
@@ -180,15 +178,11 @@ class Synth90kCrnn(abc.ABC):
 			#rnn_states2 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states2[0].c, rnn_states2[1].c), axis=-1), tf.concat((rnn_states2[0].h, rnn_states2[1].h), axis=-1))
 			#rnn_states2 = tf.layers.batch_normalization(rnn_states2, axis=-1, name='batchnorm')
 
-			print('*************** 2', rnn_outputs2.shape)
-
 			return rnn_outputs2
 
 	def _create_transcription_layer(self, inputs, num_classes):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal'), name='dense')
 		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal'), activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
-
-		print('*************** 3', outputs.shape)
 
 		return outputs
 

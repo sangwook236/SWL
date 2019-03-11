@@ -95,8 +95,6 @@ class Synth90kPreprocessor(object):
 			outputs (numpy.array or a tuple): labels of size (samples, max_label_length, num_labels) and type uint8 when is_sparse_output = False. A tuple with (indices, values, shape) for a sparse tensor when is_sparse_output = True.
 		"""
 
-		print('+++++++++++++++++++iii', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
-
 		if inputs is not None:
 			# inputs' shape = (32, 128) -> (32, 128, 1).
 
@@ -112,11 +110,6 @@ class Synth90kPreprocessor(object):
 				# One-hot encoding: (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
 				outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)
 				#outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)  # Error.
-
-		if self._is_sparse_output:
-			print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs[2])
-		else:
-			print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
 
 		return inputs, outputs
 
@@ -170,12 +163,9 @@ def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_file
 	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
-	print('******************** 111')
 	fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-	print('******************** 222')
 	num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 	print('\t{}: #saved examples = {}.'.format(os.getpid(), num_saved_examples))
-	print('******************** 333')
 
 	#--------------------
 	with global_lock:
@@ -201,7 +191,7 @@ def main():
 	initial_epoch = 0
 
 	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
-	is_sparse_output = True
+	is_sparse_output = True  # Fixed.
 	#is_time_major = False  # Fixed.
 
 	# NOTE [info] >> Places with the same parameters.
