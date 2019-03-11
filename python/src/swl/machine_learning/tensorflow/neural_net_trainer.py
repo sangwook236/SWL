@@ -47,6 +47,7 @@ class NeuralNetTrainer(object):
 		train_loss, train_acc = None, None
 		if train_data.size > 0 and (is_sparse_label or train_labels.size > 0):  # If train_data and train_labels are non-empty.
 			if self._augmenter is not None:
+				# FIXME [fix] >> May not work correctly when using sparse label.
 				train_data, train_labels = self._augmenter(train_data, train_labels, self._is_output_augmented)
 
 			#summary = self._merged_summary.eval(session=session, feed_dict=self._neuralNet.get_feed_dict(train_data, train_labels, is_training=True))

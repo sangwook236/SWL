@@ -83,6 +83,7 @@ class Synth90kPreprocessor(object):
 		self._num_labels = 37  # 0~9 + a~z + <EOS>.
 		#self._num_labels = 38  # <SOS> + 0~9 + a~z + <EOS>.
 		self._num_classes = self._num_labels + 1  # blank label.
+		self._label_eos_token = self._num_classes - 2
 
 	def __call__(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -91,7 +92,7 @@ class Synth90kPreprocessor(object):
 			outputs (numpy.array): labels of size (samples, max_label_length) and type uint8.
 		Outputs:
 			inputs (numpy.array): images of size (samples, height, width, 1) and type float32.
-			outputs (numpy.array): labels of size (samples, max_label_length) or (samples, max_label_length, num_labels) and type uint8.
+			outputs (numpy.array or a tuple): labels of size (samples, max_label_length, num_labels) and type uint8 when is_sparse_output = False. A tuple with (indices, values, shape) for a sparse tensor when is_sparse_output = True.
 		"""
 
 		print('+++++++++++++++++++iii', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
@@ -104,12 +105,18 @@ class Synth90kPreprocessor(object):
 			#inputs = (inputs - np.mean(inputs, axis=axis)) / np.std(inputs, axis=axis)
 
 		if outputs is not None:
-			if not self._is_sparse_output:
+			if self._is_sparse_output:
+				# Sparse tensor: (num_examples, max_label_len) -> A tuple with (indices, values, shape) for a sparse tensor.
+				outputs = swl_ml_util.generate_sparse_tuple_from_numpy_array(outputs, self._label_eos_token, np.uint8)
+			else:
 				# One-hot encoding: (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
 				outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)
 				#outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)  # Error.
 
-		print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
+		if self._is_sparse_output:
+			print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs[2])
+		else:
+			print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
 
 		return inputs, outputs
 
