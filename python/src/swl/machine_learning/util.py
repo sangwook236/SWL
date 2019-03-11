@@ -5,7 +5,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 def to_one_hot_encoding(label_indexes, num_classes=None):
-	if None == num_classes:
+	if num_classes is None:
 		num_classes = np.max(label_indexes) + 1
 	elif num_classes <= np.max(label_indexes):
 		raise ValueError('num_classes has to be greater than np.max(label_indexes)')

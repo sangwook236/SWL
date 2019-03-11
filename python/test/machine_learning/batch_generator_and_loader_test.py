@@ -118,7 +118,7 @@ def simple_batch_generator_example():
 			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
 
 def simple_npy_file_batch_generator_and_loader_example():
-	num_examples = 100
+	num_examples = 3000
 	inputs, outputs = generate_dataset(num_examples)
 
 	num_epochs = 7
@@ -151,24 +151,29 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 		#fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major)
 		fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-		fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
+		num_loaded_examples = 0
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			num_loaded_examples += batch[2]
+
+		print('#saved examples =', num_saved_examples)
+		print('#loaded examples =', num_loaded_examples)
 
 		dirMgr.returnDirectory(dir_path)
 
 def simple_npy_file_batch_generator_with_file_input_and_loader_example():
-	num_examples = 300
+	num_examples = 3000
 	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
@@ -203,19 +208,24 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 		#fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
 		fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-		fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
+		num_loaded_examples = 0
 		for idx, batch in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
 			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
 			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			num_loaded_examples += batch[2]
+
+		print('#saved examples =', num_saved_examples)
+		print('#loaded examples =', num_loaded_examples)
 
 		dirMgr.returnDirectory(dir_path)
 

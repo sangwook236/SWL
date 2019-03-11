@@ -1,4 +1,4 @@
-import os, abc, csv
+import os, abc, math, csv
 import numpy as np
 
 #%%------------------------------------------------------------------
@@ -15,7 +15,7 @@ class BatchGenerator(abc.ABC):
 
 #%%------------------------------------------------------------------
 # FileBatchGenerator.
-#	Generates and saves batches to files.
+#	Generates batches and saves them to files.
 class FileBatchGenerator(abc.ABC):
 	def __init__(self):
 		super().__init__()
@@ -26,16 +26,17 @@ class FileBatchGenerator(abc.ABC):
 
 #%%------------------------------------------------------------------
 # SimpleBatchGenerator.
-#	Generates batches.
+#	Generates batches from numpy.array.
 class SimpleBatchGenerator(BatchGenerator):
 	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, input_filepaths=None, output_filepaths=None):
 		"""
-		inputs: Input data of type numpy.array. It can be None.
-		outputs: Output data of type numpy.array. It can be None.
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			inputs (numpy.array): Input data of type numpy.array. It can be None.
+			outputs (numpy.array): Output data of type numpy.array. It can be None.
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
@@ -86,17 +87,18 @@ class SimpleBatchGenerator(BatchGenerator):
 
 #%%------------------------------------------------------------------
 # NpyFileBatchGenerator.
-#	Generates and saves batches to npy files.
+#	Generates batches from numpy.array and saves them to npy files.
 class NpyFileBatchGenerator(FileBatchGenerator):
-	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None, input_filepaths=None, output_filepaths=None):
+	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename=None, batch_output_filename=None, batch_info_csv_filename=None, input_filepaths=None, output_filepaths=None):
 		"""
-		inputs: Input data of type numpy.array. It can be None.
-		outputs: Output data of type numpy.array. It can be None.
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-			In this constructor, all data will be loaded from input and output npy files.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			inputs (numpy.array): Input data of type numpy.array. It can be None.
+			outputs (numpy.array): Output data of type numpy.array. It can be None.
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+				In this constructor, all data will be loaded from input and output npy files.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
@@ -121,8 +123,8 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 		self._augmenter = augmenter
 		self._is_output_augmented = is_output_augmented
 
-		self._batch_input_filename_format = 'batch_input_{}.npy' if batch_input_filename_format is None else batch_input_filename_format
-		self._batch_output_filename_format = 'batch_output_{}.npy' if batch_output_filename_format is None else batch_output_filename_format
+		self._batch_input_filename = 'batch_input.npz' if batch_input_filename is None else batch_input_filename
+		self._batch_output_filename = 'batch_output.npz' if batch_output_filename is None else batch_output_filename
 		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
 
 		self._num_examples = self._inputs.shape[batch_axis]
@@ -136,36 +138,44 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 		if self._shuffle:
 			np.random.shuffle(indices)
 
+		batch_inputs_dict, batch_outputs_dict = dict(), dict()
+		num_saved_examples = 0
+		for step in range(self._num_steps):
+			start = step * self._batch_size
+			end = start + self._batch_size
+			batch_indices = indices[start:end]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				batch_inputs, batch_outputs = self._inputs[batch_indices], self._outputs[batch_indices]
+				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
+					if self._augmenter is not None:
+						batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
+					batch_name = 'batch_{}'.format(step)
+					batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_inputs, batch_outputs
+					num_saved_examples += len(batch_indices)
+		input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename), os.path.join(dir_path, self._batch_output_filename)
+		np.savez(input_filepath, **batch_inputs_dict)
+		np.savez(output_filepath, **batch_outputs_dict)
+
 		with open(os.path.join(dir_path, self._batch_info_csv_filename), 'w', encoding='UTF8', newline='') as csvfile:
 			writer = csv.writer(csvfile)
+			writer.writerow((input_filepath, output_filepath, num_saved_examples))
 
-			for step in range(self._num_steps):
-				start = step * self._batch_size
-				end = start + self._batch_size
-				batch_indices = indices[start:end]
-				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					# FIXME [fix] >> Does not work correctly in time-major data.
-					batch_inputs, batch_outputs = self._inputs[batch_indices], self._outputs[batch_indices]
-					if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
-						if self._augmenter is not None:
-							batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
-						input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename_format.format(step)), os.path.join(dir_path, self._batch_output_filename_format.format(step))
-						np.save(input_filepath, batch_inputs)
-						np.save(output_filepath, batch_outputs)
-						writer.writerow((input_filepath, output_filepath, len(batch_indices)))
+		return num_saved_examples
 
 #%%------------------------------------------------------------------
 # NpyFileBatchGeneratorWithFileInput.
-#	Loads from npy files, generates batches and saves them to npy files.
+#	Loads data from npy files, generates their batches and saves them to npy files.
 class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 	def __init__(self, input_filepaths, output_filepaths, num_loaded_files, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
 		"""
-		input_filepaths: A list of input npy files.
-		output_filepaths: A list of output npy files.
-			In this constructor, any data will not be loaded from input and output npy files.
-		num_loaded_files: The number of files that can be loaded at one time.
-		augmenter:
-			inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
+		Inputs:
+			input_filepaths (a list of strings): A list of input npy files.
+			output_filepaths (a list of strings): A list of output npy files.
+				In this constructor, any data will not be loaded from input and output npy files.
+			num_loaded_files (int): The number of files that can be loaded at a time.
+			augmenter (object):
+				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
 
 		super().__init__()
@@ -178,12 +188,15 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 			raise ValueError('input_filepaths or output_filepaths will not be None')
 		if len(input_filepaths) != len(output_filepaths):
 			raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
+		"""
+		# TODO [enhance] >> When there are many files, this part is too slow.
 		for image_filepath, label_filepath in zip(input_filepaths, output_filepaths):
 			inp = np.load(image_filepath)
 			outp = np.load(label_filepath)
 			if inp.shape[batch_axis] != outp.shape[batch_axis]:
 				raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
-		self._input_filepaths, self._output_filepaths = input_filepaths, output_filepaths
+		"""
+		self._input_filepaths, self._output_filepaths = np.array(input_filepaths), np.array(output_filepaths)
 		self._num_loaded_files = num_loaded_files
 		self._num_files = len(self._input_filepaths)
 		self._num_file_groups = ((self._num_files - 1) // self._num_loaded_files + 1) if self._num_files > 0 else 0
@@ -196,8 +209,8 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		self._augmenter = augmenter
 		self._is_output_augmented = is_output_augmented
 
-		self._batch_input_filename_format = 'batch_input_{}.npy' if batch_input_filename_format is None else batch_input_filename_format
-		self._batch_output_filename_format = 'batch_output_{}.npy' if batch_output_filename_format is None else batch_output_filename_format
+		self._batch_input_filename_format = 'batch_input_{}.npz' if batch_input_filename_format is None else batch_input_filename_format
+		self._batch_output_filename_format = 'batch_output_{}.npz' if batch_output_filename_format is None else batch_output_filename_format
 		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
 
 	def saveBatches(self, dir_path, *args, **kwargs):
@@ -205,50 +218,71 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		if self._shuffle:
 			np.random.shuffle(file_indices)
 
-		start_file_index = 0
-		for gid in range(self._num_file_groups):
-			start = gid * self._num_loaded_files
-			end = start + self._num_loaded_files
-			sub_file_indices = file_indices[start:end]
-			if sub_file_indices.size > 0:  # If sub_file_indices is non-empty.
-				sub_input_filepaths = self._input_filepaths[sub_file_indices]
-				sub_output_filepaths = self._output_filepaths[sub_file_indices]
-				if sub_input_filepaths.size > 0 and sub_output_filepaths.size > 0:  # If sub_input_filepaths and sub_output_filepaths are non-empty.
-					inputs, outputs = NpyFileBatchGeneratorWithFileInput._load_data(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
-					num_generated_files = self._save_batches(dir_path, inputs, outputs, start_file_index, 'w' if 0 == gid else 'a')
-					start_file_index += num_generated_files
+		with open(os.path.join(dir_path, self._batch_info_csv_filename), mode='w', encoding='UTF8', newline='') as csvfile:
+			writer = csv.writer(csvfile)
 
-	def _save_batches(self, dir_path, inputs, outputs, start_file_index, mode):
+			total_saved_example_count, file_idx = 0, 0
+			for gid in range(self._num_file_groups):
+				start = gid * self._num_loaded_files
+				end = start + self._num_loaded_files
+				sub_file_indices = file_indices[start:end]
+				if sub_file_indices.size > 0:  # If sub_file_indices is non-empty.
+					sub_input_filepaths, sub_output_filepaths = self._input_filepaths[sub_file_indices], self._output_filepaths[sub_file_indices]
+					if sub_input_filepaths.size > 0 and sub_output_filepaths.size > 0:  # If sub_input_filepaths and sub_output_filepaths are non-empty.
+						inputs, outputs = NpyFileBatchGeneratorWithFileInput._load_data(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
+						
+						num_examples_in_a_group = inputs.shape[self._batch_axis]
+						if num_examples_in_a_group <= 0:
+							raise ValueError('Invalid number of examples')
+
+						example_indices = np.arange(num_examples_in_a_group)
+						if self._shuffle:
+							np.random.shuffle(example_indices)
+
+						num_examples_in_a_file = math.ceil(num_examples_in_a_group / sub_file_indices.size)
+						for idx in range(sub_file_indices.size):
+							sub_example_indices = example_indices[(num_examples_in_a_file * idx):(num_examples_in_a_file * (idx + 1))]
+							if sub_example_indices.size > 0:  # If sub_example_indices is non-empty.
+								# FIXME [fix] >> Does not work correctly in time-major data.
+								sub_inputs, sub_outputs = inputs[sub_example_indices], outputs[sub_example_indices]
+
+								batch_inputs_dict, batch_outputs_dict, num_saved_examples = self._save_batches(sub_inputs, sub_outputs)
+
+								input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename_format.format(file_idx)), os.path.join(dir_path, self._batch_output_filename_format.format(file_idx))
+								np.savez(input_filepath, **batch_inputs_dict)
+								np.savez(output_filepath, **batch_outputs_dict)
+
+								writer.writerow((input_filepath, output_filepath, num_saved_examples))
+
+								total_saved_example_count += num_saved_examples
+								file_idx += 1
+
+		return total_saved_example_count
+
+	def _save_batches(self, inputs, outputs):
 		num_examples = inputs.shape[self._batch_axis]
 		if num_examples <= 0:
 			raise ValueError('Invalid number of examples')
+
 		num_steps = ((num_examples - 1) // self._batch_size + 1) if num_examples > 0 else 0
 		if num_steps <= 0:
 			raise ValueError('Invalid number of steps')
 
-		indices = np.arange(num_examples)
-		if self._shuffle:
-			np.random.shuffle(indices)
+		batch_inputs_dict, batch_outputs_dict = dict(), dict()
+		num_saved_examples = 0
+		for step in range(num_steps):
+			start = step * self._batch_size
+			end = start + self._batch_size
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			batch_inputs, batch_outputs = inputs[start:end], outputs[start:end]
+			if batch_inputs.size > 0 and batch_outputs.size > 0 and len(batch_inputs) == len(batch_outputs):  # If batch_inputs and batch_outputs are non-empty.
+				if self._augmenter is not None:
+					batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
+				batch_name = 'batch_{}'.format(step)
+				batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_inputs, batch_outputs
+				num_saved_examples += len(batch_inputs)
 
-		with open(os.path.join(dir_path, self._batch_info_csv_filename), mode=mode, encoding='UTF8', newline='') as csvfile:
-			writer = csv.writer(csvfile)
-
-			for step in range(num_steps):
-				start = step * self._batch_size
-				end = start + self._batch_size
-				batch_indices = indices[start:end]
-				if batch_indices.size > 0:  # If batch_indices is non-empty.
-					# FIXME [fix] >> Does not work correctly in time-major data.
-					batch_inputs, batch_outputs = inputs[batch_indices], outputs[batch_indices]
-					if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
-						if self._augmenter is not None:
-							batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
-						input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename_format.format(start_file_index + step)), os.path.join(dir_path, self._batch_output_filename_format.format(start_file_index + step))
-						np.save(input_filepath, batch_inputs)
-						np.save(output_filepath, batch_outputs)
-						writer.writerow((input_filepath, output_filepath, len(batch_indices)))
-
-		return num_steps
+		return batch_inputs_dict, batch_outputs_dict, num_saved_examples
 
 	@staticmethod
 	def _load_data(input_filepaths, output_filepaths, batch_axis):

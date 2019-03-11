@@ -48,7 +48,7 @@ def load_synth90k_dataset(data_dir_path):
 
 	return lexicon, train_data, val_data, test_data
 
-def save_synth90k_to_npy_files(data_dir_path, base_save_dir_path):
+def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor):
 	# filepath(filename: index_text_lexicon-idx) lexicon-idx.
 	all_data_filepath = data_dir_path + '/annotation.txt'  # 8,919,273 files.
 	train_data_filepath = data_dir_path + '/annotation_train.txt'  # 7,224,612 files.
@@ -63,14 +63,16 @@ def save_synth90k_to_npy_files(data_dir_path, base_save_dir_path):
 	print('\tLexicon size =', len(lexicon))
 	print('End loading lexicon: {} secs.'.format(time.time() - start_time))
 
+	max_word_len_in_lexicon = 0
+	for lex in lexicon:
+		if len(lex) > max_word_len_in_lexicon:
+			max_word_len_in_lexicon = len(lex)
+	print('Max length of words in lexicon =', max_word_len_in_lexicon)  # Max label length.
+
+	label_characters = ''.join(sorted(set(''.join(lexicon))))
+	print('Label characeters in lexicon (count = {}) = {}.'.format(len(label_characters), label_characters))
+
 	#--------------------
-	image_height, image_width = 32, 128
-	num_files_loaded_at_a_time = 100000
-
-	input_filename_format = 'input_{}.npy'
-	output_filename_format = 'output_{}.npy'
-	npy_file_csv_filename = 'npy_file_info.csv'
-
 	learning_info_list = [('train', train_data_filepath), ('val', val_data_filepath), ('test', test_data_filepath)]
 
 	for learning_phase, data_filepath in learning_info_list:
@@ -87,5 +89,5 @@ def save_synth90k_to_npy_files(data_dir_path, base_save_dir_path):
 
 		print('Start saving {} data to npy files...'.format(learning_phase))
 		start_time = time.time()
-		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename)
+		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor)
 		print('End saving {} data to npy files: {} secs.'.format(learning_phase, time.time() - start_time))

@@ -9,6 +9,10 @@ sys.path.append('../../../src')
 
 #--------------------
 import os, time, datetime
+from functools import partial
+import multiprocessing as mp
+from multiprocessing.managers import BaseManager
+import threading
 import numpy as np
 import tensorflow as tf
 #import imgaug as ia
@@ -19,6 +23,9 @@ from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferre
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGeneratorWithFileInput
+from swl.machine_learning.batch_loader import NpyFileBatchLoader
+from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
 
 #%%------------------------------------------------------------------
@@ -66,38 +73,108 @@ class ImgaugAugmenter(object):
 		else:
 			return self._augmenter.augment_images(inputs), outputs
 
-def preprocess_data(data, labels, num_classes, axis=0):
-	if data is not None:
-		# Preprocessing (normalization, standardization, etc.).
-		#data = data.astype(np.float32)
-		#data /= 255.0
-		#data = (data - np.mean(data, axis=axis)) / np.std(data, axis=axis)
-		#data = np.reshape(data, data.shape + (1,))
-		pass
+#%%------------------------------------------------------------------
 
-	if labels is not None:
-		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
-		pass
+class Synth90kPreprocessor(object):
+	def __init__(self, is_sparse_output):
+		self._is_sparse_output = is_sparse_output
 
-	return data, labels
+		#self._num_labels = 36  # 0~9 + a~z.
+		self._num_labels = 37  # 0~9 + a~z + <EOS>.
+		#self._num_labels = 38  # <SOS> + 0~9 + a~z + <EOS>.
+		self._num_classes = self._num_labels + 1  # blank label.
 
-def load_data(image_shape):
-	# Pixel value: [0, 255].
-	(train_images, train_labels), (test_images, test_labels) = tf.keras.datasets.mnist.load_data()
+	def __call__(self, inputs, outputs, *args, **kwargs):
+		"""
+		Inputs:
+			inputs (numpy.array): images of size (samples, height, width) and type uint8.
+			outputs (numpy.array): labels of size (samples, max_label_length) and type uint8.
+		Outputs:
+			inputs (numpy.array): images of size (samples, height, width, 1) and type float32.
+			outputs (numpy.array): labels of size (samples, max_label_length) or (samples, max_label_length, num_labels) and type uint8.
+		"""
 
-	train_images = train_images / 255.0
-	train_images = np.reshape(train_images, (-1,) + image_shape)
-	train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.uint8)
-	test_images = test_images / 255.0
-	test_images = np.reshape(test_images, (-1,) + image_shape)
-	test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.uint8)
+		print('+++++++++++++++++++iii', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
 
-	# Pre-process.
-	#train_images, train_labels = preprocess_data(train_images, train_labels, num_classes)
-	#test_images, test_labels = preprocess_data(test_images, test_labels, num_classes)
+		if inputs is not None:
+			# inputs' shape = (32, 128) -> (32, 128, 1).
 
-	return train_images, train_labels, test_images, test_labels
+			# Preprocessing (normalization, standardization, etc.).
+			inputs = np.reshape(inputs.astype(np.float32) / 255.0, inputs.shape + (1,))
+			#inputs = (inputs - np.mean(inputs, axis=axis)) / np.std(inputs, axis=axis)
+
+		if outputs is not None:
+			if not self._is_sparse_output:
+				# One-hot encoding: (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
+				outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)
+				#outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)  # Error.
+
+		print('+++++++++++++++++++ooo', inputs.shape, inputs.dtype, outputs.shape, outputs.dtype)
+
+		return inputs, outputs
+
+def load_data(synth90k_base_dir_path):
+	train_npy_file_csv_filepath = synth90k_base_dir_path + '/train/npy_file_info.csv'
+	val_npy_file_csv_filepath = synth90k_base_dir_path + '/val/npy_file_info.csv'
+	test_npy_file_csv_filepath = synth90k_base_dir_path + '/test/npy_file_info.csv'
+
+	train_input_filepaths, train_output_filepaths, train_example_counts = swl_util.load_filepaths_from_npy_file_info(train_npy_file_csv_filepath)
+	val_input_filepaths, val_output_filepaths, val_example_counts = swl_util.load_filepaths_from_npy_file_info(val_npy_file_csv_filepath)
+	test_input_filepaths, test_output_filepaths, test_example_counts = swl_util.load_filepaths_from_npy_file_info(test_npy_file_csv_filepath)
+
+	return train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths
+
+#%%------------------------------------------------------------------
+
+def initialize_lock(lock):
+	global global_lock
+	global_lock = lock
+
+# REF [function] >> training_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
+#def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, trainFileBatchLoader, valFileBatchLoader, num_epochs):
+def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
+	print('\t{}: Start training worker process.'.format(os.getpid()))
+
+	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
+	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
+
+	#--------------------
+	start_time = time.time()
+	with train_session.as_default() as sess:
+		with sess.graph.as_default():
+			swl_tf_util.train_neural_net_by_file_batch_loader(sess, nnTrainer, trainFileBatchLoader, valFileBatchLoader, trainDirMgr, valDirMgr, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output)
+	print('\tTotal training time = {}'.format(time.time() - start_time))
+
+	print('\t{}: End training worker process.'.format(os.getpid()))
+
+# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
+#def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_filename, dirMgr, fileBatchGenerator, epoch):
+def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_filename, dirMgr, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, epoch):
+	print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
+	print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
+	while True:
+		with global_lock:
+			dir_path = dirMgr.requestDirectory(is_workable=False)
+
+		if dir_path is not None:
+			break
+		else:
+			time.sleep(0.1)
+	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
+
+	#--------------------
+	print('******************** 111')
+	fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	print('******************** 222')
+	num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+	print('\t{}: #saved examples = {}.'.format(os.getpid(), num_saved_examples))
+	print('******************** 333')
+
+	#--------------------
+	with global_lock:
+		dirMgr.returnDirectory(dir_path)
+	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
+	print('\t{}: End augmentation worker process.'.format(os.getpid()))
 
 #%%------------------------------------------------------------------
 
@@ -110,35 +187,64 @@ def main():
 	does_need_training = True
 	does_resume_training = False
 
-	output_dir_prefix = 'mnist_cnn'
+	output_dir_prefix = 'synth90k_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180302T155710'
 
 	initial_epoch = 0
 
-	is_sparse_output = False
+	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
+	is_sparse_output = True
 	#is_time_major = False  # Fixed.
 
-	image_height, image_width, image_channel = 64, 128, 1
-	num_labels = 2350  # KS X 1001.
-	if False:
-		# num_labels + space label + blank label.
-		num_classes = num_labels + 1 + 1
-		space_label = num_classes - 2
-	else:
-		# num_labels + blank label.
-		num_classes = num_labels + 1
+	# NOTE [info] >> Places with the same parameters.
+	#	class Synth90kLabelConverter in ${SWL_PYTHON_HOME}/test/language_processing/synth90k_dataset_test.py.
+	#	class Synth90kPreprocessor.
+
+	image_height, image_width, image_channel = 32, 128, 1
+	max_label_len = 23  # Max length of words in lexicon.
+
+	# Label: 0~9 + a~z + A~Z.
+	#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+	# Label: 0~9 + a~z.
+	label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
+
+	SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+	EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+	#extended_label_list = [SOS] + list(label_characters) + [EOS]
+	extended_label_list = list(label_characters) + [EOS]
+	#extended_label_list = list(label_characters)
+
+	int2char = extended_label_list
+	char2int = {c:i for i, c in enumerate(extended_label_list)}
+
+	num_labels = len(extended_label_list)
+	num_classes = num_labels + 1  # extended labels + blank label.
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	blank_label = num_classes - 1
-	label_eos_token = -1
+	label_eos_token = char2int[EOS]
+	#label_eos_token = blank_label
 
-	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
+	batch_size = 256  # Number of samples per gradient update.
+	num_epochs = 100  # Number of times to iterate over training data.
 	shuffle = True
 
 	augmenter = ImgaugAugmenter()
 	#augmenter = create_imgaug_augmenter()  # If imgaug augmenter is used, data are augmented in background augmentation processes. (faster)
 	is_output_augmented = False
+
+	#use_multiprocessing = True  # Fixed. Batch generators & loaders are used in case of multiprocessing.
+	#use_file_batch_loader = True  # Fixed. It is not related to multiprocessing.
+	num_loaded_files_at_a_time = 5
+
+	num_processes = 5
+	train_batch_dir_path_prefix = './train_batch_dir'
+	train_num_batch_dirs = 10
+	val_batch_dir_path_prefix = './val_batch_dir'
+	val_num_batch_dirs = 1
+	test_batch_dir_path_prefix = './test_batch_dir'
+	test_num_batch_dirs = 1
+	batch_info_csv_filename = 'batch_info.csv'
 
 	sess_config = tf.ConfigProto()
 	#sess_config.device_count = {'GPU': 2}
@@ -146,6 +252,22 @@ def main():
 	sess_config.log_device_placement = True
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+	#--------------------
+	# Prepares multiprocessing.
+
+	# set_start_method() should not be used more than once in the program.
+	#mp.set_start_method('spawn')
+
+	BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
+	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
+	BaseManager.register('NpyFileBatchGeneratorWithFileInput', NpyFileBatchGeneratorWithFileInput)
+	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+	manager = BaseManager()
+	manager.start()
+
+	lock = mp.Lock()
+	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	#--------------------
 	# Prepares directories.
@@ -164,21 +286,10 @@ def main():
 	#--------------------
 	# Prepares data.
 
-	if 'posix' == os.name:
-		data_home_dir_path = '/home/sangwook/my_dataset'
-	else:
-		data_home_dir_path = 'D:/dataset'
-	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
+	# NOTE [info] >> Generate synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
 
-	# filepath (filename: index_text_lexicon-idx) lexicon-idx.
-	data_filepath_list = data_dir_path + '/annotation.txt'  # 8,919,273 files.
-	train_data_filepath_list = data_dir_path + '/annotation_train.txt'  # 7,224,612 files.
-	val_data_filepath_list = data_dir_path + '/annotation_val.txt'  # 802,734 files.
-	test_data_filepath_list = data_dir_path + '/annotation_test.txt'  # 891,927 files.
-	lexicon_filepath_list = data_dir_path + '/lexicon.txt'  # 88,172 words.
-
-	#train_images, train_labels, test_images, test_labels = load_data(input_shape[1:])
-	train_images, train_labels, test_images, test_labels = None, None, None, None
+	synth90k_base_dir_path = './synth90k_npy'
+	train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths = load_data(synth90k_base_dir_path)
 
 	#--------------------
 	# Creates models, sessions, and graphs.
@@ -198,7 +309,7 @@ def main():
 			modelForTraining.create_training_model()
 
 			# Creates a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
+			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
 
 			# Creates a saver.
 			#	Saves a model every 2 hours and maximum 5 latest models are saved.
@@ -246,33 +357,85 @@ def main():
 	# Trains and evaluates.
 
 	if does_need_training:
-		start_time = time.time()
-		with train_session.as_default() as sess:
-			with sess.graph.as_default():
-				#K.set_session(sess)
-				#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
-				swl_tf_util.train_neural_net(sess, nnTrainer, train_images, train_labels, test_images, test_labels, batch_size, num_epochs, shuffle, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path)
-		print('\tTotal training time = {}'.format(time.time() - start_time))
+		valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
+
+		print('\tWaiting for a validation batch directory...')
+		while True:
+			val_dir_path = valDirMgr.requestDirectory()
+			if val_dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
+
+		valFileBatchGenerator = NpyFileBatchGeneratorWithFileInput(val_input_filepaths, val_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+		num_saved_examples  = valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
+		print('\t#saved examples = {}.'.format(num_saved_examples))
+
+		valDirMgr.returnDirectory(val_dir_path)				
+
+		#--------------------
+		# Multiprocessing (augmentation) + multithreading (training).				
+
+		trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
+		valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
+
+		#trainFileBatchGenerator_mp = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
+		#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
+
+		training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, is_sparse_output))
+		training_worker_thread.start()
+
+		#timeout = 10
+		timeout = None
+		with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
+			data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, augmenter, is_output_augmented, batch_info_csv_filename, trainDirMgr_mp, train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False), [epoch for epoch in range(num_epochs)])
+
+			data_augmentation_results.get(timeout)
+
+		training_worker_thread.join()
+
+		#--------------------
+		valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
 
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				#K.set_session(sess)
-				#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
-				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
+				swl_tf_util.evaluate_neural_net_by_file_batch_loader(sess, nnEvaluator, valFileBatchLoader, valDirMgr, eval_saver, checkpoint_dir_path, False, False)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infers.
 
+	testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, test_num_batch_dirs)
+
+	#--------------------
+	print('\tWaiting for a test batch directory...')
+	while True:
+		test_dir_path = testDirMgr.requestDirectory()
+		if test_dir_path is not None:
+			break
+		else:
+			time.sleep(0.1)
+	print('\tGot a test batch directory: {}.'.format(test_dir_path))
+
+	testFileBatchGenerator = NpyFileBatchGeneratorWithFileInput(test_input_filepaths, test_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+	num_saved_examples = testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
+	print('\t#saved examples = {}.'.format(num_saved_examples))
+
+	testDirMgr.returnDirectory(test_dir_path)				
+
+	#--------------------
+	testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
+
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			#K.set_session(sess)
-			#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
-			inferences = swl_tf_util.infer_by_neural_net(sess, nnInferrer, test_images, batch_size, infer_saver, checkpoint_dir_path)
+			inferences = swl_tf_util.infer_by_neural_net_and_file_batch_loader(sess, nnInferrer, testFileBatchLoader, testDirMgr, infer_saver, checkpoint_dir_path, False)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
+	#--------------------
 	if inferences is not None:
 		if num_classes >= 2:
 			inferences = np.argmax(inferences, -1)

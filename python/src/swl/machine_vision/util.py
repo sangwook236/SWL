@@ -31,20 +31,33 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
 
 #%%------------------------------------------------------------------
 
-def load_images_from_files(image_filepaths, height, width):
-	images = list()
-	for filepath in image_filepaths:
-		img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+def load_images_from_files(image_filepaths, height, width, channels):
+	images, valid_indices = list(), list()
+	for idx, filepath in enumerate(image_filepaths):
+		if 'grayscale' == channels or 1 == channels:
+			img = cv2.imread(filepath, cv2.IMREAD_GRAYSCALE)
+		elif 'RGB' == channels or 'BGR' == channels or 3 == channels:
+			img = cv2.imread(filepath, cv2.IMREAD_COLOR)
+		else:
+			img = cv2.imread(filepath, cv2.IMREAD_UNCHANGED)
+		#try:
+		#	img = Image.open(filepath)
+		#except IOError as ex:
+		#	print('Failed to load an image:', filepath)
+		#	continue
+		#img = np.asarray(img, dtype=np.uint8)
+
 		if img is None:
-			print('Failed to load file:', filepath)
+			print('Failed to load an image:', filepath)
 			continue
 		if img.shape[0] != height or img.shape[1] != width:
-			img = cv2.resize(img, dsize=(height, width), interpolation=cv2.INTER_LINEAR)
+			img = cv2.resize(img, dsize=(width, height), interpolation=cv2.INTER_LINEAR)
 		images.append(img)
-	return np.array(images)
-	#return images
+		valid_indices.append(idx)
+	return np.array(images), (np.array(valid_indices, dtype=np.int) if valid_indices else None)
+	#return images, valid_indices
 
-def save_images_to_npy_files(image_filepaths, labels, image_height, image_width, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename):
+def save_images_to_npy_files(image_filepaths, labels, image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None):
 	if image_height is None or image_width is None or image_height <= 0 or image_width <= 0:
 		raise ValueError('Invalid image width or height')
 
@@ -59,11 +72,20 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 
 		npy_file_idx = 0
 		for start_idx in range(0, num_files, num_files_loaded_at_a_time):
-			inputs = load_images_from_files(image_filepaths[start_idx:start_idx+num_files_loaded_at_a_time], image_height, image_width)
-			outputs = labels[start_idx:start_idx+num_files_loaded_at_a_time]
-			if len(inputs) != len(outputs):
-				print('The number of inputs is not equal to the number of outputs:', npy_file_idx)
+			inputs, valid_input_indices = load_images_from_files(image_filepaths[start_idx:start_idx+num_files_loaded_at_a_time], image_height, image_width, image_channels)
+			if valid_input_indices is None:
+				print('No valid data in npy file #{}.'.format(npy_file_idx))
 				continue
+			outputs = np.array(labels[start_idx:start_idx+num_files_loaded_at_a_time])
+
+			if len(valid_input_indices) != len(outputs):
+				outputs = outputs[valid_input_indices]
+			if len(inputs) != len(outputs):
+				print('The number of inputs is not equal to that of outputs in npy file #{}: input size = {}, output shape = {}.'.format(npy_file_idx, inputs.shape, outputs.shape))
+				continue
+
+			if data_processing_functor:
+				inputs, outputs = data_processing_functor(inputs, outputs)
 
 			input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(npy_file_idx)), os.path.join(save_dir_path, output_filename_format.format(npy_file_idx))
 			np.save(input_filepath, inputs)

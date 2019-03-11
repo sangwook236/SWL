@@ -147,6 +147,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch {}/{}'.format(epoch, num_epochs))
 
+		print('\tWaiting for a train batch directory...')
 		while True:
 			train_dir_path = trainDirMgr.requestDirectory()
 			if train_dir_path is not None:
@@ -155,6 +156,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 				time.sleep(0.1)
 		print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
+		print('\tWaiting for a validation batch directory...')
 		while True:
 			val_dir_path = valDirMgr.requestDirectory()
 			if val_dir_path is not None:
@@ -389,6 +391,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 	for epoch in range(1, num_epochs + 1):
 		print('Epoch {}/{}'.format(epoch, num_epochs))
 
+		print('\tWaiting for a train batch directory...')
 		while True:
 			train_dir_path = trainDirMgr.requestAvailableDirectory()
 			if train_dir_path is not None:
@@ -397,6 +400,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 				time.sleep(0.1)
 		print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
+		print('\tWaiting for a validation batch directory...')
 		while True:
 			val_dir_path = valDirMgr.requestAvailableDirectory()
 			if val_dir_path is not None:
@@ -816,6 +820,7 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
+	print('\tWaiting for a validation batch directory...')
 	while True:
 		val_dir_path = valDirMgr.requestDirectory()
 		if val_dir_path is not None:
@@ -896,6 +901,7 @@ def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatch
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
+	print('\tWaiting for a validation batch directory...')
 	dir_path = dirMgr.requestAvailableDirectory()
 	if dir_path is None:
 		print('[SWL] Error: No available directory.')
@@ -1069,6 +1075,7 @@ def infer_by_neural_net_and_file_batch_loader(session, nnInferrer, testFileBatch
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
+	print('\tWaiting for an inference batch directory...')
 	while True:
 		inf_dir_path = testDirMgr.requestDirectory()
 		if inf_dir_path is not None:
@@ -1134,6 +1141,7 @@ def infer_by_neural_net_and_file_batch_manager(session, nnInferrer, testFileBatc
 		#saver.restore(session, tf.train.latest_checkpoint(checkpoint_dir_path))
 		print('[SWL] Info: Loaded a model.')
 
+	print('\tWaiting for an inference batch directory...')
 	dir_path = dirMgr.requestAvailableDirectory()
 	if dir_path is None:
 		print('[SWL] Error: No available directory.')

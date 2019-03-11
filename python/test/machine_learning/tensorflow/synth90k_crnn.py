@@ -60,7 +60,6 @@ class Synth90kCrnn(abc.ABC):
 
 	def create_training_model(self):
 		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._num_classes, True)
-		print('++++++++++++++++++++++', self._model_output.shape[1], model_output_lens.shape)
 
 		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
@@ -203,7 +202,7 @@ class Synth90kCrnn(abc.ABC):
 class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		input_tensor_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_tensor_ph')
-		output_tensor_ph = tf.placeholder(tf.int32, shape=[None, num_classes], name='output_tensor_ph')
+		output_tensor_ph = tf.placeholder(tf.int32, shape=[None, None, num_classes], name='output_tensor_ph')
 		batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		super().__init__(input_tensor_ph, output_tensor_ph, batch_size_ph, image_height, image_width, image_channel, num_classes)
@@ -219,7 +218,7 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 
 	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			masks = tf.sequence_mask(seq_lens, tf.reduce_max(seq_lens), dtype=tf.bool)
+			masks = tf.sequence_mask(seq_lens, tf.reduce_max(seq_lens), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
 			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
