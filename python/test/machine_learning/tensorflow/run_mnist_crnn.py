@@ -2,7 +2,7 @@
 
 #--------------------
 import sys
-sys.path.append('../../src')
+sys.path.append('../../../src')
 
 import os, time, datetime, math, random
 import numpy as np
@@ -249,7 +249,7 @@ def main():
 	initial_epoch = 0
 
 	is_time_major = False  # Fixed.
-	is_sparse_label = False
+	is_sparse_label = True
 	if is_sparse_label:
 		use_batch_list = True  # Fixed.
 	else:
