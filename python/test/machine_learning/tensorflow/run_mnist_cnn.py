@@ -156,7 +156,10 @@ def main():
 
 	train_device_name = '/device:GPU:1'
 	eval_device_name = '/device:GPU:1'
-	infer_device_name = '/device:GPU:1'
+	# NOTE [info] >> Cannot assign a device for operation save/SaveV2: Could not satisfy explicit device specification '/device:GPU:1' because no supported kernel for GPU devices is available.
+	#	Errors occur in tf_cnnvis library when a GPU is assigned.
+	#infer_device_name = '/device:GPU:1'
+	infer_device_name = '/device:CPU:0'
 
 	#--------------------
 	# Prepares directories.

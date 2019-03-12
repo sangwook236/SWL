@@ -43,77 +43,19 @@ def make_dir(dir_path):
 			if os.errno.EEXIST != ex.errno:
 				raise
 
-def list_files_in_directory(dir_path, file_suffix, file_extension, is_recursive=False):
+def list_files_in_directory(dir_path, file_prefix, file_suffix, file_extension, is_recursive=False):
 	filepaths = list()
 	if dir_path is not None:
 		for root, dirnames, filenames in os.walk(dir_path):
 			filenames.sort()
 			for filename in filenames:
-				if re.search(file_suffix + '\.' + file_extension + '$', filename):
+				if re.search('^' + file_prefix, filename) and re.search(file_suffix + '\.' + file_extension + '$', filename):
 					filepaths.append(os.path.join(root, filename))
 			if not is_recursive:
 				break  # Do not include subdirectories.
 	return filepaths
 
 #%%------------------------------------------------------------------
-
-def load_npy_files_in_directory(dir_path, file_prefix, file_suffix):
-	file_extension = 'npy'
-	arr_list = list()
-	if dir_path is not None:
-		for root, dirnames, filenames in os.walk(dir_path):
-			filenames.sort()
-			for filename in filenames:
-				if re.search('^' + file_prefix, filename) and re.search(file_suffix + '\.' + file_extension + '$', filename):
-					filepath = os.path.join(root, filename)
-					arr = np.load(filepath)
-					arr_list.append(arr)
-			break  # Do not include subdirectories.
-	return arr_list
-
-def load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis=0):
-	if len(input_filepaths) != len(output_filepaths):
-		raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
-	inputs, outputs = None, None
-	for image_filepath, label_filepath in zip(input_filepaths, output_filepaths):
-		inp = np.load(image_filepath)
-		outp = np.load(label_filepath)
-		if inp.shape[batch_axis] != outp.shape[batch_axis]:
-			raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
-		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
-		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
-	return inputs, outputs
-
-def save_data_to_npy_files(inputs, outputs, num_files, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, batch_axis=0, start_file_index=0, mode='w'):
-	num_examples = inputs.shape[batch_axis]
-	if outputs.shape[batch_axis] != num_examples:
-		raise ValueError('The number of inputs is not equal to the number of outputs')
-	if num_examples <= 0:
-		raise ValueError('Invalid number of examples')
-	num_examples_in_a_file = ((num_examples - 1) // num_files + 1) if num_examples > 0 else 0
-	if num_examples_in_a_file <= 0:
-		raise ValueError('Invalid number of examples in a file')
-
-	make_dir(save_dir_path)
-
-	indices = np.arange(num_examples)
-	np.random.shuffle(indices)
-
-	with open(os.path.join(save_dir_path, npy_file_csv_filename), mode=mode, encoding='UTF8', newline='') as csvfile:
-		writer = csv.writer(csvfile)
-
-		for file_step in range(num_files):
-			start = file_step * num_examples_in_a_file
-			end = start + num_examples_in_a_file
-			data_indices = indices[start:end]
-			if data_indices.size > 0:  # If data_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				sub_inputs, sub_outputs = inputs[data_indices], outputs[data_indices]
-				if sub_inputs.size > 0 and sub_outputs.size > 0:  # If sub_inputs and sub_outputs are non-empty.
-					input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(start_file_index + file_step)), os.path.join(save_dir_path, output_filename_format.format(start_file_index + file_step))
-					np.save(input_filepath, sub_inputs)
-					np.save(output_filepath, sub_outputs)
-					writer.writerow((input_filepath, output_filepath, len(data_indices)))
 
 def load_filepaths_from_npy_file_info(npy_file_csv_filepath):
 	input_filepaths, output_filepaths, example_counts = list(), list(), list()
@@ -128,14 +70,66 @@ def load_filepaths_from_npy_file_info(npy_file_csv_filepath):
 			example_counts.append(int(row[2]))
 	return input_filepaths, output_filepaths, example_counts
 
+def load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis=0):
+	if len(input_filepaths) != len(output_filepaths):
+		raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
+	inputs, outputs = None, None
+	for image_filepath, label_filepath in zip(input_filepaths, output_filepaths):
+		inp, outp = np.load(image_filepath), np.load(label_filepath)
+		if inp.shape[batch_axis] != outp.shape[batch_axis]:
+			raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
+		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
+		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
+	return inputs, outputs
+
+def save_data_to_npy_files(inputs, outputs, save_dir_path, num_files, input_filename_format, output_filename_format, npy_file_csv_filename, batch_axis=0, start_file_index=0, mode='w', shuffle=True):
+	num_examples = inputs.shape[batch_axis]
+	if outputs.shape[batch_axis] != num_examples:
+		raise ValueError('The number of inputs is not equal to the number of outputs')
+	if num_examples <= 0:
+		raise ValueError('Invalid number of examples')
+	num_examples_in_a_file = ((num_examples - 1) // num_files + 1) if num_examples > 0 else 0
+	if num_examples_in_a_file <= 0:
+		raise ValueError('Invalid number of examples in a file')
+
+	make_dir(save_dir_path)
+
+	indices = np.arange(num_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	input_filepaths, output_filepaths, data_lens = list(), list(), list()
+	for file_step in range(num_files):
+		start = file_step * num_examples_in_a_file
+		end = start + num_examples_in_a_file
+		data_indices = indices[start:end]
+		if data_indices.size > 0:  # If data_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			sub_inputs, sub_outputs = inputs[data_indices], outputs[data_indices]
+			if sub_inputs.size > 0 and sub_outputs.size > 0:  # If sub_inputs and sub_outputs are non-empty.
+				input_filepath, output_filepath = os.path.join(save_dir_path, input_filename_format.format(start_file_index + file_step)), os.path.join(save_dir_path, output_filename_format.format(start_file_index + file_step))
+				np.save(input_filepath, sub_inputs)
+				np.save(output_filepath, sub_outputs)
+				input_filepaths.append(input_filepath)
+				output_filepaths.append(output_filepath)
+				data_lens.append(len(data_indices))
+
+	with open(os.path.join(save_dir_path, npy_file_csv_filename), mode=mode, encoding='UTF8', newline='') as csvfile:
+		writer = csv.writer(csvfile)
+		for input_filepath, output_filepath, data_len in zip(input_filepaths, output_filepaths, data_lens):
+			writer.writerow((input_filepath, output_filepath, data_len))
+
+	return input_filepaths, output_filepaths, data_lens
+
 def shuffle_data_in_npy_files(input_filepaths, output_filepaths, num_files_loaded_at_a_time, num_shuffles, tmp_dir_path_prefix=None, shuffle_input_filename_format=None, shuffle_output_filename_format=None, shuffle_info_csv_filename=None, is_time_major=False):
 	"""
-	input_filepaths: A list of input npy files.
-	output_filepaths: A list of output npy files.
-	num_shuffles: The number of shuffles to run.
-	num_files_loaded_at_a_time: The number of files that can be loaded at a time.
-	tmp_dir_path_prefix: A prefix for temporary directoy paths where shuffled data are saved.
-	is_time_major: Data is time-major or batch-major.
+	Inputs:
+		input_filepaths (a list of strings): A list of input npy files.
+		output_filepaths (a list of strings): A list of output npy files.
+		num_shuffles (int): The number of shuffles to run.
+		num_files_loaded_at_a_time (int): The number of files that can be loaded at a time.
+		tmp_dir_path_prefix (string): A prefix for temporary directoy paths where shuffled data are saved.
+		is_time_major (bool): Data is time-major or batch-major.
 	"""
 	
 	batch_axis = 1 if is_time_major else 0
@@ -174,3 +168,58 @@ def shuffle_data_in_npy_files(input_filepaths, output_filepaths, num_files_loade
 					start_file_index += num_files_loaded_at_a_time
 		input_filepaths, output_filepaths, _ = load_filepaths_from_npy_file_info(os.path.join(save_dir_path, shuffle_info_csv_filename))
 		input_filepaths, output_filepaths = np.array(input_filepaths), np.array(output_filepaths)
+
+#%%------------------------------------------------------------------
+
+def load_data_from_npz_file(npz_filepath, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
+	npzfile = np.load(npz_filepath)
+
+	input_keys = [key for key in npzfile.keys() if input_name_format.format('') in key]
+	output_keys = [key for key in npzfile.keys() if output_name_format.format('') in key]
+	#input_keys = sorted([key for key in npzfile.keys() if input_name_format.format('') in key])
+	#output_keys = sorted([key for key in npzfile.keys() if output_name_format.format('') in key])
+	if len(input_keys) != len(output_keys):
+		raise ValueError('The numbers of inputs and outputs are different: {} != {}.'.format(len(input_keys), len(output_keys)))
+
+	inputs, outputs = None, None
+	for ink, outk in zip(input_keys, output_keys):
+		inp, outp = npzfile[ink], npzfile[outk]
+		if inp.shape[batch_axis] != outp.shape[batch_axis]:
+			raise ValueError("Unmatched shapes of input '{}' and output '{}'".format(ink, outk))
+		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
+		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
+	return inputs, outputs
+
+def save_data_to_npz_file(inputs, outputs, npz_filepath, num_examples_in_a_file, shuffle=True, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
+	if num_examples_in_a_file <= 0:
+		raise ValueError('Invalid number of examples in a file')
+	num_examples = inputs.shape[batch_axis]
+	if outputs.shape[batch_axis] != num_examples:
+		raise ValueError('The number of inputs is not equal to the number of outputs')
+	if num_examples <= 0:
+		raise ValueError('Invalid number of examples')
+
+	indices = np.arange(num_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	dataset = dict()
+	sub_idx, start_idx = 0, 0
+	while True:
+		end_idx = start_idx + num_examples_in_a_file
+		data_indices = indices[start_idx:end_idx]
+		if data_indices.size > 0:  # If data_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			sub_inputs, sub_outputs = inputs[data_indices], outputs[data_indices]
+			if sub_inputs.size > 0 and sub_outputs.size > 0:  # If sub_inputs and sub_outputs are non-empty.
+				dataset[input_name_format.format(sub_idx)], dataset[output_name_format.format(sub_idx)] = sub_inputs, sub_outputs
+				sub_idx += 1
+
+		if end_idx >= num_examples:
+			break;
+		start_idx = end_idx
+			
+	np.savez(npz_filepath, **dataset)
+
+def load_filepaths_from_npz_file_info(npy_file_csv_filepath):
+	return load_filepaths_from_npy_file_info(npy_file_csv_filepath)
