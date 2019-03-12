@@ -170,7 +170,7 @@ def main():
 	output_shape = (None, num_classes)
 
 	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
+	num_epochs = 30  # Number of times to iterate over training data.
 	shuffle = True
 
 	augmenter = ImgaugAugmenter()

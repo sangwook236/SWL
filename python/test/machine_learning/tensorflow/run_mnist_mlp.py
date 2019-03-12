@@ -96,18 +96,23 @@ def main():
 	output_shape = (None, num_classes)
 
 	batch_size = 128  # Number of samples per gradient update.
-	num_epochs = 20  # Number of times to iterate over training data.
+	num_epochs = 30  # Number of times to iterate over training data.
 	shuffle = True
 
 	augmenter = None
 	is_output_augmented = False
 
-	sess_config = tf.ConfigProto()
-	#sess_config = tf.ConfigProto(device_count={'GPU': 2})
-	#sess_config.allow_soft_placement = True
+	#sess_config = tf.ConfigProto()
+	sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = 0,-1,2.
+	sess_config.allow_soft_placement = True
 	sess_config.log_device_placement = True
+	#sess_config.operation_timeout_in_ms = 50000
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
+
+	train_device_name = '/device:GPU:1'
+	eval_device_name = '/device:GPU:1'
+	infer_device_name = '/device:GPU:1'
 
 	#--------------------
 	# Prepares directories.
@@ -139,46 +144,49 @@ def main():
 
 	if does_need_training:
 		with train_graph.as_default():
-			#K.set_learning_phase(1)  # Sets the learning phase to 'train'. (Required)
+			with tf.device(train_device_name):
+				#K.set_learning_phase(1)  # Sets the learning phase to 'train'. (Required)
 
-			# Creates a model.
-			modelForTraining = create_mnist_mlp(input_shape, output_shape)
-			modelForTraining.create_training_model()
+				# Creates a model.
+				modelForTraining = create_mnist_mlp(input_shape, output_shape)
+				modelForTraining.create_training_model()
 
-			# Creates a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
+				# Creates a trainer.
+				nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch, augmenter, is_output_augmented)
 
-			# Creates a saver.
-			#	Saves a model every 2 hours and maximum 5 latest models are saved.
-			train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+				# Creates a saver.
+				#	Saves a model every 2 hours and maximum 5 latest models are saved.
+				train_saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-			initializer = tf.global_variables_initializer()
+				initializer = tf.global_variables_initializer()
 
 		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
+
+				# Creates a model.
+				modelForEvaluation = create_mnist_mlp(input_shape, output_shape)
+				modelForEvaluation.create_evaluation_model()
+
+				# Creates an evaluator.
+				nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
+
+				# Creates a saver.
+				eval_saver = tf.train.Saver()
+
+	with infer_graph.as_default():
+		with tf.device(infer_device_name):
 			#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
 
 			# Creates a model.
-			modelForEvaluation = create_mnist_mlp(input_shape, output_shape)
-			modelForEvaluation.create_evaluation_model()
+			modelForInference = create_mnist_mlp(input_shape, output_shape)
+			modelForInference.create_inference_model()
 
-			# Creates an evaluator.
-			nnEvaluator = NeuralNetEvaluator(modelForEvaluation)
+			# Creates an inferrer.
+			nnInferrer = NeuralNetInferrer(modelForInference)
 
 			# Creates a saver.
-			eval_saver = tf.train.Saver()
-
-	with infer_graph.as_default():
-		#K.set_learning_phase(0)  # Sets the learning phase to 'test'. (Required)
-
-		# Creates a model.
-		modelForInference = create_mnist_mlp(input_shape, output_shape)
-		modelForInference.create_inference_model()
-
-		# Creates an inferrer.
-		nnInferrer = NeuralNetInferrer(modelForInference)
-
-		# Creates a saver.
-		infer_saver = tf.train.Saver()
+			infer_saver = tf.train.Saver()
 
 	# Creates sessions.
 	if does_need_training:
