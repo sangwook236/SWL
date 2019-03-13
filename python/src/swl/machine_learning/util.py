@@ -32,13 +32,18 @@ def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop
 #%%------------------------------------------------------------------
 
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
-def generate_sparse_tuple_from_sequences(sequences, dtype=np.int32):
-	"""Create a sparse representention of x.
-	Args:
-		sequences: A list of lists of type dtype where each element is a sequence.
-	Returns:
-		A tuple with (indices, values, shape).
+def sequences_to_sparse(sequences, dtype=np.int32):
+	"""Change a list of sequences to a sparse representention.
+	Inputs:
+		sequences(a list of lists): A list of lists of type dtype where each element is a sequence.
+		dtype (numpy.dtype): A data type.
+	Output:
+		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
+			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			values (numpy.array): The values of non-zero elements in a dense tensor.
+			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
+
 	indices = []
 	values = []
 
@@ -52,22 +57,31 @@ def generate_sparse_tuple_from_sequences(sequences, dtype=np.int32):
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
+# For backwards compatibility.
+def generate_sparse_tuple_from_sequences(sequences, dtype=np.int32):
+	return sequences_to_sparse(sequences, dtype)
+
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
-def generate_sparse_tuple_from_numpy_array(np_arr, eos_token=0, dtype=np.int32):
-	"""Create a sparse representention of x.
-	Args:
-		np_arr: A numpy array of type dtype.
-		eos_token: An integer. It is part of the target label that signifies the end of a sentence.
+def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
+	"""Change a dense tensor to a sparse representention.
+	Inputs:
+		np_arr (numpy.array): A numpy array of type dtype.
+		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
+		dtype (numpy.dtype): A data type.
 	Returns:
-		A tuple with (indices, values, shape).
+		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
+			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			values (numpy.array): The values of non-zero elements in a dense tensor.
+			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
+
 	indices = []
 	values = []
 
 	for n, subarr in enumerate(np_arr):
-		eos_indices = np.where(subarr == eos_token)[0]
-		if 0 != eos_indices.size:
-			subarr = subarr[:eos_indices[0]]
+		default_indices = np.where(subarr == default_value)[0]
+		if 0 != default_indices.size:
+			subarr = subarr[:default_indices[0]]
 		indices.extend(zip([n] * len(subarr), range(len(subarr))))
 		values.extend(subarr)
 
@@ -76,6 +90,28 @@ def generate_sparse_tuple_from_numpy_array(np_arr, eos_token=0, dtype=np.int32):
 	dense_shape = np.asarray([len(np_arr), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
+
+# For backwards compatibility.
+def generate_sparse_tuple_from_numpy_array(np_arr, default_value=0, dtype=np.int32):
+	return dense_to_sparse(np_arr, default_value, dtype)
+
+def sparse_to_dense(indices, values, dense_shape, default_value=0, dtype=np.int32):
+	"""Change a sparse representation of a tensor to a dense tensor.
+	Inputs:
+		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
+			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			values (numpy.array): The values of non-zero elements in a dense tensor.
+			dense_shape (numpy.array): The shape of a dense tensor.
+		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
+		dtype (numpy.dtype): A data type.
+	Returns:
+		A dense tensor (numpy.array): A numpy array of type dtype.
+	"""
+
+	dense = np.full(dense_shape, default_value, dtype=dtype)
+	where_indices = tuple([indices[:,idx] for idx in range(indices.shape[1])])
+	dense[where_indices] = values
+	return dense
 
 def generate_batch_list(data, labels, batch_size, shuffle=True, is_time_major=False, is_sparse_label=False, eos_token=0):
 	batch_axis = 1 if is_time_major else 0
@@ -99,7 +135,7 @@ def generate_batch_list(data, labels, batch_size, shuffle=True, is_time_major=Fa
 			batch_indices = indices[start:end]
 			if batch_indices.size > 0:  # If batch_indices is non-empty.
 				data_batch_list.append(data[batch_indices])
-				label_batch_list.append(generate_sparse_tuple_from_numpy_array(labels[batch_indices], eos_token=eos_token) if is_sparse_label else labels[batch_indices])
+				label_batch_list.append(dense_to_sparse(labels[batch_indices], default_value=eos_token) if is_sparse_label else labels[batch_indices])
 
 	return data_batch_list, label_batch_list
 
