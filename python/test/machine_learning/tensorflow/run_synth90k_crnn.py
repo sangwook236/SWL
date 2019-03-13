@@ -17,7 +17,7 @@ import numpy as np
 import tensorflow as tf
 #import imgaug as ia
 from imgaug import augmenters as iaa
-from swl.machine_learning.tensorflow.simple_neural_net_trainer import SimpleNeuralNetTrainer
+from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
 import swl.util.util as swl_util
@@ -35,6 +35,22 @@ def create_synth90k_crnn(image_height, image_width, image_channel, num_classes, 
 		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes, label_eos_token)
 	else:
 		return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+
+#%%------------------------------------------------------------------
+
+class SimpleCrnnTrainer(NeuralNetTrainer):
+	def __init__(self, neuralNet, initial_epoch=0):
+		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
+		with tf.name_scope('learning_rate'):
+			learning_rate = 1.0
+			tf.summary.scalar('learning_rate', learning_rate)
+		with tf.name_scope('optimizer'):
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			#optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+			optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-08)
+
+		super().__init__(neuralNet, optimizer, global_step)
 
 #%%------------------------------------------------------------------
 
@@ -284,6 +300,7 @@ def main():
 	# Prepares data.
 
 	# NOTE [info] >> Generate synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
+	#	Refer to ${SWL_PYTHON_HOME}/test/language_processing/synth90k_dataset_test.py.
 
 	synth90k_base_dir_path = './synth90k_npy'
 	train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths = load_data(synth90k_base_dir_path)
@@ -306,7 +323,7 @@ def main():
 			modelForTraining.create_training_model()
 
 			# Creates a trainer.
-			nnTrainer = SimpleNeuralNetTrainer(modelForTraining, initial_epoch)
+			nnTrainer = SimpleCrnnTrainer(modelForTraining, initial_epoch)
 
 			# Creates a saver.
 			#	Saves a model every 2 hours and maximum 5 latest models are saved.

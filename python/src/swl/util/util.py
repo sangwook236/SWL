@@ -55,6 +55,19 @@ def list_files_in_directory(dir_path, file_prefix, file_suffix, file_extension, 
 				break  # Do not include subdirectories.
 	return filepaths
 
+def extract_subset_of_data(data, subset_ratio):
+	"""
+	Inputs:
+		data (numpy.array): Data.
+		subset_ratio (float): The ratio of subset of data. 0.0 < subset_ratio <= 1.0.
+	"""
+
+	num_data = len(data)
+	num_sub_data = math.ceil(num_data * subset_ratio)
+	indices = np.arange(num_data)
+	np.random.shuffle(indices)
+	return data[indices[:num_sub_data]]
+
 #%%------------------------------------------------------------------
 
 def load_filepaths_from_npy_file_info(npy_file_csv_filepath):

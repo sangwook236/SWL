@@ -76,7 +76,11 @@ def main():
 		data_home_dir_path = 'D:/dataset'
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 
-	#lexicon, train_data, val_data, test_data = synth90k_dataset.load_synth90k_dataset(data_dir_path)  # Error: out-of-memory.
+	#subset_ratio = None  # Error: Out-of-memory.
+	subset_ratio = 0.1
+	lexicon, train_data, val_data, test_data = synth90k_dataset.load_synth90k_dataset(data_dir_path, subset_ratio)
+	print('#lexicon = {}.'.format(lexicon))
+	print('#train data = {}, #val data = {}, #test data = {}.'.format(train_data, val_data, test_data))
 
 	#--------------------
 	base_save_dir_path = './synth90k_npy'  # base_save_dir_path/train, base_save_dir_path/val, base_save_dir_path/test.
@@ -87,7 +91,9 @@ def main():
 	npy_file_csv_filename = 'npy_file_info.csv'
 	data_processing_functor = Synth90kLabelConverter()
 
-	synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor)
+	subset_ratio = None
+	#subset_ratio = 0.1
+	#synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio)
 
 #%%------------------------------------------------------------------
 
