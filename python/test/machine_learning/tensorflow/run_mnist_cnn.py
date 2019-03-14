@@ -95,7 +95,7 @@ def preprocess_data(data, labels, num_classes, axis=0):
 
 	if labels is not None:
 		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#labels = to_one_hot_encoding(labels, num_classes).astype(np.uint8)
+		#labels = swl_ml_util.to_one_hot_encoding(labels, num_classes).astype(np.uint8)
 		pass
 
 	return data, labels
