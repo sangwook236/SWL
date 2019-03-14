@@ -13,8 +13,7 @@ import keras
 from keras.preprocessing.image import ImageDataGenerator
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
-from swl.machine_learning.data_preprocessing import standardize_samplewise, standardize_featurewise
-from swl.machine_learning.data_generator import create_dataset_generator_using_imgaug, DatasetGeneratorUsingImgaug
+from swl.machine_learning.util import standardize_samplewise, standardize_featurewise
 from swl.machine_vision.util import load_images_by_pil, load_labels_by_pil
 
 #%%------------------------------------------------------------------
