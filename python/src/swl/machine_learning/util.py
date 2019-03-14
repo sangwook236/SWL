@@ -57,10 +57,6 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
-# For backwards compatibility.
-def generate_sparse_tuple_from_sequences(sequences, dtype=np.int32):
-	return sequences_to_sparse(sequences, dtype)
-
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
 def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 	"""Change a dense tensor to a sparse representention.
@@ -90,10 +86,6 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 	dense_shape = np.asarray([len(np_arr), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
-
-# For backwards compatibility.
-def generate_sparse_tuple_from_numpy_array(np_arr, default_value=0, dtype=np.int32):
-	return dense_to_sparse(np_arr, default_value, dtype)
 
 def sparse_to_dense(indices, values, dense_shape, default_value=0, dtype=np.int32):
 	"""Change a sparse representation of a tensor to a dense tensor.

@@ -121,7 +121,7 @@ class Synth90kPreprocessor(object):
 		if outputs is not None:
 			if self._is_sparse_output:
 				# Sparse tensor: (num_examples, max_label_len) -> A tuple with (indices, values, shape) for a sparse tensor.
-				outputs = swl_ml_util.generate_sparse_tuple_from_numpy_array(outputs, self._label_eos_token, np.uint8)
+				outputs = swl_ml_util.dense_to_sparse(outputs, self._label_eos_token, np.uint8)
 			else:
 				# One-hot encoding: (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
 				outputs = swl_ml_util.to_one_hot_encoding(outputs, self._num_classes).astype(np.uint8)
@@ -228,14 +228,14 @@ def main():
 	extended_label_list = list(label_characters) + [EOS]
 	#extended_label_list = list(label_characters)
 
-	int2char = extended_label_list
-	char2int = {c:i for i, c in enumerate(extended_label_list)}
+	label_int2char = extended_label_list
+	label_char2int = {c:i for i, c in enumerate(extended_label_list)}
 
 	num_labels = len(extended_label_list)
 	num_classes = num_labels + 1  # extended labels + blank label.
 	# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 	blank_label = num_classes - 1
-	label_eos_token = char2int[EOS]
+	label_eos_token = label_char2int[EOS]
 	#label_eos_token = blank_label
 
 	batch_size = 256  # Number of samples per gradient update.
@@ -391,15 +391,17 @@ def main():
 		#--------------------
 		# Multiprocessing (augmentation) + multithreading (training).				
 
+		trainDirMgr = TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
+
+		training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, is_sparse_output))
+		training_worker_thread.start()
+
 		trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
-		valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
+		#valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
 		#trainFileBatchGenerator_mp = manager.NpyFileBatchGeneratorWithFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 		#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
 		#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
-
-		training_worker_thread = threading.Thread(target=training_worker_proc, args=(train_session, nnTrainer, trainDirMgr_mp, valDirMgr_mp, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, False, is_sparse_output))
-		training_worker_thread.start()
 
 		#timeout = 10
 		timeout = None

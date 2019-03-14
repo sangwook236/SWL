@@ -245,6 +245,9 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def get_feed_dict(self, inputs, outputs=None, **kwargs):
 		batch_size = [inputs.shape[0]]
 
+		# For checking dataset.
+		#Synth90kCrnnWithCtcLoss._visualize_data(inputs, outputs)
+
 		if outputs is None:
 			feed_dict = {self._input_tensor_ph: inputs, self._batch_size_ph: batch_size}
 		else:
@@ -275,3 +278,52 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 		decoded_best = decoded[0]  # tf.SparseTensor.
 
 		return decoded_best, logits, seq_lens
+
+	@staticmethod
+	def _visualize_data(inputs, outputs):
+		import cv2
+		import swl.machine_learning.util as swl_ml_util
+
+		if outputs is not None:
+			max_label_len = 23  # Max length of words in lexicon.
+
+			# Label: 0~9 + a~z + A~Z.
+			#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+			# Label: 0~9 + a~z.
+			label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
+
+			SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+			EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+			#extended_label_list = [SOS] + list(label_characters) + [EOS]
+			extended_label_list = list(label_characters) + [EOS]
+			#extended_label_list = list(label_characters)
+
+			label_int2char = extended_label_list
+			label_char2int = {c:i for i, c in enumerate(extended_label_list)}
+
+			num_labels = len(extended_label_list)
+			num_classes = num_labels + 1  # extended labels + blank label.
+			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+			blank_label = num_classes - 1
+			label_eos_token = label_char2int[EOS]
+			#label_eos_token = blank_label
+
+			dense_outputs = swl_ml_util.sparse_to_dense(outputs[0], outputs[1], outputs[2], default_value=label_eos_token, dtype=np.int32)
+			#dense_outputs = np.argmax(dense_outputs, -1)
+		else:
+			dense_outputs = None
+
+		if dense_outputs is not None:
+			print('Image shape: {}, dtype: {}.'.format(inputs.shape, inputs.dtype))
+			print('Image min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
+			print('Label shape: {}, dtype: {}.'.format(dense_outputs.shape, dense_outputs.dtype))
+
+			for inp, outp in zip(inputs, dense_outputs):
+				label = [label_int2char[lbl] for lbl in outp]
+				print('Label =', label)
+				
+				cv2.imshow('Image', inp)
+				ch = cv2.waitKey(0)
+				if 27 == ch:  # ESC.
+					break
+			cv2.destroyAllWindows()

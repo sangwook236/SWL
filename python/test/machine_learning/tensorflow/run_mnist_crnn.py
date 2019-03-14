@@ -414,7 +414,7 @@ def main():
 					# Supports lists of dense or sparse labels.
 					swl_tf_util.evaluate_neural_net_by_batch_list(sess, nnEvaluator, test_images_list, test_labels_list, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 				else:
-					#test_labels = swl_ml_util.generate_sparse_tuple_from_numpy_array(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
+					#test_labels = swl_ml_util.dense_to_sparse(np.argmax(test_labels, axis=-1), eos_token=label_eos_token)
 					# Supports dense or sparse labels.
 					#swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 					# Supports dense or sparse labels.

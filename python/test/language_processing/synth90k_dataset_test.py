@@ -22,14 +22,14 @@ class Synth90kLabelConverter(object):
 		extended_label_list = list(label_characters) + [EOS]
 		#extended_label_list = list(label_characters)
 
-		#self._int2char = extended_label_list
-		self._char2int = {c:i for i, c in enumerate(extended_label_list)}
+		#self._label_int2char = extended_label_list
+		self._label_char2int = {c:i for i, c in enumerate(extended_label_list)}
 
 		self._num_labels = len(extended_label_list)
 		self._num_classes = self._num_labels + 1  # Extended labels + blank label.
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._blank_label = self._num_classes - 1
-		self._label_eos_token = self._char2int[EOS]
+		self._label_eos_token = self._label_char2int[EOS]
 
 	def __call__(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -59,7 +59,7 @@ class Synth90kLabelConverter(object):
 
 			outputs2 = np.full((num_examples, self._max_label_len), self._label_eos_token, dtype=np.uint8)
 			for idx, outp in enumerate(outputs):
-				outputs2[idx,:len(outp)] = [self._char2int[ch] for ch in outp]
+				outputs2[idx,:len(outp)] = [self._label_char2int[ch] for ch in outp]
 
 			# One-hot encoding (num_examples, max_label_len) -> (num_examples, max_label_len, num_classes).
 			#outputs2 = swl_ml_util.to_one_hot_encoding(outputs2, self._num_classes).astype(np.uint8)
@@ -77,10 +77,10 @@ def main():
 	data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 
 	#subset_ratio = None  # Error: Out-of-memory.
-	subset_ratio = 0.1
+	subset_ratio = 0.01
 	lexicon, train_data, val_data, test_data = synth90k_dataset.load_synth90k_dataset(data_dir_path, subset_ratio)
-	print('#lexicon = {}.'.format(lexicon))
-	print('#train data = {}, #val data = {}, #test data = {}.'.format(train_data, val_data, test_data))
+	print('#lexicon = {}.'.format(len(lexicon)))
+	print('#train data = {}, #val data = {}, #test data = {}.'.format(len(train_data), len(val_data), len(test_data)))
 
 	#--------------------
 	base_save_dir_path = './synth90k_npy'  # base_save_dir_path/train, base_save_dir_path/val, base_save_dir_path/test.
@@ -91,9 +91,9 @@ def main():
 	npy_file_csv_filename = 'npy_file_info.csv'
 	data_processing_functor = Synth90kLabelConverter()
 
-	subset_ratio = None
-	#subset_ratio = 0.1
-	#synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio)
+	#subset_ratio = None
+	subset_ratio = 0.01
+	synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio)
 
 #%%------------------------------------------------------------------
 

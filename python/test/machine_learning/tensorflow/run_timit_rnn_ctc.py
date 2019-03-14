@@ -334,9 +334,9 @@ def main():
 	if is_sparse_label:
 		# Create sparse representation to feed the placeholder.
 		# NOTE [info] {important} >> A tuple (indices, values, dense_shape) for a sparse tensor, not tf.SparseTensor.
-		train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences([targets])
-		#train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences([targets, targets])
-		#train_outputs = swl_ml_util.generate_sparse_tuple_from_sequences(np.vstack([targets, targets]))
+		train_outputs = swl_ml_util.sequences_to_sparse([targets])
+		#train_outputs = swl_ml_util.sequences_to_sparse([targets, targets])
+		#train_outputs = swl_ml_util.sequences_to_sparse(np.vstack([targets, targets]))
 	else:
 		train_outputs = targets.reshape((-1,) + targets.shape)
 

@@ -17,8 +17,8 @@ class ReverseFunctionDataset(object):
 		#self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 1
 		self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 2
 
-		self._int2char = list(self._characters)
-		self._char2int = {c:i for i, c in enumerate(self._characters)}
+		self._label_int2char = list(self._characters)
+		self._label_char2int = {c:i for i, c in enumerate(self._characters)}
 
 		self._num_train_data = 3000
 		self._num_val_data = 100
@@ -36,11 +36,11 @@ class ReverseFunctionDataset(object):
 
 	@property
 	def start_token(self):
-		return self._char2int[self._SOS]
+		return self._label_char2int[self._SOS]
 
 	@property
 	def end_token(self):
-		return self._char2int[self._EOS]
+		return self._label_char2int[self._EOS]
 
 	def generate_dataset(self, is_time_major):
 		train_string_list = self._create_string_dataset(self._num_train_data, self._MAX_STRING_LEN)
@@ -67,7 +67,7 @@ class ReverseFunctionDataset(object):
 
 	# Character strings -> numeric data.
 	def to_numeric_data(self, char_strs):
-		num_data = np.full((len(char_strs), self._MAX_TOKEN_LEN), self._char2int[self._EOS])
+		num_data = np.full((len(char_strs), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
 		for (i, str) in enumerate(char_strs):
 			tmp = np.array(self._str2datum(str))
 			num_data[i,:tmp.shape[0]] = tmp
@@ -94,16 +94,16 @@ class ReverseFunctionDataset(object):
 	def _str2datum(self, str):
 		#str = list(str) + [self._EOS]
 		str = [self._SOS] + list(str) + [self._EOS]
-		return [self._char2int[ch] for ch in str]
+		return [self._label_char2int[ch] for ch in str]
 
 	# A numeric datum(numeric list) to a character string.
 	def _datum2str(self, datum, has_start_token):
-		locs = np.where(self._char2int[self._EOS] == datum)
+		locs = np.where(self._label_char2int[self._EOS] == datum)
 		datum = datum[:locs[0][0]]
 		if has_start_token:
-			return ''.join([self._int2char[no] for no in datum[1:]])
+			return ''.join([self._label_int2char[no] for no in datum[1:]])
 		else:
-			return ''.join([self._int2char[no] for no in datum[:]])
+			return ''.join([self._label_int2char[no] for no in datum[:]])
 
 	# Preprocessing function for character strings.
 	def _preprocess_string(self, str):
@@ -142,9 +142,9 @@ class ReverseFunctionDataset(object):
 	# Fixed-length dataset.
 	def _create_array_dataset(self, input_output_pairs, max_time_steps, num_features, is_time_major):
 		num_samples = len(input_output_pairs)
-		input_data = np.full((num_samples, max_time_steps), self._char2int[self._EOS])
-		output_data = np.full((num_samples, max_time_steps), self._char2int[self._EOS])
-		output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), self._char2int[self._EOS])
+		input_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
+		output_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
+		output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
 		for (i, (inp, outp)) in enumerate(input_output_pairs):
 			input_data[i,:len(inp)] = np.array(inp)
 			outa = np.array(outp)
@@ -188,7 +188,7 @@ class ReverseFunctionDataset(object):
 		predicted_sentence = ''
 		for i in range(num_tokens):
 			token_index = np.argmax(prediction[0, i, :])
-			ch = self._int2char[token_index]
+			ch = self._label_int2char[token_index]
 			predicted_sentence += ch
 
 		return predicted_sentence;
@@ -210,7 +210,7 @@ class ReverseFunctionDataset(object):
 
 			# Sample a token.
 			sampled_token_index = np.argmax(output_tokens[0, -1, :])
-			sampled_char = self._int2char[sampled_token_index]
+			sampled_char = self._label_int2char[sampled_token_index]
 			decoded_sentence += sampled_char
 
 			# Exit condition: either hit max length or find stop character.
