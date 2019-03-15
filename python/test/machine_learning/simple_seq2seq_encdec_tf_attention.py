@@ -87,11 +87,11 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleAuxiliaryInputTensorFlowM
 			else:
 				num_time_steps, num_classes = decoder_output_shape[1], decoder_output_shape[-1]
 			if self._is_bidirectional:
-				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
-				#return self._create_dynamic_bidirectional_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_bidirectional_model(encoder_input_tensor, decoder_input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+				#return self._create_dynamic_bidirectional_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 			else:
-				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
-				#return self._create_dynamic_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._encoder_input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
+				return self._create_dynamic_model(encoder_input_tensor, decoder_input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_time_steps, num_classes, self._is_time_major)
+				#return self._create_dynamic_model_using_tf_decoder(encoder_input_tensor, decoder_input_tensor, is_training, self._input_seq_lens_ph, self._batch_size_ph, num_classes, self._is_time_major)
 
 	# REF [function] >> SimpleSeq2SeqEncoderDecoder._create_dynamic_model() in ./simple_seq2seq_encdec.py.
 	def _create_dynamic_model(self, encoder_input_tensor, decoder_input_tensor, is_training, encoder_input_seq_lens, batch_size, num_time_steps, num_classes, is_time_major):

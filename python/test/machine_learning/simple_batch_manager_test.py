@@ -7,7 +7,7 @@ sys.path.append('../../src')
 import os, time
 import numpy as np
 from swl.machine_learning.batch_manager import SimpleBatchManager, SimpleBatchManagerWithFileInput, SimpleFileBatchManager, SimpleFileBatchManagerWithFileInput
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator, NpyFileBatchLoader
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGenerator, NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager
 import swl.util.util as swl_util
 

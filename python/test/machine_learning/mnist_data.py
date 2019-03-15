@@ -11,9 +11,7 @@ import swl.machine_learning.util as swl_ml_util
 
 class ImgaugDataAugmenter(object):
 	def __init__(self, is_output_augmented=False):
-		super().__init__()
-
-		_augment_functor = self._augmentWithOutputAugmentation if is_output_augmented else self._augmentWithoutOutputAugmentation
+		self._augment_functor = self._augmentWithOutputAugmentation if is_output_augmented else self._augmentWithoutOutputAugmentation
 		self._augmenter = iaa.Sequential([
 			iaa.SomeOf(1, [
 				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
@@ -77,28 +75,44 @@ class MnistDataPreprocessor(object):
 # MnistDataGenerator.
 
 class MnistDataGenerator(ImgaugDataGenerator):
-	def __init__(self, preprocessor, is_output_augmented=False, is_augmented_in_parallel=False):
+	def __init__(self, is_output_augmented=False, is_augmented_in_parallel=True):
 		super().__init__()
 
-		self._preprocessor = preprocessor
+		self._num_classes = 10
+		self._input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
+		self._output_shape = (None, self._num_classes)
+
+		self._train_inputs, self._train_outputs, self._test_inputs, self._test_outputs = (None,) * 4
+
+		#--------------------
+		self._preprocessor = MnistDataPreprocessor(self._input_shape[1:], self._num_classes)
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 		self._is_augmented_in_parallel = is_augmented_in_parallel
 
 		if self._augmenter is None:
-			self._generate_batches_functor = MnistDataGenerator._generateBatchesWithoutAugmentation
+			self._batch_generator = MnistDataGenerator._generateBatchesWithoutAugmentation
 		else:
 			if self._is_augmented_in_parallel:
-				self._generate_batches_functor = MnistDataGenerator._generateBatchesInParallel
+				self._batch_generator = partial(MnistDataGenerator._generateBatchesInParallelWithOutputAugmentation, self._augmenter._augmenter) if is_output_augmented else partial(MnistDataGenerator._generateBatchesInParallelWithoutOutputAugmentation, self._augmenter._augmenter)
 			else:
-				self._generate_batches_functor = partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
+				self._batch_generator = partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
 
-		self._train_inputs, self._train_outputs, self._test_inputs, self._test_outputs = (None,) * 4
+	@property
+	def dataset(self):
+		raise NotImplementedError
+
+	@property
+	def shapes(self):
+		if self._dataset is None:
+			raise ValueError('Dataset is None')
+		return self._input_shape, self._output_shape, self._num_classes
 
 	def initialize(self):
 		# Pixel value: [0, 255].
 		(self._train_inputs, self._train_outputs), (self._test_inputs, self._test_outputs) = tf.keras.datasets.mnist.load_data()
 
+		#--------------------
 		if self._preprocessor is not None:
 			self._train_inputs, self._train_outputs = self._preprocessor(self._train_inputs, self._train_outputs)
 			self._test_inputs, self._test_outputs = self._preprocessor(self._test_inputs, self._test_outputs)
@@ -140,4 +154,4 @@ class MnistDataGenerator(ImgaugDataGenerator):
 		return self._generateBatches(self._test_inputs, self._test_outputs, batch_size, shuffle=False)
 
 	def _generateBatches(self, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
-		return self._generate_batches_functor(inputs, outputs, batch_size, shuffle, *args, **kwargs)
+		return self._batch_generator(inputs, outputs, batch_size, shuffle, *args, **kwargs)

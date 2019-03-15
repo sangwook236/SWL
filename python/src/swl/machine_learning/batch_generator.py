@@ -45,12 +45,12 @@ class SimpleBatchGenerator(BatchGenerator):
 		self._inputs, self._outputs = inputs, outputs
 		if input_filepaths is not None and output_filepaths is not None:
 			if len(input_filepaths) != len(output_filepaths):
-				raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
-			for image_filepath, label_filepath in zip(input_filepaths, output_filepaths):
-				inp = np.load(image_filepath)
-				outp = np.load(label_filepath)
+				raise ValueError('Unmatched lengths of input and output filepaths')
+			for input_filepath, output_filepath in zip(input_filepaths, output_filepaths):
+				inp = np.load(input_filepath)
+				outp = np.load(output_filepath)
 				if inp.shape[batch_axis] != outp.shape[batch_axis]:
-					raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
+					raise ValueError('Unmatched shapes of {} and {}'.format(input_filepath, output_filepath))
 				self._inputs = inp if self._inputs is None else np.concatenate((self._inputs, inp), axis=0)
 				self._outputs = outp if self._outputs is None else np.concatenate((self._outputs, outp), axis=0)
 		if self._inputs is None or self._outputs is None or self._inputs.shape[batch_axis] != self._outputs.shape[batch_axis]:
@@ -86,17 +86,17 @@ class SimpleBatchGenerator(BatchGenerator):
 						yield self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
 
 #%%------------------------------------------------------------------
-# NpyFileBatchGenerator.
-#	Generates batches from numpy.array and saves them to npy files.
-class NpyFileBatchGenerator(FileBatchGenerator):
+# NpzFileBatchGenerator.
+#	Generates batches from numpy.array and saves them to npz files.
+class NpzFileBatchGenerator(FileBatchGenerator):
 	def __init__(self, inputs, outputs, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename=None, batch_output_filename=None, batch_info_csv_filename=None, input_filepaths=None, output_filepaths=None):
 		"""
 		Inputs:
 			inputs (numpy.array): Input data of type numpy.array. It can be None.
 			outputs (numpy.array): Output data of type numpy.array. It can be None.
-			input_filepaths (a list of strings): A list of input npy files.
-			output_filepaths (a list of strings): A list of output npy files.
-				In this constructor, all data will be loaded from input and output npy files.
+			input_filepaths (a list of strings): A list of input npz files.
+			output_filepaths (a list of strings): A list of output npz files.
+				In this constructor, all data will be loaded from input and output npz files.
 			augmenter (object):
 				inputs, outputs = augmenter(inputs, outputs, is_output_augmented).
 		"""
@@ -164,9 +164,9 @@ class NpyFileBatchGenerator(FileBatchGenerator):
 		return num_saved_examples
 
 #%%------------------------------------------------------------------
-# NpyFileBatchGeneratorWithFileInput.
-#	Loads data from npy files, generates their batches and saves them to npy files.
-class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
+# NpzFileBatchGeneratorWithNpyFileInput.
+#	Loads data from npy files, generates their batches and saves them to npz files.
+class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 	def __init__(self, input_filepaths, output_filepaths, num_loaded_files, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
 		"""
 		Inputs:
@@ -229,7 +229,7 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 				if sub_file_indices.size > 0:  # If sub_file_indices is non-empty.
 					sub_input_filepaths, sub_output_filepaths = self._input_filepaths[sub_file_indices], self._output_filepaths[sub_file_indices]
 					if sub_input_filepaths.size > 0 and sub_output_filepaths.size > 0:  # If sub_input_filepaths and sub_output_filepaths are non-empty.
-						inputs, outputs = NpyFileBatchGeneratorWithFileInput._load_data(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
+						inputs, outputs = NpzFileBatchGeneratorWithNpyFileInput._load_data(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
 						
 						num_examples_in_a_group = inputs.shape[self._batch_axis]
 						if num_examples_in_a_group <= 0:
@@ -289,11 +289,11 @@ class NpyFileBatchGeneratorWithFileInput(FileBatchGenerator):
 		if len(input_filepaths) != len(output_filepaths):
 			raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
 		inputs, outputs = None, None
-		for image_filepath, label_filepath in zip(input_filepaths, output_filepaths):
-			inp = np.load(image_filepath)
-			outp = np.load(label_filepath)
+		for input_filepath, output_filepath in zip(input_filepaths, output_filepaths):
+			inp = np.load(input_filepath)
+			outp = np.load(output_filepath)
 			if inp.shape[batch_axis] != outp.shape[batch_axis]:
-				raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
+				raise ValueError('Unmatched shapes of {} and {}'.format(input_filepath, output_filepath))
 			inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
 			outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
 

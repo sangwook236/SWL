@@ -27,7 +27,7 @@ class ReverseFunctionDataset(object):
 
 		#print(self._sample_model(4, 5))
 		#print(self._sample_model(5, 10))
-	
+
 	@property
 	def vocab_size(self):
 		return self._VOCAB_SIZE
@@ -235,36 +235,25 @@ class ReverseFunctionDataGenerator(Data3Generator):
 	def __init__(self, is_time_major, is_dynamic):
 		super().__init__()
 
+		self._dataset = ReverseFunctionDataset()
+		self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs = (None,) * 6
+
+		#--------------------
 		self._is_time_major = is_time_major
 		self._is_dynamic = is_dynamic
-		self._dataset = ReverseFunctionDataset()
-
-		self._generate_batches_functor = ReverseFunctionDataGenerator._generateBatchesWithoutAugmentation
-
-		self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs = (None,) * 6
+		self._batch_generator = ReverseFunctionDataGenerator._generateBatchesWithoutAugmentation
 
 	@property
 	def dataset(self):
 		if self._dataset is None:
-			raise TypeError
+			raise ValueError('Dataset is None')
 		return self._dataset
 
-	def initialize(self):
-		# NOTICE [info] >> How to use the hidden state c of an encoder in a decoder?
-		#	1) The hidden state c of the encoder is used as the initial state of the decoder and the previous output of the decoder may be used as its only input.
-		#	2) The previous output of the decoder is used as its input along with the hidden state c of the encoder.
-		self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs = self._dataset.generate_dataset(self._is_time_major)
+	@property
+	def shapes(self):
+		if self._dataset is None:
+			raise ValueError('Dataset is None')
 
-		if self._train_encoder_inputs is None or self._train_decoder_inputs is None or self._train_decoder_outputs is None:
-			raise ValueError('Train inputs or outputs is None')
-		if len(self._train_encoder_inputs) != len(self._train_decoder_inputs) or len(self._train_encoder_inputs) != len(self._train_decoder_outputs):
-			raise ValueError('The lengths of train inputs and outputs are different: {}, {}, {}'.format(len(self._train_encoder_inputs), len(self._train_decoder_inputs), len(self._train_decoder_outputs)))
-		if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
-			raise ValueError('Test inputs or outputs is None')
-		if len(self._val_encoder_inputs) != len(self._val_decoder_inputs) or len(self._val_encoder_inputs) != len(self._val_decoder_outputs):
-			raise ValueError('The lengths of test inputs and outputs are different: {}, {}, {}'.format(len(self._val_encoder_inputs), len(self._val_decoder_inputs), len(self._val_decoder_outputs)))
-
-	def getShapes(self):
 		if self._is_dynamic:
 			# Dynamic RNNs use variable-length dataset.
 			# TODO [improve] >> Training & validation datasets are still fixed-length (static).
@@ -286,11 +275,26 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 		return encoder_input_shape, decoder_input_shape, decoder_output_shape
 
+	def initialize(self):
+		# NOTICE [info] >> How to use the hidden state c of an encoder in a decoder?
+		#	1) The hidden state c of the encoder is used as the initial state of the decoder and the previous output of the decoder may be used as its only input.
+		#	2) The previous output of the decoder is used as its input along with the hidden state c of the encoder.
+		self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs = self._dataset.generate_dataset(self._is_time_major)
+
+		if self._train_encoder_inputs is None or self._train_decoder_inputs is None or self._train_decoder_outputs is None:
+			raise ValueError('Train inputs or outputs is None')
+		if len(self._train_encoder_inputs) != len(self._train_decoder_inputs) or len(self._train_encoder_inputs) != len(self._train_decoder_outputs):
+			raise ValueError('The lengths of train inputs and outputs are different: {}, {}, {}'.format(len(self._train_encoder_inputs), len(self._train_decoder_inputs), len(self._train_decoder_outputs)))
+		if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
+			raise ValueError('Test inputs or outputs is None')
+		if len(self._val_encoder_inputs) != len(self._val_decoder_inputs) or len(self._val_encoder_inputs) != len(self._val_decoder_outputs):
+			raise ValueError('The lengths of test inputs and outputs are different: {}, {}, {}'.format(len(self._val_encoder_inputs), len(self._val_decoder_inputs), len(self._val_decoder_outputs)))
+
 	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
 		if self._train_encoder_inputs is None or self._train_decoder_inputs is None  or self._train_decoder_outputs is None:
 			raise ValueError('At least one of train input or output data is None')
 
-		return self._generate_batches_functor(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
+		return self._batch_generator(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
 
 	def hasValidationData(self):
 		return self._val_encoder_inputs is not None and self._val_decoder_inputs is not None and self._val_decoder_outputs is not None and len(self._val_encoder_inputs) > 0
@@ -302,7 +306,7 @@ class ReverseFunctionDataGenerator(Data3Generator):
 		if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
 			raise ValueError('At least one of validation input or output data is None')
 
-		return self._generate_batches_functor(self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False)
+		return self._batch_generator(self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False)
 
 	def hasTestData(self):
 		return False

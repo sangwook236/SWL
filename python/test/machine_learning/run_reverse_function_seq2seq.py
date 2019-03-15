@@ -99,7 +99,7 @@ def main():
 	# Prepare data.
 
 	dataGenerator = ReverseFunctionDataGenerator(is_time_major, is_dynamic)
-	encoder_input_shape, decoder_input_shape, decoder_output_shape = dataGenerator.getShapes()
+	encoder_input_shape, decoder_input_shape, decoder_output_shape = dataGenerator.shapes
 	start_token, end_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
 
 	#--------------------

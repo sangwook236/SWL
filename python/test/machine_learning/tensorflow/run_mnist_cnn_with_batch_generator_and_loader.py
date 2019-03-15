@@ -19,8 +19,8 @@ from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferre
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator
-from swl.machine_learning.batch_loader import NpyFileBatchLoader
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGenerator
+from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 from mnist_cnn_tf import MnistCnnUsingTF
 
@@ -111,8 +111,8 @@ def initialize_lock(lock):
 def training_worker_proc(train_session, nnTrainer, trainDirMgr, valDirMgr, batch_info_csv_filename, num_epochs, does_resume_training, train_saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
 	print('\t{}: Start training worker process.'.format(os.getpid()))
 
-	trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
-	valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+	trainFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+	valFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 	#--------------------
 	start_time = time.time()
@@ -139,7 +139,7 @@ def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_file
 	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
-	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	fileBatchGenerator = NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -204,8 +204,8 @@ def main():
 
 		BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
 		BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-		BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
-		#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+		BaseManager.register('NpzFileBatchGenerator', NpzFileBatchGenerator)
+		#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 		manager = BaseManager()
 		manager.start()
 
@@ -302,7 +302,7 @@ def main():
 					time.sleep(0.1)
 			print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-			valFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+			valFileBatchGenerator = NpzFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 			valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 
 			valDirMgr.returnDirectory(val_dir_path)				
@@ -312,9 +312,9 @@ def main():
 			trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, train_num_batch_dirs)
 			valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, val_num_batch_dirs)
 
-			#trainFileBatchGenerator_mp = manager.NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-			#trainFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
-			#valFileBatchLoader_mp = manager.NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			#trainFileBatchGenerator_mp = manager.NpzFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+			#trainFileBatchLoader_mp = manager.NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			#valFileBatchLoader_mp = manager.NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			#--------------------
 			if False:
@@ -360,14 +360,14 @@ def main():
 						time.sleep(0.1)
 				print('\tGot a train batch directory: {}.'.format(train_dir_path))
 
-				trainFileBatchGenerator = NpyFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename=batch_info_csv_filename)
+				trainFileBatchGenerator = NpzFileBatchGenerator(train_images, train_labels, batch_size, shuffle, False, batch_info_csv_filename=batch_info_csv_filename)
 				trainFileBatchGenerator.saveBatches(train_dir_path)  # Generates and saves batches.
 
 				trainDirMgr.returnDirectory(train_dir_path)				
 
 			#--------------------
-			trainFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
-			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			trainFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			valFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			start_time = time.time()
 			with train_session.as_default() as sess:
@@ -386,7 +386,7 @@ def main():
 
 		#--------------------
 		if use_file_batch_loader:
-			valFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+			valFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 			start_time = time.time()
 			with eval_session.as_default() as sess:
@@ -417,13 +417,13 @@ def main():
 				time.sleep(0.1)
 		print('\tGot a test batch directory: {}.'.format(test_dir_path))
 
-		testFileBatchGenerator = NpyFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+		testFileBatchGenerator = NpzFileBatchGenerator(test_images, test_labels, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 		testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
 
 		testDirMgr.returnDirectory(test_dir_path)				
 
 		#--------------------
-		testFileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
+		testFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=None)
 
 		start_time = time.time()
 		with infer_session.as_default() as sess:

@@ -10,8 +10,8 @@ import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import numpy as np
 from imgaug import augmenters as iaa
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpyFileBatchGenerator, NpyFileBatchGeneratorWithFileInput
-from swl.machine_learning.batch_loader import NpyFileBatchLoader
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGenerator, NpzFileBatchGeneratorWithNpyFileInput
+from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
 
@@ -149,11 +149,11 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
-		#fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major)
-		fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#fileBatchGenerator = NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major)
+		fileBatchGenerator = NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
-		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
@@ -206,11 +206,11 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
-		#fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
-		fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
+		fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
-		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
 
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
@@ -257,7 +257,7 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 		print('\t{}: Got a working directory: {}.'.format(os.getpid(), dir_path))
 
 		#--------------------
-		fileBatchLoader = NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
 		for idx, batch in enumerate(batches):
 			# Train with each batch (inputs & outputs).
@@ -298,8 +298,8 @@ def augmentation_worker_proc(dirMgr, inputs, outputs, batch_size, shuffle, is_ti
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
-	#fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major)
-	fileBatchGenerator = NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
+	#fileBatchGenerator = NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major)
+	fileBatchGenerator = NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -328,8 +328,8 @@ def augmentation_with_file_input_worker_proc(dirMgr, npy_input_filepaths, npy_ou
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
-	#fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
-	fileBatchGenerator = NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
+	#fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
+	fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -362,8 +362,8 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 	batch_info_csv_filename = 'batch_info.csv'
 
 	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-	BaseManager.register('NpyFileBatchGenerator', NpyFileBatchGenerator)
-	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+	BaseManager.register('NpzFileBatchGenerator', NpzFileBatchGenerator)
+	#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 	manager = BaseManager()
 	manager.start()
 
@@ -371,18 +371,18 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	#fileBatchGenerator = manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchGenerator = manager.NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchLoader = manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------
 	#timeout = 10
 	timeout = None
 	#with mp.Pool(processes=num_processes) as pool:  # RuntimeError: Lock objects should only be shared between processes through inheritance.
 	with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename), num_epochs))  # Error.
+		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename), num_epochs))  # Error.
 		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, fileBatchLoader, num_epochs))  # TypeError: can't pickle generator objects.
 		training_results = pool.apply_async(training_worker_proc, args=(dirMgr, batch_info_csv_filename, num_epochs))
-		#data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, dirMgr, manager.NpyFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
+		#data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, dirMgr, manager.NpzFileBatchGenerator(inputs, outputs, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
 		#data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, dirMgr, fileBatchGenerator), [epoch for epoch in range(num_epochs)])  # Ok.
 		data_augmentation_results = pool.map_async(partial(augmentation_worker_proc, dirMgr, inputs, outputs, batch_size, shuffle, is_time_major), [epoch for epoch in range(num_epochs)])
 
@@ -415,8 +415,8 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	batch_info_csv_filename = 'batch_info.csv'
 
 	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-	BaseManager.register('NpyFileBatchGeneratorWithFileInput', NpyFileBatchGeneratorWithFileInput)
-	#BaseManager.register('NpyFileBatchLoader', NpyFileBatchLoader)
+	BaseManager.register('NpzFileBatchGeneratorWithNpyFileInput', NpzFileBatchGeneratorWithNpyFileInput)
+	#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 	manager = BaseManager()
 	manager.start()
 
@@ -424,18 +424,18 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	#fileBatchGenerator = manager.NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-	#fileBatchLoader = manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchGenerator = manager.NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchLoader = manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------
 	#timeout = 10
 	timeout = None
 	#with mp.Pool(processes=num_processes) as pool:  # RuntimeError: Lock objects should only be shared between processes through inheritance.
 	with mp.Pool(processes=num_processes, initializer=initialize_lock, initargs=(lock,)) as pool:
-		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, manager.NpyFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename), num_epochs))  # Error.
+		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename), num_epochs))  # Error.
 		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, fileBatchLoader, num_epochs))  # TypeError: can't pickle generator objects.
 		training_results = pool.apply_async(training_worker_proc, args=(dirMgr, batch_info_csv_filename, num_epochs))
-		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, manager.NpyFileBatchGeneratorWithFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
+		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, manager.NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
 		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, fileBatchGenerator), [epoch for epoch in range(num_epochs)])  # Ok.
 		data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major), [epoch for epoch in range(num_epochs)])
 

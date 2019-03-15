@@ -11,7 +11,7 @@ from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
 import swl.util.util as swl_util
 from mnist_cnn import MnistCnn
-from mnist_data import MnistDataGenerator, MnistDataPreprocessor, ImgaugDataAugmenter
+from mnist_data import MnistDataGenerator
 
 #%%------------------------------------------------------------------
 
@@ -35,14 +35,12 @@ def main():
 
 	initial_epoch = 0
 
-	num_classes = 10
-	input_shape = (None, 28, 28, 1)  # 784 = 28 * 28.
-	output_shape = (None, num_classes)
-
 	batch_size = 128  # Number of samples per gradient update.
 	num_epochs = 30  # Number of times to iterate over training data.
 	shuffle = True
+
 	is_output_augmented = False  # Fixed.
+	is_augmented_in_parallel = True
 
 	sess_config = tf.ConfigProto()
 	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = 0,1.
@@ -73,8 +71,8 @@ def main():
 	#--------------------
 	# Prepares data.
 
-	preprocessor = MnistDataPreprocessor(input_shape[1:], num_classes)
-	dataGenerator = MnistDataGenerator(preprocessor, is_output_augmented, is_augmented_in_parallel=True)
+	dataGenerator = MnistDataGenerator(is_output_augmented, is_augmented_in_parallel)
+	input_shape, output_shape, num_classes = dataGenerator.shapes
 
 	#--------------------
 	# Creates models, sessions, and graphs.

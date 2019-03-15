@@ -14,9 +14,9 @@ class FileBatchLoader(abc.ABC):
 		raise NotImplementedError
 
 #%%------------------------------------------------------------------
-# NpyFileBatchLoader.
-#	Loads batches from npy files.
-class NpyFileBatchLoader(FileBatchLoader):
+# NpzFileBatchLoader.
+#	Loads batches from npz files.
+class NpzFileBatchLoader(FileBatchLoader):
 	def __init__(self, batch_info_csv_filename=None, data_processing_functor=None):
 		super().__init__()
 
