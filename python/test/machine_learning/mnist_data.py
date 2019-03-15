@@ -1,21 +1,19 @@
-import abc
+from functools import partial
 import numpy as np
 import tensorflow as tf
-import imgaug as ia
+#import imgaug as ia
 from imgaug import augmenters as iaa
-from swl.machine_learning.data_generator import DataGenerator
+from swl.machine_learning.imgaug_data_generator import ImgaugDataGenerator
 import swl.machine_learning.util as swl_ml_util
 
 #%%------------------------------------------------------------------
 # ImgaugDataAugmenter.
 
 class ImgaugDataAugmenter(object):
-	def __init__(self, is_output_augmented=False, is_augmented_in_parallel=False):
+	def __init__(self, is_output_augmented=False):
 		super().__init__()
 
-		self._is_output_augmented = is_output_augmented
-		self._is_augmented_in_parallel = is_augmented_in_parallel
-
+		_augment_functor = self._augmentWithOutputAugmentation if is_output_augmented else self._augmentWithoutOutputAugmentation
 		self._augmenter = iaa.Sequential([
 			iaa.SomeOf(1, [
 				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
@@ -38,25 +36,15 @@ class ImgaugDataAugmenter(object):
 			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 		])
 
-	@property
-	def isOutputAugmented(self):
-		if self._is_output_augmented is None:
-			raise TypeError
-		return self._is_output_augmented
+	def __call__(self, inputs, outputs, *args, **kwargs):
+		return self._augment_functor(inputs, outputs, *args, **kwargs)
 
-	@property
-	def isAugmentedInParallel(self):
-		if self._is_augmented_in_parallel is None:
-			raise TypeError
-		return self._is_augmented_in_parallel
+	def _augmentWithoutOutputAugmentation(self, inputs, outputs, *args, **kwargs):
+		return self._augmenter.augment_images(inputs), outputs
 
-	# Augments in sequence.
-	def augment(self, inputs, outputs, *args, **kwargs):
-		if self._is_output_augmented:
-			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
-		else:
-			return self._augmenter.augment_images(inputs), outputs
+	def _augmentWithOutputAugmentation(self, inputs, outputs, *args, **kwargs):
+		augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+		return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 #%%------------------------------------------------------------------
 # MnistDataPreprocessor.
@@ -88,31 +76,41 @@ class MnistDataPreprocessor(object):
 #%%------------------------------------------------------------------
 # MnistDataGenerator.
 
-#class MnistDataGenerator(abc.ABC):
-class MnistDataGenerator(DataGenerator):
-	def __init__(self, preprocessor, augmenter):
+class MnistDataGenerator(ImgaugDataGenerator):
+	def __init__(self, preprocessor, is_output_augmented=False, is_augmented_in_parallel=False):
 		super().__init__()
 
 		self._preprocessor = preprocessor
-		self._augmenter = augmenter
+		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
+		#self._augmenter = None
+		self._is_augmented_in_parallel = is_augmented_in_parallel
+
+		if self._augmenter is None:
+			self._generate_batches_functor = MnistDataGenerator._generateBatchesWithoutAugmentation
+		else:
+			if self._is_augmented_in_parallel:
+				self._generate_batches_functor = MnistDataGenerator._generateBatchesInParallel
+			else:
+				self._generate_batches_functor = partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
 
 		self._train_inputs, self._train_outputs, self._test_inputs, self._test_outputs = (None,) * 4
 
 	def initialize(self):
 		# Pixel value: [0, 255].
 		(self._train_inputs, self._train_outputs), (self._test_inputs, self._test_outputs) = tf.keras.datasets.mnist.load_data()
+
 		if self._preprocessor is not None:
 			self._train_inputs, self._train_outputs = self._preprocessor(self._train_inputs, self._train_outputs)
 			self._test_inputs, self._test_outputs = self._preprocessor(self._test_inputs, self._test_outputs)
 
 		if self._train_inputs is None or self._train_outputs is None:
-			raise ValueError('Train inputs or outputs is None')
+			raise ValueError('At least one of train input or output data is None')
 		if len(self._train_inputs) != len(self._train_outputs):
-			raise ValueError('The lengths of train inputs and outputs are different: {} != {}'.format(len(self._train_inputs), len(self._train_outputs)))
+			raise ValueError('The lengths of train input and output data are different: {} != {}'.format(len(self._train_inputs), len(self._train_outputs)))
 		if self._test_inputs is None or self._test_outputs is None:
-			raise ValueError('Test inputs or outputs is None')
+			raise ValueError('At least one of test input or output data is None')
 		if len(self._test_inputs) != len(self._test_outputs):
-			raise ValueError('The lengths of test inputs and outputs are different: {} != {}'.format(len(self._test_inputs), len(self._test_outputs)))
+			raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_inputs), len(self._test_outputs)))
 
 	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
 		if self._train_inputs is None or self._train_outputs is None:
@@ -142,87 +140,4 @@ class MnistDataGenerator(DataGenerator):
 		return self._generateBatches(self._test_inputs, self._test_outputs, batch_size, shuffle=False)
 
 	def _generateBatches(self, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
-		if self._augmenter is not None and self._augmenter.isAugmentedInParallel:
-			return self._generateBatchesInParallel(inputs, outputs, batch_size, shuffle, *args, **kwargs)
-		else:
-			return self._generateBatchesInSequence(inputs, outputs, batch_size, shuffle, *args, **kwargs)
-
-	def _generateBatchesInSequence(self, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
-		num_examples = len(inputs)
-		if batch_size is None:
-			batch_size = num_examples
-		if batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		indices = np.arange(num_examples)
-		if shuffle:
-			np.random.shuffle(indices)
-
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_inputs, batch_outputs = inputs[batch_indices], outputs[batch_indices]
-				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
-					if self._augmenter is not None:
-						batch_inputs, batch_outputs = self._augmenter.augment(batch_inputs, batch_outputs)
-					yield (batch_inputs, batch_outputs), batch_indices.size
-
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
-
-	def _generateBatchesInParallel(self, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
-		if not isinstance(self._augmenter._augmenter, iaa.Sequential):
-			raise ValueError('The augmenter has to be an instance of imgaug.augmenters.Sequential to augment in parallel')
-
-		# TODO [enhance] >> To use self._augmenter._augmenter is not so good.
-		# Start a pool to augment on multiple CPU cores.
-		#	processes=-1 means that all CPU cores except one are used for the augmentation, so one is kept free to move data to the GPU.
-		#	maxtasksperchild=20 restarts child workers every 20 tasks.
-		#		Only use this if you encounter problems such as memory leaks.
-		#		Restarting child workers decreases performance.
-		#	seed=123 makes the result of the whole augmentation process deterministic between runs of this script, i.e. reproducible results.
-		#with self._augmenter._augmenter.pool(processes=-1, maxtasksperchild=20, seed=123) as pool:
-		with self._augmenter._augmenter.pool(processes=4) as pool:
-			batch_gen = self._createBatchGeneratorInParallel(inputs, outputs, batch_size, shuffle)
-
-			# Augment on multiple CPU cores.
-			#	The result of imap_batches() is also a generator.
-			#	Use map_batches() if your input is a list.
-			#	chunksize=10 controls how much data to send to each child worker per transfer, set it higher for better performance.
-			batch_aug_gen = pool.imap_batches(batch_gen, chunksize=5)
-
-			for batch in batch_aug_gen:
-				yield (batch.images_aug, (batch.segmentation_maps_aug if self._augmenter.isOutputAugmented else batch.data)), len(batch.images_aug)
-
-	def _createBatchGeneratorInParallel(self, inputs, outputs, batch_size, shuffle):
-		num_examples = len(inputs)
-		if batch_size is None:
-			batch_size = num_examples
-		if batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		indices = np.arange(num_examples)
-		if shuffle:
-			np.random.shuffle(indices)
-
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_inputs, batch_outputs = inputs[batch_indices], outputs[batch_indices]
-				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
-					# Add e.g. keypoints=... or bounding_boxes=... here to also augment keypoints / bounding boxes on these images.
-					if self._augmenter.isOutputAugmented:
-						yield ia.Batch(images=batch_inputs, segmentation_maps=batch_outputs)
-					else:
-						yield ia.Batch(images=batch_inputs, data=batch_outputs)
-
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+		return self._generate_batches_functor(inputs, outputs, batch_size, shuffle, *args, **kwargs)

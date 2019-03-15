@@ -1,13 +1,13 @@
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow_model import SimpleTwoInputTensorFlowModel
+from swl.machine_learning.tensorflow_model import SimpleAuxiliaryInputTensorFlowModel
 
 #%%------------------------------------------------------------------
 
-class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleTwoInputTensorFlowModel):
+class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleAuxiliaryInputTensorFlowModel):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional=True, is_time_major=False):
-		self._encoder_input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='encoder_input_seq_lens_ph')
-		self._decoder_output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='decoder_output_seq_lens_ph')
+		self._input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='input_seq_lens_ph')
+		self._output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='output_seq_lens_ph')
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._start_token = start_token
@@ -32,7 +32,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleTwoInputTensorFlowModel):
 				decoder_output_seq_lens = np.full(encoder_inputs.shape[0], encoder_inputs.shape[1], np.int32)
 				batch_size = [encoder_inputs.shape[0]]
 
-			feed_dict = {self._encoder_input_tensor_ph: data[0], self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
+			feed_dict = {self._input_tensor_ph: data[0], self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		elif 3 == len_data:
 			encoder_inputs, decoder_inputs, decoder_outputs = data
 
@@ -52,9 +52,9 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleTwoInputTensorFlowModel):
 				batch_size = [encoder_inputs.shape[0]]
 
 			if decoder_inputs is None or decoder_outputs is None:
-				feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
+				feed_dict = {self._input_tensor_ph: encoder_inputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 			else:
-				feed_dict = {self._encoder_input_tensor_ph: encoder_inputs, self._decoder_input_tensor_ph: decoder_inputs, self._decoder_output_tensor_ph: decoder_outputs, self._encoder_input_seq_lens_ph: encoder_input_seq_lens, self._decoder_output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
+				feed_dict = {self._input_tensor_ph: encoder_inputs, self._aux_input_tensor_ph: decoder_inputs, self._output_tensor_ph: decoder_outputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: batch_size}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
@@ -71,7 +71,7 @@ class SimpleSeq2SeqEncoderDecoderWithTfAttention(SimpleTwoInputTensorFlowModel):
 			else:
 				assert num_classes > 0, 'Invalid number of classes.'
 			"""
-			masks = tf.sequence_mask(self._decoder_output_seq_lens_ph, tf.reduce_max(self._decoder_output_seq_lens_ph), dtype=tf.float32)
+			masks = tf.sequence_mask(self._output_seq_lens_ph, tf.reduce_max(self._output_seq_lens_ph), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
 			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)

@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 from random import choice, randrange
-from swl.machine_learning.data_generator import DataGenerator
+from swl.machine_learning.data_generator import Data3Generator
 
 #%%------------------------------------------------------------------
 # REF [site] >> https://talbaumel.github.io/attention/
@@ -231,14 +231,15 @@ class ReverseFunctionDataset(object):
 #%%------------------------------------------------------------------
 # ReverseFunctionDataGenerator.
 
-#class ReverseFunctionDataGenerator(abc.ABC):
-class ReverseFunctionDataGenerator(DataGenerator):
+class ReverseFunctionDataGenerator(Data3Generator):
 	def __init__(self, is_time_major, is_dynamic):
 		super().__init__()
 
 		self._is_time_major = is_time_major
 		self._is_dynamic = is_dynamic
 		self._dataset = ReverseFunctionDataset()
+
+		self._generate_batches_functor = ReverseFunctionDataGenerator._generateBatchesWithoutAugmentation
 
 		self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs = (None,) * 6
 
@@ -289,7 +290,7 @@ class ReverseFunctionDataGenerator(DataGenerator):
 		if self._train_encoder_inputs is None or self._train_decoder_inputs is None  or self._train_decoder_outputs is None:
 			raise ValueError('At least one of train input or output data is None')
 
-		return self._generateBatches(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
+		return self._generate_batches_functor(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
 
 	def hasValidationData(self):
 		return self._val_encoder_inputs is not None and self._val_decoder_inputs is not None and self._val_decoder_outputs is not None and len(self._val_encoder_inputs) > 0
@@ -301,7 +302,7 @@ class ReverseFunctionDataGenerator(DataGenerator):
 		if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
 			raise ValueError('At least one of validation input or output data is None')
 
-		return self._generateBatches(self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False)
+		return self._generate_batches_functor(self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False)
 
 	def hasTestData(self):
 		return False
@@ -311,28 +312,3 @@ class ReverseFunctionDataGenerator(DataGenerator):
 
 	def getTestBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		raise NotImplementedError
-
-	def _generateBatches(self, encoder_inputs, decoder_inputs, decoder_outputs, batch_size, shuffle=True, *args, **kwargs):
-		num_examples = len(encoder_inputs)
-		if batch_size is None:
-			batch_size = num_examples
-		if batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		indices = np.arange(num_examples)
-		if shuffle:
-			np.random.shuffle(indices)
-
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_enc_inputs, batch_dec_inputs, batch_dec_outputs = encoder_inputs[batch_indices], decoder_inputs[batch_indices], decoder_outputs[batch_indices]
-				if batch_enc_inputs.size > 0 and batch_dec_inputs.size > 0 and batch_dec_outputs.size > 0:  # If batch_enc_inputs, batch_dec_inputs, and batch_dec_outputs are non-empty.
-					yield (batch_enc_inputs, batch_dec_inputs, batch_dec_outputs), batch_indices.size
-
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx

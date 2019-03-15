@@ -61,6 +61,7 @@ class TensorFlowModel(LearningModel):
 
 #%%------------------------------------------------------------------
 
+# Single-input single-output TensorFlow learning model.
 class SimpleTensorFlowModel(TensorFlowModel):
 	def __init__(self, input_shape, output_shape):
 		super().__init__()
@@ -68,9 +69,9 @@ class SimpleTensorFlowModel(TensorFlowModel):
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=input_shape, name='input_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, shape=output_shape, name='output_tensor_ph')
-		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=output_shape, name='output_tensor_ph')
+		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
@@ -96,37 +97,38 @@ class SimpleTensorFlowModel(TensorFlowModel):
 
 #%%------------------------------------------------------------------
 
-class SimpleTwoInputTensorFlowModel(TensorFlowModel):
-	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):
+# Single-input single-output TensorFlow learning model with an auxiliary input for training.
+class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
+	def __init__(self, input_shape, aux_input_shape, output_shape):
 		super().__init__()
 
-		self._encoder_input_shape = encoder_input_shape
-		self._decoder_input_shape = decoder_input_shape
-		self._decoder_output_shape = decoder_output_shape
+		self._input_shape = input_shape
+		self._aux_input_shape = aux_input_shape
+		self._output_shape = output_shape
 
-		self._encoder_input_tensor_ph = tf.placeholder(tf.float32, shape=encoder_input_shape, name='encoder_input_tensor_ph')
-		self._decoder_input_tensor_ph = tf.placeholder(tf.float32, shape=decoder_input_shape, name='decoder_input_tensor_ph')
-		self._decoder_output_tensor_ph = tf.placeholder(tf.int32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
-		#self._decoder_output_tensor_ph = tf.placeholder(tf.float32, shape=decoder_output_shape, name='decoder_output_tensor_ph')
+		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
+		self._aux_input_tensor_ph = tf.placeholder(tf.float32, shape=self._aux_input_shape, name='aux_input_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, True)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, True)
 
-		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, False)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
 
-		self._loss = self._get_loss(self._model_output, self._decoder_output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._decoder_output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._encoder_input_tensor_ph, self._decoder_input_tensor_ph, self._encoder_input_shape, self._decoder_input_shape, self._decoder_output_shape, False)
+		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
 
 	@abc.abstractmethod
-	def _create_single_model(self, encoder_input_tensor, decoder_input_tensor, encoder_input_shape, decoder_input_shape, decoder_output_shape, is_training):
+	def _create_single_model(self, input_tensor, aux_input_tensor, input_shape, aux_input_shape, output_shape, is_training):
 		raise NotImplementedError

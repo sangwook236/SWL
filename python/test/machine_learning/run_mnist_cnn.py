@@ -73,10 +73,8 @@ def main():
 	#--------------------
 	# Prepares data.
 
-	augmenter = ImgaugDataAugmenter(is_output_augmented, is_augmented_in_parallel=True)
-	#augmenter = None
 	preprocessor = MnistDataPreprocessor(input_shape[1:], num_classes)
-	dataGenerator = MnistDataGenerator(preprocessor, augmenter)
+	dataGenerator = MnistDataGenerator(preprocessor, is_output_augmented, is_augmented_in_parallel=True)
 
 	#--------------------
 	# Creates models, sessions, and graphs.
