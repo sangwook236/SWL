@@ -5,7 +5,7 @@ else:
 	swl_python_home_dir_path = 'D:/work/SWL_github/python'
 sys.path.append(swl_python_home_dir_path + '/src')
 
-from swl.machine_learning.cvppp_dataset import create_cvppp_generator_from_data_loader, create_cvppp_generator_from_directory, create_cvppp_generator_from_imgaug, load_cvppp_dataset
+from swl.machine_vision.camvid_dataset import create_camvid_generator_from_data_loader, create_camvid_generator_from_directory, create_camvid_generator_from_imgaug, load_camvid_dataset
 
 #%%------------------------------------------------------------------
 
@@ -14,16 +14,20 @@ if 'posix' == os.name:
 else:
 	data_home_dir_path = 'D:/dataset'
 
-train_image_dir_path = data_home_dir_path + '/phenotyping/cvppp2017_lsc_lcc_challenge/package/CVPPP2017_LSC_training/training/A1'
-train_label_dir_path = train_image_dir_path
+train_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/train/image'
+train_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/trainannot/image'
+val_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/val/image'
+val_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/valannot/image'
+test_image_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/test/image'
+test_label_dir_path = data_home_dir_path + '/pattern_recognition/camvid/tmp/testannot/image'
 
-image_suffix = '_rgb'
+image_suffix = ''
 image_extension = 'png'
-label_suffix = '_fg'
+label_suffix = ''
 label_extension = 'png'
 
-num_examples = 128
-num_classes = 2
+num_examples = 367
+num_classes = 12
 
 batch_size = 32
 shuffle = False
@@ -31,7 +35,7 @@ shuffle = False
 #%%------------------------------------------------------------------
 # Create a dataset generator.
 
-original_image_size = (530, 500)  # (height, width).
+original_image_size = (360, 480)  # (height, width).
 #resized_image_size = None
 resized_image_size = original_image_size
 random_crop_size = None
@@ -54,7 +58,8 @@ seed = 1
 dataset_generator_type = 2
 if 0 == dataset_generator_type:
 	# FIXME [fix] >> Images only are transformed, but labels are not transformed.
-	train_dataset_gen = create_cvppp_generator_from_data_loader(train_image_dir_path, train_label_dir_path,
+	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_data_loader(
+			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=None)
 elif 1 == dataset_generator_type:
@@ -62,17 +67,19 @@ elif 1 == dataset_generator_type:
 	#	- resized_image_size should be not None.
 	#	- Each input directory should contain one subdirectory per class.
 	#	- Images are loaded as RGB or gray color.
-	train_dataset_gen = create_cvppp_generator_from_directory(train_image_dir_path, train_label_dir_path,
+	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_directory(
+			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 			num_classes, batch_size=batch_size, resized_image_size=resized_image_size, random_crop_size=random_crop_size, center_crop_size=center_crop_size, shuffle=shuffle, seed=seed)
 elif 2 == dataset_generator_type:
-	train_dataset_gen = create_cvppp_generator_from_imgaug(train_image_dir_path, train_label_dir_path,
+	train_dataset_gen, val_dataset_gen, test_dataset_gen = create_camvid_generator_from_imgaug(
+			train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 			data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 			batch_size=batch_size, width=image_shape[1], height=image_shape[0], shuffle=shuffle)
 else:
 	assert dataset_generator_type < 3, 'Invalid dataset generator type.'
 
 # Usage.
-#num_examples = 128
+#num_examples = 367
 #num_epochs = 10
 #steps_per_epoch = num_examples / batch_size
 #model.fit_generator(train_dataset_gen, steps_per_epoch=steps_per_epoch, epochs=num_epochs)
@@ -89,14 +96,15 @@ else:
 # Load images and convert them to numpy.array.
 
 image_width, image_height = None, None
-#image_width, image_height = 500, 530
+#image_width, image_height = 480, 360
 
-train_images, train_labels = load_cvppp_dataset(train_image_dir_path, train_label_dir_path,
+train_images, train_labels, val_images, val_labels, test_images, test_labels = load_camvid_dataset(
+		train_image_dir_path, train_label_dir_path, val_image_dir_path, val_label_dir_path, test_image_dir_path, test_label_dir_path,
 		data_suffix=image_suffix, data_extension=image_extension, label_suffix=label_suffix, label_extension=label_extension,
 		width=image_width, height=image_height)
 
 # Usage.
-#num_examples = 128
+#num_examples = 367
 #batch_size = 32
 #num_epochs = 10
 #history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs)
@@ -106,7 +114,7 @@ train_images, train_labels = load_cvppp_dataset(train_image_dir_path, train_labe
 
 import numpy as np
 
-image_width, image_height = 500, 530
+image_width, image_height = 480, 360
 num_epochs = 1
 steps_per_epoch = num_examples / batch_size
 
@@ -124,7 +132,7 @@ for epoch in range(num_epochs):
 		if num_batches >= steps_per_epoch:
 			break
 
-assert len(data_list) == len(labels_list), '[Error] len(data_list) == len(labels_list).'
+assert len(data_list) == len(labels_list), '[Error] len(data_list) == len(labels_list)'
 generated_images = np.ndarray(shape=(num_examples, image_height, image_width, 3))
 if 1 == dataset_generator_type:
 	# Images of size (resized_image_size, 1).
@@ -132,10 +140,10 @@ if 1 == dataset_generator_type:
 else:
 	generated_labels = np.ndarray(shape=(num_examples, image_height, image_width, num_classes))
 for idx in range(len(data_list)):
-    start_idx = idx * batch_size
-    end_idx = start_idx + data_list[idx].shape[0]
-    generated_images[start_idx:end_idx] = data_list[idx]
-    generated_labels[start_idx:end_idx] = labels_list[idx]
+	start_idx = idx * batch_size
+	end_idx = start_idx + data_list[idx].shape[0]
+	generated_images[start_idx:end_idx] = data_list[idx]
+	generated_labels[start_idx:end_idx] = labels_list[idx]
 if 1 == dataset_generator_type:
 	pass
 else:

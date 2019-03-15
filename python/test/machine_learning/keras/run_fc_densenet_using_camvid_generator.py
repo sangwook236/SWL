@@ -31,8 +31,8 @@ from keras import optimizers, callbacks
 import densenet_fc as dc
 from swl.util.threading import ThreadSafeGenerator
 from swl.machine_learning.keras.data_generator import create_dataset_generator_using_imgaug, DatasetGeneratorUsingImgaug
-from swl.machine_learning.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset, create_camvid_generator_from_array, create_camvid_generator_from_directory
-from swl.machine_learning.camvid_dataset import get_imgaug_sequence_for_camvid
+from swl.machine_vision.camvid_dataset import preprocess_camvid_dataset, load_camvid_dataset, create_camvid_generator_from_array, create_camvid_generator_from_directory
+from swl.machine_vision.camvid_dataset import get_imgaug_sequence_for_camvid
 
 #%%------------------------------------------------------------------
 

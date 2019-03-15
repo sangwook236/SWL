@@ -91,7 +91,7 @@ class Data2Generator(DataGenerator):
 				# FIXME [fix] >> Does not work correctly in time-major data.
 				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
 				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
-					batch_data1, batch_data2 = augmenter.augment(batch_data1, batch_data2)
+					batch_data1, batch_data2 = augmenter(batch_data1, batch_data2)
 					yield (batch_data1, batch_data2), batch_indices.size
 
 			if end_idx >= num_examples:
@@ -149,7 +149,7 @@ class Data3Generator(DataGenerator):
 				# FIXME [fix] >> Does not work correctly in time-major data.
 				batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
 				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-					batch_data1, batch_data2, batch_data3 = augmenter.augment(batch_data1, batch_data2, batch_data3)
+					batch_data1, batch_data2, batch_data3 = augmenter(batch_data1, batch_data2, batch_data3)
 					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
 
 			if end_idx >= num_examples:
