@@ -3,6 +3,9 @@ import abc
 #%%------------------------------------------------------------------
 
 class LearningModel(abc.ABC):
+	"""Toplevel class for learning model.
+	"""
+
 	def __init__(self):
 		super().__init__()
 

@@ -5,6 +5,9 @@ from swl.machine_learning.learning_model import LearningModel
 #%%------------------------------------------------------------------
 
 class TensorFlowModel(LearningModel):
+	"""Learning model for TensorFlow library.
+	"""
+
 	def __init__(self):
 		super().__init__()
 
@@ -15,13 +18,13 @@ class TensorFlowModel(LearningModel):
 	@property
 	def loss(self):
 		if self._loss is None:
-			raise TypeError
+			raise ValueError('Loss is None')
 		return self._loss
 
 	@property
 	def accuracy(self):
 		if self._accuracy is None:
-			raise TypeError
+			raise ValueError('Accuracy is None')
 		return self._accuracy
 
 	@abc.abstractmethod
@@ -61,8 +64,13 @@ class TensorFlowModel(LearningModel):
 
 #%%------------------------------------------------------------------
 
-# Single-input single-output TensorFlow learning model.
 class SimpleTensorFlowModel(TensorFlowModel):
+	"""Single-input single-output learning model for TensorFlow library.
+
+	- Fixed-length inputs and outputs.
+	- Dense tensors for input and output.
+	"""
+
 	def __init__(self, input_shape, output_shape):
 		super().__init__()
 
@@ -72,6 +80,10 @@ class SimpleTensorFlowModel(TensorFlowModel):
 		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
 		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
 		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
+
+	@abc.abstractmethod
+	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
+		raise NotImplementedError
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
@@ -91,14 +103,16 @@ class SimpleTensorFlowModel(TensorFlowModel):
 		self._loss = None
 		self._accuracy = None
 
-	@abc.abstractmethod
-	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
-		raise NotImplementedError
-
 #%%------------------------------------------------------------------
 
-# Single-input single-output TensorFlow learning model with an auxiliary input for training.
 class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
+	"""Single-input single-output learning model for TensorFlow library.
+
+	- Auxiliary inputs for training.
+	- Fixed- or variable-length inputs and outputs.
+	- Dense tensors for input and output.
+	"""
+
 	def __init__(self, input_shape, aux_input_shape, output_shape):
 		super().__init__()
 
@@ -110,6 +124,10 @@ class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
 		self._aux_input_tensor_ph = tf.placeholder(tf.float32, shape=self._aux_input_shape, name='aux_input_tensor_ph')
 		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
 		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
+
+	@abc.abstractmethod
+	def _create_single_model(self, input_tensor, aux_input_tensor, input_shape, aux_input_shape, output_shape, is_training):
+		raise NotImplementedError
 
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, True)
@@ -129,6 +147,50 @@ class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
 		self._loss = None
 		self._accuracy = None
 
+#%%------------------------------------------------------------------
+
+class SimpleSequentialTensorFlowModel(TensorFlowModel):
+	"""Single-input single-output learning model for TensorFlow library.
+
+	- Fixed- or variable-length inputs and outputs.
+	- Dense tensors for input.
+	- Dense or sparse tensors for output.
+	"""
+
+	def __init__(self, input_shape, output_shape, num_classes, is_time_major=False):
+		super().__init__()
+
+		self._input_shape = input_shape
+		self._output_shape = output_shape
+		self._num_classes = num_classes
+		self._is_time_major = is_time_major
+
+		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
+		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+
 	@abc.abstractmethod
-	def _create_single_model(self, input_tensor, aux_input_tensor, input_shape, aux_input_shape, output_shape, is_training):
+	def _get_loss(self, y, t, seq_lens):
 		raise NotImplementedError
+
+	@abc.abstractmethod
+	def _create_single_model(self, input_tensor, input_shape, num_classes, is_training):
+		raise NotImplementedError
+
+	def create_training_model(self):
+		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, True)
+
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_evaluation_model(self):
+		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, False)
+
+		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+
+	def create_inference_model(self):
+		self._model_output, _, _ = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, False)
+
+		self._loss = None
+		self._accuracy = None

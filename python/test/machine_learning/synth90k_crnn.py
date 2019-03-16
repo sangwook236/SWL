@@ -1,82 +1,31 @@
+import abc
 import numpy as np
 import tensorflow as tf
-from swl.machine_learning.tensorflow_model import SimpleTensorFlowModel
+from swl.machine_learning.tensorflow_model import SimpleSequentialTensorFlowModel
 
 #%%------------------------------------------------------------------
 
-class Synth90kCrnn(SimpleTensorFlowModel):
-	def __init__(self, input_tensor_ph, output_tensor_ph, batch_size_ph, image_height, image_width, image_channel, num_classes):
-		super().__init__()
-
-		self._input_tensor_ph = input_tensor_ph
-		self._output_tensor_ph = output_tensor_ph
-		#self._output_seq_lens_ph = output_seq_lens_ph
-		self._batch_size_ph = batch_size_ph
-
-		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._num_classes = num_classes
-		#self._is_time_major = False
-
-		# model_output is used in training, evaluation, and inference steps.
-		self._model_output = None
-
-		# Loss and accuracy are used in training and evaluation steps.
-		self._loss = None
-		self._accuracy = None
-
-	@property
-	def model_output(self):
-		if self._model_output is None:
-			raise TypeError
-		return self._model_output
-
-	@property
-	def loss(self):
-		if self._loss is None:
-			raise TypeError
-		return self._loss
-
-	@property
-	def accuracy(self):
-		if self._loss is None:
-			raise TypeError
-		return self._accuracy
-
-	@abc.abstractmethod
-	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def _get_loss(self, y, t, seq_lens):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def _get_accuracy(self, y, t):
-		raise NotImplementedError
+class Synth90kCrnn(SimpleSequentialTensorFlowModel):
+	def __init__(self, input_shape, output_shape, num_classes):
+		super().__init__(input_shape, output_shape, num_classes, is_time_major=False)
 
 	@abc.abstractmethod
 	def _get_final_output(self, logits, seq_lens):
 		raise NotImplementedError
 
-	def create_training_model(self):
-		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._num_classes, True)
+	def get_feed_dict(self, data, *args, **kwargs):
+		len_data = len(data)
+		if 1 == len_data:
+			batch_size = [inputs.shape[0]]
+			feed_dict = {self._input_tensor_ph: data[0], self._batch_size_ph: batch_size}
+		elif 2 == len_data:
+			batch_size = [inputs.shape[0]]
+			feed_dict = {self._input_tensor_ph: data[0], self._output_tensor_ph: data[1], self._batch_size_ph: batch_size}
+		else:
+			raise ValueError('Invalid number of feed data: {}'.format(len_data))
+		return feed_dict
 
-		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
-
-	def create_evaluation_model(self):
-		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._num_classes, False)
-
-		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
-
-	def create_inference_model(self):
-		self._model_output, _, _ = self._create_single_model(self._input_tensor_ph, self._num_classes, False)
-
-		self._loss = None
-		self._accuracy = None
-
-	def _create_single_model(self, input_tensor, num_classes, is_training):
+	def _create_single_model(self, input_tensor, input_shape, num_classes, is_training):
 		with tf.variable_scope('synth90k_crnn', reuse=tf.AUTO_REUSE):
 			crnn_outputs = self._create_crnn(input_tensor, num_classes, is_training)
 
@@ -195,20 +144,7 @@ class Synth90kCrnn(SimpleTensorFlowModel):
 
 class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		input_tensor_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_tensor_ph')
-		output_tensor_ph = tf.placeholder(tf.int32, shape=[None, None, num_classes], name='output_tensor_ph')
-		batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
-
-		super().__init__(input_tensor_ph, output_tensor_ph, batch_size_ph, image_height, image_width, image_channel, num_classes)
-
-	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		batch_size = [inputs.shape[0]]
-
-		if outputs is None:
-			feed_dict = {self._input_tensor_ph: inputs, self._batch_size_ph: batch_size}
-		else:
-			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._batch_size_ph: batch_size}
-		return feed_dict
+		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes)
 
 	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
@@ -234,25 +170,8 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 #%%------------------------------------------------------------------
 
 class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
-	def __init__(self, image_height, image_width, image_channel, num_classes, eos_token=-1):
-		input_tensor_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_tensor_ph')
-		output_tensor_ph = tf.sparse_placeholder(tf.int32, shape=[None, None], name='output_tensor_ph')
-		batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
-		self._eos_token = eos_token
-
-		super().__init__(input_tensor_ph, output_tensor_ph, batch_size_ph, image_height, image_width, image_channel, num_classes)
-
-	def get_feed_dict(self, inputs, outputs=None, **kwargs):
-		batch_size = [inputs.shape[0]]
-
-		# For checking dataset.
-		#Synth90kCrnnWithCtcLoss._visualize_data(inputs, outputs)
-
-		if outputs is None:
-			feed_dict = {self._input_tensor_ph: inputs, self._batch_size_ph: batch_size}
-		else:
-			feed_dict = {self._input_tensor_ph: inputs, self._output_tensor_ph: outputs, self._batch_size_ph: batch_size}
-		return feed_dict
+	def __init__(self, image_height, image_width, image_channel, num_classes):
+		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes)
 
 	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):

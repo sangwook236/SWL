@@ -104,8 +104,6 @@ class MnistDataGenerator(ImgaugDataGenerator):
 
 	@property
 	def shapes(self):
-		if self._dataset is None:
-			raise ValueError('Dataset is None')
 		return self._input_shape, self._output_shape, self._num_classes
 
 	def initialize(self):

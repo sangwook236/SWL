@@ -58,7 +58,7 @@ def main():
 
 	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
 	is_time_major = False
-	is_dynamic = False
+	is_dynamic = False  # Uses variable-length time steps.
 	is_attentive = True  # Uses attention mechanism.
 	is_bidirectional = True  # Uses a bidirectional model.
 	if is_attentive:

@@ -1,13 +1,8 @@
 #!/usr/bin/env python
 
-# Path to libcudnn.so.
-#export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-
-#--------------------
 import sys
-sys.path.append('../../../src')
+sys.path.append('../../src')
 
-#--------------------
 import os, time, datetime
 from functools import partial
 import threading
@@ -26,9 +21,9 @@ from synth90k_data import Synth90kDataGenerator
 
 #%%------------------------------------------------------------------
 
-def create_learning_model(image_height, image_width, image_channel, num_classes, label_eos_token, is_sparse_output):
+def create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
-		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes, label_eos_token)
+		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
 		return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
 
@@ -83,7 +78,7 @@ def main():
 	num_epochs = 100  # Number of times to iterate over training data.
 	shuffle = True
 
-	is_output_augmented = False
+	is_output_augmented = False  # Fixed.
 	is_augmented_in_parallel = True
 
 	sess_config = tf.ConfigProto()
@@ -118,7 +113,7 @@ def main():
 	dataGenerator = Synth90kDataGenerator(is_sparse_output, is_output_augmented, is_augmented_in_parallel)
 	image_height, image_width, image_channel, num_classes = dataGenerator.shapes
 	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
-	label_eos_token = dataGenerator.dataset.end_token
+	#label_eos_token = dataGenerator.dataset.end_token
 
 	#--------------------
 	# Creates models, sessions, and graphs.
@@ -133,7 +128,7 @@ def main():
 		with train_graph.as_default():
 			with tf.device(train_device_name):
 				# Creates a model.
-				modelForTraining = create_learning_model(image_height, image_width, image_channel, num_classes, label_eos_token, is_sparse_output)
+				modelForTraining = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
@@ -144,7 +139,7 @@ def main():
 	with eval_graph.as_default():
 		with tf.device(eval_device_name):
 			# Creates a model.
-			modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, label_eos_token, is_sparse_output)
+			modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
 			modelForEvaluation.create_evaluation_model()
 
 			# Creates an evaluator.
@@ -153,7 +148,7 @@ def main():
 	with infer_graph.as_default():
 		with tf.device(infer_device_name):
 			# Creates a model.
-			modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, label_eos_token, is_sparse_output)
+			modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
 			modelForInference.create_inference_model()
 
 			# Creates an inferrer.

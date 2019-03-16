@@ -30,8 +30,8 @@ class Synth90kDataset(object):
 
 		self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-		#extended_label_list = [SOS] + list(label_characters) + [EOS]
-		extended_label_list = list(label_characters) + [EOS]
+		#extended_label_list = [self._SOS] + list(label_characters) + [self._EOS]
+		extended_label_list = list(label_characters) + [self._EOS]
 		#extended_label_list = list(label_characters)
 
 		#self._label_int2char = extended_label_list
@@ -41,7 +41,7 @@ class Synth90kDataset(object):
 		self._num_classes = self._num_labels + 1  # Extended labels + blank label.
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._blank_label = self._num_classes - 1
-		self._label_eos_token = self._label_char2int[EOS]
+		self._label_eos_token = self._label_char2int[self._EOS]
 
 	@property
 	def label_size(self):
@@ -102,7 +102,7 @@ class ImgaugDataAugmenter(object):
 
 class Synth90kDataPreprocessor(object):
 	def __init__(self, num_classes, label_eos_token, is_sparse_output):
-		self._num_classes = num_classes.
+		self._num_classes = num_classes
 		self._label_eos_token = label_eos_token
 		self._is_sparse_output = is_sparse_output
 
@@ -189,7 +189,7 @@ class Synth90kDataGenerator(ImgaugDataGenerator):
 		#self._lock = mp.Manager().Lock()  # TypeError: can't pickle thread.lock objects.
 		num_processes = 5
 
-		self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.augmentation_worker_thread_proc, args=(num_processes, self._manager, self._lock, train_batch_dir_path_prefix, num_train_batch_dirs, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+		self._augmentation_worker_thread = None
 
 	@property
 	def dataset(self):
@@ -225,6 +225,8 @@ class Synth90kDataGenerator(ImgaugDataGenerator):
 		synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 		self._train_data_info, self._val_data_info, self._test_data_info = Synth90kDataGenerator._loadDataInfo(synth90k_data_dir_path)
 
+		self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.augmentation_worker_thread_proc, args=(num_processes, self._manager, self._lock, train_batch_dir_path_prefix, num_train_batch_dirs, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+
 	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
 		self._startAugmentationThread()
 		self._generateValidationBatches()
@@ -234,6 +236,7 @@ class Synth90kDataGenerator(ImgaugDataGenerator):
 		#--------------------
 		# FIXME [fix] >> Bad position.
 		self._augmentation_worker_thread.join()
+		self._isAugmentationThreadStarted = True
 
 	def hasValidationData(self):
 		return self.hasTestData()
