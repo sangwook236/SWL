@@ -16,10 +16,10 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 	def get_feed_dict(self, data, *args, **kwargs):
 		len_data = len(data)
 		if 1 == len_data:
-			batch_size = [inputs.shape[0]]
+			batch_size = [data[0].shape[0]]
 			feed_dict = {self._input_tensor_ph: data[0], self._batch_size_ph: batch_size}
 		elif 2 == len_data:
-			batch_size = [inputs.shape[0]]
+			batch_size = [data[0].shape[0]]
 			feed_dict = {self._input_tensor_ph: data[0], self._output_tensor_ph: data[1], self._batch_size_ph: batch_size}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))

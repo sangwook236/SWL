@@ -81,9 +81,9 @@ class SimpleBatchGenerator(BatchGenerator):
 				batch_inputs, batch_outputs = self._inputs[batch_indices], self._outputs[batch_indices]
 				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
 					if self._augmenter is None:
-						yield batch_inputs, batch_outputs
+						yield (batch_inputs, batch_outputs), batch_indices.size
 					else:
-						yield self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
+						yield self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented), batch_indices.size
 
 #%%------------------------------------------------------------------
 # NpzFileBatchGenerator.
@@ -229,7 +229,7 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 				if sub_file_indices.size > 0:  # If sub_file_indices is non-empty.
 					sub_input_filepaths, sub_output_filepaths = self._input_filepaths[sub_file_indices], self._output_filepaths[sub_file_indices]
 					if sub_input_filepaths.size > 0 and sub_output_filepaths.size > 0:  # If sub_input_filepaths and sub_output_filepaths are non-empty.
-						inputs, outputs = NpzFileBatchGeneratorWithNpyFileInput._load_data(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
+						inputs, outputs = NpzFileBatchGeneratorWithNpyFileInput._load_data_from_npy_files(sub_input_filepaths, sub_output_filepaths, self._batch_axis)
 						
 						num_examples_in_a_group = inputs.shape[self._batch_axis]
 						if num_examples_in_a_group <= 0:
@@ -285,7 +285,7 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 		return batch_inputs_dict, batch_outputs_dict, num_saved_examples
 
 	@staticmethod
-	def _load_data(input_filepaths, output_filepaths, batch_axis):
+	def _load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis):
 		if len(input_filepaths) != len(output_filepaths):
 			raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
 		inputs, outputs = None, None

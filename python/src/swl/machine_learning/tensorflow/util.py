@@ -44,14 +44,13 @@ def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator,
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
 		batches = trainBatchGenerator.generateBatches()  # Generates and augments batches.
-		for train_inputs, train_outputs in batches:
-			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
+		for batch_data, num_batch_examples in batches:
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, batch_data[0], batch_data[1], train_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = train_inputs.shape[batch_axis]
-			train_acc += batch_acc * batch_size
-			train_loss += batch_loss * batch_size
-			num_train_examples += batch_size
+			train_acc += batch_acc * num_batch_examples
+			train_loss += batch_loss * num_batch_examples
+			num_train_examples += num_batch_examples
 
 			step += 1
 			if 0 == step % 10:
@@ -64,14 +63,13 @@ def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator,
 		#--------------------
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 		batches = valBatchGenerator.generateBatches()  # Generates and augments batches.
-		for val_inputs, val_outputs in batches:
-			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
+		for batch_data, num_batch_examples in batches:
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, batch_data[0], batch_data[1], val_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = val_inputs.shape[batch_axis]
-			val_acc += batch_acc * batch_size
-			val_loss += batch_loss * batch_size
-			num_val_examples += batch_size
+			val_acc += batch_acc * num_batch_examples
+			val_loss += batch_loss * num_batch_examples
+			num_val_examples += num_batch_examples
 
 		val_acc /= num_val_examples
 		val_loss /= num_val_examples
@@ -172,14 +170,13 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		step = 0
 		train_loss, train_acc, num_train_examples = 0.0, 0.0, 0
 		batches = trainFileBatchLoader.loadBatches(train_dir_path)  # Loads batches.
-		for train_inputs, train_outputs, _ in batches:
-			batch_acc, batch_loss = nnTrainer.train_by_batch(session, train_inputs, train_outputs, train_summary_writer, is_time_major, is_sparse_output)
+		for batch_data, num_batch_examples in batches:
+			batch_acc, batch_loss = nnTrainer.train_by_batch(session, batch_data[0], batch_data[1], train_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = train_inputs.shape[batch_axis]
-			train_acc += batch_acc * batch_size
-			train_loss += batch_loss * batch_size
-			num_train_examples += batch_size
+			train_acc += batch_acc * num_batch_examples
+			train_loss += batch_loss * num_batch_examples
+			num_train_examples += num_batch_examples
 
 			step += 1
 			if 0 == step % 10:
@@ -194,14 +191,13 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		#--------------------
 		val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 		batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
-		for val_inputs, val_outputs, _ in batches:
-			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, val_inputs, val_outputs, val_summary_writer, is_time_major, is_sparse_output)
+		for batch_data, num_batch_examples in batches:
+			batch_acc, batch_loss = nnTrainer.evaluate_training_by_batch(session, batch_data[0], batch_data[1], val_summary_writer, is_time_major, is_sparse_output)
 
 			# TODO [check] >> Are these calculations correct?
-			batch_size = val_inputs.shape[batch_axis]
-			val_acc += batch_acc * batch_size
-			val_loss += batch_loss * batch_size
-			num_val_examples += batch_size
+			val_acc += batch_acc * num_batch_examples
+			val_loss += batch_loss * num_batch_examples
+			num_val_examples += num_batch_examples
 
 		valDirMgr.returnDirectory(val_dir_path)				
 
@@ -791,14 +787,13 @@ def evaluate_neural_net_by_batch_generator(session, nnEvaluator, valBatchGenerat
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 	batches = valBatchGenerator.generateBatches()  # Generates and augments batches.
-	for val_inputs, val_outputs in batches:
-		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
+	for batch_data, num_batch_examples in batches:
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, batch_data[0], batch_data[1], is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs.shape[batch_axis]
-		val_acc += batch_acc * batch_size
-		val_loss += batch_loss * batch_size
-		num_val_examples += batch_size
+		val_acc += batch_acc * num_batch_examples
+		val_loss += batch_loss * num_batch_examples
+		num_val_examples += num_batch_examples
 
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
@@ -834,14 +829,13 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 
 	val_loss, val_acc, num_val_examples = 0.0, 0.0, 0
 	batches = valFileBatchLoader.loadBatches(val_dir_path)  # Loads batches.
-	for val_inputs, val_outputs, _ in batches:
-		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, val_inputs, val_outputs, is_time_major, is_sparse_output)
+	for batch_data, num_batch_examples in batches:
+		batch_acc, batch_loss = nnEvaluator.evaluate_by_batch(session, batch_data[0], batch_data[1], is_time_major, is_sparse_output)
 
 		# TODO [check] >> Are these calculations correct?
-		batch_size = val_inputs.shape[batch_axis]
-		val_acc += batch_acc * batch_size
-		val_loss += batch_loss * batch_size
-		num_val_examples += batch_size
+		val_acc += batch_acc * num_batch_examples
+		val_loss += batch_loss * num_batch_examples
+		num_val_examples += num_batch_examples
 
 	valDirMgr.returnDirectory(val_dir_path)				
 
@@ -1054,8 +1048,8 @@ def infer_by_neural_net_and_batch_generator(session, nnInferrer, testBatchGenera
 
 	inf_outputs_list = list()
 	batches = testBatchGenerator.generateBatches()  # Generates and augments batches.
-	for test_inputs, _ in batches:
-		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
+	for batch_data, _ in batches:
+		batch_outputs = nnInferrer.infer_by_batch(session, batch_data[0], is_time_major)
 		inf_outputs_list.append(batch_outputs)
 	print('\tInference time = {}'.format(time.time() - start_time))
 	print('[SWL] Info: End inferring...')
@@ -1089,8 +1083,8 @@ def infer_by_neural_net_and_file_batch_loader(session, nnInferrer, testFileBatch
 
 	inf_outputs_list = list()
 	batches = testFileBatchLoader.loadBatches(inf_dir_path)  # Loads batches.
-	for test_inputs, _, _ in batches:
-		batch_outputs = nnInferrer.infer_by_batch(session, test_inputs, is_time_major)
+	for batch_data, _ in batches:
+		batch_outputs = nnInferrer.infer_by_batch(session, batch_data[0], is_time_major)
 		inf_outputs_list.append(batch_outputs)
 
 	testDirMgr.returnDirectory(inf_dir_path)				

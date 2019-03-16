@@ -110,12 +110,12 @@ def simple_batch_generator_example():
 		print('>>>>> Epoch #{}.'.format(epoch))
 
 		batches = batchGenerator.generateBatches()  # Generates batches.
-		for idx, batch in enumerate(batches):
+		for idx, (batch_data, num_batch_examples) in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
-			#print('{}: {}, {}'.format(idx, batch[0].shape, batch[1].shape))
-			print('{}: {}-{}, {}-{}'.format(idx, batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			#print('{}: {}, {}'.format(idx, batch_data[0].shape, batch_data[1].shape))
+			print('{}: {}-{}, {}-{}'.format(idx, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
 
 def simple_npy_file_batch_generator_and_loader_example():
 	num_examples = 3000
@@ -159,13 +159,13 @@ def simple_npy_file_batch_generator_and_loader_example():
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
 		num_loaded_examples = 0
-		for idx, batch in enumerate(batches):
+		for idx, (batch_data, num_batch_examples) in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
-			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
-			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
-			num_loaded_examples += batch[2]
+			#print('\t{}: {}, {}, {}'.format(idx, num_batch_examples, batch_data[0].shape, batch_data[1].shape))
+			print('\t{}: {}, {}-{}, {}-{}'.format(idx, num_batch_examples, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
+			num_loaded_examples += num_batch_examples
 
 		print('#saved examples =', num_saved_examples)
 		print('#loaded examples =', num_loaded_examples)
@@ -216,13 +216,13 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
 
 		num_loaded_examples = 0
-		for idx, batch in enumerate(batches):
+		for idx, (batch_data, num_batch_examples) in enumerate(batches):
 			# Can run in an individual thread or process.
 			# Augment each batch (inputs & outputs).
 			# Train with each batch (inputs & outputs).
-			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
-			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
-			num_loaded_examples += batch[2]
+			#print('\t{}: {}, {}, {}'.format(idx, num_batch_examples, batch_data[0].shape, batch_data[1].shape))
+			print('\t{}: {}, {}-{}, {}-{}'.format(idx, num_batch_examples, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
+			num_loaded_examples += num_batch_examples
 
 		print('#saved examples =', num_saved_examples)
 		print('#loaded examples =', num_loaded_examples)
@@ -259,10 +259,10 @@ def training_worker_proc(dirMgr, batch_info_csv_filename, num_epochs):
 		#--------------------
 		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
-		for idx, batch in enumerate(batches):
+		for idx, (batch_data, num_batch_examples) in enumerate(batches):
 			# Train with each batch (inputs & outputs).
-			#print('\t{}: {}, {}, {}'.format(idx, batch[2], batch[0].shape, batch[1].shape))
-			print('\t{}: {}, {}-{}, {}-{}'.format(idx, batch[2], batch[0].shape, np.max(np.reshape(batch[0], (batch[0].shape[0], -1)), axis=-1), batch[1].shape, np.max(np.reshape(batch[1], (batch[1].shape[0], -1)), axis=-1)))
+			#print('\t{}: {}, {}, {}'.format(idx, num_batch_examples, batch_data[0].shape, batch_data[1].shape))
+			print('\t{}: {}, {}-{}, {}-{}'.format(idx, num_batch_examples, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
 
 		#--------------------
 		"""

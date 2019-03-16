@@ -43,11 +43,11 @@ class SimpleCrnnTrainer(ModelTrainer):
 
 # REF [function] >> training_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, shuffle, is_training_resumed):
-	print('\t{}: Start training worker thread.'.format(os.getpid()))
+	print('\t{}({}): Start training worker thread.'.format(os.getpid(), threading.get_ident()))
 
 	modelTrainer.train(session, batch_size, num_epochs, shuffle, is_training_resumed)
 
-	print('\t{}: End training worker thread.'.format(os.getpid()))
+	print('\t{}({}): End training worker thread.'.format(os.getpid(), threading.get_ident()))
 
 #%%------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ def main():
 	#--------------------
 	# Prepares data.
 
-	dataGenerator = Synth90kDataGenerator(is_sparse_output, is_output_augmented, is_augmented_in_parallel)
+	dataGenerator = Synth90kDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel)
 	image_height, image_width, image_channel, num_classes = dataGenerator.shapes
 	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
 	#label_eos_token = dataGenerator.dataset.end_token

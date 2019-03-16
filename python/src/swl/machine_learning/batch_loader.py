@@ -44,4 +44,4 @@ class NpzFileBatchLoader(FileBatchLoader):
 					num_examples = len(batch_inputs) if len(batch_inputs) == len(batch_outputs) else -1
 					if self._data_processing_functor:
 						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
-					yield batch_inputs, batch_outputs, num_examples
+					yield (batch_inputs, batch_outputs), num_examples

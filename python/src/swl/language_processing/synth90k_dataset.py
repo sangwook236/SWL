@@ -109,7 +109,6 @@ def load_synth90k_dataset(data_dir_path, subset_ratio=None):
 
 	print('Start loading train data...')
 	start_time = time.time()
-	with open(train_anno_filepath, 'r', encoding='UTF8') as fd:
 	#train_data = load_synth90k_data(train_anno_filepath, data_dir_path)
 	train_data = load_synth90k_data(train_anno_filepath, data_dir_path, lexicon)
 	print('\tTrain data size =', len(train_data))
