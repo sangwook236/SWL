@@ -157,16 +157,20 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 	- Dense or sparse tensors for output.
 	"""
 
-	def __init__(self, input_shape, output_shape, num_classes, is_time_major=False):
+	def __init__(self, input_shape, output_shape, num_classes, is_sparse_output=False, is_time_major=False):
 		super().__init__()
 
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 		self._num_classes = num_classes
+		self._is_sparse_output = is_sparse_output
 		self._is_time_major = is_time_major
 
 		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+		if self._is_sparse_output:
+			self._output_tensor_ph = tf.sparse_placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+		else:
+			self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 	@abc.abstractmethod

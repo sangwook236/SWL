@@ -11,11 +11,7 @@ import tensorflow as tf
 from swl.machine_learning.model_trainer import ModelTrainer
 from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGeneratorWithNpyFileInput
-from swl.machine_learning.batch_loader import NpzFileBatchLoader
-from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
-import swl.machine_learning.util as swl_ml_util
 from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
 from synth90k_data import Synth90kDataGenerator
 
@@ -187,8 +183,6 @@ def main():
 	# Evaluates.
 
 	if True:
-		valFileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
-
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():

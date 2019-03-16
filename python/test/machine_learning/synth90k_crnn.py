@@ -6,8 +6,8 @@ from swl.machine_learning.tensorflow_model import SimpleSequentialTensorFlowMode
 #%%------------------------------------------------------------------
 
 class Synth90kCrnn(SimpleSequentialTensorFlowModel):
-	def __init__(self, input_shape, output_shape, num_classes):
-		super().__init__(input_shape, output_shape, num_classes, is_time_major=False)
+	def __init__(self, input_shape, output_shape, num_classes, is_sparse_output):
+		super().__init__(input_shape, output_shape, num_classes, is_sparse_output, is_time_major=False)
 
 	@abc.abstractmethod
 	def _get_final_output(self, logits, seq_lens):
@@ -144,7 +144,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes)
+		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes, is_sparse_output=False)
 
 	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
@@ -171,7 +171,7 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 
 class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes)
+		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 
 	def _get_loss(self, y, t, seq_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
