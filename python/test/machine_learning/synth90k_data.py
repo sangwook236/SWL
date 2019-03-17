@@ -6,7 +6,7 @@ import threading
 import numpy as np
 #import imgaug as ia
 from imgaug import augmenters as iaa
-from swl.machine_learning.imgaug_data_generator import ImgaugDataGenerator
+from swl.machine_learning.data_generator import Data2Generator
 from swl.machine_learning.batch_generator import NpzFileBatchGeneratorWithNpyFileInput
 from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
@@ -137,7 +137,7 @@ class Synth90kDataPreprocessor(object):
 #%%------------------------------------------------------------------
 # Synth90kDataGenerator.
 
-class Synth90kDataGenerator(ImgaugDataGenerator):
+class Synth90kDataGenerator(Data2Generator):
 	def __init__(self, num_epochs, is_sparse_output, is_output_augmented=False, is_augmented_in_parallel=True):
 		super().__init__()
 

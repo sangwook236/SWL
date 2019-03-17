@@ -134,10 +134,17 @@ class NpzFileBatchGenerator(FileBatchGenerator):
 			raise ValueError('Invalid number of examples')
 
 	def saveBatches(self, dir_path, *args, **kwargs):
+		if self._augmenter is not None and isinstance(self._augmenter._augmenter, iaa.Sequential):
+			return self._saveBatchesByImgaug(dir_path, *args, **kwargs)
+		else:
+			return self._saveBatches(dir_path, *args, **kwargs)
+
+	def _saveBatches(self, dir_path, *args, **kwargs):
 		indices = np.arange(self._num_examples)
 		if self._shuffle:
 			np.random.shuffle(indices)
 
+		"""
 		batch_inputs_dict, batch_outputs_dict = dict(), dict()
 		num_saved_examples = 0
 		for step in range(self._num_steps):
@@ -153,6 +160,54 @@ class NpzFileBatchGenerator(FileBatchGenerator):
 					batch_name = 'batch_{}'.format(step)
 					batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_inputs, batch_outputs
 					num_saved_examples += len(batch_indices)
+		"""
+		if self._augmenter is None:
+			inputs, outputs = self._inputs, self._outputs
+		else:
+			inputs, outputs = self._augmenter(self._inputs, self._outputs, self._is_output_augmented)
+
+		batch_inputs_dict, batch_outputs_dict = dict(), dict()
+		num_saved_examples = 0
+		for step in range(self._num_steps):
+			start = step * self._batch_size
+			end = start + self._batch_size
+			batch_indices = indices[start:end]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				batch_inputs, batch_outputs = inputs[batch_indices], outputs[batch_indices]
+				if batch_inputs.size > 0 and batch_outputs.size > 0:  # If batch_inputs and batch_outputs are non-empty.
+					batch_name = 'batch_{}'.format(step)
+					batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_inputs, batch_outputs
+					num_saved_examples += len(batch_indices)
+
+		#--------------------
+		input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename), os.path.join(dir_path, self._batch_output_filename)
+		np.savez(input_filepath, **batch_inputs_dict)
+		np.savez(output_filepath, **batch_outputs_dict)
+
+		with open(os.path.join(dir_path, self._batch_info_csv_filename), 'w', encoding='UTF8', newline='') as csvfile:
+			writer = csv.writer(csvfile)
+			writer.writerow((input_filepath, output_filepath, num_saved_examples))
+
+		return num_saved_examples
+
+	def _saveBatchesByImgaug(self, dir_path, *args, **kwargs):
+		"""Saves batches in parallel by imgaug library.
+		"""
+
+		import imgaug_util
+
+		batch_generator = imgaug_util.generateBatchesInParallelWithOutputAugmentation if self._is_output_augmented else imgaug_util.generateBatchesInParallelWithoutOutputAugmentation
+
+		processes, chunksize = 4, 5
+		batch_inputs_dict, batch_outputs_dict = dict(), dict()
+		num_saved_examples = 0
+		for idx, (batch_data, num_batch_examples) in enumerate(batch_generator(self._augmenter._augmenter, processes, chunksize, self._inputs, self._outputs, self._batch_size, self._shuffle)):
+			batch_name = 'batch_{}'.format(idx)
+			batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_data[:2]
+			num_saved_examples += num_batch_examples
+
+		#--------------------
 		input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename), os.path.join(dir_path, self._batch_output_filename)
 		np.savez(input_filepath, **batch_inputs_dict)
 		np.savez(output_filepath, **batch_outputs_dict)
@@ -239,6 +294,10 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 						if self._shuffle:
 							np.random.shuffle(example_indices)
 
+						# TODO [enhance] >> Augment in parallel by imgaug library.
+						if self._augmenter is not None:
+							inputs, outputs = self._augmenter(inputs, outputs, self._is_output_augmented)
+
 						num_examples_in_a_file = math.ceil(num_examples_in_a_group / sub_file_indices.size)
 						for idx in range(sub_file_indices.size):
 							sub_example_indices = example_indices[(num_examples_in_a_file * idx):(num_examples_in_a_file * (idx + 1))]
@@ -246,7 +305,7 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 								# FIXME [fix] >> Does not work correctly in time-major data.
 								sub_inputs, sub_outputs = inputs[sub_example_indices], outputs[sub_example_indices]
 
-								batch_inputs_dict, batch_outputs_dict, num_saved_examples = self._save_batches(sub_inputs, sub_outputs)
+								batch_inputs_dict, batch_outputs_dict, num_saved_examples = self._construct_batch_dicts(sub_inputs, sub_outputs)
 
 								input_filepath, output_filepath = os.path.join(dir_path, self._batch_input_filename_format.format(file_idx)), os.path.join(dir_path, self._batch_output_filename_format.format(file_idx))
 								np.savez(input_filepath, **batch_inputs_dict)
@@ -259,7 +318,9 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 
 		return total_saved_example_count
 
-	def _save_batches(self, inputs, outputs):
+	def _construct_batch_dicts(self, inputs, outputs):
+		# inputs and outputs have already been shuffled and augmented.
+
 		num_examples = inputs.shape[self._batch_axis]
 		if num_examples <= 0:
 			raise ValueError('Invalid number of examples')
@@ -276,8 +337,8 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 			# FIXME [fix] >> Does not work correctly in time-major data.
 			batch_inputs, batch_outputs = inputs[start:end], outputs[start:end]
 			if batch_inputs.size > 0 and batch_outputs.size > 0 and len(batch_inputs) == len(batch_outputs):  # If batch_inputs and batch_outputs are non-empty.
-				if self._augmenter is not None:
-					batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
+				#if self._augmenter is not None:
+				#	batch_inputs, batch_outputs = self._augmenter(batch_inputs, batch_outputs, self._is_output_augmented)
 				batch_name = 'batch_{}'.format(step)
 				batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_inputs, batch_outputs
 				num_saved_examples += len(batch_inputs)

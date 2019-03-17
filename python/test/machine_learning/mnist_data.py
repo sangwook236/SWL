@@ -3,8 +3,9 @@ import numpy as np
 import tensorflow as tf
 #import imgaug as ia
 from imgaug import augmenters as iaa
-from swl.machine_learning.imgaug_data_generator import ImgaugDataGenerator
+from swl.machine_learning.data_generator import Data2Generator
 import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.imgaug_util as imgaug_util
 
 #%%------------------------------------------------------------------
 # ImgaugDataAugmenter.
@@ -74,7 +75,7 @@ class MnistDataPreprocessor(object):
 #%%------------------------------------------------------------------
 # MnistDataGenerator.
 
-class MnistDataGenerator(ImgaugDataGenerator):
+class MnistDataGenerator(Data2Generator):
 	def __init__(self, is_output_augmented=False, is_augmented_in_parallel=True):
 		super().__init__()
 
@@ -94,7 +95,7 @@ class MnistDataGenerator(ImgaugDataGenerator):
 			self._batch_generator = MnistDataGenerator._generateBatchesWithoutAugmentation
 		else:
 			if self._is_augmented_in_parallel:
-				self._batch_generator = partial(MnistDataGenerator._generateBatchesInParallelWithOutputAugmentation, self._augmenter._augmenter) if is_output_augmented else partial(MnistDataGenerator._generateBatchesInParallelWithoutOutputAugmentation, self._augmenter._augmenter)
+				self._batch_generator = partial(imgaug_util.generateBatchesInParallelWithOutputAugmentation, self._augmenter._augmenter, 4, 5) if is_output_augmented else partial(imgaug_util.generateBatchesInParallelWithoutOutputAugmentation, self._augmenter._augmenter, 4, 5)
 			else:
 				self._batch_generator = partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
 
