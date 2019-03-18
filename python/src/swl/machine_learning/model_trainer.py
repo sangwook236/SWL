@@ -104,7 +104,8 @@ class ModelTrainer(object):
 			train_loss, train_acc = 0.0, 0.0
 			if True:
 				num_train_examples = 0
-				for batch_data, num_batch_examples in self._dataGenerator.getTrainBatches(batch_size, shuffle=False):
+				#for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=shuffle):
+				for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=False):
 					if self._accuracy is None:
 						batch_loss = self._loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
 						#batch_acc = self._accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))

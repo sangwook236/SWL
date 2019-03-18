@@ -132,7 +132,9 @@ def main():
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
+				dataGenerator.initializeTraining(batch_size, shuffle)
 				modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
+				dataGenerator.finalizeTraining()
 		print('\tTotal training time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------

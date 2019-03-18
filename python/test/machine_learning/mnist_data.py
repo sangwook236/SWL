@@ -131,6 +131,12 @@ class MnistDataGenerator(Data2Generator):
 
 		return self._generateBatches(self._train_inputs, self._train_outputs, batch_size, shuffle)
 
+	def getTrainBatchesForEvaluation(self, batch_size, shuffle=False, *args, **kwargs):
+		"""Gets train batches for evaluation such as loss and accuracy, etc.
+		"""
+
+		return self.getTrainBatches(batch_size, shuffle, *args, **kwargs)
+
 	def hasValidationData(self):
 		return self.hasTestData()
 

@@ -296,6 +296,12 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 		return self._batch_generator(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
 
+	def getTrainBatchesForEvaluation(self, batch_size, shuffle=False, *args, **kwargs):
+		"""Gets train batches for evaluation such as loss and accuracy, etc.
+		"""
+
+		return self.getTrainBatches(batch_size, shuffle, *args, **kwargs)
+
 	def hasValidationData(self):
 		return self._val_encoder_inputs is not None and self._val_decoder_inputs is not None and self._val_decoder_outputs is not None and len(self._val_encoder_inputs) > 0
 

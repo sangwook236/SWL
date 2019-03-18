@@ -176,29 +176,33 @@ class Synth90kDataGenerator(Data2Generator):
 		#--------------------
 		train_batch_dir_path_prefix = './train_batch_dir'
 		num_train_batch_dirs = 10
+		train_for_evaluation_batch_dir_path_prefix = './train_for_evaluation_batch_dir'
+		num_train_for_evaluation_batch_dirs = 1
 		val_batch_dir_path_prefix = './val_batch_dir'
 		num_val_batch_dirs = 1
 		test_batch_dir_path_prefix = './test_batch_dir'
 		num_test_batch_dirs = 1
 		self._batch_info_csv_filename = 'batch_info.csv'
-
 		self._num_loaded_files_at_a_time = 5
 
 		trainDirMgr_mp = self._manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, num_train_batch_dirs)
+		#trainForEvaluationDirMgr_mp = self._manager.WorkingDirectoryManager(train_for_evaluation_batch_dir_path_prefix, num_train_for_evaluation_batch_dirs)
 		#valDirMgr_mp = self._manager.WorkingDirectoryManager(val_batch_dir_path_prefix, num_val_batch_dirs)
 
 		#self._trainDirMgr = TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, num_train_batch_dirs)
 		self._trainDirMgr = trainDirMgr_mp
+		self._trainForEvaluationDirMgr = WorkingDirectoryManager(train_for_evaluation_batch_dir_path_prefix, num_train_for_evaluation_batch_dirs)
 		self._valDirMgr = WorkingDirectoryManager(val_batch_dir_path_prefix, num_val_batch_dirs)
 		self._testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, num_test_batch_dirs)
 
 		self._trainFileBatchLoader = NpzFileBatchLoader(self._batch_info_csv_filename, data_processing_functor=self._preprocessor)
+		self._trainForEvaluationFileBatchLoader = NpzFileBatchLoader(self._batch_info_csv_filename, data_processing_functor=self._preprocessor)
 		self._valFileBatchLoader = NpzFileBatchLoader(self._batch_info_csv_filename, data_processing_functor=self._preprocessor)
 		self._testFileBatchLoader = NpzFileBatchLoader(self._batch_info_csv_filename, data_processing_functor=self._preprocessor)
 
 		#--------------------
 		self._isAugmentationThreadStarted = False
-		self._isValidationBatchesGenerated, self._isTestBatchesGenerated = False, False
+		self._isTrainBatchesForEvaluationGenerated, self._isValidationBatchesGenerated, self._isTestBatchesGenerated = False, False, False
 
 	@property
 	def dataset(self):
@@ -232,18 +236,39 @@ class Synth90kDataGenerator(Data2Generator):
 		synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 		self._train_data_info, self._val_data_info, self._test_data_info = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
 
-	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
+	def initializeTraining(self, batch_size, shuffle):
 		if not self._isAugmentationThreadStarted:
-			self._startAugmentationThread(batch_size, shuffle)
-		if not self._isValidationBatchesGenerated:
-			self._generateValidationBatches(batch_size, shuffle)
+			# Augmentation: multithreading + multiprocessing.
+			self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+			self._augmentation_worker_thread.start()
+			self._isAugmentationThreadStarted = True
 
-		return self._loadBatches(self._trainFileBatchLoader, self._trainDirMgr, batch_size, shuffle, phase='train')
-
-		#--------------------
-		# FIXME [fix] >> Bad position.
+	def finalizeTraining(self):
 		if self._isAugmentationThreadStarted:
-			self._joinAugmentationThread()
+			self._augmentation_worker_thread.join()
+			self._isAugmentationThreadStarted = False
+
+	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
+		# REF [function] >> self.initializeTraining().
+		#if not self._isTrainBatchesGenerated:
+		#	self._generateTrainBatches(batch_size, shuffle)	
+		# TODO [improve] >> Run in a thread.
+		if not self._isValidationBatchesGenerated:
+			self._generateBatches(self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			self._isValidationBatchesGenerated = True
+
+		return self._loadBatches(self._trainFileBatchLoader, self._trainDirMgr, phase='train')
+
+	def getTrainBatchesForEvaluation(self, batch_size, shuffle=False, *args, **kwargs):
+		"""Gets train batches for evaluation such as loss and accuracy, etc.
+		"""
+
+		# TODO [improve] >> Run in a thread.
+		if not self._isTrainBatchesForEvaluationGenerated:
+			self._generateBatches(self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle, phase='train-for-evaluation')
+			self._isTrainBatchesForEvaluationGenerated = True
+
+		return self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation')
 
 	def hasValidationData(self):
 		return self._valFileBatchLoader is not None and self._valDirMgr is not None
@@ -253,9 +278,10 @@ class Synth90kDataGenerator(Data2Generator):
 
 	def getValidationBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		if not self._isValidationBatchesGenerated:
-			self._generateValidationBatches(batch_size, shuffle)			
+			self._generateBatches(self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			self._isValidationBatchesGenerated = True
 
-		return self._loadBatches(self._valFileBatchLoader, self._valDirMgr, batch_size, shuffle=False, phase='validation')
+		return self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation')
 
 	def hasTestData(self):
 		return self._testFileBatchLoader is not None and self._testDirMgr is not None
@@ -265,11 +291,29 @@ class Synth90kDataGenerator(Data2Generator):
 
 	def getTestBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		if not self._isTestBatchesGenerated:
-			self._generateTestBatches()			
+			self._generateBatches(self._testDirMgr, self._test_input_filepaths, self._test_output_filepaths, batch_size, shuffle, phase='test')
+			self._isTestBatchesGenerated = True
 
-		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, batch_size, shuffle=False, phase='test')
+		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test')
 
-	def _loadBatches(self, batchLoader, dirMgr, batch_size, shuffle=True, phase='', *args, **kwargs):
+	def _generateBatches(self, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
+		print('\tWaiting for a {} batch directory...'.format(phase))
+		while True:
+			dir_path = dirMgr.requestDirectory()
+			if dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a {} batch directory: {}.'.format(phase, dir_path))
+
+		is_time_major, is_output_augmented = False, False  # Don't care.
+		batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
+		num_saved_examples = batchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+		print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
+
+		dirMgr.returnDirectory(dir_path)
+
+	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
 		print('\tWaiting for a {} batch directory...'.format(phase))
 		while True:
 			dir_path = dirMgr.requestDirectory()
@@ -280,54 +324,6 @@ class Synth90kDataGenerator(Data2Generator):
 		print('\tGot a {} batch directory: {}.'.format(phase, dir_path))
 
 		return batchLoader.loadBatches(dir_path)  # Loads batches.
-
-	def _generateValidationBatches(self, batch_size, shuffle):
-		print('\tWaiting for a validation batch directory...')
-		while True:
-			val_dir_path = self._valDirMgr.requestDirectory()
-			if val_dir_path is not None:
-				break
-			else:
-				time.sleep(0.1)
-		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
-
-		is_time_major, is_output_augmented = False, False  # Don't care.
-		valFileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(self._val_input_filepaths, self._val_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
-		num_saved_examples = valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
-		print('\t#saved validation examples = {}.'.format(num_saved_examples))
-
-		self._valDirMgr.returnDirectory(val_dir_path)		
-
-		self._isValidationBatchesGenerated = True
-
-	def _generateTestBatches(self):
-		print('\tWaiting for a test batch directory...')
-		while True:
-			test_dir_path = self._testDirMgr.requestDirectory()
-			if test_dir_path is not None:
-				break
-			else:
-				time.sleep(0.1)
-		print('\tGot a test batch directory: {}.'.format(test_dir_path))
-
-		is_time_major, is_output_augmented = False, False  # Don't care.
-		testFileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(self._test_input_filepaths, self._test_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
-		num_saved_examples = testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
-		print('\t#saved test examples = {}.'.format(num_saved_examples))
-
-		self._testDirMgr.returnDirectory(test_dir_path)				
-
-		self._isTestBatchesGenerated = True
-
-	def _startAugmentationThread(self, batch_size, shuffle):
-		# Augmentation: multithreading + multiprocessing.
-		self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
-		self._augmentation_worker_thread.start()
-		self._isAugmentationThreadStarted = True
-
-	def _joinAugmentationThread(self):
-		self._augmentation_worker_thread.join()
-		self._isAugmentationThreadStarted = True
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):
@@ -411,8 +407,8 @@ class Synth90kDataGenerator(Data2Generator):
 
 	@staticmethod
 	def initialize_lock(lock):
-		global global_lock
-		global_lock = lock
+		global global_synth90k_augmentation_lock
+		global_synth90k_augmentation_lock = lock
 
 	# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 	@staticmethod
@@ -420,7 +416,7 @@ class Synth90kDataGenerator(Data2Generator):
 		print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
 		print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
 		while True:
-			with global_lock:
+			with global_synth90k_augmentation_lock:
 				dir_path = dirMgr.requestDirectory(is_workable=False)
 
 			if dir_path is not None:
@@ -435,7 +431,7 @@ class Synth90kDataGenerator(Data2Generator):
 		print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
 
 		#--------------------
-		with global_lock:
+		with global_synth90k_augmentation_lock:
 			dirMgr.returnDirectory(dir_path)
 		print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
 		print('\t{}: End augmentation worker process.'.format(os.getpid()))

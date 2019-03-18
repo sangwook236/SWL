@@ -17,6 +17,13 @@ class DataGenerator(abc.ABC):
 		raise NotImplementedError
 
 	@abc.abstractmethod
+	def getTrainBatchesForEvaluation(self, batch_size, shuffle=True, *args, **kwargs):
+		"""Gets train batches for evaluation such as loss and accuracy, etc.
+		"""
+
+		raise NotImplementedError
+
+	@abc.abstractmethod
 	def hasValidationData(self):
 		raise NotImplementedError
 
@@ -39,6 +46,12 @@ class DataGenerator(abc.ABC):
 	@abc.abstractmethod
 	def getTestBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		raise NotImplementedError
+
+	def initializeTraining(self, *args, **kwargs):
+		pass
+
+	def finalizeTraining(self, *args, **kwargs):
+		pass
 
 #%%------------------------------------------------------------------
 # Data2Generator.
