@@ -1,4 +1,4 @@
-import os, abc, csv
+import os, abc, csv, zipfile
 import numpy as np
 
 #%%------------------------------------------------------------------
@@ -36,12 +36,21 @@ class NpzFileBatchLoader(FileBatchLoader):
 					continue
 				num_all_examples = int(row[2])
 
-				for ki, ko in zip(sorted(batch_inputs_npzfile.keys()), sorted(batch_outputs_npzfile.keys())):
+				#for ki, ko in zip(sorted(batch_inputs_npzfile.keys()), sorted(batch_outputs_npzfile.keys())):
+				for ki, ko in zip(batch_inputs_npzfile.keys(), batch_outputs_npzfile.keys()):
 					if ki != ko:
 						print('Unmatched batch key name: {} != {}.'.format(ki, ko))
 						continue
-					batch_inputs, batch_outputs = batch_inputs_npzfile[ki], batch_outputs_npzfile[ko]
-					num_examples = len(batch_inputs) if len(batch_inputs) == len(batch_outputs) else -1
+					num_batch_examples = len(batch_inputs)
+					if num_batch_examples != len(batch_outputs):
+						print('Unmatched batch size: {} != {}.'.format(num_batch_examples, len(batch_outputs)))
+						continue
+
+					try:
+						batch_inputs, batch_outputs = batch_inputs_npzfile[ki], batch_outputs_npzfile[ko]
+					except zipfile.BadZipFile as ex:
+						print('Zip file loading {} in {} or {}: {}.'.format(ki, row[0], row[1], ex))
+						continue
 					if self._data_processing_functor:
 						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
-					yield (batch_inputs, batch_outputs), num_examples
+					yield (batch_inputs, batch_outputs), num_batch_examples

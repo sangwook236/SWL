@@ -188,7 +188,8 @@ def main():
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)
+				#modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)  # Exception: NotImplementedError is raised in dataGenerator.getValidationData().
+				modelEvaluator.evaluate(sess, batch_size=batch_size, shuffle=False)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------

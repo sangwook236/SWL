@@ -217,6 +217,7 @@ class Synth90kDataGenerator(Data2Generator):
 		return self._dataset._image_height, self._dataset._image_width, self._dataset._image_channel, self._dataset._num_classes
 
 	def initialize(self):
+		print('Start loading Synth90k dataset from pre-arranged npy files...')
 		synth90k_base_dir_path = './synth90k_npy'
 		self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = Synth90kDataGenerator._loadDataFromNpyFiles(synth90k_base_dir_path)
 
@@ -226,15 +227,18 @@ class Synth90kDataGenerator(Data2Generator):
 			raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
 		if len(self._test_input_filepaths) != len(self._test_output_filepaths):
 			raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
+		print('End loading Synth90k dataset from pre-arranged npy files.')
 
 		#--------------------
 		# FIXME [implement] >> How to use?
+		print('Start loading Synth90k dataset from annotation files of Synth90k dataset...')
 		if 'posix' == os.name:
 			data_home_dir_path = '/home/sangwook/my_dataset'
 		else:
 			data_home_dir_path = 'D:/dataset'
 		synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 		self._train_data_info, self._val_data_info, self._test_data_info = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
+		print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
 
 	def initializeTraining(self, batch_size, shuffle):
 		if not self._isAugmentationThreadStarted:
@@ -296,34 +300,88 @@ class Synth90kDataGenerator(Data2Generator):
 
 		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test')
 
+	class BatchDirectoryGuard(object):
+		def __init__(self, dirMgr, phase, isGenerated):
+			self._dirMgr = dirMgr
+			self._phase = phase
+			self._dir_path = None
+			self._isGenerated = isGenerated
+
+		@property
+		def directory(self):
+			return self._dir_path
+
+		def __enter__(self):
+			print('\tWaiting for a {} batch directory for {}...'.format(self._phase, ('generation' if self._isGenerated else 'loading')))
+			while True:
+				self._dir_path = self._dirMgr.requestDirectory()
+				if self._dir_path is not None:
+					break
+				else:
+					time.sleep(0.1)
+			print('\tGot a {} batch directory for {}: {}.'.format(self._phase, ('generation' if self._isGenerated else 'loading'), self._dir_path))
+			return self
+
+		def __exit__(self, exception_type, exception_value, traceback):
+			self._dirMgr.returnDirectory(self._dir_path)
+			print('\tReturned a {} batch directory: {}.'.format(self._phase, self._dir_path))
+
 	def _generateBatches(self, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
-		print('\tWaiting for a {} batch directory...'.format(phase))
-		while True:
-			dir_path = dirMgr.requestDirectory()
-			if dir_path is not None:
-				break
-			else:
-				time.sleep(0.1)
-		print('\tGot a {} batch directory: {}.'.format(phase, dir_path))
-
-		is_time_major, is_output_augmented = False, False  # Don't care.
-		batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
-		num_saved_examples = batchGenerator.saveBatches(dir_path)  # Generates and saves batches.
-		print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
-
-		dirMgr.returnDirectory(dir_path)
+		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, phase, True) as guard:
+			is_time_major, is_output_augmented = False, False  # Don't care.
+			batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
+			if guard.directory:
+				num_saved_examples = batchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
+				print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
 
 	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
-		print('\tWaiting for a {} batch directory...'.format(phase))
+		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, phase, False) as guard:
+			if guard.directory:
+				return batchLoader.loadBatches(guard.directory)  # Loads batches.
+	"""
+	class BatchDirectoryGuard(object):
+		def __init__(self, dirMgr, dir_path, phase, isGenerated):
+			self._dirMgr = dirMgr
+			self._phase = phase
+			self._dir_path = dir_path
+			self._isGenerated = isGenerated
+
+		def __enter__(self):
+			return self
+
+		def __exit__(self, exception_type, exception_value, traceback):
+			self._dirMgr.returnDirectory(self._dir_path)
+			print('\tReturned a {} batch directory for {}: {}.'.format(self._phase, ('generation' if self._isGenerated else 'loading'), self._dir_path))
+
+	def _generateBatches(self, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
+		print('\tWaiting for a {} batch directory for generation...'.format(phase))
 		while True:
 			dir_path = dirMgr.requestDirectory()
 			if dir_path is not None:
 				break
 			else:
 				time.sleep(0.1)
-		print('\tGot a {} batch directory: {}.'.format(phase, dir_path))
+		print('\tGot a {} batch directory for generation: {}.'.format(phase, dir_path))
 
-		return batchLoader.loadBatches(dir_path)  # Loads batches.
+		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, dir_path, phase, True):
+			is_time_major, is_output_augmented = False, False  # Don't care.
+			batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
+			num_saved_examples = batchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+			print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
+
+	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
+		print('\tWaiting for a {} batch directory for loading...'.format(phase))
+		while True:
+			dir_path = dirMgr.requestDirectory()
+			if dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+		print('\tGot a {} batch directory for loading: {}.'.format(phase, dir_path))
+
+		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, dir_path, phase, False):
+			return batchLoader.loadBatches(dir_path)  # Loads batches.
+	"""
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):

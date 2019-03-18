@@ -22,7 +22,7 @@ def load_synth90k_lexicon(lexicon_filepath):
 	print('\tMax length of words in lexicon =', max_word_len_in_lexicon)  # Max label length.
 
 	label_characters = ''.join(sorted(set(''.join(lexicon))))
-	print('\tLabel characeters in lexicon (count = {}) = {}.'.format(len(label_characters), label_characters))
+	print('\tLabel characeters in lexicon = {} (count = {}).'.format(label_characters, len(label_characters)))
 
 	return lexicon
 

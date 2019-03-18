@@ -2,14 +2,14 @@ import os, queue
 import swl.util.util as swl_util
 
 class WorkingDirectoryManager(object):
-	"""
-	One-step working directory manager.
+	"""One-step working directory manager.
 	"""
 
 	def __init__(self, dir_path_prefix, num_dirs):
 		"""
-		dir_path_prefix: A path prefix of directories to be managed.
-		num_dirs: Total number of working directories.
+		Inputs:
+			dir_path_prefix (string): A path prefix of directories to be managed.
+			num_dirs (int): Total number of working directories.
 		"""
 
 		super().__init__()
@@ -43,16 +43,17 @@ class WorkingDirectoryManager(object):
 			return False
 
 class TwoStepWorkingDirectoryManager(object):
-	"""
-	Two-step working directory manager.
+	"""Two-step working directory manager.
+
 	Work step:
 		Preparatory directory -> working directory -> preparatory directory -> ...
 	"""
 
 	def __init__(self, dir_path_prefix, num_dirs):
 		"""
-		dir_path_prefix: A path prefix of directories to be managed.
-		num_dirs: Total number of working directories.
+		Inputs:
+			dir_path_prefix (string): A path prefix of directories to be managed.
+			num_dirs (int): Total number of working directories.
 		"""
 
 		super().__init__()
@@ -100,17 +101,18 @@ class TwoStepWorkingDirectoryManager(object):
 			return False
 
 class MultiStepWorkingDirectoryManager(object):
-	"""
-	Multi-step working directory manager.
+	"""Multi-step working directory manager.
+
 	Work step:
 		Working directory #0 (start working directory) -> working directory #1 -> ... -> working directory #(num_work_steps - 1) (final working directory) -> working directory #0 -> ...
 	"""
 
 	def __init__(self, dir_path_prefix, num_dirs, num_work_steps):
 		"""
-		dir_path_prefix: A path prefix of directories to be managed.
-		num_dirs: Total number of working directories.
-		num_work_steps: Number of work steps.
+		Inputs:
+			dir_path_prefix (string): A path prefix of directories to be managed.
+			num_dirs (int): Total number of working directories.
+			num_work_steps (int): Number of work steps.
 		"""
 
 		super().__init__()
