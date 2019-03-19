@@ -135,6 +135,96 @@ class Synth90kDataPreprocessor(object):
 		return inputs, outputs
 
 #%%------------------------------------------------------------------
+# Working directory guard classes.
+
+class LockGuard(object):
+	def __init__(self, lock):
+		self._lock = lock
+
+	def __enter__(self):
+		self._lock.acquire(block=True, timeout=None)
+		return self
+
+	def __exit__(self, exception_type, exception_value, traceback):
+		self._lock.release()
+
+class WorkingDirectoryGuard(object):
+	def __init__(self, dirMgr, lock, phase, isGenerated):
+		self._dirMgr = dirMgr
+		self._lock = lock
+		self._phase = phase
+		self._mode = 'generation' if isGenerated else 'loading'
+		self._dir_path = None
+
+	@property
+	def directory(self):
+		return self._dir_path
+
+	def __enter__(self):
+		print('\tWaiting for a {} directory for {}...'.format(self._phase, self._mode))
+		while True:
+			with self._lock:
+			#with LockGuard(self._lock):
+				self._dir_path = self._dirMgr.requestDirectory()
+			if self._dir_path is not None:
+				break
+			else:
+				time.sleep(0.5)
+		print('\tGot a {} directory for {}: {}.'.format(self._phase, self._mode, self._dir_path))
+		return self
+
+	def __exit__(self, exception_type, exception_value, traceback):
+		while True:
+			is_returned = False
+			with self._lock:
+			#with LockGuard(self._lock):
+				is_returned = self._dirMgr.returnDirectory(self._dir_path)
+			if is_returned:
+				break
+			else:
+				time.sleep(0.5)
+		print('\tReturned a {} directory for {}: {}.'.format(self._phase, self._mode, self._dir_path))
+
+class TwoStepWorkingDirectoryGuard(object):
+	def __init__(self, dirMgr, is_workable, lock, phase, isGenerated):
+		self._dirMgr = dirMgr
+		self._is_workable = is_workable
+		self._lock = lock
+		self._phase = phase
+		self._step = 'working' if self._is_workable else 'preparatory'
+		self._mode = 'generation' if isGenerated else 'loading'
+		self._dir_path = None
+
+	@property
+	def directory(self):
+		return self._dir_path
+
+	def __enter__(self):
+		print('\tWaiting for a {} {} directory for {}...'.format(self._step, self._phase, self._mode))
+		while True:
+			with self._lock:
+			#with LockGuard(self._lock):
+				self._dir_path = self._dirMgr.requestDirectory(is_workable=self._is_workable)
+			if self._dir_path is not None:
+				break
+			else:
+				time.sleep(0.5)
+		print('\tGot a {} {} directory for {}: {}.'.format(self._step, self._phase, self._mode, self._dir_path))
+		return self
+
+	def __exit__(self, exception_type, exception_value, traceback):
+		while True:
+			is_returned = False
+			with self._lock:
+			#with LockGuard(self._lock):
+				is_returned = self._dirMgr.returnDirectory(self._dir_path)
+			if is_returned:
+				break
+			else:
+				time.sleep(0.5)
+		print('\tReturned a {} {} directory for {}: {}.'.format(self._step, self._phase, self._mode, self._dir_path))
+
+#%%------------------------------------------------------------------
 # Synth90kDataGenerator.
 
 class Synth90kDataGenerator(Data2Generator):
@@ -300,88 +390,24 @@ class Synth90kDataGenerator(Data2Generator):
 
 		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test')
 
-	class BatchDirectoryGuard(object):
-		def __init__(self, dirMgr, phase, isGenerated):
-			self._dirMgr = dirMgr
-			self._phase = phase
-			self._dir_path = None
-			self._isGenerated = isGenerated
-
-		@property
-		def directory(self):
-			return self._dir_path
-
-		def __enter__(self):
-			print('\tWaiting for a {} batch directory for {}...'.format(self._phase, ('generation' if self._isGenerated else 'loading')))
-			while True:
-				self._dir_path = self._dirMgr.requestDirectory()
-				if self._dir_path is not None:
-					break
-				else:
-					time.sleep(0.1)
-			print('\tGot a {} batch directory for {}: {}.'.format(self._phase, ('generation' if self._isGenerated else 'loading'), self._dir_path))
-			return self
-
-		def __exit__(self, exception_type, exception_value, traceback):
-			self._dirMgr.returnDirectory(self._dir_path)
-			print('\tReturned a {} batch directory: {}.'.format(self._phase, self._dir_path))
-
 	def _generateBatches(self, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
-		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, phase, True) as guard:
+		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
+		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, True) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, False, self._lock, phase, True)) as guard:
 			is_time_major, is_output_augmented = False, False  # Don't care.
 			batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
 			if guard.directory:
 				num_saved_examples = batchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
 				print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
+			else:
+				raise ValueError('Directory is None')
 
 	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
-		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, phase, False) as guard:
+		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
+		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, False) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, True, self._lock, phase, False)) as guard:
 			if guard.directory:
 				return batchLoader.loadBatches(guard.directory)  # Loads batches.
-	"""
-	class BatchDirectoryGuard(object):
-		def __init__(self, dirMgr, dir_path, phase, isGenerated):
-			self._dirMgr = dirMgr
-			self._phase = phase
-			self._dir_path = dir_path
-			self._isGenerated = isGenerated
-
-		def __enter__(self):
-			return self
-
-		def __exit__(self, exception_type, exception_value, traceback):
-			self._dirMgr.returnDirectory(self._dir_path)
-			print('\tReturned a {} batch directory for {}: {}.'.format(self._phase, ('generation' if self._isGenerated else 'loading'), self._dir_path))
-
-	def _generateBatches(self, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
-		print('\tWaiting for a {} batch directory for generation...'.format(phase))
-		while True:
-			dir_path = dirMgr.requestDirectory()
-			if dir_path is not None:
-				break
 			else:
-				time.sleep(0.1)
-		print('\tGot a {} batch directory for generation: {}.'.format(phase, dir_path))
-
-		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, dir_path, phase, True):
-			is_time_major, is_output_augmented = False, False  # Don't care.
-			batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=self._augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
-			num_saved_examples = batchGenerator.saveBatches(dir_path)  # Generates and saves batches.
-			print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
-
-	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
-		print('\tWaiting for a {} batch directory for loading...'.format(phase))
-		while True:
-			dir_path = dirMgr.requestDirectory()
-			if dir_path is not None:
-				break
-			else:
-				time.sleep(0.1)
-		print('\tGot a {} batch directory for loading: {}.'.format(phase, dir_path))
-
-		with Synth90kDataGenerator.BatchDirectoryGuard(dirMgr, dir_path, phase, False):
-			return batchLoader.loadBatches(dir_path)  # Loads batches.
-	"""
+				raise ValueError('Directory is None')
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):
@@ -472,24 +498,11 @@ class Synth90kDataGenerator(Data2Generator):
 	@staticmethod
 	def augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
 		print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-		print('\t{}: Request a preparatory train directory.'.format(os.getpid()))
-		while True:
-			with global_synth90k_augmentation_lock:
-				dir_path = dirMgr.requestDirectory(is_workable=False)
-
-			if dir_path is not None:
-				break
+		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
+			if guard.directory:
+				fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+				num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+				print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
 			else:
-				time.sleep(0.1)
-		print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
-
-		#--------------------
-		fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
-		print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
-
-		#--------------------
-		with global_synth90k_augmentation_lock:
-			dirMgr.returnDirectory(dir_path)
-		print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
+				raise ValueError('Directory is None')
 		print('\t{}: End augmentation worker process.'.format(os.getpid()))

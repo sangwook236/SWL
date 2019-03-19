@@ -3,7 +3,6 @@
 import sys
 sys.path.append('../../src')
 
-#--------------------
 import os, math
 import numpy as np
 from swl.util import util as swl_util

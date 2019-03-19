@@ -41,15 +41,28 @@ class NpzFileBatchLoader(FileBatchLoader):
 					if ki != ko:
 						print('Unmatched batch key name: {} != {}.'.format(ki, ko))
 						continue
-					num_batch_examples = len(batch_inputs)
-					if num_batch_examples != len(batch_outputs):
-						print('Unmatched batch size: {} != {}.'.format(num_batch_examples, len(batch_outputs)))
-						continue
 
+					"""
 					try:
 						batch_inputs, batch_outputs = batch_inputs_npzfile[ki], batch_outputs_npzfile[ko]
 					except zipfile.BadZipFile as ex:
 						print('Zip file loading {} in {} or {}: {}.'.format(ki, row[0], row[1], ex))
+						continue
+					"""
+					try:
+						batch_inputs = batch_inputs_npzfile[ki]
+					except zipfile.BadZipFile as ex:
+						print('Zip file loading {} in {}: {}.'.format(ki, row[0], ex))
+						continue
+					try:
+						batch_outputs = batch_outputs_npzfile[ko]
+					except zipfile.BadZipFile as ex:
+						print('Zip file loading {} in {}: {}.'.format(ko, row[1], ex))
+						continue
+
+					num_batch_examples = len(batch_inputs)
+					if num_batch_examples != len(batch_outputs):
+						print('Unmatched batch size: {} != {}.'.format(num_batch_examples, len(batch_outputs)))
 						continue
 					if self._data_processing_functor:
 						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)

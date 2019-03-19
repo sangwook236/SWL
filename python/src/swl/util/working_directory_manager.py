@@ -1,6 +1,8 @@
 import os, queue
 import swl.util.util as swl_util
 
+#%%------------------------------------------------------------------
+
 class WorkingDirectoryManager(object):
 	"""One-step working directory manager.
 	"""
@@ -41,6 +43,8 @@ class WorkingDirectoryManager(object):
 		else:
 			#raise ValueError('Invalid directory path: {}'.format(dir_path))
 			return False
+
+#%%------------------------------------------------------------------
 
 class TwoStepWorkingDirectoryManager(object):
 	"""Two-step working directory manager.
@@ -99,6 +103,8 @@ class TwoStepWorkingDirectoryManager(object):
 		else:
 			#raise ValueError('Invalid directory path: {}'.format(dir_path))
 			return False
+
+#%%------------------------------------------------------------------
 
 class MultiStepWorkingDirectoryManager(object):
 	"""Multi-step working directory manager.

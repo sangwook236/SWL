@@ -316,7 +316,7 @@ class NpzFileBatchGeneratorWithNpyFileInput(FileBatchGenerator):
 								total_saved_example_count += num_saved_examples
 								file_idx += 1
 
-		return total_saved_example_count
+			return total_saved_example_count
 
 	def _construct_batch_dicts(self, inputs, outputs):
 		# inputs and outputs have already been shuffled and augmented.
