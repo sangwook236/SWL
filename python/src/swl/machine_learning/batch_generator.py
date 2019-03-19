@@ -134,7 +134,7 @@ class NpzFileBatchGenerator(FileBatchGenerator):
 			raise ValueError('Invalid number of examples')
 
 	def saveBatches(self, dir_path, *args, **kwargs):
-		if self._augmenter is not None and isinstance(self._augmenter._augmenter, iaa.Sequential):
+		if self._augmenter is not None and self._augmenter._augmenter is not None and isinstance(self._augmenter._augmenter, iaa.Sequential):
 			return self._saveBatchesByImgaug(dir_path, *args, **kwargs)
 		else:
 			return self._saveBatches(dir_path, *args, **kwargs)

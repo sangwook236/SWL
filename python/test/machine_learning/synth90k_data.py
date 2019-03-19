@@ -161,7 +161,7 @@ class WorkingDirectoryGuard(object):
 		return self._dir_path
 
 	def __enter__(self):
-		print('\tWaiting for a {} directory for {}...'.format(self._phase, self._mode))
+		print('\t{}: Waiting for a {} directory for {}...'.format(os.getpid(), self._phase, self._mode))
 		while True:
 			with self._lock:
 			#with LockGuard(self._lock):
@@ -170,7 +170,7 @@ class WorkingDirectoryGuard(object):
 				break
 			else:
 				time.sleep(0.5)
-		print('\tGot a {} directory for {}: {}.'.format(self._phase, self._mode, self._dir_path))
+		print('\t{}: Got a {} directory for {}: {}.'.format(os.getpid(), self._phase, self._mode, self._dir_path))
 		return self
 
 	def __exit__(self, exception_type, exception_value, traceback):
@@ -183,7 +183,7 @@ class WorkingDirectoryGuard(object):
 				break
 			else:
 				time.sleep(0.5)
-		print('\tReturned a {} directory for {}: {}.'.format(self._phase, self._mode, self._dir_path))
+		print('\t{}: Returned a {} directory for {}: {}.'.format(os.getpid(), self._phase, self._mode, self._dir_path))
 
 class TwoStepWorkingDirectoryGuard(object):
 	def __init__(self, dirMgr, is_workable, lock, phase, isGenerated):
@@ -200,7 +200,7 @@ class TwoStepWorkingDirectoryGuard(object):
 		return self._dir_path
 
 	def __enter__(self):
-		print('\tWaiting for a {} {} directory for {}...'.format(self._step, self._phase, self._mode))
+		print('\t{}: Waiting for a {} {} directory for {}...'.format(os.getpid(), self._step, self._phase, self._mode))
 		while True:
 			with self._lock:
 			#with LockGuard(self._lock):
@@ -209,7 +209,7 @@ class TwoStepWorkingDirectoryGuard(object):
 				break
 			else:
 				time.sleep(0.5)
-		print('\tGot a {} {} directory for {}: {}.'.format(self._step, self._phase, self._mode, self._dir_path))
+		print('\t{}: Got a {} {} directory for {}: {}.'.format(os.getpid(), self._step, self._phase, self._mode, self._dir_path))
 		return self
 
 	def __exit__(self, exception_type, exception_value, traceback):
@@ -222,7 +222,7 @@ class TwoStepWorkingDirectoryGuard(object):
 				break
 			else:
 				time.sleep(0.5)
-		print('\tReturned a {} {} directory for {}: {}.'.format(self._step, self._phase, self._mode, self._dir_path))
+		print('\t{}: Returned a {} {} directory for {}: {}.'.format(os.getpid(), self._step, self._phase, self._mode, self._dir_path))
 
 #%%------------------------------------------------------------------
 # Synth90kDataGenerator.
@@ -501,7 +501,7 @@ class Synth90kDataGenerator(Data2Generator):
 		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
 			if guard.directory:
 				fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
-				num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+				num_saved_examples = fileBatchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
 				print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
 			else:
 				raise ValueError('Directory is None')

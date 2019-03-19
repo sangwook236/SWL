@@ -42,23 +42,23 @@ class NpzFileBatchLoader(FileBatchLoader):
 						print('Unmatched batch key name: {} != {}.'.format(ki, ko))
 						continue
 
-					"""
 					try:
 						batch_inputs, batch_outputs = batch_inputs_npzfile[ki], batch_outputs_npzfile[ko]
 					except zipfile.BadZipFile as ex:
-						print('Zip file loading {} in {} or {}: {}.'.format(ki, row[0], row[1], ex))
+						print('Zip file error: {} in {} or {}: {}.'.format(ki, row[0], row[1], ex))
 						continue
 					"""
 					try:
 						batch_inputs = batch_inputs_npzfile[ki]
 					except zipfile.BadZipFile as ex:
-						print('Zip file loading {} in {}: {}.'.format(ki, row[0], ex))
+						print('Zip file error: {} in {}: {}.'.format(ki, row[0], ex))
 						continue
 					try:
 						batch_outputs = batch_outputs_npzfile[ko]
 					except zipfile.BadZipFile as ex:
-						print('Zip file loading {} in {}: {}.'.format(ko, row[1], ex))
+						print('Zip file error: {} in {}: {}.'.format(ko, row[1], ex))
 						continue
+					"""
 
 					num_batch_examples = len(batch_inputs)
 					if num_batch_examples != len(batch_outputs):
