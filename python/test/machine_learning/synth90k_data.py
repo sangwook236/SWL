@@ -148,6 +148,22 @@ class LockGuard(object):
 	def __exit__(self, exception_type, exception_value, traceback):
 		self._lock.release()
 
+class SimpleDirectoryGuard(object):
+	def __init__(self, dir_path):
+		self._dir_path = dir_path
+
+	@property
+	def directory(self):
+		return self._dir_path
+
+	def __enter__(self):
+		# Do nothing.
+		return self
+
+	def __exit__(self, exception_type, exception_value, traceback):
+		# Do nothing.
+		pass
+
 class WorkingDirectoryGuard(object):
 	def __init__(self, dirMgr, lock, phase, isGenerated):
 		self._dirMgr = dirMgr
@@ -186,12 +202,12 @@ class WorkingDirectoryGuard(object):
 		print('\t{}: Returned a {} directory for {}: {}.'.format(os.getpid(), self._phase, self._mode, self._dir_path))
 
 class TwoStepWorkingDirectoryGuard(object):
-	def __init__(self, dirMgr, is_workable, lock, phase, isGenerated):
+	def __init__(self, dirMgr, isWorkable, lock, phase, isGenerated):
 		self._dirMgr = dirMgr
-		self._is_workable = is_workable
+		self._isWorkable = isWorkable
 		self._lock = lock
 		self._phase = phase
-		self._step = 'working' if self._is_workable else 'preparatory'
+		self._step = 'working' if self._isWorkable else 'preparatory'
 		self._mode = 'generation' if isGenerated else 'loading'
 		self._dir_path = None
 
@@ -204,7 +220,7 @@ class TwoStepWorkingDirectoryGuard(object):
 		while True:
 			with self._lock:
 			#with LockGuard(self._lock):
-				self._dir_path = self._dirMgr.requestDirectory(is_workable=self._is_workable)
+				self._dir_path = self._dirMgr.requestDirectory(is_workable=self._isWorkable)
 			if self._dir_path is not None:
 				break
 			else:
@@ -403,11 +419,16 @@ class Synth90kDataGenerator(Data2Generator):
 
 	def _loadBatches(self, batchLoader, dirMgr, phase='', *args, **kwargs):
 		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
+		"""
+		# NOTE [info] >> This implementation does not properly work because of the characteristic of yield keyword.
 		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, False) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, True, self._lock, phase, False)) as guard:
 			if guard.directory:
 				return batchLoader.loadBatches(guard.directory)  # Loads batches.
 			else:
 				raise ValueError('Directory is None')
+		"""
+		directoryGuard = WorkingDirectoryGuard(dirMgr, self._lock, phase, False) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, True, self._lock, phase, False)
+		return batchLoader.loadBatchesUsingDirectoryGuard(directoryGuard)  # Loads batches.
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):

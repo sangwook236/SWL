@@ -57,11 +57,11 @@ class WorkingDirectoryGuard(object):
 		print('\t{}({}): Returned a working directory: {}.'.format(os.getpid(), threading.get_ident(), self._dir_path))
 
 class TwoStepWorkingDirectoryGuard(object):
-	def __init__(self, dirMgr, is_workable, lock):
+	def __init__(self, dirMgr, isWorkable, lock):
 		self._dirMgr = dirMgr
-		self._is_workable = is_workable
+		self._isWorkable = isWorkable
 		self._lock = lock
-		self._step = 'working' if self._is_workable else 'preparatory'
+		self._step = 'working' if self._isWorkable else 'preparatory'
 		self._dir_path = None
 
 	@property
@@ -73,7 +73,7 @@ class TwoStepWorkingDirectoryGuard(object):
 		while True:
 			with self._lock:
 			#with LockGuard(self._lock):
-				self._dir_path = self._dirMgr.requestDirectory(is_workable=self._is_workable)
+				self._dir_path = self._dirMgr.requestDirectory(is_workable=self._isWorkable)
 			if self._dir_path is not None:
 				break
 			else:

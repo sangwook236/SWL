@@ -67,6 +67,7 @@ class SimpleBatchGenerator(BatchGenerator):
 		if self._num_examples <= 0:
 			raise ValueError('Invalid number of examples')
 
+	# Returns a generator.
 	def generateBatches(self, *args, **kwargs):
 		indices = np.arange(self._num_examples)
 		if self._shuffle:
