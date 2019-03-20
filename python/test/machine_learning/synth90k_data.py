@@ -423,6 +423,7 @@ class Synth90kDataGenerator(Data2Generator):
 		# NOTE [info] >> This implementation does not properly work because of the characteristic of yield keyword.
 		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, False) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, True, self._lock, phase, False)) as guard:
 			if guard.directory:
+				# FIXME [fix] >> Exits this function and returns the working directory before starting yield.
 				return batchLoader.loadBatches(guard.directory)  # Loads batches.
 			else:
 				raise ValueError('Directory is None')

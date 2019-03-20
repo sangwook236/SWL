@@ -82,9 +82,9 @@ class NpzFileBatchLoader(FileBatchLoader):
 
 			"""
 			# NOTE [info] >> This implementation does not properly work because of the characteristic of yield keyword.
-			return self.loadBatches(dir_path, *args, **kwargs)
+			return self.loadBatches(directoryGuard.directory, *args, **kwargs)
 			"""
-			with open(os.path.join(dir_path, self._batch_info_csv_filename), 'r', encoding='UTF8') as csvfile:
+			with open(os.path.join(directoryGuard.directory, self._batch_info_csv_filename), 'r', encoding='UTF8') as csvfile:
 				reader = csv.reader(csvfile)
 				for row in reader:
 					if not row:
