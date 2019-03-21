@@ -24,11 +24,7 @@ class DataGenerator(abc.ABC):
 		raise NotImplementedError
 
 	@abc.abstractmethod
-	def hasValidationData(self):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def getValidationData(self, *args, **kwargs):
+	def hasValidationBatches(self):
 		raise NotImplementedError
 
 	@abc.abstractmethod
@@ -36,11 +32,7 @@ class DataGenerator(abc.ABC):
 		raise NotImplementedError
 
 	@abc.abstractmethod
-	def hasTestData(self):
-		raise NotImplementedError
-
-	@abc.abstractmethod
-	def getTestData(self, *args, **kwargs):
+	def hasTestBatches(self):
 		raise NotImplementedError
 
 	@abc.abstractmethod
@@ -59,7 +51,7 @@ class DataGenerator(abc.ABC):
 # Data generator with 2 data.
 class Data2Generator(DataGenerator):
 	@staticmethod
-	def _generateBatchesWithoutAugmentation(data1, data2, batch_size, shuffle=True, *args, **kwargs):
+	def _generateBatchesWithoutAugmentation(preprocessor, data1, data2, batch_size, shuffle=True, *args, **kwargs):
 		num_examples = len(data1)
 		if batch_size is None:
 			batch_size = num_examples
@@ -70,22 +62,37 @@ class Data2Generator(DataGenerator):
 		if shuffle:
 			np.random.shuffle(indices)
 
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
-					yield (batch_data1, batch_data2), batch_indices.size
+		if preprocessor is None:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+						yield (batch_data1, batch_data2), batch_indices.size
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+						yield preprocessor(batch_data1, batch_data2), batch_indices.size
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 
 	@staticmethod
-	def _generateBatchesWithAugmentation(augmenter, data1, data2, batch_size, shuffle=True, *args, **kwargs):
+	def _generateBatchesWithAugmentation(augmenter, preprocessor, data1, data2, batch_size, shuffle=True, *args, **kwargs):
 		num_examples = len(data1)
 		if batch_size is None:
 			batch_size = num_examples
@@ -96,20 +103,39 @@ class Data2Generator(DataGenerator):
 		if shuffle:
 			np.random.shuffle(indices)
 
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
-					batch_data1, batch_data2 = augmenter(batch_data1, batch_data2)
-					yield (batch_data1, batch_data2), batch_indices.size
+		if preprocessor is None:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+						batch_data1, batch_data2 = augmenter(batch_data1, batch_data2)
+						yield (batch_data1, batch_data2), batch_indices.size
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+						# Data augmentation -> preprocessing.
+						batch_data1, batch_data2 = preprocessor(*augmenter(batch_data1, batch_data2))
+						# Data preprocessing -> augmentation.
+						#batch_data1, batch_data2 = augmenter(*preprocessor(batch_data1, batch_data2))
+						yield (batch_data1, batch_data2), batch_indices.size
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 
 #%%------------------------------------------------------------------
 # Data3Generator.
@@ -117,7 +143,7 @@ class Data2Generator(DataGenerator):
 # Data generator with 3 data.
 class Data3Generator(DataGenerator):
 	@staticmethod
-	def _generateBatchesWithoutAugmentation(data1, data2, data3, batch_size, shuffle=True, *args, **kwargs):
+	def _generateBatchesWithoutAugmentation(preprocessor, data1, data2, data3, batch_size, shuffle=True, *args, **kwargs):
 		num_examples = len(data1)
 		if batch_size is None:
 			batch_size = num_examples
@@ -128,22 +154,37 @@ class Data3Generator(DataGenerator):
 		if shuffle:
 			np.random.shuffle(indices)
 
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+		if preprocessor is None:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+						yield (batch_data1, batch_data2, batch_data3), batch_indices.size
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+						yield preprocessor(batch_data1, batch_data2, batch_data3), batch_indices.size
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 
 	@staticmethod
-	def _generateBatchesWithAugmentation(augmenter, data1, data2, data3, batch_size, shuffle=True, *args, **kwargs):
+	def _generateBatchesWithAugmentation(augmenter, preprocessor, data1, data2, data3, batch_size, shuffle=True, *args, **kwargs):
 		num_examples = len(data1)
 		if batch_size is None:
 			batch_size = num_examples
@@ -154,17 +195,33 @@ class Data3Generator(DataGenerator):
 		if shuffle:
 			np.random.shuffle(indices)
 
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-					batch_data1, batch_data2, batch_data3 = augmenter(batch_data1, batch_data2, batch_data3)
-					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+		if preprocessor is None:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+						batch_data1, batch_data2, batch_data3 = augmenter(batch_data1, batch_data2, batch_data3)
+						yield (batch_data1, batch_data2, batch_data3), batch_indices.size
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = data1[batch_indices], data2[batch_indices], data3[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+						batch_data1, batch_data2, batch_data3 = augmenter(batch_data1, batch_data2, batch_data3)
+						yield preprocessor(batch_data1, batch_data2, batch_data3), batch_indices.size
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx

@@ -25,6 +25,10 @@ class MnistCnn(SimpleTensorFlowModel):
 	def _create_model(self, input_tensor, is_training, num_classes):
 		dropout_prob = 0.25
 
+		# Preprocessing.
+		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')

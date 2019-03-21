@@ -70,7 +70,7 @@ class NpzFileBatchLoader(FileBatchLoader):
 					if num_batch_examples != len(batch_outputs):
 						print('Unmatched batch size: {} != {}.'.format(num_batch_examples, len(batch_outputs)))
 						continue
-					if self._data_processing_functor:
+					if self._data_processing_functor is not None:
 						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
 					yield (batch_inputs, batch_outputs), num_batch_examples
 
@@ -124,6 +124,6 @@ class NpzFileBatchLoader(FileBatchLoader):
 						if num_batch_examples != len(batch_outputs):
 							print('Unmatched batch size: {} != {}.'.format(num_batch_examples, len(batch_outputs)))
 							continue
-						if self._data_processing_functor:
+						if self._data_processing_functor is not None:
 							batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
 						yield (batch_inputs, batch_outputs), num_batch_examples

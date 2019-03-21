@@ -4,7 +4,7 @@ import imgaug as ia
 
 #%%------------------------------------------------------------------
 
-def generateBatchesInParallelWithoutOutputAugmentation(imgaug_augmenter, processes, chunksize, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
+def generateBatchesInParallelWithoutOutputAugmentation(processes, chunksize, imgaug_augmenter, preprocessor, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
 	#if not isinstance(imgaug_augmenter, iaa.Sequential):
 	#	raise ValueError('The augmenter has to be an instance of imgaug.augmenters.Sequential to augment in parallel')
 
@@ -50,10 +50,14 @@ def generateBatchesInParallelWithoutOutputAugmentation(imgaug_augmenter, process
 		#	chunksize=10 controls how much data to send to each child worker per transfer, set it higher for better performance.
 		batch_aug_gen = pool.imap_batches(batch_gen, chunksize=chunksize)
 
-		for batch in batch_aug_gen:
-			yield (batch.images_aug, batch.data), len(batch.images_aug)
+		if preprocessor is None:
+			for batch in batch_aug_gen:
+				yield (batch.images_aug, batch.data), len(batch.images_aug)
+		else:
+			for batch in batch_aug_gen:
+				yield preprocessor(batch.images_aug, batch.data), len(batch.images_aug)
 
-def generateBatchesInParallelWithOutputAugmentation(imgaug_augmenter, processes, chunksize, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
+def generateBatchesInParallelWithOutputAugmentation(processes, chunksize, imgaug_augmenter, preprocessor, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
 	#if not isinstance(imgaug_augmenter, iaa.Sequential):
 	#	raise ValueError('The augmenter has to be an instance of imgaug.augmenters.Sequential to augment in parallel')
 
@@ -99,5 +103,10 @@ def generateBatchesInParallelWithOutputAugmentation(imgaug_augmenter, processes,
 		#	chunksize=10 controls how much data to send to each child worker per transfer, set it higher for better performance.
 		batch_aug_gen = pool.imap_batches(batch_gen, chunksize=chunksize)
 
-		for batch in batch_aug_gen:
-			yield (batch.images_aug, batch.segmentation_maps_aug), len(batch.images_aug)
+		if preprocessor is None:
+			for batch in batch_aug_gen:
+				yield (batch.images_aug, batch.segmentation_maps_aug), len(batch.images_aug)
+		else:
+			for batch in batch_aug_gen:
+				# Data augmentation -> preprocessing.
+				yield preprocessor(batch.images_aug, batch.segmentation_maps_aug), len(batch.images_aug)

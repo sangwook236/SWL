@@ -33,7 +33,11 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			return self._get_final_output(crnn_outputs, crnn_output_lens)
 
 	def _create_crnn(self, input_tensor, num_classes, is_training):
-		input_tensor = tf.transpose(input_tensor, perm=[0, 2, 1, 3])  # (batches, height, width, channels) -> (batches, width, height, channels).
+		# Preprocessing.
+		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+			# (samples, height, width, channels) -> (samples, width, height, channels).
+			input_tensor = tf.transpose(input_tensor, perm=[0, 2, 1, 3], name='transpose')
 
 		#--------------------
 		# Convolutional layer.

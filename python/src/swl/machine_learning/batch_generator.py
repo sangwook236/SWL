@@ -203,7 +203,9 @@ class NpzFileBatchGenerator(FileBatchGenerator):
 		processes, chunksize = 4, 5
 		batch_inputs_dict, batch_outputs_dict = dict(), dict()
 		num_saved_examples = 0
-		for idx, (batch_data, num_batch_examples) in enumerate(batch_generator(self._augmenter._augmenter, processes, chunksize, self._inputs, self._outputs, self._batch_size, self._shuffle)):
+		# No data preprocessing in batch_generator.
+		#	Data preprocessing is performed in NpzFileBatchLoader.
+		for idx, (batch_data, num_batch_examples) in enumerate(batch_generator(processes, chunksize, self._augmenter._augmenter, None, self._inputs, self._outputs, self._batch_size, self._shuffle)):
 			batch_name = 'batch_{}'.format(idx)
 			batch_inputs_dict[batch_name], batch_outputs_dict[batch_name] = batch_data[:2]
 			num_saved_examples += num_batch_examples

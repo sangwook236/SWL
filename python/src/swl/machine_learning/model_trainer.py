@@ -116,15 +116,16 @@ class ModelTrainer(object):
 					train_loss += batch_loss * num_batch_examples
 					train_acc += batch_acc * num_batch_examples
 					num_train_examples += num_batch_examples
-				train_loss /= num_train_examples
-				train_acc /= num_train_examples
+				if num_train_examples > 0:
+					train_loss /= num_train_examples
+					train_acc /= num_train_examples
 
 				history['loss'].append(train_loss)
 				history['acc'].append(train_acc)
 
 			# Evaluate.
 			val_loss, val_acc = 0.0, 0.0
-			if self._dataGenerator.hasValidationData():
+			if self._dataGenerator.hasValidationBatches():
 				num_val_examples = 0
 				#for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=shuffle):
 				for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=False):
@@ -142,8 +143,9 @@ class ModelTrainer(object):
 					val_loss += batch_loss * num_batch_examples
 					val_acc += batch_acc * num_batch_examples
 					num_val_examples += num_batch_examples
-				val_loss /= num_val_examples
-				val_acc /= num_val_examples
+				if num_val_examples > 0:
+					val_loss /= num_val_examples
+					val_acc /= num_val_examples
 
 				history['val_loss'].append(val_loss)
 				history['val_acc'].append(val_acc)

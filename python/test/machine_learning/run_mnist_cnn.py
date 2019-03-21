@@ -26,7 +26,7 @@ def main():
 	#--------------------
 	# Sets parameters.
 
-	is_training_required = True
+	is_training_required, is_evaluation_required = True, False
 	is_training_resumed = False
 
 	output_dir_prefix = 'mnist_cnn'
@@ -50,9 +50,9 @@ def main():
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_device_name = '/device:GPU:1'
-	eval_device_name = '/device:GPU:1'
-	infer_device_name = '/device:GPU:1'
+	train_device_name = '/device:GPU:0'
+	eval_device_name = '/device:GPU:0'
+	infer_device_name = '/device:GPU:0'
 
 	#--------------------
 	# Prepares directories.
@@ -80,7 +80,8 @@ def main():
 	# Creates graphs.
 	if is_training_required:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+	if is_evaluation_required:
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
 	if is_training_required:
@@ -95,14 +96,15 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
-	with eval_graph.as_default():
-		with tf.device(eval_device_name):
-			# Creates a model.
-			modelForEvaluation = create_learning_model(input_shape, output_shape)
-			modelForEvaluation.create_evaluation_model()
+	if is_evaluation_required:
+		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				# Creates a model.
+				modelForEvaluation = create_learning_model(input_shape, output_shape)
+				modelForEvaluation.create_evaluation_model()
 
-			# Creates an evaluator.
-			modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+				# Creates an evaluator.
+				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
 
 	with infer_graph.as_default():
 		with tf.device(infer_device_name):
@@ -116,7 +118,8 @@ def main():
 	# Creates sessions.
 	if is_training_required:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
-	eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	if is_evaluation_required:
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initializes.
@@ -140,7 +143,7 @@ def main():
 	#%%------------------------------------------------------------------
 	# Evaluates.
 
-	if True:
+	if is_evaluation_required:
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -153,27 +156,24 @@ def main():
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			if True:
-				(test_inputs, test_outputs), num_test_examples = dataGenerator.getTestData()
-				inferences = modelInferrer.infer(sess, test_inputs)
-			else:
-				inferences, test_outputs = list(), list()
-				num_test_examples = 0
-				for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
-					batch_inputs, batch_outputs = batch_data
-					inferences.append(modelInferrer.infer(sess, batch_inputs))
-					test_outputs.append(batch_outputs)
-				inferences = np.array(inferences)
-				test_outputs = np.array(test_outputs)
+			inferences, ground_truths = list(), list()
+			num_test_examples = 0
+			#for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
+			for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size=None, shuffle=False):  # Gets the whole test data at a time.
+				batch_inputs, batch_outputs = batch_data
+				inferences.append(modelInferrer.infer(sess, batch_inputs))
+				ground_truths.append(batch_outputs)
+			inferences = np.array(inferences)
+			ground_truths = np.array(ground_truths)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	if inferences is not None:
 		if num_classes >= 2:
 			inferences = np.argmax(inferences, -1)
-			ground_truths = np.argmax(test_outputs, -1)
+			ground_truths = np.argmax(ground_truths, -1)
 		else:
 			inferences = np.around(inferences)
-			ground_truths = test_outputs
+			#ground_truths = ground_truths
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
 		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 	else:
@@ -185,8 +185,9 @@ def main():
 	if is_training_required:
 		train_session.close()
 		del train_session
-	eval_session.close()
-	del eval_session
+	if is_evaluation_required:
+		eval_session.close()
+		del eval_session
 	infer_session.close()
 	del infer_session
 

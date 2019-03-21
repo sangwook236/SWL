@@ -17,7 +17,7 @@ class ModelEvaluator(object):
 		self._saver = tf.train.Saver()
 
 	def evaluate(self, session, batch_size=None, shuffle=False):
-		if not self._dataGenerator.hasValidationData():
+		if not self._dataGenerator.hasValidationBatches():
 			print('[SWL] Error: No validation data.')
 			return
 
@@ -40,26 +40,18 @@ class ModelEvaluator(object):
 	def _evaluate(self, session, batch_size=None, shuffle=False):
 		loss, accuracy = self._model.loss, self._model.accuracy
 
-		if batch_size is None:
-			val_data, num_val_examples = self._dataGenerator.getValidationData()
-			#val_loss = loss.eval(session=session, feed_dict=self._model.get_feed_dict(val_data, is_training=False))
-			#val_acc = accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(val_data, is_training=False))
-			val_loss, val_acc = session.run([loss, accuracy], feed_dict=self._model.get_feed_dict(val_data, is_training=False))
-		else:
-			if batch_size <= 0:
-				raise ValueError('Invalid batch size: {}'.format(batch_size))
+		val_loss, val_acc = 0.0, 0.0
+		num_val_examples = 0
+		for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle):
+			#batch_loss = loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+			#batch_acc = accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+			batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
 
-			val_loss, val_acc = 0.0, 0.0
-			num_val_examples = 0
-			for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle):
-				#batch_loss = loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-				#batch_acc = accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-				batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-
-				# TODO [check] >> Is val_loss or val_acc correct?
-				val_loss += batch_loss * num_batch_examples
-				val_acc += batch_acc * num_batch_examples
-				num_val_examples += num_batch_examples
+			# TODO [check] >> Is val_loss or val_acc correct?
+			val_loss += batch_loss * num_batch_examples
+			val_acc += batch_acc * num_batch_examples
+			num_val_examples += num_batch_examples
+		if num_val_examples > 0:
 			val_loss /= num_val_examples
 			val_acc /= num_val_examples
 

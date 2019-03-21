@@ -46,7 +46,7 @@ def main():
 	#--------------------
 	# Parameters.
 
-	is_training_required = True
+	is_training_required, is_evaluation_required = True, True
 	is_training_resumed = False
 
 	output_dir_prefix = 'reverse_function_seq2seq'
@@ -77,9 +77,9 @@ def main():
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_device_name = '/device:GPU:1'
-	eval_device_name = '/device:GPU:1'
-	infer_device_name = '/device:GPU:1'
+	train_device_name = '/device:GPU:0'
+	eval_device_name = '/device:GPU:0'
+	infer_device_name = '/device:GPU:0'
 
 	#--------------------
 	# Prepare directories.
@@ -108,7 +108,8 @@ def main():
 	# Create graphs.
 	if is_training_required:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+	if is_evaluation_required:
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
 	if is_training_required:
@@ -124,14 +125,15 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
-	with eval_graph.as_default():
-		with tf.device(eval_device_name):
-			# Create a model.
-			modelForEvaluation = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
-			modelForEvaluation.create_evaluation_model()
+	if is_evaluation_required:
+		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				# Create a model.
+				modelForEvaluation = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForEvaluation.create_evaluation_model()
 
-			# Create an evaluator.
-			modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+				# Create an evaluator.
+				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
 
 	with infer_graph.as_default():
 		with tf.device(infer_device_name):
@@ -145,7 +147,8 @@ def main():
 	# Create sessions.
 	if is_training_required:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
-	eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	if is_evaluation_required:
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initialize.
@@ -169,7 +172,7 @@ def main():
 	#%%------------------------------------------------------------------
 	# Evaluate.
 
-	if True:
+	if is_evaluation_required:
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -181,12 +184,12 @@ def main():
 
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
 	# Character strings -> numeric data.
-	test_data = dataGenerator.dataset.to_numeric_data(test_strs)
+	test_inputs = dataGenerator.dataset.to_numeric_data(test_strs)
 
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			inferences = modelInferrer.infer(sess, test_data)
+			inferences = modelInferrer.infer(sess, test_inputs)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	if inferences is not None:
@@ -202,8 +205,9 @@ def main():
 	if is_training_required:
 		train_session.close()
 		del train_session
-	eval_session.close()
-	del eval_session
+	if is_evaluation_required:
+		eval_session.close()
+		del eval_session
 	infer_session.close()
 	del infer_session
 

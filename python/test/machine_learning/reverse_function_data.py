@@ -1,10 +1,11 @@
+import random, time
 import numpy as np
 import tensorflow as tf
-from random import choice, randrange
 from swl.machine_learning.data_generator import Data3Generator
 
-#%%------------------------------------------------------------------
-# REF [site] >> https://talbaumel.github.io/attention/
+#--------------------------------------------------------------------
+# ReverseFunctionDataset.
+#	REF [site] >> https://talbaumel.github.io/attention/
 
 class ReverseFunctionDataset(object):
 	def __init__(self):
@@ -78,16 +79,16 @@ class ReverseFunctionDataset(object):
 
 	# Numeric data -> character strings.
 	def to_char_strings(self, num_data, has_start_token=True):
-		num_data = np.argmax(num_data, axis=-1)
-		char_strs = []
-		for dat in num_data:
-			char_strs.append(self._datum2str(dat, has_start_token))
-		return char_strs
+		strs = list()
+		for nums in np.argmax(num_data, axis=-1):
+			ss = list(self._label_int2char[nm] for nm in nums.tolist())
+			strs.append(''.join(ss[1:ss.index(self._EOS)] if has_start_token else ss[:ss.index(self._EOS)]))
+		return strs
 
 	def _sample_model(self, min_length, max_length):
-		random_length = randrange(min_length, max_length)
+		random_length = random.randrange(min_length, max_length)
 		# Pick a random length.
-		random_char_list = [choice(self._characters[1:-1]) for _ in range(random_length)]
+		random_char_list = [random.choice(self._characters[1:-1]) for _ in range(random_length)]
 		# Pick random chars.
 		random_str = ''.join(random_char_list)
 		return random_str, random_str[::-1]  # Return the random string and its reverse.
@@ -144,9 +145,9 @@ class ReverseFunctionDataset(object):
 	# Fixed-length dataset.
 	def _create_array_dataset(self, input_output_pairs, max_time_steps, num_features, is_time_major):
 		num_samples = len(input_output_pairs)
-		input_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
-		output_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
-		output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS])
+		input_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS], dtype=np.int32)
+		output_data = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS], dtype=np.int32)
+		output_data_ahead_of_one_timestep = np.full((num_samples, max_time_steps), self._label_char2int[self._EOS], dtype=np.int32)
 		for (i, (inp, outp)) in enumerate(input_output_pairs):
 			input_data[i,:len(inp)] = np.array(inp)
 			outa = np.array(outp)
@@ -154,9 +155,9 @@ class ReverseFunctionDataset(object):
 			output_data_ahead_of_one_timestep[i,:(len(outp) - 1)] = outa[1:]
 
 		# (samples, time-steps) -> (samples, time-steps, features).
-		input_data = tf.keras.utils.to_categorical(input_data, num_features).reshape(input_data.shape + (-1,))
-		output_data = tf.keras.utils.to_categorical(output_data, num_features).reshape(output_data.shape + (-1,))
-		output_data_ahead_of_one_timestep = tf.keras.utils.to_categorical(output_data_ahead_of_one_timestep, num_features).reshape(output_data_ahead_of_one_timestep.shape + (-1,))
+		input_data = tf.keras.utils.to_categorical(input_data, num_features).reshape(input_data.shape + (-1,)).astype(np.int32)
+		output_data = tf.keras.utils.to_categorical(output_data, num_features).reshape(output_data.shape + (-1,)).astype(np.int32)
+		output_data_ahead_of_one_timestep = tf.keras.utils.to_categorical(output_data_ahead_of_one_timestep, num_features).reshape(output_data_ahead_of_one_timestep.shape + (-1,)).astype(np.int32)
 
 		if is_time_major:
 			# (time-steps, samples, features) -> (samples, time-steps, features).
@@ -216,7 +217,7 @@ class ReverseFunctionDataset(object):
 			decoded_sentence += sampled_char
 
 			# Exit condition: either hit max length or find stop character.
-			if (sampled_char == self._EOS or len(decoded_sentence) > self._MAX_TOKEN_LEN):
+			if sampled_char == self._EOS or len(decoded_sentence) > self._MAX_TOKEN_LEN:
 				stop_condition = True
 
 			# Update the target sequence (of length 1).
@@ -228,7 +229,60 @@ class ReverseFunctionDataset(object):
 
 		return decoded_sentence
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
+# ReverseFunctionDataVisualizer.
+
+class ReverseFunctionDataVisualizer(object):
+	def __init__(self, dataset, start_index=0, end_index=5):
+		"""
+		Inputs:
+			start_index (int): The start index of example to show.
+			end_index (int): The end index of example to show.
+				Shows examples between start_index and end_index, (start_index, end_index).
+		"""
+
+		self._dataset = dataset
+		self._start_index, self._end_index = start_index, end_index
+
+	def __call__(self, data, *args, **kwargs):
+		import types
+		if isinstance(data, types.GeneratorType):
+			start_example_index = 0
+			for datum in data:
+				self._visualize(datum, start_example_index, *args, **kwargs)
+				start_example_index += num_examples
+		else:
+			self._visualize(data, 0, *args, **kwargs)
+
+	def _visualize(self, data, start_example_index, *args, **kwargs):
+		(encoder_inputs, decoder_inputs, decoder_outputs), num_examples = data
+		if isinstance(encoder_inputs, np.ndarray):
+			print('\tEncoder input: shape = {}, dtype = {}.'.format(encoder_inputs.shape, encoder_inputs.dtype))
+			print('\tEncoder input: min = {}, max = {}.'.format(np.min(encoder_inputs), np.max(encoder_inputs)))
+		else:
+			print('\tEncoder input: type = {}.'.format(type(encoder_inputs)))
+		if isinstance(decoder_inputs, np.ndarray):
+			print('\tDecoder input: shape = {}, dtype = {}.'.format(decoder_inputs.shape, decoder_inputs.dtype))
+			print('\tDecoder input: min = {}, max = {}.'.format(np.min(decoder_inputs), np.max(decoder_inputs)))
+		else:
+			print('\tDecoder input: type = {}.'.format(type(decoder_inputs)))
+		if isinstance(decoder_outputs, np.ndarray):
+			print('\tDecoder output: shape = {}, dtype = {}.'.format(decoder_outputs.shape, decoder_outputs.dtype))
+			print('\tDecoder output: min = {}, max = {}.'.format(np.min(decoder_outputs), np.max(decoder_outputs)))
+		else:
+			print('\tDecoder output: type = {}.'.format(type(decoder_outputs)))
+
+		if len(encoder_inputs) != num_examples or len(decoder_inputs) != num_examples or len(decoder_outputs) != num_examples:
+			raise ValueError('The lengths of inputs and outputs are different: {}, {}, {}'.format(len(encoder_inputs), len(decoder_inputs), len(decoder_outputs)))
+
+		encoder_strs, decoder_strs, decoder_strs = self._dataset.to_char_strings(encoder_inputs, has_start_token=True), self._dataset.to_char_strings(decoder_inputs, has_start_token=False), self._dataset.to_char_strings(decoder_outputs, has_start_token=False)
+		for idx, (inp1, inp2, outp) in enumerate(zip(encoder_strs, decoder_strs, decoder_strs)):
+			idx += start_example_index
+			if idx >= self._start_index and idx < self._end_index:
+				print('\tData #{}: {}, {}, {}.'.format(idx, inp1, inp2, outp))
+				time.sleep(1)
+
+#--------------------------------------------------------------------
 # ReverseFunctionDataGenerator.
 
 class ReverseFunctionDataGenerator(Data3Generator):
@@ -275,7 +329,7 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 		return encoder_input_shape, decoder_input_shape, decoder_output_shape
 
-	def initialize(self):
+	def initialize(self, batch_size=None, *args, **kwargs):
 		# NOTICE [info] >> How to use the hidden state c of an encoder in a decoder?
 		#	1) The hidden state c of the encoder is used as the initial state of the decoder and the previous output of the decoder may be used as its only input.
 		#	2) The previous output of the decoder is used as its input along with the hidden state c of the encoder.
@@ -290,11 +344,22 @@ class ReverseFunctionDataGenerator(Data3Generator):
 		if len(self._val_encoder_inputs) != len(self._val_decoder_inputs) or len(self._val_encoder_inputs) != len(self._val_decoder_outputs):
 			raise ValueError('The lengths of test inputs and outputs are different: {}, {}, {}'.format(len(self._val_encoder_inputs), len(self._val_decoder_inputs), len(self._val_decoder_outputs)))
 
+		#--------------------
+		# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+		if True:
+			visualizer = ReverseFunctionDataVisualizer(self._dataset, start_index=0, end_index=5)
+			print('[SWL] Train data which is not augmented and preprocessed.')
+			#visualizer(self._batch_generator(None, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False, *args, **kwargs))
+			visualizer(((self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs), len(self._train_encoder_inputs)))
+			print('[SWL] Valiation data which is not augmented and preprocessed.')
+			#visualizer(self._batch_generator(None, self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle=False, *args, **kwargs))
+			visualizer(((self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs), len(self._val_encoder_inputs)))
+
 	def getTrainBatches(self, batch_size, shuffle=True, *args, **kwargs):
 		if self._train_encoder_inputs is None or self._train_decoder_inputs is None  or self._train_decoder_outputs is None:
 			raise ValueError('At least one of train input or output data is None')
 
-		return self._batch_generator(self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle)
+		return self._batch_generator(None, self._train_encoder_inputs, self._train_decoder_inputs, self._train_decoder_outputs, batch_size, shuffle, *args, **kwargs)
 
 	def getTrainBatchesForEvaluation(self, batch_size, shuffle=False, *args, **kwargs):
 		"""Gets train batches for evaluation such as loss and accuracy, etc.
@@ -302,23 +367,21 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 		return self.getTrainBatches(batch_size, shuffle, *args, **kwargs)
 
-	def hasValidationData(self):
+	def hasValidationBatches(self):
 		return self._val_encoder_inputs is not None and self._val_decoder_inputs is not None and self._val_decoder_outputs is not None and len(self._val_encoder_inputs) > 0
 
-	def getValidationData(self, *args, **kwargs):
-		return (self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs), (0 if self._val_encoder_inputs is None else len(self._val_encoder_inputs))
-
 	def getValidationBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
-		if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
-			raise ValueError('At least one of validation input or output data is None')
+		#if batch_size is None:
+		if True:
+			yield ((self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs), (0 if self._val_encoder_inputs is None else len(self._val_encoder_inputs)))
+		else:
+			if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
+				raise ValueError('At least one of validation input or output data is None')
 
-		return self._batch_generator(self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle=False)
+			return self._batch_generator(None, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle, *args, **kwargs)
 
-	def hasTestData(self):
+	def hasTestBatches(self):
 		return False
-
-	def getTestData(self, *args, **kwargs):
-		raise NotImplementedError
 
 	def getTestBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		raise NotImplementedError

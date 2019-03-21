@@ -12,6 +12,7 @@ from swl.machine_learning.model_trainer import ModelTrainer
 from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
 import swl.util.util as swl_util
+import swl.machine_learning.util as swl_ml_util
 from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
 from synth90k_data import Synth90kDataGenerator
 
@@ -29,7 +30,7 @@ class SimpleCrnnTrainer(ModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
-			learning_rate = 1.0
+			learning_rate = 0.001
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -57,12 +58,12 @@ def main():
 	#--------------------
 	# Sets parameters.
 
-	is_training_required = True
+	is_training_required, is_evaluation_required = True, True
 	is_training_resumed = False
 
 	output_dir_prefix = 'synth90k_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20180302T155710'
+	#output_dir_suffix = '20190320T134245'
 
 	initial_epoch = 0
 
@@ -109,7 +110,7 @@ def main():
 	dataGenerator = Synth90kDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel)
 	image_height, image_width, image_channel, num_classes = dataGenerator.shapes
 	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
-	#label_eos_token = dataGenerator.dataset.end_token
+	label_eos_token = dataGenerator.dataset.end_token
 
 	#--------------------
 	# Creates models, sessions, and graphs.
@@ -117,7 +118,8 @@ def main():
 	# Creates graphs.
 	if is_training_required:
 		train_graph = tf.Graph()
-	eval_graph = tf.Graph()
+	if is_evaluation_required:
+		eval_graph = tf.Graph()
 	infer_graph = tf.Graph()
 
 	if is_training_required:
@@ -132,14 +134,15 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
-	with eval_graph.as_default():
-		with tf.device(eval_device_name):
-			# Creates a model.
-			modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
-			modelForEvaluation.create_evaluation_model()
+	if is_evaluation_required:
+		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				# Creates a model.
+				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForEvaluation.create_evaluation_model()
 
-			# Creates an evaluator.
-			modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+				# Creates an evaluator.
+				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
 
 	with infer_graph.as_default():
 		with tf.device(infer_device_name):
@@ -153,14 +156,15 @@ def main():
 	# Creates sessions.
 	if is_training_required:
 		train_session = tf.Session(graph=train_graph, config=sess_config)
-	eval_session = tf.Session(graph=eval_graph, config=sess_config)
+	if is_evaluation_required:
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
 	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
 	# Initializes.
 	if is_training_required:
 		train_session.run(initializer)
 
-	dataGenerator.initialize()
+	dataGenerator.initialize(batch_size)
 
 	#%%------------------------------------------------------------------
 	# Trains.
@@ -184,7 +188,7 @@ def main():
 	#%%------------------------------------------------------------------
 	# Evaluates.
 
-	if True:
+	if is_evaluation_required:
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -194,29 +198,36 @@ def main():
 
 	#%%------------------------------------------------------------------
 	# Infers.
+
 	start_time = time.time()
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
-			inferences, test_outputs = list(), list()
+			inferences, ground_truths = list(), list()
 			num_test_examples = 0
 			for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
-				batch_inputs, batch_outputs = batch_data
-				inferences.append(modelInferrer.infer(sess, batch_inputs))
-				test_outputs.append(batch_outputs)
-			inferences = np.array(inferences)
-			test_outputs = np.array(test_outputs)
+				# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
+				stv = modelInferrer.infer(sess, batch_data[0])  # tf.SparseTensorValue.
+				print('*******************', stv.dense_shape)
+				dense_batch_inferences = swl_ml_util.sparse_to_dense(stv.indices, stv.values, stv.dense_shape, default_value=label_eos_token, dtype=np.int8)
+				dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
+				inferences.append(dense_batch_inferences)
+				ground_truths.append(dense_batch_outputs)
+			# Variable-length numpy.arrays are not merged into a single numpy.array.
+			#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	#--------------------
 	if inferences is not None:
-		if num_classes >= 2:
-			inferences = np.argmax(inferences, -1)
-			groundtruths = np.argmax(test_labels, -1)
-		else:
-			inferences = np.around(inferences)
-			groundtruths = test_labels
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, groundtruths))
-		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, groundtruths.size, correct_estimation_count / groundtruths.size))
+		if len(inferences) == len(ground_truths):
+			#correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+			#print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+
+			#for inf, gt in zip(inferences, ground_truths):
+			#	#print('Result =\n', np.hstack((inf, gt)))
+			#	print('Result =\n', inf, gt)
+			for idx in range(3):
+				#print('Result =\n', np.hstack((inferences[idx], ground_truths[idx])))
+				print('Result =\n', inferences[idx], ground_truths[idx])
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 
@@ -226,6 +237,7 @@ def main():
 	if is_training_required:
 		train_session.close()
 		del train_session
+	if is_evaluation_required:
 		eval_session.close()
 		del eval_session
 	infer_session.close()
