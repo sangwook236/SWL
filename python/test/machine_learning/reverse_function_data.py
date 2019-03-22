@@ -372,12 +372,14 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 	def getValidationBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		#if batch_size is None:
-		if True:
+		if True:  # Wants to evaluate all data at a time.
 			yield ((self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs), (0 if self._val_encoder_inputs is None else len(self._val_encoder_inputs)))
 		else:
 			if self._val_encoder_inputs is None or self._val_decoder_inputs is None or self._val_decoder_outputs is None:
 				raise ValueError('At least one of validation input or output data is None')
 
+			# FIX [fix] >> Do not work when batch_size is not None.
+			#	self._batch_generator() is not called. But I do not know the cause.
 			return self._batch_generator(None, self._val_encoder_inputs, self._val_decoder_inputs, self._val_decoder_outputs, batch_size, shuffle, *args, **kwargs)
 
 	def hasTestBatches(self):

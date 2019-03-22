@@ -270,7 +270,7 @@ class MnistDataGenerator(Data2Generator):
 			raise ValueError('At least one of test input or output data is None')
 
 		#if batch_size is None:
-		if True:
+		if True:  # Wants to infer all data at a time.
 			# No data augmentation + data preprocessing.
 			#yield ((self._test_inputs, self._test_outputs) if self._preprocessor is None else self._preprocessor(self._test_inputs, self._test_outputs)), (0 if self._test_inputs is None else len(self._test_inputs))
 			# No data augmentation + no data preprocessing.
