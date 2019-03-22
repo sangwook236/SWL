@@ -113,6 +113,14 @@ def sequences_to_sparse_test():
 	print('Sparse values =\n', sparse_values)
 	print('Dense shape =\n', dense_shape)
 
+def sparse_to_sequences_test():
+	sparse_indices = np.array([[0, 0], [0, 1], [1, 0], [2, 0], [2, 1], [3, 0], [3, 1], [3, 2], [3, 3]], dtype=np.int32)
+	sparse_values = np.array([2, 0, 2, 1, 2, 2, 0, 1, 2], dtype=np.int32)
+	dense_shape = np.array([4, 4], dtype=np.int32)
+
+	sequences = swl_ml_util.sparse_to_sequences(sparse_indices, sparse_values, dense_shape, dtype=np.int32)
+	print('Sequeses =\n', sequences)
+
 def dense_to_sparse_test():
 	default_value = -1
 	dense = np.array([
@@ -142,6 +150,7 @@ def main():
 	#drop_based_learning_rate_test()
 
 	sequences_to_sparse_test()
+	sparse_to_sequences_test()
 	dense_to_sparse_test()
 	sparse_to_dense_test()
 

@@ -95,7 +95,7 @@ def normalize_featurewise_by_min_max(data):
 
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
 def sequences_to_sparse(sequences, dtype=np.int32):
-	"""Change a list of sequences to a sparse representention.
+	"""Change a list of sequences to a 2D sparse representention.
 	Inputs:
 		sequences(a list of lists): A list of lists of type dtype where each element is a sequence.
 		dtype (numpy.dtype): A data type.
@@ -106,9 +106,7 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
 
-	indices = []
-	values = []
-
+	indices, values = list(), list()
 	for n, seq in enumerate(sequences):
 		indices.extend(zip([n] * len(seq), range(len(seq))))
 		values.extend(seq)
@@ -119,9 +117,33 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
+def sparse_to_sequences(indices, values, dense_shape, dtype=np.int32):
+	"""Change a 2D sparse representention to a list of sequences.
+	Inputs:
+		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
+			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			values (numpy.array): The values of non-zero elements in a dense tensor.
+			dense_shape (numpy.array): The shape of a dense tensor.
+		dtype (numpy.dtype): A data type.
+	Output:
+		sequences(a list of lists): A list of lists of type dtype where each element is a sequence.
+	"""
+
+	default_val = np.max(values) + 1
+	dense = sparse_to_dense(indices, values, dense_shape, default_val)
+
+	def extract(x):
+		x = x.tolist()
+		try:
+			return x[:x.index(default_val)]
+		except ValueError:
+			return x
+
+	return list(map(extract, dense))
+
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
 def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
-	"""Change a dense tensor to a sparse representention.
+	"""Change a dense tensor to a 2D sparse representention.
 	Inputs:
 		np_arr (numpy.array): A numpy array of type dtype.
 		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
@@ -133,8 +155,7 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
 
-	indices = []
-	values = []
+	indices, values = list(), list()
 
 	for n, subarr in enumerate(np_arr):
 		default_indices = np.where(subarr == default_value)[0]
@@ -150,7 +171,7 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
 def sparse_to_dense(indices, values, dense_shape, default_value=0, dtype=np.int32):
-	"""Change a sparse representation of a tensor to a dense tensor.
+	"""Change a 2D sparse representation of a tensor to a dense tensor.
 	Inputs:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
 			indices (numpy.array): The indices of non-zero elements in a dense tensor..
