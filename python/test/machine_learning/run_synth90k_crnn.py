@@ -86,9 +86,9 @@ def main():
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_device_name = '/device:GPU:1'
-	eval_device_name = '/device:GPU:1'
-	infer_device_name = '/device:GPU:1'
+	train_device_name = '/device:GPU:0'
+	eval_device_name = '/device:GPU:0'
+	infer_device_name = '/device:GPU:0'
 
 	#--------------------
 	# Prepares directories.

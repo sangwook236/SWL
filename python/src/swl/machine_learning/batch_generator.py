@@ -492,8 +492,8 @@ class NpzFileBatchGeneratorFromImageFiles(NpzFileBatchGeneratorFromFiles):
 		"""
 		# TODO [enhance] >> When there are many files, this part is too slow.
 		for input_filepath, output in zip(input_filepaths, output_seqs):
-			inp, outp = np.load(input_filepath), np.load(output)
-			if inp.shape[self._batch_axis] != outp.shape[self._batch_axis]:
+			img = cv.imread(input_filepath)
+			if img.shape[self._batch_axis] != output.shape[self._batch_axis]:
 				raise ValueError('Unmatched shapes of {} and {}'.format(input_filepath, output))
 		"""
 

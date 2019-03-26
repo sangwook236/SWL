@@ -68,17 +68,17 @@ class ReverseFunctionDataset(object):
 
 		return train_input_seqs, train_output_seqs, train_output_seqs_ahead_of_one_timestep, val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep
 
-	# Character strings -> numeric data.
-	def to_numeric_data(self, char_strs):
-		num_data = np.full((len(char_strs), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
-		for (i, str) in enumerate(char_strs):
-			tmp = np.array(self._str2datum(str))
-			num_data[i,:tmp.shape[0]] = tmp
+	# String data -> numeric data.
+	def to_numeric(self, str_data):
+		num_data = np.full((len(str_data), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
+		for (i, str) in enumerate(str_data):
+			#num_data[i,:len(str)] = np.array(list(self._label_char2int[ch] for ch in (list(str) + [self._EOS])))
+			num_data[i,:len(str)] = np.array(list(self._label_char2int[ch] for ch in ([self._SOS] + list(str) + [self._EOS])))
 		num_data.reshape((-1,) + num_data.shape)
 		return tf.keras.utils.to_categorical(num_data, self._VOCAB_SIZE).reshape(num_data.shape + (-1,))
 
-	# Numeric data -> character strings.
-	def to_char_strings(self, num_data, has_start_token=True):
+	# Numeric data -> string data.
+	def to_string(self, num_data, has_start_token=True):
 		strs = list()
 		for nums in np.argmax(num_data, axis=-1):
 			ss = list(self._label_int2char[nm] for nm in nums.tolist())
@@ -275,7 +275,7 @@ class ReverseFunctionDataVisualizer(object):
 		if len(encoder_inputs) != num_examples or len(decoder_inputs) != num_examples or len(decoder_outputs) != num_examples:
 			raise ValueError('The lengths of inputs and outputs are different: {}, {}, {}'.format(len(encoder_inputs), len(decoder_inputs), len(decoder_outputs)))
 
-		encoder_strs, decoder_strs, decoder_strs = self._dataset.to_char_strings(encoder_inputs, has_start_token=True), self._dataset.to_char_strings(decoder_inputs, has_start_token=False), self._dataset.to_char_strings(decoder_outputs, has_start_token=False)
+		encoder_strs, decoder_strs, decoder_strs = self._dataset.to_string(encoder_inputs, has_start_token=True), self._dataset.to_string(decoder_inputs, has_start_token=False), self._dataset.to_string(decoder_outputs, has_start_token=False)
 		for idx, (inp1, inp2, outp) in enumerate(zip(encoder_strs, decoder_strs, decoder_strs)):
 			idx += start_example_index
 			if idx >= self._start_index and idx < self._end_index:

@@ -62,10 +62,21 @@ class Synth90kDataset(object):
 	def end_token(self):
 		return self._label_char2int[self._EOS]
 
-	# Numeric data -> character strings.
-	def to_char_strings(self, num_data):
+	# String data -> numeric data.
+	def to_numeric(self, str_data):
+		num_data = np.full((len(str_data), self._max_label_len), self._label_char2int[self._EOS])
+		for (i, str) in enumerate(str_data):
+			num_data[i,:len(str)] = np.array(list(self._label_char2int[ch] for ch in str))
+		return num_data
+
+	# Numeric data -> string data.
+	def to_string(self, num_data):
 		label = list(self._label_int2char[nm] for nm in num_data)
-		return ''.join(label[:label.index(self._EOS)])
+		try:
+			label = label[:label.index(self._EOS)]
+		except ValueError:
+			pass  # Uses the whole label.
+		return ''.join(label)
 
 #--------------------------------------------------------------------
 # ImgaugDataAugmenter.
@@ -233,7 +244,7 @@ class Synth90kDataVisualizer(object):
 		for idx, (inp, outp) in enumerate(zip(inputs, dense_outputs)):
 			idx += start_example_index
 			if idx >= self._start_index and idx < self._end_index:
-				print('\tLabel #{} = {} ({}).'.format(idx, outp, self._dataset.to_char_strings(outp)))
+				print('\tLabel #{} = {} ({}).'.format(idx, outp, self._dataset.to_string(outp)))
 				cv.imshow('Image', inp)
 				ch = cv.waitKey(2000)
 				if 27 == ch:  # ESC.
@@ -364,7 +375,7 @@ class Synth90kDataGenerator(Data2Generator):
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
-		self._is_npy_files_used_as_input = False  # Using npy files is much faster.
+		self._is_npy_files_used_as_input = False  # Using npy files is faster.
 		if self._is_npy_files_used_as_input:
 			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = (None,) * 6
 		else:
@@ -495,6 +506,10 @@ class Synth90kDataGenerator(Data2Generator):
 				data_home_dir_path = 'D:/dataset'
 			synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
 			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
+
+			self._train_label_seqs = self._dataset.to_numeric(self._train_label_seqs)
+			self._val_label_seqs = self._dataset.to_numeric(self._val_label_seqs)
+			self._test_label_seqs = self._dataset.to_numeric(self._test_label_seqs)
 			print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
 
 			#--------------------
@@ -640,16 +655,14 @@ class Synth90kDataGenerator(Data2Generator):
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):
-		"""Loads images and labels from npy files generated from Synth90k dataset
+		"""Loads images and labels from npy files generated from Synth90k dataset.
 		
-		Refer to swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
+		Generate synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
+		Refer to ../language_processing/synth90k_dataset_test.py.
 
 		Inputs:
 			synth90k_base_dir_path (string): The directory path of npy files generated from Synth90k dataset.
 		"""
-
-		# NOTE [info] >> Generate synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
-		#	Refer to ${SWL_PYTHON_HOME}/test/language_processing/synth90k_dataset_test.py.
 
 		train_npy_file_csv_filepath = synth90k_base_dir_path + '/train/npy_file_info.csv'
 		val_npy_file_csv_filepath = synth90k_base_dir_path + '/val/npy_file_info.csv'

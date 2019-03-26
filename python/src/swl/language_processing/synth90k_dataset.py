@@ -74,7 +74,7 @@ def load_synth90k_data(anno_filepath, data_dir_path, lexicon=None, subset_ratio=
 		lines = [line.replace('\n', '').split(' ') for line in fd.readlines()]
 		if subset_ratio is not None:
 			lines = swl_util.extract_subset_of_data(np.array(lines), subset_ratio)
-		data = [process_line(line, data_dir_path) for line in lines]
+		data = [process_line(line, data_dir_path, lexicon) for line in lines]
 
 	return data
 

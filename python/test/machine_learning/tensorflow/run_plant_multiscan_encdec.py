@@ -203,8 +203,8 @@ def main():
 	# Infer.
 	
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	# Character strings -> numeric data.
-	test_data = dataset.to_numeric_data(test_strs)
+	# String data -> numeric data.
+	test_data = dataset.to_numeric(test_strs)
 
 	start_time = time.time()
 	with infer_session.as_default() as sess:
@@ -213,8 +213,8 @@ def main():
 	print('\tTotal inference time = {}'.format(time.time() - start_time))
 
 	if inferences is not None:
-		# Numeric data -> character strings.
-		inferred_strs = dataset.to_char_strings(inferences, has_start_token=False)
+		# Numeric data -> string data.
+		inferred_strs = dataset.to_string(inferences, has_start_token=False)
 		print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
 	else:
 		print('[SWL] Warning: Invalid inference results.')

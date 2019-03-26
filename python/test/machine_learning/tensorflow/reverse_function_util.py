@@ -65,22 +65,22 @@ class ReverseFunctionDataset(object):
 
 		return train_input_seqs, train_output_seqs, train_output_seqs_ahead_of_one_timestep, val_input_seqs, val_output_seqs, val_output_seqs_ahead_of_one_timestep
 
-	# Character strings -> numeric data.
-	def to_numeric_data(self, char_strs):
-		num_data = np.full((len(char_strs), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
-		for (i, str) in enumerate(char_strs):
+	# String data -> numeric data.
+	def to_numeric(self, str_data):
+		num_data = np.full((len(str_data), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
+		for (i, str) in enumerate(str_data):
 			tmp = np.array(self._str2datum(str))
 			num_data[i,:tmp.shape[0]] = tmp
 		num_data.reshape((-1,) + num_data.shape)
 		return keras.utils.to_categorical(num_data, self._VOCAB_SIZE).reshape(num_data.shape + (-1,))
 
-	# Numeric data -> character strings.
-	def to_char_strings(self, num_data, has_start_token=True):
+	# Numeric data -> string data.
+	def to_string(self, num_data, has_start_token=True):
 		num_data = np.argmax(num_data, axis=-1)
-		char_strs = []
+		str_data = []
 		for dat in num_data:
-			char_strs.append(self._datum2str(dat, has_start_token))
-		return char_strs
+			str_data.append(self._datum2str(dat, has_start_token))
+		return str_data
 
 	def _sample_model(self, min_length, max_length):
 		random_length = randrange(min_length, max_length)
