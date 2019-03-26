@@ -48,7 +48,9 @@ def load_synth90k_data_info(anno_filepath, data_dir_path, lexicon=None, subset_r
 			lines = swl_util.extract_subset_of_data(np.array(lines), subset_ratio)
 		data = [process_line(line, data_dir_path, lexicon) for line in lines]
 
-	return data  # (filepath, label) or (filepath, label index).
+	return data  # (file path, label) or (file path, label index).
+	#filepaths, labels = zip(*data)  # (file path, label) or (file path, label index).
+	#return filepaths, labels
 
 def load_synth90k_data(anno_filepath, data_dir_path, lexicon=None, subset_ratio=None):
 	"""

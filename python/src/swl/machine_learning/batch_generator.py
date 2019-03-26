@@ -1,6 +1,7 @@
 import os, abc, math, csv
 import numpy as np
 import cv2 as cv
+import swl.machine_vision.util as swl_cv_util
 
 #--------------------------------------------------------------------
 
@@ -366,13 +367,12 @@ class NpzFileBatchGeneratorFromFiles(FileBatchGenerator):
 		return inputs, outputs
 
 	@staticmethod
-	def _loadDataFromImageFiles(input_filepaths, batch_axis):
-		inputs = list()
-		for input_filepath in input_filepaths:
-			inp = cv.imread(input_filepath)
-			inputs.append(inp)
+	def _loadDataFromImageFiles(image_filepaths, height, width, channels):
+		inputs, valid_input_indices = swl_cv_util.load_images_from_files(image_filepaths, height, width, channels)
+		if valid_input_indices is None:
+			print('No valid image.')
 
-		return np.array(inputs)
+		return inputs
 
 #--------------------------------------------------------------------
 
@@ -463,7 +463,7 @@ class NpzFileBatchGeneratorFromImageFiles(NpzFileBatchGeneratorFromFiles):
 	"""Loads data from images files, generates their batches and saves them to npz files.
 	"""
 
-	def __init__(self, input_filepaths, output_seqs, num_loaded_files, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
+	def __init__(self, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files, batch_size, shuffle=True, is_time_major=False, augmenter=None, is_output_augmented=False, batch_input_filename_format=None, batch_output_filename_format=None, batch_info_csv_filename=None):
 		"""
 		In this constructor, no data will be loaded from input image files.
 
@@ -497,6 +497,7 @@ class NpzFileBatchGeneratorFromImageFiles(NpzFileBatchGeneratorFromFiles):
 				raise ValueError('Unmatched shapes of {} and {}'.format(input_filepath, output))
 		"""
 
+		self._image_height, self._image_width, self._image_channels = image_height, image_width, image_channels
 		self._num_files = len(input_filepaths)
 		self._num_file_groups = ((self._num_files - 1) // self._num_loaded_files + 1) if self._num_files > 0 else 0
 		if self._num_file_groups <= 0:
@@ -526,7 +527,7 @@ class NpzFileBatchGeneratorFromImageFiles(NpzFileBatchGeneratorFromFiles):
 			if sub_file_indices.size > 0:  # If sub_file_indices is non-empty.
 				sub_input_filepaths, outputs = self._input_filepaths[sub_file_indices], self._output_seqs[sub_file_indices]
 				if sub_input_filepaths.size > 0 and outputs.size > 0:  # If sub_input_filepaths and outputs are non-empty.
-					inputs = NpzFileBatchGeneratorFromImageFiles._loadDataFromImageFiles(sub_input_filepaths, self._batch_axis)
+					inputs = NpzFileBatchGeneratorFromImageFiles._loadDataFromImageFiles(sub_input_filepaths, self._image_height, self._image_width, self._image_channels)
 
 					#num_files = sub_file_indices.size
 					num_files = 1

@@ -9,7 +9,7 @@ import cv2 as cv
 #import imgaug as ia
 from imgaug import augmenters as iaa
 from swl.machine_learning.data_generator import Data2Generator
-from swl.machine_learning.batch_generator import NpzFileBatchGeneratorWithNpyFileInput
+from swl.machine_learning.batch_generator import NpzFileBatchGeneratorFromNpyFiles, NpzFileBatchGeneratorFromImageFiles
 from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
@@ -204,14 +204,14 @@ class Synth90kDataVisualizer(object):
 		if isinstance(data, types.GeneratorType):
 			start_example_index = 0
 			for datum in data:
-				self._visualize(datum, start_example_index, *args, **kwargs)
+				num_examples = self._visualize(datum, start_example_index, *args, **kwargs)
 				start_example_index += num_examples
 		else:
 			self._visualize(data, 0, *args, **kwargs)
 		cv.destroyAllWindows()
 
 	def _visualize(self, data, start_example_index, *args, **kwargs):
-		inputs, outputs, num_examples = data
+		(inputs, outputs), num_examples = data
 		if isinstance(inputs, np.ndarray):
 			print('\tInput: shape = {}, dtype = {}.'.format(inputs.shape, inputs.dtype))
 			print('\tInput: min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
@@ -238,6 +238,8 @@ class Synth90kDataVisualizer(object):
 				ch = cv.waitKey(2000)
 				if 27 == ch:  # ESC.
 					break
+
+		return num_examples
 
 #--------------------------------------------------------------------
 # Working directory guard classes.
@@ -362,8 +364,12 @@ class Synth90kDataGenerator(Data2Generator):
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
-		self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = (None,) * 6
-		self._train_data_info, self._val_data_info, self._test_data_info = (None,) * 3
+		self._is_npy_files_used_as_input = False  # Using npy files is much faster.
+		if self._is_npy_files_used_as_input:
+			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = (None,) * 6
+		else:
+			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = (None,) * 6
+			self._image_height, self._image_width, self._image_channels = 32, 128, 1
 
 		#--------------------
 		# Multiprocessing.
@@ -373,7 +379,10 @@ class Synth90kDataGenerator(Data2Generator):
 
 		#BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
 		BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-		#BaseManager.register('NpzFileBatchGeneratorWithNpyFileInput', NpzFileBatchGeneratorWithNpyFileInput)
+		#if self._is_npy_files_used_as_input:
+		#	BaseManager.register('NpzFileBatchGeneratorFromNpyFiles', NpzFileBatchGeneratorFromNpyFiles)
+		#else:
+		#	BaseManager.register('NpzFileBatchGeneratorFromImageFiles', NpzFileBatchGeneratorFromImageFiles)
 		#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 		self._manager = BaseManager()
 		self._manager.start()
@@ -394,7 +403,10 @@ class Synth90kDataGenerator(Data2Generator):
 		test_batch_dir_path_prefix = './test_batch_dir'
 		num_test_batch_dirs = 1
 		self._batch_info_csv_filename = 'batch_info.csv'
-		self._num_loaded_files_at_a_time = 5
+		if self._is_npy_files_used_as_input:
+			self._num_loaded_files_at_a_time = 5
+		else:
+			self._num_loaded_files_at_a_time = 50000
 
 		trainDirMgr_mp = self._manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, num_train_batch_dirs)
 		#trainForEvaluationDirMgr_mp = self._manager.WorkingDirectoryManager(train_for_evaluation_batch_dir_path_prefix, num_train_for_evaluation_batch_dirs)
@@ -428,63 +440,97 @@ class Synth90kDataGenerator(Data2Generator):
 		return self._dataset._image_height, self._dataset._image_width, self._dataset._image_channel, self._dataset._num_classes
 
 	def initialize(self, batch_size=None, *args, **kwargs):
-		print('Start loading Synth90k dataset from pre-arranged npy files...')
-		synth90k_base_dir_path = './synth90k_npy'
-		self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = Synth90kDataGenerator._loadDataFromNpyFiles(synth90k_base_dir_path)
+		if self._is_npy_files_used_as_input:
+			print('Start loading Synth90k dataset from pre-arranged npy files...')
+			synth90k_base_dir_path = './synth90k_npy'
+			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = Synth90kDataGenerator._loadDataFromNpyFiles(synth90k_base_dir_path)
 
-		if len(self._train_input_filepaths) != len(self._train_output_filepaths):
-			raise ValueError('The lengths of train input and output data are different: {} != {}'.format(len(self._train_input_filepaths), len(self._train_output_filepaths)))
-		if len(self._val_input_filepaths) != len(self._val_output_filepaths):
-			raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
-		if len(self._test_input_filepaths) != len(self._test_output_filepaths):
-			raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
-		print('End loading Synth90k dataset from pre-arranged npy files.')
+			if len(self._train_input_filepaths) != len(self._train_output_filepaths):
+				raise ValueError('The lengths of train input and output data are different: {} != {}'.format(len(self._train_input_filepaths), len(self._train_output_filepaths)))
+			if len(self._val_input_filepaths) != len(self._val_output_filepaths):
+				raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
+			if len(self._test_input_filepaths) != len(self._test_output_filepaths):
+				raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
+			print('End loading Synth90k dataset from pre-arranged npy files.')
 
-		#--------------------
-		# Visualizes data to check data itself, as well as data preprocessing and augmentation.
-		if True:
-			visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
+			#--------------------
+			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+			if True:
+				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
 
-			print('[SWL] Train data which is augmented (optional) and preprocessed.')
-			# Data augmentation (optional).
-			self._generateBatches(self._augmenter, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle=False, phase='train-for-evaluation')
-			#self._isTrainBatchesForEvaluationGenerated = False  # It is possible that this generated data is augmented.
-			# Data preprocessing.
-			visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
+				print('[SWL] Train data which is augmented (optional) and preprocessed.')
+				# Data augmentation (optional).
+				self._generateBatchesFromNpyFiles(self._augmenter, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle=False, phase='train-for-evaluation')
+				#self._isTrainBatchesForEvaluationGenerated = False  # It is possible that this generated data is augmented.
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
 
-			print('[SWL] Train data which is preprocessed but not augmented.')
-			# No data augmentation.
-			self._generateBatches(None, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle=False, phase='train-for-evaluation')
-			self._isTrainBatchesForEvaluationGenerated = True
-			# Data preprocessing.
-			visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
-
-			print('[SWL] Validation data which is preprocessed but not augmented.')
-			if not self._isValidationBatchesGenerated:
+				print('[SWL] Train data which is preprocessed but not augmented.')
 				# No data augmentation.
-				self._generateBatches(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle=False, phase='validation')
-				self._isValidationBatchesGenerated = True
-			# Data preprocessing.
-			visualizer(self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation'))
+				self._generateBatchesFromNpyFiles(None, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle=False, phase='train-for-evaluation')
+				self._isTrainBatchesForEvaluationGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
 
-			print('[SWL] Test data which is preprocessed but not augmented.')
-			if not self._isTestBatchesGenerated:
-				# No data augmentation.
-				self._generateBatches(None, self._testDirMgr, self._test_input_filepaths, self._test_output_filepaths, batch_size, shuffle=False, phase='test')
-				self._isTestBatchesGenerated = True
-			# Data preprocessing.
-			visualizer(self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test'))
+				print('[SWL] Validation data which is preprocessed but not augmented.')
+				if not self._isValidationBatchesGenerated:
+					# No data augmentation.
+					self._generateBatchesFromNpyFiles(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle=False, phase='validation')
+					self._isValidationBatchesGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation'))
 
-		#--------------------
-		# FIXME [implement] >> How to use?
-		print('Start loading Synth90k dataset from annotation files of Synth90k dataset...')
-		if 'posix' == os.name:
-			data_home_dir_path = '/home/sangwook/my_dataset'
+				print('[SWL] Test data which is preprocessed but not augmented.')
+				if not self._isTestBatchesGenerated:
+					# No data augmentation.
+					self._generateBatchesFromNpyFiles(None, self._testDirMgr, self._test_input_filepaths, self._test_output_filepaths, batch_size, shuffle=False, phase='test')
+					self._isTestBatchesGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test'))
 		else:
-			data_home_dir_path = 'D:/dataset'
-		synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
-		self._train_data_info, self._val_data_info, self._test_data_info = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
-		print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
+			print('Start loading Synth90k dataset from annotation files of Synth90k dataset...')
+			if 'posix' == os.name:
+				data_home_dir_path = '/home/sangwook/my_dataset'
+			else:
+				data_home_dir_path = 'D:/dataset'
+			synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
+			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
+			print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
+
+			#--------------------
+			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+			if True:
+				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
+
+				print('[SWL] Train data which is augmented (optional) and preprocessed.')
+				# Data augmentation (optional).
+				self._generateBatchesFromImageFiles(self._augmenter, self._trainForEvaluationDirMgr, self._train_image_filepaths, self._train_label_seqs, batch_size, shuffle=False, phase='train-for-evaluation')
+				#self._isTrainBatchesForEvaluationGenerated = False  # It is possible that this generated data is augmented.
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
+
+				print('[SWL] Train data which is preprocessed but not augmented.')
+				# No data augmentation.
+				self._generateBatchesFromImageFiles(None, self._trainForEvaluationDirMgr, self._train_image_filepaths, self._train_label_seqs, batch_size, shuffle=False, phase='train-for-evaluation')
+				self._isTrainBatchesForEvaluationGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
+
+				print('[SWL] Validation data which is preprocessed but not augmented.')
+				if not self._isValidationBatchesGenerated:
+					# No data augmentation.
+					self._generateBatchesFromImageFiles(None, self._valDirMgr, self._val_image_filepaths, self._val_label_seqs, batch_size, shuffle=False, phase='validation')
+					self._isValidationBatchesGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation'))
+
+				print('[SWL] Test data which is preprocessed but not augmented.')
+				if not self._isTestBatchesGenerated:
+					# No data augmentation.
+					self._generateBatchesFromImageFiles(None, self._testDirMgr, self._test_image_filepaths, self._test_label_seqs, batch_size, shuffle=False, phase='test')
+					self._isTestBatchesGenerated = True
+				# Data preprocessing.
+				visualizer(self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test'))
 
 	def initializeTraining(self, batch_size, shuffle):
 		if not self._isAugmentationThreadStarted:
@@ -505,7 +551,10 @@ class Synth90kDataGenerator(Data2Generator):
 		# TODO [improve] >> Run in a thread.
 		if not self._isValidationBatchesGenerated:
 			# No data augmentation.
-			self._generateBatches(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			if self._is_npy_files_used_as_input:
+				self._generateBatchesFromNpyFiles(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			else:
+				self._generateBatchesFromImageFiles(None, self._valDirMgr, self._val_image_filepaths, self._val_label_seqs, batch_size, shuffle, phase='validation')
 			self._isValidationBatchesGenerated = True
 
 		return self._loadBatches(self._trainFileBatchLoader, self._trainDirMgr, phase='train')
@@ -517,7 +566,10 @@ class Synth90kDataGenerator(Data2Generator):
 		# TODO [improve] >> Run in a thread.
 		if not self._isTrainBatchesForEvaluationGenerated:
 			# No data augmentation.
-			self._generateBatches(None, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle, phase='train-for-evaluation')
+			if self._is_npy_files_used_as_input:
+				self._generateBatchesFromNpyFiles(None, self._trainForEvaluationDirMgr, self._train_input_filepaths, self._train_output_filepaths, batch_size, shuffle, phase='train-for-evaluation')
+			else:
+				self._generateBatchesFromNpyFiles(None, self._trainForEvaluationDirMgr, self._train_image_filepaths, self._train_label_seqs, batch_size, shuffle, phase='train-for-evaluation')
 			self._isTrainBatchesForEvaluationGenerated = True
 
 		return self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation')
@@ -528,7 +580,10 @@ class Synth90kDataGenerator(Data2Generator):
 	def getValidationBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		if not self._isValidationBatchesGenerated:
 			# No data augmentation.
-			self._generateBatches(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			if self._is_npy_files_used_as_input:
+				self._generateBatchesFromNpyFiles(None, self._valDirMgr, self._val_input_filepaths, self._val_output_filepaths, batch_size, shuffle, phase='validation')
+			else:
+				self._generateBatchesFromNpyFiles(None, self._valDirMgr, self._val_image_filepaths, self._val_label_seqs, batch_size, shuffle, phase='validation')
 			self._isValidationBatchesGenerated = True
 
 		return self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation')
@@ -539,16 +594,30 @@ class Synth90kDataGenerator(Data2Generator):
 	def getTestBatches(self, batch_size=None, shuffle=False, *args, **kwargs):
 		if not self._isTestBatchesGenerated:
 			# No data augmentation.
-			self._generateBatches(None, self._testDirMgr, self._test_input_filepaths, self._test_output_filepaths, batch_size, shuffle, phase='test')
+			if self._is_npy_files_used_as_input:
+				self._generateBatchesFromNpyFiles(None, self._testDirMgr, self._test_input_filepaths, self._test_output_filepaths, batch_size, shuffle, phase='test')
+			else:
+				self._generateBatchesFromNpyFiles(None, self._testDirMgr, self._test_image_filepaths, self._test_label_seqs, batch_size, shuffle, phase='test')
 			self._isTestBatchesGenerated = True
 
 		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test')
 
-	def _generateBatches(self, augmenter, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
+	def _generateBatchesFromNpyFiles(self, augmenter, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
 		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
 		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, True) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, False, self._lock, phase, True)) as guard:
 			is_time_major, is_output_augmented = False, False  # Don't care.
-			batchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
+			batchGenerator = NpzFileBatchGeneratorFromNpyFiles(input_filepaths, output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
+			if guard.directory is None:
+				raise ValueError('Directory is None')
+			else:
+				num_saved_examples = batchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
+				print('\t#saved {} examples = {}.'.format(phase, num_saved_examples))
+
+	def _generateBatchesFromImageFiles(self, augmenter, dirMgr, input_filepaths, output_seqs, batch_size, shuffle, phase=''):
+		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
+		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, True) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, False, self._lock, phase, True)) as guard:
+			is_time_major, is_output_augmented = False, False  # Don't care.
+			batchGenerator = NpzFileBatchGeneratorFromImageFiles(input_filepaths, output_seqs, self._image_height, self._image_width, self._image_channels, self._num_loaded_files_at_a_time, batch_size, shuffle, is_time_major=is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=self._batch_info_csv_filename)
 			if guard.directory is None:
 				raise ValueError('Directory is None')
 			else:
@@ -586,9 +655,20 @@ class Synth90kDataGenerator(Data2Generator):
 		val_npy_file_csv_filepath = synth90k_base_dir_path + '/val/npy_file_info.csv'
 		test_npy_file_csv_filepath = synth90k_base_dir_path + '/test/npy_file_info.csv'
 
+		print('Start loading info about train npy files...')
+		start_time = time.time()
 		train_input_filepaths, train_output_filepaths, train_example_counts = swl_util.load_filepaths_from_npy_file_info(train_npy_file_csv_filepath)
+		print('End loading info about train npy files: {} secs.'.format(time.time() - start_time))
+
+		print('Start loading info about validation npy files...')
+		start_time = time.time()
 		val_input_filepaths, val_output_filepaths, val_example_counts = swl_util.load_filepaths_from_npy_file_info(val_npy_file_csv_filepath)
+		print('End loading info about validation npy files: {} secs.'.format(time.time() - start_time))
+
+		print('Start loading info about test npy files...')
+		start_time = time.time()
 		test_input_filepaths, test_output_filepaths, test_example_counts = swl_util.load_filepaths_from_npy_file_info(test_npy_file_csv_filepath)
+		print('End loading info about test npy files: {} secs.'.format(time.time() - start_time))
 
 		return train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths
 
@@ -617,25 +697,29 @@ class Synth90kDataGenerator(Data2Generator):
 		print('End loading lexicon: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		print('Start loading train data info...')
+		print('Start loading info about train files and labels...')
 		start_time = time.time()
 		train_data_info = synth90k_dataset.load_synth90k_data_info(train_anno_filepath, data_dir_path, lexicon, subset_ratio)
 		print('\tTrain data size =', len(train_data_info))
-		print('End loading train data info: {} secs.'.format(time.time() - start_time))
+		print('End loading info about train files and labels: {} secs.'.format(time.time() - start_time))
 
-		print('Start loading validation data info...')
+		print('Start loading info about validation files and labels...')
 		start_time = time.time()
 		val_data_info = synth90k_dataset.load_synth90k_data_info(val_anno_filepath, data_dir_path, lexicon, subset_ratio)
 		print('\tValiation data size =', len(val_data_info))
-		print('End loading validation data info: {} secs.'.format(time.time() - start_time))
+		print('End loading info about validation files and labels: {} secs.'.format(time.time() - start_time))
 
-		print('Start loading test data info...')
+		print('Start loading info about test files and labels...')
 		start_time = time.time()
 		test_data_info = synth90k_dataset.load_synth90k_data_info(test_anno_filepath, data_dir_path, lexicon, subset_ratio)
 		print('\tTest data size =', len(test_data_info))
-		print('End loading test data info: {} secs.'.format(time.time() - start_time))
+		print('End loading info about test files and labels: {} secs.'.format(time.time() - start_time))
 
-		return train_data_info, val_data_info, test_data_info
+		train_image_filepaths, train_label_seqs = zip(*train_data_info)
+		val_image_filepaths, val_label_seqs = zip(*val_data_info)
+		test_image_filepaths, test_label_seqs = zip(*test_data_info)
+
+		return train_image_filepaths, train_label_seqs, val_image_filepaths, val_label_seqs, test_image_filepaths, test_label_seqs
 
 	@staticmethod
 	def augmentation_worker_thread_proc(num_epochs, num_processes, lock, trainDirMgr_mp, augmenter, train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, batch_info_csv_filename):
@@ -662,7 +746,7 @@ class Synth90kDataGenerator(Data2Generator):
 			if guard.directory is None:
 				raise ValueError('Directory is None')
 			else:
-				fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+				fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 				num_saved_examples = fileBatchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
 				print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
 		print('\t{}: End augmentation worker process.'.format(os.getpid()))
