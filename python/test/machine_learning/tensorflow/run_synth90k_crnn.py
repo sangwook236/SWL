@@ -20,7 +20,7 @@ from imgaug import augmenters as iaa
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer
 from swl.machine_learning.tensorflow.neural_net_evaluator import NeuralNetEvaluator
 from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferrer
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGeneratorWithNpyFileInput
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGeneratorFromNpyFiles
 from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
@@ -179,7 +179,7 @@ def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_file
 	print('\t{}: Got a preparatory train directory: {}.'.format(os.getpid(), dir_path))
 
 	#--------------------
-	fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 	print('\t{}: #saved examples = {}.'.format(os.getpid(), num_saved_examples))
 
@@ -274,7 +274,7 @@ def main():
 
 	BaseManager.register('WorkingDirectoryManager', WorkingDirectoryManager)
 	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-	BaseManager.register('NpzFileBatchGeneratorWithNpyFileInput', NpzFileBatchGeneratorWithNpyFileInput)
+	BaseManager.register('NpzFileBatchGeneratorFromNpyFiles', NpzFileBatchGeneratorFromNpyFiles)
 	#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 	manager = BaseManager()
 	manager.start()
@@ -382,7 +382,7 @@ def main():
 				time.sleep(0.1)
 		print('\tGot a validation batch directory: {}.'.format(val_dir_path))
 
-		valFileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(val_input_filepaths, val_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+		valFileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(val_input_filepaths, val_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 		num_saved_examples  = valFileBatchGenerator.saveBatches(val_dir_path)  # Generates and saves batches.
 		print('\t#saved examples = {}.'.format(num_saved_examples))
 
@@ -399,7 +399,7 @@ def main():
 		trainDirMgr_mp = manager.TwoStepWorkingDirectoryManager(train_batch_dir_path_prefix, num_train_batch_dirs)
 		#valDirMgr_mp = manager.WorkingDirectoryManager(val_batch_dir_path_prefix, num_val_batch_dirs)
 
-		#trainFileBatchGenerator_mp = manager.NpzFileBatchGeneratorWithNpyFileInput(train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#trainFileBatchGenerator_mp = manager.NpzFileBatchGeneratorFromNpyFiles(train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, False, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 		#trainFileBatchLoader_mp = manager.NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
 		#valFileBatchLoader_mp = manager.NpzFileBatchLoader(batch_info_csv_filename, data_processing_functor=Synth90kPreprocessor(is_sparse_output))
 
@@ -436,7 +436,7 @@ def main():
 			time.sleep(0.1)
 	print('\tGot a test batch directory: {}.'.format(test_dir_path))
 
-	testFileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(test_input_filepaths, test_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
+	testFileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(test_input_filepaths, test_output_filepaths, num_loaded_files_at_a_time, batch_size, False, False, batch_info_csv_filename=batch_info_csv_filename)
 	num_saved_examples = testFileBatchGenerator.saveBatches(test_dir_path)  # Generates and saves batches.
 	print('\t#saved examples = {}.'.format(num_saved_examples))
 

@@ -1,35 +1,68 @@
 import os, abc, csv, zipfile
 import numpy as np
 
-#%%------------------------------------------------------------------
-# FileBatchLoader.
-#	Loads batches from files.
+#--------------------------------------------------------------------
+
 class FileBatchLoader(abc.ABC):
+	"""Loads batches from files.
+	"""
+
 	def __init__(self):
 		super().__init__()
 
-	# Returns a generator.
 	@abc.abstractmethod
 	def loadBatches(self, dir_path, *args, **kwargs):
+		"""Returns a generator.
+
+		Inputs:
+			dir_path (string): A path of a directory to load batch files.
+		Outputs:
+			A generator to generate batches.
+		"""
+
 		raise NotImplementedError
 
-	# Returns a generator.
 	@abc.abstractmethod
 	def loadBatchesUsingDirectoryGuard(self, directoryGuard, *args, **kwargs):
+		"""Returns a generator.
+
+		Inputs:
+			directoryGuard (object): A guard of a directory to load batch files.
+				The guard has a property 'directory' which returns a directory to load batch files.
+				The guard has attributes __enter__() and __exit__() for the with statement.
+		Outputs:
+			A generator to generate batches.
+		"""
+
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
-# NpzFileBatchLoader.
-#	Loads batches from npz files.
+#--------------------------------------------------------------------
+
 class NpzFileBatchLoader(FileBatchLoader):
+	"""Loads batches from npz files.
+	"""
+
 	def __init__(self, batch_info_csv_filename=None, data_processing_functor=None):
+		"""
+		Inputs:
+			batch_info_csv_filename (string): A CSV file name to save info about batch inputs and outputs. batch_info_csv_filename = 'batch_info.csv' when it is None.
+			data_processing_functor (functor): A function object for data processing. It can be None.
+		"""
+
 		super().__init__()
 
 		self._batch_info_csv_filename = 'batch_info.csv' if batch_info_csv_filename is None else batch_info_csv_filename
 		self._data_processing_functor = data_processing_functor
 
-	# Returns a generator.
 	def loadBatches(self, dir_path, *args, **kwargs):
+		"""Returns a generator.
+
+		Inputs:
+			dir_path (string): The path of a directory to load batch files.
+		Outputs:
+			A generator to generate batches.
+		"""
+
 		with open(os.path.join(dir_path, self._batch_info_csv_filename), 'r', encoding='UTF8') as csvfile:
 			reader = csv.reader(csvfile)
 			for row in reader:
@@ -74,8 +107,17 @@ class NpzFileBatchLoader(FileBatchLoader):
 						batch_inputs, batch_outputs = self._data_processing_functor(batch_inputs, batch_outputs)
 					yield (batch_inputs, batch_outputs), num_batch_examples
 
-	# Returns a generator.
 	def loadBatchesUsingDirectoryGuard(self, directoryGuard, *args, **kwargs):
+		"""Returns a generator.
+
+		Inputs:
+			directoryGuard (object): A guard of a directory to load batch files.
+				The guard has a property 'directory' which returns a directory to load batch files.
+				The guard has attributes __enter__() and __exit__() for the with statement.
+		Outputs:
+			A generator to generate batches.
+		"""
+
 		with directoryGuard:
 			if directoryGuard.directory is None:
 				raise ValueError('Directory is None')

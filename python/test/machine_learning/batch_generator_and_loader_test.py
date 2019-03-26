@@ -9,8 +9,9 @@ from functools import partial
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import numpy as np
+import cv2 as cv
 from imgaug import augmenters as iaa
-from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGenerator, NpzFileBatchGeneratorWithNpyFileInput
+from swl.machine_learning.batch_generator import SimpleBatchGenerator, NpzFileBatchGenerator, NpzFileBatchGeneratorFromNpyFiles, NpzFileBatchGeneratorFromImageFiles
 from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
@@ -56,7 +57,7 @@ class ImgaugAugmenter(object):
 		else:
 			return self._augmenter.augment_images(inputs), outputs
 
-def generate_dataset(num_examples, is_output_augmented=False):
+def generate_numpy_dataset(num_examples, is_output_augmented=False):
 	if is_output_augmented:
 		inputs = np.zeros((num_examples, 2, 2, 1))
 		outputs = np.zeros((num_examples, 2, 2, 1))
@@ -69,8 +70,23 @@ def generate_dataset(num_examples, is_output_augmented=False):
 		outputs[idx] = idx
 	return inputs, outputs
 
-def generate_file_dataset(dir_path, num_examples, is_output_augmented=False):
-	inputs, outputs = generate_dataset(num_examples, is_output_augmented)
+def generate_image_dataset(num_examples, is_output_augmented=False):
+	if is_output_augmented:
+		#inputs = np.random.randint(0, 256, size=(num_examples, 200, 300, 3))
+		inputs = np.zeros((num_examples, 200, 300, 3), dtype=np.uint)
+		outputs = np.zeros((num_examples, 200, 300, 1), dtype=np.int32)
+	else:
+		#inputs = np.random.randint(0, 256, size=(num_examples, 200, 300, 3))
+		inputs = np.zeros((num_examples, 200, 300, 3), dtype=np.uint8)
+		outputs = np.zeros((num_examples, 1), dtype=np.int32)
+
+	for idx in range(num_examples):
+		inputs[idx] = idx
+		outputs[idx] = idx
+	return inputs, outputs
+
+def generate_npy_file_dataset(dir_path, num_examples, is_output_augmented=False):
+	inputs, outputs = generate_numpy_dataset(num_examples, is_output_augmented)
 
 	swl_util.make_dir(dir_path)
 
@@ -90,9 +106,21 @@ def generate_file_dataset(dir_path, num_examples, is_output_augmented=False):
 		idx += 1
 	return input_filepaths, output_filepaths
 
+def generate_image_file_dataset(dir_path, num_examples, is_output_augmented=False):
+	inputs, outputs = generate_image_dataset(num_examples, is_output_augmented)
+
+	swl_util.make_dir(dir_path)
+
+	input_filepaths = list()
+	for idx, inp in enumerate(inputs):
+		input_filepath = os.path.join(dir_path, 'inputs_{}.png'.format(idx))
+		cv.imwrite(input_filepath, inp)
+		input_filepaths.append(input_filepath)
+	return input_filepaths, outputs.tolist()
+
 def simple_batch_generator_example():
 	num_examples = 100
-	inputs, outputs = generate_dataset(num_examples)
+	inputs, outputs = generate_numpy_dataset(num_examples)
 
 	num_epochs = 7
 	batch_size = 12
@@ -117,9 +145,9 @@ def simple_batch_generator_example():
 			#print('{}: {}, {}'.format(idx, batch_data[0].shape, batch_data[1].shape))
 			print('{}: {}-{}, {}-{}'.format(idx, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
 
-def simple_npy_file_batch_generator_and_loader_example():
+def simple_npz_file_batch_generator_and_loader_example():
 	num_examples = 3000
-	inputs, outputs = generate_dataset(num_examples)
+	inputs, outputs = generate_numpy_dataset(num_examples)
 
 	num_epochs = 7
 	batch_size = 12
@@ -172,9 +200,9 @@ def simple_npy_file_batch_generator_and_loader_example():
 
 		dirMgr.returnDirectory(dir_path)
 
-def simple_npy_file_batch_generator_with_file_input_and_loader_example():
+def simple_npz_file_batch_generator_from_npy_files_and_loader_example():
 	num_examples = 3000
-	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
+	npy_input_filepaths, npy_output_filepaths = generate_npy_file_dataset('./npy_files', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
 
@@ -206,8 +234,64 @@ def simple_npy_file_batch_generator_with_file_input_and_loader_example():
 
 		print('\t>>>>> Directory: {}.'.format(dir_path))
 
-		#fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
-		fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		#fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
+		fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
+
+		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
+		batches = fileBatchLoader.loadBatches(dir_path)  # Loads batches.
+
+		#dirMgr.returnDirectory(dir_path)  # If dir_path is returned before completing a job, dir_path can be used in a different job.
+
+		num_loaded_examples = 0
+		for idx, (batch_data, num_batch_examples) in enumerate(batches):
+			# Can run in an individual thread or process.
+			# Augment each batch (inputs & outputs).
+			# Train with each batch (inputs & outputs).
+			#print('\t{}: {}, {}, {}'.format(idx, num_batch_examples, batch_data[0].shape, batch_data[1].shape))
+			print('\t{}: {}, {}-{}, {}-{}'.format(idx, num_batch_examples, batch_data[0].shape, np.max(np.reshape(batch_data[0], (batch_data[0].shape[0], -1)), axis=-1), batch_data[1].shape, np.max(np.reshape(batch_data[1], (batch_data[1].shape[0], -1)), axis=-1)))
+			num_loaded_examples += num_batch_examples
+
+		print('#saved examples =', num_saved_examples)
+		print('#loaded examples =', num_loaded_examples)
+
+		dirMgr.returnDirectory(dir_path)
+
+def simple_npz_file_batch_generator_from_image_files_and_loader_example():
+	num_examples = 256
+	npy_input_filepaths, output_seqs = generate_image_file_dataset('./image_files', num_examples)
+	num_loaded_files = 57
+
+	num_epochs = 7
+	batch_size = 12
+	shuffle = True
+	is_time_major = False
+
+	batch_dir_path_prefix = './batch_dir'
+	num_batch_dirs = 5
+	dirMgr = WorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
+
+	batch_info_csv_filename = 'batch_info.csv'
+	#augmenter = augment_identically
+	#augmenter = IdentityAugmenter()
+	augmenter = ImgaugAugmenter()
+	is_output_augmented = False
+
+	#--------------------
+	for epoch in range(num_epochs):
+		print('>>>>> Epoch #{}.'.format(epoch))
+
+		while True:
+			dir_path = dirMgr.requestDirectory()
+			if dir_path is not None:
+				break
+			else:
+				time.sleep(0.1)
+
+		print('\t>>>>> Directory: {}.'.format(dir_path))
+
+		#fileBatchGenerator = NpzFileBatchGeneratorFromImageFiles(npy_input_filepaths, output_seqs, num_loaded_files, batch_size, shuffle, is_time_major)
+		fileBatchGenerator = NpzFileBatchGeneratorFromImageFiles(npy_input_filepaths, output_seqs, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 		num_saved_examples = fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 		fileBatchLoader = NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
@@ -328,8 +412,8 @@ def augmentation_with_file_input_worker_proc(dirMgr, npy_input_filepaths, npy_ou
 	augmenter = ImgaugAugmenter()
 	is_output_augmented = False
 
-	#fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
-	fileBatchGenerator = NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
+	#fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major)
+	fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented)
 	fileBatchGenerator.saveBatches(dir_path)  # Generates and saves batches.
 
 	#--------------------
@@ -338,9 +422,9 @@ def augmentation_with_file_input_worker_proc(dirMgr, npy_input_filepaths, npy_ou
 	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
 	print('\t{}: End augmentation worker process.'.format(os.getpid()))
 
-def multiprocessing_npy_file_batch_generator_and_loader_example():
+def multiprocessing_npz_file_batch_generator_and_loader_example():
 	num_examples = 100
-	inputs, outputs = generate_dataset(num_examples)
+	inputs, outputs = generate_numpy_dataset(num_examples)
 
 	num_epochs = 7
 	batch_size = 12
@@ -389,9 +473,9 @@ def multiprocessing_npy_file_batch_generator_and_loader_example():
 		training_results.get(timeout)
 		data_augmentation_results.get(timeout)
 
-def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example():
+def multiprocessing_npz_file_batch_generator_from_npy_files_and_loader_example():
 	num_examples = 300
-	npy_input_filepaths, npy_output_filepaths = generate_file_dataset('./batches', num_examples)
+	npy_input_filepaths, npy_output_filepaths = generate_npy_file_dataset('./npy_files', num_examples)
 	npy_input_filepaths, npy_output_filepaths = np.array(npy_input_filepaths), np.array(npy_output_filepaths)
 	num_loaded_files = 3
 
@@ -415,7 +499,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	batch_info_csv_filename = 'batch_info.csv'
 
 	BaseManager.register('TwoStepWorkingDirectoryManager', TwoStepWorkingDirectoryManager)
-	BaseManager.register('NpzFileBatchGeneratorWithNpyFileInput', NpzFileBatchGeneratorWithNpyFileInput)
+	BaseManager.register('NpzFileBatchGeneratorFromNpyFiles', NpzFileBatchGeneratorFromNpyFiles)
 	#BaseManager.register('NpzFileBatchLoader', NpzFileBatchLoader)
 	manager = BaseManager()
 	manager.start()
@@ -424,7 +508,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 	#lock= mp.Manager().Lock()  # TypeError: can't pickle _thread.lock objects.
 
 	dirMgr = manager.TwoStepWorkingDirectoryManager(batch_dir_path_prefix, num_batch_dirs)
-	#fileBatchGenerator = manager.NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+	#fileBatchGenerator = manager.NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 	#fileBatchLoader = manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename)
 
 	#--------------------
@@ -435,7 +519,7 @@ def multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example(
 		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, manager.NpzFileBatchLoader(batch_info_csv_filename=batch_info_csv_filename), num_epochs))  # Error.
 		#training_results = pool.apply_async(training_worker_proc, args=(dirMgr, fileBatchLoader, num_epochs))  # TypeError: can't pickle generator objects.
 		training_results = pool.apply_async(training_worker_proc, args=(dirMgr, batch_info_csv_filename, num_epochs))
-		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, manager.NpzFileBatchGeneratorWithNpyFileInput(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
+		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, manager.NpzFileBatchGeneratorFromNpyFiles(npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)), [epoch for epoch in range(num_epochs)])  # Error.
 		#data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, fileBatchGenerator), [epoch for epoch in range(num_epochs)])  # Ok.
 		data_augmentation_results = pool.map_async(partial(augmentation_with_file_input_worker_proc, dirMgr, npy_input_filepaths, npy_output_filepaths, num_loaded_files, batch_size, shuffle, is_time_major), [epoch for epoch in range(num_epochs)])
 
@@ -447,11 +531,12 @@ def main():
 	#simple_batch_generator_example()
 
 	# Batch generator and loader.
-	simple_npy_file_batch_generator_and_loader_example()
-	#simple_npy_file_batch_generator_with_file_input_and_loader_example()
+	#simple_npz_file_batch_generator_and_loader_example()
+	#simple_npz_file_batch_generator_from_npy_files_and_loader_example()
+	simple_npz_file_batch_generator_from_image_files_and_loader_example()
 
-	#multiprocessing_npy_file_batch_generator_and_loader_example()
-	#multiprocessing_npy_file_batch_generator_with_file_input_and_loader_example()
+	#multiprocessing_npz_file_batch_generator_and_loader_example()
+	#multiprocessing_npz_file_batch_generator_from_npy_files_and_loader_example()
 
 #%%------------------------------------------------------------------
 
