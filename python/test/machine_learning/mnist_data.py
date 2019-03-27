@@ -25,9 +25,9 @@ class ImgaugDataAugmenter(object):
 			iaa.Sometimes(0.5, iaa.SomeOf(1, [
 				iaa.Affine(
 					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
-					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
-					shear=(-16, 16),  # Shear by -16 to +16 degrees.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
@@ -36,15 +36,15 @@ class ImgaugDataAugmenter(object):
 				),
 				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(0.5, 3.5), sigma=0.25),  # Move pixels locally around (with random strengths).
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
 			])),
 			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0
-				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7
-				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7
+				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
+				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
+				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
 
-				iaa.Invert(0.05, per_channel=True),  # Invert color channels.
-				iaa.ContrastNormalization((0.5, 2.0), per_channel=0.5),  # Improve or worsen the contrast.
+				iaa.Invert(0.5, per_channel=True),  # Invert color channels.
+				iaa.LinearContrast((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
 
 				#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
 				#iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
@@ -54,7 +54,7 @@ class ImgaugDataAugmenter(object):
 				#	iaa.EdgeDetect(alpha=(0.5, 1.0)),
 				#	iaa.DirectedEdgeDetect(alpha=(0.5, 1.0), direction=(0.0, 1.0)),
 				#])),
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),  # Add gaussian noise to images.
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05 * 255), per_channel=True),  # Add Gaussian noise to images.
 			])),
 			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 		])
@@ -133,7 +133,7 @@ class MnistDataVisualizer(object):
 		if isinstance(data, types.GeneratorType):
 			start_example_index = 0
 			for datum in data:
-				self._visualize(datum, start_example_index, *args, **kwargs)
+				num_examples = self._visualize(datum, start_example_index, *args, **kwargs)
 				start_example_index += num_examples
 		else:
 			self._visualize(data, 0, *args, **kwargs)
@@ -163,6 +163,8 @@ class MnistDataVisualizer(object):
 				ch = cv.waitKey(2000)
 				if 27 == ch:  # ESC.
 					break
+
+		return num_examples
 
 #--------------------------------------------------------------------
 # MnistDataGenerator.
@@ -226,6 +228,9 @@ class MnistDataGenerator(Data2Generator):
 
 		#--------------------
 		# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+		# Good places to visualize:
+		# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+		#	DataPreprocessor.__call__(): before or after data augmentation.
 		if True:
 			visualizer = MnistDataVisualizer(start_index=0, end_index=5)
 			print('[SWL] Train data which is augmented (optional) and preprocessed.')

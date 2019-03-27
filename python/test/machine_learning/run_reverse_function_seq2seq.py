@@ -70,16 +70,18 @@ def main():
 	shuffle = True
 
 	sess_config = tf.ConfigProto()
-	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = 0,1.
+	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'.
 	sess_config.allow_soft_placement = True
 	#sess_config.log_device_placement = True
 	#sess_config.operation_timeout_in_ms = 50000
 	sess_config.gpu_options.allow_growth = True
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	train_device_name = '/device:GPU:0'
-	eval_device_name = '/device:GPU:0'
-	infer_device_name = '/device:GPU:0'
+	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
+	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify a device.
+	train_device_name = None #'/device:GPU:0'
+	eval_device_name = None #'/device:GPU:0'
+	infer_device_name = None #'/device:GPU:0'
 
 	#--------------------
 	# Prepare directories.
@@ -214,4 +216,5 @@ def main():
 #%%------------------------------------------------------------------
 
 if '__main__' == __name__:
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	main()

@@ -72,8 +72,9 @@ class ReverseFunctionDataset(object):
 	def to_numeric(self, str_data):
 		num_data = np.full((len(str_data), self._MAX_TOKEN_LEN), self._label_char2int[self._EOS])
 		for (i, str) in enumerate(str_data):
-			#num_data[i,:len(str)] = np.array(list(self._label_char2int[ch] for ch in (list(str) + [self._EOS])))
-			num_data[i,:len(str)] = np.array(list(self._label_char2int[ch] for ch in ([self._SOS] + list(str) + [self._EOS])))
+			#str = np.array(list(self._label_char2int[ch] for ch in (list(str) + [self._EOS])))
+			str = np.array(list(self._label_char2int[ch] for ch in ([self._SOS] + list(str) + [self._EOS])))
+			num_data[i,:len(str)] = str
 		num_data.reshape((-1,) + num_data.shape)
 		return tf.keras.utils.to_categorical(num_data, self._VOCAB_SIZE).reshape(num_data.shape + (-1,))
 
@@ -249,7 +250,7 @@ class ReverseFunctionDataVisualizer(object):
 		if isinstance(data, types.GeneratorType):
 			start_example_index = 0
 			for datum in data:
-				self._visualize(datum, start_example_index, *args, **kwargs)
+				num_examples = self._visualize(datum, start_example_index, *args, **kwargs)
 				start_example_index += num_examples
 		else:
 			self._visualize(data, 0, *args, **kwargs)
@@ -281,6 +282,8 @@ class ReverseFunctionDataVisualizer(object):
 			if idx >= self._start_index and idx < self._end_index:
 				print('\tData #{}: {}, {}, {}.'.format(idx, inp1, inp2, outp))
 				time.sleep(1)
+
+		return num_examples
 
 #--------------------------------------------------------------------
 # ReverseFunctionDataGenerator.
@@ -346,6 +349,9 @@ class ReverseFunctionDataGenerator(Data3Generator):
 
 		#--------------------
 		# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+		# Good places to visualize:
+		# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+		#	DataPreprocessor.__call__(): before or after data augmentation.
 		if True:
 			visualizer = ReverseFunctionDataVisualizer(self._dataset, start_index=0, end_index=5)
 			print('[SWL] Train data which is not augmented and preprocessed.')

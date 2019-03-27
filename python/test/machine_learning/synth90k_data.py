@@ -94,9 +94,9 @@ class ImgaugDataAugmenter(object):
 			iaa.Sometimes(0.5, iaa.SomeOf(1, [
 				iaa.Affine(
 					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.2, 0.2), 'y': (-0.2, 0.2)},  # Translate by -20 to +20 percent (per axis).
-					rotate=(-45, 45),  # Rotate by -45 to +45 degrees.
-					shear=(-16, 16),  # Shear by -16 to +16 degrees.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
 					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
 					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
 					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
@@ -105,15 +105,15 @@ class ImgaugDataAugmenter(object):
 				),
 				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(0.5, 3.5), sigma=0.25),  # Move pixels locally around (with random strengths).
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
 			])),
 			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0
-				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7
-				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7
+				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
+				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
+				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
 
-				iaa.Invert(0.05, per_channel=True),  # Invert color channels.
-				iaa.ContrastNormalization((0.5, 2.0), per_channel=0.5),  # Improve or worsen the contrast.
+				iaa.Invert(0.5, per_channel=True),  # Invert color channels.
+				iaa.LinearContrast((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
 
 				#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
 				#iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
@@ -123,7 +123,7 @@ class ImgaugDataAugmenter(object):
 				#	iaa.EdgeDetect(alpha=(0.5, 1.0)),
 				#	iaa.DirectedEdgeDetect(alpha=(0.5, 1.0), direction=(0.0, 1.0)),
 				#])),
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05*255), per_channel=0.5),  # Add gaussian noise to images.
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05 * 255), per_channel=True),  # Add Gaussian noise to images.
 			])),
 			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 		])
@@ -362,7 +362,7 @@ class TwoStepWorkingDirectoryGuard(object):
 # Synth90kDataGenerator.
 
 class Synth90kDataGenerator(Data2Generator):
-	def __init__(self, num_epochs, is_sparse_output, is_output_augmented=False, is_augmented_in_parallel=True):
+	def __init__(self, num_epochs, is_sparse_output, is_output_augmented=False, is_augmented_in_parallel=True, is_npy_files_used_as_input=True):
 		super().__init__()
 
 		self._num_epochs = num_epochs
@@ -375,7 +375,7 @@ class Synth90kDataGenerator(Data2Generator):
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
-		self._is_npy_files_used_as_input = False  # Using npy files is faster.
+		self._is_npy_files_used_as_input = is_npy_files_used_as_input  # Using npy files is faster.
 		if self._is_npy_files_used_as_input:
 			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = (None,) * 6
 		else:
@@ -466,6 +466,9 @@ class Synth90kDataGenerator(Data2Generator):
 
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+			# Good places to visualize:
+			# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
 				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
 
@@ -505,7 +508,9 @@ class Synth90kDataGenerator(Data2Generator):
 			else:
 				data_home_dir_path = 'D:/dataset'
 			synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
-			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path)
+
+			subset_ratio = None
+			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path, subset_ratio)
 
 			self._train_label_seqs = self._dataset.to_numeric(self._train_label_seqs)
 			self._val_label_seqs = self._dataset.to_numeric(self._val_label_seqs)
@@ -514,6 +519,9 @@ class Synth90kDataGenerator(Data2Generator):
 
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
+			# Good places to visualize:
+			# 	ensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
 				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
 
@@ -550,7 +558,10 @@ class Synth90kDataGenerator(Data2Generator):
 	def initializeTraining(self, batch_size, shuffle):
 		if not self._isAugmentationThreadStarted:
 			# Data augmentation: multithreading + multiprocessing.
-			self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+			if self._is_npy_files_used_as_input:
+				self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.npy_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+			else:
+				self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.image_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_image_filepaths, self._train_label_seqs, self._image_height, self._image_width, self._image_channels, self._num_loaded_files_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
 			self._augmentation_worker_thread.start()
 			self._isAugmentationThreadStarted = True
 
@@ -735,16 +746,28 @@ class Synth90kDataGenerator(Data2Generator):
 		return train_image_filepaths, train_label_seqs, val_image_filepaths, val_label_seqs, test_image_filepaths, test_label_seqs
 
 	@staticmethod
-	def augmentation_worker_thread_proc(num_epochs, num_processes, lock, trainDirMgr_mp, augmenter, train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, batch_info_csv_filename):
-		print('\t{}({}): Start augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
+	def npy_augmentation_worker_thread_proc(num_epochs, num_processes, lock, dirMgr_mp, augmenter, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, batch_info_csv_filename):
+		print('\t{}({}): Start npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
 		#timeout = 10
 		timeout = None
 		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.augmentation_worker_process_proc, augmenter, is_output_augmented, trainDirMgr_mp, train_input_filepaths, train_output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
-		print('\t{}({}): End augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
+		print('\t{}({}): End npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
+
+	@staticmethod
+	def image_augmentation_worker_thread_proc(num_epochs, num_processes, lock, dirMgr_mp, augmenter, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, batch_info_csv_filename):
+		print('\t{}({}): Start image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
+		#timeout = 10
+		timeout = None
+		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
+			is_output_augmented, is_time_major = False, False  # Don't care.
+			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+
+			data_augmentation_results.get(timeout)
+		print('\t{}({}): End image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
 
 	@staticmethod
 	def initialize_lock(lock):
@@ -753,8 +776,8 @@ class Synth90kDataGenerator(Data2Generator):
 
 	# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 	@staticmethod
-	def augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
-		print('\t{}: Start augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
+	def npy_augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
+		print('\t{}: Start npy augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
 		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
 			if guard.directory is None:
 				raise ValueError('Directory is None')
@@ -762,4 +785,17 @@ class Synth90kDataGenerator(Data2Generator):
 				fileBatchGenerator = NpzFileBatchGeneratorFromNpyFiles(input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
 				num_saved_examples = fileBatchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
 				print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
-		print('\t{}: End augmentation worker process.'.format(os.getpid()))
+		print('\t{}: End npy augmentation worker process.'.format(os.getpid()))
+
+	# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
+	@staticmethod
+	def image_augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
+		print('\t{}: Start image augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
+		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
+			if guard.directory is None:
+				raise ValueError('Directory is None')
+			else:
+				fileBatchGenerator = NpzFileBatchGeneratorFromImageFiles(input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, augmenter=augmenter, is_output_augmented=is_output_augmented, batch_info_csv_filename=batch_info_csv_filename)
+				num_saved_examples = fileBatchGenerator.saveBatches(guard.directory)  # Generates and saves batches.
+				print('\t{}: #saved train examples = {}.'.format(os.getpid(), num_saved_examples))
+		print('\t{}: End image augmentation worker process.'.format(os.getpid()))
