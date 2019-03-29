@@ -30,17 +30,17 @@ class SimpleCrnnTrainer(ModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
-			start_learning_rate = 0.001
+			init_learning_rate = 0.001
 			decay_steps = 10000
 			decay_rate = 0.96
-			learning_rate = start_learning_rate
-			#learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
-			#learning_rate = tf.train.inverse_time_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
-			#learning_rate = tf.train.natural_exp_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
-			#learning_rate = tf.train.cosine_decay(start_learning_rate, global_step, decay_steps, alpha=0.0)
-			#learning_rate = tf.train.linear_cosine_decay(start_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
-			#learning_rate = tf.train.noisy_linear_cosine_decay(start_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
-			#learning_rate = tf.train.polynomial_decay(start_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
+			learning_rate = init_learning_rate
+			#learning_rate = tf.train.exponential_decay(init_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.inverse_time_decay(init_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.natural_exp_decay(init_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.cosine_decay(init_learning_rate, global_step, decay_steps, alpha=0.0)
+			#learning_rate = tf.train.linear_cosine_decay(init_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.noisy_linear_cosine_decay(init_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.polynomial_decay(init_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
