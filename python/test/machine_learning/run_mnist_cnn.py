@@ -51,7 +51,7 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
-	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify a device.
+	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
 	train_device_name = None #'/device:GPU:0'
 	eval_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
@@ -140,7 +140,7 @@ def main():
 				dataGenerator.initializeTraining(batch_size, shuffle)
 				modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
 				dataGenerator.finalizeTraining()
-		print('\tTotal training time = {}'.format(time.time() - start_time))
+		print('\tTotal training time = {}.'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Evaluates.
@@ -150,7 +150,7 @@ def main():
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)
-		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
+		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infers.
@@ -167,7 +167,7 @@ def main():
 				ground_truths.append(batch_outputs)
 			inferences = np.array(inferences)
 			ground_truths = np.array(ground_truths)
-	print('\tTotal inference time = {}'.format(time.time() - start_time))
+	print('\tTotal inference time = {}.'.format(time.time() - start_time))
 
 	if inferences is not None:
 		if num_classes >= 2:
@@ -177,7 +177,7 @@ def main():
 			inferences = np.around(inferences)
 			#ground_truths = ground_truths
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-		print('\tAccurary = {} / {} = {}'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+		print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 

@@ -83,6 +83,9 @@ def load_filepaths_from_npy_file_info(npy_file_csv_filepath):
 			example_counts.append(int(row[2]))
 	return input_filepaths, output_filepaths, example_counts
 
+def load_filepaths_from_npz_file_info(npy_file_csv_filepath):
+	return load_filepaths_from_npy_file_info(npy_file_csv_filepath)
+
 def load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis=0):
 	if len(input_filepaths) != len(output_filepaths):
 		raise ValueError('Unmatched lengths of input_filepaths and output_filepaths')
@@ -91,6 +94,25 @@ def load_data_from_npy_files(input_filepaths, output_filepaths, batch_axis=0):
 		inp, outp = np.load(image_filepath), np.load(label_filepath)
 		if inp.shape[batch_axis] != outp.shape[batch_axis]:
 			raise ValueError('Unmatched shapes of {} and {}'.format(image_filepath, label_filepath))
+		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
+		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
+	return inputs, outputs
+
+def load_data_from_npz_file(npz_filepath, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
+	npzfile = np.load(npz_filepath)
+
+	input_keys = [key for key in npzfile.keys() if input_name_format.format('') in key]
+	output_keys = [key for key in npzfile.keys() if output_name_format.format('') in key]
+	#input_keys = sorted([key for key in npzfile.keys() if input_name_format.format('') in key])
+	#output_keys = sorted([key for key in npzfile.keys() if output_name_format.format('') in key])
+	if len(input_keys) != len(output_keys):
+		raise ValueError('The numbers of inputs and outputs are different: {} != {}.'.format(len(input_keys), len(output_keys)))
+
+	inputs, outputs = None, None
+	for ink, outk in zip(input_keys, output_keys):
+		inp, outp = npzfile[ink], npzfile[outk]
+		if inp.shape[batch_axis] != outp.shape[batch_axis]:
+			raise ValueError("Unmatched shapes of input '{}' and output '{}'".format(ink, outk))
 		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
 		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
 	return inputs, outputs
@@ -133,6 +155,37 @@ def save_data_to_npy_files(inputs, outputs, save_dir_path, num_files, input_file
 			writer.writerow((input_filepath, output_filepath, data_len))
 
 	return input_filepaths, output_filepaths, data_lens
+
+def save_data_to_npz_file(inputs, outputs, npz_filepath, num_examples_in_a_file, shuffle=True, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
+	if num_examples_in_a_file <= 0:
+		raise ValueError('Invalid number of examples in a file')
+	num_examples = inputs.shape[batch_axis]
+	if outputs.shape[batch_axis] != num_examples:
+		raise ValueError('The number of inputs is not equal to the number of outputs')
+	if num_examples <= 0:
+		raise ValueError('Invalid number of examples')
+
+	indices = np.arange(num_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	dataset = dict()
+	sub_idx, start_idx = 0, 0
+	while True:
+		end_idx = start_idx + num_examples_in_a_file
+		data_indices = indices[start_idx:end_idx]
+		if data_indices.size > 0:  # If data_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			sub_inputs, sub_outputs = inputs[data_indices], outputs[data_indices]
+			if sub_inputs.size > 0 and sub_outputs.size > 0:  # If sub_inputs and sub_outputs are non-empty.
+				dataset[input_name_format.format(sub_idx)], dataset[output_name_format.format(sub_idx)] = sub_inputs, sub_outputs
+				sub_idx += 1
+
+		if end_idx >= num_examples:
+			break;
+		start_idx = end_idx
+			
+	np.savez(npz_filepath, **dataset)
 
 def shuffle_data_in_npy_files(input_filepaths, output_filepaths, num_files_loaded_at_a_time, num_shuffles, tmp_dir_path_prefix=None, shuffle_input_filename_format=None, shuffle_output_filename_format=None, shuffle_info_csv_filename=None, is_time_major=False):
 	"""
@@ -181,58 +234,3 @@ def shuffle_data_in_npy_files(input_filepaths, output_filepaths, num_files_loade
 					start_file_index += num_files_loaded_at_a_time
 		input_filepaths, output_filepaths, _ = load_filepaths_from_npy_file_info(os.path.join(save_dir_path, shuffle_info_csv_filename))
 		input_filepaths, output_filepaths = np.array(input_filepaths), np.array(output_filepaths)
-
-#%%------------------------------------------------------------------
-
-def load_data_from_npz_file(npz_filepath, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
-	npzfile = np.load(npz_filepath)
-
-	input_keys = [key for key in npzfile.keys() if input_name_format.format('') in key]
-	output_keys = [key for key in npzfile.keys() if output_name_format.format('') in key]
-	#input_keys = sorted([key for key in npzfile.keys() if input_name_format.format('') in key])
-	#output_keys = sorted([key for key in npzfile.keys() if output_name_format.format('') in key])
-	if len(input_keys) != len(output_keys):
-		raise ValueError('The numbers of inputs and outputs are different: {} != {}.'.format(len(input_keys), len(output_keys)))
-
-	inputs, outputs = None, None
-	for ink, outk in zip(input_keys, output_keys):
-		inp, outp = npzfile[ink], npzfile[outk]
-		if inp.shape[batch_axis] != outp.shape[batch_axis]:
-			raise ValueError("Unmatched shapes of input '{}' and output '{}'".format(ink, outk))
-		inputs = inp if inputs is None else np.concatenate((inputs, inp), axis=0)
-		outputs = outp if outputs is None else np.concatenate((outputs, outp), axis=0)
-	return inputs, outputs
-
-def save_data_to_npz_file(inputs, outputs, npz_filepath, num_examples_in_a_file, shuffle=True, batch_axis=0, input_name_format='input_{}', output_name_format='output_{}'):
-	if num_examples_in_a_file <= 0:
-		raise ValueError('Invalid number of examples in a file')
-	num_examples = inputs.shape[batch_axis]
-	if outputs.shape[batch_axis] != num_examples:
-		raise ValueError('The number of inputs is not equal to the number of outputs')
-	if num_examples <= 0:
-		raise ValueError('Invalid number of examples')
-
-	indices = np.arange(num_examples)
-	if shuffle:
-		np.random.shuffle(indices)
-
-	dataset = dict()
-	sub_idx, start_idx = 0, 0
-	while True:
-		end_idx = start_idx + num_examples_in_a_file
-		data_indices = indices[start_idx:end_idx]
-		if data_indices.size > 0:  # If data_indices is non-empty.
-			# FIXME [fix] >> Does not work correctly in time-major data.
-			sub_inputs, sub_outputs = inputs[data_indices], outputs[data_indices]
-			if sub_inputs.size > 0 and sub_outputs.size > 0:  # If sub_inputs and sub_outputs are non-empty.
-				dataset[input_name_format.format(sub_idx)], dataset[output_name_format.format(sub_idx)] = sub_inputs, sub_outputs
-				sub_idx += 1
-
-		if end_idx >= num_examples:
-			break;
-		start_idx = end_idx
-			
-	np.savez(npz_filepath, **dataset)
-
-def load_filepaths_from_npz_file_info(npy_file_csv_filepath):
-	return load_filepaths_from_npy_file_info(npy_file_csv_filepath)

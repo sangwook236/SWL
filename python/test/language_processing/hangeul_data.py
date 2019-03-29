@@ -1,5 +1,5 @@
-import os, time
-from functools import partial
+import os, time, json
+from functools import partial, reduce
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import threading
@@ -13,27 +13,51 @@ from swl.machine_learning.batch_generator import NpzFileBatchGeneratorFromNpyFil
 from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 import swl.util.util as swl_util
+import swl.machine_vision.util as swl_cv_util
 import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
-# Synth90kDataset
+# HangeulDataset
 
-class Synth90kDataset(object):
+class HangeulDataset(object):
 	def __init__(self):
-		# NOTE [info] >> The same parameters exist in class Synth90kLabelConverter in ${SWL_PYTHON_HOME}/test/language_processing/synth90k_dataset_test.py.
+		#--------------------
+		# Loads info on dataset.
 
-		self._max_label_len = 23  # Max length of words in lexicon.
+		train_dataset_json_filepath = './text_train_dataset_5_mixed_320x64_250.json'
+		test_dataset_json_filepath = './text_test_dataset_5_mixed_320x64_250.json'
 
-		# Label: 0~9 + a~z + A~Z.
-		#label_characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-		# Label: 0~9 + a~z.
-		label_characters = '0123456789abcdefghijklmnopqrstuvwxyz'
+		print('Start loading Hangeul dataset info...')
+		start_time = time.time()
+		self._train_image_filepaths, self._train_labels, label_characters = HangeulDataset._load_dataset_info(train_dataset_json_filepath)
+		self._test_image_filepaths, self._test_labels, test_label_characters = HangeulDataset._load_dataset_info(test_dataset_json_filepath)
+
+		if sorted(label_characters) != sorted(test_label_characters):
+			raise ValueError('Label characters for train and test datasets should be identical')
+		if not all(map(lambda fl: os.path.splitext(os.path.basename(fl[0]))[0] == fl[1], zip(self._train_image_filepaths, self._train_labels))):
+			raise ValueError('Train file names and labels should be identical')
+		if not all(map(lambda fl: os.path.splitext(os.path.basename(fl[0]))[0] == fl[1], zip(self._test_image_filepaths, self._test_labels))):
+			raise ValueError('Test file names and labels should be identical')
+		if len(self._train_image_filepaths) != len(self._train_labels):
+			raise ValueError('The lengths of train file names and labels should be identical')
+		if len(self._test_image_filepaths) != len(self._test_labels):
+			raise ValueError('The lengths of test file names and labels should be identical')
+
+		print('\tThe length of loaded train data = {}.'.format(len(self._train_image_filepaths)))
+		print('\tThe length of loaded test data = {}.'.format(len(self._test_image_filepaths)))
+		print('End loading Hangeul dataset info: {} secs.'.format(time.time() - start_time))
+
+		self._max_label_len = reduce(lambda lhs, rhs: max(lhs, len(rhs)), self._train_labels + self._test_labels, 0)  # Max length of labels.
+		label_characters = list(label_characters)
+
+		#--------------------
+		# Prepares characters.
 
 		self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-		#extended_label_list = [self._SOS] + list(label_characters) + [self._EOS]
-		extended_label_list = list(label_characters) + [self._EOS]
-		#extended_label_list = list(label_characters)
+		#extended_label_list = [self._SOS] + label_characters + [self._EOS]
+		extended_label_list = label_characters + [self._EOS]
+		#extended_label_list = label_characters
 
 		self._label_int2char = extended_label_list
 		self._label_char2int = {c:i for i, c in enumerate(extended_label_list)}
@@ -43,6 +67,14 @@ class Synth90kDataset(object):
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._blank_label = self._num_classes - 1
 		self._label_eos_token = self._label_char2int[self._EOS]
+
+		#--------------------
+		self._train_labels = self.to_numeric(self._train_labels)
+		self._test_labels = self.to_numeric(self._test_labels)
+
+		#base_dir_path = './'
+		#self._train_image_filepaths = list(map(lambda fn: os.path.join(base_dir_path, fn), self._train_image_filepaths))
+		#self._test_image_filepaths = list(map(lambda fn: os.path.join(base_dir_path, fn), self._test_image_filepaths))
 
 	@property
 	def num_classes(self):
@@ -61,6 +93,22 @@ class Synth90kDataset(object):
 	def end_token(self):
 		return self._label_char2int[self._EOS]
 
+	@property
+	def train_filepaths(self):
+		return self._train_image_filepaths
+
+	@property
+	def train_labels(self):
+		return self._train_labels
+
+	@property
+	def test_filepaths(self):
+		return self._test_image_filepaths
+
+	@property
+	def test_labels(self):
+		return self._test_labels
+
 	# String data -> numeric data.
 	def to_numeric(self, str_data):
 		num_data = np.full((len(str_data), self._max_label_len), self._label_char2int[self._EOS])
@@ -78,6 +126,25 @@ class Synth90kDataset(object):
 				pass  # Uses the whole label.
 			return ''.join(label)
 		return list(map(num2str, num_data))
+
+	@staticmethod
+	def _load_dataset_info(dataset_json_filepath):
+		with open(dataset_json_filepath, 'r', encoding='UTF8') as json_file:
+			dataset = json.load(json_file)
+
+		"""
+		print(dataset['charset'])
+		for datum in dataset['data']:
+			print('file =', datum['file'])
+			print('size =', datum['size'])
+			print('text =', datum['text'])
+			print('char IDs =', datum['char_id'])
+		"""
+
+		label_characters = dataset['charset'].values()
+		image_filepaths, labels = zip(*map(lambda datum: (datum['file'], datum['text']), dataset['data']))
+
+		return image_filepaths, labels, label_characters
 
 #--------------------------------------------------------------------
 # ImgaugDataAugmenter.
@@ -140,9 +207,9 @@ class ImgaugDataAugmenter(object):
 		return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 #--------------------------------------------------------------------
-# Synth90kDataPreprocessor.
+# HangeulDataPreprocessor.
 
-class Synth90kDataPreprocessor(object):
+class HangeulDataPreprocessor(object):
 	def __init__(self, num_classes, label_eos_token, is_sparse_output):
 		self._num_classes = num_classes
 		self._label_eos_token = label_eos_token
@@ -155,10 +222,10 @@ class Synth90kDataPreprocessor(object):
 		"""
 		Inputs:
 			inputs (numpy.array): Images of size (samples, height, width) and type uint8.
-			outputs (numpy.array): Labels of size (samples, max_label_length) and type uint16.
+			outputs (numpy.array): Labels of size (samples, max_label_length) and type uint8.
 		Outputs:
 			inputs (numpy.array): Images of size (samples, height, width, 1) and type float32.
-			outputs (numpy.array or a tuple): Labels of size (samples, max_label_length, num_labels) and type uint16 when is_sparse_output = False. A tuple with (indices, values, shape) for a sparse tensor when is_sparse_output = True.
+			outputs (numpy.array or a tuple): Labels of size (samples, max_label_length, num_labels) and type uint8 when is_sparse_output = False. A tuple with (indices, values, shape) for a sparse tensor when is_sparse_output = True.
 		"""
 
 		if inputs is not None:
@@ -197,9 +264,9 @@ class Synth90kDataPreprocessor(object):
 		return inputs, outputs
 
 #--------------------------------------------------------------------
-# Synth90kDataVisualizer.
+# HangeulDataVisualizer.
 
-class Synth90kDataVisualizer(object):
+class HangeulDataVisualizer(object):
 	def __init__(self, dataset, start_index=0, end_index=5):
 		"""
 		Inputs:
@@ -235,7 +302,7 @@ class Synth90kDataVisualizer(object):
 		else:
 			print('\tOutput: type = {}.'.format(type(outputs)))
 
-		dense_outputs = swl_ml_util.sparse_to_dense(*outputs, default_value=self._dataset.end_token, dtype=np.int8)
+		dense_outputs = swl_ml_util.sparse_to_dense(*outputs, default_value=self._dataset.end_token, dtype=np.int16)
 		print('\tDense output: shape = {}, dtype = {}.'.format(dense_outputs.shape, dense_outputs.dtype))
 		print('\tDense output: min = {}, max = {}.'.format(np.min(dense_outputs), np.max(dense_outputs)))
 		print('\tSparse Output: min = {}, max = {}.'.format(np.min(outputs[1]), np.max(outputs[1])))
@@ -366,9 +433,9 @@ class TwoStepWorkingDirectoryGuard(object):
 		print('\t{}: Returned a {} {} directory for {}: {}.'.format(os.getpid(), self._step, self._phase, self._mode, self._dir_path))
 
 #--------------------------------------------------------------------
-# Synth90kDataGenerator.
+# HangeulDataGenerator.
 
-class Synth90kDataGenerator(Data2Generator):
+class HangeulDataGenerator(Data2Generator):
 	def __init__(self, num_epochs, is_sparse_output, is_output_augmented=False, is_augmented_in_parallel=True, is_npy_files_used_as_input=True):
 		super().__init__()
 
@@ -376,10 +443,10 @@ class Synth90kDataGenerator(Data2Generator):
 		self._is_augmented_in_parallel = is_augmented_in_parallel
 
 		#--------------------
-		self._dataset = Synth90kDataset()
+		self._dataset = HangeulDataset()
 		self._image_height, self._image_width, self._image_channels = 32, 128, 1
 
-		self._preprocessor = Synth90kDataPreprocessor(self._dataset.num_classes, self._dataset.end_token, is_sparse_output)
+		self._preprocessor = HangeulDataPreprocessor(self._dataset.num_classes, self._dataset.end_token, is_sparse_output)
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
@@ -387,12 +454,36 @@ class Synth90kDataGenerator(Data2Generator):
 		if self._is_npy_files_used_as_input:
 			self._num_files_to_load_at_a_time = 5  # The number of npy files to load at a time and shuffle, each of which contains many image files.
 		else:
-			self._num_files_to_load_at_a_time = 50000  # The number of image files to load at a time.
+			self._num_files_to_load_at_a_time = 5000  # The number of image files to load at a time.
 
 		if self._is_npy_files_used_as_input:
-			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = (None,) * 6
+			train_save_dir_path, test_save_dir_path = './hangeul_npy/train', './hangeul_npy/test'
+			npy_file_csv_filename = 'npy_file_info.csv'
+			if not os.path.isdir(train_save_dir_path) or not os.path.isdir(test_save_dir_path):
+				num_files_to_save_at_a_time = 5000
+				input_filename_format = 'input_{}.npy'
+				output_filename_format = 'output_{}.npy'
+				print('Start saving image files and labels in Hangeul dataset to npy files...')
+				start_time = time.time()
+				swl_cv_util.save_images_to_npy_files(self._dataset.train_filepaths, self._dataset.train_labels, self._image_height, self._image_width, self._image_channels, num_files_to_save_at_a_time, train_save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None)
+				swl_cv_util.save_images_to_npy_files(self._dataset.test_filepaths, self._dataset.test_labels, self._image_height, self._image_width, self._image_channels, num_files_to_save_at_a_time, test_save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None)
+				print('End saving image files and labels in Hangeul dataset to npy files: {} secs.'.format(time.time() - start_time))
+
+			print('Start loading Hangeul dataset from pre-arranged npy files...')
+			start_time = time.time()
+			self._train_input_filepaths, self._train_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = HangeulDataGenerator._loadDataFromNpyFiles(os.path.join(train_save_dir_path, npy_file_csv_filename), os.path.join(test_save_dir_path, npy_file_csv_filename))
+			self._val_input_filepaths, self._val_output_filepaths = self._test_input_filepaths, self._test_output_filepaths
+
+			if len(self._train_input_filepaths) != len(self._train_output_filepaths):
+				raise ValueError('The lengths of train input and output data are different: {} != {}'.format(len(self._train_input_filepaths), len(self._train_output_filepaths)))
+			if len(self._val_input_filepaths) != len(self._val_output_filepaths):
+				raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
+			if len(self._test_input_filepaths) != len(self._test_output_filepaths):
+				raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
+			print('End loading Hangeul dataset from pre-arranged npy files: {} secs.'.format(time.time() - start_time))
 		else:
-			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = (None,) * 6
+			self._train_image_filepaths, self._train_label_seqs, self._test_image_filepaths, self._test_label_seqs = self._dataset.train_filepaths, self._dataset.train_labels, self._dataset.test_filepaths, self._dataset.test_labels
+			self._val_image_filepaths, self._val_label_seqs = self._test_image_filepaths, self._test_label_seqs
 
 		#--------------------
 		# Multiprocessing.
@@ -460,26 +551,13 @@ class Synth90kDataGenerator(Data2Generator):
 
 	def initialize(self, batch_size=None, *args, **kwargs):
 		if self._is_npy_files_used_as_input:
-			print('Start loading Synth90k dataset from pre-arranged npy files...')
-			start_time = time.time()
-			synth90k_base_dir_path = './synth90k_npy'
-			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = Synth90kDataGenerator._loadDataFromNpyFiles(synth90k_base_dir_path)
-
-			if len(self._train_input_filepaths) != len(self._train_output_filepaths):
-				raise ValueError('The lengths of train input and output data are different: {} != {}'.format(len(self._train_input_filepaths), len(self._train_output_filepaths)))
-			if len(self._val_input_filepaths) != len(self._val_output_filepaths):
-				raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
-			if len(self._test_input_filepaths) != len(self._test_output_filepaths):
-				raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
-			print('End loading Synth90k dataset from pre-arranged npy files: {} secs.'.format(time.time() - start_time))
-
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
 			# Good places to visualize:
 			# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
 			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
-				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
+				visualizer = HangeulDataVisualizer(self._dataset, start_index=0, end_index=5)
 
 				print('[SWL] Train data which is augmented (optional) and preprocessed.')
 				# Data augmentation (optional).
@@ -495,6 +573,7 @@ class Synth90kDataGenerator(Data2Generator):
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
 
+				"""
 				print('[SWL] Validation data which is preprocessed but not augmented.')
 				if not self._isValidationBatchesGenerated:
 					# No data augmentation.
@@ -502,6 +581,7 @@ class Synth90kDataGenerator(Data2Generator):
 					self._isValidationBatchesGenerated = True
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation'))
+				"""
 
 				print('[SWL] Test data which is preprocessed but not augmented.')
 				if not self._isTestBatchesGenerated:
@@ -511,28 +591,13 @@ class Synth90kDataGenerator(Data2Generator):
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test'))
 		else:
-			print('Start loading Synth90k dataset from annotation files of Synth90k dataset...')
-			if 'posix' == os.name:
-				data_home_dir_path = '/home/sangwook/my_dataset'
-			else:
-				data_home_dir_path = 'D:/dataset'
-			synth90k_data_dir_path = data_home_dir_path + '/pattern_recognition/language_processing/mjsynth/mnt/ramdisk/max/90kDICT32px'
-
-			subset_ratio = None
-			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path, subset_ratio)
-
-			self._train_label_seqs = self._dataset.to_numeric(self._train_label_seqs)
-			self._val_label_seqs = self._dataset.to_numeric(self._val_label_seqs)
-			self._test_label_seqs = self._dataset.to_numeric(self._test_label_seqs)
-			print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
-
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
 			# Good places to visualize:
 			# 	ensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
 			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
-				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
+				visualizer = HangeulDataVisualizer(self._dataset, start_index=0, end_index=5)
 
 				print('[SWL] Train data which is augmented (optional) and preprocessed.')
 				# Data augmentation (optional).
@@ -548,6 +613,7 @@ class Synth90kDataGenerator(Data2Generator):
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._trainForEvaluationFileBatchLoader, self._trainForEvaluationDirMgr, phase='train-for-evaluation'))
 
+				"""
 				print('[SWL] Validation data which is preprocessed but not augmented.')
 				if not self._isValidationBatchesGenerated:
 					# No data augmentation.
@@ -555,6 +621,7 @@ class Synth90kDataGenerator(Data2Generator):
 					self._isValidationBatchesGenerated = True
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._valFileBatchLoader, self._valDirMgr, phase='validation'))
+				"""
 
 				print('[SWL] Test data which is preprocessed but not augmented.')
 				if not self._isTestBatchesGenerated:
@@ -568,9 +635,9 @@ class Synth90kDataGenerator(Data2Generator):
 		if not self._isAugmentationThreadStarted:
 			# Data augmentation: multithreading + multiprocessing.
 			if self._is_npy_files_used_as_input:
-				self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.npy_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_files_to_load_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+				self._augmentation_worker_thread = threading.Thread(target=HangeulDataGenerator.npy_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_input_filepaths, self._train_output_filepaths, self._num_files_to_load_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
 			else:
-				self._augmentation_worker_thread = threading.Thread(target=Synth90kDataGenerator.image_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_image_filepaths, self._train_label_seqs, self._image_height, self._image_width, self._image_channels, self._num_files_to_load_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
+				self._augmentation_worker_thread = threading.Thread(target=HangeulDataGenerator.image_augmentation_worker_thread_proc, args=(self._num_epochs, self._num_processes, self._lock, self._trainDirMgr, self._augmenter, self._train_image_filepaths, self._train_label_seqs, self._image_height, self._image_width, self._image_channels, self._num_files_to_load_at_a_time, batch_size, shuffle, self._batch_info_csv_filename))
 			self._augmentation_worker_thread.start()
 			self._isAugmentationThreadStarted = True
 
@@ -674,94 +741,33 @@ class Synth90kDataGenerator(Data2Generator):
 		return batchLoader.loadBatchesUsingDirectoryGuard(directoryGuard)  # Loads batches.
 
 	@staticmethod
-	def _loadDataFromNpyFiles(synth90k_base_dir_path):
-		"""Loads images and labels from npy files generated from Synth90k dataset.
-
-		Generate Synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
-		Refer to ../language_processing/synth90k_dataset_test.py.
+	def _loadDataFromNpyFiles(train_npy_file_csv_filepath, test_npy_file_csv_filepath):
+		"""Loads images and labels from npy files generated from Hangeul dataset.
 
 		Inputs:
-			synth90k_base_dir_path (string): The directory path of npy files generated from Synth90k dataset.
+			train_npy_file_csv_filepath (string): The CSV info file of train npy files generated from Hangeul dataset.
+			test_npy_file_csv_filepath (string): The CSV info file of test npy files generated from Hangeul dataset.
 		"""
-
-		train_npy_file_csv_filepath = synth90k_base_dir_path + '/train/npy_file_info.csv'
-		val_npy_file_csv_filepath = synth90k_base_dir_path + '/val/npy_file_info.csv'
-		test_npy_file_csv_filepath = synth90k_base_dir_path + '/test/npy_file_info.csv'
 
 		print('Start loading info about train npy files...')
 		start_time = time.time()
 		train_input_filepaths, train_output_filepaths, train_example_counts = swl_util.load_filepaths_from_npy_file_info(train_npy_file_csv_filepath)
 		print('End loading info about train npy files: {} secs.'.format(time.time() - start_time))
-
-		print('Start loading info about validation npy files...')
-		start_time = time.time()
-		val_input_filepaths, val_output_filepaths, val_example_counts = swl_util.load_filepaths_from_npy_file_info(val_npy_file_csv_filepath)
-		print('End loading info about validation npy files: {} secs.'.format(time.time() - start_time))
-
 		print('Start loading info about test npy files...')
 		start_time = time.time()
 		test_input_filepaths, test_output_filepaths, test_example_counts = swl_util.load_filepaths_from_npy_file_info(test_npy_file_csv_filepath)
 		print('End loading info about test npy files: {} secs.'.format(time.time() - start_time))
 
-		return train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths
-
-	@staticmethod
-	def _loadDataFromAnnotationFiles(data_dir_path, subset_ratio=None):
-		"""Loads images and labels from annotation files in Synth90k dataset.
-
-		Inputs:
-			data_dir_path (string): The directory path of Synth90k dataset.
-			subset_ratio (float or None): The ratio of subset of data. 0.0 < subset_ratio <= 1.0.
-		"""
-
-		import swl.language_processing.synth90k_dataset as synth90k_dataset
-
-		# filepath (filename: index_text_lexicon-idx) lexicon-idx.
-		all_anno_filepath = data_dir_path + '/annotation.txt'  # 8,919,273 files.
-		train_anno_filepath = data_dir_path + '/annotation_train.txt'  # 7,224,612 files.
-		val_anno_filepath = data_dir_path + '/annotation_val.txt'  # 802,734 files.
-		test_anno_filepath = data_dir_path + '/annotation_test.txt'  # 891,927 files.
-		lexicon_filepath = data_dir_path + '/lexicon.txt'  # 88,172 words.
-
-		print('Start loading lexicon...')
-		start_time = time.time()
-		lexicon = synth90k_dataset.load_synth90k_lexicon(lexicon_filepath)
-		print('\tLexicon size =', len(lexicon))
-		print('End loading lexicon: {} secs.'.format(time.time() - start_time))
-
-		#--------------------
-		print('Start loading info about train files and labels...')
-		start_time = time.time()
-		train_data_info = synth90k_dataset.load_synth90k_data_info(train_anno_filepath, data_dir_path, lexicon, subset_ratio)
-		print('\tTrain data size =', len(train_data_info))
-		print('End loading info about train files and labels: {} secs.'.format(time.time() - start_time))
-
-		print('Start loading info about validation files and labels...')
-		start_time = time.time()
-		val_data_info = synth90k_dataset.load_synth90k_data_info(val_anno_filepath, data_dir_path, lexicon, subset_ratio)
-		print('\tValiation data size =', len(val_data_info))
-		print('End loading info about validation files and labels: {} secs.'.format(time.time() - start_time))
-
-		print('Start loading info about test files and labels...')
-		start_time = time.time()
-		test_data_info = synth90k_dataset.load_synth90k_data_info(test_anno_filepath, data_dir_path, lexicon, subset_ratio)
-		print('\tTest data size =', len(test_data_info))
-		print('End loading info about test files and labels: {} secs.'.format(time.time() - start_time))
-
-		train_image_filepaths, train_label_seqs = zip(*train_data_info)
-		val_image_filepaths, val_label_seqs = zip(*val_data_info)
-		test_image_filepaths, test_label_seqs = zip(*test_data_info)
-
-		return train_image_filepaths, train_label_seqs, val_image_filepaths, val_label_seqs, test_image_filepaths, test_label_seqs
+		return train_input_filepaths, train_output_filepaths, test_input_filepaths, test_output_filepaths
 
 	@staticmethod
 	def npy_augmentation_worker_thread_proc(num_epochs, num_processes, lock, dirMgr_mp, augmenter, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, batch_info_csv_filename):
 		print('\t{}({}): Start npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
 		#timeout = 10
 		timeout = None
-		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
+		with mp.Pool(processes=num_processes, initializer=HangeulDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(partial(HangeulDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
@@ -771,23 +777,23 @@ class Synth90kDataGenerator(Data2Generator):
 		print('\t{}({}): Start image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
 		#timeout = 10
 		timeout = None
-		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
+		with mp.Pool(processes=num_processes, initializer=HangeulDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(partial(HangeulDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
 
 	@staticmethod
 	def initialize_lock(lock):
-		global global_synth90k_augmentation_lock
-		global_synth90k_augmentation_lock = lock
+		global global_hangeul_augmentation_lock
+		global_hangeul_augmentation_lock = lock
 
 	# REF [function] >> augmentation_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 	@staticmethod
 	def npy_augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
 		print('\t{}: Start npy augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
+		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_hangeul_augmentation_lock, 'train', True) as guard:
 			if guard.directory is None:
 				raise ValueError('Directory is None')
 			else:
@@ -800,7 +806,7 @@ class Synth90kDataGenerator(Data2Generator):
 	@staticmethod
 	def image_augmentation_worker_process_proc(augmenter, is_output_augmented, dirMgr, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename, epoch):
 		print('\t{}: Start image augmentation worker process: epoch #{}.'.format(os.getpid(), epoch))
-		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_synth90k_augmentation_lock, 'train', True) as guard:
+		with TwoStepWorkingDirectoryGuard(dirMgr, False, global_hangeul_augmentation_lock, 'train', True) as guard:
 			if guard.directory is None:
 				raise ValueError('Directory is None')
 			else:

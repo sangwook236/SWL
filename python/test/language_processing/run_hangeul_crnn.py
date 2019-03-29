@@ -13,16 +13,16 @@ from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
-from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
-from synth90k_data import Synth90kDataGenerator
+from hangeul_crnn import HangeulCrnnWithCrossEntropyLoss, HangeulCrnnWithCtcLoss
+from hangeul_data import HangeulDataGenerator
 
 #%%------------------------------------------------------------------
 
 def create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
-		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
+		return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
-		return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+		return HangeulCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
 
 #%%------------------------------------------------------------------
 
@@ -30,7 +30,17 @@ class SimpleCrnnTrainer(ModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
-			learning_rate = 0.001
+			start_learning_rate = 0.001
+			decay_steps = 10000
+			decay_rate = 0.96
+			learning_rate = start_learning_rate
+			#learning_rate = tf.train.exponential_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.inverse_time_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.natural_exp_decay(start_learning_rate, global_step, decay_steps, decay_rate, staircase=True)
+			#learning_rate = tf.train.cosine_decay(start_learning_rate, global_step, decay_steps, alpha=0.0)
+			#learning_rate = tf.train.linear_cosine_decay(start_learning_rate, global_step, decay_steps, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.noisy_linear_cosine_decay(start_learning_rate, global_step, decay_steps, initial_variance=1.0, variance_decay=0.55, num_periods=0.5, alpha=0.0, beta=0.001)
+			#learning_rate = tf.train.polynomial_decay(start_learning_rate, global_step, decay_steps, end_learning_rate=0.0001, power=1.0, cycle=False)
 			tf.summary.scalar('learning_rate', learning_rate)
 		with tf.name_scope('optimizer'):
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -61,7 +71,7 @@ def main():
 	is_training_required, is_evaluation_required = True, True
 	is_training_resumed = False
 
-	output_dir_prefix = 'synth90k_crnn'
+	output_dir_prefix = 'hangeul_crnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20190320T134245'
 
@@ -77,7 +87,7 @@ def main():
 
 	is_output_augmented = False  # Fixed.
 	is_augmented_in_parallel = True
-	is_npy_files_used_as_input = False  # Specifies whether npy files or image files are used as input. Using npy files is faster.
+	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
 
 	sess_config = tf.ConfigProto()
 	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'.
@@ -110,7 +120,7 @@ def main():
 	#--------------------
 	# Prepares data.
 
-	dataGenerator = Synth90kDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
+	dataGenerator = HangeulDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
 	image_height, image_width, image_channel, num_classes = dataGenerator.shapes
 	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
 	label_eos_token = dataGenerator.dataset.end_token

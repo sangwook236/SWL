@@ -78,7 +78,7 @@ def main():
 	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
-	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify a device.
+	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
 	train_device_name = None #'/device:GPU:0'
 	eval_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
@@ -169,7 +169,7 @@ def main():
 				dataGenerator.initializeTraining(batch_size, shuffle)
 				modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
 				dataGenerator.finalizeTraining()
-		print('\tTotal training time = {}'.format(time.time() - start_time))
+		print('\tTotal training time = {}.'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Evaluate.
@@ -179,7 +179,7 @@ def main():
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)
-		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
+		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
 	#%%------------------------------------------------------------------
 	# Infer.
@@ -192,12 +192,12 @@ def main():
 	with infer_session.as_default() as sess:
 		with sess.graph.as_default():
 			inferences = modelInferrer.infer(sess, test_inputs)
-	print('\tTotal inference time = {}'.format(time.time() - start_time))
+	print('\tTotal inference time = {}.'.format(time.time() - start_time))
 
 	if inferences is not None:
 		# Numeric data -> string data.
 		inferred_strs = dataGenerator.dataset.to_string(inferences, has_start_token=False)
-		print('\tTest strings = {}, inferred strings = {}'.format(test_strs, inferred_strs))
+		print('\tTest strings = {}, inferred strings = {}.'.format(test_strs, inferred_strs))
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 
