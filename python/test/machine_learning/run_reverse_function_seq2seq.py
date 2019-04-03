@@ -41,7 +41,9 @@ def create_learning_model(encoder_input_shape, decoder_input_shape, decoder_outp
 #%%------------------------------------------------------------------
 
 def main():
-	#np.random.seed(7)
+	#random.seed(a=None, version=2)
+	#np.random.seed(None)
+	#tf.set_random_seed(1234)  # Sets a graph-level seed.
 
 	#--------------------
 	# Parameters.

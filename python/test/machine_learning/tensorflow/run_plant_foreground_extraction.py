@@ -115,7 +115,7 @@ def infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list
 
 		print('\tInference time = {}'.format(end_time - start_time))
 		print('\tAccurary = {} / {} = {}'.format(total_correct_estimation_count, total_pixel_count, total_correct_estimation_count / total_pixel_count))
-		print('\tMin accurary = {} at index {}, max accuracy = {} at index {}'.format(np.array(inference_accurary_rates).min(), np.argmin(np.array(inference_accurary_rates)), np.array(inference_accurary_rates).max(), np.argmax(np.array(inference_accurary_rates))))
+		print('\tMin accuracy = {} at index {}, max accuracy = {} at index {}'.format(np.array(inference_accurary_rates).min(), np.argmin(np.array(inference_accurary_rates)), np.array(inference_accurary_rates).max(), np.argmax(np.array(inference_accurary_rates))))
 	else:
 		print('[SWL] Error: The number of test images is not equal to that of test labels.')
 

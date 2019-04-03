@@ -182,7 +182,7 @@ class Synth90kDataPreprocessor(object):
 			#inputs /= 255.0  # Normalization.
 
 			# Reshaping.
-			# (32, 128) -> (32, 128, 1).
+			# (height, width) -> (height, width, 1).
 			inputs = np.reshape(inputs, inputs.shape + (1,))
 
 		if outputs is not None:
@@ -380,6 +380,7 @@ class Synth90kDataGenerator(Data2Generator):
 		self._image_height, self._image_width, self._image_channels = 32, 128, 1
 
 		self._preprocessor = Synth90kDataPreprocessor(self._dataset.num_classes, self._dataset.end_token, is_sparse_output)
+		#ia.seed(1)
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
@@ -529,7 +530,7 @@ class Synth90kDataGenerator(Data2Generator):
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
 			# Good places to visualize:
-			# 	ensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+			# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
 			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
 				visualizer = Synth90kDataVisualizer(self._dataset, start_index=0, end_index=5)
@@ -677,7 +678,7 @@ class Synth90kDataGenerator(Data2Generator):
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):
 		"""Loads images and labels from npy files generated from Synth90k dataset.
 
-		Generate Synth90k dataset using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
+		Generate npy files using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
 		Refer to ../language_processing/synth90k_dataset_test.py.
 
 		Inputs:

@@ -76,7 +76,7 @@ def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator,
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
 		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -87,7 +87,7 @@ def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator,
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
-			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -206,7 +206,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
 		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -217,7 +217,7 @@ def train_neural_net_by_file_batch_loader(session, nnTrainer, trainFileBatchLoad
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
-			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -317,7 +317,7 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
 		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -328,7 +328,7 @@ def train_neural_net_by_batch_manager(session, nnTrainer, trainBatchMgr, valBatc
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
-			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -454,7 +454,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
 		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -465,7 +465,7 @@ def train_neural_net_by_file_batch_manager(session, nnTrainer, trainFileBatchMgr
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
-			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -576,7 +576,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 
 		print('\tTraining time = {}'.format(time.time() - start_time))
 		print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		history['acc'].append(train_acc)
 		history['loss'].append(train_loss)
@@ -587,7 +587,7 @@ def train_neural_net_by_batch_list(session, nnTrainer, train_inputs_list, train_
 		if saver is not None and checkpoint_dir_path is not None and val_acc >= best_val_acc:
 			saved_model_path = saver.save(session, checkpoint_dir_path + '/model.ckpt', global_step=nnTrainer.global_step)
 			best_val_acc = val_acc
-			print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+			print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 	# Close writers.
 	if train_summary_writer is not None:
@@ -799,7 +799,7 @@ def evaluate_neural_net_by_batch_generator(session, nnEvaluator, valBatchGenerat
 	val_loss /= num_val_examples
 
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # Supports lists of dense or sparse outputs.
@@ -843,7 +843,7 @@ def evaluate_neural_net_by_file_batch_loader(session, nnEvaluator, valFileBatchL
 	val_loss /= num_val_examples
 
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # NOTE [info] >> Use evaluate_neural_net_by_batch_generator().
@@ -878,7 +878,7 @@ def evaluate_neural_net_by_batch_manager(session, nnEvaluator, valBatchMgr, save
 	val_loss /= num_val_examples
 
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # NOTE [info] >> evaluate_neural_net_by_file_batch_loader().
@@ -924,7 +924,7 @@ def evaluate_neural_net_by_file_batch_manager(session, nnEvaluator, valFileBatch
 	val_loss /= num_val_examples
 
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # Supports lists of dense or sparse outputs.
@@ -963,7 +963,7 @@ def evaluate_neural_net_by_batch_list(session, nnEvaluator, val_inputs_list, val
 	val_acc /= num_val_examples
 	val_loss /= num_val_examples
 	print('\tEvaluation time = {}'.format(time.time() - start_time))
-	print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+	print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 	print('[SWL] Info: End evaluation...')
 
 # Supports dense or sparse outputs.
@@ -994,7 +994,7 @@ def evaluate_neural_net(session, nnEvaluator, val_inputs, val_outputs, batch_siz
 		#val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, batch_size)
 		val_loss, val_acc = nnEvaluator.evaluate(session, val_inputs, val_outputs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The number of validation inputs is not equal to that of validation outputs.')
@@ -1023,7 +1023,7 @@ def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_inp
 		#val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size)
 		val_loss, val_acc = nnEvaluator.evaluate_seq2seq(session, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, num_val_examples if is_sparse_output else batch_size, is_time_major, is_sparse_output)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 	else:
 		print('[SWL] Error: The numbers of validation inputs and outputs are not equal.')

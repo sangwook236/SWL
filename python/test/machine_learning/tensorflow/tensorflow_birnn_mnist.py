@@ -182,7 +182,7 @@ with tf.Session() as sess:
 		history['val_loss'].append(val_loss)
 		history['val_acc'].append(val_acc)
 
-		print('epoch:', epoch, ' validation loss:', val_loss, ' validation accurary:', val_acc)
+		print('epoch:', epoch, ' validation loss:', val_loss, ' validation accuracy:', val_acc)
 
 		if early_stopping.validate(val_loss):
 			break

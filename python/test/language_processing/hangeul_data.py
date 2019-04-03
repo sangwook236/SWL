@@ -249,7 +249,7 @@ class HangeulDataPreprocessor(object):
 			#inputs /= 255.0  # Normalization.
 
 			# Reshaping.
-			# (32, 128) -> (32, 128, 1).
+			# (height, width) -> (height, width, 1).
 			inputs = np.reshape(inputs, inputs.shape + (1,))
 
 		if outputs is not None:
@@ -444,9 +444,11 @@ class HangeulDataGenerator(Data2Generator):
 
 		#--------------------
 		self._dataset = HangeulDataset()
-		self._image_height, self._image_width, self._image_channels = 32, 128, 1
+		#self._image_height, self._image_width, self._image_channels = 32, 128, 1
+		self._image_height, self._image_width, self._image_channels = 64, 320, 1
 
 		self._preprocessor = HangeulDataPreprocessor(self._dataset.num_classes, self._dataset.end_token, is_sparse_output)
+		#ia.seed(1)
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
@@ -457,6 +459,8 @@ class HangeulDataGenerator(Data2Generator):
 			self._num_files_to_load_at_a_time = 5000  # The number of image files to load at a time.
 
 		if self._is_npy_files_used_as_input:
+			# Generates npy files.
+			#	Removes './hangeul_npy' to generate npy files again.
 			train_save_dir_path, test_save_dir_path = './hangeul_npy/train', './hangeul_npy/test'
 			npy_file_csv_filename = 'npy_file_info.csv'
 			if not os.path.isdir(train_save_dir_path) or not os.path.isdir(test_save_dir_path):
@@ -469,6 +473,7 @@ class HangeulDataGenerator(Data2Generator):
 				swl_cv_util.save_images_to_npy_files(self._dataset.test_filepaths, self._dataset.test_labels, self._image_height, self._image_width, self._image_channels, num_files_to_save_at_a_time, test_save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None)
 				print('End saving image files and labels in Hangeul dataset to npy files: {} secs.'.format(time.time() - start_time))
 
+			#--------------------
 			print('Start loading Hangeul dataset from pre-arranged npy files...')
 			start_time = time.time()
 			self._train_input_filepaths, self._train_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = HangeulDataGenerator._loadDataFromNpyFiles(os.path.join(train_save_dir_path, npy_file_csv_filename), os.path.join(test_save_dir_path, npy_file_csv_filename))
@@ -594,7 +599,7 @@ class HangeulDataGenerator(Data2Generator):
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
 			# Good places to visualize:
-			# 	ensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
+			# 	TensorFlowModel.get_feed_dict(): after data preprocessing and augmentation.
 			#	DataPreprocessor.__call__(): before or after data augmentation.
 			if True:
 				visualizer = HangeulDataVisualizer(self._dataset, start_index=0, end_index=5)
@@ -743,6 +748,8 @@ class HangeulDataGenerator(Data2Generator):
 	@staticmethod
 	def _loadDataFromNpyFiles(train_npy_file_csv_filepath, test_npy_file_csv_filepath):
 		"""Loads images and labels from npy files generated from Hangeul dataset.
+
+		Refer to self.__init__() to generate npy files.
 
 		Inputs:
 			train_npy_file_csv_filepath (string): The CSV info file of train npy files generated from Hangeul dataset.

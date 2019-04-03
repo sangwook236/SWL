@@ -34,7 +34,7 @@ class ModelEvaluator(object):
 		start_time = time.time()
 		val_loss, val_acc = self._evaluate(session, batch_size, shuffle)
 		print('\tEvaluation time = {}'.format(time.time() - start_time))
-		print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 		print('[SWL] Info: End evaluation...')
 
 	def _evaluate(self, session, batch_size=None, shuffle=False):

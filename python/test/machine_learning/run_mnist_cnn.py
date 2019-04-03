@@ -21,7 +21,9 @@ def create_learning_model(input_shape, output_shape):
 #%%------------------------------------------------------------------
 
 def main():
-	#np.random.seed(7)
+	#random.seed(a=None, version=2)
+	#np.random.seed(None)
+	#tf.set_random_seed(1234)  # Sets a graph-level seed.
 
 	#--------------------
 	# Sets parameters.

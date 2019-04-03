@@ -85,7 +85,7 @@ def main():
 	#--------------------
 	base_save_dir_path = './synth90k_npy'  # base_save_dir_path/train, base_save_dir_path/val, base_save_dir_path/test.
 	image_height, image_width, image_channels = 32, 128, 1
-	num_files_loaded_at_a_time = 50000
+	num_files_to_load_at_a_time = 50000
 	input_filename_format = 'input_{}.npy'
 	output_filename_format = 'output_{}.npy'
 	npy_file_csv_filename = 'npy_file_info.csv'
@@ -93,7 +93,7 @@ def main():
 
 	#subset_ratio = None
 	subset_ratio = 0.01
-	synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio)
+	synth90k_dataset.save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_to_load_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio)
 
 #%%------------------------------------------------------------------
 

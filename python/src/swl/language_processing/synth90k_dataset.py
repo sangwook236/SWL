@@ -132,7 +132,7 @@ def load_synth90k_dataset(data_dir_path, subset_ratio=None):
 
 	return lexicon, train_data, val_data, test_data
 
-def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_loaded_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio=None):
+def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_height, image_width, image_channels, num_files_to_load_at_a_time, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor, subset_ratio=None):
 	"""
 	Inputs:
 		data_dir_path (string): The directory path of Synth90k dataset.
@@ -174,5 +174,5 @@ def save_synth90k_dataset_to_npy_files(data_dir_path, base_save_dir_path, image_
 
 		print('Start saving {} data to npy files...'.format(learning_phase))
 		start_time = time.time()
-		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, image_channels, num_files_loaded_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor)
+		swl_cv_util.save_images_to_npy_files(list(file_label_dict.keys()), list(file_label_dict.values()), image_height, image_width, image_channels, num_files_to_load_at_a_time, save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor)
 		print('End saving {} data to npy files: {} secs.'.format(learning_phase, time.time() - start_time))

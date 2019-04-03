@@ -155,11 +155,11 @@ class ModelTrainer(object):
 					saved_model_path = self._saver.save(session, self._model_save_dir_path + '/model.ckpt', global_step=self._global_step)
 					best_val_acc = val_acc
 
-					print('[SWL] Info: Accurary is improved and the model is saved at {}.'.format(saved_model_path))
+					print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))
 
 			print('\tElapsed time = {}'.format(time.time() - start_time))
 			print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
-			print('\tValidation: loss = {}, accurary = {}'.format(val_loss, val_acc))
+			print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
 
 		# Close writers.
 		if train_summary_writer is not None:

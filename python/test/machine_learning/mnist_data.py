@@ -183,6 +183,7 @@ class MnistDataGenerator(Data2Generator):
 
 		#--------------------
 		self._preprocessor = MnistDataPreprocessor(self._input_shape[1:], self._num_classes)
+		#ia.seed(1)
 		self._augmenter = ImgaugDataAugmenter(is_output_augmented)
 		#self._augmenter = None
 
