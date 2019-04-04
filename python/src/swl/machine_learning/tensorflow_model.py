@@ -174,7 +174,7 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 	@abc.abstractmethod
-	def _get_loss(self, y, t, seq_lens):
+	def _get_loss(self, y, t, y_lens):
 		raise NotImplementedError
 
 	@abc.abstractmethod

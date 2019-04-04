@@ -41,55 +41,55 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		#--------------------
 		# Convolutional layer.
 		with tf.variable_scope('convolutional_layer', reuse=tf.AUTO_REUSE):
-			cnn_outputs = self._create_convolutional_layer(input_tensor)
+			cnn_outputs = self._create_convolutional_layer(input_tensor, is_training)
 
 		#--------------------
 		# Recurrent layer.
 		with tf.variable_scope('recurrent_layer', reuse=tf.AUTO_REUSE):
-			rnn_outputs = self._create_recurrent_layer(cnn_outputs)
+			rnn_outputs = self._create_recurrent_layer(cnn_outputs, is_training)
 
 		#--------------------
 		# Transcription layer.
 		with tf.variable_scope('transcription_layer', reuse=tf.AUTO_REUSE):
-			return self._create_transcription_layer(rnn_outputs, num_classes)
+			return self._create_transcription_layer(rnn_outputs, num_classes, is_training)
 
-	def _create_convolutional_layer(self, inputs):
+	def _create_convolutional_layer(self, inputs, is_training):
 		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
 
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv1 = tf.layers.batch_normalization(conv1, axis=-1, name='batchnorm')
+			conv1 = tf.layers.batch_normalization(conv1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			conv1 = tf.nn.relu(conv1, name='relu')
 			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
 
 		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
 			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv2 = tf.layers.batch_normalization(conv2, axis=-1, name='batchnorm')
+			conv2 = tf.layers.batch_normalization(conv2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			conv2 = tf.nn.relu(conv2, name='relu')
 			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
 
 		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
 			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv3 = tf.layers.batch_normalization(conv3, axis=-1, name='batchnorm1')
+			conv3 = tf.layers.batch_normalization(conv3, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm1')
 			conv3 = tf.nn.relu(conv3, name='relu1')
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv3 = tf.layers.batch_normalization(conv3, axis=-1, name='batchnorm2')
+			conv3 = tf.layers.batch_normalization(conv3, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
 			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
 
 		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
 			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv1')
-			conv4 = tf.layers.batch_normalization(conv4, axis=-1, name='batchnorm1')
+			conv4 = tf.layers.batch_normalization(conv4, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm1')
 			conv4 = tf.nn.relu(conv4, name='relu1')
 			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv2')
-			conv4 = tf.layers.batch_normalization(conv4, axis=-1, name='batchnorm2')
+			conv4 = tf.layers.batch_normalization(conv4, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
 			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
 
 		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
 			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(1, 1), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
-			conv5 = tf.layers.batch_normalization(conv5, axis=-1, name='batchnorm')
+			conv5 = tf.layers.batch_normalization(conv5, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			conv5 = tf.nn.relu(conv5, name='relu')
 
 		with tf.variable_scope('dense', reuse=tf.AUTO_REUSE):
@@ -101,7 +101,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 			return outputs
 
-	def _create_recurrent_layer(self, inputs):
+	def _create_recurrent_layer(self, inputs, is_training):
 		num_hidden_units = 256
 		keep_prob = 1.0
 		#keep_prob = 0.5
@@ -117,9 +117,9 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			#rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs1 = tf.concat(rnn_outputs1, axis=-1)
-			rnn_outputs1 = tf.layers.batch_normalization(rnn_outputs1, axis=-1, name='batchnorm')
+			rnn_outputs1 = tf.layers.batch_normalization(rnn_outputs1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states1 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states1[0].c, rnn_states1[1].c), axis=-1), tf.concat((rnn_states1[0].h, rnn_states1[1].h), axis=-1))
-			#rnn_states1 = tf.layers.batch_normalization(rnn_states1, axis=-1, name='batchnorm')
+			#rnn_states1 = tf.layers.batch_normalization(rnn_states1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 
 		with tf.variable_scope('rnn2', reuse=tf.AUTO_REUSE):
 			cell_fw2 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'fw_unit_cell')  # Forward cell.
@@ -130,13 +130,13 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			#rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs2 = tf.concat(rnn_outputs2, axis=-1)
-			rnn_outputs2 = tf.layers.batch_normalization(rnn_outputs2, axis=-1, name='batchnorm')
+			rnn_outputs2 = tf.layers.batch_normalization(rnn_outputs2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states2 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states2[0].c, rnn_states2[1].c), axis=-1), tf.concat((rnn_states2[0].h, rnn_states2[1].h), axis=-1))
-			#rnn_states2 = tf.layers.batch_normalization(rnn_states2, axis=-1, name='batchnorm')
+			#rnn_states2 = tf.layers.batch_normalization(rnn_states2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 
 			return rnn_outputs2
 
-	def _create_transcription_layer(self, inputs, num_classes):
+	def _create_transcription_layer(self, inputs, num_classes, is_training):
 		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
 
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
