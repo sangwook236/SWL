@@ -30,14 +30,14 @@ def user_defined_learning_rate(learning_rate, global_step, gamma, power, name=No
 	if global_step is None:
 		raise ValueError('global_step should not be None')
 
-    with tf.name_scope(name, 'user_defined_learning_rate', [learning_rate, global_step, gamma, power]) as name:
-        learning_rate = tf.convert_to_tensor(learning_rate, name='learning_rate')
-        dtype = learning_rate.dtype
-        global_step = tf.cast(global_step, dtype)
-        gamma = tf.cast(gamma, dtype)
-        power = tf.cast(power, dtype)
-        base = tf.multiply(gamma, global_step)
-        return tf.multiply(learning_rate, tf.pow(1 + base, -power), name=name)
+	with tf.name_scope(name, 'user_defined_learning_rate', [learning_rate, global_step, gamma, power]) as name:
+		learning_rate = tf.convert_to_tensor(learning_rate, name='learning_rate')
+		dtype = learning_rate.dtype
+		global_step = tf.cast(global_step, dtype)
+		gamma = tf.cast(gamma, dtype)
+		power = tf.cast(power, dtype)
+		base = tf.multiply(gamma, global_step)
+		return tf.multiply(learning_rate, tf.pow(1 + base, -power), name=name)
 
 class SimpleCrnnTrainer(ModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
@@ -103,7 +103,7 @@ def main():
 
 	is_output_augmented = False  # Fixed.
 	is_augmented_in_parallel = True
-	is_npy_files_used_as_input = False  # Specifies whether npy files or image files are used as input. Using npy files is faster.
+	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
 
 	sess_config = tf.ConfigProto()
 	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'.

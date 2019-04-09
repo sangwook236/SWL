@@ -186,8 +186,8 @@ class HangeulCrnnWithCtcLoss(HangeulCrnn):
 
 	def _get_loss(self, y, t, y_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			# FIXME [fix] >>
-			# The 2 is critical here since the first couple of outputs of the RNN tend to be garbage:
+			# TODO [check] >> Which y and y_lens?
+			#	The first couple of outputs of RNN might be garbage (2:).
 			y = y[:, 2:, :]
 			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
 
@@ -200,9 +200,15 @@ class HangeulCrnnWithCtcLoss(HangeulCrnn):
 
 	def _get_accuracy(self, y, t):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
+			# TODO [check] >> Which accuracy?
+			"""
 			# Inaccuracy: label error rate.
+			# NOTE [info] >> tf.edit_distance() is too slow.
+			#	We do not need to compute accuracy to train.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
+			"""
+			accuracy = tf.constant(-1, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
@@ -231,9 +237,9 @@ class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
 			t_dense = tf.sparse.to_dense(t, default_value=self._eos_token)
 			t_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), t.dense_shape[1])  # Batch-major.
 
-			# FIXME [fix] >>
+			# TODO [check] >> Which y and y_lens?
+			#	The first couple of outputs of RNN might be garbage (2:).
 			#y_lens = tf.reshape(y_lens, (-1, 1))
-			# The 2 is critical here since the first couple of outputs of the RNN tend to be garbage:
 			y = y[:, 2:, :]
 			y_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), y.shape[1])  # Batch-major.
 
@@ -245,18 +251,22 @@ class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
 
 	def _get_accuracy(self, y, t):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			# FIXME [fix] >>
+			# TODO [check] >> Which accuracy?
+			"""
+			# TODO [check] >> Which y_sparse?
 			#y_sparse = tf.contrib.layers.dense_to_sparse(y, eos_token=self._eos_token)  # Memory error.
 			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
 			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(logits, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
+			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
 			y_sparse = decoded[0]  # tf.SparseTensor.
 
 			# Inaccuracy: label error rate.
+			# NOTE [info] >> tf.edit_distance() is too slow.
+			#	We do not need to compute accuracy to train.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
-			# FIXME [fix] >>
-			#accuracy = tf.constant(-1.0, tf.float32)
+			"""
+			accuracy = tf.constant(-1.0, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy

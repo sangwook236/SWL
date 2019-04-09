@@ -238,7 +238,7 @@ class Synth90kDataVisualizer(object):
 		dense_outputs = swl_ml_util.sparse_to_dense(*outputs, default_value=self._dataset.end_token, dtype=np.int8)
 		print('\tDense output: shape = {}, dtype = {}.'.format(dense_outputs.shape, dense_outputs.dtype))
 		print('\tDense output: min = {}, max = {}.'.format(np.min(dense_outputs), np.max(dense_outputs)))
-		print('\tSparse Output: min = {}, max = {}.'.format(np.min(outputs[1]), np.max(outputs[1])))
+		print('\tSparse output: min = {}, max = {}.'.format(np.min(outputs[1]), np.max(outputs[1])))
 
 		if len(inputs) != num_examples or len(dense_outputs) != num_examples:
 			raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))

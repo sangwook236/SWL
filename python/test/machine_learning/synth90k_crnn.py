@@ -185,6 +185,11 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _get_loss(self, y, t, y_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
+			# TODO [check] >> Which y and y_lens?
+			#	The first couple of outputs of RNN might be garbage (2:).
+			y = y[:, 2:, :]
+			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
+
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
 			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=y_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
@@ -195,8 +200,11 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def _get_accuracy(self, y, t):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# Inaccuracy: label error rate.
+			# NOTE [info] >> tf.edit_distance() is too slow.
+			#	We do not need to compute accuracy to train.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
+			#accuracy = tf.constant(-1, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
