@@ -101,7 +101,7 @@ class ModelTrainer(object):
 					train_summary_writer.add_summary(summary, epoch)
 
 			# Evaluate training.
-			train_loss, train_acc = math.inf, -math.inf
+			train_loss, train_acc = 0.0, 0.0
 			if True:
 				num_train_examples = 0
 				#for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=shuffle):
@@ -124,7 +124,7 @@ class ModelTrainer(object):
 				history['acc'].append(train_acc)
 
 			# Evaluate.
-			val_loss, val_acc = math.inf, -math.inf
+			val_loss, val_acc = 0.0, 0.0
 			if self._dataGenerator.hasValidationBatches():
 				num_val_examples = 0
 				#for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=shuffle):
