@@ -22,7 +22,8 @@ def create_learning_model(image_height, image_width, image_channel, num_classes,
 	if is_sparse_output:
 		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
-		return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+		#return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+		raise TypeError('Synth90kCrnnWithCrossEntropyLoss with dense outputs cannot be used')
 
 #%%------------------------------------------------------------------
 

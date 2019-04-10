@@ -23,7 +23,8 @@ def create_learning_model(image_height, image_width, image_channel, num_classes,
 		return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 		#return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
-		return HangeulCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+		#return HangeulCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
+		raise TypeError('HangeulCrnnWithCrossEntropyLoss with dense outputs cannot be used')
 
 #%%------------------------------------------------------------------
 

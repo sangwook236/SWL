@@ -1,3 +1,4 @@
+import abc
 import tensorflow as tf
 from swl.machine_learning.tensorflow_model import SimpleTensorFlowModel
 
@@ -13,7 +14,7 @@ class DilationNet(SimpleTensorFlowModel):
 		super().__init__(input_shape, output_shape)
 
 		self._is_final_relu_applied = is_final_relu_applied
-		self._model_name = _model_name
+		self._model_name = model_name
 
 	def get_feed_dict(self, data, *args, **kwargs):
 		len_data = len(data)
@@ -34,7 +35,7 @@ class DilationNet(SimpleTensorFlowModel):
 
 			#--------------------
 			with tf.variable_scope('front_end_module', reuse=tf.AUTO_REUSE):
-				front_end_outputs = self._create_front_end_module(input_tensor, self._is_final_relu_applied, is_training)
+				front_end_outputs = self._create_front_end_module(input_tensor, num_classes, self._is_final_relu_applied, is_training)
 
 			#--------------------
 			with tf.variable_scope('context_module', reuse=tf.AUTO_REUSE):
@@ -45,7 +46,7 @@ class DilationNet(SimpleTensorFlowModel):
 	def _create_context_module(self, inputs, num_classes, is_training):
 		raise NotImplementedError
 
-	def _create_front_end_module(self, inputs, is_final_relu_applied, is_training)
+	def _create_front_end_module(self, inputs, num_classes, is_final_relu_applied, is_training):
 		"""A network model based on VGG-16.
 		"""
 
@@ -125,7 +126,7 @@ class PascalVocDilationNet(DilationNet):
 		# TODO [check] >> is_final_relu_applied = True?
 		super().__init__(input_shape, output_shape, is_final_relu_applied=True, model_name='pascal_voc_dilation_net')
 
-	def _create_context_module(self, inputs, is_training):
+	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
 			conv1 = tf.pad(inputs, [[0, 0], [33, 33], [33, 33], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
 
@@ -176,7 +177,7 @@ class CamVidDilationNet(DilationNet):
 		# TODO [check] >> is_final_relu_applied = False?
 		super().__init__(input_shape, output_shape, is_final_relu_applied=False, model_name='camvid_dilation_net')
 
-	def _create_context_module(self, inputs, is_training):
+	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
 			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
 

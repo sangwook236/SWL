@@ -1,4 +1,4 @@
-import abc, time
+import abc, math, time
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
@@ -86,7 +86,7 @@ class ModelTrainer(object):
 			'val_loss': []
 		}
 
-		best_val_acc = 0.0
+		best_val_acc = -math.inf
 		for epoch in range(1, num_epochs + 1):
 			print('Epoch {}/{}'.format(epoch, num_epochs))
 
@@ -101,7 +101,7 @@ class ModelTrainer(object):
 					train_summary_writer.add_summary(summary, epoch)
 
 			# Evaluate training.
-			train_loss, train_acc = 0.0, 0.0
+			train_loss, train_acc = math.inf, -math.inf
 			if True:
 				num_train_examples = 0
 				#for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=shuffle):
@@ -124,7 +124,7 @@ class ModelTrainer(object):
 				history['acc'].append(train_acc)
 
 			# Evaluate.
-			val_loss, val_acc = 0.0, 0.0
+			val_loss, val_acc = math.inf, -math.inf
 			if self._dataGenerator.hasValidationBatches():
 				num_val_examples = 0
 				#for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=shuffle):

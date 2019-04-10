@@ -40,8 +40,12 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 		#--------------------
 		# Convolutional layer.
+
+		# TODO [check] >> The magic number (64).
+		num_cnn_features = 64
+
 		with tf.variable_scope('convolutional_layer', reuse=tf.AUTO_REUSE):
-			cnn_outputs = self._create_convolutional_layer(input_tensor, is_training)
+			cnn_outputs = self._create_convolutional_layer(input_tensor, num_cnn_features, is_training)
 
 		#--------------------
 		# Recurrent layer.
@@ -53,7 +57,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		with tf.variable_scope('transcription_layer', reuse=tf.AUTO_REUSE):
 			return self._create_transcription_layer(rnn_outputs, num_classes, is_training)
 
-	def _create_convolutional_layer(self, inputs, is_training):
+	def _create_convolutional_layer(self, inputs, num_features, is_training):
 		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
 
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
@@ -97,7 +101,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + [-1], name='reshape')
 			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + [conv5_shape[2] * conv5_shape[3]], name='reshape')
 			outputs = tf.reshape(conv5, shape=[-1, conv5_shape[1], conv5_shape[2] * conv5_shape[3]], name='reshape')
-			outputs = tf.layers.dense(outputs, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+			outputs = tf.layers.dense(outputs, num_features, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 			return outputs
 
@@ -185,8 +189,7 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _get_loss(self, y, t, y_lens):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			# TODO [check] >> Which y and y_lens?
-			#	The first couple of outputs of RNN might be garbage (2:).
+			# NOTE [info] >> The first couple of outputs of RNN might be garbage (2:).
 			y = y[:, 2:, :]
 			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
 
@@ -199,12 +202,15 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _get_accuracy(self, y, t):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
+			"""
 			# Inaccuracy: label error rate.
 			# NOTE [info] >> tf.edit_distance() is too slow.
+			#	I guess that this function is run on CPU, not GPU.
 			#	We do not need to compute accuracy to train.
 			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y, tf.int32), t, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
-			#accuracy = tf.constant(-1, tf.float32)
+			"""
+			accuracy = tf.constant(-1, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
