@@ -257,29 +257,31 @@ class ReverseFunctionDataVisualizer(object):
 
 	def _visualize(self, data, start_example_index, *args, **kwargs):
 		(encoder_inputs, decoder_inputs, decoder_outputs), num_examples = data
-		if isinstance(encoder_inputs, np.ndarray):
-			print('\tEncoder input: shape = {}, dtype = {}.'.format(encoder_inputs.shape, encoder_inputs.dtype))
-			print('\tEncoder input: min = {}, max = {}.'.format(np.min(encoder_inputs), np.max(encoder_inputs)))
-		else:
-			print('\tEncoder input: type = {}.'.format(type(encoder_inputs)))
-		if isinstance(decoder_inputs, np.ndarray):
-			print('\tDecoder input: shape = {}, dtype = {}.'.format(decoder_inputs.shape, decoder_inputs.dtype))
-			print('\tDecoder input: min = {}, max = {}.'.format(np.min(decoder_inputs), np.max(decoder_inputs)))
-		else:
-			print('\tDecoder input: type = {}.'.format(type(decoder_inputs)))
-		if isinstance(decoder_outputs, np.ndarray):
-			print('\tDecoder output: shape = {}, dtype = {}.'.format(decoder_outputs.shape, decoder_outputs.dtype))
-			print('\tDecoder output: min = {}, max = {}.'.format(np.min(decoder_outputs), np.max(decoder_outputs)))
-		else:
-			print('\tDecoder output: type = {}.'.format(type(decoder_outputs)))
+		#if start_example_index <= self._start_index < start_example_index + num_examples and start_example_index < self._end_index <= start_example_index + num_examples:
+		if self._start_index < start_example_index + num_examples and self._end_index > start_example_index:
+			if isinstance(encoder_inputs, np.ndarray):
+				print('\tEncoder input: shape = {}, dtype = {}.'.format(encoder_inputs.shape, encoder_inputs.dtype))
+				print('\tEncoder input: min = {}, max = {}.'.format(np.min(encoder_inputs), np.max(encoder_inputs)))
+			else:
+				print('\tEncoder input: type = {}.'.format(type(encoder_inputs)))
+			if isinstance(decoder_inputs, np.ndarray):
+				print('\tDecoder input: shape = {}, dtype = {}.'.format(decoder_inputs.shape, decoder_inputs.dtype))
+				print('\tDecoder input: min = {}, max = {}.'.format(np.min(decoder_inputs), np.max(decoder_inputs)))
+			else:
+				print('\tDecoder input: type = {}.'.format(type(decoder_inputs)))
+			if isinstance(decoder_outputs, np.ndarray):
+				print('\tDecoder output: shape = {}, dtype = {}.'.format(decoder_outputs.shape, decoder_outputs.dtype))
+				print('\tDecoder output: min = {}, max = {}.'.format(np.min(decoder_outputs), np.max(decoder_outputs)))
+			else:
+				print('\tDecoder output: type = {}.'.format(type(decoder_outputs)))
 
-		if len(encoder_inputs) != num_examples or len(decoder_inputs) != num_examples or len(decoder_outputs) != num_examples:
-			raise ValueError('The lengths of inputs and outputs are different: {}, {}, {}'.format(len(encoder_inputs), len(decoder_inputs), len(decoder_outputs)))
+			if len(encoder_inputs) != num_examples or len(decoder_inputs) != num_examples or len(decoder_outputs) != num_examples:
+				raise ValueError('The lengths of inputs and outputs are different: {}, {}, {}'.format(len(encoder_inputs), len(decoder_inputs), len(decoder_outputs)))
 
-		encoder_strs, decoder_strs, decoder_strs = self._dataset.to_string(encoder_inputs, has_start_token=True), self._dataset.to_string(decoder_inputs, has_start_token=False), self._dataset.to_string(decoder_outputs, has_start_token=False)
-		for idx, (inp1, inp2, outp) in enumerate(zip(encoder_strs, decoder_strs, decoder_strs)):
-			idx += start_example_index
-			if idx >= self._start_index and idx < self._end_index:
+			encoder_strs, decoder_in_strs, decoder_out_strs = self._dataset.to_string(encoder_inputs, has_start_token=True), self._dataset.to_string(decoder_inputs, has_start_token=False), self._dataset.to_string(decoder_outputs, has_start_token=False)
+			for idx in range(max(self._start_index - start_example_index, 0), min(self._end_index - start_example_index, num_examples)):
+				inp1, inp2, outp = encoder_strs[idx], decoder_in_strs[idx], decoder_out_strs[idx]
+
 				print('\tData #{}: {}, {}, {}.'.format(idx, inp1, inp2, outp))
 				time.sleep(1)
 

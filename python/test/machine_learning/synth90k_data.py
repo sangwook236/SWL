@@ -224,32 +224,34 @@ class Synth90kDataVisualizer(object):
 
 	def _visualize(self, data, start_example_index, *args, **kwargs):
 		(inputs, outputs), num_examples = data
-		if isinstance(inputs, np.ndarray):
-			print('\tInput: shape = {}, dtype = {}.'.format(inputs.shape, inputs.dtype))
-			print('\tInput: min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
-		else:
-			print('\tInput: type = {}.'.format(type(inputs)))
-		if isinstance(outputs, np.ndarray):
-			print('\tOutput: shape = {}, dtype = {}.'.format(outputs.shape, outputs.dtype))
-			print('\tOutput: min = {}, max = {}.'.format(np.min(outputs), np.max(outputs)))
-		else:
-			print('\tOutput: type = {}.'.format(type(outputs)))
+		#if start_example_index <= self._start_index < start_example_index + num_examples and start_example_index < self._end_index <= start_example_index + num_examples:
+		if self._start_index < start_example_index + num_examples and self._end_index > start_example_index:
+			if isinstance(inputs, np.ndarray):
+				print('\tInput: shape = {}, dtype = {}.'.format(inputs.shape, inputs.dtype))
+				print('\tInput: min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
+			else:
+				print('\tInput: type = {}.'.format(type(inputs)))
+			if isinstance(outputs, np.ndarray):
+				print('\tOutput: shape = {}, dtype = {}.'.format(outputs.shape, outputs.dtype))
+				print('\tOutput: min = {}, max = {}.'.format(np.min(outputs), np.max(outputs)))
+			else:
+				print('\tOutput: type = {}.'.format(type(outputs)))
 
-		dense_outputs = swl_ml_util.sparse_to_dense(*outputs, default_value=self._dataset.end_token, dtype=np.int8)
-		print('\tDense output: shape = {}, dtype = {}.'.format(dense_outputs.shape, dense_outputs.dtype))
-		print('\tDense output: min = {}, max = {}.'.format(np.min(dense_outputs), np.max(dense_outputs)))
-		print('\tSparse output: min = {}, max = {}.'.format(np.min(outputs[1]), np.max(outputs[1])))
+			dense_outputs = swl_ml_util.sparse_to_dense(*outputs, default_value=self._dataset.end_token, dtype=np.int8)
+			print('\tDense output: shape = {}, dtype = {}.'.format(dense_outputs.shape, dense_outputs.dtype))
+			print('\tDense output: min = {}, max = {}.'.format(np.min(dense_outputs), np.max(dense_outputs)))
+			print('\tSparse output: min = {}, max = {}.'.format(np.min(outputs[1]), np.max(outputs[1])))
 
-		if len(inputs) != num_examples or len(dense_outputs) != num_examples:
-			raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))
+			if len(inputs) != num_examples or len(dense_outputs) != num_examples:
+				raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))
 
-		str_outputs = self._dataset.to_string(dense_outputs)
-		for idx, (inp, outp, str_outp) in enumerate(zip(inputs, dense_outputs, str_outputs)):
-			idx += start_example_index
-			if idx >= self._start_index and idx < self._end_index:
+			str_outputs = self._dataset.to_string(dense_outputs)
+			for idx in range(max(self._start_index - start_example_index, 0), min(self._end_index - start_example_index, num_examples)):
+				inp, outp, str_outp = inputs[idx], dense_outputs[idx], str_outputs[idx]
+
 				# Rescale images to visualize.
-				min, max = np.min(inp), np.max(inp)
-				inp = (inp - min) / (max - min)
+				minval, maxval = np.min(inp), np.max(inp)
+				inp = (inp - minval) / (maxval - minval)
 
 				print('\tLabel #{} = {} ({}).'.format(idx, outp, str_outp))
 				cv.imshow('Image', inp)

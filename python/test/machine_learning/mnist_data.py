@@ -141,23 +141,29 @@ class MnistDataVisualizer(object):
 
 	def _visualize(self, data, start_example_index, *args, **kwargs):
 		(inputs, outputs), num_examples = data
-		if isinstance(inputs, np.ndarray):
-			print('\tInput: shape = {}, dtype = {}.'.format(inputs.shape, inputs.dtype))
-			print('\tInput: min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
-		else:
-			print('\tInput: type = {}.'.format(type(inputs)))
-		if isinstance(outputs, np.ndarray):
-			print('\tOutput: shape = {}, dtype = {}.'.format(outputs.shape, outputs.dtype))
-			print('\tOutput: min = {}, max = {}.'.format(np.min(outputs), np.max(outputs)))
-		else:
-			print('\tOutput type = {}.'.format(type(outputs)))
+		#if start_example_index <= self._start_index < start_example_index + num_examples and start_example_index < self._end_index <= start_example_index + num_examples:
+		if self._start_index < start_example_index + num_examples and self._end_index > start_example_index:
+			if isinstance(inputs, np.ndarray):
+				print('\tInput: shape = {}, dtype = {}.'.format(inputs.shape, inputs.dtype))
+				print('\tInput: min = {}, max = {}.'.format(np.min(inputs), np.max(inputs)))
+			else:
+				print('\tInput: type = {}.'.format(type(inputs)))
+			if isinstance(outputs, np.ndarray):
+				print('\tOutput: shape = {}, dtype = {}.'.format(outputs.shape, outputs.dtype))
+				print('\tOutput: min = {}, max = {}.'.format(np.min(outputs), np.max(outputs)))
+			else:
+				print('\tOutput type = {}.'.format(type(outputs)))
 
-		if len(inputs) != num_examples or len(outputs) != num_examples:
-			raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))
+			if len(inputs) != num_examples or len(outputs) != num_examples:
+				raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))
 
-		for idx, (inp, outp) in enumerate(zip(inputs, outputs)):
-			idx += start_example_index
-			if idx >= self._start_index and idx < self._end_index:
+			for idx in range(max(self._start_index - start_example_index, 0), min(self._end_index - start_example_index, num_examples)):
+				inp, outp = inputs[idx], outputs[idx]
+
+				# Rescale images to visualize.
+				minval, maxval = np.min(inp), np.max(inp)
+				inp = (inp - minval) / (maxval - minval)
+
 				print('\tLabel #{} = {} ({}).'.format(idx, outp, np.argmax(outp, axis=-1)))
 				cv.imshow('Image', inp)
 				ch = cv.waitKey(2000)
