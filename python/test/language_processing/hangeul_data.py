@@ -467,9 +467,11 @@ class HangeulDataGenerator(Data2Generator):
 		if self._is_npy_files_used_as_input:
 			# Generates npy files.
 			#	Removes './hangeul_npy' to generate npy files again.
+			print('[SWL] Npy files are used as input.')
 			train_save_dir_path, test_save_dir_path = './hangeul_npy/train', './hangeul_npy/test'
 			npy_file_csv_filename = 'npy_file_info.csv'
 			if not os.path.isdir(train_save_dir_path) or not os.path.isdir(test_save_dir_path):
+				print('[SWL] New npy files are generated in {} and {}.'.format(train_save_dir_path, test_save_dir_path))
 				num_files_to_save_at_a_time = 5000
 				input_filename_format = 'input_{}.npy'
 				output_filename_format = 'output_{}.npy'
@@ -478,6 +480,8 @@ class HangeulDataGenerator(Data2Generator):
 				swl_cv_util.save_images_to_npy_files(self._dataset.train_filepaths, self._dataset.train_labels, self._image_height, self._image_width, self._image_channels, num_files_to_save_at_a_time, train_save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None)
 				swl_cv_util.save_images_to_npy_files(self._dataset.test_filepaths, self._dataset.test_labels, self._image_height, self._image_width, self._image_channels, num_files_to_save_at_a_time, test_save_dir_path, input_filename_format, output_filename_format, npy_file_csv_filename, data_processing_functor=None)
 				print('End saving image files and labels in Hangeul dataset to npy files: {} secs.'.format(time.time() - start_time))
+			else:
+				print('[SWL] Existing npy files are used in {} and {}.'.format(train_save_dir_path, test_save_dir_path))
 
 			#--------------------
 			print('Start loading Hangeul dataset from pre-arranged npy files...')
@@ -493,6 +497,7 @@ class HangeulDataGenerator(Data2Generator):
 				raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
 			print('End loading Hangeul dataset from pre-arranged npy files: {} secs.'.format(time.time() - start_time))
 		else:
+			print('[SWL] Image files are used as input.')
 			self._train_image_filepaths, self._train_label_seqs, self._test_image_filepaths, self._test_label_seqs = self._dataset.train_filepaths, self._dataset.train_labels, self._dataset.test_filepaths, self._dataset.test_labels
 			self._val_image_filepaths, self._val_label_seqs = self._test_image_filepaths, self._test_label_seqs
 

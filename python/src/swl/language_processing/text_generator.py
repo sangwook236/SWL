@@ -1,26 +1,27 @@
-import abc
+import numpy as np
 import cv2
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class Transformer(object):
 	"""Transforms a numpy.array.
 	"""
 
-	def __call__(self, input, mask, *args, **kwargs):
+	def __call__(self, input, mask, canvas_size=None, *args, **kwargs):
 		"""Transforms a numpy.array.
 
 		Inputs:
-			input (numpy.array): a 2D or 3D numpy.array to transform.
-			mask (numpy.array): a mask of input to transform. It can be None.
+			input (numpy.array): A 2D or 3D numpy.array to transform.
+			mask (numpy.array): A mask of input to transform. It can be None.
+			canvas_size (tuple of ints): The size of a canvas (height, width). If canvas_size = None, the size of input is used.
 		Outputs:
-			transformed input (numpy.array): a transformed 2D or 3D numpy.array.
-			transformed mask (numpy.array): a transformed mask.
+			A transformed input (numpy.array): A transformed 2D or 3D numpy.array.
+			A transformed mask (numpy.array): A transformed mask.
 		"""
 
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class HangeulJamoGenerator(object):
 	"""Generates a Hangeul jamo and its mask of numpy.array.
@@ -30,13 +31,14 @@ class HangeulJamoGenerator(object):
 	A mask is binary (black(bg) and white(fg)).
 	"""
 
-	def __call__(self, jamo, *args, **kwargs):
+	def __call__(self, jamo, font_color=None, *args, **kwargs):
 		"""Generates a Hangeul jamo and its mask of numpy.array.
 
 		Inputs:
-			jamo (str): a single Hangeul jamo.
+			jamo (str): A single Hangeul jamo.
+			font_color (tuple): A font color for the jamo. If None, random colors are used.
 		Outputs:
-			jamo (numpy.array): a numpy.array generated from an input Hangeul jamo.
+			A jamo (numpy.array): A numpy.array generated from an input Hangeul jamo.
 		"""
 
 		raise NotImplementedError
@@ -49,12 +51,12 @@ class HangeulJamoPositioner(object):
 		"""Places jamos to construct a Hangeul letter.
 
 		Inputs:
-			jamo_list (a list of numpy.array): a list of jamos of type numpy.array to compose a letter.
-			mask_list (a list of numpy.array): a list of masks of jamos in jamo_list.
-			shape_type (int): the shape type of a letter. [1, 6].
+			jamo_list (a list of numpy.array): A list of jamos of type numpy.array to compose a letter.
+			mask_list (a list of numpy.array): A list of masks of jamos in jamo_list.
+			shape_type (int): The shape type of a letter. [1, 6].
 		Outputs:
-			A Hangeul letter (numpy.array): a Hangeul letter made up of jamos.
-			Masks (a list of numpy.array): a list of jamos' masks. A mask is binary (black(bg) and white(fg)). It can be None.
+			A Hangeul letter (numpy.array): A Hangeul letter made up of jamos.
+			Masks (a list of numpy.array): A list of jamos' masks. A mask is binary (black(bg) and white(fg)). It can be None.
 		"""
 
 		raise NotImplementedError
@@ -77,7 +79,7 @@ class HangeulJamoPositioner(object):
 			raise ValueError('Invalid shape type: it must be [1, 6]')
 		"""
 
-class HangeulLetterGenerator(abc.ABC):
+class HangeulLetterGenerator(object):
 	"""Generates a Hangeul letter made up of jamos.
 	"""
 
@@ -85,9 +87,9 @@ class HangeulLetterGenerator(abc.ABC):
 		"""Constructor.
 
 		Inputs:
-			jamoGenerator (HangeulJamoGenerator): an object to generate each jamo.
-			jamoTransformer (Transformer): an object to tranform each jamo.
-			jamoPositioner (HangeulJamoPositioner): an object to place jamos.
+			jamoGenerator (HangeulJamoGenerator): An object to generate each jamo.
+			jamoTransformer (Transformer): An object to tranform each jamo.
+			jamoPositioner (HangeulJamoPositioner): An object to place jamos.
 		"""
 
 		self._jamoGenerator = jamoGenerator
@@ -98,11 +100,11 @@ class HangeulLetterGenerator(abc.ABC):
 		"""Generates a Hangeul letter made up of jamos.
 
 		Inputs:
-			jamos (str): jamos to compose a letter.
-			shape_type (int): the shape type of a letter. [1, 6].
+			jamos (str): Jamos to compose a letter.
+			shape_type (int): The shape type of a letter. [1, 6].
 		Outputs:
-			A Hangeul letter (numpy.array): a Hangeul letter made up of jamos.
-			Masks (a list of numpy.array): a list of jamos' masks.
+			A Hangeul letter (numpy.array): A Hangeul letter made up of jamos.
+			Masks (a list of numpy.array): A list of jamos' masks.
 		"""
 
 		jamo_list, mask_list = list(), list()
@@ -114,7 +116,7 @@ class HangeulLetterGenerator(abc.ABC):
 
 		return self._jamoPositioner(jamo_list, mask_list, shape_type, *args, **kwargs)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class CharacterGenerator(object):
 	"""Generates a character and its mask of numpy.array.
@@ -124,67 +126,148 @@ class CharacterGenerator(object):
 	A mask is binary (black(bg) and white(fg)).
 	"""
 
-	def __call__(self, char, *args, **kwargs):
+	def __call__(self, char, font_size, font_color=None, *args, **kwargs):
 		"""Generates a character and its mask of numpy.array.
 
 		Inputs:
-			char (str): a single character.
+			char (str): A single character.
+			font_size (int): A font size for the character.
+			font_color (tuple): A font color for the character. If None, random colors are used.
 		Outputs:
-			char (numpy.array): a numpy.array generated from an input character.
-			mask (numpy.array): a mask of an input character, char. A mask is binary (black(bg) and white(fg)). It can be None.
+			A character (numpy.array): A numpy.array generated from an input character.
+			A mask (numpy.array): A mask of an input character, char. A mask is binary (black(bg) and white(fg)). It can be None.
 		"""
 
 		raise NotImplementedError
 
 class CharacterPositioner(object):
-	"""Place characters to construct a text line.
+	"""Places characters to construct a text line.
 	"""
 
-	def __call__(self, char_list, mask_list, *args, **kwargs):
+	def __call__(self, char_list, mask_list, char_space, is_single_mask_generated=True, *args, **kwargs):
 		"""Places characters to construct a single text line.
 
 		Inputs:
-			char_list (a list of numpy.array): a list of characters of type numpy.array to compose a text line.
-			mask_list (a list of numpy.array): a list of masks of characters in char_list.
+			char_list (a list of numpy.array): A list of characters of type numpy.array to compose a text line.
+			mask_list (a list of numpy.array): A list of masks of characters in char_list.
+			char_space (int): A space between characters.
+				If char_space <= 0, widths of characters are used.
+			is_single_mask_generated (bool): Specifies whether a list of masks or a single mask is generated.
 		Outputs:
-			A text line (numpy.array): a text line of type 2D numpy.array made up of char_list.
-			Masks (a list of numpy.array): a list of characters' masks. It can be None.
+			A text line (numpy.array): A text line of type 2D numpy.array made up of char_list.
+			Masks (a list of (numpy.array, int, int)) or a mask (numpy.array): A list of masks and (y position, x position) of characters or a mask of the text line.
+				Which mask is generated depends on the input parameter is_single_mask_generated.
 		"""
 
 		raise NotImplementedError
 
-class TextGenerator(abc.ABC):
-	"""Generates a single text line and its mask made up of characters.
+#--------------------------------------------------------------------
+
+class TextGenerator(object):
+	"""Generates a single text line and masks for individual characters.
 	"""
 
 	def __init__(self, characterGenerator, characterTransformer, characterPositioner):
 		"""Constructor.
 
 		Inputs:
-			characterGenerator (CharacterGenerator): an object to generate each character.
-			characterTransformer (Transformer): an object to tranform each character.
-			characterPositioner (CharacterPositioner): an object to place characters.
+			characterGenerator (CharacterGenerator): An object to generate each character.
+			characterTransformer (Transformer): An object to tranform each character.
+			characterPositioner (CharacterPositioner): An object to place characters.
 		"""
 
 		self._characterGenerator = characterGenerator
 		self._characterTransformer = characterTransformer
 		self._characterPositioner = characterPositioner
 
-	def __call__(self, text, *args, **kwargs):
-		"""Generates a single text line and its mask made up of characters.
+	def __call__(self, text, char_space, font_size, font_color=None, is_single_mask_generated=True, *args, **kwargs):
+		"""Generates a single text line and masks for individual characters.
 
 		Inputs:
-			text (str): characters to compose a text line.
+			text (str): Characters to compose a text line.
+			char_space (int): A space between characters.
+				If char_space <= 0, widths of characters are used.
+			font_size (int): A font size for the characters.
+			font_color (tuple): A font color for the characters. If None, random colors are used.
+			is_single_mask_generated (bool): Specifies whether a list of masks or a single mask is generated.
 		Outputs:
-			A text line (numpy.array): a text line made up of characters.
-			Masks (a list of numpy.array): a list of characters' masks.
+			A text line (numpy.array): A text line of type 2D numpy.array made up of char_list.
+			Masks (a list of (numpy.array, int, int)) or a mask (numpy.array): A list of masks and (y position, x position) of characters or a mask of the text line.
+				Which mask is generated depends on the input parameter is_single_mask_generated.
 		"""
 
 		char_list, mask_list = list(), list()
 		for ch in text:
-			ch, mask = self._characterGenerator(ch)
-			ch, mask = self._characterTransformer(ch, mask)
+			ch, mask = self._characterGenerator(ch, font_size, font_color, *args, **kwargs)
+			ch, mask = self._characterTransformer(ch, mask, *args, **kwargs)
 			char_list.append(ch)
 			mask_list.append(mask)
 
-		return self._characterPositioner(char_list, mask_list, *args, **kwargs)
+		return self._characterPositioner(char_list, mask_list, char_space, is_single_mask_generated, *args, **kwargs)
+
+#--------------------------------------------------------------------
+
+class SceneProvider(object):
+	"""Generates and provides a scene.
+	"""
+
+	def __call__(self, shape=None, *args, **kwargs):
+		"""Generates and provides a scene.
+
+		Inputs:
+			shape (int or tuple of ints): Shape of a new scene. If shape = None, a scene of a prespecified or a random shape is generated.
+		Outputs:
+			A scene (numpy.array): A scene generated.
+		"""
+
+		raise NotImplementedError
+
+class SceneTextGenerator(object):
+	"""Generates a scene containing multiple transformed text lines in a background.
+	"""
+
+	def __init__(self, textTransformer):
+		"""Constructor.
+
+		Inputs:
+			textTransformer (Transformer): An object to transform a single text line.
+		"""
+
+		self._textTransformer = textTransformer
+
+	def __call__(self, scene, texts, text_masks, *args, **kwargs):
+		"""Generates a scene containing multiple transformed text lines in a background.
+
+		Inputs:
+			scene (numpy.array): An object to be used as a scene or a background.
+			texts (list of numpy.arrays): A list object with multiple text lines.
+			text_masks (list of numpy.arrays): A list object of masks of the text lines.
+		Outputs:
+			A scene (numpy.array): A scene containing transformed text lines.
+			A scene text mask (numpy.array) or a list of text masks (list of numpy.array's): A scene mask containing masks of transformed text lines in a scene.
+		"""
+
+		scene_size = scene.shape[:2]
+
+		scene_mask = np.zeros(scene_size, dtype=np.uint16)
+		#scene_text_masks = list()
+		for idx, (text, mask) in enumerate(zip(texts, text_masks)):
+			text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
+
+			#--------------------
+			pixels = np.where(mask > 0)
+			#pixels = np.where(text > 0)
+
+			if 2 == text.ndim:
+				channels = 1
+			elif 3 == text.ndim:
+				channels = text.shape[-1]
+			else:
+				print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
+				continue
+			scene[:,:,:channels][pixels] = text[pixels]
+			scene_mask[pixels] = idx + 1
+			#scene_text_masks.append(mask)
+
+		return scene, scene_mask
+		#return scene, scene_text_masks

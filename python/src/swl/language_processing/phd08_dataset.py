@@ -38,7 +38,7 @@ def generate_phd08_dataset_info(phd08_conversion_result_filepath, phd08_npy_data
 		for info in dataset_info_list:
 			writer.writerow(info)
 
-def load_phd08_image(phd08_image_dataset_info_filepath, inverted_image=False):
+def load_phd08_image(phd08_image_dataset_info_filepath, is_dark_background=False):
 	"""
 	with open(phd08_image_dataset_info_filepath, 'r', encoding='UTF8') as csvfile:
 		reader = csv.reader(csvfile, delimiter=',')
@@ -63,13 +63,13 @@ def load_phd08_image(phd08_image_dataset_info_filepath, inverted_image=False):
 			continue
 		if img.shape != (height, width, channels):
 			print('Different image shape: {} != {} in {}'.format(img.shape, (height, width, channels), img_filepath))
-		if inverted_image:
+		if is_dark_background:
 			img = cv2.bitwise_not(img)
 		letter_dict[label].append(img)
 
 	return letter_dict
 
-def load_phd08_npy(phd08_npy_dataset_info_filepath, inverted_image=False):
+def load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False):
 	"""
 	with open(phd08_npy_dataset_info_filepath, 'r', encoding='UTF8') as csvfile:
 		reader = csv.reader(csvfile, delimiter=',')
@@ -93,7 +93,7 @@ def load_phd08_npy(phd08_npy_dataset_info_filepath, inverted_image=False):
 			continue
 		if data_npy.shape != (data_count, height, width):
 			print('Different image shape: {} != {} in {}'.format(data_npy.shape, (data_count, height, width), data_filepath))
-		if not inverted_image:
+		if not is_dark_background:
 			data_npy = cv2.bitwise_not(data_npy)
 		#if not label in letter_dict:
 		#	letter_dict[label] = list()

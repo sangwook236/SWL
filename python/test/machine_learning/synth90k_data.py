@@ -463,7 +463,8 @@ class Synth90kDataGenerator(Data2Generator):
 
 	def initialize(self, batch_size=None, *args, **kwargs):
 		if self._is_npy_files_used_as_input:
-			print('Start loading Synth90k dataset from pre-arranged npy files...')
+			print('[SWL] Pre-arranged npy files created from the Synth90k dataset are used as input.')
+			print('Start loading the Synth90k dataset from pre-arranged npy files...')
 			start_time = time.time()
 			synth90k_base_dir_path = './synth90k_npy'
 			self._train_input_filepaths, self._train_output_filepaths, self._val_input_filepaths, self._val_output_filepaths, self._test_input_filepaths, self._test_output_filepaths = Synth90kDataGenerator._loadDataFromNpyFiles(synth90k_base_dir_path)
@@ -474,7 +475,7 @@ class Synth90kDataGenerator(Data2Generator):
 				raise ValueError('The lengths of validation input and output data are different: {} != {}'.format(len(self._val_input_filepaths), len(self._val_output_filepaths)))
 			if len(self._test_input_filepaths) != len(self._test_output_filepaths):
 				raise ValueError('The lengths of test input and output data are different: {} != {}'.format(len(self._test_input_filepaths), len(self._test_output_filepaths)))
-			print('End loading Synth90k dataset from pre-arranged npy files: {} secs.'.format(time.time() - start_time))
+			print('End loading the Synth90k dataset from pre-arranged npy files: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
@@ -514,7 +515,8 @@ class Synth90kDataGenerator(Data2Generator):
 				# Data preprocessing.
 				visualizer(self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test'))
 		else:
-			print('Start loading Synth90k dataset from annotation files of Synth90k dataset...')
+			print('[SWL] Image files listed in annotation files of the Synth90k dataset are used as input.')
+			print('Start loading the Synth90k dataset from annotation files of the Synth90k dataset...')
 			if 'posix' == os.name:
 				data_home_dir_path = '/home/sangwook/my_dataset'
 			else:
@@ -527,7 +529,7 @@ class Synth90kDataGenerator(Data2Generator):
 			self._train_label_seqs = self._dataset.to_numeric(self._train_label_seqs)
 			self._val_label_seqs = self._dataset.to_numeric(self._val_label_seqs)
 			self._test_label_seqs = self._dataset.to_numeric(self._test_label_seqs)
-			print('End loading Synth90k dataset from annotation files of Synth90k dataset.')
+			print('End loading the Synth90k dataset from annotation files of the Synth90k dataset.')
 
 			#--------------------
 			# Visualizes data to check data itself, as well as data preprocessing and augmentation.
@@ -678,13 +680,13 @@ class Synth90kDataGenerator(Data2Generator):
 
 	@staticmethod
 	def _loadDataFromNpyFiles(synth90k_base_dir_path):
-		"""Loads images and labels from npy files generated from Synth90k dataset.
+		"""Loads images and labels from npy files generated from the Synth90k dataset.
 
 		Generate npy files using swl.language_processing.synth90k_dataset.save_synth90k_dataset_to_npy_files().
 		Refer to ../language_processing/synth90k_dataset_test.py.
 
 		Inputs:
-			synth90k_base_dir_path (string): The directory path of npy files generated from Synth90k dataset.
+			synth90k_base_dir_path (string): The directory path of npy files generated from the Synth90k dataset.
 		"""
 
 		train_npy_file_csv_filepath = synth90k_base_dir_path + '/train/npy_file_info.csv'
@@ -710,10 +712,10 @@ class Synth90kDataGenerator(Data2Generator):
 
 	@staticmethod
 	def _loadDataFromAnnotationFiles(data_dir_path, subset_ratio=None):
-		"""Loads images and labels from annotation files in Synth90k dataset.
+		"""Loads images and labels from annotation files in the Synth90k dataset.
 
 		Inputs:
-			data_dir_path (string): The directory path of Synth90k dataset.
+			data_dir_path (string): The directory path of the Synth90k dataset.
 			subset_ratio (float or None): The ratio of subset of data. 0.0 < subset_ratio <= 1.0.
 		"""
 

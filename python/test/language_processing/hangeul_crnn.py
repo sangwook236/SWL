@@ -284,7 +284,7 @@ class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
 
 #%%------------------------------------------------------------------
 
-class HangeulCrnnWithCtcLossAndDilation(HangeulCrnn):
+class HangeulDilatedCrnnWithCtcLoss(HangeulCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 

@@ -13,7 +13,7 @@ from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
-from hangeul_crnn import HangeulCrnnWithCrossEntropyLoss, HangeulCrnnWithCtcLoss, HangeulCrnnWithKerasCtcLoss
+from hangeul_crnn import HangeulCrnnWithCrossEntropyLoss, HangeulCrnnWithCtcLoss, HangeulCrnnWithKerasCtcLoss, HangeulDilatedCrnnWithCtcLoss
 from hangeul_data import HangeulDataGenerator
 
 #%%------------------------------------------------------------------
@@ -22,6 +22,7 @@ def create_learning_model(image_height, image_width, image_channel, num_classes,
 	if is_sparse_output:
 		return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 		#return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
+		#return HangeulDilatedCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
 		#return HangeulCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
 		raise TypeError('HangeulCrnnWithCrossEntropyLoss with dense outputs cannot be used')

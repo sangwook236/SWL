@@ -7,11 +7,13 @@ import time
 import swl.language_processing.phd08_dataset as phd08_dataset
 
 # Usage:
-#	1) Generate npy file from PHD08 dataset.
+#	1) Generate npy files from the PHD08 dataset.
 #		python phd08_to_npy.py --data_dir ./phd08 --width 32 --height 32 --batch_size 1 > phd08_conversion_results.txt
 #		python phd08_to_npy.py --data_dir ./phd08 --one_hot --width 32 --height 32 --batch_size 1 > phd08_conversion_results.txt
-#	2) python phd08_datset_test.py
-#	3) Use phd08_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath)
+#	2) Generate an info file for the npy files generated from the PHD08 dataset.
+#		Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
+#	3) Load the npy files.
+#		Refer to phd08_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath).
 def generate_npy_dataset_from_phd08_conversion_result():
 	phd08_conversion_result_filepath = './phd08_conversion_results.txt'
 	phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
