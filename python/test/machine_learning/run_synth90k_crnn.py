@@ -13,19 +13,22 @@ from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
-from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
+from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss, Synth90kCrnnWithKerasCtcLoss, Synth90kDilatedCrnnWithCtcLoss, Synth90kDilatedCrnnWithKerasCtcLoss
 from synth90k_data import Synth90kDataGenerator
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
-		return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
+		#return Synth90kCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
+		return Synth90kCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
+		#return Synth90kDilatedCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
+		#return Synth90kDilatedCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
 		#return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
 		raise TypeError('Synth90kCrnnWithCrossEntropyLoss with dense outputs cannot be used')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def user_defined_learning_rate(learning_rate, global_step, gamma, power, name=None):
 	if global_step is None:
@@ -65,7 +68,7 @@ class SimpleCrnnTrainer(ModelTrainer):
 
 		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [function] >> training_worker_proc() in ${SWL_PYTHON_HOME}/python/test/machine_learning/batch_generator_and_loader_test.py.
 def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, shuffle, is_training_resumed):
@@ -75,7 +78,7 @@ def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, s
 
 	print('\t{}({}): End training worker thread.'.format(os.getpid(), threading.get_ident()))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#random.seed(a=None, version=2)
@@ -142,17 +145,14 @@ def main():
 	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
 	label_eos_token = dataGenerator.dataset.end_token
 
-	#--------------------
-	# Creates models, sessions, and graphs.
+	dataGenerator.initialize(batch_size)
 
-	# Creates graphs.
+	#%%------------------------------------------------------------------
+	# Trains.
+
 	if is_training_required:
+		# Creates a graph.
 		train_graph = tf.Graph()
-	if is_evaluation_required:
-		eval_graph = tf.Graph()
-	infer_graph = tf.Graph()
-
-	if is_training_required:
 		with train_graph.as_default():
 			with tf.device(train_device_name):
 				# Creates a model.
@@ -164,42 +164,13 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
-	if is_evaluation_required:
-		with eval_graph.as_default():
-			with tf.device(eval_device_name):
-				# Creates a model.
-				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
-				modelForEvaluation.create_evaluation_model()
-
-				# Creates an evaluator.
-				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
-
-	with infer_graph.as_default():
-		with tf.device(infer_device_name):
-			# Creates a model.
-			modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
-			modelForInference.create_inference_model()
-
-			# Creates an inferrer.
-			modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
-
-	# Creates sessions.
-	if is_training_required:
+		# Creates a session.
 		train_session = tf.Session(graph=train_graph, config=sess_config)
-	if is_evaluation_required:
-		eval_session = tf.Session(graph=eval_graph, config=sess_config)
-	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initializes.
-	if is_training_required:
+		# Initializes.
 		train_session.run(initializer)
 
-	dataGenerator.initialize(batch_size)
-
-	#%%------------------------------------------------------------------
-	# Trains.
-
-	if is_training_required:
+		#--------------------
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -215,10 +186,32 @@ def main():
 				dataGenerator.finalizeTraining()
 		print('\tTotal training time = {}.'.format(time.time() - start_time))
 
+		#--------------------
+		# Closes the session and the graph.
+		train_session.close()
+		del train_session
+		#train_graph.reset_default_graph()
+		del train_graph
+
 	#%%------------------------------------------------------------------
 	# Evaluates.
 
 	if is_evaluation_required:
+		# Creates a graph.
+		eval_graph = tf.Graph()
+		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				# Creates a model.
+				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForEvaluation.create_evaluation_model()
+
+				# Creates an evaluator.
+				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+
+		# Creates a session.
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+
+		#--------------------
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -226,52 +219,70 @@ def main():
 				modelEvaluator.evaluate(sess, batch_size=batch_size, shuffle=False)
 		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
+		#--------------------
+		# Closes the session and the graph.
+		eval_session.close()
+		del eval_session
+		#eval_graph.reset_default_graph()
+		del eval_graph
+
 	#%%------------------------------------------------------------------
 	# Infers.
 
-	start_time = time.time()
-	with infer_session.as_default() as sess:
-		with sess.graph.as_default():
-			inferences, ground_truths = list(), list()
-			num_test_examples = 0
-			for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
-				# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-				stv = modelInferrer.infer(sess, batch_data[0])  # tf.SparseTensorValue.
-				print('*******************', stv.dense_shape)
-				dense_batch_inferences = swl_ml_util.sparse_to_dense(stv.indices, stv.values, stv.dense_shape, default_value=label_eos_token, dtype=np.int8)
-				dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
-				inferences.append(dense_batch_inferences)
-				ground_truths.append(dense_batch_outputs)
-			# Variable-length numpy.arrays are not merged into a single numpy.array.
-			#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
-	print('\tTotal inference time = {}.'.format(time.time() - start_time))
+	if True:
+		# Creates a graph.
+		infer_graph = tf.Graph()
+		with infer_graph.as_default():
+			with tf.device(infer_device_name):
+				# Creates a model.
+				modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForInference.create_inference_model()
 
-	#--------------------
-	if inferences is not None:
-		if len(inferences) == len(ground_truths):
-			#correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			#print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+				# Creates an inferrer.
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
 
-			#for inf, gt in zip(inferences, ground_truths):
-			#	#print('Result =\n', np.hstack((inf, gt)))
-			#	print('Result =\n', inf, gt)
-			for idx in range(3):
-				#print('Result =\n', np.hstack((inferences[idx], ground_truths[idx])))
-				print('Result =\n', inferences[idx], ground_truths[idx])
-	else:
-		print('[SWL] Warning: Invalid inference results.')
+		# Creates a session.
+		infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	#--------------------
-	# Closes sessions.
+		#--------------------
+		start_time = time.time()
+		with infer_session.as_default() as sess:
+			with sess.graph.as_default():
+				inferences, ground_truths = list(), list()
+				num_test_examples = 0
+				for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
+					# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
+					stv = modelInferrer.infer(sess, batch_data[0])  # tf.SparseTensorValue.
+					print('*******************', stv.dense_shape)
+					dense_batch_inferences = swl_ml_util.sparse_to_dense(stv.indices, stv.values, stv.dense_shape, default_value=label_eos_token, dtype=np.int8)
+					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
+					inferences.append(dense_batch_inferences)
+					ground_truths.append(dense_batch_outputs)
+				# Variable-length numpy.arrays are not merged into a single numpy.array.
+				#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
+		print('\tTotal inference time = {}.'.format(time.time() - start_time))
 
-	if is_training_required:
-		train_session.close()
-		del train_session
-	if is_evaluation_required:
-		eval_session.close()
-		del eval_session
-	infer_session.close()
-	del infer_session
+		#--------------------
+		if inferences is not None:
+			if len(inferences) == len(ground_truths):
+				#correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+				#print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+
+				#for inf, gt in zip(inferences, ground_truths):
+				#	#print('Result =\n', np.hstack((inf, gt)))
+				#	print('Result =\n', inf, gt)
+				for idx in range(3):
+					#print('Result =\n', np.hstack((inferences[idx], ground_truths[idx])))
+					print('Result =\n', inferences[idx], ground_truths[idx])
+		else:
+			print('[SWL] Warning: Invalid inference results.')
+
+		#--------------------
+		# Closes the session and the graph.
+		infer_session.close()
+		del infer_session
+		#infer_graph.reset_default_graph()
+		del infer_graph
 
 #%%------------------------------------------------------------------
 

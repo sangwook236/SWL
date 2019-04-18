@@ -1,7 +1,7 @@
 import tensorflow as tf
 from swl.machine_learning.tensorflow_model import SimpleTensorFlowModel
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCnn(SimpleTensorFlowModel):
 	def __init__(self, input_shape, output_shape):

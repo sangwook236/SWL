@@ -13,12 +13,12 @@ import swl.util.util as swl_util
 from mnist_cnn import MnistCnn
 from mnist_data import MnistDataGenerator
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_learning_model(input_shape, output_shape):
 	return MnistCnn(input_shape, output_shape)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#random.seed(a=None, version=2)
@@ -78,17 +78,14 @@ def main():
 	dataGenerator = MnistDataGenerator(is_output_augmented, is_augmented_in_parallel)
 	input_shape, output_shape, num_classes = dataGenerator.shapes
 
-	#--------------------
-	# Creates models, sessions, and graphs.
+	dataGenerator.initialize()
 
-	# Creates graphs.
+	#%%------------------------------------------------------------------
+	# Trains.
+
 	if is_training_required:
+		# Creates a graph.
 		train_graph = tf.Graph()
-	if is_evaluation_required:
-		eval_graph = tf.Graph()
-	infer_graph = tf.Graph()
-
-	if is_training_required:
 		with train_graph.as_default():
 			with tf.device(train_device_name):
 				# Creates a model.
@@ -100,7 +97,34 @@ def main():
 
 				initializer = tf.global_variables_initializer()
 
+		# Creates a session.
+		train_session = tf.Session(graph=train_graph, config=sess_config)
+
+		# Initializes.
+		train_session.run(initializer)
+
+		#--------------------
+		start_time = time.time()
+		with train_session.as_default() as sess:
+			with sess.graph.as_default():
+				dataGenerator.initializeTraining(batch_size, shuffle)
+				modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
+				dataGenerator.finalizeTraining()
+		print('\tTotal training time = {}.'.format(time.time() - start_time))
+
+		#--------------------
+		# Closes the session and the graph.
+		train_session.close()
+		del train_session
+		#train_graph.reset_default_graph()
+		del train_graph
+
+	#%%------------------------------------------------------------------
+	# Evaluates.
+
 	if is_evaluation_required:
+		# Creates a graph.
+		eval_graph = tf.Graph()
 		with eval_graph.as_default():
 			with tf.device(eval_device_name):
 				# Creates a model.
@@ -110,90 +134,74 @@ def main():
 				# Creates an evaluator.
 				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
 
-	with infer_graph.as_default():
-		with tf.device(infer_device_name):
-			# Creates a model.
-			modelForInference = create_learning_model(input_shape, output_shape)
-			modelForInference.create_inference_model()
-
-			# Creates an inferrer.
-			modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
-
-	# Creates sessions.
-	if is_training_required:
-		train_session = tf.Session(graph=train_graph, config=sess_config)
-	if is_evaluation_required:
+		# Creates a session.
 		eval_session = tf.Session(graph=eval_graph, config=sess_config)
-	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initializes.
-	if is_training_required:
-		train_session.run(initializer)
-
-	dataGenerator.initialize()
-
-	#%%------------------------------------------------------------------
-	# Trains.
-
-	if is_training_required:
-		start_time = time.time()
-		with train_session.as_default() as sess:
-			with sess.graph.as_default():
-				dataGenerator.initializeTraining(batch_size, shuffle)
-				modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
-				dataGenerator.finalizeTraining()
-		print('\tTotal training time = {}.'.format(time.time() - start_time))
-
-	#%%------------------------------------------------------------------
-	# Evaluates.
-
-	if is_evaluation_required:
+		#--------------------
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)
 		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
+		#--------------------
+		# Closes the session and the graph.
+		eval_session.close()
+		del eval_session
+		#eval_graph.reset_default_graph()
+		del eval_graph
+
 	#%%------------------------------------------------------------------
 	# Infers.
 
-	start_time = time.time()
-	with infer_session.as_default() as sess:
-		with sess.graph.as_default():
-			inferences, ground_truths = list(), list()
-			num_test_examples = 0
-			#for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
-			for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size=None, shuffle=False):  # Gets the whole test data at a time.
-				batch_inputs, batch_outputs = batch_data
-				inferences.append(modelInferrer.infer(sess, batch_inputs))
-				ground_truths.append(batch_outputs)
-			inferences = np.array(inferences)
-			ground_truths = np.array(ground_truths)
-	print('\tTotal inference time = {}.'.format(time.time() - start_time))
+	if True:
+		# Creates a graph.
+		infer_graph = tf.Graph()
+		with infer_graph.as_default():
+			with tf.device(infer_device_name):
+				# Creates a model.
+				modelForInference = create_learning_model(input_shape, output_shape)
+				modelForInference.create_inference_model()
 
-	if inferences is not None:
-		if num_classes >= 2:
-			inferences = np.argmax(inferences, -1)
-			ground_truths = np.argmax(ground_truths, -1)
+				# Creates an inferrer.
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
+
+		# Creates a session.
+		infer_session = tf.Session(graph=infer_graph, config=sess_config)
+
+		#--------------------
+		start_time = time.time()
+		with infer_session.as_default() as sess:
+			with sess.graph.as_default():
+				inferences, ground_truths = list(), list()
+				num_test_examples = 0
+				#for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
+				for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size=None, shuffle=False):  # Gets the whole test data at a time.
+					batch_inputs, batch_outputs = batch_data
+					inferences.append(modelInferrer.infer(sess, batch_inputs))
+					ground_truths.append(batch_outputs)
+				inferences = np.array(inferences)
+				ground_truths = np.array(ground_truths)
+		print('\tTotal inference time = {}.'.format(time.time() - start_time))
+
+		if inferences is not None:
+			if num_classes >= 2:
+				inferences = np.argmax(inferences, -1)
+				ground_truths = np.argmax(ground_truths, -1)
+			else:
+				inferences = np.around(inferences)
+				#ground_truths = ground_truths
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+			print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			inferences = np.around(inferences)
-			#ground_truths = ground_truths
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-		print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
-	else:
-		print('[SWL] Warning: Invalid inference results.')
+			print('[SWL] Warning: Invalid inference results.')
 
-	#--------------------
-	# Closes sessions.
-
-	if is_training_required:
-		train_session.close()
-		del train_session
-	if is_evaluation_required:
-		eval_session.close()
-		del eval_session
-	infer_session.close()
-	del infer_session
+		#--------------------
+		# Closes the session and the graph.
+		infer_session.close()
+		del infer_session
+		#infer_graph.reset_default_graph()
+		del infer_graph
 
 #%%------------------------------------------------------------------
 

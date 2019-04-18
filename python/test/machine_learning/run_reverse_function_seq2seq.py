@@ -28,7 +28,7 @@ from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
 from simple_seq2seq_encdec_tf_attention import SimpleSeq2SeqEncoderDecoderWithTfAttention
 from reverse_function_data import ReverseFunctionDataGenerator
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major):
 	if is_attentive:
@@ -38,7 +38,7 @@ def create_learning_model(encoder_input_shape, decoder_input_shape, decoder_outp
 		# Sequence-to-sequence encoder-decoder model w/o attention.
 		return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional, is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#random.seed(a=None, version=2)
@@ -86,7 +86,7 @@ def main():
 	infer_device_name = None #'/device:GPU:0'
 
 	#--------------------
-	# Prepare directories.
+	# Prepares directories.
 
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
@@ -100,71 +100,39 @@ def main():
 	swl_util.make_dir(val_summary_dir_path)
 
 	#--------------------
-	# Prepare data.
+	# Prepares data.
 
 	dataGenerator = ReverseFunctionDataGenerator(is_time_major, is_dynamic)
 	encoder_input_shape, decoder_input_shape, decoder_output_shape = dataGenerator.shapes
 	start_token, end_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
 
-	#--------------------
-	# Create models, sessions, and graphs.
+	dataGenerator.initialize()
 
-	# Create graphs.
+	#%%------------------------------------------------------------------
+	# Trains.
+
 	if is_training_required:
+		# Creates a graph.
 		train_graph = tf.Graph()
-	if is_evaluation_required:
-		eval_graph = tf.Graph()
-	infer_graph = tf.Graph()
-
-	if is_training_required:
 		with train_graph.as_default():
 			with tf.device(train_device_name):
-				# Create a model.
+				# Creates a model.
 				modelForTraining = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
 				modelForTraining.create_training_model()
 
-				# Create a trainer.
+				# Creates a trainer.
 				#modelTrainer = SimpleModelTrainer(modelForTraining, dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch)
 				modelTrainer = SimpleGradientClippingModelTrainer(modelForTraining, dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, initial_epoch)
 
 				initializer = tf.global_variables_initializer()
 
-	if is_evaluation_required:
-		with eval_graph.as_default():
-			with tf.device(eval_device_name):
-				# Create a model.
-				modelForEvaluation = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
-				modelForEvaluation.create_evaluation_model()
-
-				# Create an evaluator.
-				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
-
-	with infer_graph.as_default():
-		with tf.device(infer_device_name):
-			# Create a model.
-			modelForInference = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
-			modelForInference.create_inference_model()
-
-			# Create an inferrer.
-			modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
-
-	# Create sessions.
-	if is_training_required:
+		# Creates a session.
 		train_session = tf.Session(graph=train_graph, config=sess_config)
-	if is_evaluation_required:
-		eval_session = tf.Session(graph=eval_graph, config=sess_config)
-	infer_session = tf.Session(graph=infer_graph, config=sess_config)
 
-	# Initialize.
-	if is_training_required:
+		# Initializes.
 		train_session.run(initializer)
 
-	dataGenerator.initialize()
-
-	#%%------------------------------------------------------------------
-	# Train.
-
-	if is_training_required:
+		#--------------------
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
@@ -173,47 +141,87 @@ def main():
 				dataGenerator.finalizeTraining()
 		print('\tTotal training time = {}.'.format(time.time() - start_time))
 
+		#--------------------
+		# Closes the session and the graph.
+		train_session.close()
+		del train_session
+		#train_graph.reset_default_graph()
+		del train_graph
+
 	#%%------------------------------------------------------------------
-	# Evaluate.
+	# Evaluates.
 
 	if is_evaluation_required:
+		# Creates a graph.
+		eval_graph = tf.Graph()
+		with eval_graph.as_default():
+			with tf.device(eval_device_name):
+				# Creates a model.
+				modelForEvaluation = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForEvaluation.create_evaluation_model()
+
+				# Creates an evaluator.
+				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+
+		# Creates a session.
+		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+
+		#--------------------
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)
 		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
-	# Infer.
-
-	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-	# String data -> numeric data.
-	test_inputs = dataGenerator.dataset.to_numeric(test_strs)
-
-	start_time = time.time()
-	with infer_session.as_default() as sess:
-		with sess.graph.as_default():
-			inferences = modelInferrer.infer(sess, test_inputs)
-	print('\tTotal inference time = {}.'.format(time.time() - start_time))
-
-	if inferences is not None:
-		# Numeric data -> string data.
-		inferred_strs = dataGenerator.dataset.to_string(inferences, has_start_token=False)
-		print('\tTest strings = {}, inferred strings = {}.'.format(test_strs, inferred_strs))
-	else:
-		print('[SWL] Warning: Invalid inference results.')
-
-	#--------------------
-	# Close sessions.
-
-	if is_training_required:
-		train_session.close()
-		del train_session
-	if is_evaluation_required:
+		#--------------------
+		# Closes the session and the graph.
 		eval_session.close()
 		del eval_session
-	infer_session.close()
-	del infer_session
+		#eval_graph.reset_default_graph()
+		del eval_graph
+
+	#%%------------------------------------------------------------------
+	# Infers.
+
+	if True:
+		# Creates a graph.
+		infer_graph = tf.Graph()
+		with infer_graph.as_default():
+			with tf.device(infer_device_name):
+				# Creates a model.
+				modelForInference = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForInference.create_inference_model()
+
+				# Creates an inferrer.
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
+
+		# Creates a session.
+		infer_session = tf.Session(graph=infer_graph, config=sess_config)
+
+		#--------------------
+		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+		# String data -> numeric data.
+		test_inputs = dataGenerator.dataset.to_numeric(test_strs)
+
+		start_time = time.time()
+		with infer_session.as_default() as sess:
+			with sess.graph.as_default():
+				inferences = modelInferrer.infer(sess, test_inputs)
+		print('\tTotal inference time = {}.'.format(time.time() - start_time))
+
+		if inferences is not None:
+			# Numeric data -> string data.
+			inferred_strs = dataGenerator.dataset.to_string(inferences, has_start_token=False)
+			print('\tTest strings = {}, inferred strings = {}.'.format(test_strs, inferred_strs))
+		else:
+			print('[SWL] Warning: Invalid inference results.')
+
+		#--------------------
+		# Closes the session and the graph.
+		infer_session.close()
+		del infer_session
+		#infer_graph.reset_default_graph()
+		del infer_graph
 
 #%%------------------------------------------------------------------
 
