@@ -123,7 +123,8 @@ class HangeulDataset(object):
 	# Numeric data -> string data.
 	def to_string(self, num_data):
 		def num2str(num):
-			label = list(self._label_int2char[n] for n in num)
+			#label = list(self._label_int2char[n] for n in num)
+			label = list(self._label_int2char[n] for n in num if n < self._blank_label)
 			try:
 				label = label[:label.index(self._EOS)]
 			except ValueError:

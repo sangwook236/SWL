@@ -93,7 +93,7 @@ def main():
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
-				modelTrainer = SimpleModelTrainer(modelForTraining, dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch)
+				modelTrainer = SimpleModelTrainer(modelForTraining, dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch, var_list=None)
 
 				initializer = tf.global_variables_initializer()
 

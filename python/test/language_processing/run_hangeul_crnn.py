@@ -21,7 +21,7 @@ from hangeul_data import HangeulDataGenerator
 def create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
 		#return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
-		return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
+		return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
 		#return HangeulDilatedCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 		#return HangeulDilatedCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
@@ -31,7 +31,7 @@ def create_learning_model(image_height, image_width, image_channel, num_classes,
 #--------------------------------------------------------------------
 
 class SimpleCrnnTrainer(ModelTrainer):
-	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
+	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0, var_list=None):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			initial_learning_rate = 1.0
@@ -52,7 +52,7 @@ class SimpleCrnnTrainer(ModelTrainer):
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 			optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-07)
 
-		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step)
+		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step, var_list)
 
 #--------------------------------------------------------------------
 
@@ -237,12 +237,16 @@ def main():
 				inferences, ground_truths = list(), list()
 				num_test_examples = 0
 				for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
+					inferred = modelInferrer.infer(sess, batch_data[0])
+					if isinstance(inferred, tf.SparseTensorValue):
+						print('*******************', inferred.dense_shape)
+						# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
+						dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=label_eos_token, dtype=np.int8)
+						inferences.append(dense_batch_inferences)
+					else:
+						inferences.append(inferred)
 					# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-					stv = modelInferrer.infer(sess, batch_data[0])  # tf.SparseTensorValue.
-					print('*******************', stv.dense_shape)
-					dense_batch_inferences = swl_ml_util.sparse_to_dense(stv.indices, stv.values, stv.dense_shape, default_value=label_eos_token, dtype=np.int8)
 					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
-					inferences.append(dense_batch_inferences)
 					ground_truths.append(dense_batch_outputs)
 				# Variable-length numpy.arrays are not merged into a single numpy.array.
 				#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
@@ -251,15 +255,23 @@ def main():
 		#--------------------
 		if inferences is not None:
 			if len(inferences) == len(ground_truths):
-				#correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-				#print('\tAccurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+				num_correct_letters, num_letters = 0, 0
+				num_correct_texts, num_texts = 0, 0
+				for inference, ground_truth in zip(inferences, ground_truths):
+					inference, ground_truth = dataGenerator.dataset.to_string(np.argmax(inference, axis=-1)), dataGenerator.dataset.to_string(ground_truth)
+					for inf, gt in zip(inference, ground_truth):
+						for ich, gch in zip(inf, gt):
+							if ich == gch:
+								num_correct_letters += 1
+						num_letters += max(len(inf), len(gt))
 
-				#for inf, gt in zip(inferences, ground_truths):
-				#	#print('Result =\n', np.hstack((inf, gt)))
-				#	print('Result =\n', inf, gt)
-				for idx in range(3):
-					#print('Result =\n', np.hstack((inferences[idx], ground_truths[idx])))
-					print('Result =\n', inferences[idx], ground_truths[idx])
+						if inf == gt:
+							num_correct_texts += 1
+						num_texts += 1
+						print('Inferred: {}, G/T: {}.'.format(inf, gt))
+				print('Letter accuracy = {}, Text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
+			else:
+				print('[SWL] Error: The lengths of inference results and ground truth are different.')
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 

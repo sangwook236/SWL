@@ -8,7 +8,7 @@ import swl.machine_learning.util as swl_ml_util
 
 #class ModelTrainer(abc.ABC):
 class ModelTrainer(object):
-	def __init__(self, model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step=None):
+	def __init__(self, model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step=None, var_list=None):
 		super().__init__()
 
 		self._model = model
@@ -29,7 +29,7 @@ class ModelTrainer(object):
 		if self._loss is None:
 			raise ValueError('Invalid loss')
 
-		self._train_operation = self._get_train_operation(self._loss, self._global_step)
+		self._train_operation = self._get_train_operation(self._loss, self._global_step, var_list=var_list)
 
 		# Merge all the summaries.
 		self._merged_summary = tf.summary.merge_all()
@@ -169,9 +169,9 @@ class ModelTrainer(object):
 
 		return history
 
-	def _get_train_operation(self, loss, global_step=None):
+	def _get_train_operation(self, loss, global_step=None, var_list=None):
 		with tf.name_scope('train_op'):
-			train_op = self._optimizer.minimize(loss, global_step=global_step)
+			train_op = self._optimizer.minimize(loss, global_step=global_step, var_list=var_list)
 			return train_op
 
 #%%------------------------------------------------------------------
@@ -181,10 +181,10 @@ class GradientClippingModelTrainer(ModelTrainer):
 		self._max_gradient_norm = max_gradient_norm
 		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step)
 
-	def _get_train_operation(self, loss, global_step=None):
+	def _get_train_operation(self, loss, global_step=None, var_list=None):
 		with tf.name_scope('train_op'):
 			# Method 1.
-			gradients = self._optimizer.compute_gradients(loss)
+			gradients = self._optimizer.compute_gradients(loss, var_list=var_list)
 			for i, (g, v) in enumerate(gradients):
 				if g is not None:
 					gradients[i] = (tf.clip_by_norm(g, self._max_gradient_norm), v)  # Clip gradients.
@@ -192,8 +192,9 @@ class GradientClippingModelTrainer(ModelTrainer):
 			"""
 			# Method 2.
 			#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
-			params = tf.trainable_variables()
-			gradients = tf.gradients(loss, params)
+			if var_list is None:
+				var_list = tf.trainable_variables()
+			gradients = tf.gradients(loss, var_list)
 			clipped_gradients, _ = tf.clip_by_global_norm(gradients, self._max_gradient_norm)  # Clip gradients.
 			train_op = self._optimizer.apply_gradients(zip(clipped_gradients, params), global_step=global_step)
 			"""
@@ -202,7 +203,7 @@ class GradientClippingModelTrainer(ModelTrainer):
 #%%------------------------------------------------------------------
 
 class SimpleModelTrainer(ModelTrainer):
-	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0):
+	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0, var_list=None):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 0.001
@@ -213,12 +214,12 @@ class SimpleModelTrainer(ModelTrainer):
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
-		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step)
+		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step, var_list)
 
 #%%------------------------------------------------------------------
 
 class SimpleGradientClippingModelTrainer(GradientClippingModelTrainer):
-	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, initial_epoch=0):
+	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, initial_epoch=0, var_list=None):
 		global_step = tf.Variable(initial_epoch, name='global_step', trainable=False)
 		with tf.name_scope('learning_rate'):
 			learning_rate = 0.001
@@ -229,4 +230,4 @@ class SimpleGradientClippingModelTrainer(GradientClippingModelTrainer):
 			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
 
-		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, global_step)
+		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, global_step, var_list)
