@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import cv2
 
@@ -235,13 +236,14 @@ class SceneTextGenerator(object):
 
 		self._textTransformer = textTransformer
 
-	def __call__(self, scene, texts, text_masks, *args, **kwargs):
+	def __call__(self, scene, texts, text_masks, blend_ratio_interval=None, *args, **kwargs):
 		"""Generates a scene containing multiple transformed text lines in a background.
 
 		Inputs:
 			scene (numpy.array): An object to be used as a scene or a background.
 			texts (list of numpy.arrays): A list object with multiple text lines.
 			text_masks (list of numpy.arrays): A list object of masks of the text lines.
+			blend_ratio_interval (tuple of two floats): Specifies min and max ratios to blend texts and a scene. 0.0 <= min ratio <= max ratio <= 1.0. If None, texts and a scene are not blended.
 		Outputs:
 			A scene (numpy.array): A scene containing transformed text lines.
 			A scene text mask (numpy.array) or a list of text masks (list of numpy.array's): A scene mask containing masks of transformed text lines in a scene.
@@ -251,23 +253,47 @@ class SceneTextGenerator(object):
 
 		scene_mask = np.zeros(scene_size, dtype=np.uint16)
 		#scene_text_masks = list()
-		for idx, (text, mask) in enumerate(zip(texts, text_masks)):
-			text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
+		if blend_ratio_interval is None:
+			for idx, (text, mask) in enumerate(zip(texts, text_masks)):
+				text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
 
-			#--------------------
-			pixels = np.where(mask > 0)
-			#pixels = np.where(text > 0)
+				#--------------------
+				pixels = np.where(mask > 0)
+				#pixels = np.where(text > 0)
 
-			if 2 == text.ndim:
-				channels = 1
-			elif 3 == text.ndim:
-				channels = text.shape[-1]
-			else:
-				print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
-				continue
-			scene[:,:,:channels][pixels] = text[pixels]
-			scene_mask[pixels] = idx + 1
-			#scene_text_masks.append(mask)
+				if 2 == text.ndim:
+					channels = 1
+				elif 3 == text.ndim:
+					channels = text.shape[-1]
+				else:
+					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
+					continue
+				scene[:,:,:channels][pixels] = text[pixels]
+				scene_mask[pixels] = idx + 1
+				#scene_text_masks.append(mask)
+		else:
+			scene_text = np.zeros_like(scene)
+			for idx, (text, mask) in enumerate(zip(texts, text_masks)):
+				text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
+
+				#--------------------
+				pixels = np.where(mask > 0)
+				#pixels = np.where(text > 0)
+
+				if 2 == text.ndim:
+					channels = 1
+				elif 3 == text.ndim:
+					channels = text.shape[-1]
+				else:
+					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
+					continue
+				scene_text[:,:,:channels][pixels] = text[pixels]
+				scene_mask[pixels] = idx + 1
+				#scene_text_masks.append(mask)
+
+			pixels = np.where(scene_mask > 0)
+			alpha = random.uniform(blend_ratio_interval[0], blend_ratio_interval[1])
+			scene[pixels] = (1.0 - alpha) * scene[pixels] + alpha * scene_text[pixels]
 
 		return scene, scene_mask
 		#return scene, scene_text_masks
