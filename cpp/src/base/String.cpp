@@ -64,6 +64,36 @@ namespace swl {
 	return std::wstring(wcstr.get());
 }
 
+/*static*/ std::string String::wcs2utf8(const std::wstring &wcstr)
+{
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+	const int len = WideCharToMultiByte(CP_UTF8, 0, wcstr.c_str(), -1, NULL, 0, NULL, NULL);
+	std::unique_ptr<char []> utf8(new char [len]);
+	const int len2 = WideCharToMultiByte(CP_UTF8, 0, wcstr.c_str(), -1, utf8.get(), (int)len, NULL, NULL);
+	//assert(wcstr.length() == len2);
+
+	return std::string(utf8.get());
+#else
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+	return conv.to_bytes(wcstr);
+#endif
+}
+
+/*static*/ std::wstring String::utf82wcs(const std::string &utf8)
+{
+#if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
+	const int len = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, NULL, 0);
+	std::unique_ptr<wchar_t []> wcstr(new wchar_t [len]);
+	const int len2 = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, wcstr.get(), (int)len);
+	//assert(wcstr.length() == len2);
+
+	return std::wstring(wcstr.get());
+#else
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
+	return conv.from_bytes(utf8);
+#endif
+}
+
 //-----------------------------------------------------------------------------------
 // Byte data converter.
 

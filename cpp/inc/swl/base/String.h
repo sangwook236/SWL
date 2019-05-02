@@ -49,6 +49,19 @@ public:
 	static std::wstring mbs2wcs(const std::string &mbstr);
 
 	/**
+	*	@brief  unicode string을 UTF-8 string으로 변환하는 함수.
+	*	@param[in]  wcstr  변환해야 할 unicode string.
+	*	@return  unicode string을 변환한 UTF-8 string이 반환.
+	*/
+	static std::string wcs2utf8(const std::wstring &wcstr);
+	/**
+	*	@brief  UTF-8 string을 unicode string으로 변환하는 함수.
+	*	@param[in]  utf8  변환해야 할 UTF-8 string.
+	*	@return  UTF-8 string을 변환한 unicode string이 반환.
+	*/
+	static std::wstring utf82wcs(const std::string &utf8);
+
+	/**
 	 *	@brief  10진수를 ASCII character code로 변환.
 	 *	@param[in]  dec  변환해야 할 10진수. 0 <= dec <= 9 사이의 자연수.
 	 *	@return  10진수를 변환한 ASCII character code 반환.
