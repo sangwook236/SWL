@@ -18,6 +18,7 @@ class Transformer(object):
 		Outputs:
 			A transformed input (numpy.array): A transformed 2D or 3D numpy.array.
 			A transformed mask (numpy.array): A transformed mask.
+			A transformed bounding rectangle (numpy.array): A transformed bounding rectangle. 4 x 2.
 		"""
 
 		raise NotImplementedError
@@ -200,7 +201,7 @@ class TextGenerator(object):
 		char_list, mask_list = list(), list()
 		for ch in text:
 			ch, mask = self._characterGenerator(ch, font_size, font_color, *args, **kwargs)
-			ch, mask = self._characterTransformer(ch, mask, *args, **kwargs)
+			ch, mask, _ = self._characterTransformer(ch, mask, *args, **kwargs)
 			char_list.append(ch)
 			mask_list.append(mask)
 
@@ -247,15 +248,17 @@ class SceneTextGenerator(object):
 		Outputs:
 			A scene (numpy.array): A scene containing transformed text lines.
 			A scene text mask (numpy.array) or a list of text masks (list of numpy.array's): A scene mask containing masks of transformed text lines in a scene.
+			A list of transformed bounding rectangles (list of numpy.array's): A list of transformed bounding rectangles (4 x 2) in a scene.
 		"""
 
 		scene_size = scene.shape[:2]
 
 		scene_mask = np.zeros(scene_size, dtype=np.uint16)
 		#scene_text_masks = list()
+		bboxes = list()
 		if blend_ratio_interval is None:
 			for idx, (text, mask) in enumerate(zip(texts, text_masks)):
-				text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
+				text, mask, bbox = self._textTransformer(text, mask, scene_size, *args, **kwargs)
 
 				#--------------------
 				pixels = np.where(mask > 0)
@@ -271,10 +274,11 @@ class SceneTextGenerator(object):
 				scene[:,:,:channels][pixels] = text[pixels]
 				scene_mask[pixels] = idx + 1
 				#scene_text_masks.append(mask)
+				bboxes.append(bbox)
 		else:
 			scene_text = np.zeros_like(scene)
 			for idx, (text, mask) in enumerate(zip(texts, text_masks)):
-				text, mask = self._textTransformer(text, mask, scene_size, *args, **kwargs)
+				text, mask, bbox = self._textTransformer(text, mask, scene_size, *args, **kwargs)
 
 				#--------------------
 				pixels = np.where(mask > 0)
@@ -290,10 +294,11 @@ class SceneTextGenerator(object):
 				scene_text[:,:,:channels][pixels] = text[pixels]
 				scene_mask[pixels] = idx + 1
 				#scene_text_masks.append(mask)
+				bboxes.append(bbox)
 
 			pixels = np.where(scene_mask > 0)
 			alpha = random.uniform(blend_ratio_interval[0], blend_ratio_interval[1])
 			scene[pixels] = (1.0 - alpha) * scene[pixels] + alpha * scene_text[pixels]
 
-		return scene, scene_mask
-		#return scene, scene_text_masks
+		return scene, scene_mask, np.array(bboxes)
+		#return scene, scene_text_masks, np.array(bboxes)
