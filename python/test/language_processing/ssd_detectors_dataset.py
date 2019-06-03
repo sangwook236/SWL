@@ -2,10 +2,14 @@
 
 # REF [site] >> https://github.com/mvoelk/ssd_detectors
 
-import sys
-sys.path.append('D:/lib_repo/python/rnd/ssd_detectors_github')
+import sys, os
+if 'posix' == os.name:
+	lib_home_dir_path = '/home/sangwook/lib_repo/python'
+else:
+	lib_home_dir_path = 'D:/lib_repo/python/rnd'
+sys.path.append(lib_home_dir_path + '/ssd_detectors_github')
 
-import os, math, time, glob, csv, json, pickle
+import math, time, glob, csv, json, pickle
 import numpy as np
 import cv2
 from ssd_data import BaseGTUtility
@@ -26,6 +30,8 @@ def load_scene_text_dataset(dir_path, json_filename):
 
 	return image_filepaths, mask_filepaths, gt_texts, gt_boxes
 
+# REF [file] >> ${ssd_detectors_github}/data_synthtext.py
+# REF [site] >> https://github.com/mvoelk/ssd_detectors
 class GTUtility(BaseGTUtility):
 	"""Utility for my scene text dataset.
 
@@ -37,8 +43,6 @@ class GTUtility(BaseGTUtility):
 			Required by SegLink...
 	"""
 	def __init__(self, use_my_scene_text_dataset, use_rrc_mlt_2019_dataset, use_e2e_mlt_dataset, max_slope=None, polygon=False):
-		self.classes = ['Background', 'Text']
-
 		# Data directory structure:
 		#	scene_text_dataset
 		#		e2e_mlt
@@ -57,6 +61,11 @@ class GTUtility(BaseGTUtility):
 		#			*.png
 		#		scene_text_dataset.json
 		data_dir_path = './scene_text_dataset'
+
+		self.classes = ['Background', 'Text']
+		self.data_path = data_dir_path
+		self.gt_path = gt_path = os.path.join(data_dir_path, 'gt.mat')  # Inexact.
+		self.image_path = image_path = data_dir_path
 
 		img_filepaths, gt_texts, gt_boxes = list(), list(), list()
 		if use_my_scene_text_dataset:
@@ -78,9 +87,13 @@ class GTUtility(BaseGTUtility):
 
 		#--------------------
 		print('Processing samples...')
+		start_time = time.time()
 		self.image_names, self.data, self.text = list(), list(), list()
 		for img_filepath, text, boxes in zip(img_filepaths, gt_texts, gt_boxes):
 			img = cv2.imread(os.path.join(data_dir_path, img_filepath))
+			if img is None:
+				print('Failed to load an image: {}.'.format(os.path.join(data_dir_path, img_filepath)))
+				continue
 			img_height, img_width = img.shape[:2]
 
 			#boxes = np.array(boxes)
@@ -143,6 +156,8 @@ class GTUtility(BaseGTUtility):
 			self.image_names.append(img_filepath)
 			self.data.append(boxes)
 			self.text.append(text)
+		print('\tGenerated dataset: #images = {}, #boxes = {}, #texts = {}.'.format(len(self.image_names), len(self.data), len(self.text)))
+		print('\tElapsed time = {}'.format(time.time() - start_time))
 
 		self.init()
 
