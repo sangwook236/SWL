@@ -883,8 +883,21 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 		#scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_masks, blend_ratio_interval=(0.5, 1.0))
 
 		#--------------------
-		text_image_filepath = os.path.join(scene_subdir_name, 'scene_{:07}.png'.format(idx))
-		mask_image_filepath = os.path.join(mask_subdir_name, 'mask_{:07}.png'.format(idx))
+		if False:
+			text_image_filepath = os.path.join(scene_subdir_name, 'scene_{:07}.png'.format(idx))
+			mask_image_filepath = os.path.join(mask_subdir_name, 'mask_{:07}.png'.format(idx))
+		elif False:
+			# For MS-D-Net.
+			#scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255.0
+			scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2BGR)
+			text_image_filepath = os.path.join(scene_subdir_name, 'scene_{:07}.tiff'.format(idx))
+			mask_image_filepath = os.path.join(mask_subdir_name, 'mask_{:07}.tiff'.format(idx))
+		elif False:
+			# For MS-D_Net_PyTorch.
+			#scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255.0
+			scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2BGR)
+			text_image_filepath = os.path.join(scene_subdir_name, 'img_{:07}.tif'.format(idx))
+			mask_image_filepath = os.path.join(mask_subdir_name, 'img_{:07}.tif'.format(idx))
 		"""
 		# Draw bounding rectangles.
 		for box in bboxes:
@@ -953,9 +966,10 @@ def scene_text_generation():
 		sceneProvider = MyGrayscaleBackgroundProvider(scene_shape)
 
 	# Generate a scene dataset.
-	scene_text_dataset_dir_path = './scene_text_dataset'
+	#scene_text_dataset_dir_path = './scene_text_dataset'
+	scene_text_dataset_dir_path = 'E:/scene_text_dataset_for_ms_d_net'
 	scene_text_dataset_json_filename = 'scene_text_dataset.json'
-	num_images = 100
+	num_images = 50000
 	generate_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename, sceneTextGenerator, sceneProvider, textGenerator, num_images, is_white_background=is_white_background)
 
 	# Load a scene dataset.
