@@ -6,7 +6,7 @@ import os, math, time, glob, csv
 import numpy as np
 import cv2
 
-def bounding_box_test():
+def data_loading_test():
 	if 'posix' == os.name:
 		data_home_dir_path = '/home/sangwook/my_dataset'
 	else:
@@ -83,15 +83,21 @@ def bounding_box_test():
 		for box in boxes:
 			#box = box.reshape((-1, 2))
 			box = box.astype(np.int)
-			cv2.drawContours(rgb, [box], 0, (0, 0, 255), 2)
+			if False:
+				cv2.drawContours(rgb, [box], 0, (0, 0, 255), 2)
+			else:
+				cv2.line(rgb, tuple(box[0,:]), tuple(box[1,:]), (0, 0, 255), 2, cv2.LINE_8)
+				cv2.line(rgb, tuple(box[1,:]), tuple(box[2,:]), (0, 255, 0), 2, cv2.LINE_8)
+				cv2.line(rgb, tuple(box[2,:]), tuple(box[3,:]), (255, 0, 0), 2, cv2.LINE_8)
+				cv2.line(rgb, tuple(box[3,:]), tuple(box[0,:]), (255, 0, 255), 2, cv2.LINE_8)
 
-		cv2.imshow('Bounding Box', rgb)
+		cv2.imshow('E2E-MLT', rgb)
 		cv2.waitKey(0)
 
 	cv2.destroyAllWindows()
 
 def main():
-	bounding_box_test()
+	data_loading_test()
 
 #%%------------------------------------------------------------------
 
