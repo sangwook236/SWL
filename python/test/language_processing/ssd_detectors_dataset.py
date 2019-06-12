@@ -30,7 +30,7 @@ def load_scene_text_dataset(dir_path, json_filename):
 
 	return image_filepaths, mask_filepaths, gt_texts, gt_boxes
 
-# REF [file] >> ${ssd_detectors_github}/data_synthtext.py
+# REF [file] >> ${ssd_detectors_HOME}/data_synthtext.py
 # REF [site] >> https://github.com/mvoelk/ssd_detectors
 class GTUtility(BaseGTUtility):
 	"""Utility for my scene text dataset.
@@ -161,7 +161,7 @@ class GTUtility(BaseGTUtility):
 
 		self.init()
 
-	def load_my_scene_text_dataset(self, data_dir_path, json_filename):
+	def load_my_scene_text_dataset(self, data_dir_path):
 		print('Loading data (My scene text dataset)...')
 		start_time = time.time()
 		json_filename = 'scene_text_dataset.json'
