@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: UTF-8 -*-
 
 import sys
 sys.path.append('../../src')
@@ -24,6 +25,7 @@ class IdentityTransformer(object):
 		Inputs:
 			input (numpy.array): A 2D or 3D numpy.array to transform.
 			mask (numpy.array): A mask of input to transform. It can be None.
+			canvas_size (tuple of ints): The size of a canvas (height, width). If canvas_size = None, the size of input is used.
 		Outputs:
 			A transformed input (numpy.array): A transformed 2D or 3D numpy.array.
 			A transformed mask (numpy.array): A transformed mask.
@@ -440,6 +442,7 @@ class MyHangeulFontCharacterGenerator(MyCharacterGenerator):
 			system_font_dir = 'C:/Windows/Fonts'
 			font_dir = 'D:/work/font'
 
+		"""
 		if 'posix' == os.name:
 			font_info_list = [
 				(system_font_dir + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
@@ -451,6 +454,10 @@ class MyHangeulFontCharacterGenerator(MyCharacterGenerator):
 				(system_font_dir + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
 			]
 		font_info_list += [
+		"""
+		font_info_list = [
+			(font_dir + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+			(font_dir + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
 			(font_dir + '/gabia_bombaram.ttf', 1),
 			(font_dir + '/gabia_napjakBlock.ttf', 1),
 			(font_dir + '/gabia_solmee.ttf', 1),
@@ -883,7 +890,7 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 		#scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_masks, blend_ratio_interval=(0.5, 1.0))
 
 		#--------------------
-		if False:
+		if True:
 			text_image_filepath = os.path.join(scene_subdir_name, 'scene_{:07}.png'.format(idx))
 			mask_image_filepath = os.path.join(mask_subdir_name, 'mask_{:07}.png'.format(idx))
 		elif False:
@@ -896,6 +903,8 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			# For MS-D_Net_PyTorch.
 			#scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255.0
 			scene = cv2.cvtColor(scene, cv2.COLOR_BGRA2BGR)
+			scene_text_mask[scene_text_mask > 0] = 1
+			#scene_text_mask = scene_text_mask.astype(np.uint8)
 			text_image_filepath = os.path.join(scene_subdir_name, 'img_{:07}.tif'.format(idx))
 			mask_image_filepath = os.path.join(mask_subdir_name, 'img_{:07}.tif'.format(idx))
 		"""
@@ -966,8 +975,9 @@ def scene_text_generation():
 		sceneProvider = MyGrayscaleBackgroundProvider(scene_shape)
 
 	# Generate a scene dataset.
-	#scene_text_dataset_dir_path = './scene_text_dataset'
-	scene_text_dataset_dir_path = 'E:/scene_text_dataset_for_ms_d_net'
+	scene_text_dataset_dir_path = './scene_text_dataset'
+	#scene_text_dataset_dir_path = './scene_text_dataset_for_ms_d_net'
+	#scene_text_dataset_dir_path = './scene_text_dataset_for_ms_d_net_pytorch'
 	scene_text_dataset_json_filename = 'scene_text_dataset.json'
 	num_images = 50000
 	generate_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename, sceneTextGenerator, sceneProvider, textGenerator, num_images, is_white_background=is_white_background)
