@@ -6,6 +6,7 @@ sys.path.append('../../src')
 
 import os, math, random, csv, time, copy, glob, json
 import numpy as np
+import tensorflow as tf
 import cv2
 #import imgaug as ia
 #from imgaug import augmenters as iaa

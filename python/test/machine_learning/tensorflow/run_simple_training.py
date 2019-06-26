@@ -9,39 +9,6 @@ import cv2
 
 #--------------------------------------------------------------------
 
-def create_model(input_tensor, num_classes):
-	# Preprocessing.
-	with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
-		input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
-
-	#--------------------
-	with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-		conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
-		conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
-
-	with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
-		conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu, name='conv')
-		conv2 = tf.layers.max_pooling2d(conv2, 2, 2, name='maxpool')
-
-	with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
-		fc1 = tf.layers.flatten(conv2, name='flatten')
-
-		fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='dense')
-
-	with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-		if 1 == num_classes:
-			fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='dense')
-			#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
-		elif num_classes >= 2:
-			fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='dense')
-			#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
-		else:
-			assert num_classes > 0, 'Invalid number of classes.'
-
-		return fc2
-
-#--------------------------------------------------------------------
-
 def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
 	if inputs is not None:
 		# Contrast limited adaptive histogram equalization (CLAHE).
@@ -76,18 +43,47 @@ def preprocess_data(inputs, outputs, image_height, image_width, image_channel, n
 	return inputs, outputs
 
 def load_data(image_height, image_width, image_channel, num_classes):
-	transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+	# Pixel value: [0, 255].
+	(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
-	trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-	trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-
-	testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-	testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=2)
-
+	# Preprocessing.
 	train_inputs, train_outputs = preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
 	test_inputs, test_outputs = preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 	return train_inputs, train_outputs, test_inputs, test_outputs
+
+#--------------------------------------------------------------------
+
+def create_model(input_tensor, num_classes):
+	# Preprocessing.
+	with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+		input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+
+	#--------------------
+	with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
+		conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
+		conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
+
+	with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
+		conv2 = tf.layers.conv2d(conv1, 64, 3, activation=tf.nn.relu, name='conv')
+		conv2 = tf.layers.max_pooling2d(conv2, 2, 2, name='maxpool')
+
+	with tf.variable_scope('fc1', reuse=tf.AUTO_REUSE):
+		fc1 = tf.layers.flatten(conv2, name='flatten')
+
+		fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='dense')
+
+	with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
+		if 1 == num_classes:
+			fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='dense')
+			#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+		elif num_classes >= 2:
+			fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='dense')
+			#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+		else:
+			assert num_classes > 0, 'Invalid number of classes.'
+
+		return fc2
 
 def get_loss(y, t):
 	with tf.name_scope('loss'):
@@ -114,6 +110,8 @@ def main():
 		pass
 
 	#--------------------
+	# Load data.
+
 	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, num_classes)
 
 	print("Train image's shape = {}, train label's shape = {}.".format(train_images.shape, train_labels.shape))
@@ -200,6 +198,7 @@ def main():
 
 		# Switch to test data.
 		sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels})
+		#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
 		inferences = list()
 		start_time = time.time()
 		while True:
