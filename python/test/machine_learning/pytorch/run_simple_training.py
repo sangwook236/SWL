@@ -138,7 +138,7 @@ def main():
 		_, model_outputs = torch.max(model_outputs, 1)
 		inferences.extend(model_outputs.cpu().numpy())
 		ground_truths.extend(outputs.numpy())
-	print('Inference time: {:.6} secs.'.format(time.time() - start_time))
+	print('Inference time: {:.6f} secs.'.format(time.time() - start_time))
 
 	inferences = np.array(inferences)
 	ground_truths = np.array(ground_truths)

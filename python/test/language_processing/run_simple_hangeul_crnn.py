@@ -86,15 +86,6 @@ def load_data(image_height, image_width, image_channel):
 
 	return train_data, train_labels, test_data, test_labels
 
-def get_loss(y, t, y_length, t_length):
-	with tf.name_scope('loss'):
-		# The 2 is critical here since the first couple outputs of the RNN tend to be garbage.
-		y = y[:, 2:, :]
-
-		loss =K.ctc_batch_cost(t, y, y_length, t_length)
-
-		return loss
-
 #--------------------------------------------------------------------
 
 def create_model(input_tensor, num_classes):
@@ -134,36 +125,59 @@ def create_model(input_tensor, num_classes):
 	# CNN to RNN.
 	rnn_input_shape = inner.shape #inner.shape.as_list()
 	inner = Reshape(target_shape=((rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3])), name='reshape')(inner)  # (None, width/4, height/16 * 512)
-	"""
-	inner = Dense(256, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, width/4, 256)
+	if True:
+		inner = Dense(64, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, width/4, 256)
 
-	# RNN layer.
-	lstm_1 = LSTM(1024, return_sequences=True, kernel_initializer='he_normal', name='lstm1')(inner)
-	lstm_1b = LSTM(1024, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm1_b')(inner)
-	lstm1_merged = add([lstm_1, lstm_1b])  # (None, width/4, 2048)
-	lstm1_merged = BatchNormalization()(lstm1_merged)
-	lstm_2 = LSTM(1024, return_sequences=True, kernel_initializer='he_normal', name='lstm2')(lstm1_merged)
-	lstm_2b = LSTM(1024, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm2_b')(lstm1_merged)
-	lstm2_merged = concatenate([lstm_2, lstm_2b])  # (None, width/4, 2048)
-	lstm2_merged = BatchNormalization()(lstm2_merged)  # NOTE [check] >> Different from the original implementation.
-	"""
-	inner = Dense(64, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, width/4, 256)
+		# RNN layer.
+		lstm_1 = LSTM(256, return_sequences=True, kernel_initializer='he_normal', name='lstm1')(inner)
+		lstm_1b = LSTM(256, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm1_b')(inner)
+		lstm1_merged = add([lstm_1, lstm_1b])  # (None, width/4, 512)
+		lstm1_merged = BatchNormalization()(lstm1_merged)
+		lstm_2 = LSTM(256, return_sequences=True, kernel_initializer='he_normal', name='lstm2')(lstm1_merged)
+		lstm_2b = LSTM(256, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm2_b')(lstm1_merged)
+		lstm2_merged = concatenate([lstm_2, lstm_2b])  # (None, width/4, 512)
+		lstm2_merged = BatchNormalization()(lstm2_merged)
+	elif False:
+		inner = Dense(128, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, width/4, 256)
 
-	# RNN layer.
-	lstm_1 = LSTM(256, return_sequences=True, kernel_initializer='he_normal', name='lstm1')(inner)
-	lstm_1b = LSTM(256, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm1_b')(inner)
-	lstm1_merged = add([lstm_1, lstm_1b])  # (None, width/4, 2048)
-	lstm1_merged = BatchNormalization()(lstm1_merged)
-	lstm_2 = LSTM(256, return_sequences=True, kernel_initializer='he_normal', name='lstm2')(lstm1_merged)
-	lstm_2b = LSTM(256, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm2_b')(lstm1_merged)
-	lstm2_merged = concatenate([lstm_2, lstm_2b])  # (None, width/4, 2048)
-	lstm2_merged = BatchNormalization()(lstm2_merged)
+		# RNN layer.
+		lstm_1 = LSTM(512, return_sequences=True, kernel_initializer='he_normal', name='lstm1')(inner)
+		lstm_1b = LSTM(512, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm1_b')(inner)
+		lstm1_merged = add([lstm_1, lstm_1b])  # (None, width/4, 1024)
+		lstm1_merged = BatchNormalization()(lstm1_merged)
+		lstm_2 = LSTM(512, return_sequences=True, kernel_initializer='he_normal', name='lstm2')(lstm1_merged)
+		lstm_2b = LSTM(512, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm2_b')(lstm1_merged)
+		lstm2_merged = concatenate([lstm_2, lstm_2b])  # (None, width/4, 1024)
+		lstm2_merged = BatchNormalization()(lstm2_merged)
+	elif False:
+		inner = Dense(256, activation='relu', kernel_initializer='he_normal', name='dense1')(inner)  # (None, width/4, 256)
+
+		# RNN layer.
+		lstm_1 = LSTM(1024, return_sequences=True, kernel_initializer='he_normal', name='lstm1')(inner)
+		lstm_1b = LSTM(1024, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm1_b')(inner)
+		lstm1_merged = add([lstm_1, lstm_1b])  # (None, width/4, 2048)
+		lstm1_merged = BatchNormalization()(lstm1_merged)
+		lstm_2 = LSTM(1024, return_sequences=True, kernel_initializer='he_normal', name='lstm2')(lstm1_merged)
+		lstm_2b = LSTM(1024, return_sequences=True, go_backwards=True, kernel_initializer='he_normal', name='lstm2_b')(lstm1_merged)
+		lstm2_merged = concatenate([lstm_2, lstm_2b])  # (None, width/4, 2048)
+		lstm2_merged = BatchNormalization()(lstm2_merged)  # NOTE [check] >> Different from the original implementation.
 
 	# Transforms RNN output to character activations.
 	inner = Dense(num_classes, kernel_initializer='he_normal', name='dense2')(lstm2_merged)  # (None, width/4, num_classes)
 	y_pred = Activation('softmax', name='softmax')(inner)
 
 	return y_pred
+
+def get_loss(y, t, y_length, t_length):
+	with tf.name_scope('loss'):
+		# The 2 is critical here since the first couple outputs of the RNN tend to be garbage.
+		y = y[:, 2:, :]
+
+		# Connectionist temporal classification (CTC) loss.
+		loss = K.ctc_batch_cost(t, y, y_length, t_length)  # Output shape: [batch_size, 1].
+		loss = tf.reduce_mean(loss)
+
+		return loss
 
 #--------------------------------------------------------------------
 
@@ -227,17 +241,25 @@ def main():
 
 		with tf.Session() as sess:
 			sess.run(tf.global_variables_initializer())
-			# Initialise iterator with train data.
-			sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
 			for epoch in range(NUM_EPOCHS):
 				print('Epoch {}:'.format(epoch + 1))
 				start_time = time.time()
+				# Initialise iterator with train data.
+				sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
+				train_loss = 0
+				batch_idx = 0
 				while True:
 					try:
-						_, loss_value = sess.run([train_op, loss])
+						#_, loss_value = sess.run([train_op, loss])
+						_, loss_value, elem_value = sess.run([train_op, loss, input_elem])
+						train_loss += loss_value * elem_value.shape[0]
+						if (batch_idx + 1) % 100 == 0:
+							print('\tBatch = {}: {:.6f} secs.'.format(batch_idx + 1, time.time() - start_time))
 					except tf.errors.OutOfRangeError:
 						break
-				print('\tLoss = {:.4f}: {} secs.'.format(loss_value, time.time() - start_time))
+					batch_idx += 1
+				train_loss /= train_images.shape[0]
+				print('\tLoss = {:.4f}: {:.6f} secs.'.format(train_loss, time.time() - start_time))
 
 			# Save a model.
 			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
@@ -254,15 +276,15 @@ def main():
 
 		# Switch to test data.
 		sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
-		#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error
-		inferences = list()
+		#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
 		start_time = time.time()
+		inferences = list()
 		while True:
 			try:
 				inferences.append(sess.run(model_output))
 			except tf.errors.OutOfRangeError:
 				break
-		print('Inference time: {:.6} secs.'.format(time.time() - start_time))
+		print('Inference time: {:.6f} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:

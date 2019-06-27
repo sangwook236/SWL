@@ -153,8 +153,8 @@ def main():
 				print('Epoch {}:'.format(epoch + 1))
 				# Initialise iterator with train data.
 				sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels})
-				train_loss, train_accuracy = 0, 0
 				start_time = time.time()
+				train_loss, train_accuracy = 0, 0
 				while True:
 					try:
 						#_, loss_value, accuracy_value = sess.run([train_op, loss, accuracy])
@@ -169,8 +169,8 @@ def main():
 
 				# Switch to validation data.
 				sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels})
-				val_loss, val_accuracy = 0, 0
 				start_time = time.time()
+				val_loss, val_accuracy = 0, 0
 				while True:
 					try:
 						#loss_value, accuracy_value = sess.run([loss, accuracy])
@@ -199,14 +199,14 @@ def main():
 		# Switch to test data.
 		sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels})
 		#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
-		inferences = list()
 		start_time = time.time()
+		inferences = list()
 		while True:
 			try:
 				inferences.append(sess.run(model_output))
 			except tf.errors.OutOfRangeError:
 				break
-		print('Inference time: {:.6} secs.'.format(time.time() - start_time))
+		print('Inference time: {:.6f} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
