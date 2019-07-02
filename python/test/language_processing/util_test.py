@@ -4,7 +4,9 @@ import sys
 sys.path.append('../../src')
 
 import os
-from swl.language_processing.util import generate_text_image
+import numpy as np
+import cv2
+from swl.language_processing.util import generate_text_image, draw_text_on_image
 
 def hangul_example():
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
@@ -96,8 +98,64 @@ def generate_text_image_test():
 	#symbol_example()  # Not yet implemented.
 	all_font_example()
 
+def draw_text_on_image_test():
+	if 'posix' == os.name:
+		font_type = '/usr/share/fonts/truetype/gulim.ttf'  # 굴림, 굴림체, 돋움, 돋움체.
+		#font_type = '/usr/share/fonts/truetype/batang.ttf'  # 바탕, 바탕체, 궁서, 궁서체.
+	else:
+		font_type = 'C:/Windows/Fonts/gulim.ttc'  # 굴림, 굴림체, 돋움, 돋움체.
+	font_index = 0
+
+	is_white_background = False  # Uses white or black background.
+	font_size = 32
+	#font_color = None  # Uses random colors.
+	#font_color = (0, 0, 0) if is_white_background else (255, 255, 255)
+	#font_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+	font_color = (255, 255, 255)
+	bg_color = (0, 0, 0)
+	text_offset = (0, 0)
+	crop_text_area = True
+	draw_text_border = False
+	image_size = (500, 500)
+
+	text = generate_text_image('가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+	text = np.asarray(text, dtype=np.uint8)
+
+	mask = np.zeros_like(text)
+	mask[text > 0] = 255
+
+	pixels = np.where(text > 0)
+	#pixels = np.where(mask > 0)
+	scene = np.full((500, 500, 3), 128, dtype=np.uint8)
+	scene[:,:][pixels] = text[pixels]
+	
+	cv2.imshow('Text', text)
+	cv2.imshow('Text Mask', mask)
+	cv2.imshow('Scene', scene)
+
+	scene2 = np.full((1000, 1000, 3), 128, dtype=np.uint8)
+	#scene2 = cv2.imread('./image1.jpg')
+	text_offset = (100, 300)
+	rotation_angle = None
+
+	scene2, text_mask, text_bbox = draw_text_on_image(scene2, '가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, text_offset=text_offset, rotation_angle=rotation_angle)
+
+	text_bbox = np.round(text_bbox).astype(np.int)
+	#cv2.drawContours(scene2, [text_bbox], 0, (0, 0, 255), 1, cv2.LINE_8)
+	cv2.line(scene2, tuple(text_bbox[0]), tuple(text_bbox[1]), (255, 0, 0), 1, cv2.LINE_8)
+	cv2.line(scene2, tuple(text_bbox[1]), tuple(text_bbox[2]), (0, 255, 0), 1, cv2.LINE_8)
+	cv2.line(scene2, tuple(text_bbox[2]), tuple(text_bbox[3]), (0, 0, 255), 1, cv2.LINE_8)
+	cv2.line(scene2, tuple(text_bbox[3]), tuple(text_bbox[0]), (255, 0, 255), 1, cv2.LINE_8)
+
+	cv2.imshow('Scene2', scene2)
+	cv2.imshow('Scene2 Text Mask', text_mask)
+
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
 def main():
-	generate_text_image_test()
+	#generate_text_image_test()
+	draw_text_on_image_test()
 
 #%%------------------------------------------------------------------
 

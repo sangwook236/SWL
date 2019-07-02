@@ -6,7 +6,6 @@ sys.path.append('../../src')
 
 import os, math, random, csv, time, copy, glob, json
 import numpy as np
-import tensorflow as tf
 import cv2
 #import imgaug as ia
 #from imgaug import augmenters as iaa
@@ -43,6 +42,16 @@ class RotationTransformer(object):
 	"""Rotates an object of numpy.array.
 	"""
 
+	def __init__(self, min_angle, max_angle):
+		"""Constructor.
+
+		Inputs:
+			min_angle (float): A min. rotation angle in degrees.
+			max_angle (float): A max. rotation angle in degrees.
+		"""
+
+		self._min_angle, self._max_angle = min_angle, max_angle
+
 	def __call__(self, input, mask, canvas_size=None, *args, **kwargs):
 		"""Rotates an object of numpy.array.
 
@@ -62,8 +71,62 @@ class RotationTransformer(object):
 		else:
 			canvas_height, canvas_width = canvas_size
 
-		rot_angle = random.uniform(-30, 30)
+		rot_angle = random.uniform(self._min_angle, self._max_angle)
 		T = cv2.getRotationMatrix2D(((width - 1) / 2.0, (height - 1) / 2.0), rot_angle, 1)
+
+		input = cv2.warpAffine(input, T, (canvas_width, canvas_height))
+		#input = cv2.warpAffine(input, T, (canvas_width, canvas_height), cv2.INTER_CUBIC, cv2.BORDER_DEFAULT + cv2.BORDER_TRANSPARENT)
+		if mask is not None:
+			mask = cv2.warpAffine(mask, T, (canvas_width, canvas_height))
+
+		dst_rect = np.matmul(T, np.array([(0, 0, 1), (width, 0, 1), (width, height, 1), (0, height, 1)], dtype=np.float32).T)
+
+		return input, mask, dst_rect.T
+
+#class AffineTransformer(Transformer):
+class AffineTransformer(object):
+	"""Affinely transforms an object of numpy.array.
+	"""
+
+	def __init__(self, paper_size, min_angle, max_angle, min_scale, max_scale):
+		"""Constructor.
+
+		Inputs:
+			paper_size (tuple of ints): The size of a paper (height, width).
+			min_angle (float): A min. rotation angle in degrees.
+			max_angle (float): A max. rotation angle in degrees.
+			min_scale (float): A min. scale.
+			max_scale (float): A max. scale.
+		"""
+
+		self._paper_height, self._paper_width = paper_size
+		self._min_angle, self._max_angle = min_angle, max_angle
+		self._min_scale, self._max_scale = min_scale, max_scale
+
+	def __call__(self, input, mask, canvas_size=None, *args, **kwargs):
+		"""Affinely transforms an object of numpy.array.
+
+		Inputs:
+			input (numpy.array): A 2D or 3D numpy.array to rotate.
+			mask (numpy.array): A mask of input to rotate. It can be None.
+			canvas_size (tuple of ints): The size of a canvas (height, width). If canvas_size = None, the size of input is used.
+		Outputs:
+			A transformed input (numpy.array): A rotated 2D or 3D numpy.array.
+			A transformed mask (numpy.array): A rotated mask.
+			A transformed bounding rectangle (numpy.array): A transformed bounding rectangle. 4 x 2.
+		"""
+
+		height, width = input.shape[:2]
+		if canvas_size is None:
+			canvas_height, canvas_width = height, width
+		else:
+			canvas_height, canvas_width = canvas_size
+
+		dx, dy = random.uniform(0, self._paper_width - width), random.uniform(0, self._paper_height - height)
+		rot_angle = random.uniform(self._min_angle, self._max_angle)
+		scale = random.uniform(self._min_scale, self._max_scale)
+		T = cv2.getRotationMatrix2D((width / 2.0, height / 2.0), rot_angle, scale)
+		T[:,2] += (dx, dy)
 
 		input = cv2.warpAffine(input, T, (canvas_width, canvas_height))
 		#input = cv2.warpAffine(input, T, (canvas_width, canvas_height), cv2.INTER_CUBIC, cv2.BORDER_DEFAULT + cv2.BORDER_TRANSPARENT)
@@ -701,12 +764,12 @@ def text_generator_test():
 	font_color = None  # Uses random character colors.
 	#font_color = (random.randint(0, 255),) * 3  # Uses a random text color.
 	#font_color = (0, 0, 0) if is_white_background else (255, 255, 255)
-	char_space = 30
+	char_space = 30  # If char_space <= 0, widths of characters are used.
 	mask_threshold = 254 if is_white_background else 1
 
 	characterGenerator = MyCharacterGenerator(mask_threshold, is_white_background)
 	#characterTransformer = IdentityTransformer()
-	characterTransformer = RotationTransformer()
+	characterTransformer = RotationTransformer(-30, 30)
 	#characterTransformer = ImgaugAffineTransformer()
 	characterPositioner = MyCharacterPositioner(is_white_background)
 	textGenerator = TextGenerator(characterGenerator, characterTransformer, characterPositioner)
@@ -755,7 +818,7 @@ def scene_text_generator_test():
 
 	characterGenerator = MyCharacterGenerator(mask_threshold, is_white_background)
 	#characterTransformer = IdentityTransformer()
-	characterTransformer = RotationTransformer()
+	characterTransformer = RotationTransformer(-30, 30)
 	#characterTransformer = ImgaugAffineTransformer()
 	characterPositioner = MyCharacterPositioner(is_white_background)
 	textGenerator = TextGenerator(characterGenerator, characterTransformer, characterPositioner)
@@ -949,14 +1012,13 @@ def load_scene_text_dataset(dir_path, json_filename):
 
 	return image_filepaths, mask_filepaths, gt_texts, gt_boxes
 
-def scene_text_generation():
-	#--------------------
+def generate_hangeul_synthetic_scene_text_dataset():
 	is_white_background = False  # Uses white or black background.
 	mask_threshold = 254 if is_white_background else 1
 
 	characterGenerator = MyHangeulFontCharacterGenerator(mask_threshold, is_white_background)
 	#characterTransformer = IdentityTransformer()
-	characterTransformer = RotationTransformer()
+	characterTransformer = RotationTransformer(-30, 30)
 	#characterTransformer = ImgaugAffineTransformer()
 	characterPositioner = MyCharacterPositioner(is_white_background)
 	textGenerator = TextGenerator(characterGenerator, characterTransformer, characterPositioner)
@@ -995,7 +1057,7 @@ def main():
 	#scene_text_generator_test()
 
 	# Application.
-	scene_text_generation()
+	generate_hangeul_synthetic_scene_text_dataset()
 
 #%%------------------------------------------------------------------
 

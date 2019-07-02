@@ -265,13 +265,12 @@ class SceneTextGenerator(object):
 				#pixels = np.where(text > 0)
 
 				if 2 == text.ndim:
-					channels = 1
+					scene[:,:][pixels] = text[pixels]
 				elif 3 == text.ndim:
-					channels = text.shape[-1]
+					scene[:,:,:text.shape[-1]][pixels] = text[pixels]
 				else:
-					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
+					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(text.shape[-1], idx, text))
 					continue
-				scene[:,:,:channels][pixels] = text[pixels]
 				scene_mask[pixels] = idx + 1
 				#scene_text_masks.append(mask)
 				bboxes.append(bbox)
@@ -285,13 +284,12 @@ class SceneTextGenerator(object):
 				#pixels = np.where(text > 0)
 
 				if 2 == text.ndim:
-					channels = 1
+					scene_text[:,:][pixels] = text[pixels]
 				elif 3 == text.ndim:
-					channels = text.shape[-1]
+					scene_text[:,:,:text.shape[-1]][pixels] = text[pixels]
 				else:
-					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(channels, idx, text))
+					print('[SWL] Invalid number {} of channels in the {}-th text, {}.'.format(text.shape[-1], idx, text))
 					continue
-				scene_text[:,:,:channels][pixels] = text[pixels]
 				scene_mask[pixels] = idx + 1
 				#scene_text_masks.append(mask)
 				bboxes.append(bbox)

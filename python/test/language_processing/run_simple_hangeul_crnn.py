@@ -216,9 +216,21 @@ def main():
 	output_length_ph = tf.placeholder(tf.int32, shape=[None, 1], name='output_length_ph')
 	model_output_length_ph = tf.placeholder(tf.int32, shape=[None, 1], name='model_output_length_ph')
 
-	dataset = tf.data.Dataset.from_tensor_slices((input_ph, output_ph, output_length_ph, model_output_length_ph)).batch(BATCH_SIZE)
+	use_reinitializable_iterator = True
+	if not use_reinitializable_iterator:
+		# Use an initializable iterator.
+		dataset = tf.data.Dataset.from_tensor_slices((input_ph, output_ph, output_length_ph, model_output_length_ph)).batch(BATCH_SIZE)
 
-	iter = dataset.make_initializable_iterator()
+		iter = dataset.make_initializable_iterator()
+	else:
+		# Use a reinitializable iterator.
+		train_dataset = tf.data.Dataset.from_tensor_slices((input_ph, output_ph, output_length_ph, model_output_length_ph)).batch(BATCH_SIZE)
+		test_dataset = tf.data.Dataset.from_tensor_slices((input_ph, output_ph, output_length_ph, model_output_length_ph)).batch(BATCH_SIZE)
+
+		iter = tf.data.Iterator.from_structure(train_dataset.output_types, train_dataset.output_shapes)
+
+		train_init_op = iter.make_initializer(train_dataset)
+		test_init_op = iter.make_initializer(test_dataset)
 	input_elem, output_elem, output_length_elem, model_output_length_elem = iter.get_next()
 
 	#--------------------
@@ -244,8 +256,11 @@ def main():
 			for epoch in range(NUM_EPOCHS):
 				print('Epoch {}:'.format(epoch + 1))
 				start_time = time.time()
-				# Initialise iterator with train data.
-				sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
+				# Initialize iterator with train data.
+				if not use_reinitializable_iterator:
+					sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
+				else:
+					sess.run(train_init_op, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
 				train_loss = 0
 				batch_idx = 0
 				while True:
@@ -254,12 +269,12 @@ def main():
 						_, loss_value, elem_value = sess.run([train_op, loss, input_elem])
 						train_loss += loss_value * elem_value.shape[0]
 						if (batch_idx + 1) % 100 == 0:
-							print('\tBatch = {}: {:.6f} secs.'.format(batch_idx + 1, time.time() - start_time))
+							print('\tBatch = {}: {} secs.'.format(batch_idx + 1, time.time() - start_time))
 					except tf.errors.OutOfRangeError:
 						break
 					batch_idx += 1
 				train_loss /= train_images.shape[0]
-				print('\tLoss = {:.4f}: {:.6f} secs.'.format(train_loss, time.time() - start_time))
+				print('\tLoss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
 
 			# Save a model.
 			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
@@ -275,8 +290,11 @@ def main():
 		#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
 
 		# Switch to test data.
-		sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
-		#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
+		if not use_reinitializable_iterator:
+			sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
+			#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
+		else:
+			sess.run(test_init_op, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
 		start_time = time.time()
 		inferences = list()
 		while True:
@@ -284,7 +302,7 @@ def main():
 				inferences.append(sess.run(model_output))
 			except tf.errors.OutOfRangeError:
 				break
-		print('Inference time: {:.6f} secs.'.format(time.time() - start_time))
+		print('Inference time: {} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
