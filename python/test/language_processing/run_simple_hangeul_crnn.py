@@ -216,7 +216,7 @@ def main():
 	output_length_ph = tf.placeholder(tf.int32, shape=[None, 1], name='output_length_ph')
 	model_output_length_ph = tf.placeholder(tf.int32, shape=[None, 1], name='model_output_length_ph')
 
-	use_reinitializable_iterator = True
+	use_reinitializable_iterator = False
 	if not use_reinitializable_iterator:
 		# Use an initializable iterator.
 		dataset = tf.data.Dataset.from_tensor_slices((input_ph, output_ph, output_length_ph, model_output_length_ph)).batch(BATCH_SIZE)
@@ -276,8 +276,8 @@ def main():
 				train_loss /= train_images.shape[0]
 				print('\tLoss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
 
-			# Save a model.
-			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
+				# Save a model.
+				saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
 
 	#--------------------
 	# Infer.

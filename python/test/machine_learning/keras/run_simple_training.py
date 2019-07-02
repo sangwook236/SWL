@@ -6,6 +6,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from tensorflow.keras import backend as K
 #from sklearn import preprocessing
 import cv2
 import matplotlib.pyplot as plt
@@ -55,6 +56,48 @@ def load_data(image_height, image_width, image_channel, num_classes):
 
 	return train_inputs, train_outputs, test_inputs, test_outputs
 
+def generate_data(image_height, image_width, image_channel, num_classes, batch_size, is_training=False, shuffle=False):
+	# Pixel value: [0, 255].
+	if is_training:
+		(inputs, outputs), (_, _) = tf.keras.datasets.mnist.load_data()
+	else:
+		(_, _), (inputs, outputs) = tf.keras.datasets.mnist.load_data()
+
+	# Preprocessing.
+	inputs, outputs = preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes)
+
+	num_examples = len(inputs)
+	if len(outputs) != num_examples:
+		raise ValueError('Invalid data size: {} != {}'.format(num_examples, len(outputs)))
+	if batch_size is None:
+		batch_size = num_examples
+	if batch_size <= 0:
+		raise ValueError('Invalid batch size: {}'.format(batch_size))
+
+	indices = np.arange(num_examples)
+	if shuffle:
+		np.random.shuffle(indices)
+
+	start_idx = 0
+	while True:
+		end_idx = start_idx + batch_size
+		batch_indices = indices[start_idx:end_idx]
+		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			batch_input, batch_output = inputs[batch_indices], outputs[batch_indices]
+			if batch_input.size > 0 and batch_output.size > 0:  # If batch_input and batch_output are non-empty.
+				yield (batch_input, batch_output)
+
+		#start_idx = 0 if end_idx >= num_examples else end_idx
+		if end_idx >= num_examples:
+			indices = np.arange(num_examples)
+			if shuffle:
+				np.random.shuffle(indices)
+
+			start_idx = 0
+		else:
+			start_idx = end_idx
+
 #--------------------------------------------------------------------
 
 def create_model(input_shape, num_classes):
@@ -102,10 +145,16 @@ def main():
 
 	checkpoint_filepath = './mnist_cnn_weights.{epoch:02d}-{val_loss:.2f}.hdf5'
 
+	#sess = tf.Session(config=config)
+	#K.set_session(sess)
+	#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
+	#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
+
 	#--------------------
 	# Load data.
 
 	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, num_classes)
+	num_train_images, num_test_images = len(train_images), len(test_images)
 
 	print("Train image's shape = {}, train label's shape = {}.".format(train_images.shape, train_labels.shape))
 	print("Test image's shape = {}, test label's shape = {}.".format(test_images.shape, test_labels.shape))
@@ -114,6 +163,7 @@ def main():
 	# Create a model.
 
 	model = create_model((image_height, image_width, image_channel), num_classes)
+	#print('Model summary =', model.summary())
 
 	loss = tf.keras.losses.categorical_crossentropy
 	optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.0, nesterov=True)
@@ -129,8 +179,12 @@ def main():
 
 		print('Start training...')
 		start_time = time.time()
-		history = model.fit(train_images, train_labels, batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, validation_split=0.2, shuffle=True, initial_epoch=0, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
-		#history = model.fit_generator(train_images, train_labels, batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, validation_split=0.2, shuffle=True, initial_epoch=0, class_weight=None, max_queue_size=10, workers=1, use_multiprocessing=False, callbacks=[early_stopping_callback, model_checkpoint_callback])
+		if False:
+			history = model.fit(train_images, train_labels, batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, validation_split=0.2, shuffle=True, initial_epoch=0, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
+		else:
+			train_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=True, shuffle=True)
+			val_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
+			history = model.fit_generator(train_generator, epochs=NUM_EPOCHS, steps_per_epoch=num_train_images // BATCH_SIZE + 1, validation_data=val_generator, validation_steps=num_test_images // BATCH_SIZE + 1, shuffle=True, initial_epoch=0, class_weight=None, max_queue_size=10, workers=1, use_multiprocessing=True, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		#print('History =', history.history)
@@ -138,8 +192,11 @@ def main():
 
 		print('Start evaluating...')
 		start_time = time.time()
-		score = model.evaluate(test_images, test_labels, batch_size=BATCH_SIZE, sample_weight=None)
-		#score = model.evaluate_generator(generator, max_queue_size=10, workers=1, use_multiprocessing=False, sample_weight=None)
+		if False:
+			score = model.evaluate(test_images, test_labels, batch_size=BATCH_SIZE, sample_weight=None)
+		else:
+			val_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
+			score = model.evaluate_generator(val_generator, steps=num_test_images // BATCH_SIZE + 1, max_queue_size=10, workers=1, use_multiprocessing=True)
 		print('\tEvaluation: loss = {}, accuracy = {}.'.format(*score))
 		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
@@ -167,8 +224,11 @@ def main():
 
 	print('Start inferring...')
 	start_time = time.time()
-	inferences = loaded_model.predict(test_images, batch_size=BATCH_SIZE)
-	#inferences = loaded_model.predict_generator(generator, max_queue_size=10, workers=1, use_multiprocessing=False)
+	if False:
+		inferences = loaded_model.predict(test_images, batch_size=BATCH_SIZE)
+	else:
+		test_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
+		inferences = loaded_model.predict_generator(test_generator, steps=num_test_images // BATCH_SIZE + 1, max_queue_size=10, workers=1, use_multiprocessing=True)
 	print('End inferring: {} secs.'.format(time.time() - start_time))
 
 	if inferences is not None:

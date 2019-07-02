@@ -25,11 +25,11 @@ class UNet(KerasNeuralNetwork):
 		if 'tf' == backend:
 			inputs = tf_input
 			concat_axis = 3
-			data_format = "channels_last"
+			data_format = 'channels_last'
 		else:
 			inputs = Input(shape=input_shape)
 			concat_axis = 1
-			data_format = "channels_first"
+			data_format = 'channels_first'
 
 		# Conv 1.
 		conv1 = Conv2D(64, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv1_1')(inputs)
@@ -106,11 +106,11 @@ class UNet(KerasNeuralNetwork):
 		if 'tf' == backend:
 			inputs = tf_input
 			concat_axis = 3
-			data_format = "channels_last"
+			data_format = 'channels_last'
 		else:
 			inputs = Input(shape=input_shape)
 			concat_axis = 1
-			data_format = "channels_first"
+			data_format = 'channels_first'
 
 		# Conv 1.
 		conv1 = Conv2D(32, (3, 3), activation='relu', padding='same', data_format=data_format, name='conv1_1')(inputs)
