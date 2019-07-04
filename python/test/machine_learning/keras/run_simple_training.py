@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time
+import os, time, datetime, math
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -143,7 +143,12 @@ def main():
 	num_classes = 10
 	BATCH_SIZE, NUM_EPOCHS = 128, 30
 
-	checkpoint_filepath = './mnist_cnn_weights.{epoch:02d}-{val_loss:.2f}.hdf5'
+	output_dir_prefix = 'simple_training'
+	output_dir_timestamp = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_timestamp))
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
 
 	#sess = tf.Session(config=config)
 	#K.set_session(sess)
@@ -153,11 +158,17 @@ def main():
 	#--------------------
 	# Load data.
 
+	print('Start loading dataset...')
+	start_time = time.time()
 	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, num_classes)
+	print('End loading dataset: {} secs.'.format(time.time() - start_time))
+
 	num_train_images, num_test_images = len(train_images), len(test_images)
 
-	print("Train image's shape = {}, train label's shape = {}.".format(train_images.shape, train_labels.shape))
-	print("Test image's shape = {}, test label's shape = {}.".format(test_images.shape, test_labels.shape))
+	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
+	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
+	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
+	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
 
 	#--------------------
 	# Create a model.
@@ -184,7 +195,7 @@ def main():
 		else:
 			train_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=True, shuffle=True)
 			val_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
-			history = model.fit_generator(train_generator, epochs=NUM_EPOCHS, steps_per_epoch=num_train_images // BATCH_SIZE + 1, validation_data=val_generator, validation_steps=num_test_images // BATCH_SIZE + 1, shuffle=True, initial_epoch=0, class_weight=None, max_queue_size=10, workers=1, use_multiprocessing=True, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit_generator(train_generator, epochs=NUM_EPOCHS, steps_per_epoch=int(math.ceil(num_train_images / BATCH_SIZE)), validation_data=val_generator, validation_steps=int(math.ceil(num_test_images / BATCH_SIZE)), shuffle=True, initial_epoch=0, class_weight=None, max_queue_size=10, workers=1, use_multiprocessing=True, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		#print('History =', history.history)
@@ -196,7 +207,7 @@ def main():
 			score = model.evaluate(test_images, test_labels, batch_size=BATCH_SIZE, sample_weight=None)
 		else:
 			val_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
-			score = model.evaluate_generator(val_generator, steps=num_test_images // BATCH_SIZE + 1, max_queue_size=10, workers=1, use_multiprocessing=True)
+			score = model.evaluate_generator(val_generator, steps=int(math.ceil(num_test_images / BATCH_SIZE)), max_queue_size=10, workers=1, use_multiprocessing=True)
 		print('\tEvaluation: loss = {}, accuracy = {}.'.format(*score))
 		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
@@ -205,9 +216,9 @@ def main():
 			json_string = model.to_json()
 			#yaml_string = model.to_yaml()
 			# Save only a model's weights.
-			model.save_weights('./mnist_cnn_weights.h5')
+			model.save_weights(os.path.join(output_dir_path, 'model_weights.h5'))
 		else:
-			model.save('./mnist_cnn.h5')
+			model.save(os.path.join(output_dir_path, 'model.h5'))
 		del model
 
 	#--------------------
@@ -218,9 +229,9 @@ def main():
 		loaded_model = keras.models.model_from_json(json_string)
 		#loaded_model = keras.models.model_from_yaml(yaml_string)
 		# Load only a model's weights.
-		loaded_model.load_weights('./mnist_cnn_weights.h5')
+		loaded_model.load_weights(os.path.join(output_dir_path, 'model_weights.h5'))
 	else:
-		loaded_model = tf.keras.models.load_model('./mnist_cnn.h5')
+		loaded_model = tf.keras.models.load_model(os.path.join(output_dir_path, 'model.h5'))
 
 	print('Start inferring...')
 	start_time = time.time()
@@ -228,16 +239,18 @@ def main():
 		inferences = loaded_model.predict(test_images, batch_size=BATCH_SIZE)
 	else:
 		test_generator = generate_data(image_height, image_width, image_channel, num_classes, BATCH_SIZE, is_training=False, shuffle=False)
-		inferences = loaded_model.predict_generator(test_generator, steps=num_test_images // BATCH_SIZE + 1, max_queue_size=10, workers=1, use_multiprocessing=True)
+		inferences = loaded_model.predict_generator(test_generator, steps=int(math.ceil(num_test_images / BATCH_SIZE)), max_queue_size=10, workers=1, use_multiprocessing=True)
 	print('End inferring: {} secs.'.format(time.time() - start_time))
 
 	if inferences is not None:
-		if num_classes >= 2:
+		if num_classes > 2:
 			inferences = np.argmax(inferences, -1)
 			ground_truths = np.argmax(test_labels, -1)
-		else:
+		elif 2 == num_classes:
 			inferences = np.around(inferences)
 			ground_truths = test_labels
+		else:
+			raise ValueError('Invalid number of classes')
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
 		print('Accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 	else:

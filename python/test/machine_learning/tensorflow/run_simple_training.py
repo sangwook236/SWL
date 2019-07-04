@@ -104,18 +104,20 @@ def main():
 	BATCH_SIZE, NUM_EPOCHS = 128, 30
 
 	checkpoint_dir_path = './tf_checkpoint'
-	try:
-		os.makedirs(checkpoint_dir_path)
-	except FileExistsError:
-		pass
+	os.makedirs(checkpoint_dir_path, exist_ok=True)
 
 	#--------------------
 	# Load data.
 
+	print('Start loading dataset...')
+	start_time = time.time()
 	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, num_classes)
+	print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
-	print("Train image's shape = {}, train label's shape = {}.".format(train_images.shape, train_labels.shape))
-	print("Test image's shape = {}, test label's shape = {}.".format(test_images.shape, test_labels.shape))
+	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
+	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
+	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
+	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
 
 	#--------------------
 	input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel])
@@ -233,12 +235,14 @@ def main():
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
-			if num_classes >= 2:
+			if num_classes > 2:
 				inferences = np.argmax(inferences, -1)
 				ground_truths = np.argmax(test_labels, -1)
-			else:
+			elif 2 == num_classes:
 				inferences = np.around(inferences)
 				ground_truths = test_labels
+			else:
+				raise ValueError('Invalid number of classes')
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
 			print('Accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:

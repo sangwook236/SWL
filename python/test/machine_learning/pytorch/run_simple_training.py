@@ -63,14 +63,20 @@ def main():
 	#--------------------
 	# Load data.
 
+	print('Start loading dataset...')
+	start_time = time.time()
 	train_loader, test_loader = load_data(BATCH_SIZE)
+	print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 	data_iter = iter(train_loader)
 	images, labels = data_iter.next()
-	print("Train image's shape = {}, Train label's shape = {}.".format(images.shape, labels.shape))
+	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
+	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
+
 	data_iter = iter(test_loader)
 	images, labels = data_iter.next()
-	print("Test image's shape = {}, Test label's shape = {}.".format(images.shape, labels.shape))
+	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
+	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
 
 	#--------------------
 	# Create a model.
