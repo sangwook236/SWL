@@ -16,6 +16,92 @@ import swl.language_processing.phd08_dataset as phd08_dataset
 import swl.machine_vision.util as swl_cv_util
 from swl.util.util import make_dir
 
+def generate_hangeul_font_list():
+	if 'posix' == os.name:
+		system_font_dir = '/usr/share/fonts'
+		font_dir = '/home/sangwook/work/font'
+	else:
+		system_font_dir = 'C:/Windows/Fonts'
+		font_dir = 'D:/work/font'
+
+	"""
+	if 'posix' == os.name:
+		font_info_list = [
+			(system_font_dir + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+			(system_font_dir + '/truetype/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+		]
+	else:
+		font_info_list = [
+			(system_font_dir + '/gulim.ttc', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+			(system_font_dir + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+		]
+	font_info_list += [
+	"""
+	font_info_list = [
+		(font_dir + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+		(font_dir + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+		(font_dir + '/gabia_bombaram.ttf', 1),
+		(font_dir + '/gabia_napjakBlock.ttf', 1),
+		(font_dir + '/gabia_solmee.ttf', 1),
+		(font_dir + '/godoMaum.ttf', 1),
+		(font_dir + '/godoRounded R.ttf', 1),
+		#(font_dir + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
+		(font_dir + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
+		(font_dir + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
+		(font_dir + '/HS4.ttf', 1),  # HS두꺼비체.ttf
+		#(font_dir + '/HS5.ttf', 1),  # HS봄바람체1.0.ttf
+		(font_dir + '/HS6.ttf', 1),  # HS봄바람체2.0.ttf
+		(font_dir + '/HS7.ttf', 1),  # HS여름물빛체.ttf
+		(font_dir + '/NanumBarunGothic.ttf', 1),
+		(font_dir + '/NanumBarunpenR.ttf', 1),
+		(font_dir + '/NanumBrush.ttf', 1),
+		(font_dir + '/NanumGothic.ttf', 1),
+		(font_dir + '/NanumMyeongjo.ttf', 1),
+		(font_dir + '/NanumPen.ttf', 1),
+		(font_dir + '/NanumSquareR.ttf', 1),
+		#(font_dir + '/NanumSquareRoundR.ttf', 1),
+		(font_dir + '/SDMiSaeng.ttf', 1),
+	]
+
+	font_list = list()
+	for font_filepath, font_count in font_info_list:
+		for font_idx in range(font_count):
+			font_list.append((font_filepath, font_idx))
+
+	return font_list
+
+def generate_phd08_dict():
+	if True:
+		# Loads PHD08 image dataset.
+		phd08_image_dataset_info_filepath = './phd08_png_dataset.csv'
+		print('Start loading PHD08 image dataset...')
+		start_time = time.time()
+		handwriting_dict = phd08_dataset.load_phd08_image(phd08_image_dataset_info_filepath, is_dark_background=False)
+		for key, values in handwriting_dict.items():
+			handwriting_dict[key] = list()
+			for val in values:
+				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
+				handwriting_dict[key].append(val)
+		print('End loading PHD08 image dataset: {} secs.'.format(time.time() - start_time))
+	elif False:
+		# Loads PHD08 npy dataset.
+		# Generate an info file for npy files generated from the PHD08 dataset.
+		#	Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
+		phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
+		print('Start loading PHD08 npy dataset...')
+		start_time = time.time()
+		handwriting_dict = phd08_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
+		for key, values in handwriting_dict.items():
+			handwriting_dict[key] = list()
+			for val in values:
+				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
+				handwriting_dict[key].append(val)
+		print('End loading PHD08 npy dataset: {} secs.'.format(time.time() - start_time))
+	else:
+		handwriting_dict = dict()
+
+	return handwriting_dict
+
 #class IdentityTransformer(Transformer):
 class IdentityTransformer(object):
 	"""Transforms an object of numpy.array.
@@ -320,86 +406,8 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 
 		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
-		# Font.
-		if 'posix' == os.name:
-			system_font_dir = '/usr/share/fonts'
-			font_dir = '/home/sangwook/work/font'
-		else:
-			system_font_dir = 'C:/Windows/Fonts'
-			font_dir = 'D:/work/font'
-
-		"""
-		if 'posix' == os.name:
-			font_info_list = [
-				(system_font_dir + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-				(system_font_dir + '/truetype/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-			]
-		else:
-			font_info_list = [
-				(system_font_dir + '/gulim.ttc', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-				(system_font_dir + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-			]
-		font_info_list += [
-		"""
-		font_info_list = [
-			(font_dir + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-			(font_dir + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-			(font_dir + '/gabia_bombaram.ttf', 1),
-			(font_dir + '/gabia_napjakBlock.ttf', 1),
-			(font_dir + '/gabia_solmee.ttf', 1),
-			(font_dir + '/godoMaum.ttf', 1),
-			(font_dir + '/godoRounded R.ttf', 1),
-			#(font_dir + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
-			(font_dir + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
-			(font_dir + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
-			(font_dir + '/HS4.ttf', 1),  # HS두꺼비체.ttf
-			#(font_dir + '/HS5.ttf', 1),  # HS봄바람체1.0.ttf
-			(font_dir + '/HS6.ttf', 1),  # HS봄바람체2.0.ttf
-			(font_dir + '/HS7.ttf', 1),  # HS여름물빛체.ttf
-			(font_dir + '/NanumBarunGothic.ttf', 1),
-			(font_dir + '/NanumBarunpenR.ttf', 1),
-			(font_dir + '/NanumBrush.ttf', 1),
-			(font_dir + '/NanumGothic.ttf', 1),
-			(font_dir + '/NanumMyeongjo.ttf', 1),
-			(font_dir + '/NanumPen.ttf', 1),
-			(font_dir + '/NanumSquareR.ttf', 1),
-			#(font_dir + '/NanumSquareRoundR.ttf', 1),
-			(font_dir + '/SDMiSaeng.ttf', 1),
-		]
-
-		self._font_list = list()
-		for font_filepath, font_count in font_info_list:
-			for font_idx in range(font_count):
-				self._font_list.append((font_filepath, font_idx))
-
-		if True:
-			# Loads PHD08 image dataset.
-			phd08_image_dataset_info_filepath = './phd08_png_dataset.csv'
-			print('Start loading PHD08 image dataset...')
-			start_time = time.time()
-			self._handwriting_dict = phd08_dataset.load_phd08_image(phd08_image_dataset_info_filepath, is_dark_background=False)
-			for key, values in self._handwriting_dict.items():
-				self._handwriting_dict[key] = list()
-				for val in values:
-					val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
-					self._handwriting_dict[key].append(val)
-			print('End loading PHD08 image dataset: {} secs.'.format(time.time() - start_time))
-		elif False:
-			# Loads PHD08 npy dataset.
-			# Generate an info file for npy files generated from the PHD08 dataset.
-			#	Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
-			phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
-			print('Start loading PHD08 npy dataset...')
-			start_time = time.time()
-			self._handwriting_dict = phd08_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
-			for key, values in self._handwriting_dict.items():
-				self._handwriting_dict[key] = list()
-				for val in values:
-					val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
-					self._handwriting_dict[key].append(val)
-			print('End loading PHD08 npy dataset: {} secs.'.format(time.time() - start_time))
-		else:
-			self._handwriting_dict = dict()
+		self._font_list = generate_hangeul_font_list()
+		self._handwriting_dict = generate_phd08_dict()
 
 	def __call__(self, char, font_size, *args, **kwargs):
 		"""Generates a character and its mask of numpy.array.
@@ -441,31 +449,17 @@ class MyCharacterAlphaMattePositioner(object):
 	"""Place characters to construct a text line.
 	"""
 
-	def __call__(self, char_alpha_list, char_space, *args, **kwargs):
+	def __call__(self, char_alpha_list, char_space_ratio, *args, **kwargs):
 		"""Places characters to construct a single text line.
 
 		Inputs:
 			char_alpha_list (a list of numpy.array): A list of character alpha mattes of type numpy.array to compose a text line.
-			char_space (int): A space between characters.
-				If char_space <= 0, default widths of characters are used.
+			char_space_ratio (float): A ratio of space between characters.
 		Outputs:
 			A list of coordinates of character alpha mattes (a list of (int, int)): A list of (y position, x position) of the character alpha mattes.
-				A text line can be constructed by MyCharacterAlphaMattePositioner.constructTextLine().
 		"""
 
-		if char_space <= 0:
-			max_height, max_width = 0, 0
-			for alpha in char_alpha_list:
-				if alpha.shape[0] > max_height:
-					max_height = alpha.shape[0]
-				max_width += alpha.shape[1]
-		else:
-			max_height = 0
-			for alpha in char_alpha_list:
-				if alpha.shape[0] > max_height:
-					max_height = alpha.shape[0]
-			#max_width = math.ceil(char_alpha_list[0].shape[1] / 2) + (len(char_alpha_list) - 1) * char_space + math.ceil(char_alpha_list[-1].shape[1] / 2)
-			max_width = (len(char_alpha_list) - 1) * char_space + math.ceil(char_alpha_list[-1].shape[1])
+		max_height = reduce(lambda x, y: max(x, y.shape[0]), char_alpha_list, 0)
 
 		char_alpha_coordinate_list = list()
 		sx = 0
@@ -474,9 +468,65 @@ class MyCharacterAlphaMattePositioner(object):
 
 			char_alpha_coordinate_list.append((sy, sx))
 
-			sx += alpha.shape[1] if char_space <= 0 else char_space
+			sx += math.ceil(alpha.shape[1] * char_space_ratio)
 
 		return char_alpha_coordinate_list
+
+class MySimplePrintedHangeulTextGenerator(object):
+	"""Generates a simple printed Hangeul text line and masks for individual characters.
+	"""
+
+	def __init__(self, characterTransformer, characterPositioner):
+		"""Constructor.
+
+		Inputs:
+			characterTransformer (Transformer): An object to tranform each character.
+			characterPositioner (CharacterPositioner): An object to place characters.
+		"""
+
+		self._characterTransformer = characterTransformer
+		self._characterPositioner = characterPositioner
+
+		self._text_offset = (0, 0)
+		self._crop_text_area = True
+		self._draw_text_border = False
+
+		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+
+		self._font_list = generate_hangeul_font_list()
+		#self._handwriting_dict = generate_phd08_dict()
+
+	def __call__(self, text, char_space_ratio, font_size, *args, **kwargs):
+		"""Generates a single text line and masks for individual characters.
+
+		Inputs:
+			text (str): Characters to compose a text line.
+			char_space_ratio (float): A ratio of space between characters.
+			font_size (int): A font size for the characters.
+		Outputs:
+			char_alpha_list (a list of numpy.array): A list of character alpha mattes.
+			char_alpha_coordinate_list (a list of (int, int)): A list of (y position, x position) of character alpha mattes.
+				A text line can be constructed by MyTextGenerator.constructTextLine().
+		"""
+
+		image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
+
+		#print('Generate a printed Hangeul letter.')
+		font_id = random.randrange(len(self._font_list))
+		font_type, font_index = self._font_list[font_id]
+
+		font_color = (255, 255, 255)
+		bg_color = (0, 0, 0)
+
+		char_alpha_list = list()
+		for ch in text:
+			alpha = swl_langproc_util.generate_text_image(ch, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border)
+			alpha = cv2.cvtColor(np.array(alpha), cv2.COLOR_BGR2GRAY).astype(np.float32) / 255
+			alpha, _, _ = self._characterTransformer(alpha, None, *args, **kwargs)
+			char_alpha_list.append(alpha)
+
+		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
+		return char_alpha_list, char_alpha_coordinate_list
 
 #class MyTextGenerator(TextGenerator):
 class MyTextGenerator(object):
@@ -496,20 +546,17 @@ class MyTextGenerator(object):
 		self._characterTransformer = characterTransformer
 		self._characterPositioner = characterPositioner
 
-	def __call__(self, text, char_space, font_size, *args, **kwargs):
+	def __call__(self, text, char_space_ratio, font_size, *args, **kwargs):
 		"""Generates a single text line and masks for individual characters.
 
 		Inputs:
 			text (str): Characters to compose a text line.
-			char_space (int): A space between characters.
-				If char_space <= 0, widths of characters are used.
+			char_space_ratio (float): A ratio of space between characters.
 			font_size (int): A font size for the characters.
-			font_color (tuple): A font color for the characters. If None, random colors are used.
-			is_single_mask_generated (bool): Specifies whether a list of masks or a single mask is generated.
 		Outputs:
-			A text line (numpy.array): A text line of type 2D numpy.array made up of char_list.
-			Masks (a list of (numpy.array, int, int)) or a mask (numpy.array): A list of masks and (y position, x position) of characters or a mask of the text line.
-				Which mask is generated depends on the input parameter is_single_mask_generated.
+			char_alpha_list (a list of numpy.array): A list of character alpha mattes.
+			char_alpha_coordinate_list (a list of (int, int)): A list of (y position, x position) of character alpha mattes.
+				A text line can be constructed by MyTextGenerator.constructTextLine().
 		"""
 
 		char_alpha_list = list()
@@ -518,7 +565,7 @@ class MyTextGenerator(object):
 			alpha, _, _ = self._characterTransformer(alpha, None, *args, **kwargs)
 			char_alpha_list.append(alpha)
 
-		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space, *args, **kwargs)
+		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
 	@staticmethod
@@ -548,11 +595,13 @@ class MyTextGenerator(object):
 				text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 				text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 		else:
+			font_color = list(map(lambda x: x / 255, font_color))
 			for alpha, (sy, sx) in zip(char_alpha_list, char_alpha_coordinate_list):
 				#pixels = np.where(alpha > 0)
 				#text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]][pixels] = alpha[pixels]	
 				text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full(alpha.shape + (3,), font_color, dtype=np.float32), text_line[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
 				text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]] = swl_cv_util.blend_image(np.full_like(alpha, 1.0, dtype=np.float32), text_line_alpha[sy:sy+alpha.shape[0],sx:sx+alpha.shape[1]], alpha)
+
 		#return text_line, text_line_alpha
 		return np.round(text_line * 255).astype(np.uint8), text_line_alpha
 
@@ -612,7 +661,6 @@ class MySceneTextGenerator(object):
 			#scene_text_masks.append(alpha)
 			bboxes.append(bbox)
 
-		print('***********', scene_mask.shape, scene_mask.dtype)
 		return np.round(scene).astype(np.uint8), scene_mask, np.array(bboxes)
 		#return np.round(scene).astype(np.uint8), scene_text_masks, np.array(bboxes)
 
@@ -681,9 +729,9 @@ def hangeul_letter_generator_test():
 
 def text_generator_test():
 	font_size = 32
-	font_color = None  # Uses random character colors.
-	#font_color = (random.randint(0, 255),) * 3  # Uses a random text color.
-	char_space = 30  # If char_space <= 0, widths of characters are used.
+	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
+	font_color = None  # Uses random font colors.
+	char_space_ratio = 1.2
 
 	characterAlphaMatteGenerator = MyHangeulCharacterAlphaMatteGenerator()
 	#characterTransformer = IdentityTransformer()
@@ -692,7 +740,7 @@ def text_generator_test():
 	characterAlphaMattePositioner = MyCharacterAlphaMattePositioner()
 	textGenerator = MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
 
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space, font_size)
+	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio, font_size)
 	text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None)
 
 	#--------------------
@@ -727,8 +775,8 @@ def text_generator_test():
 	cv2.destroyAllWindows()
 
 def scene_text_generator_test():
-	font_color = None  # Uses random character colors.
-	#font_color = (random.randint(0, 255),) * 3  # Uses a random text color.
+	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
+	font_color = None  # Uses random font colors.
 
 	characterAlphaMatteGenerator = MyHangeulCharacterAlphaMatteGenerator()
 	#characterTransformer = IdentityTransformer()
@@ -740,19 +788,19 @@ def scene_text_generator_test():
 	#--------------------
 	texts, text_alphas = list(), list()
 
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space=30, font_size=32)
+	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio=0.9, font_size=32)
 	text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	#char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ', char_space=40, font_size=24)
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLM', char_space=40, font_size=24)
+	#char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ', char_space_ratio=1.6, font_size=24)
+	char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLM', char_space_ratio=1.6, font_size=24)
 	text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	#char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklmnopqrstuvwxyz', char_space=14, font_size=16)
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklm', char_space=14, font_size=16)
+	#char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklmnopqrstuvwxyz', char_space_ratio=2.0, font_size=16)
+	char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklm', char_space_ratio=2.0, font_size=16)
 	text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
@@ -777,7 +825,6 @@ def scene_text_generator_test():
 		raise ValueError('Invalid image shape')
 
 	scene, scene_text_mask, _ = sceneTextGenerator(scene, texts, text_alphas)
-	#scene, scene_text_mask, _ = sceneTextGenerator(scene, texts, text_alphas)
 
 	#--------------------
 	if 'posix' == os.name:
@@ -794,6 +841,245 @@ def scene_text_generator_test():
 		cv2.waitKey(0)
 
 		cv2.destroyAllWindows()
+
+def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, num_images, batch_size, font_color=None, bg_color=None):
+	sceneTextGenerator = MySceneTextGenerator(IdentityTransformer())
+
+	scene_list, scene_text_mask_list = list(), list()
+	for idx in range(num_images):
+		font_size = random.randint(*font_size_interval)
+		char_space_ratio = random.uniform(*char_space_ratio_interval)
+
+		text = random.sample(word_set, 1)[0]
+
+		char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
+		text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+
+		if bg_color is None:
+			# Grayscale background.
+			bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
+		else:
+			bg = np.full_like(text_line, bg_color, dtype=np.uint8)
+
+		scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+		scene_list.append(scene)
+		scene_text_mask_list.append(scene_text_mask)
+
+		if 0 == (idx + 1) % batch_size:
+			yield scene_list, scene_text_mask_list
+			scene_list, scene_text_mask_list = list(), list()
+
+	if scene_list and scene_text_mask_list:
+		yield scene_list, scene_text_mask_list
+
+def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval, num_images, batch_size, font_color=None):
+	scene_list, scene_text_mask_list, bboxes_list = list(), list(), list()
+	for idx in range(num_images):
+		num_texts_per_image = random.randint(*text_count_interval)
+
+		texts, text_images, text_alphas = list(), list(), list()
+		for ii in range(num_texts_per_image):
+			font_size = random.randint(*font_size_interval)
+			char_space_ratio = random.uniform(*char_space_ratio_interval)
+
+			text = random.sample(word_set, 1)[0]
+
+			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
+			text_line_image, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+
+			texts.append(text)
+			text_images.append(text_line_image)
+			text_alphas.append(text_line_alpha)
+
+		#--------------------
+		scene = sceneProvider()
+		if 3 == scene.ndim and 3 != scene.shape[-1]:
+			#raise ValueError('Invalid image shape')
+			print('Error: Invalid image shape.')
+			continue
+
+		scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
+		scene_list.append(scene)
+		scene_text_mask_list.append(scene_text_mask)
+		bboxes_list.append(bboxes)
+
+		if 0 == (idx + 1) % batch_size:
+			yield scene_list, scene_text_mask_list, bboxes_list
+			scene_list, scene_text_mask_list, bboxes_list = list(), list(), list()
+
+	if scene_list and scene_text_mask_list and bboxes_list:
+		yield scene_list, scene_text_mask_list, bboxes_list
+
+def generate_simple_text_lines_test():
+	word_set = set()
+	word_set.add('abc')
+	word_set.add('defg')
+	word_set.add('hijklmn')
+	word_set.add('가나')
+	word_set.add('다라마바사')
+	word_set.add('자차카타파하')
+	word_set.add('123')
+	word_set.add('45')
+	word_set.add('67890')
+
+	#--------------------
+	characterTransformer = IdentityTransformer()
+	#characterTransformer = RotationTransformer(-30, 30)
+	#characterTransformer = ImgaugAffineTransformer()
+	characterAlphaMattePositioner = MyCharacterAlphaMattePositioner()
+	textGenerator = MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+
+	#--------------------
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
+	font_color = (255, 255, 255)
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
+	#font_color = None  # Uses random font colors.
+	bg_color = (0, 0, 0)
+	#bg_color = None  # Uses random colors.
+
+	num_images, batch_size= 100, 30
+	generator = generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), num_images, batch_size, font_color, bg_color)
+
+	#--------------------
+	for scene_list, scene_text_mask_list in generator:
+		for scene, scene_text_mask in zip(scene_list, scene_text_mask_list):
+			if 'posix' == os.name:
+				cv2.imwrite('./scene.png', scene)
+				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
+			else:
+				#scene_text_mask[scene_text_mask > 0] = 255
+				#scene_text_mask = scene_text_mask.astype(np.uint8)
+				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
+				scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
+
+				cv2.imshow('Scene', scene)
+				cv2.imshow('Scene Mask', scene_text_mask)
+				cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def generate_text_lines_test():
+	word_set = set()
+	word_set.add('abc')
+	word_set.add('defg')
+	word_set.add('hijklmn')
+	word_set.add('가나')
+	word_set.add('다라마바사')
+	word_set.add('자차카타파하')
+	word_set.add('123')
+	word_set.add('45')
+	word_set.add('67890')
+
+	#--------------------
+	characterAlphaMatteGenerator = MyHangeulCharacterAlphaMatteGenerator()
+	#characterTransformer = IdentityTransformer()
+	characterTransformer = RotationTransformer(-30, 30)
+	#characterTransformer = ImgaugAffineTransformer()
+	characterAlphaMattePositioner = MyCharacterAlphaMattePositioner()
+	textGenerator = MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+
+	#--------------------
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
+	#font_color = (255, 255, 255)
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
+	font_color = None  # Uses random font colors.
+	#bg_color = (0, 0, 0)
+	bg_color = None  # Uses random colors.
+
+	num_images, batch_size= 100, 30
+	generator = generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), num_images, batch_size, font_color, bg_color)
+
+	#--------------------
+	for scene_list, scene_text_mask_list in generator:
+		for scene, scene_text_mask in zip(scene_list, scene_text_mask_list):
+			if 'posix' == os.name:
+				cv2.imwrite('./scene.png', scene)
+				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
+			else:
+				#scene_text_mask[scene_text_mask > 0] = 255
+				#scene_text_mask = scene_text_mask.astype(np.uint8)
+				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
+				scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
+
+				cv2.imshow('Scene', scene)
+				cv2.imshow('Scene Mask', scene_text_mask)
+				cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def generate_scene_texts_test():
+	word_set = set()
+	word_set.add('abc')
+	word_set.add('defg')
+	word_set.add('hijklmn')
+	word_set.add('가나')
+	word_set.add('다라마바사')
+	word_set.add('자차카타파하')
+	word_set.add('123')
+	word_set.add('45')
+	word_set.add('67890')
+
+	#--------------------
+	characterAlphaMatteGenerator = MyHangeulCharacterAlphaMatteGenerator()
+	#characterTransformer = IdentityTransformer()
+	characterTransformer = RotationTransformer(-30, 30)
+	#characterTransformer = ImgaugAffineTransformer()
+	characterAlphaMattePositioner = MyCharacterAlphaMattePositioner()
+	textGenerator = MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+
+	#--------------------
+	if True:
+		textTransformer = PerspectiveTransformer()
+	else:
+		textTransformer = ProjectiveTransformer()
+	sceneTextGenerator = MySceneTextGenerator(textTransformer)
+
+	if True:
+		sceneProvider = MySceneProvider()
+	else:
+		# Grayscale background.
+		scene_shape = (800, 1000, 3)  # Some handwritten characters have 3 channels.
+		sceneProvider = MyGrayscaleBackgroundProvider(scene_shape)
+
+	#--------------------
+	min_text_count_per_image, max_text_count_per_image = 2, 10
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
+	font_color = None  # Uses random font colors.
+
+	num_images, batch_size= 100, 30
+	generator = generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, (min_text_count_per_image, max_text_count_per_image), (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), num_images, batch_size, font_color)
+
+	#--------------------
+	for scene_list, scene_text_mask_list, bboxes_list in generator:
+		for scene, scene_text_mask, bboxes in zip(scene_list, scene_text_mask_list, bboxes_list):
+			if 'posix' == os.name:
+				cv2.imwrite('./scene.png', scene)
+				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
+			else:
+				#scene_text_mask[scene_text_mask > 0] = 255
+				#scene_text_mask = scene_text_mask.astype(np.uint8)
+				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
+				scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
+
+				# Draw bounding rectangles.
+				for box in bboxes:
+					scene = cv2.line(scene, (box[0,0], box[0,1]), (box[1,0], box[1,1]), (0, 0, 255), 2, cv2.LINE_8)
+					scene = cv2.line(scene, (box[1,0], box[1,1]), (box[2,0], box[2,1]), (0, 255, 0), 2, cv2.LINE_8)
+					scene = cv2.line(scene, (box[2,0], box[2,1]), (box[3,0], box[3,1]), (255, 0, 0), 2, cv2.LINE_8)
+					scene = cv2.line(scene, (box[3,0], box[3,1]), (box[0,0], box[0,1]), (255, 0, 255), 2, cv2.LINE_8)
+
+				cv2.imshow('Scene', scene)
+				cv2.imshow('Scene Mask', scene_text_mask)
+				cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
 
 def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sceneProvider, textGenerator, num_images):
 	scene_subdir_name = 'scene'
@@ -836,7 +1122,6 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	min_char_count_per_text, max_char_count_per_text = 1, 10
 	min_text_count_per_image, max_text_count_per_image = 2, 10
 	min_font_size, max_font_size = 15, 30
-	min_char_space, max_char_space = 10, 60
 	min_char_space_ratio, max_char_space_ratio = 0.8, 3
 
 	#--------------------
@@ -847,11 +1132,10 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 		texts, text_images, text_alphas = list(), list(), list()
 		for ii in range(num_texts_per_image):
 			font_size = random.randint(min_font_size, max_font_size)
-			char_space = random.randint(min_char_space, max_char_space)
-			char_space = max(max(char_space, int(font_size * min_char_space_ratio)), min(char_space, int(font_size * max_char_space_ratio)))
+			char_space_ratio = random.uniform(min_char_space_ratio, max_char_space_ratio)
 
-			font_color = None  # Uses random character colors.
 			#font_color = (random.randint(0, 255),) * 3  # Uses a random text color.
+			font_color = None  # Uses random font colors.
 
 			num_chars_per_text = random.randint(min_char_count_per_text, max_char_count_per_text)
 
@@ -864,7 +1148,7 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			charset_len = len(charset)
 			text = ''.join(list(charset[random.randrange(charset_len)] for _ in range(num_chars_per_text)))
 
-			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space=char_space, font_size=font_size)
+			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio=char_space_ratio, font_size=font_size)
 			text_line_image, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 
 			texts.append(text)
@@ -879,8 +1163,6 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			continue
 
 		scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
-		#scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
-		#scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
 
 		#--------------------
 		if True:
@@ -983,7 +1265,12 @@ def main():
 	#scene_text_generator_test()
 
 	# Application.
-	generate_hangeul_synthetic_scene_text_dataset()
+	#generate_hangeul_synthetic_scene_text_dataset()
+
+	# Create a text generator.
+	#generate_simple_text_lines_test()
+	#generate_text_lines_test()
+	generate_scene_texts_test()
 
 #%%------------------------------------------------------------------
 
