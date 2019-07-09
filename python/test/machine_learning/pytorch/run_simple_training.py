@@ -56,11 +56,12 @@ def main():
 
 	#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 	num_classes = 10
+
 	BATCH_SIZE, NUM_EPOCHS = 128, 30
 
 	model_file_path = './mnist_cnn.pt'
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Load data.
 
 	print('Start loading dataset...')
@@ -78,21 +79,25 @@ def main():
 	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
 	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Create a model.
 
 	model = Model()
 	model = model.to(device)
 
-	criterion = nn.CrossEntropyLoss()
-	optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Train.
 
 	if True:
+		criterion = nn.CrossEntropyLoss()
+		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+
+		#--------------------
+		print('Start training...')
+		start_total_time = time.time()
 		for epoch in range(NUM_EPOCHS):
 			print('Epoch {}:'.format(epoch + 1))
+
 			start_time = time.time()
 			running_loss = 0.0
 			for idx, data in enumerate(train_loader):
@@ -120,20 +125,30 @@ def main():
 				# Print statistics.
 				running_loss += loss.item()
 				if (idx + 1) % 100 == 0:
-					print('\tStep {}: Loss = {:.6f}.'.format(idx + 1, running_loss / 100))
+					print('\tStep {}: loss = {:.6f}.'.format(idx + 1, running_loss / 100))
 					running_loss = 0.0
-			print('\tTrain time: {:.6f} secs.'.format(time.time() - start_time))
+			print('\tTrain: time = {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
+		#--------------------
+		print('Start saving a model...')
+		start_time = time.time()
 		torch.save(model, model_file_path)
+		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Infer.
 
+	print('Start loading a model...')
+	start_time = time.time()
 	model = torch.load(model_file_path)
 	model.eval()
+	print('End loading a model: {} secs.'.format(time.time() - start_time))
 
-	inferences, ground_truths = list(), list()
+	#--------------------
+	print('Start inferring...')
 	start_time = time.time()
+	inferences, ground_truths = list(), list()
 	for idx, data in enumerate(test_loader):
 		inputs, outputs = data
 		#inputs, outputs = inputs.to(device), outputs.to(device)
@@ -144,13 +159,13 @@ def main():
 		_, model_outputs = torch.max(model_outputs, 1)
 		inferences.extend(model_outputs.cpu().numpy())
 		ground_truths.extend(outputs.numpy())
-	print('Inference time: {:.6f} secs.'.format(time.time() - start_time))
+	print('End inferring: {} secs.'.format(time.time() - start_time))
 
 	inferences = np.array(inferences)
 	ground_truths = np.array(ground_truths)
 	if inferences is not None:
 		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-		print('Accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+		print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 

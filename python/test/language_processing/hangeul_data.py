@@ -36,7 +36,8 @@ class HangeulDataset(object):
 		self._train_image_filepaths, self._train_labels, label_characters = HangeulDataset._load_dataset_info(train_dataset_json_filepath)
 		self._test_image_filepaths, self._test_labels, test_label_characters = HangeulDataset._load_dataset_info(test_dataset_json_filepath)
 
-		if sorted(label_characters) != sorted(test_label_characters):
+		#if sorted(label_characters) != sorted(test_label_characters):
+		if set(label_characters) != set(test_label_characters):
 			raise ValueError('Label characters for train and test datasets should be identical')
 		if not all(map(lambda fl: os.path.splitext(os.path.basename(fl[0]))[0] == fl[1], zip(self._train_image_filepaths, self._train_labels))):
 			raise ValueError('Train file names and labels should be identical')
@@ -52,7 +53,6 @@ class HangeulDataset(object):
 		print('End loading Hangeul dataset info: {} secs.'.format(time.time() - start_time))
 
 		self._max_label_len = reduce(lambda lhs, rhs: max(lhs, len(rhs)), self._train_labels + self._test_labels, 0)  # Max length of labels.
-		label_characters = list(label_characters)
 
 		#--------------------
 		# Prepares characters.
@@ -146,7 +146,7 @@ class HangeulDataset(object):
 			print('char IDs =', datum['char_id'])
 		"""
 
-		label_characters = dataset['charset'].values()
+		label_characters = list(dataset['charset'].values())
 		image_filepaths, labels = zip(*map(lambda datum: (datum['file'], datum['text']), dataset['data']))
 
 		return image_filepaths, labels, label_characters

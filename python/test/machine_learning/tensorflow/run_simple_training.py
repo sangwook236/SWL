@@ -101,12 +101,13 @@ def get_accuracy(y, t):
 def main():
 	image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 	num_classes = 10
+
 	BATCH_SIZE, NUM_EPOCHS = 128, 30
 
 	checkpoint_dir_path = './tf_checkpoint'
 	os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Load data.
 
 	print('Start loading dataset...')
@@ -141,37 +142,42 @@ def main():
 		test_init_op = iter.make_initializer(test_dataset)
 	input_elem, output_elem = iter.get_next()
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Create a model.
 
 	model_output = create_model(input_elem, num_classes)
 
-	loss = get_loss(model_output, output_elem)
-	accuracy = get_accuracy(model_output, output_elem)
-
-	learning_rate = 0.001
-	#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-	optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-	#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-
-	train_op = optimizer.minimize(loss)
-
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Train and evaluate.
 
 	if True:
+		loss = get_loss(model_output, output_elem)
+		accuracy = get_accuracy(model_output, output_elem)
+
+		learning_rate = 0.001
+		#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+		optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+		#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+
+		train_op = optimizer.minimize(loss)
+
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
+		#--------------------
+		print('Start training...')
+		start_total_time = time.time()
 		with tf.Session() as sess:
 			sess.run(tf.global_variables_initializer())
 			for epoch in range(NUM_EPOCHS):
 				print('Epoch {}:'.format(epoch + 1))
+
+				#--------------------
+				start_time = time.time()
 				# Initialize iterator with train data.
 				if not use_reinitializable_iterator:
 					sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels})
 				else:
 					sess.run(train_init_op, feed_dict={input_ph: train_images, output_ph: train_labels})
-				start_time = time.time()
 				train_loss, train_accuracy = 0, 0
 				while True:
 					try:
@@ -183,14 +189,15 @@ def main():
 						break
 				train_loss /= train_images.shape[0]
 				train_accuracy /= train_images.shape[0]
-				print('\tTrain loss = {:.6f}, Train accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
+				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
 
+				#--------------------
+				start_time = time.time()
 				# Switch to validation data.
 				if not use_reinitializable_iterator:
 					sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels})
 				else:
 					sess.run(val_init_op, feed_dict={input_ph: test_images, output_ph: test_labels})
-				start_time = time.time()
 				val_loss, val_accuracy = 0, 0
 				while True:
 					try:
@@ -202,21 +209,30 @@ def main():
 						break
 				val_loss /= test_images.shape[0]
 				val_accuracy /= test_images.shape[0]
-				print('\tVal loss   = {:.6f}, Val accuracy   = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
+				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
 
-			# Save a model.
+			#--------------------
+			print('Start saving a model...')
+			start_time = time.time()
 			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
+			print('End saving a model: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Infer.
 
 	with tf.Session() as sess:
-		# Load a model.
+		print('Start loading a model...')
+		start_time = time.time()
 		saver = tf.train.Saver()
 		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(sess, ckpt.model_checkpoint_path)
 		#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('End loading a model: {} secs.'.format(time.time() - start_time))
 
+		#--------------------
+		print('Start inferring...')
+		start_time = time.time()
 		# Switch to test data.
 		if not use_reinitializable_iterator:
 			sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels})
@@ -224,14 +240,13 @@ def main():
 		else:
 			sess.run(test_init_op, feed_dict={input_ph: test_images, output_ph: test_labels})
 			#sess.run(test_init_op, feed_dict={input_ph: test_images})  # Error.
-		start_time = time.time()
 		inferences = list()
 		while True:
 			try:
 				inferences.append(sess.run(model_output))
 			except tf.errors.OutOfRangeError:
 				break
-		print('Inference time: {} secs.'.format(time.time() - start_time))
+		print('End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
@@ -244,7 +259,7 @@ def main():
 			else:
 				raise ValueError('Invalid number of classes')
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('Accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 

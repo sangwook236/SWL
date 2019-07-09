@@ -9,8 +9,33 @@ import cv2
 from PIL import Image
 #import keras
 import swl.util.util as swl_util
-import swl.machine_learning.util as swl_ml_util
+#import swl.machine_learning.util as swl_ml_util
 import swl.machine_vision.util as swl_cv_util
+
+def blend_image_test():
+	if True:
+		fg = np.full((500, 500, 3), (0, 0, 1), dtype=np.float32)
+		bg = np.full((500, 500, 3), (1, 0, 0), dtype=np.float32)
+	else:
+		fg = np.full((500, 500, 3), (0, 0, 255), dtype=np.uint8)
+		bg = np.full((500, 500, 3), (255, 0, 0), dtype=np.uint8)
+		fg = fg.astype(np.float32)
+		bg = bg.astype(np.float32)
+
+	alpha = np.full((500, 500), 0, dtype=np.float32)
+	alpha = cv2.rectangle(alpha, (100, 100), (400, 400), 0.5, cv2.FILLED)
+	alpha = cv2.rectangle(alpha, (200, 200), (300, 300), 1, cv2.FILLED)
+
+	cv2.imshow('F/G', fg)
+	cv2.imshow('B/G', bg)
+
+	blended = swl_cv_util.blend_image(fg, bg, alpha)
+
+	#blended = np.round(blended).astype(np.uint8)
+	cv2.imshow('Blended', blended)
+
+	cv2.waitKey(0)
+	cv2.destroyAllWindows()
 
 def load_images_test():
 	if 'posix' == os.name:
@@ -55,7 +80,7 @@ def load_images_test():
 
 	#--------------------
 
-	if False:
+	if True:
 		num_classes = np.max([np.max(np.unique(train_labels)), np.max(np.unique(val_labels)), np.max(np.unique(test_labels))]) + 1
 		train_labels = np.uint8(keras.utils.to_categorical(train_labels, num_classes).reshape(train_labels.shape + (-1,)))
 		val_labels = np.uint8(keras.utils.to_categorical(val_labels, num_classes).reshape(val_labels.shape + (-1,)))
@@ -270,6 +295,7 @@ def show_image_and_label_in_npz_pair():
 	cv2.destroyAllWindows()
 
 def main():
+	blend_image_test()
 	#load_images_test()
 
 	#--------------------
@@ -278,7 +304,7 @@ def main():
 	#show_image_in_npy()
 	#show_image_and_label_in_npy_pair()
 	#show_image_in_npz()
-	show_image_and_label_in_npz_pair()
+	#show_image_and_label_in_npz_pair()
 
 #%%------------------------------------------------------------------
 

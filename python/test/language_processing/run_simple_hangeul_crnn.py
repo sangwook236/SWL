@@ -45,6 +45,9 @@ def text_dataset_to_numpy(dataset_json_filepath, image_height, image_width, imag
 	if 0 == max_height or 0 == max_width or 0 == max_channel or 0 == max_label_len:
 		raise ValueError('[Error] Invalid dataset size')
 
+	charset = list(dataset['charset'].values())
+	#charset = sorted(charset)
+
 	#data = np.zeros((num_examples, max_height, max_width, max_channel))
 	data = np.zeros((num_examples, image_height, image_width, image_channel))
 	#labels = np.zeros((num_examples, max_label_len))
@@ -56,29 +59,30 @@ def text_dataset_to_numpy(dataset_json_filepath, image_height, image_width, imag
 			img = cv2.resize(img, (image_width, image_height))
 		#data[idx,:sz[0],:sz[1],:sz[2]] = img.reshape(img.shape + (-1,))
 		data[idx,:,:,0] = img
-		labels[idx,:len(datum['char_id'])] = datum['char_id']
+		if False:  # Char ID.
+			labels[idx,:len(datum['char_id'])] = datum['char_id']
+		else:  # Unicode -> char ID.
+			labels[idx,:len(datum['char_id'])] = list(charset.index(chr(id)) for id in datum['char_id'])
 
 	return data, labels
 
-def load_data(image_height, image_width, image_channel):
-	label_eos_token = -1
-
+def load_data(image_height, image_width, image_channel, eos_token):
 	print('Start loading train dataset to numpy...')
 	start_time = time.time()
-	train_data, train_labels = text_dataset_to_numpy('./text_train_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token=label_eos_token)
+	train_data, train_labels = text_dataset_to_numpy('./text_train_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token)
 	print('End loading train dataset: {} secs.'.format(time.time() - start_time))
 	print('Start loading test dataset to numpy...')
 	start_time = time.time()
-	test_data, test_labels = text_dataset_to_numpy('./text_test_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token=label_eos_token)
+	test_data, test_labels = text_dataset_to_numpy('./text_test_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token)
 	print('End loading test dataset: {} secs.'.format(time.time() - start_time))
 
 	# Preprocessing.
 	train_data = (train_data.astype(np.float32) / 255.0) * 2 - 1  # [-1, 1].
-	#train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.int32)
-	train_labels = train_labels.astype(np.int32)
+	#train_labels = tf.keras.utils.to_categorical(train_labels).astype(np.int16)
+	train_labels = train_labels.astype(np.int16)
 	test_data = (test_data.astype(np.float32) / 255.0) * 2 - 1  # [-1, 1].
-	#test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.int32)
-	test_labels = test_labels.astype(np.int32)
+	#test_labels = tf.keras.utils.to_categorical(test_labels).astype(np.int16)
+	test_labels = test_labels.astype(np.int16)
 
 	# (samples, height, width, channels) -> (samples, width, height, channels).
 	train_data = train_data.transpose((0, 2, 1, 3))
@@ -183,29 +187,36 @@ def get_loss(y, t, y_length, t_length):
 
 def main():
 	image_height, image_width, image_channel = 64, 320, 1
+	label_eos_token = 2350
 	#num_classes = 2350
 	num_classes = 2350 + 1  # Includes EOS token.
+
 	BATCH_SIZE, NUM_EPOCHS = 128, 1000
 
 	checkpoint_dir_path = './tf_checkpoint'
-	try:
-		os.makedirs(checkpoint_dir_path)
-	except FileExistsError:
-		pass
+	os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Load data.
 
-	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel)
+	print('Start loading dataset...')
+	start_time = time.time()
+	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, label_eos_token)
 	train_label_lengths, test_label_lengths = np.full((train_labels.shape[0], 1), train_labels.shape[-1]), np.full((test_labels.shape[0], 1), test_labels.shape[-1])
+	print('End loading dataset: {} secs.'.format(time.time() - start_time))
+
+	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
+	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
+	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
+	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
+
 	# FIXME [improve] >> Stupid implementation.
-	#model_output_lengths = np.full((train_images.shape[0], 1), image_width / 4)
-	model_output_lengths = np.full((train_images.shape[0], 1), image_width / 4 - 2)  # See get_loss().
+	#train_model_output_lengths = np.full((train_images.shape[0], 1), image_width / 4)
+	train_model_output_lengths = np.full((train_images.shape[0], 1), image_width / 4 - 2)  # See get_loss().
+	#test_model_output_lengths = np.full((test_images.shape[0], 1), image_width / 4)
+	test_model_output_lengths = np.full((test_images.shape[0], 1), image_width / 4 - 2)  # See get_loss().
 
 	max_output_len = max(train_labels.shape[-1], test_labels.shape[-1])
-
-	print("Train image's shape = {}, train label's shape = {}.".format(train_images.shape, train_labels.shape))
-	print("Test image's shape = {}, test label's shape = {}.".format(test_images.shape, test_labels.shape))
 
 	#--------------------
 
@@ -233,34 +244,39 @@ def main():
 		test_init_op = iter.make_initializer(test_dataset)
 	input_elem, output_elem, output_length_elem, model_output_length_elem = iter.get_next()
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Create a model.
 
 	model_output = create_model(input_elem, num_classes)
 
-	loss = get_loss(model_output, output_elem, model_output_length_elem, output_length_elem)
-
-	learning_rate = 0.001
-	optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-08)
-
-	train_op = optimizer.minimize(loss)
-
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Train.
 
 	if True:
+		loss = get_loss(model_output, output_elem, model_output_length_elem, output_length_elem)
+
+		learning_rate = 0.001
+		optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1e-08)
+
+		train_op = optimizer.minimize(loss)
+
 		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
+		#--------------------
+		print('Start training...')
+		start_total_time = time.time()
 		with tf.Session() as sess:
 			sess.run(tf.global_variables_initializer())
 			for epoch in range(NUM_EPOCHS):
 				print('Epoch {}:'.format(epoch + 1))
+
+				#--------------------
 				start_time = time.time()
 				# Initialize iterator with train data.
 				if not use_reinitializable_iterator:
-					sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
+					sess.run(iter.initializer, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: train_model_output_lengths})
 				else:
-					sess.run(train_init_op, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: model_output_lengths})
+					sess.run(train_init_op, feed_dict={input_ph: train_images, output_ph: train_labels, output_length_ph: train_label_lengths, model_output_length_ph: train_model_output_lengths})
 				train_loss = 0
 				batch_idx = 0
 				while True:
@@ -274,27 +290,36 @@ def main():
 						break
 					batch_idx += 1
 				train_loss /= train_images.shape[0]
-				print('\tLoss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
+				print('\tTrain: loss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
 
-				# Save a model.
+				#--------------------
+				print('Start saving a model...')
+				start_time = time.time()
 				saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
+				print('End saving a model: {} secs.'.format(time.time() - start_time))
+		print('End training: {} secs.'.format(time.time() - start_total_time))
 
-	#--------------------
+	#%%------------------------------------------------------------------
 	# Infer.
 
 	with tf.Session() as sess:
-		# Load a model.
+		print('Start loading a model...')
+		start_time = time.time()
 		saver = tf.train.Saver()
 		ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 		saver.restore(sess, ckpt.model_checkpoint_path)
 		#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
+		print('End loading a model: {} secs.'.format(time.time() - start_time))
 
+		#--------------------
+		print('Start inferring...')
+		start_time = time.time()
 		# Switch to test data.
 		if not use_reinitializable_iterator:
-			sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
+			sess.run(iter.initializer, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: test_model_output_lengths})
 			#sess.run(iter.initializer, feed_dict={input_ph: test_images})  # Error.
 		else:
-			sess.run(test_init_op, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: model_output_lengths})
+			sess.run(test_init_op, feed_dict={input_ph: test_images, output_ph: test_labels, output_length_ph: test_label_lengths, model_output_length_ph: test_model_output_lengths})
 		start_time = time.time()
 		inferences = list()
 		while True:
@@ -302,12 +327,15 @@ def main():
 				inferences.append(sess.run(model_output))
 			except tf.errors.OutOfRangeError:
 				break
-		print('Inference time: {} secs.'.format(time.time() - start_time))
+		print('End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences = np.vstack(inferences)
 		if inferences is not None:
-			# TODO [implement] >>
-			pass
+			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			inferences = np.argmax(inferences, -1)
+
+			print('**********', inferences[:10])
+			print('**********', test_labels[:10])
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 

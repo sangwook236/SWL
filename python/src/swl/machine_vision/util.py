@@ -7,13 +7,13 @@ from scipy import ndimage, misc
 import cv2
 import swl.util.util as swl_util
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> http://www.socouldanyone.com/2013/03/converting-grayscale-to-rgb-with-numpy.html
 def to_rgb(gray):
     return np.dstack([gray.astype(np.uint8)] * 3)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def center_crop(x, center_crop_size, **kwargs):
 	centerw, centerh = x.shape[1] // 2, x.shape[2] // 2
@@ -28,6 +28,72 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
 	offsetw = 0 if rangew == 0 else np.random.randint(rangew)
 	offseth = 0 if rangeh == 0 else np.random.randint(rangeh)
 	return x[:, offsetw:offsetw+random_crop_size[0], offseth:offseth+random_crop_size[1]]
+
+#--------------------------------------------------------------------
+
+def blend_image(fg, bg, alpha):
+	"""Alpha-blends two images (foregound and background).
+
+	Inputs:
+		fg (numpy.array): A foreground image.
+		bg (numpy.array): A background image.
+		alpha (float): An alpha value. [0.0, 1.0].
+	Outputs:
+		blended (numpy.array): An alpha-blended image.
+	"""
+
+	if 2 == fg.ndim and 2 == bg.ndim:
+		fg[:,:] = cv2.multiply(alpha, fg[:,:])
+		bg[:,:] = cv2.multiply(1.0 - alpha, bg[:,:])
+	elif 3 == fg.ndim and 3 == bg.ndim:
+		for idx in range(fg.shape[-1]):
+			fg[:,:,idx] = cv2.multiply(alpha, fg[:,:,idx])
+			bg[:,:,idx] = cv2.multiply(1.0 - alpha, bg[:,:,idx])
+	else:
+		raise ValueError('Invalid dimension: fg = {}, bg = {}.'.format(fg.ndim, bg.ndim))
+	blended = cv2.add(fg, bg)
+	
+	return blended
+
+# REF [size] >> https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
+def stack_images_horzontally(images):
+	'''
+	images: PIL image list.
+	'''
+
+	widths, heights = zip(*(img.size for img in images))
+
+	total_width = sum(widths)
+	max_height = max(heights)
+
+	stacked_img = Image.new('RGB', (total_width, max_height))
+
+	x_offset = 0
+	for img in images:
+		stacked_img.paste(img, (x_offset, 0))
+		x_offset += img.size[0]
+
+	return stacked_img
+
+# REF [size] >> https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
+def stack_images_vertically(images):
+	'''
+	images: PIL image list.
+	'''
+
+	widths, heights = zip(*(img.size for img in images))
+
+	max_width = max(widths)
+	total_height = sum(heights)
+
+	stacked_img = Image.new('RGB', (max_width, total_height))
+
+	y_offset = 0
+	for img in images:
+		stacked_img.paste(img, (0, y_offset))
+		y_offset += img.size[1]
+
+	return stacked_img
 
 #%%------------------------------------------------------------------
 
@@ -204,7 +270,7 @@ def load_labels_by_scipy(dir_path, file_suffix, file_extension, width=None, heig
 				break  # Do not include subdirectories.
 	return np.array(labels)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def generate_image_patch_list(image, label, patch_height, patch_width, nonzero_label_ratio_threshold=None):
 	"""
@@ -309,45 +375,3 @@ def stitch_label_patches(patches, regions, shape):
 		rgn = regions[idx]
 		stitched[rgn[0]:rgn[2],rgn[1]:rgn[3]] += patches[idx]
 	return np.argmax(stitched, -1).astype(np.uint8)  # Its shape = shape.
-
-#%%------------------------------------------------------------------
-
-# REF [size] >> https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
-def stack_images_horzontally(images):
-	'''
-	images: PIL image list.
-	'''
-
-	widths, heights = zip(*(img.size for img in images))
-
-	total_width = sum(widths)
-	max_height = max(heights)
-
-	stacked_img = Image.new('RGB', (total_width, max_height))
-
-	x_offset = 0
-	for img in images:
-		stacked_img.paste(img, (x_offset, 0))
-		x_offset += img.size[0]
-
-	return stacked_img
-
-# REF [size] >> https://stackoverflow.com/questions/30227466/combine-several-images-horizontally-with-python
-def stack_images_vertically(images):
-	'''
-	images: PIL image list.
-	'''
-
-	widths, heights = zip(*(img.size for img in images))
-
-	max_width = max(widths)
-	total_height = sum(heights)
-
-	stacked_img = Image.new('RGB', (max_width, total_height))
-
-	y_offset = 0
-	for img in images:
-		stacked_img.paste(img, (0, y_offset))
-		y_offset += img.size[1]
-
-	return stacked_img

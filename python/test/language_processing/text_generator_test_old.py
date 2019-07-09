@@ -320,7 +320,7 @@ class MyCharacterGenerator(object):
 			is_white_background (bool): Specifies if background is white or black.
 		"""
 
-		self._maks_threshold = mask_threshold
+		self._mask_threshold = mask_threshold
 		self._is_white_background = is_white_background
 
 		self._text_offset = (0, 0)
@@ -447,10 +447,10 @@ class MyCharacterGenerator(object):
 		mask = arr
 		#mask = self._clahe.apply(mask)
 		if self._is_white_background:
-			_, mask = cv2.threshold(mask, self._maks_threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+			_, mask = cv2.threshold(mask, self._mask_threshold, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 		else:
-			_, mask = cv2.threshold(mask, self._maks_threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-		#_, mask = cv2.threshold(mask, self._maks_threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+			_, mask = cv2.threshold(mask, self._mask_threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+		#_, mask = cv2.threshold(mask, self._mask_threshold, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 		#mask = cv2.adaptiveThreshold(mask, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 11, 2)
 		#mask = cv2.adaptiveThreshold(mask, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
 
@@ -467,9 +467,9 @@ class MyCharacterGenerator(object):
 
 		mask = np.zeros_like(arr)
 		if self._is_white_background:
-			mask[arr <= self._maks_threshold] = 255
+			mask[arr <= self._mask_threshold] = 255
 		else:
-			mask[arr >= self._maks_threshold] = 255
+			mask[arr >= self._mask_threshold] = 255
 
 		return mask
 
@@ -489,7 +489,7 @@ class MyHangeulFontCharacterGenerator(MyCharacterGenerator):
 			is_white_background (bool): Specifies if background is white or black.
 		"""
 
-		self._maks_threshold = mask_threshold
+		self._mask_threshold = mask_threshold
 		self._is_white_background = is_white_background
 
 		self._text_offset = (0, 0)
@@ -625,15 +625,13 @@ class MyCharacterPositioner(object):
 
 		if self._is_white_background:
 			#font_color = (0, 0, 0)
-			#bg_color = (255, 255, 255)
-			bg_fill_value = 255
+			bg_color = (255, 255, 255)
 		else:
 			#font_color = (255, 255, 255)
-			#bg_color = (0, 0, 0)
-			bg_fill_value = 0
+			bg_color = (0, 0, 0)
 
-		#text = np.zeros((max_height, max_width, max_channels), dtype=np.uint8)
-		text = np.full((max_height, max_width, max_channels), bg_fill_value, dtype=np.uint8)
+		text = np.zeros((max_height, max_width, max_channels), dtype=np.uint8)
+		text[:,:] = bg_color
 		if is_single_mask_generated:
 			text_mask = np.zeros((max_height, max_width), dtype=np.uint8)
 		else:
