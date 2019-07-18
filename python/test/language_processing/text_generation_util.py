@@ -10,6 +10,39 @@ import swl.language_processing.phd08_dataset as phd08_dataset
 import swl.machine_vision.util as swl_cv_util
 from swl.util.util import make_dir
 
+def generate_random_word_set(num_words, charset, min_char_count, max_char_count):
+	charset_len = len(charset)
+	word_set = set()
+	for idx in range(num_words):
+		num_chars = random.randint(min_char_count, max_char_count)
+		text = ''.join(list(charset[random.randrange(charset_len)] for _ in range(num_chars)))
+		word_set.add(text)
+
+	return word_set
+
+def generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, max_char_count):
+	indices = list(range(len(charset)))
+	multi_indices = indices * num_char_repetitions
+	random.shuffle(multi_indices)
+	#print(multi_indices[0:100], len(multi_indices))
+
+	num_chars = len(multi_indices)
+
+	word_set = set()
+	start_idx = 0
+	while start_idx < num_chars:
+		#end_idx = min(start_idx + random.randint(min_char_count, max_char_count), num_chars)
+		end_idx = start_idx + random.randint(min_char_count, max_char_count)
+		char_indices = multi_indices[start_idx:end_idx]
+		text = ''.join(map(lambda idx: charset[idx], char_indices))
+		word_set.add(text)
+
+		start_idx = end_idx
+
+	return word_set
+
+#--------------------------------------------------------------------
+
 def generate_hangeul_font_list():
 	if 'posix' == os.name:
 		system_font_dir = '/usr/share/fonts'
@@ -95,6 +128,8 @@ def generate_phd08_dict():
 		handwriting_dict = dict()
 
 	return handwriting_dict
+
+#--------------------------------------------------------------------
 
 #class IdentityTransformer(Transformer):
 class IdentityTransformer(object):
@@ -715,11 +750,14 @@ class MySimpleSceneProvider(MySceneProvider):
 	def __init__(self):
 		self._scene_filepaths = glob.glob('./background_image/*.jpg', recursive=True)
 
-def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, num_images, batch_size, font_color=None, bg_color=None):
+#--------------------------------------------------------------------
+
+def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
 	sceneTextGenerator = MySceneTextGenerator(IdentityTransformer())
 
 	scene_list, scene_text_mask_list = list(), list()
-	for idx in range(num_images):
+	step = 0
+	while True:
 		font_size = random.randint(*font_size_interval)
 		char_space_ratio = random.uniform(*char_space_ratio_interval)
 
@@ -738,16 +776,16 @@ def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_
 		scene_list.append(scene)
 		scene_text_mask_list.append(scene_text_mask)
 
-		if 0 == (idx + 1) % batch_size:
+		step += 1
+		if 0 == step % batch_size:
 			yield scene_list, scene_text_mask_list
 			scene_list, scene_text_mask_list = list(), list()
+			step = 0
 
-	if scene_list and scene_text_mask_list:
-		yield scene_list, scene_text_mask_list
-
-def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval, num_images, batch_size, font_color=None):
-	scene_list, scene_text_mask_list, bboxes_list = list(), list(), list()
-	for idx in range(num_images):
+def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval,  batch_size, font_color=None):
+	scene_list, scene_text_mask_list, bboxes_list, text_list = list(), list(), list(), list()
+	step = 0
+	while True:
 		num_texts_per_image = random.randint(*text_count_interval)
 
 		texts, text_images, text_alphas = list(), list(), list()
@@ -776,9 +814,8 @@ def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenera
 		scene_text_mask_list.append(scene_text_mask)
 		bboxes_list.append(bboxes)
 
-		if 0 == (idx + 1) % batch_size:
+		step += 1
+		if 0 == step % batch_size:
 			yield scene_list, scene_text_mask_list, bboxes_list
 			scene_list, scene_text_mask_list, bboxes_list = list(), list(), list()
-
-	if scene_list and scene_text_mask_list and bboxes_list:
-		yield scene_list, scene_text_mask_list, bboxes_list
+			step = 0

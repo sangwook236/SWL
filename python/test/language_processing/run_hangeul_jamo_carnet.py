@@ -1,87 +1,142 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time, json
+import os, time, random
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, LSTM, Input, Dense, Activation, Reshape, Lambda, BatchNormalization
-from tensorflow.keras.layers import add, concatenate
-from tensorflow.keras.models import Model
-from tensorflow.keras import backend as K
 import cv2
+import text_generation_util as tg_util
+import hangeul_util as hg_util
 
 #--------------------------------------------------------------------
 
-def text_dataset_to_numpy(dataset_json_filepath, image_height, image_width, image_channel, eos_token, blank_label):
-	with open(dataset_json_filepath, 'r', encoding='UTF8') as json_file:
-		dataset = json.load(json_file)
+# REF [function] >> generate_text_lines() in text_generation_util.py.
+def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, image_height, image_width, image_channel, batch_size, font_color=None, bg_color=None, eoc_str='<EOC>'):
+	sceneTextGenerator = tg_util.MySceneTextGenerator(tg_util.IdentityTransformer())
 
-	"""
-	print(dataset['charset'])
-	for datum in dataset['data']:
-		print('file =', datum['file'])
-		print('size =', datum['size'])
-		print('text =', datum['text'])
-		print('char IDs =', datum['char_id'])
-	"""
+	scene_list, scene_text_mask_list, text_list = list(), list(), list()
+	step = 0
+	while True:
+		font_size = random.randint(*font_size_interval)
+		char_space_ratio = random.uniform(*char_space_ratio_interval)
 
-	num_examples = len(dataset['data'])
-	max_height, max_width, max_channel, max_label_len = 0, 0, 0, 0
-	for datum in dataset['data']:
-		sz = datum['size']
-		if len(sz) != 3:
-			print('[Warning] Invalid data size: {}.'.format(datum['file']))
-			continue
+		text = random.sample(word_set, 1)[0]
 
-		if sz[0] > max_height:
-			max_height = sz[0]
-		if sz[1] > max_width:
-			max_width = sz[1]
-		if sz[2] > max_channel:
-			max_channel = sz[2]
-		if len(datum['char_id']) > max_label_len:
-			max_label_len = len(datum['char_id'])
+		char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
+		text_line, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
 
-	max_label_len += 1  # For EOS token.
-	#max_label_len += 2  # For EOS token + blank label.
+		if bg_color is None:
+			# Grayscale background.
+			bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
+		else:
+			bg = np.full_like(text_line, bg_color, dtype=np.uint8)
 
-	if 0 == max_height or 0 == max_width or 0 == max_channel or 0 == max_label_len:
-		raise ValueError('[Error] Invalid dataset size')
+		scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+		scene = cv2.resize(scene, (image_height, image_width), interpolation=cv2.INTER_AREA)
+		#scene_text_mask = cv2.resize(scene_text_mask, (image_height, image_width), interpolation=cv2.INTER_AREA)
+		scene_list.append(scene)
+		#scene_text_mask_list.append(scene_text_mask)
+		if True:
+			text = hg_util.hangeul2jamo(text, eoc_str, use_separate_consonants=False, use_separate_vowels=True)  # Hangeul letters -> Hangeul jamos.
+		text_list.append(text)
 
-	charset = list(dataset['charset'].values())
-	#charset = sorted(charset)
+		step += 1
+		if 0 == (idx + 1) % batch_size:
+			#yield scene_list, scene_text_mask_list, text_list
+			yield scene_list, text_list
+			scene_list, scene_text_mask_list, text_list = list(), list(), list()
+			step = 0
 
-	#data = np.zeros((num_examples, max_height, max_width, max_channel))
-	data = np.zeros((num_examples, image_height, image_width, image_channel))
-	#labels = np.zeros((num_examples, max_label_len))
-	labels = np.full((num_examples, max_label_len), blank_label)
-	for idx, datum in enumerate(dataset['data']):
-		img = cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE)
-		sz = datum['size']
-		if sz[0] != image_height or sz[1] != image_width:
-			img = cv2.resize(img, (image_width, image_height))
-		#data[idx,:sz[0],:sz[1],:sz[2]] = img.reshape(img.shape + (-1,))
-		data[idx,:,:,0] = img
-		if False:  # Char ID.
-			#labels[idx,:len(datum['char_id'])] = datum['char_id']
-			labels[idx,:(len(datum['char_id']) + 1)] = datum['char_id'] + [eos_token]
-			#labels[idx,:(len(datum['char_id']) + 2)] = datum['char_id'] + [eos_token, blank_label]
-		else:  # Unicode -> char ID.
-			#labels[idx,:len(datum['char_id'])] = list(charset.index(chr(id)) for id in datum['char_id'])
-			labels[idx,:(len(datum['char_id']) + 1)] = list(charset.index(chr(id)) for id in datum['char_id']) + [eos_token]
-			#labels[idx,:(len(datum['char_id']) + 2)] = list(charset.index(chr(id)) for id in datum['char_id']) + [eos_token, blank_label]
+def create_text_line_generator(image_height, image_width, image_channel, min_font_size, max_font_size, min_char_space_ratio, max_char_space_ratio, font_color=None, bg_color=None):
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#data = fd.readlines()  # A string.
+		#data = fd.read().strip('\n')  # A list of strings.
+		#data = fd.read().splitlines()  # A list of strings.
+		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
+	count = 80
+	hangeul_charset = str()
+	for idx in range(0, len(data), count):
+		txt = ''.join(data[idx:idx+count])
+		#hangeul_charset += ('' if 0 == idx else '\n') + txt
+		hangeul_charset += txt
+	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+	digit_charset = '0123456789'
+	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-	return data, labels
+	#print('Hangeul charset =', len(hangeul_charset), hangeul_charset)
+	#print('Alphabet charset =', len(alphabet_charset), alphabet_charset)
+	#print('Digit charset =', len(digit_charset), digit_charset)
+	#print('Symbol charset =', len(symbol_charset), symbol_charset)
+
+	num_char_repetitions = 2000
+	min_char_count, max_char_count = 5, 5
+	word_set = tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset, min_char_count, max_char_count)
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, digit_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + digit_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + symbol_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset + digit_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset + symbol_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset + digit_charset, min_char_count, max_char_count))
+	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset + symbol_charset, min_char_count, max_char_count))
+
+	#--------------------
+	characterTransformer = tg_util.IdentityTransformer()
+	#characterTransformer = tg_util.RotationTransformer(-30, 30)
+	#characterTransformer = tg_util.ImgaugAffineTransformer()
+	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
+	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+
+	#--------------------
+	batch_size = 30
+	generator = generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), image_height, image_width, image_channel, batch_size, font_color, bg_color)
+
+	return generator
 
 def load_data(image_height, image_width, image_channel, num_classes, eos_token, blank_label):
-	print('Start loading train dataset to numpy...')
+	min_font_size, max_font_size = 32, 32
+	min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
+
+	#font_color = (255, 255, 255)
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
+	font_color = None  # Uses random font colors.
+	#bg_color = (0, 0, 0)
+	bg_color = None  # Uses random colors.
+
+	print('Start creating a train text line generator...')
 	start_time = time.time()
-	train_data, train_labels = text_dataset_to_numpy('./text_train_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token, blank_label)
-	print('End loading train dataset: {} secs.'.format(time.time() - start_time))
-	print('Start loading test dataset to numpy...')
+	train_generator = create_text_line_generator(min_font_size, max_font_size, min_char_space_ratio, max_char_space_ratio, font_color, bg_color)
+	print('End creating a train text line generator: {} secs.'.format(time.time() - start_time))
+	print('Start creating a test text line generator...')
 	start_time = time.time()
-	test_data, test_labels = text_dataset_to_numpy('./text_test_dataset_tmp/text_dataset.json', image_height, image_width, image_channel, eos_token, blank_label)
-	print('End loading test dataset: {} secs.'.format(time.time() - start_time))
+	test_generator = create_text_line_generator(min_font_size, max_font_size, min_char_space_ratio, max_char_space_ratio, font_color, bg_color)
+	print('End creating a test text line generator: {} secs.'.format(time.time() - start_time))
+
+	step = 1
+	for scene_list, jamo_text_list in train_generator:
+		for scene, jamo_text in zip(scene_list, jamo_text_list):
+			if 'posix' == os.name:
+				cv2.imwrite('./scene.png', scene)
+				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
+			else:
+				#scene_text_mask[scene_text_mask > 0] = 255
+				#scene_text_mask = scene_text_mask.astype(np.uint8)
+				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
+				#scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
+
+				print('Jamo text =', jamo_text)
+				cv2.imshow('Scene', scene)
+				#cv2.imshow('Scene Mask', scene_text_mask)
+				cv2.waitKey(0)
+
+		if step >= 3:
+			break
+		step += 1
+	raise ValueError
 
 	# Preprocessing.
 	train_data = (train_data.astype(np.float32) / 255.0) * 2 - 1  # [-1, 1].
@@ -276,6 +331,10 @@ def main():
 		loss = get_loss(model_output, output_elem, model_output_length_elem, output_length_elem)
 
 		learning_rate = 0.001
+		#optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1.0e-6, momentum=0.0, nesterov=True)
+		#optimizer = tf.keras.optimizers.RMSprop(lr=0.001, rho=0.9, momentum=0.0, epsilon=1.0e-7, centered=False)
+		#optimizer = tf.keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1.0e-7, amsgrad=False)
+		#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1.0e-7)
 		optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1.0e-7, use_locking=False)
 
 		train_op = optimizer.minimize(loss)
