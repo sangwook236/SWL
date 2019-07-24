@@ -17,8 +17,8 @@ class ReverseFunctionDataset(object):
 		self._VOCAB_SIZE = len(self._characters)
 		self._MAX_STRING_LEN = 15
 		#self._MAX_TOKEN_LEN = self._MAX_STRING_LEN
-		#self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 1
-		self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 2
+		#self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 1  # EOS.
+		self._MAX_TOKEN_LEN = self._MAX_STRING_LEN + 2  # SOS + EOS.
 
 		self._label_int2char = list(self._characters)
 		self._label_char2int = {c:i for i, c in enumerate(self._characters)}

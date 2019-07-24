@@ -30,7 +30,7 @@ from reverse_function_data import ReverseFunctionDataGenerator
 
 #--------------------------------------------------------------------
 
-def create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major):
+def create_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major):
 	if is_attentive:
 		# Sequence-to-sequence encoder-decoder model w/ TF attention.
 		return SimpleSeq2SeqEncoderDecoderWithTfAttention(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional, is_time_major)
@@ -117,7 +117,7 @@ def main():
 		with train_graph.as_default():
 			with tf.device(train_device_name):
 				# Creates a model.
-				modelForTraining = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForTraining = create_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
@@ -157,7 +157,7 @@ def main():
 		with eval_graph.as_default():
 			with tf.device(eval_device_name):
 				# Creates a model.
-				modelForEvaluation = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForEvaluation = create_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
 				modelForEvaluation.create_evaluation_model()
 
 				# Creates an evaluator.
@@ -189,7 +189,7 @@ def main():
 		with infer_graph.as_default():
 			with tf.device(infer_device_name):
 				# Creates a model.
-				modelForInference = create_learning_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
+				modelForInference = create_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_attentive, is_bidirectional, is_time_major)
 				modelForInference.create_inference_model()
 
 				# Creates an inferrer.
