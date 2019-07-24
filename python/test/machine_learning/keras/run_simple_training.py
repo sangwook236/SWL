@@ -13,87 +13,127 @@ import matplotlib.pyplot as plt
 
 #--------------------------------------------------------------------
 
-def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
-	if inputs is not None:
-		# Contrast limited adaptive histogram equalization (CLAHE).
-		#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-		#inputs = np.array([clahe.apply(inp) for inp in inputs])
+# REF [class] >> MyDataset in ${SWL_PYTHON_HOME}/test/machine_learning/tensorflow/run_simple_training.py.
+class MyDataset(object):
+	def __init__(self, image_height, image_width, image_channel, num_classes):
+		# Load data.
+		print('Start loading dataset...')
+		start_time = time.time()
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset.load_data(image_height, image_width, image_channel, num_classes)
+		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		# Normalization, standardization, etc.
-		inputs = inputs.astype(np.float32)
+		self._num_train_examples = len(self._train_images)
+		if len(self._train_labels) != self._num_train_examples:
+			raise ValueError('Invalid train data length: {} != {}'.format(self._num_train_examples, len(self._train_labels)))
+		self._num_test_examples = len(self._test_images)
+		if len(self._test_labels) != self._num_test_examples:
+			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
-		if False:
-			inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
-			#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
-			#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
-			#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
-		elif True:
-			inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
-		elif False:
-			in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
-			out_min, out_max = 0, 1 #-1, 1
-			inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
-		elif False:
-			inputs /= 255.0  # Normalization.
+		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
+		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
+		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
+		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
-		# Reshaping.
-		inputs = np.reshape(inputs, (-1, image_height, image_width, image_channel))
+	@property
+	def train_data_length(self):
+		return self._num_train_examples
 
-	if outputs is not None:
-		# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
-		#outputs = swl_ml_util.to_one_hot_encoding(outputs, num_classes).astype(np.uint8)
-		outputs = tf.keras.utils.to_categorical(outputs).astype(np.uint8)
+	@property
+	def test_data_length(self):
+		return self._num_test_examples
 
-	return inputs, outputs
+	@property
+	def train_data(self):
+		return self._train_images, self._train_labels
 
-def load_data(image_height, image_width, image_channel, num_classes):
-	# Pixel value: [0, 255].
-	(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
+	@property
+	def test_data(self):
+		return self._test_images, self._test_labels
 
-	# Preprocessing.
-	train_inputs, train_outputs = preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-	test_inputs, test_outputs = preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+	def create_train_batch_generator(self, batch_size, shuffle=True):
+		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
 
-	return train_inputs, train_outputs, test_inputs, test_outputs
+	def create_test_batch_generator(self, batch_size, shuffle=False):
+		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
 
-def generate_data(inputs, outputs, batch_size=None, shuffle=False):
-	num_examples = len(inputs)
-	if len(outputs) != num_examples:
-		raise ValueError('Invalid data size: {} != {}'.format(num_examples, len(outputs)))
-	if batch_size is None:
-		batch_size = num_examples
-	if batch_size <= 0:
-		raise ValueError('Invalid batch size: {}'.format(batch_size))
+	@staticmethod
+	def _create_batch_generator(data1, data2, batch_size, shuffle):
+		num_examples = len(data1)
+		if len(data2) != num_examples:
+			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(data2)))
+		if batch_size is None:
+			batch_size = num_examples
+		if batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
 
-	indices = np.arange(num_examples)
-	if shuffle:
-		np.random.shuffle(indices)
+		indices = np.arange(num_examples)
+		if shuffle:
+			np.random.shuffle(indices)
 
-	start_idx = 0
-	while True:
-		end_idx = start_idx + batch_size
-		batch_indices = indices[start_idx:end_idx]
-		if batch_indices.size > 0:  # If batch_indices is non-empty.
-			# FIXME [fix] >> Does not work correctly in time-major data.
-			batch_input, batch_output = inputs[batch_indices], outputs[batch_indices]
-			if batch_input.size > 0 and batch_output.size > 0:  # If batch_input and batch_output are non-empty.
-				yield (batch_input, batch_output)
+		start_idx = 0
+		while True:
+			end_idx = start_idx + batch_size
+			batch_indices = indices[start_idx:end_idx]
+			if batch_indices.size > 0:  # If batch_indices is non-empty.
+				# FIXME [fix] >> Does not work correctly in time-major data.
+				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+					yield (batch_data1, batch_data2), batch_indices.size
+				else:
+					yield (None, None), 0
 			else:
-				yield (None, None)
-		else:
-			yield (None, None)
+				yield (None, None), 0
 
-		#start_idx = 0 if end_idx >= num_examples else end_idx
-		if end_idx >= num_examples:
-			indices = np.arange(num_examples)
-			if shuffle:
-				np.random.shuffle(indices)
-
-			start_idx = 0
-		else:
+			if end_idx >= num_examples:
+				break
 			start_idx = end_idx
 
-class DataSequence(tf.keras.utils.Sequence):
+	@staticmethod
+	def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
+		if inputs is not None:
+			# Contrast limited adaptive histogram equalization (CLAHE).
+			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+			#inputs = np.array([clahe.apply(inp) for inp in inputs])
+
+			# Normalization, standardization, etc.
+			inputs = inputs.astype(np.float32)
+
+			if False:
+				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+			elif True:
+				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
+			elif False:
+				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
+				out_min, out_max = 0, 1 #-1, 1
+				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
+			elif False:
+				inputs /= 255.0  # Normalization.
+
+			# Reshaping.
+			inputs = np.reshape(inputs, (-1, image_height, image_width, image_channel))
+
+		if outputs is not None:
+			# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
+			#outputs = swl_ml_util.to_one_hot_encoding(outputs, num_classes).astype(np.uint8)
+			outputs = tf.keras.utils.to_categorical(outputs).astype(np.uint8)
+
+		return inputs, outputs
+
+	@staticmethod
+	def load_data(image_height, image_width, image_channel, num_classes):
+		# Pixel value: [0, 255].
+		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
+
+		# Preprocessing.
+		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+
+		return train_inputs, train_outputs, test_inputs, test_outputs
+
+class MyDataSequence(tf.keras.utils.Sequence):
 	def __init__(self, inputs, outputs, batch_size=None, shuffle=False):
 		self.inputs, self.outputs = inputs, outputs
 		self.batch_size = batch_size
@@ -126,22 +166,26 @@ class DataSequence(tf.keras.utils.Sequence):
 
 #--------------------------------------------------------------------
 
-def create_model(input_shape, num_classes):
-	model = Sequential()
+class MyModel(object):
+	def __init__(self):
+		pass
 
-	# Layer 1.
-	model.add(Conv2D(filters=32, kernel_size=5, strides=1, activation='relu', input_shape=input_shape))
-	model.add(MaxPooling2D(pool_size=2, strides=2))
-	# Layer 2.
-	model.add(Conv2D(filters=64, kernel_size=3, strides=1, activation='relu'))
-	model.add(MaxPooling2D(pool_size=2, strides=2))
-	model.add(Flatten())
-	# Layer 3.
-	model.add(Dense(units=1024, activation='relu'))
-	# Layer 4.
-	model.add(Dense(units=num_classes, activation='softmax'))
+	def create_model(self, input_shape, num_classes):
+		model = Sequential()
 
-	return model
+		# Layer 1.
+		model.add(Conv2D(filters=32, kernel_size=5, strides=1, activation='relu', input_shape=input_shape))
+		model.add(MaxPooling2D(pool_size=2, strides=2))
+		# Layer 2.
+		model.add(Conv2D(filters=64, kernel_size=3, strides=1, activation='relu'))
+		model.add(MaxPooling2D(pool_size=2, strides=2))
+		model.add(Flatten())
+		# Layer 3.
+		model.add(Dense(units=1024, activation='relu'))
+		# Layer 4.
+		model.add(Dense(units=num_classes, activation='softmax'))
+
+		return model
 
 def draw_history(history):
 	# Plot training & validation accuracy values.
@@ -164,75 +208,67 @@ def draw_history(history):
 
 #--------------------------------------------------------------------
 
-def main():
-	image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
-	num_classes = 10
+class MyRunner(object):
+	def __init__(self):
+		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+		self._num_classes = 10
 
-	BATCH_SIZE, NUM_EPOCHS = 128, 30
-	initial_epoch = 0
-	max_queue_size, num_workers = 10, 8
-	use_multiprocessing = True
+		self._max_queue_size, self._num_workers = 10, 8
+		self._use_multiprocessing = True
 
-	output_dir_prefix = 'simple_training'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	os.makedirs(output_dir_path, exist_ok=True)
+		self._use_keras_data_sequence, self._use_generator = True, False
 
-	checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
+		output_dir_prefix = 'simple_training'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		self._output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		os.makedirs(self._output_dir_path, exist_ok=True)
 
-	#sess = tf.Session(config=config)
-	#K.set_session(sess)
-	#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
-	#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
+		self._checkpoint_filepath = os.path.join(self._output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
 
-	#%%------------------------------------------------------------------
-	# Load data.
+		#sess = tf.Session(config=config)
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
+		#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
 
-	print('Start loading dataset...')
-	start_time = time.time()
-	train_images, train_labels, test_images, test_labels = load_data(image_height, image_width, image_channel, num_classes)
-	print('End loading dataset: {} secs.'.format(time.time() - start_time))
+		#--------------------
+		# Create a dataset.
 
-	num_train_images, num_test_images = len(train_images), len(test_images)
+		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
 
-	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
-	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
-	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
-	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
+		#--------------------
+		# Create a model.
 
-	#%%------------------------------------------------------------------
-	# Create a model.
+		self._model = MyModel().create_model((image_height, image_width, image_channel), self._num_classes)
+		#print('Model summary =', self._model.summary())
 
-	model = create_model((image_height, image_width, image_channel), num_classes)
-	#print('Model summary =', model.summary())
-
-	#%%------------------------------------------------------------------
-	# Train and evaluate.
-
-	if True:
+	def train(self, num_epochs, batch_size, initial_epoch=0):
 		loss = tf.keras.losses.categorical_crossentropy
 		optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.0, nesterov=True)
 
-		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+		self._model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
 		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=0)
-		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(self._checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 		#--------------------
 		print('Start training...')
 		start_time = time.time()
-		if False:
-			history = model.fit(train_images, train_labels, batch_size=BATCH_SIZE, epochs=NUM_EPOCHS, validation_split=0.2, shuffle=True, initial_epoch=0, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
-		elif False:
-			# Use generators.
-			train_generator = generate_data(train_images, train_labels, batch_size=BATCH_SIZE, shuffle=True)
-			val_generator = generate_data(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-			history = model.fit_generator(train_generator, epochs=NUM_EPOCHS, steps_per_epoch=math.ceil(num_train_images / BATCH_SIZE), validation_data=val_generator, validation_steps=math.ceil(num_test_images / BATCH_SIZE), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
-		else:
+		if self._use_keras_data_sequence:
 			# Use Keras sequences.
-			train_sequence = DataSequence(train_images, train_labels, batch_size=BATCH_SIZE, shuffle=True)
-			val_sequence = DataSequence(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-			history = model.fit_generator(train_sequence, epochs=NUM_EPOCHS, steps_per_epoch=math.ceil(num_train_images / BATCH_SIZE), validation_data=val_sequence, validation_steps=math.ceil(num_test_images / BATCH_SIZE), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			train_images, train_labels = self._dataset.train_data
+			train_sequence = MyDataSequence(train_images, train_labels, batch_size=batch_size, shuffle=True)
+			val_images, val_labels = self._dataset.test_data
+			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
+			history = self._model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+		elif self._use_generator:
+			# Use generators.
+			train_generator = self._dataset.create_train_batch_generator(batch_size, shuffle=True)
+			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
+			history = self._model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+		else:
+			train_images, train_labels = self._dataset.train_data
+			history = self._model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		#print('History =', history.history)
@@ -241,16 +277,18 @@ def main():
 		#--------------------
 		print('Start evaluating...')
 		start_time = time.time()
-		if False:
-			score = model.evaluate(test_images, test_labels, batch_size=BATCH_SIZE, sample_weight=None)
-		elif False:
-			# Use a generator.
-			val_generator = generate_data(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-			score = model.evaluate_generator(val_generator, steps=math.ceil(num_test_images / BATCH_SIZE), max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing)
-		else:
+		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
-			val_sequence = DataSequence(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-			score = model.evaluate_generator(val_sequence, steps=math.ceil(num_test_images / BATCH_SIZE), max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing)
+			val_images, val_labels = self._dataset.test_data
+			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
+			score = self._model.evaluate_generator(val_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+		elif self._use_generator:
+			# Use a generator.
+			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
+			score = self._model.evaluate_generator(val_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+		else:
+			val_images, val_labels = self._dataset.test_data
+			score = self._model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
 		print('\tValidation: loss = {}, accuracy = {}.'.format(*score))
 		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
@@ -259,61 +297,75 @@ def main():
 		start_time = time.time()
 		if False:
 			# Save only a model's architecture.
-			json_string = model.to_json()
-			#yaml_string = model.to_yaml()
+			json_string = self._model.to_json()
+			#yaml_string = self._model.to_yaml()
 			# Save only a model's weights.
-			model.save_weights(os.path.join(output_dir_path, 'model_weights.hdf5'))
+			self._model.save_weights(os.path.join(self._output_dir_path, 'model_weights.hdf5'))
 		else:
-			model.save(os.path.join(output_dir_path, 'model.hdf5'))
-		del model
+			self._model.save(os.path.join(self._output_dir_path, 'model.hdf5'))
+		del self._model
 		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
-	# Infer.
-
-	print('Start loading a model...')
-	start_time = time.time()
-	if False:
-		# Load only a model's architecture.
-		loaded_model = keras.models.model_from_json(json_string)
-		#loaded_model = keras.models.model_from_yaml(yaml_string)
-		# Load only a model's weights.
-		loaded_model.load_weights(os.path.join(output_dir_path, 'model_weights.hdf5'))
-	else:
-		loaded_model = tf.keras.models.load_model(os.path.join(output_dir_path, 'model.hdf5'))
-	print('End loading a model: {} secs.'.format(time.time() - start_time))
-
-	#--------------------
-	print('Start inferring...')
-	start_time = time.time()
-	if False:
-		inferences = loaded_model.predict(test_images, batch_size=BATCH_SIZE)
-	elif False:
-		# Use a generator.
-		test_generator = generate_data(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-		inferences = loaded_model.predict_generator(test_generator, steps=math.ceil(num_test_images / BATCH_SIZE), max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing)
-	else:
-		# Use a Keras sequence.
-		test_sequence = DataSequence(test_images, test_labels, batch_size=BATCH_SIZE, shuffle=False)
-		inferences = loaded_model.predict_generator(test_sequence, steps=math.ceil(num_test_images / BATCH_SIZE), max_queue_size=max_queue_size, workers=num_workers, use_multiprocessing=use_multiprocessing)
-	print('End inferring: {} secs.'.format(time.time() - start_time))
-
-	if inferences is not None:
-		if num_classes > 2:
-			inferences = np.argmax(inferences, -1)
-			ground_truths = np.argmax(test_labels, -1)
-		elif 2 == num_classes:
-			inferences = np.around(inferences)
-			ground_truths = test_labels
+	def infer(self, batch_size=None):
+		print('Start loading a model...')
+		start_time = time.time()
+		if False:
+			# Load only a model's architecture.
+			loaded_model = keras.models.model_from_json(json_string)
+			#loaded_model = keras.models.model_from_yaml(yaml_string)
+			# Load only a model's weights.
+			loaded_model.load_weights(os.path.join(self._output_dir_path, 'model_weights.hdf5'))
 		else:
-			raise ValueError('Invalid number of classes')
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-		print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
-	else:
-		print('[SWL] Warning: Invalid inference results.')
+			loaded_model = tf.keras.models.load_model(os.path.join(self._output_dir_path, 'model.hdf5'))
+		print('End loading a model: {} secs.'.format(time.time() - start_time))
+
+		#--------------------
+		print('Start inferring...')
+		start_time = time.time()
+		if self._use_keras_data_sequence:
+			# Use a Keras sequence.
+			test_images, test_labels = self._dataset.test_data
+			test_sequence = MyDataSequence(test_images, test_labels, batch_size=batch_size, shuffle=False)
+			inferences = loaded_model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+		elif self._use_generator:
+			# Use a generator.
+			test_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
+			inferences = loaded_model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			# TODO [implement] >> self._test_labels have to be generated.
+			test_labels = self._dataset.test_data[1]
+		else:
+			test_images, test_labels = self._dataset.test_data
+			inferences = loaded_model.predict(test_images, batch_size=batch_size)
+		print('End inferring: {} secs.'.format(time.time() - start_time))
+
+		if inferences is not None:
+			if self._num_classes > 2:
+				inferences = np.argmax(inferences, -1)
+				ground_truths = np.argmax(test_labels, -1)
+			elif 2 == self._num_classes:
+				inferences = np.around(inferences)
+				ground_truths = test_labels
+			else:
+				raise ValueError('Invalid number of classes')
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+			print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+		else:
+			print('[SWL] Warning: Invalid inference results.')
+
+#--------------------------------------------------------------------
+
+def main():
+	NUM_EPOCHS, BATCH_SIZE = 30, 128
+	initial_epoch = 0
+
+	runner = MyRunner()
+
+	runner.train(NUM_EPOCHS, BATCH_SIZE, initial_epoch)
+	runner.infer()
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()

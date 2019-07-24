@@ -13,23 +13,28 @@ import cv2
 
 #--------------------------------------------------------------------
 
-def load_data(batch_size, num_workers=4):
-	# Preprocessing.
-	transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+class MyDataset(object):
+	def __init__(self):
+		# Preprocessing.
+		self._transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
-	train_set = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
-	train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+	def create_train_data_loader(self, batch_size, shuffle=True, num_workers=4):
+		train_set = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=self._transform)
+		train_loader = torch.utils.data.DataLoader(train_set, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
 
-	test_set = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=transform)
-	test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+		return train_loader
 
-	return train_loader, test_loader
+	def create_test_data_loader(self, batch_size, shuffle=False, num_workers=4):
+		test_set = torchvision.datasets.MNIST(root='./data', train=False, download=True, transform=self._transform)
+		test_loader = torch.utils.data.DataLoader(test_set, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+
+		return test_loader
 
 #--------------------------------------------------------------------
 
-class Model(nn.Module):
+class MyModel(nn.Module):
 	def __init__(self):
-		super(Model, self).__init__()
+		super(MyModel, self).__init__()
 
 		#self.conv1 = nn.Conv2d(1, 32, 5)
 		self.conv1 = nn.Conv2d(1, 32, 5, padding=2)
@@ -51,73 +56,79 @@ class Model(nn.Module):
 
 #--------------------------------------------------------------------
 
-def main():
-	device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+class MyRunner(object):
+	def __init__(self, batch_size):
+		self._device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-	#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
-	num_classes = 10
+		#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+		self._num_classes = 10
 
-	BATCH_SIZE, NUM_EPOCHS = 128, 30
+		output_dir_prefix = 'simple_training'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		os.makedirs(output_dir_path, exist_ok=True)
 
-	model_file_path = './mnist_cnn.pt'
+		self._model_filepath = os.path.join(output_dir_path, 'mnist_cnn.pt')
 
-	#%%------------------------------------------------------------------
-	# Load data.
+		#--------------------
+		# Create a dataset.
 
-	print('Start loading dataset...')
-	start_time = time.time()
-	train_loader, test_loader = load_data(BATCH_SIZE)
-	print('End loading dataset: {} secs.'.format(time.time() - start_time))
+		print('Start loading dataset...')
+		start_time = time.time()
+		dataset = MyDataset()
+		self._train_loader = dataset.create_train_data_loader(batch_size, shuffle=True, num_workers=4)
+		self._test_loader = dataset.create_test_data_loader(batch_size, shuffle=False, num_workers=4)
+		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
-	data_iter = iter(train_loader)
-	images, labels = data_iter.next()
-	print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_images.shape, train_images.dtype, np.min(train_images), np.max(train_images)))
-	print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(train_labels.shape, train_labels.dtype, np.min(train_labels), np.max(train_labels)))
+		data_iter = iter(self._train_loader)
+		images, labels = data_iter.next()
+		images, labels = images.numpy(), labels.numpy()
+		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-	data_iter = iter(test_loader)
-	images, labels = data_iter.next()
-	print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_images.shape, test_images.dtype, np.min(test_images), np.max(test_images)))
-	print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(test_labels.shape, test_labels.dtype, np.min(test_labels), np.max(test_labels)))
+		data_iter = iter(self._test_loader)
+		images, labels = data_iter.next()
+		images, labels = images.numpy(), labels.numpy()
+		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
+		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-	#%%------------------------------------------------------------------
-	# Create a model.
+		#--------------------
+		# Create a model.
 
-	model = Model()
-	model = model.to(device)
+		self._model = MyModel()
+		self._model = self._model.to(self._device)
 
-	#%%------------------------------------------------------------------
-	# Train.
-
-	if True:
+	def train(self, num_epochs):
 		criterion = nn.CrossEntropyLoss()
-		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+		optimizer = optim.SGD(self._model.parameters(), lr=0.001, momentum=0.9)
 
 		#--------------------
 		print('Start training...')
 		start_total_time = time.time()
-		for epoch in range(NUM_EPOCHS):
+		for epoch in range(num_epochs):
 			print('Epoch {}:'.format(epoch + 1))
 
 			start_time = time.time()
 			running_loss = 0.0
-			for idx, data in enumerate(train_loader):
+			for idx, data in enumerate(self._train_loader):
 				inputs, outputs = data
 
 				"""
 				# One-hot encoding.
-				outputs_onehot = torch.LongTensor(outputs.shape[0], num_classes)
+				outputs_onehot = torch.LongTensor(outputs.shape[0], self._num_classes)
 				outputs_onehot.zero_()
 				outputs_onehot.scatter_(1, outputs.view(outputs.shape[0], -1), 1)
 				"""
 
-				inputs, outputs = inputs.to(device), outputs.to(device)
-				#inputs, outputs, outputs_onehot = inputs.to(device), outputs.to(device), outputs_onehot.to(device)
+				inputs, outputs = inputs.to(self._device), outputs.to(self._device)
+				#inputs, outputs, outputs_onehot = inputs.to(self._device), outputs.to(self._device), outputs_onehot.to(self._device)
 
 				# Zero the parameter gradients.
 				optimizer.zero_grad()
 
 				# Forward + backward + optimize.
-				model_outputs = model(inputs)
+				model_outputs = self._model(inputs)
 				loss = criterion(model_outputs, outputs)
 				loss.backward()
 				optimizer.step()
@@ -133,41 +144,49 @@ def main():
 		#--------------------
 		print('Start saving a model...')
 		start_time = time.time()
-		torch.save(model, model_file_path)
+		torch.save(self._model, self._model_filepath)
 		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
-	# Infer.
+	def infer(self):
+		print('Start loading a model...')
+		start_time = time.time()
+		self._model = torch.load(self._model_filepath)
+		self._model.eval()
+		print('End loading a model: {} secs.'.format(time.time() - start_time))
 
-	print('Start loading a model...')
-	start_time = time.time()
-	model = torch.load(model_file_path)
-	model.eval()
-	print('End loading a model: {} secs.'.format(time.time() - start_time))
+		#--------------------
+		print('Start inferring...')
+		start_time = time.time()
+		inferences, ground_truths = list(), list()
+		for idx, data in enumerate(self._test_loader):
+			inputs, outputs = data
+			#inputs, outputs = inputs.to(self._device), outputs.to(self._device)
+			inputs = inputs.to(self._device)
 
-	#--------------------
-	print('Start inferring...')
-	start_time = time.time()
-	inferences, ground_truths = list(), list()
-	for idx, data in enumerate(test_loader):
-		inputs, outputs = data
-		#inputs, outputs = inputs.to(device), outputs.to(device)
-		inputs = inputs.to(device)
+			model_outputs = self._model(inputs)
 
-		model_outputs = model(inputs)
+			_, model_outputs = torch.max(model_outputs, 1)
+			inferences.extend(model_outputs.cpu().numpy())
+			ground_truths.extend(outputs.numpy())
+		print('End inferring: {} secs.'.format(time.time() - start_time))
 
-		_, model_outputs = torch.max(model_outputs, 1)
-		inferences.extend(model_outputs.cpu().numpy())
-		ground_truths.extend(outputs.numpy())
-	print('End inferring: {} secs.'.format(time.time() - start_time))
+		inferences = np.array(inferences)
+		ground_truths = np.array(ground_truths)
+		if inferences is not None:
+			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+			print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+		else:
+			print('[SWL] Warning: Invalid inference results.')
 
-	inferences = np.array(inferences)
-	ground_truths = np.array(ground_truths)
-	if inferences is not None:
-		correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-		print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
-	else:
-		print('[SWL] Warning: Invalid inference results.')
+#--------------------------------------------------------------------
+
+def main():
+	NUM_EPOCHS, BATCH_SIZE = 30, 128
+
+	runner = MyRunner(BATCH_SIZE)
+
+	runner.train(NUM_EPOCHS)
+	runner.infer()
 
 #--------------------------------------------------------------------
 

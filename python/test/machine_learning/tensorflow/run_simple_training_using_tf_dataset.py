@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time, datetime
+import os, time
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -9,6 +9,7 @@ import cv2
 
 #--------------------------------------------------------------------
 
+# REF [class] >> MyDataset in ${SWL_PYTHON_HOME}/test/machine_learning/tensorflow/run_simple_training.py.
 class MyDataset(object):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		# Load data.
@@ -107,8 +108,8 @@ class MyDataset(object):
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
 		# Preprocessing.
-		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		train_inputs, train_outputs = preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
@@ -163,9 +164,11 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, batch_size):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
+
+		self._use_reinitializable_iterator = False
 
 		output_dir_prefix = 'simple_training'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
@@ -180,18 +183,36 @@ class MyRunner(object):
 		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
 
 		#--------------------
-		# Create a model.
-
 		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')
 		self._output_ph = tf.placeholder(tf.float32, shape=[None, self._num_classes], name='output_ph')
+
+		if not self._use_reinitializable_iterator:
+			# Use an initializable iterator.
+			dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
+
+			self._iter = dataset.make_initializable_iterator()
+		else:
+			# Use a reinitializable iterator.
+			train_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
+			test_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
+
+			self._iter = tf.data.Iterator.from_structure(train_dataset.output_types, train_dataset.output_shapes)
+
+			self._train_init_op = self._iter.make_initializer(train_dataset)
+			self._val_init_op = self._iter.make_initializer(test_dataset)
+			self._test_init_op = self._iter.make_initializer(test_dataset)
+
+		#--------------------
+		# Create a model.
 
 		self._model = MyModel()
 		self._model_output = self._model.create_model(self._input_ph, self._num_classes)
 
-	# Train and evaluate.
-	def train(self, num_epochs, batch_size):
-		loss = self._model.get_loss(self._model_output, self._output_ph)
-		accuracy = self._model.get_accuracy(self._model_output, self._output_ph)
+	def train(self, num_epochs):
+		input_elem, output_elem = self._iter.get_next()
+
+		loss = self._model.get_loss(self._model_output, output_elem)
+		accuracy = self._model.get_accuracy(self._model_output, output_elem)
 
 		learning_rate = 0.001
 		#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -212,60 +233,85 @@ class MyRunner(object):
 
 				#--------------------
 				start_time = time.time()
-				train_loss, train_accuracy, num_examples = 0, 0, 0
-				for data, num_data in self._dataset.create_train_batch_generator(batch_size, shuffle=True):
-					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: data[0], self._output_ph: data[1]})
-					train_loss += batch_loss * num_data
-					train_accuracy += batch_accuracy * num_data
-					num_examples += num_data
-				train_loss /= num_examples
-				train_accuracy /= num_examples
+				# Initialize iterator with train data.
+				if not self._use_reinitializable_iterator:
+					sess.run(self._iter.initializer, feed_dict={self._input_ph: train_images, self._output_ph: train_labels})
+				else:
+					sess.run(self._train_init_op, feed_dict={self._input_ph: train_images, self._output_ph: train_labels})
+				train_loss, train_accuracy = 0, 0
+				while True:
+					try:
+						#_, loss_value, accuracy_value = sess.run([train_op, loss, accuracy])
+						_, loss_value, accuracy_value, elem_value = sess.run([train_op, loss, accuracy, input_elem])
+						train_loss += loss_value * elem_value.shape[0]
+						train_accuracy += accuracy_value * elem_value.shape[0]
+					except tf.errors.OutOfRangeError:
+						break
+				train_loss /= train_images.shape[0]
+				train_accuracy /= train_images.shape[0]
 				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
 
 				#--------------------
 				start_time = time.time()
-				val_loss, val_accuracy, num_examples = 0, 0, 0
-				for data, num_data in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={self._input_ph: data[0], self._output_ph: data[1]})
-					val_loss += batch_loss * num_data
-					val_accuracy += batch_accuracy * num_data
-					num_examples += num_data
-				val_loss /= num_examples
-				val_accuracy /= num_examples
+				# Switch to validation data.
+				if not self._use_reinitializable_iterator:
+					sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
+				else:
+					sess.run(self._val_init_op, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
+				val_loss, val_accuracy = 0, 0
+				while True:
+					try:
+						#loss_value, accuracy_value = sess.run([loss, accuracy])
+						loss_value, accuracy_value, elem_value = sess.run([loss, accuracy, input_elem])
+						val_loss += loss_value * elem_value.shape[0]
+						val_accuracy += accuracy_value * elem_value.shape[0]
+					except tf.errors.OutOfRangeError:
+						break
+				val_loss /= test_images.shape[0]
+				val_accuracy /= test_images.shape[0]
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
 
 			#--------------------
 			print('Start saving a model...')
 			start_time = time.time()
-			saved_model_path = saver.save(sess, self._checkpoint_dir_path + '/model.ckpt')
+			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
 			print('End saving a model: {} secs.'.format(time.time() - start_time))
 		print('End training: {} secs.'.format(time.time() - start_total_time))
 
-	def infer(self, batch_size=None):
+	def infer(self):
 		with tf.Session() as sess:
 			print('Start loading a model...')
 			start_time = time.time()
 			saver = tf.train.Saver()
-			ckpt = tf.train.get_checkpoint_state(self._checkpoint_dir_path)
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			saver.restore(sess, ckpt.model_checkpoint_path)
-			#saver.restore(sess, tf.train.latest_checkpoint(self._checkpoint_dir_path))
+			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
 			print('End loading a model: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
 			print('Start inferring...')
 			start_time = time.time()
-			inferences, test_labels = list(), list()
-			for data, num_data in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-				inferences.append(sess.run(self._model_output, feed_dict={self._input_ph: data[0]}))
-				test_labels.append(data[1])
+			# Switch to test data.
+			if not self._use_reinitializable_iterator:
+				sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
+				#sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images})  # Error.
+			else:
+				sess.run(self._test_init_op, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
+				#sess.run(self._test_init_op, feed_dict={self._input_ph: test_images})  # Error.
+			inferences = list()
+			while True:
+				try:
+					inferences.append(sess.run(self._model_output))
+				except tf.errors.OutOfRangeError:
+					break
 			print('End inferring: {} secs.'.format(time.time() - start_time))
 
-			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
+			inferences = np.vstack(inferences)
 			if inferences is not None:
-				if self._num_classes > 2:
+				if num_classes > 2:
 					inferences = np.argmax(inferences, -1)
 					ground_truths = np.argmax(test_labels, -1)
-				elif 2 == self._num_classes:
+				elif 2 == num_classes:
 					inferences = np.around(inferences)
 					ground_truths = test_labels
 				else:
@@ -280,14 +326,13 @@ class MyRunner(object):
 def main():
 	NUM_EPOCHS, BATCH_SIZE = 30, 128
 
-	runner = MyRunner()
+	runner = MyRunner(BATCH_SIZE)
 
-	runner.train(NUM_EPOCHS, BATCH_SIZE)
+	runner.train(NUM_EPOCHS)
 	runner.infer()
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()
