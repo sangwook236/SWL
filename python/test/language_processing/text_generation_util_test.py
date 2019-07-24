@@ -4,10 +4,11 @@
 import sys
 sys.path.append('../../src')
 
-import os, random, json
+import os, math, random, json
 import numpy as np
 import cv2
 from swl.util.util import make_dir
+import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
 def generate_random_word_set_test():
@@ -29,24 +30,32 @@ def generate_random_word_set_test():
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-	#print('Hangeul charset =', len(hangeul_charset), hangeul_charset)
-	#print('Alphabet charset =', len(alphabet_charset), alphabet_charset)
-	#print('Digit charset =', len(digit_charset), digit_charset)
-	#print('Symbol charset =', len(symbol_charset), symbol_charset)
+	if False:
+		print('Hangeul charset =', len(hangeul_charset), hangeul_charset)
+		print('Alphabet charset =', len(alphabet_charset), alphabet_charset)
+		print('Digit charset =', len(digit_charset), digit_charset)
+		print('Symbol charset =', len(symbol_charset), symbol_charset)
+
+	charsets = [
+		hangeul_charset,
+		alphabet_charset,
+		digit_charset,
+		#symbol_charset,
+		hangeul_charset + digit_charset,
+		hangeul_charset + symbol_charset,
+		alphabet_charset + digit_charset,
+		alphabet_charset + symbol_charset,
+		hangeul_charset + alphabet_charset,
+		hangeul_charset + alphabet_charset + digit_charset,
+		hangeul_charset + alphabet_charset + symbol_charset,
+		hangeul_charset + alphabet_charset + digit_charset + symbol_charset,
+	]
 
 	num_words = 10
 	min_char_count, max_char_count = 2, 10
-	word_set = tg_util.generate_random_word_set(num_words, hangeul_charset, min_char_count, max_char_count)
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, alphabet_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, digit_charset, min_char_count, max_char_count))
-	#word_set = word_set.union(tg_util.generate_random_word_set(num_words, symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, hangeul_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, hangeul_charset + symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, alphabet_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, alphabet_charset + symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, hangeul_charset + alphabet_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, hangeul_charset + alphabet_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_random_word_set(num_words, hangeul_charset + alphabet_charset + symbol_charset, min_char_count, max_char_count))
+	word_set = set()
+	for charset in charsets:
+		word_set = word_set.union(tg_util.generate_random_word_set(num_words, charset, min_char_count, max_char_count))
 	
 	print('#generated word set =', len(word_set))
 	print('Generated word set =', word_set)
@@ -70,27 +79,66 @@ def generate_repetitive_word_set_test():
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-	#print('Hangeul charset =', len(hangeul_charset), hangeul_charset)
-	#print('Alphabet charset =', len(alphabet_charset), alphabet_charset)
-	#print('Digit charset =', len(digit_charset), digit_charset)
-	#print('Symbol charset =', len(symbol_charset), symbol_charset)
+	if False:
+		print('Hangeul charset =', len(hangeul_charset), hangeul_charset)
+		print('Alphabet charset =', len(alphabet_charset), alphabet_charset)
+		print('Digit charset =', len(digit_charset), digit_charset)
+		print('Symbol charset =', len(symbol_charset), symbol_charset)
+
+	charsets = [
+		hangeul_charset,
+		alphabet_charset,
+		digit_charset,
+		#symbol_charset,
+		hangeul_charset + digit_charset,
+		hangeul_charset + symbol_charset,
+		alphabet_charset + digit_charset,
+		alphabet_charset + symbol_charset,
+		hangeul_charset + alphabet_charset,
+		hangeul_charset + alphabet_charset + digit_charset,
+		hangeul_charset + alphabet_charset + symbol_charset,
+		hangeul_charset + alphabet_charset + digit_charset + symbol_charset,
+	]
 
 	num_char_repetitions = 2
 	min_char_count, max_char_count = 2, 10
-	word_set = tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset, min_char_count, max_char_count)
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, digit_charset, min_char_count, max_char_count))
-	#word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, alphabet_charset + symbol_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset + digit_charset, min_char_count, max_char_count))
-	word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, hangeul_charset + alphabet_charset + symbol_charset, min_char_count, max_char_count))
+	word_set = set()
+	for charset in charsets:
+		word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, max_char_count))
 	
 	print('#generated word set =', len(word_set))
 	print('Generated word set =', word_set)
+
+def generate_hangeul_font_list_test():
+	texts = [
+		'가나다라마바사앙잦찿캌탙팦핳',
+		'각난닫랄맘밥삿아자차카타파하',
+		'ABCDEFGHIJKLMnopqrstuvwxyz',
+		'abcdefghijklmNOPQRSTUVWXYZ',
+		'0123456789',
+		' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?',
+	]
+
+	text_offset = (0, 0)
+	crop_text_area = True
+	draw_text_border = False
+
+	font_list = tg_util.generate_hangeul_font_list()
+	for font_type, font_index in font_list:
+		print('Font: {}, font index: {}.'.format(font_type, font_index))
+		for text in texts:
+			font_size = random.randint(20, 40)
+			image_size = (math.ceil(font_size * 1.1) * len(text), math.ceil(font_size * 1.1))
+			#font_color = (255, 255, 255)
+			font_color = None
+			#bg_color = (0, 0, 0)
+			bg_color = None
+			alpha = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+
+			cv2.imshow('Text', np.array(alpha))
+			cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
 
 def text_generator_test():
 	font_size = 32
@@ -573,6 +621,9 @@ def main():
 	#generate_random_word_set_test()
 	#generate_repetitive_word_set_test()
 
+	#generate_hangeul_font_list_test()
+
+	#--------------------
 	#text_generator_test()
 	#scene_text_generator_test()
 
@@ -581,10 +632,10 @@ def main():
 
 	# Create a text generator.
 	#generate_simple_text_lines_test()
-	#generate_text_lines_test()
-	generate_scene_texts_test()
+	generate_text_lines_test()
+	#generate_scene_texts_test()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

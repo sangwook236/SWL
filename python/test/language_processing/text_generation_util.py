@@ -6,7 +6,7 @@ import cv2
 #from imgaug import augmenters as iaa
 import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
-import swl.language_processing.phd08_dataset as phd08_dataset
+import swl.language_processing.hangeul_handwriting_dataset as hg_hw_dataset
 import swl.machine_vision.util as swl_cv_util
 from swl.util.util import make_dir
 
@@ -45,49 +45,49 @@ def generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, 
 
 def generate_hangeul_font_list():
 	if 'posix' == os.name:
-		system_font_dir = '/usr/share/fonts'
-		font_dir = '/home/sangwook/work/font'
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font'
 	else:
-		system_font_dir = 'C:/Windows/Fonts'
-		font_dir = 'D:/work/font'
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font'
 
 	"""
 	if 'posix' == os.name:
 		font_info_list = [
-			(system_font_dir + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-			(system_font_dir + '/truetype/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+			(system_font_dir_path + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+			(system_font_dir_path + '/truetype/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
 		]
 	else:
 		font_info_list = [
-			(system_font_dir + '/gulim.ttc', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-			(system_font_dir + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+			(system_font_dir_path + '/gulim.ttc', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+			(system_font_dir_path + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
 		]
 	font_info_list += [
 	"""
 	font_info_list = [
-		(font_dir + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-		(font_dir + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-		(font_dir + '/gabia_bombaram.ttf', 1),
-		(font_dir + '/gabia_napjakBlock.ttf', 1),
-		(font_dir + '/gabia_solmee.ttf', 1),
-		(font_dir + '/godoMaum.ttf', 1),
-		(font_dir + '/godoRounded R.ttf', 1),
-		#(font_dir + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
-		(font_dir + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
-		(font_dir + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
-		(font_dir + '/HS4.ttf', 1),  # HS두꺼비체.ttf
-		#(font_dir + '/HS5.ttf', 1),  # HS봄바람체1.0.ttf
-		(font_dir + '/HS6.ttf', 1),  # HS봄바람체2.0.ttf
-		(font_dir + '/HS7.ttf', 1),  # HS여름물빛체.ttf
-		(font_dir + '/NanumBarunGothic.ttf', 1),
-		(font_dir + '/NanumBarunpenR.ttf', 1),
-		(font_dir + '/NanumBrush.ttf', 1),
-		(font_dir + '/NanumGothic.ttf', 1),
-		(font_dir + '/NanumMyeongjo.ttf', 1),
-		(font_dir + '/NanumPen.ttf', 1),
-		(font_dir + '/NanumSquareR.ttf', 1),
-		#(font_dir + '/NanumSquareRoundR.ttf', 1),
-		(font_dir + '/SDMiSaeng.ttf', 1),
+		(font_dir_path + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
+		(font_dir_path + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
+		(font_dir_path + '/gabia_bombaram.ttf', 1),
+		#(font_dir_path + '/gabia_napjakBlock.ttf', 1),  # 한글 하단부 잘림.
+		(font_dir_path + '/gabia_solmee.ttf', 1),
+		(font_dir_path + '/godoMaum.ttf', 1),
+		#(font_dir_path + '/godoRounded R.ttf', 1),  # 한글 깨짐.
+		#(font_dir_path + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
+		(font_dir_path + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
+		(font_dir_path + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
+		#(font_dir_path + '/HS4.ttf', 1),  # HS두꺼비체.ttf  # 한글/영문/숫자/기호 하단부 잘림.
+		#(font_dir_path + '/HS5.ttf', 1),  # HS봄바람체1.0.ttf
+		(font_dir_path + '/HS6.ttf', 1),  # HS봄바람체2.0.ttf
+		(font_dir_path + '/HS7.ttf', 1),  # HS여름물빛체.ttf
+		(font_dir_path + '/NanumBarunGothic.ttf', 1),
+		(font_dir_path + '/NanumBarunpenR.ttf', 1),
+		(font_dir_path + '/NanumBrush.ttf', 1),
+		(font_dir_path + '/NanumGothic.ttf', 1),
+		(font_dir_path + '/NanumMyeongjo.ttf', 1),
+		(font_dir_path + '/NanumPen.ttf', 1),
+		(font_dir_path + '/NanumSquareR.ttf', 1),
+		#(font_dir_path + '/NanumSquareRoundR.ttf', 1),
+		(font_dir_path + '/SDMiSaeng.ttf', 1),
 	]
 
 	font_list = list()
@@ -97,8 +97,22 @@ def generate_hangeul_font_list():
 
 	return font_list
 
-def generate_phd08_dict():
-	if True:
+def generate_phd08_dict(from_npy=True):
+	if from_npy:
+		# Loads PHD08 npy dataset.
+		# Generate an info file for npy files generated from the PHD08 dataset.
+		#	Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
+		phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
+		print('Start loading PHD08 npy dataset...')
+		start_time = time.time()
+		handwriting_dict = hg_hw_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
+		for key, values in handwriting_dict.items():
+			handwriting_dict[key] = list()
+			for val in values:
+				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
+				handwriting_dict[key].append(val)
+		print('End loading PHD08 npy dataset: {} secs.'.format(time.time() - start_time))
+	else:
 		# Loads PHD08 image dataset.
 		phd08_image_dataset_info_filepath = './phd08_png_dataset.csv'
 		print('Start loading PHD08 image dataset...')
@@ -110,22 +124,6 @@ def generate_phd08_dict():
 				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
 				handwriting_dict[key].append(val)
 		print('End loading PHD08 image dataset: {} secs.'.format(time.time() - start_time))
-	elif False:
-		# Loads PHD08 npy dataset.
-		# Generate an info file for npy files generated from the PHD08 dataset.
-		#	Refer to generate_npy_dataset_from_phd08_conversion_result() in ${SWL_PYTHON_HOME}/test/language_processing/phd08_datset_test.py.
-		phd08_npy_dataset_info_filepath = './phd08_npy_dataset.csv'
-		print('Start loading PHD08 npy dataset...')
-		start_time = time.time()
-		handwriting_dict = phd08_dataset.load_phd08_npy(phd08_npy_dataset_info_filepath, is_dark_background=False)
-		for key, values in handwriting_dict.items():
-			handwriting_dict[key] = list()
-			for val in values:
-				val = cv2.cvtColor(cv2.bitwise_not(val), cv2.COLOR_BGRA2GRAY).astype(np.float32) / 255
-				handwriting_dict[key].append(val)
-		print('End loading PHD08 npy dataset: {} secs.'.format(time.time() - start_time))
-	else:
-		handwriting_dict = dict()
 
 	return handwriting_dict
 
@@ -436,7 +434,8 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 		self._font_list = generate_hangeul_font_list()
-		self._handwriting_dict = generate_phd08_dict()
+		#self._handwriting_dict = generate_phd08_dict(from_npy=True)
+		self._handwriting_dict = dict()
 
 	def __call__(self, char, font_size, *args, **kwargs):
 		"""Generates a character and its mask of numpy.array.
@@ -523,7 +522,7 @@ class MySimplePrintedHangeulTextGenerator(object):
 		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 		self._font_list = generate_hangeul_font_list()
-		#self._handwriting_dict = generate_phd08_dict()
+		#self._handwriting_dict = generate_phd08_dict(from_npy=True)
 
 	def __call__(self, text, char_space_ratio, font_size, *args, **kwargs):
 		"""Generates a single text line and masks for individual characters.
