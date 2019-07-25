@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time
+import os, time, datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -57,19 +57,14 @@ class MyModel(nn.Module):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size):
+	def __init__(self, batch_size, output_dir_path):
 		self._device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 		#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		os.makedirs(output_dir_path, exist_ok=True)
-
 		self._model_filepath = os.path.join(output_dir_path, 'mnist_cnn.pt')
+		os.makedirs(output_dir_path, exist_ok=True)
 
 		#--------------------
 		# Create a dataset.
@@ -170,9 +165,10 @@ class MyRunner(object):
 			ground_truths.extend(outputs.numpy())
 		print('End inferring: {} secs.'.format(time.time() - start_time))
 
-		inferences = np.array(inferences)
-		ground_truths = np.array(ground_truths)
+		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 		if inferences is not None:
+			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
 			print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
@@ -181,11 +177,17 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
-	NUM_EPOCHS, BATCH_SIZE = 30, 128
+	num_epochs, batch_size = 30, 128
 
-	runner = MyRunner(BATCH_SIZE)
+	output_dir_prefix = 'simple_training'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	runner.train(NUM_EPOCHS)
+	#--------------------
+	runner = MyRunner(batch_size, output_dir_path)
+
+	runner.train(num_epochs)
 	runner.infer()
 
 #--------------------------------------------------------------------

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time
+import os, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -25,48 +25,19 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
+		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
-	def create_train_batch_generator(self, batch_size, shuffle=True):
-		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
+	@property
+	def train_data(self):
+		return self._train_images, self._train_labels
 
-	def create_test_batch_generator(self, batch_size, shuffle=False):
-		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
-
-	@staticmethod
-	def _create_batch_generator(data1, data2, batch_size, shuffle):
-		num_examples = len(data1)
-		if len(data2) != num_examples:
-			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(data2)))
-		if batch_size is None:
-			batch_size = num_examples
-		if batch_size <= 0:
-			raise ValueError('Invalid batch size: {}'.format(batch_size))
-
-		indices = np.arange(num_examples)
-		if shuffle:
-			np.random.shuffle(indices)
-
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
-					yield (batch_data1, batch_data2), batch_indices.size
-				else:
-					yield (None, None), 0
-			else:
-				yield (None, None), 0
-
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+	@property
+	def test_data(self):
+		return self._test_images, self._test_labels
 
 	@staticmethod
 	def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
@@ -108,8 +79,8 @@ class MyDataset(object):
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
 		# Preprocessing.
-		train_inputs, train_outputs = preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
@@ -164,21 +135,17 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size):
+	def __init__(self, batch_size, output_dir_path):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
 		self._use_reinitializable_iterator = False
 
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		self._checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 		os.makedirs(self._checkpoint_dir_path, exist_ok=True)
 
 		#--------------------
-		# Create MNIST datset.
+		# Create a dataset.
 
 		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
 
@@ -188,31 +155,30 @@ class MyRunner(object):
 
 		if not self._use_reinitializable_iterator:
 			# Use an initializable iterator.
-			dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
+			dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(batch_size)
 
 			self._iter = dataset.make_initializable_iterator()
 		else:
 			# Use a reinitializable iterator.
-			train_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
-			test_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(BATCH_SIZE)
+			train_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(batch_size)
+			test_dataset = tf.data.Dataset.from_tensor_slices((self._input_ph, self._output_ph)).batch(batch_size)
 
 			self._iter = tf.data.Iterator.from_structure(train_dataset.output_types, train_dataset.output_shapes)
 
 			self._train_init_op = self._iter.make_initializer(train_dataset)
 			self._val_init_op = self._iter.make_initializer(test_dataset)
 			self._test_init_op = self._iter.make_initializer(test_dataset)
+		self._input_elem, self._output_elem = self._iter.get_next()
 
 		#--------------------
 		# Create a model.
 
 		self._model = MyModel()
-		self._model_output = self._model.create_model(self._input_ph, self._num_classes)
+		self._model_output = self._model.create_model(self._input_elem, self._num_classes)
 
-	def train(self, num_epochs):
-		input_elem, output_elem = self._iter.get_next()
-
-		loss = self._model.get_loss(self._model_output, output_elem)
-		accuracy = self._model.get_accuracy(self._model_output, output_elem)
+	def train(self, num_epochs, initial_epoch=0):
+		loss = self._model.get_loss(self._model_output, self._output_elem)
+		accuracy = self._model.get_accuracy(self._model_output, self._output_elem)
 
 		learning_rate = 0.001
 		#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
@@ -235,14 +201,16 @@ class MyRunner(object):
 				start_time = time.time()
 				# Initialize iterator with train data.
 				if not self._use_reinitializable_iterator:
+					train_images, train_labels = self._dataset.train_data
 					sess.run(self._iter.initializer, feed_dict={self._input_ph: train_images, self._output_ph: train_labels})
 				else:
+					train_images, train_labels = self._dataset.train_data
 					sess.run(self._train_init_op, feed_dict={self._input_ph: train_images, self._output_ph: train_labels})
 				train_loss, train_accuracy = 0, 0
 				while True:
 					try:
 						#_, loss_value, accuracy_value = sess.run([train_op, loss, accuracy])
-						_, loss_value, accuracy_value, elem_value = sess.run([train_op, loss, accuracy, input_elem])
+						_, loss_value, accuracy_value, elem_value = sess.run([train_op, loss, accuracy, self._input_elem])
 						train_loss += loss_value * elem_value.shape[0]
 						train_accuracy += accuracy_value * elem_value.shape[0]
 					except tf.errors.OutOfRangeError:
@@ -255,14 +223,16 @@ class MyRunner(object):
 				start_time = time.time()
 				# Switch to validation data.
 				if not self._use_reinitializable_iterator:
+					test_images, test_labels = self._dataset.test_data
 					sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
 				else:
+					test_images, test_labels = self._dataset.test_data
 					sess.run(self._val_init_op, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
 				val_loss, val_accuracy = 0, 0
 				while True:
 					try:
 						#loss_value, accuracy_value = sess.run([loss, accuracy])
-						loss_value, accuracy_value, elem_value = sess.run([loss, accuracy, input_elem])
+						loss_value, accuracy_value, elem_value = sess.run([loss, accuracy, self._input_elem])
 						val_loss += loss_value * elem_value.shape[0]
 						val_accuracy += accuracy_value * elem_value.shape[0]
 					except tf.errors.OutOfRangeError:
@@ -274,7 +244,7 @@ class MyRunner(object):
 			#--------------------
 			print('Start saving a model...')
 			start_time = time.time()
-			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
+			saved_model_path = saver.save(sess, self._checkpoint_dir_path + '/model.ckpt')
 			print('End saving a model: {} secs.'.format(time.time() - start_time))
 		print('End training: {} secs.'.format(time.time() - start_total_time))
 
@@ -283,9 +253,9 @@ class MyRunner(object):
 			print('Start loading a model...')
 			start_time = time.time()
 			saver = tf.train.Saver()
-			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			ckpt = tf.train.get_checkpoint_state(self._checkpoint_dir_path)
 			saver.restore(sess, ckpt.model_checkpoint_path)
-			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
+			#saver.restore(sess, tf.train.latest_checkpoint(self._checkpoint_dir_path))
 			print('End loading a model: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
@@ -293,9 +263,11 @@ class MyRunner(object):
 			start_time = time.time()
 			# Switch to test data.
 			if not self._use_reinitializable_iterator:
+				test_images, test_labels = self._dataset.test_data
 				sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
 				#sess.run(self._iter.initializer, feed_dict={self._input_ph: test_images})  # Error.
 			else:
+				test_images, test_labels = self._dataset.test_data
 				sess.run(self._test_init_op, feed_dict={self._input_ph: test_images, self._output_ph: test_labels})
 				#sess.run(self._test_init_op, feed_dict={self._input_ph: test_images})  # Error.
 			inferences = list()
@@ -308,10 +280,12 @@ class MyRunner(object):
 
 			inferences = np.vstack(inferences)
 			if inferences is not None:
-				if num_classes > 2:
+				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+				if self._num_classes > 2:
 					inferences = np.argmax(inferences, -1)
 					ground_truths = np.argmax(test_labels, -1)
-				elif 2 == num_classes:
+				elif 2 == self._num_classes:
 					inferences = np.around(inferences)
 					ground_truths = test_labels
 				else:
@@ -324,15 +298,23 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
-	NUM_EPOCHS, BATCH_SIZE = 30, 128
+	num_epochs, batch_size = 30, 128
+	initial_epoch = 0
 
-	runner = MyRunner(BATCH_SIZE)
+	output_dir_prefix = 'simple_training'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	runner.train(NUM_EPOCHS)
+	#--------------------
+	runner = MyRunner(batch_size, output_dir_path)
+
+	runner.train(num_epochs, initial_epoch)
 	runner.infer()
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()

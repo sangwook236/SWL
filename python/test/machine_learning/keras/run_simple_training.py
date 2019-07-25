@@ -29,6 +29,7 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
+		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
@@ -209,7 +210,7 @@ def draw_history(history):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, output_dir_path):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
@@ -218,13 +219,9 @@ class MyRunner(object):
 
 		self._use_keras_data_sequence, self._use_generator = True, False
 
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		self._output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-		os.makedirs(self._output_dir_path, exist_ok=True)
-
+		self._output_dir_path = output_dir_path
 		self._checkpoint_filepath = os.path.join(self._output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
+		os.makedirs(self._output_dir_path, exist_ok=True)
 
 		#sess = tf.Session(config=config)
 		#K.set_session(sess)
@@ -306,7 +303,7 @@ class MyRunner(object):
 		del self._model
 		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	def infer(self, batch_size=None):
+	def infer(self, batch_size=None, shuffle=False):
 		print('Start loading a model...')
 		start_time = time.time()
 		if False:
@@ -325,11 +322,11 @@ class MyRunner(object):
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
 			test_images, test_labels = self._dataset.test_data
-			test_sequence = MyDataSequence(test_images, test_labels, batch_size=batch_size, shuffle=False)
+			test_sequence = MyDataSequence(test_images, test_labels, batch_size=batch_size, shuffle=shuffle)
 			inferences = loaded_model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
-			test_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
+			test_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle)
 			inferences = loaded_model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 			# TODO [implement] >> self._test_labels have to be generated.
 			test_labels = self._dataset.test_data[1]
@@ -339,6 +336,8 @@ class MyRunner(object):
 		print('End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
+			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
 			if self._num_classes > 2:
 				inferences = np.argmax(inferences, -1)
 				ground_truths = np.argmax(test_labels, -1)
@@ -355,12 +354,18 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
-	NUM_EPOCHS, BATCH_SIZE = 30, 128
+	num_epochs, batch_size = 30, 128
 	initial_epoch = 0
 
-	runner = MyRunner()
+	output_dir_prefix = 'simple_training'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	runner.train(NUM_EPOCHS, BATCH_SIZE, initial_epoch)
+	#--------------------
+	runner = MyRunner(output_dir_path)
+
+	runner.train(num_epochs, batch_size, initial_epoch)
 	runner.infer()
 
 #--------------------------------------------------------------------

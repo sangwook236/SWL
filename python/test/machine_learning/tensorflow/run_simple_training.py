@@ -24,6 +24,7 @@ class MyDataset(object):
 		if len(self._test_labels) != self._num_test_examples:
 			raise ValueError('Invalid test data length: {} != {}'.format(self._num_test_examples, len(self._test_labels)))
 
+		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
@@ -163,19 +164,15 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self):
+	def __init__(self, output_dir_path):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
-		output_dir_prefix = 'simple_training'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		self._checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 		os.makedirs(self._checkpoint_dir_path, exist_ok=True)
 
 		#--------------------
-		# Create MNIST datset.
+		# Create a dataset.
 
 		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
 
@@ -189,7 +186,7 @@ class MyRunner(object):
 		self._model_output = self._model.create_model(self._input_ph, self._num_classes)
 
 	# Train and evaluate.
-	def train(self, num_epochs, batch_size):
+	def train(self, num_epochs, batch_size, initial_epoch=0):
 		loss = self._model.get_loss(self._model_output, self._output_ph)
 		accuracy = self._model.get_accuracy(self._model_output, self._output_ph)
 
@@ -213,11 +210,11 @@ class MyRunner(object):
 				#--------------------
 				start_time = time.time()
 				train_loss, train_accuracy, num_examples = 0, 0, 0
-				for data, num_data in self._dataset.create_train_batch_generator(batch_size, shuffle=True):
-					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: data[0], self._output_ph: data[1]})
-					train_loss += batch_loss * num_data
-					train_accuracy += batch_accuracy * num_data
-					num_examples += num_data
+				for batch_data, num_batch_examples in self._dataset.create_train_batch_generator(batch_size, shuffle=True):
+					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
+					train_loss += batch_loss * num_batch_examples
+					train_accuracy += batch_accuracy * num_batch_examples
+					num_examples += num_batch_examples
 				train_loss /= num_examples
 				train_accuracy /= num_examples
 				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
@@ -225,11 +222,11 @@ class MyRunner(object):
 				#--------------------
 				start_time = time.time()
 				val_loss, val_accuracy, num_examples = 0, 0, 0
-				for data, num_data in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={self._input_ph: data[0], self._output_ph: data[1]})
-					val_loss += batch_loss * num_data
-					val_accuracy += batch_accuracy * num_data
-					num_examples += num_data
+				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
+					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
+					val_loss += batch_loss * num_batch_examples
+					val_accuracy += batch_accuracy * num_batch_examples
+					num_examples += num_batch_examples
 				val_loss /= num_examples
 				val_accuracy /= num_examples
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
@@ -241,7 +238,7 @@ class MyRunner(object):
 			print('End saving a model: {} secs.'.format(time.time() - start_time))
 		print('End training: {} secs.'.format(time.time() - start_total_time))
 
-	def infer(self, batch_size=None):
+	def infer(self, batch_size=None, shuffle=False):
 		with tf.Session() as sess:
 			print('Start loading a model...')
 			start_time = time.time()
@@ -255,13 +252,15 @@ class MyRunner(object):
 			print('Start inferring...')
 			start_time = time.time()
 			inferences, test_labels = list(), list()
-			for data, num_data in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-				inferences.append(sess.run(self._model_output, feed_dict={self._input_ph: data[0]}))
-				test_labels.append(data[1])
+			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
+				inferences.append(sess.run(self._model_output, feed_dict={self._input_ph: batch_data[0]}))
+				test_labels.append(batch_data[1])
 			print('End inferring: {} secs.'.format(time.time() - start_time))
 
 			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
 			if inferences is not None:
+				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
 				if self._num_classes > 2:
 					inferences = np.argmax(inferences, -1)
 					ground_truths = np.argmax(test_labels, -1)
@@ -278,11 +277,18 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
-	NUM_EPOCHS, BATCH_SIZE = 30, 128
+	num_epochs, batch_size = 30, 128
+	initial_epoch = 0
 
-	runner = MyRunner()
+	output_dir_prefix = 'simple_training'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	runner.train(NUM_EPOCHS, BATCH_SIZE)
+	#--------------------
+	runner = MyRunner(output_dir_path)
+
+	runner.train(num_epochs, batch_size, initial_epoch)
 	runner.infer()
 
 #--------------------------------------------------------------------
