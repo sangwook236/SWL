@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time, datetime, math
+import os, argparse, time, datetime, math
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -240,7 +240,7 @@ class MyRunner(object):
 
 		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
-		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=0)
+		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 		#--------------------
@@ -348,29 +348,123 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def main():
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+def parse_command_line_options():
+	parser = argparse.ArgumentParser(description='Train and test a CNN model for MNIST dataset.')
 
-	num_epochs, batch_size = 30, 128
-	initial_epoch = 0
+	parser.add_argument(
+		'--train',
+		action='store_true',
+		help='Specify whether to train a model'
+	)
+	parser.add_argument(
+		'--infer',
+		action='store_true',
+		help='Specify whether to infer by a trained model'
+	)
+	parser.add_argument(
+		'-r',
+		'--resume',
+		action='store_true',
+		help='Specify whether to resume training'
+	)
+	parser.add_argument(
+		'-m',
+		'--model_file',
+		type=str,
+		#nargs='?',
+		help='The model file path where a trained model is saved or a pretrained model is loaded',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
+		'-tr',
+		'--train_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of training data',
+		default='./train_data'
+	)
+	parser.add_argument(
+		'-te',
+		'--test_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of test data',
+		default='./test_data'
+	)
+	parser.add_argument(
+		'-e',
+		'--epoch',
+		type=int,
+		help='Number of epochs',
+		default=30
+	)
+	parser.add_argument(
+		'-b',
+		'--batch_size',
+		type=int,
+		help='Batch size',
+		default=128
+	)
+	parser.add_argument(
+		'-g',
+		'--gpu',
+		type=str,
+		help='Specify GPU to use',
+		default='0'
+	)
+	parser.add_argument(
+		'-l',
+		'--log_level',
+		type=int,
+		help='Log level',
+		default=None
+	)
+
+	return parser.parse_args()
+
+def main():
+	args = parse_command_line_options()
+
+	if not args.train and not args.infer:
+		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+		return
+
+	if args.gpu:
+		os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+	if args.log_level:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(args.log_level)
 
 	#--------------------
-	output_dir_prefix = 'simple_training'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190724T231604'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	os.makedirs(output_dir_path, exist_ok=True)
+	num_epochs, batch_size = args.epoch, args.batch_size
+	initial_epoch = 0
 
-	model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
-	model_filepath = os.path.join(output_dir_path, 'model.hdf5')
-	#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
+	model_filepath = args.model_file
 
 	#--------------------
 	runner = MyRunner()
 
-	runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
-	runner.infer(model_filepath)
+	if args.train:
+		if model_filepath:
+			output_dir_path = os.path.dirname(model_filepath)
+		else:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			#output_dir_suffix = '20190724T231604'
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+			model_filepath = os.path.join(output_dir_path, 'model.hdf5')
+			#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
+		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
+		if output_dir_path.strip():
+			os.makedirs(output_dir_path, exist_ok=True)
+
+		runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
+
+	if args.infer:
+		if model_filepath and os.path.exists(model_filepath):
+			runner.infer(model_filepath)
+		else:
+			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
 
 #--------------------------------------------------------------------
 

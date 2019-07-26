@@ -14,6 +14,7 @@ def generate_text_image(text, font_type, font_index, font_size, font_color, bg_c
 	font_offset = font.getoffset(text)  # (x, y).
 
 	img = Image.new(mode='RGB', size=image_size, color=bg_color)
+	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
 	draw = ImageDraw.Draw(img)
 
 	#text_size = draw.textsize(text, font=font)  # (x, y).

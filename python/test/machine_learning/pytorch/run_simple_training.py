@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time, datetime
+import os, argparse, time, datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -173,28 +173,121 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
+def parse_command_line_options():
+	parser = argparse.ArgumentParser(description='Train and test a CNN model for MNIST dataset.')
+
+	parser.add_argument(
+		'--train',
+		action='store_true',
+		help='Specify whether to train a model'
+	)
+	parser.add_argument(
+		'--infer',
+		action='store_true',
+		help='Specify whether to infer by a trained model'
+	)
+	parser.add_argument(
+		'-r',
+		'--resume',
+		action='store_true',
+		help='Specify whether to resume training'
+	)
+	parser.add_argument(
+		'-m',
+		'--model_file',
+		type=str,
+		#nargs='?',
+		help='The model file path where a trained model is saved or a pretrained model is loaded',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
+		'-tr',
+		'--train_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of training data',
+		default='./train_data'
+	)
+	parser.add_argument(
+		'-te',
+		'--test_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of test data',
+		default='./test_data'
+	)
+	parser.add_argument(
+		'-e',
+		'--epoch',
+		type=int,
+		help='Number of epochs',
+		default=30
+	)
+	parser.add_argument(
+		'-b',
+		'--batch_size',
+		type=int,
+		help='Batch size',
+		default=128
+	)
+	parser.add_argument(
+		'-g',
+		'--gpu',
+		type=str,
+		help='Specify GPU to use',
+		default='0'
+	)
+	parser.add_argument(
+		'-l',
+		'--log_level',
+		type=int,
+		help='Log level',
+		default=None
+	)
+
+	return parser.parse_args()
+
 def main():
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	args = parse_command_line_options()
 
-	num_epochs, batch_size = 30, 128
+	if not args.train and not args.infer:
+		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+		return
 
-	train_device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-	infer_device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+	#if args.gpu:
+	#	os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 
 	#--------------------
-	output_dir_prefix = 'simple_training'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190724T231604'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	os.makedirs(output_dir_path, exist_ok=True)
+	num_epochs, batch_size = args.epoch, args.batch_size
 
-	model_filepath = os.path.join(output_dir_path, 'model.pt')
+	train_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+	infer_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
+
+	model_filepath = args.model_file
 
 	#--------------------
 	runner = MyRunner(batch_size)
 
-	runner.train(model_filepath, num_epochs, train_device)
-	runner.infer(model_filepath, infer_device)
+	if args.train:
+		if model_filepath:
+			output_dir_path = os.path.dirname(model_filepath)
+		else:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			#output_dir_suffix = '20190724T231604'
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+			model_filepath = os.path.join(output_dir_path, 'model.pt')
+		if output_dir_path.strip():
+			os.makedirs(output_dir_path, exist_ok=True)
+
+		runner.train(model_filepath, num_epochs, train_device)
+
+	if args.infer:
+		if model_filepath and os.path.exists(model_filepath):
+			runner.infer(model_filepath, infer_device)
+		else:
+			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
 
 #--------------------------------------------------------------------
 

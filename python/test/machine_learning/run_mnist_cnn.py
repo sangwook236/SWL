@@ -14,11 +14,6 @@ from mnist_data import MnistDataGenerator
 
 #--------------------------------------------------------------------
 
-def create_model(input_shape, output_shape):
-	return MnistCnn(input_shape, output_shape)
-
-#--------------------------------------------------------------------
-
 class MyRunner(object):
 	def __init__(self):
 		# Sets parameters.
@@ -58,7 +53,7 @@ class MyRunner(object):
 		with train_graph.as_default():
 			with tf.device(device_name):
 				# Creates a model.
-				modelForTraining = create_model(self._input_shape, self._output_shape)
+				modelForTraining = MnistCnn(self._input_shape, self._output_shape)
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
@@ -94,7 +89,7 @@ class MyRunner(object):
 		with eval_graph.as_default():
 			with tf.device(device_name):
 				# Creates a model.
-				modelForEvaluation = create_model(self._input_shape, self._output_shape)
+				modelForEvaluation = MnistCnn(self._input_shape, self._output_shape)
 				modelForEvaluation.create_evaluation_model()
 
 				# Creates an evaluator.
@@ -123,7 +118,7 @@ class MyRunner(object):
 		with infer_graph.as_default():
 			with tf.device(device_name):
 				# Creates a model.
-				modelForInference = create_model(self._input_shape, self._output_shape)
+				modelForInference = MnistCnn(self._input_shape, self._output_shape)
 				modelForInference.create_inference_model()
 
 				# Creates an inferrer.

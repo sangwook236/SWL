@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, time, datetime
+import os, argparse, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -278,27 +278,118 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def main():
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+def parse_command_line_options():
+	parser = argparse.ArgumentParser(description='Train and test a CNN model for MNIST dataset.')
 
-	num_epochs, batch_size = 30, 128
-	initial_epoch = 0
+	parser.add_argument(
+		'--train',
+		action='store_true',
+		help='Specify whether to train a model'
+	)
+	parser.add_argument(
+		'--infer',
+		action='store_true',
+		help='Specify whether to infer by a trained model'
+	)
+	parser.add_argument(
+		'-r',
+		'--resume',
+		action='store_true',
+		help='Specify whether to resume training'
+	)
+	parser.add_argument(
+		'-m',
+		'--model_dir',
+		type=str,
+		#nargs='?',
+		help='The model directory path where a trained model is saved or a pretrained model is loaded',
+		#required=True,
+		default=None
+	)
+	parser.add_argument(
+		'-tr',
+		'--train_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of training data',
+		default='./train_data'
+	)
+	parser.add_argument(
+		'-te',
+		'--test_data_dir',
+		type=str,
+		#nargs='?',
+		help='The directory path of test data',
+		default='./test_data'
+	)
+	parser.add_argument(
+		'-e',
+		'--epoch',
+		type=int,
+		help='Number of epochs',
+		default=30
+	)
+	parser.add_argument(
+		'-b',
+		'--batch_size',
+		type=int,
+		help='Batch size',
+		default=512
+	)
+	parser.add_argument(
+		'-g',
+		'--gpu',
+		type=str,
+		help='Specify GPU to use',
+		default='0'
+	)
+	parser.add_argument(
+		'-l',
+		'--log_level',
+		type=int,
+		help='Log level',
+		default=None
+	)
+
+	return parser.parse_args()
+
+def main():
+	args = parse_command_line_options()
+
+	if not args.train and not args.infer:
+		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+
+	if args.gpu:
+		os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+	if args.log_level:
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(args.log_level)
 
 	#--------------------
-	output_dir_prefix = 'simple_training'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190724T231604'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	num_epochs, batch_size = args.epoch, args.batch_size
+	initial_epoch = 0
 
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	os.makedirs(checkpoint_dir_path, exist_ok=True)
+	checkpoint_dir_path = args.model_dir
 
 	#--------------------
 	runner = MyRunner()
 
-	runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
-	runner.infer(checkpoint_dir_path)
+	if args.train:
+		if not checkpoint_dir_path:
+			output_dir_prefix = 'simple_training'
+			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+			#output_dir_suffix = '20190724T231604'
+			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+			checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+		if checkpoint_dir_path.strip():
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
+
+		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
+
+	if args.infer:
+		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
+			runner.infer(checkpoint_dir_path)
+		else:
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 
 #--------------------------------------------------------------------
 

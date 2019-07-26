@@ -330,6 +330,7 @@ def main():
 	num_epochs, batch_size = 1000, 128
 	initial_epoch = 0
 
+	#--------------------
 	output_dir_prefix = 'hangeul_jamo_carnet'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20190724T231604'
