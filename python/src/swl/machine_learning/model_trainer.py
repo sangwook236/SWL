@@ -177,9 +177,9 @@ class ModelTrainer(object):
 #%%------------------------------------------------------------------
 
 class GradientClippingModelTrainer(ModelTrainer):
-	def __init__(self, model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, global_step=None):
+	def __init__(self, model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, global_step=None, var_list=None):
 		self._max_gradient_norm = max_gradient_norm
-		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step)
+		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step, var_list)
 
 	def _get_train_operation(self, loss, global_step=None, var_list=None):
 		with tf.name_scope('train_op'):

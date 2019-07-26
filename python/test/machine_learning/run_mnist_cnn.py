@@ -20,7 +20,7 @@ def create_model(input_shape, output_shape):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, output_dir_path):
+	def __init__(self):
 		# Sets parameters.
 
 		is_output_augmented = False  # Fixed.
@@ -35,20 +35,6 @@ class MyRunner(object):
 		#self._sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
 		#--------------------
-		# Prepares directories.
-
-		self._output_dir_path = output_dir_path
-		self._checkpoint_dir_path = os.path.join(self._output_dir_path, 'tf_checkpoint')
-		self._inference_dir_path = os.path.join(self._output_dir_path, 'inference')
-		self._train_summary_dir_path = os.path.join(self._output_dir_path, 'train_log')
-		self._val_summary_dir_path = os.path.join(self._output_dir_path, 'val_log')
-
-		os.makedirs(self._checkpoint_dir_path, exist_ok=True)
-		os.makedirs(self._inference_dir_path, exist_ok=True)
-		os.makedirs(self._train_summary_dir_path, exist_ok=True)
-		os.makedirs(self._val_summary_dir_path, exist_ok=True)
-
-		#--------------------
 		# Prepares data.
 
 		self._dataGenerator = MnistDataGenerator(is_output_augmented, is_augmented_in_parallel)
@@ -56,7 +42,17 @@ class MyRunner(object):
 
 		self._dataGenerator.initialize()
 
-	def train(self, num_epochs, batch_size, shuffle=True, initial_epoch=0, is_training_resumed=False, device_name=None):
+	def train(self, checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, initial_epoch=0, is_training_resumed=False, device_name=None):
+		# Prepares directories.
+		inference_dir_path = os.path.join(output_dir_path, 'inference')
+		train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+		val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
+
+		os.makedirs(inference_dir_path, exist_ok=True)
+		os.makedirs(train_summary_dir_path, exist_ok=True)
+		os.makedirs(val_summary_dir_path, exist_ok=True)
+
+		#--------------------
 		# Creates a graph.
 		train_graph = tf.Graph()
 		with train_graph.as_default():
@@ -66,7 +62,7 @@ class MyRunner(object):
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
-				modelTrainer = SimpleModelTrainer(modelForTraining, self._dataGenerator, self._output_dir_path, self._checkpoint_dir_path, self._train_summary_dir_path, self._val_summary_dir_path, initial_epoch, var_list=None)
+				modelTrainer = SimpleModelTrainer(modelForTraining, self._dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch, var_list=None)
 
 				initializer = tf.global_variables_initializer()
 
@@ -92,7 +88,7 @@ class MyRunner(object):
 		#train_graph.reset_default_graph()
 		del train_graph
 
-	def evaluate(self, batch_size=None, shuffle=False, device_name=None):
+	def evaluate(self, checkpoint_dir_path, batch_size=None, shuffle=False, device_name=None):
 		# Creates a graph.
 		eval_graph = tf.Graph()
 		with eval_graph.as_default():
@@ -102,7 +98,7 @@ class MyRunner(object):
 				modelForEvaluation.create_evaluation_model()
 
 				# Creates an evaluator.
-				modelEvaluator = ModelEvaluator(modelForEvaluation, self._dataGenerator, self._checkpoint_dir_path)
+				modelEvaluator = ModelEvaluator(modelForEvaluation, self._dataGenerator, checkpoint_dir_path)
 
 		# Creates a session.
 		eval_session = tf.Session(graph=eval_graph, config=self._sess_config)
@@ -121,7 +117,7 @@ class MyRunner(object):
 		#eval_graph.reset_default_graph()
 		del eval_graph
 
-	def infer(self, batch_size=None, shuffle=False, device_name=None):
+	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False, device_name=None):
 		# Creates a graph.
 		infer_graph = tf.Graph()
 		with infer_graph.as_default():
@@ -131,7 +127,7 @@ class MyRunner(object):
 				modelForInference.create_inference_model()
 
 				# Creates an inferrer.
-				modelInferrer = ModelInferrer(modelForInference, self._checkpoint_dir_path)
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
 
 		# Creates a session.
 		infer_session = tf.Session(graph=infer_graph, config=self._sess_config)
@@ -151,7 +147,7 @@ class MyRunner(object):
 		print('\tTotal inference time = {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
-			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes >= 2:
 				inferences = np.argmax(inferences, -1)
@@ -174,6 +170,9 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 	#random.seed(a=None, version=2)
 	#np.random.seed(None)
 	#tf.set_random_seed(1234)  # Sets a graph-level seed.
@@ -189,21 +188,23 @@ def main():
 	eval_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
 
+	#--------------------
 	output_dir_prefix = 'mnist_cnn'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20180302T155710'
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	#--------------------
-	runner = MyRunner(output_dir_path)
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-	runner.train(num_epochs, batch_size, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed)
-	runner.evaluate()
-	runner.infer()
+	#--------------------
+	runner = MyRunner()
+
+	runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
+	runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
+	runner.infer(checkpoint_dir_path, device_name=infer_device_name)
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()

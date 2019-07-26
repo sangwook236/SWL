@@ -164,12 +164,9 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, output_dir_path):
+	def __init__(self):
 		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
-
-		self._checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-		os.makedirs(self._checkpoint_dir_path, exist_ok=True)
 
 		#--------------------
 		# Create a dataset.
@@ -177,32 +174,32 @@ class MyRunner(object):
 		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
 
 		#--------------------
-		# Create a model.
-
 		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')
 		self._output_ph = tf.placeholder(tf.float32, shape=[None, self._num_classes], name='output_ph')
 
-		self._model = MyModel()
-		self._model_output = self._model.create_model(self._input_ph, self._num_classes)
-
 	# Train and evaluate.
-	def train(self, num_epochs, batch_size, initial_epoch=0):
-		loss = self._model.get_loss(self._model_output, self._output_ph)
-		accuracy = self._model.get_accuracy(self._model_output, self._output_ph)
-
-		learning_rate = 0.001
-		#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-		optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-		#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-
-		train_op = optimizer.minimize(loss)
-
-		saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
-
-		#--------------------
-		print('Start training...')
-		start_total_time = time.time()
+	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0):
 		with tf.Session() as sess:
+			# Create a model.
+			model = MyModel()
+			model_output = model.create_model(self._input_ph, self._num_classes)
+
+			# Create a trainer.
+			loss = model.get_loss(model_output, self._output_ph)
+			accuracy = model.get_accuracy(model_output, self._output_ph)
+
+			learning_rate = 0.001
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+
+			train_op = optimizer.minimize(loss)
+
+			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+			#--------------------
+			print('Start training...')
+			start_total_time = time.time()
 			sess.run(tf.global_variables_initializer())
 			for epoch in range(num_epochs):
 				print('Epoch {}:'.format(epoch + 1))
@@ -230,22 +227,27 @@ class MyRunner(object):
 				val_loss /= num_examples
 				val_accuracy /= num_examples
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
+			print('End training: {} secs.'.format(time.time() - start_total_time))
 
 			#--------------------
 			print('Start saving a model...')
 			start_time = time.time()
-			saved_model_path = saver.save(sess, self._checkpoint_dir_path + '/model.ckpt')
+			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
 			print('End saving a model: {} secs.'.format(time.time() - start_time))
-		print('End training: {} secs.'.format(time.time() - start_total_time))
 
-	def infer(self, batch_size=None, shuffle=False):
+	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		with tf.Session() as sess:
+			# Create a model.
+			model = MyModel()
+			model_output = model.create_model(self._input_ph, self._num_classes)
+
+			# Load a model.
 			print('Start loading a model...')
 			start_time = time.time()
 			saver = tf.train.Saver()
-			ckpt = tf.train.get_checkpoint_state(self._checkpoint_dir_path)
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			saver.restore(sess, ckpt.model_checkpoint_path)
-			#saver.restore(sess, tf.train.latest_checkpoint(self._checkpoint_dir_path))
+			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
 			print('End loading a model: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
@@ -253,7 +255,7 @@ class MyRunner(object):
 			start_time = time.time()
 			inferences, test_labels = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
-				inferences.append(sess.run(self._model_output, feed_dict={self._input_ph: batch_data[0]}))
+				inferences.append(sess.run(model_output, feed_dict={self._input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
 			print('End inferring: {} secs.'.format(time.time() - start_time))
 
@@ -277,23 +279,28 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 	num_epochs, batch_size = 30, 128
 	initial_epoch = 0
 
+	#--------------------
 	output_dir_prefix = 'simple_training'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20190724T231604'
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
-	#--------------------
-	runner = MyRunner(output_dir_path)
+	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-	runner.train(num_epochs, batch_size, initial_epoch)
-	runner.infer()
+	#--------------------
+	runner = MyRunner()
+
+	runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
+	runner.infer(checkpoint_dir_path)
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()

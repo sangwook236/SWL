@@ -210,18 +210,14 @@ def draw_history(history):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, output_dir_path):
-		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+	def __init__(self):
+		self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
 		self._max_queue_size, self._num_workers = 10, 8
 		self._use_multiprocessing = True
 
 		self._use_keras_data_sequence, self._use_generator = True, False
-
-		self._output_dir_path = output_dir_path
-		self._checkpoint_filepath = os.path.join(self._output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
-		os.makedirs(self._output_dir_path, exist_ok=True)
 
 		#sess = tf.Session(config=config)
 		#K.set_session(sess)
@@ -231,22 +227,21 @@ class MyRunner(object):
 		#--------------------
 		# Create a dataset.
 
-		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
+		self._dataset = MyDataset(self._image_height, self._image_width, self._image_channel, self._num_classes)
 
-		#--------------------
+	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0):
 		# Create a model.
+		model = MyModel().create_model((self._image_height, self._image_width, self._image_channel), self._num_classes)
+		#print('Model summary =', model.summary())
 
-		self._model = MyModel().create_model((image_height, image_width, image_channel), self._num_classes)
-		#print('Model summary =', self._model.summary())
-
-	def train(self, num_epochs, batch_size, initial_epoch=0):
+		# Create a trainer.
 		loss = tf.keras.losses.categorical_crossentropy
 		optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1e-6, momentum=0.0, nesterov=True)
 
-		self._model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
+		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
 		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=0)
-		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(self._checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 		#--------------------
 		print('Start training...')
@@ -257,15 +252,15 @@ class MyRunner(object):
 			train_sequence = MyDataSequence(train_images, train_labels, batch_size=batch_size, shuffle=True)
 			val_images, val_labels = self._dataset.test_data
 			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
-			history = self._model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		elif self._use_generator:
 			# Use generators.
 			train_generator = self._dataset.create_train_batch_generator(batch_size, shuffle=True)
 			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
-			history = self._model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		else:
 			train_images, train_labels = self._dataset.train_data
-			history = self._model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('End training: {} secs.'.format(time.time() - start_time))
 
 		#print('History =', history.history)
@@ -278,42 +273,42 @@ class MyRunner(object):
 			# Use a Keras sequence.
 			val_images, val_labels = self._dataset.test_data
 			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
-			score = self._model.evaluate_generator(val_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			score = model.evaluate_generator(val_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
 			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
-			score = self._model.evaluate_generator(val_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			score = model.evaluate_generator(val_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		else:
 			val_images, val_labels = self._dataset.test_data
-			score = self._model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
+			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
 		print('\tValidation: loss = {}, accuracy = {}.'.format(*score))
 		print('End evaluating: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
 		print('Start saving a model...')
 		start_time = time.time()
-		if False:
-			# Save only a model's architecture.
-			json_string = self._model.to_json()
-			#yaml_string = self._model.to_yaml()
-			# Save only a model's weights.
-			self._model.save_weights(os.path.join(self._output_dir_path, 'model_weights.hdf5'))
-		else:
-			self._model.save(os.path.join(self._output_dir_path, 'model.hdf5'))
-		del self._model
+		"""
+		# Save only a model's architecture.
+		json_string = model.to_json()
+		#yaml_string = model.to_yaml()
+		# Save only a model's weights.
+		model.save_weights(model_weight_filepath)
+		"""
+		model.save(model_filepath)
 		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	def infer(self, batch_size=None, shuffle=False):
+	def infer(self, model_filepath, batch_size=None, shuffle=False):
+		# Load a model.
 		print('Start loading a model...')
 		start_time = time.time()
-		if False:
-			# Load only a model's architecture.
-			loaded_model = keras.models.model_from_json(json_string)
-			#loaded_model = keras.models.model_from_yaml(yaml_string)
-			# Load only a model's weights.
-			loaded_model.load_weights(os.path.join(self._output_dir_path, 'model_weights.hdf5'))
-		else:
-			loaded_model = tf.keras.models.load_model(os.path.join(self._output_dir_path, 'model.hdf5'))
+		"""
+		# Load only a model's architecture.
+		model = keras.models.model_from_json(json_string)
+		#model = keras.models.model_from_yaml(yaml_string)
+		# Load only a model's weights.
+		model.load_weights(model_weight_filepath)
+		"""
+		model = tf.keras.models.load_model(model_filepath)
 		print('End loading a model: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
@@ -323,16 +318,16 @@ class MyRunner(object):
 			# Use a Keras sequence.
 			test_images, test_labels = self._dataset.test_data
 			test_sequence = MyDataSequence(test_images, test_labels, batch_size=batch_size, shuffle=shuffle)
-			inferences = loaded_model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		elif self._use_generator:
 			# Use a generator.
 			test_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle)
-			inferences = loaded_model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 			# TODO [implement] >> self._test_labels have to be generated.
 			test_labels = self._dataset.test_data[1]
 		else:
 			test_images, test_labels = self._dataset.test_data
-			inferences = loaded_model.predict(test_images, batch_size=batch_size)
+			inferences = model.predict(test_images, batch_size=batch_size)
 		print('End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
@@ -354,23 +349,30 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
 	num_epochs, batch_size = 30, 128
 	initial_epoch = 0
 
+	#--------------------
 	output_dir_prefix = 'simple_training'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20190724T231604'
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
+	model_filepath = os.path.join(output_dir_path, 'model.hdf5')
+	#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 
 	#--------------------
-	runner = MyRunner(output_dir_path)
+	runner = MyRunner()
 
-	runner.train(num_epochs, batch_size, initial_epoch)
-	runner.infer()
+	runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
+	runner.infer(model_filepath)
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 	main()

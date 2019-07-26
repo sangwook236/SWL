@@ -57,14 +57,9 @@ class MyModel(nn.Module):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, batch_size, output_dir_path):
-		self._device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
+	def __init__(self, batch_size):
 		#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
-
-		self._model_filepath = os.path.join(output_dir_path, 'mnist_cnn.pt')
-		os.makedirs(output_dir_path, exist_ok=True)
 
 		#--------------------
 		# Create a dataset.
@@ -88,15 +83,14 @@ class MyRunner(object):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(images.shape, images.dtype, np.min(images), np.max(images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(labels.shape, labels.dtype, np.min(labels), np.max(labels)))
 
-		#--------------------
+	def train(self, model_filepath, num_epochs, device):
 		# Create a model.
+		model = MyModel()
+		model = model.to(device)
 
-		self._model = MyModel()
-		self._model = self._model.to(self._device)
-
-	def train(self, num_epochs):
+		# Create a trainer.
 		criterion = nn.CrossEntropyLoss()
-		optimizer = optim.SGD(self._model.parameters(), lr=0.001, momentum=0.9)
+		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 		#--------------------
 		print('Start training...')
@@ -116,14 +110,14 @@ class MyRunner(object):
 				outputs_onehot.scatter_(1, outputs.view(outputs.shape[0], -1), 1)
 				"""
 
-				inputs, outputs = inputs.to(self._device), outputs.to(self._device)
-				#inputs, outputs, outputs_onehot = inputs.to(self._device), outputs.to(self._device), outputs_onehot.to(self._device)
+				inputs, outputs = inputs.to(device), outputs.to(device)
+				#inputs, outputs, outputs_onehot = inputs.to(device), outputs.to(device), outputs_onehot.to(device)
 
 				# Zero the parameter gradients.
 				optimizer.zero_grad()
 
 				# Forward + backward + optimize.
-				model_outputs = self._model(inputs)
+				model_outputs = model(inputs)
 				loss = criterion(model_outputs, outputs)
 				loss.backward()
 				optimizer.step()
@@ -139,15 +133,18 @@ class MyRunner(object):
 		#--------------------
 		print('Start saving a model...')
 		start_time = time.time()
-		torch.save(self._model, self._model_filepath)
+		torch.save(model, model_filepath)
 		print('End saving a model: {} secs.'.format(time.time() - start_time))
 
-	def infer(self):
+	def infer(self, model_filepath, device):
+		# Load a model.
 		print('Start loading a model...')
 		start_time = time.time()
-		self._model = torch.load(self._model_filepath)
-		self._model.eval()
+		model = torch.load(model_filepath)
+		model.eval()
 		print('End loading a model: {} secs.'.format(time.time() - start_time))
+
+		model = model.to(device)
 
 		#--------------------
 		print('Start inferring...')
@@ -155,10 +152,10 @@ class MyRunner(object):
 		inferences, ground_truths = list(), list()
 		for idx, data in enumerate(self._test_loader):
 			inputs, outputs = data
-			#inputs, outputs = inputs.to(self._device), outputs.to(self._device)
-			inputs = inputs.to(self._device)
+			#inputs, outputs = inputs.to(device), outputs.to(device)
+			inputs = inputs.to(device)
 
-			model_outputs = self._model(inputs)
+			model_outputs = model(inputs)
 
 			_, model_outputs = torch.max(model_outputs, 1)
 			inferences.extend(model_outputs.cpu().numpy())
@@ -177,21 +174,29 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def main():
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+
 	num_epochs, batch_size = 30, 128
 
+	train_device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+	infer_device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+
+	#--------------------
 	output_dir_prefix = 'simple_training'
 	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 	#output_dir_suffix = '20190724T231604'
 	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+	os.makedirs(output_dir_path, exist_ok=True)
+
+	model_filepath = os.path.join(output_dir_path, 'model.pt')
 
 	#--------------------
-	runner = MyRunner(batch_size, output_dir_path)
+	runner = MyRunner(batch_size)
 
-	runner.train(num_epochs)
-	runner.infer()
+	runner.train(model_filepath, num_epochs, train_device)
+	runner.infer(model_filepath, infer_device)
 
 #--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	main()
