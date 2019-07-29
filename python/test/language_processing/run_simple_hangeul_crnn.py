@@ -281,7 +281,7 @@ class MyTensorFlowModel(object):
 		rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]])
 		rnn_output = MyTensorFlowModel.create_bidirectionnal_rnn(rnn_input, model_time_step_tensor)
 
-		#max_char_count = rnn_input.shape.as_list()[1]  #  Model time-steps.
+		#max_char_count = rnn_input.shape.as_list()[1]  # Model time-steps.
 
 		logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, name='dense')
 		logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
@@ -520,20 +520,29 @@ def main():
 	num_epochs, batch_size = 1000, 128
 	initial_epoch = 0
 
-	#--------------------
-	output_dir_prefix = 'simple_hangeul_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190724T231604'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	os.makedirs(checkpoint_dir_path, exist_ok=True)
+	checkpoint_dir_path = None
+	if not checkpoint_dir_path:
+		output_dir_prefix = 'simple_hangeul_crnn'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
 	runner = MyRunner()
 
-	runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
-	runner.infer(checkpoint_dir_path)
+	if True:
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
+
+		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.infer(checkpoint_dir_path)
 
 #--------------------------------------------------------------------
 

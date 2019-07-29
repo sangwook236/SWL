@@ -156,7 +156,6 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 	"""
 
 	indices, values = list(), list()
-
 	for n, subarr in enumerate(np_arr):
 		default_indices = np.where(subarr == default_value)[0]
 		if 0 != default_indices.size:

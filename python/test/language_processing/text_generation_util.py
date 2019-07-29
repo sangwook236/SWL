@@ -71,7 +71,7 @@ def generate_hangeul_font_list():
 		#(font_dir_path + '/gabia_napjakBlock.ttf', 1),  # 한글 하단부 잘림.
 		(font_dir_path + '/gabia_solmee.ttf', 1),
 		(font_dir_path + '/godoMaum.ttf', 1),
-		#(font_dir_path + '/godoRounded R.ttf', 1),  # 한글 깨짐.
+		#(font_dir_path + '/godoRoundedR.ttf', 1),  # 한글 깨짐.
 		#(font_dir_path + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
 		(font_dir_path + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
 		(font_dir_path + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
