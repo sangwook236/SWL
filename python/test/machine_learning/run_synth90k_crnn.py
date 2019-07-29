@@ -241,7 +241,7 @@ class MyRunner(object):
 				num_correct_letters, num_letters = 0, 0
 				num_correct_texts, num_texts = 0, 0
 				for inference, ground_truth in zip(inferences, ground_truths):
-					inference, ground_truth = self._dataGenerator.dataset.to_string(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.to_string(ground_truth)
+					inference, ground_truth = self._dataGenerator.dataset.decode_label(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.decode_label(ground_truth)
 					for inf, gt in zip(inference, ground_truth):
 						for ich, gch in zip(inf, gt):
 							if ich == gch:
@@ -290,21 +290,36 @@ def main():
 	eval_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
 
-	#--------------------
-	output_dir_prefix = 'synth90k_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190320T134245'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	os.makedirs(checkpoint_dir_path, exist_ok=True)
+	checkpoint_dir_path = None
+	if not checkpoint_dir_path:
+		output_dir_prefix = 'synth90k_crnn'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190320T134245'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
 	runner = MyRunner(num_epochs, batch_size, is_sparse_output)
 
-	runner.train(checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
-	runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
-	runner.infer(checkpoint_dir_path, device_name=infer_device_name)
+	if True:
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
+
+		runner.train(checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.infer(checkpoint_dir_path, device_name=infer_device_name)
 
 #--------------------------------------------------------------------
 

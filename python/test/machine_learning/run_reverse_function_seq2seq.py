@@ -161,8 +161,8 @@ class MyRunner(object):
 
 		#--------------------
 		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
-		# String data -> numeric data.
-		test_inputs = self._dataGenerator.dataset.to_numeric(test_strs)
+		# String data -> one-hot data.
+		test_inputs = self._dataGenerator.dataset.encode_data(test_strs)
 
 		start_time = time.time()
 		with infer_session.as_default() as sess:
@@ -173,8 +173,8 @@ class MyRunner(object):
 		if inferences is not None:
 			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			# Numeric data -> string data.
-			inferred_strs = self._dataGenerator.dataset.to_string(inferences, has_start_token=False)
+			# One-hot data -> string data.
+			inferred_strs = self._dataGenerator.dataset.decode_data(inferences, has_start_token=False)
 			print('\tTest strings = {}, inferred strings = {}.'.format(test_strs, inferred_strs))
 		else:
 			print('[SWL] Warning: Invalid inference results.')
@@ -217,21 +217,36 @@ def main():
 	eval_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
 
-	#--------------------
-	output_dir_prefix = 'reverse_function_seq2seq'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20181210T003513'
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	os.makedirs(checkpoint_dir_path, exist_ok=True)
+	checkpoint_dir_path = None
+	if not checkpoint_dir_path:
+		output_dir_prefix = 'reverse_function_seq2seq'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20181210T003513'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
 	runner = MyRunner(is_time_major, is_dynamic, is_attentive, is_bidirectional)
 
-	runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, max_gradient_norm=max_gradient_norm, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
-	runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
-	runner.infer(checkpoint_dir_path, device_name=infer_device_name)
+	if True:
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
+
+		runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, max_gradient_norm=max_gradient_norm, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.infer(checkpoint_dir_path, device_name=infer_device_name)
 
 #--------------------------------------------------------------------
 

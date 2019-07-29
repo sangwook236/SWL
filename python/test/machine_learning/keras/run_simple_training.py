@@ -119,7 +119,7 @@ class MyDataset(object):
 		if outputs is not None:
 			# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
 			#outputs = swl_ml_util.to_one_hot_encoding(outputs, num_classes).astype(np.uint8)
-			outputs = tf.keras.utils.to_categorical(outputs).astype(np.uint8)
+			outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
 
 		return inputs, outputs
 
@@ -440,31 +440,32 @@ def main():
 	initial_epoch = 0
 
 	model_filepath = args.model_file
+	if model_filepath:
+		output_dir_path = os.path.dirname(model_filepath)
+	else:
+		output_dir_prefix = 'simple_training'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		model_filepath = os.path.join(output_dir_path, 'model.hdf5')
+		#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 
 	#--------------------
 	runner = MyRunner()
 
 	if args.train:
-		if model_filepath:
-			output_dir_path = os.path.dirname(model_filepath)
-		else:
-			output_dir_prefix = 'simple_training'
-			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			#output_dir_suffix = '20190724T231604'
-			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-			model_filepath = os.path.join(output_dir_path, 'model.hdf5')
-			#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
 		model_checkpoint_filepath = os.path.join(output_dir_path, 'model_weights.{epoch:02d}-{val_loss:.2f}.hdf5')
-		if output_dir_path.strip():
+		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
 
 	if args.infer:
-		if model_filepath and os.path.exists(model_filepath):
-			runner.infer(model_filepath)
-		else:
+		if not model_filepath or not os.path.exists(model_filepath):
 			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
+			return
+
+		runner.infer(model_filepath)
 
 #--------------------------------------------------------------------
 

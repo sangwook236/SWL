@@ -61,15 +61,15 @@ class Synth90kDataset(object):
 	def end_token(self):
 		return self._label_char2int[self._EOS]
 
-	# String data -> numeric data.
-	def to_numeric(self, str_data):
-		num_data = np.full((len(str_data), self._max_label_len), self._label_char2int[self._EOS])
-		for (idx, st) in enumerate(str_data):
-			num_data[idx,:len(st)] = np.array(list(self._label_char2int[ch] for ch in st))
-		return num_data
+	# String labels -> integer labels.
+	def encode_label(self, str_labels):
+		int_labels = np.full((len(str_labels), self._max_label_len), self._label_char2int[self._EOS])
+		for (idx, st) in enumerate(str_labels):
+			int_labels[idx,:len(st)] = np.array(list(self._label_char2int[ch] for ch in st))
+		return int_labels
 
-	# Numeric data -> string data.
-	def to_string(self, num_data):
+	# Integer labels -> string labels.
+	def decode_label(self, int_labels):
 		def num2str(num):
 			#label = list(self._label_int2char[n] for n in num)
 			label = list(self._label_int2char[n] for n in num if n < self._blank_label)
@@ -78,7 +78,7 @@ class Synth90kDataset(object):
 			except ValueError:
 				pass  # Uses the whole label.
 			return ''.join(label)
-		return list(map(num2str, num_data))
+		return list(map(num2str, int_labels))
 
 #--------------------------------------------------------------------
 # ImgaugDataAugmenter.
@@ -246,7 +246,7 @@ class Synth90kDataVisualizer(object):
 			if len(inputs) != num_examples or len(dense_outputs) != num_examples:
 				raise ValueError('The lengths of inputs and outputs are different: {} != {}'.format(len(inputs), len(outputs)))
 
-			str_outputs = self._dataset.to_string(dense_outputs)
+			str_outputs = self._dataset.decode_label(dense_outputs)
 			for idx in range(max(self._start_index - start_example_index, 0), min(self._end_index - start_example_index, num_examples)):
 				inp, outp, str_outp = inputs[idx], dense_outputs[idx], str_outputs[idx]
 
@@ -527,9 +527,9 @@ class Synth90kDataGenerator(Data2Generator):
 			subset_ratio = None
 			self._train_image_filepaths, self._train_label_seqs, self._val_image_filepaths, self._val_label_seqs, self._test_image_filepaths, self._test_label_seqs = Synth90kDataGenerator._loadDataFromAnnotationFiles(synth90k_data_dir_path, subset_ratio)
 
-			self._train_label_seqs = self._dataset.to_numeric(self._train_label_seqs)
-			self._val_label_seqs = self._dataset.to_numeric(self._val_label_seqs)
-			self._test_label_seqs = self._dataset.to_numeric(self._test_label_seqs)
+			self._train_label_seqs = self._dataset.encode_label(self._train_label_seqs)
+			self._val_label_seqs = self._dataset.encode_label(self._val_label_seqs)
+			self._test_label_seqs = self._dataset.encode_label(self._test_label_seqs)
 			print('End loading the Synth90k dataset from annotation files of the Synth90k dataset.')
 
 			#--------------------

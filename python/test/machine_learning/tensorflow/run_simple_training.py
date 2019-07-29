@@ -98,7 +98,7 @@ class MyDataset(object):
 		if outputs is not None:
 			# One-hot encoding (num_examples, height, width) -> (num_examples, height, width, num_classes).
 			#outputs = swl_ml_util.to_one_hot_encoding(outputs, num_classes).astype(np.uint8)
-			outputs = tf.keras.utils.to_categorical(outputs).astype(np.uint8)
+			outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
 
 		return inputs, outputs
 
@@ -369,27 +369,28 @@ def main():
 	initial_epoch = 0
 
 	checkpoint_dir_path = args.model_dir
+	if not checkpoint_dir_path:
+		output_dir_prefix = 'simple_training'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
 	runner = MyRunner()
 
 	if args.train:
-		if not checkpoint_dir_path:
-			output_dir_prefix = 'simple_training'
-			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			#output_dir_suffix = '20190724T231604'
-			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-			checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-		if checkpoint_dir_path.strip():
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
 		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
 
 	if args.infer:
-		if checkpoint_dir_path and os.path.exists(checkpoint_dir_path):
-			runner.infer(checkpoint_dir_path)
-		else:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.infer(checkpoint_dir_path)
 
 #--------------------------------------------------------------------
 

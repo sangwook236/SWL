@@ -265,29 +265,30 @@ def main():
 	infer_device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu else 'cpu')
 
 	model_filepath = args.model_file
+	if model_filepath:
+		output_dir_path = os.path.dirname(model_filepath)
+	else:
+		output_dir_prefix = 'simple_training'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190724T231604'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+		model_filepath = os.path.join(output_dir_path, 'model.pt')
 
 	#--------------------
 	runner = MyRunner(batch_size)
 
 	if args.train:
-		if model_filepath:
-			output_dir_path = os.path.dirname(model_filepath)
-		else:
-			output_dir_prefix = 'simple_training'
-			output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-			#output_dir_suffix = '20190724T231604'
-			output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-			model_filepath = os.path.join(output_dir_path, 'model.pt')
-		if output_dir_path.strip():
+		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
 		runner.train(model_filepath, num_epochs, train_device)
 
 	if args.infer:
-		if model_filepath and os.path.exists(model_filepath):
-			runner.infer(model_filepath, infer_device)
-		else:
+		if not model_filepath or not os.path.exists(model_filepath):
 			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
+			return
+
+		runner.infer(model_filepath, infer_device)
 
 #--------------------------------------------------------------------
 
