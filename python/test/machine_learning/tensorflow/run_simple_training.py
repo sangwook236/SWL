@@ -178,11 +178,26 @@ class MyRunner(object):
 		self._output_ph = tf.placeholder(tf.float32, shape=[None, self._num_classes], name='output_ph')
 
 	# Train and evaluate.
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0):
+	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		with tf.Session() as sess:
 			# Create a model.
 			model = MyModel()
 			model_output = model.create_model(self._input_ph, self._num_classes)
+
+			# Restore a model.
+			if is_training_resumed:
+				print('[SWL] Info: Start restoring a model...')
+				start_time = time.time()
+				ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+				if ckpt_filepath:
+					initial_epoch = int(ckpt_filepath.split('-')[1])
+					saver.restore(session, ckpt_filepath)
+				else:
+					print('Failed to restore a model from {}.'.format(checkpoint_dir_path))
+					return
+				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
 
 			# Create a trainer.
 			loss = model.get_loss(model_output, self._output_ph)
@@ -198,10 +213,10 @@ class MyRunner(object):
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			#--------------------
-			print('Start training...')
+			print('[SWL] Info: Start training...')
 			start_total_time = time.time()
 			sess.run(tf.global_variables_initializer())
-			for epoch in range(num_epochs):
+			for epoch in range(initial_epoch, initial_epoch + num_epochs):
 				print('Epoch {}:'.format(epoch + 1))
 
 				#--------------------
@@ -227,13 +242,13 @@ class MyRunner(object):
 				val_loss /= num_examples
 				val_accuracy /= num_examples
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
-			print('End training: {} secs.'.format(time.time() - start_total_time))
+			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
 			#--------------------
-			print('Start saving a model...')
+			print('[SWL] Info: Start saving a model...')
 			start_time = time.time()
-			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
-			print('End saving a model: {} secs.'.format(time.time() - start_time))
+			saved_model_path = saver.save(sess, os.path.joint(checkpoint_dir_path, 'model.ckpt'))
+			print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		with tf.Session() as sess:
@@ -242,25 +257,30 @@ class MyRunner(object):
 			model_output = model.create_model(self._input_ph, self._num_classes)
 
 			# Load a model.
-			print('Start loading a model...')
+			print('[SWL] Info: Start loading a model...')
 			start_time = time.time()
 			saver = tf.train.Saver()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-			saver.restore(sess, ckpt.model_checkpoint_path)
-			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
-			print('End loading a model: {} secs.'.format(time.time() - start_time))
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+			if ckpt_filepath:
+				saver.restore(sess, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return
+			print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
-			print('Start inferring...')
+			print('[SWL] Info: Start inferring...')
 			start_time = time.time()
 			inferences, test_labels = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
 				inferences.append(sess.run(model_output, feed_dict={self._input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
-			print('End inferring: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
-			if inferences is not None:
+			if inferences and test_labels:
 				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._num_classes > 2:
@@ -367,6 +387,7 @@ def main():
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
 	initial_epoch = 0
+	is_training_resumed = False
 
 	checkpoint_dir_path = args.model_dir
 	if not checkpoint_dir_path:
@@ -383,7 +404,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
+		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
 
 	if args.infer:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):

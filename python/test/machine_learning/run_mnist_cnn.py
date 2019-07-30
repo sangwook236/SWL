@@ -141,7 +141,7 @@ class MyRunner(object):
 				ground_truths = np.array(ground_truths)
 		print('\tTotal inference time = {} secs.'.format(time.time() - start_time))
 
-		if inferences is not None:
+		if inferences and ground_truths:
 			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes >= 2:

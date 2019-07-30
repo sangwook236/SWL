@@ -234,7 +234,7 @@ class MyRunner(object):
 		print('\tTotal inference time = {}.'.format(time.time() - start_time))
 
 		#--------------------
-		if inferences is not None:
+		if inferences and ground_truths:
 			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if len(inferences) == len(ground_truths):

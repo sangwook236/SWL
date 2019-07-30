@@ -93,7 +93,7 @@ class MyRunner(object):
 		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 		#--------------------
-		print('Start training...')
+		print('[SWL] Info: Start training...')
 		start_total_time = time.time()
 		for epoch in range(num_epochs):
 			print('Epoch {}:'.format(epoch + 1))
@@ -128,26 +128,26 @@ class MyRunner(object):
 					print('\tStep {}: loss = {:.6f}.'.format(idx + 1, running_loss / 100))
 					running_loss = 0.0
 			print('\tTrain: time = {} secs.'.format(time.time() - start_time))
-		print('End training: {} secs.'.format(time.time() - start_total_time))
+		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
 		#--------------------
-		print('Start saving a model...')
+		print('[SWL] Info: Start saving a model...')
 		start_time = time.time()
 		torch.save(model, model_filepath)
-		print('End saving a model: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 	def infer(self, model_filepath, device):
 		# Load a model.
-		print('Start loading a model...')
+		print('[SWL] Info: Start loading a model...')
 		start_time = time.time()
 		model = torch.load(model_filepath)
 		model.eval()
-		print('End loading a model: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
 
 		model = model.to(device)
 
 		#--------------------
-		print('Start inferring...')
+		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences, ground_truths = list(), list()
 		for idx, data in enumerate(self._test_loader):
@@ -160,10 +160,10 @@ class MyRunner(object):
 			_, model_outputs = torch.max(model_outputs, 1)
 			inferences.extend(model_outputs.cpu().numpy())
 			ground_truths.extend(outputs.numpy())
-		print('End inferring: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
-		if inferences is not None:
+		if inferences and ground_truths:
 			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))

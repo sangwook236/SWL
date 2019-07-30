@@ -170,7 +170,7 @@ class MyRunner(object):
 				inferences = modelInferrer.infer(sess, test_inputs)
 		print('\tTotal inference time = {}.'.format(time.time() - start_time))
 
-		if inferences is not None:
+		if inferences:
 			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			# One-hot data -> string data.

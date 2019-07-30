@@ -30,12 +30,12 @@ class ModelEvaluator(object):
 			#self._saver.restore(session, tf.train.latest_checkpoint(self._model_save_dir_path))
 			print('[SWL] Info: Loaded a model.')
 
-		print('[SWL] Info: Start evaluation...')
+		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()
 		val_loss, val_acc = self._evaluate(session, batch_size, shuffle)
-		print('\tEvaluation time = {}'.format(time.time() - start_time))
+		print('\tEvaluation time = {} secs.'.format(time.time() - start_time))
 		print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
-		print('[SWL] Info: End evaluation...')
+		print('[SWL] Info: End evaluating.')
 
 	def _evaluate(self, session, batch_size=None, shuffle=False):
 		loss, accuracy = self._model.loss, self._model.accuracy

@@ -244,7 +244,7 @@ class MyRunner(object):
 		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 		#--------------------
-		print('Start training...')
+		print('[SWL] Info: Start training...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.
@@ -261,13 +261,13 @@ class MyRunner(object):
 		else:
 			train_images, train_labels = self._dataset.train_data
 			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
-		print('End training: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
 		#print('History =', history.history)
 		draw_history(history)
 
 		#--------------------
-		print('Start evaluating...')
+		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -282,10 +282,10 @@ class MyRunner(object):
 			val_images, val_labels = self._dataset.test_data
 			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
 		print('\tValidation: loss = {}, accuracy = {}.'.format(*score))
-		print('End evaluating: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End evaluating: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		print('Start saving a model...')
+		print('[SWL] Info: Start saving a model...')
 		start_time = time.time()
 		"""
 		# Save only a model's architecture.
@@ -295,11 +295,11 @@ class MyRunner(object):
 		model.save_weights(model_weight_filepath)
 		"""
 		model.save(model_filepath)
-		print('End saving a model: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 	def infer(self, model_filepath, batch_size=None, shuffle=False):
 		# Load a model.
-		print('Start loading a model...')
+		print('[SWL] Info: Start loading a model...')
 		start_time = time.time()
 		"""
 		# Load only a model's architecture.
@@ -309,10 +309,10 @@ class MyRunner(object):
 		model.load_weights(model_weight_filepath)
 		"""
 		model = tf.keras.models.load_model(model_filepath)
-		print('End loading a model: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
-		print('Start inferring...')
+		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -328,9 +328,9 @@ class MyRunner(object):
 		else:
 			test_images, test_labels = self._dataset.test_data
 			inferences = model.predict(test_images, batch_size=batch_size)
-		print('End inferring: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
-		if inferences is not None:
+		if inferences and test_labels:
 			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes > 2:

@@ -54,14 +54,14 @@ class ModelTrainer(object):
 
 		start_time = time.time()
 		history = self._train(session, batch_size, num_epochs, shuffle)
-		print('\tTraining time = {}'.format(time.time() - start_time))
+		print('\tTraining time = {} secs.'.format(time.time() - start_time))
 
 		#--------------------
 		# Display results.
 		#swl_ml_util.display_train_history(history)
 		if self._output_dir_path is not None:
 			swl_ml_util.save_train_history(history, self._output_dir_path)
-		print('[SWL] Info: End training...')
+		print('[SWL] Info: End training.')
 
 		"""
 		# Save a graph.
