@@ -26,9 +26,17 @@ class ModelEvaluator(object):
 			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
 			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
 			ckpt = tf.train.get_checkpoint_state(self._model_save_dir_path)
-			self._saver.restore(session, ckpt.model_checkpoint_path)
-			#self._saver.restore(session, tf.train.latest_checkpoint(self._model_save_dir_path))
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(self._model_save_dir_path)
+			if ckpt_filepath:
+				self._saver.restore(session, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(self._model_save_dir_path))
+				return
 			print('[SWL] Info: Loaded a model.')
+		else:
+			print('[SWL] Error: Invalid model save path, {}.'.format(self._model_save_dir_path))
+			return
 
 		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()

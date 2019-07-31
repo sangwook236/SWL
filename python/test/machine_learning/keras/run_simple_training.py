@@ -330,7 +330,7 @@ class MyRunner(object):
 			inferences = model.predict(test_images, batch_size=batch_size)
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
-		if inferences and test_labels:
+		if inferences is not None and test_labels is not None:
 			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes > 2:
@@ -468,6 +468,9 @@ def main():
 		runner.infer(model_filepath)
 
 #--------------------------------------------------------------------
+
+# Usage:
+#	python run_simple_training.py --train --infer --epoch 30
 
 if '__main__' == __name__:
 	main()

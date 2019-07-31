@@ -314,8 +314,8 @@ def generate_text_lines_test():
 
 	#--------------------
 	step = 1
-	for scene_list, scene_text_mask_list in generator:
-		for scene, scene_text_mask in zip(scene_list, scene_text_mask_list):
+	for text_list, scene_list, scene_text_mask_list in generator:
+		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
 			if 'posix' == os.name:
 				cv2.imwrite('./scene.png', scene)
 				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
@@ -325,7 +325,18 @@ def generate_text_lines_test():
 				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
 				scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
 
+				if True:
+					if 'posix' == os.name:
+						font_dir_path = '/home/sangwook/work/font'
+					else:
+						font_dir_path = 'D:/work/font'
+					font_type, font_index = font_dir_path + '/gulim.ttf', 0
+					font_size = random.randrange(min_font_size, max_font_size)
+					cv2.imshow('Naive Font Image', np.array(swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False)))
+
+				print('Text =', text)
 				cv2.imshow('Scene', scene)
+				cv2.imshow('Scene (Gray)', cv2.cvtColor(scene, cv2.COLOR_BGRA2GRAY))
 				cv2.imshow('Scene Mask', scene_text_mask)
 				cv2.waitKey(0)
 
@@ -382,8 +393,8 @@ def generate_scene_texts_test():
 
 	#--------------------
 	step = 1
-	for scene_list, scene_text_mask_list, bboxes_list in generator:
-		for scene, scene_text_mask, bboxes in zip(scene_list, scene_text_mask_list, bboxes_list):
+	for texts_list, scene_list, scene_text_mask_list, bboxes_list in generator:
+		for texts, scene, scene_text_mask, bboxes in zip(texts_list, scene_list, scene_text_mask_list, bboxes_list):
 			if 'posix' == os.name:
 				cv2.imwrite('./scene.png', scene)
 				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
@@ -400,6 +411,7 @@ def generate_scene_texts_test():
 					scene = cv2.line(scene, (box[2,0], box[2,1]), (box[3,0], box[3,1]), (255, 0, 0), 2, cv2.LINE_8)
 					scene = cv2.line(scene, (box[3,0], box[3,1]), (box[0,0], box[0,1]), (255, 0, 255), 2, cv2.LINE_8)
 
+				print('Texts =', texts)
 				cv2.imshow('Scene', scene)
 				cv2.imshow('Scene Mask', scene_text_mask)
 				cv2.waitKey(0)

@@ -1,4 +1,4 @@
-import abc, math, time
+import os, abc, math, time
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
@@ -40,15 +40,25 @@ class ModelTrainer(object):
 
 	def train(self, session, batch_size, num_epochs, shuffle=True, is_training_resumed=False):
 		if is_training_resumed:
-			print('[SWL] Info: Resume training...')
+			if self._saver is not None and self._model_save_dir_path is not None:
+				print('[SWL] Info: Resume training...')
 
-			# Load a model.
-			# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
-			# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
-			ckpt = tf.train.get_checkpoint_state(self._model_save_dir_path)
-			self._saver.restore(session, ckpt.model_checkpoint_path)
-			#self._saver.restore(session, tf.train.latest_checkpoint(self._model_save_dir_path))
-			print('[SWL] Info: Restored a model.')
+				# Restore a model.
+				# REF [site] >> https://www.tensorflow.org/programmers_guide/saved_model
+				# REF [site] >> http://cv-tricks.com/tensorflow-tutorial/save-restore-tensorflow-models-quick-complete-tutorial/
+				ckpt = tf.train.get_checkpoint_state(self._model_save_dir_path)
+				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+				#ckpt_filepath = tf.train.latest_checkpoint(self._model_save_dir_path)
+				if ckpt_filepath:
+					#initial_epoch = int(ckpt_filepath.split('-')[1])
+					self._saver.restore(session, ckpt_filepath)
+				else:
+					print('[SWL] Error: Failed to restore a model from {}.'.format(self._model_save_dir_path))
+					return
+				print('[SWL] Info: Restored a model.')
+			else:
+				print('[SWL] Error: Invalid model save path, {}.'.format(self._model_save_dir_path))
+				return
 		else:
 			print('[SWL] Info: Start training...')
 
@@ -152,7 +162,7 @@ class ModelTrainer(object):
 
 				# Save a model.
 				if self._saver is not None and self._model_save_dir_path is not None and val_acc >= best_val_acc:
-					saved_model_path = self._saver.save(session, self._model_save_dir_path + '/model.ckpt', global_step=self._global_step)
+					saved_model_path = self._saver.save(session, os.path.join(self._model_save_dir_path, 'model.ckpt'), global_step=self._global_step)
 					best_val_acc = val_acc
 
 					print('[SWL] Info: Accuracy is improved and the model is saved at {}.'.format(saved_model_path))

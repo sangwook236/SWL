@@ -100,32 +100,32 @@ class MyRunner(object):
 
 			start_time = time.time()
 			running_loss = 0.0
-			for idx, data in enumerate(self._train_loader):
-				inputs, outputs = data
+			for batch_step, batch_data in enumerate(self._train_loader):
+				batch_inputs, batch_outputs = batch_data
 
 				"""
 				# One-hot encoding.
-				outputs_onehot = torch.LongTensor(outputs.shape[0], self._num_classes)
-				outputs_onehot.zero_()
-				outputs_onehot.scatter_(1, outputs.view(outputs.shape[0], -1), 1)
+				batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._num_classes)
+				batch_outputs_onehot.zero_()
+				batch_outputs_onehot.scatter_(1, batch_outputs.view(batch_outputs.shape[0], -1), 1)
 				"""
 
-				inputs, outputs = inputs.to(device), outputs.to(device)
-				#inputs, outputs, outputs_onehot = inputs.to(device), outputs.to(device), outputs_onehot.to(device)
+				batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
+				#batch_inputs, batch_outputs, batch_outputs_onehot = batch_inputs.to(device), batch_outputs.to(device), batch_outputs_onehot.to(device)
 
 				# Zero the parameter gradients.
 				optimizer.zero_grad()
 
 				# Forward + backward + optimize.
-				model_outputs = model(inputs)
-				loss = criterion(model_outputs, outputs)
+				model_outputs = model(batch_inputs)
+				loss = criterion(model_outputs, batch_outputs)
 				loss.backward()
 				optimizer.step()
 
 				# Print statistics.
 				running_loss += loss.item()
-				if (idx + 1) % 100 == 0:
-					print('\tStep {}: loss = {:.6f}.'.format(idx + 1, running_loss / 100))
+				if (batch_step + 1) % 100 == 0:
+					print('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 					running_loss = 0.0
 			print('\tTrain: time = {} secs.'.format(time.time() - start_time))
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
@@ -150,20 +150,20 @@ class MyRunner(object):
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences, ground_truths = list(), list()
-		for idx, data in enumerate(self._test_loader):
-			inputs, outputs = data
-			#inputs, outputs = inputs.to(device), outputs.to(device)
-			inputs = inputs.to(device)
+		for batch_data in self._test_loader:
+			batch_inputs, batch_outputs = batch_data
+			#batch_inputs, batch_outputs = batch_inputs.to(device), batch_outputs.to(device)
+			batch_inputs = batch_inputs.to(device)
 
-			model_outputs = model(inputs)
+			model_outputs = model(batch_inputs)
 
 			_, model_outputs = torch.max(model_outputs, 1)
 			inferences.extend(model_outputs.cpu().numpy())
-			ground_truths.extend(outputs.numpy())
+			ground_truths.extend(batch_outputs.numpy())
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
-		if inferences and ground_truths:
+		if inferences is not None and ground_truths is not None:
 			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
@@ -291,6 +291,9 @@ def main():
 		runner.infer(model_filepath, infer_device)
 
 #--------------------------------------------------------------------
+
+# Usage:
+#	python run_simple_training.py --train --infer --epoch 30
 
 if '__main__' == __name__:
 	main()

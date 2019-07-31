@@ -42,6 +42,10 @@ class MyModel(object):
 	def __init__(self):
 		pass
 
+	@property
+	def placeholders(self):
+		return self._input_ph, self._output_ph
+
 	def create_model(self, input_tensor, num_classes):
 		dropout_rate = 0.5
 
@@ -191,7 +195,7 @@ class MyRunner(object):
 	def __init__(self):
 		image_height, image_width, image_channel = 64, 320, 1
 		num_labels =
-		width_downsample_factor = 4  # Fixed.
+		width_downsample_factor = 4  # TODO [modify] >> Depends on a model.
 
 		if False:
 			self._num_classes = num_labels
@@ -210,27 +214,17 @@ class MyRunner(object):
 
 		self._dataset = MyDataset()
 
-		#--------------------
-		# (samples, height, width, channels) -> (samples, width, height, channels).
-		#self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')  # NOTE [caution] >> (?, image_height, image_width, ?)
-		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_width, image_height, image_channel], name='input_ph')  # NOTE [caution] >> (?, image_width, image_height, ?)
-		if False:
-			self._output_ph = tf.placeholder(tf.float32, shape=[None, max_label_len], name='output_ph')
-		else:
-			self._output_ph = tf.sparse.placeholder(tf.int32, name='output_ph')
-		self._output_length_ph = tf.placeholder(tf.int32, shape=[None], name='output_length_ph')
-		self._model_output_length_ph = tf.placeholder(tf.int32, shape=[None], name='model_time_step_ph')
-
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0):
-		with tf.Session() as sess:
+	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+		graph = tf.Graph()
+		with graph.as_default():
 			# Create a model.
 			model = MyModel()
 			model_output = model.create_model(self._input_ph, self._num_classes)
 
-			# Create a trainer.
 			loss = model.get_loss(model_output, self._output_ph, self._model_output_length_ph)
 			accuracy = model.get_accuracy(model_output, self._output_ph, self._model_output_length_ph, default_value=self._eos_token_label)
 
+			# Create a trainer.
 			learning_rate = 0.001
 			#optimizer = tf.keras.optimizers.SGD(lr=0.01, decay=1.0e-6, momentum=0.0, nesterov=True)
 			#optimizer = tf.keras.optimizers.RMSprop(lr=0.001, rho=0.9, momentum=0.0, epsilon=1.0e-7, centered=False)
@@ -240,44 +234,67 @@ class MyRunner(object):
 
 			train_op = optimizer.minimize(loss)
 
+			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+			initializer = tf.global_variables_initializer()
+
+		with tf.Session(graph=graph).as_default() as sess:
+			sess.run(initializer)
+
+			# Restore a model.
+			if is_training_resumed:
+				print('[SWL] Info: Start restoring a model...')
+				start_time = time.time()
+				ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+				ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+				#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+				if ckpt_filepath:
+					initial_epoch = int(ckpt_filepath.split('-')[1])
+					saver.restore(session, ckpt_filepath)
+				else:
+					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
+					return
+				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
 
 			#--------------------
 			print('Start training...')
 			start_total_time = time.time()
-			sess.run(tf.global_variables_initializer())
 			for epoch in range(NUM_EPOCHS):
 				print('Epoch {}:'.format(epoch + 1))
 
 				#--------------------
 				start_time = time.time()
-				train_loss, train_accuracy, num_examples = 0, 0, 0
+				train_loss, train_acc, num_examples = 0, 0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
 					#_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
 					_, batch_loss = sess.run([train_op, loss], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
-					#train_accuracy += batch_accuracy * num_batch_examples
+					#train_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
+
 					if (batch_step + 1) % 100 == 0:
-						print('\tStep = {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
 				train_loss /= num_examples
-				#train_accuracy /= num_examples
+				#train_acc /= num_examples
 				print('\tTrain:      loss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
-				#print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
+				#print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
 
 				#--------------------
 				start_time = time.time()
-				val_loss, val_accuracy, num_examples = 0, 0, 0
+				val_loss, val_acc, num_examples = 0, 0, 0
 				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
+					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
 					#batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
 					batch_loss = sess.run(loss, feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
 					val_loss += batch_loss * num_batch_examples
-					#val_accuracy += batch_accuracy * num_batch_examples
+					#val_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
 				val_loss /= num_examples
-				#val_accuracy /= num_examples
+				#val_acc /= num_examples
 				print('\tValidation: loss = {:.6f}: {} secs.'.format(val_loss, time.time() - start_time))
-				#print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
+				#print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 				#--------------------
 				print('Start saving a model...')
@@ -287,15 +304,19 @@ class MyRunner(object):
 			print('End training: {} secs.'.format(time.time() - start_total_time))
 
 	def infer(self, checkpoint_dir_path, batch_size=None):
-		with tf.Session() as sess:
+		graph = tf.Graph()
+		with graph.as_default():
 			# Create a model.
 			model = MyModel()
 			model_output = model.create_model(self._input_ph, self._num_classes)
 
+			# Create a saver.
+			saver = tf.train.Saver()
+
+		with tf.Session(graph=graph).as_default() as sess:
 			# Load a model.
 			print('Start loading a model...')
 			start_time = time.time()
-			saver = tf.train.Saver()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			saver.restore(sess, ckpt.model_checkpoint_path)
 			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
@@ -329,6 +350,7 @@ def main():
 
 	num_epochs, batch_size = 1000, 128
 	initial_epoch = 0
+	is_training_resumed = False
 
 	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
@@ -345,7 +367,7 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
+		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
 
 	if True:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):

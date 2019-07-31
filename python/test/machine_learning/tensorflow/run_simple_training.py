@@ -116,10 +116,16 @@ class MyDataset(object):
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	def __init__(self):
-		pass
+	def __init__(self, image_height, image_width, image_channel, num_classes):
+		self._num_classes = num_classes
+		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')
+		self._output_ph = tf.placeholder(tf.float32, shape=[None, self._num_classes], name='output_ph')
 
-	def create_model(self, input_tensor, num_classes):
+	@property
+	def placeholders(self):
+		return self._input_ph, self._output_ph
+
+	def create_model(self, input_tensor):
 		# Preprocessing.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
 			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
@@ -139,14 +145,14 @@ class MyModel(object):
 			fc1 = tf.layers.dense(fc1, 1024, activation=tf.nn.relu, name='dense')
 
 		with tf.variable_scope('fc2', reuse=tf.AUTO_REUSE):
-			if 1 == num_classes:
+			if 1 == self._num_classes:
 				fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, name='dense')
 				#fc2 = tf.layers.dense(fc1, 1, activation=tf.sigmoid, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
-			elif num_classes >= 2:
-				fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, name='dense')
-				#fc2 = tf.layers.dense(fc1, num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+			elif self._num_classes >= 2:
+				fc2 = tf.layers.dense(fc1, self._num_classes, activation=tf.nn.softmax, name='dense')
+				#fc2 = tf.layers.dense(fc1, self._num_classes, activation=tf.nn.softmax, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 			else:
-				assert num_classes > 0, 'Invalid number of classes.'
+				assert self._num_classes > 0, 'Invalid number of classes.'
 
 			return fc2
 
@@ -165,24 +171,41 @@ class MyModel(object):
 
 class MyRunner(object):
 	def __init__(self):
-		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+		self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
 		self._num_classes = 10
 
 		#--------------------
 		# Create a dataset.
 
-		self._dataset = MyDataset(image_height, image_width, image_channel, self._num_classes)
+		self._dataset = MyDataset(self._image_height, self._image_width, self._image_channel, self._num_classes)
 
-		#--------------------
-		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')
-		self._output_ph = tf.placeholder(tf.float32, shape=[None, self._num_classes], name='output_ph')
-
-	# Train and evaluate.
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
-		with tf.Session() as sess:
+		graph = tf.Graph()
+		with graph.as_default():
 			# Create a model.
-			model = MyModel()
-			model_output = model.create_model(self._input_ph, self._num_classes)
+			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			input_ph, output_ph = model.placeholders
+
+			model_output = model.create_model(input_ph)
+
+			loss = model.get_loss(model_output, output_ph)
+			accuracy = model.get_accuracy(model_output, output_ph)
+
+			# Create a trainer.
+			learning_rate = 0.001
+			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
+
+			train_op = optimizer.minimize(loss)
+
+			# Create a saver.
+			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
+
+			initializer = tf.global_variables_initializer()
+
+		with tf.Session(graph=graph) as sess:
+			sess.run(initializer)
 
 			# Restore a model.
 			if is_training_resumed:
@@ -195,38 +218,27 @@ class MyRunner(object):
 					initial_epoch = int(ckpt_filepath.split('-')[1])
 					saver.restore(session, ckpt_filepath)
 				else:
-					print('Failed to restore a model from {}.'.format(checkpoint_dir_path))
+					print('[SWL] Info: Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
 				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
-
-			# Create a trainer.
-			loss = model.get_loss(model_output, self._output_ph)
-			accuracy = model.get_accuracy(model_output, self._output_ph)
-
-			learning_rate = 0.001
-			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
-			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-
-			train_op = optimizer.minimize(loss)
-
-			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
 			#--------------------
 			print('[SWL] Info: Start training...')
 			start_total_time = time.time()
-			sess.run(tf.global_variables_initializer())
 			for epoch in range(initial_epoch, initial_epoch + num_epochs):
 				print('Epoch {}:'.format(epoch + 1))
 
 				#--------------------
 				start_time = time.time()
 				train_loss, train_accuracy, num_examples = 0, 0, 0
-				for batch_data, num_batch_examples in self._dataset.create_train_batch_generator(batch_size, shuffle=True):
-					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
 					train_accuracy += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
+
+					if (batch_step + 1) % 100 == 0:
+						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
 				train_loss /= num_examples
 				train_accuracy /= num_examples
 				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
@@ -235,7 +247,7 @@ class MyRunner(object):
 				start_time = time.time()
 				val_loss, val_accuracy, num_examples = 0, 0, 0
 				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1]})
+					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					val_loss += batch_loss * num_batch_examples
 					val_accuracy += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
@@ -247,19 +259,25 @@ class MyRunner(object):
 			#--------------------
 			print('[SWL] Info: Start saving a model...')
 			start_time = time.time()
-			saved_model_path = saver.save(sess, os.path.joint(checkpoint_dir_path, 'model.ckpt'))
+			saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'))
 			print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
-		with tf.Session() as sess:
+		graph = tf.Graph()
+		with graph.as_default():
 			# Create a model.
-			model = MyModel()
-			model_output = model.create_model(self._input_ph, self._num_classes)
+			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			input_ph, output_ph = model.placeholders
 
+			model_output = model.create_model(input_ph)
+
+			# Create a saver.
+			saver = tf.train.Saver()
+
+		with tf.Session(graph=graph) as sess:
 			# Load a model.
 			print('[SWL] Info: Start loading a model...')
 			start_time = time.time()
-			saver = tf.train.Saver()
 			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
 			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
 			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
@@ -275,12 +293,12 @@ class MyRunner(object):
 			start_time = time.time()
 			inferences, test_labels = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
-				inferences.append(sess.run(model_output, feed_dict={self._input_ph: batch_data[0]}))
+				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
 				test_labels.append(batch_data[1])
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
-			if inferences and test_labels:
+			if inferences is not None and test_labels is not None:
 				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._num_classes > 2:
@@ -378,6 +396,7 @@ def main():
 
 	if not args.train and not args.infer:
 		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+		return
 
 	if args.gpu:
 		os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
@@ -414,6 +433,9 @@ def main():
 		runner.infer(checkpoint_dir_path)
 
 #--------------------------------------------------------------------
+
+# Usage:
+#	python run_simple_training.py --train --infer --epoch 30
 
 if '__main__' == __name__:
 	main()

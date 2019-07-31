@@ -754,7 +754,7 @@ class MySimpleSceneProvider(MySceneProvider):
 def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
 	sceneTextGenerator = MySceneTextGenerator(IdentityTransformer())
 
-	scene_list, scene_text_mask_list = list(), list()
+	text_list, scene_list, scene_text_mask_list = list(), list(), list()
 	step = 0
 	while True:
 		font_size = random.randint(*font_size_interval)
@@ -772,17 +772,18 @@ def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_
 			bg = np.full_like(text_line, bg_color, dtype=np.uint8)
 
 		scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+		text_list.append(text)
 		scene_list.append(scene)
 		scene_text_mask_list.append(scene_text_mask)
 
 		step += 1
 		if 0 == step % batch_size:
-			yield scene_list, scene_text_mask_list
-			scene_list, scene_text_mask_list = list(), list()
+			yield text_list, scene_list, scene_text_mask_list
+			text_list, scene_list, scene_text_mask_list = list(), list(), list()
 			step = 0
 
 def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval,  batch_size, font_color=None):
-	scene_list, scene_text_mask_list, bboxes_list, text_list = list(), list(), list(), list()
+	texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
 	step = 0
 	while True:
 		num_texts_per_image = random.randint(*text_count_interval)
@@ -809,12 +810,13 @@ def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenera
 			continue
 
 		scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
+		texts_list.append(texts)
 		scene_list.append(scene)
 		scene_text_mask_list.append(scene_text_mask)
 		bboxes_list.append(bboxes)
 
 		step += 1
 		if 0 == step % batch_size:
-			yield scene_list, scene_text_mask_list, bboxes_list
-			scene_list, scene_text_mask_list, bboxes_list = list(), list(), list()
+			yield texts_list, scene_list, scene_text_mask_list, bboxes_list
+			texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
 			step = 0
