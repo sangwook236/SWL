@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime
+import os, time, datetime, csv
 import numpy as np
 import tensorflow as tf
 import cv2
@@ -36,12 +36,6 @@ class MyDataset(object):
 	def num_classes(self):
 		return self._num_classes
 
-	def create_train_batch_generator(self, batch_size, shuffle=True):
-		return MyDataset._create_batch_generator(self._train_data, batch_size, shuffle)
-
-	def create_test_batch_generator(self, batch_size, shuffle=False):
-		return MyDataset._create_batch_generator(self._test_data, batch_size, shuffle)
-
 	# String label -> integer label.
 	def encode_label(self, label_str):
 		try:
@@ -57,6 +51,12 @@ class MyDataset(object):
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
+
+	def create_train_batch_generator(self, batch_size, shuffle=True):
+		return MyDataset._create_batch_generator(self._train_data, batch_size, shuffle)
+
+	def create_test_batch_generator(self, batch_size, shuffle=False):
+		return MyDataset._create_batch_generator(self._test_data, batch_size, shuffle)
 
 	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
@@ -164,7 +164,7 @@ class MyDataset(object):
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	def __init__(self, image_width, image_height, image_channel):
+	def __init__(self, image_height, image_width, image_channel):
 		self._input_ph = tf.placeholder(tf.float32, [None, image_width, image_height, image_channel], name='input_ph')
 		self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
@@ -305,19 +305,19 @@ class MyRunner(object):
 		#data_dir_path = './en_samples_200000'
 
 		self._image_height, self._image_width, self._image_channel = 32, 100, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-		train_test_ratio = 0.8
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
 		model_output_time_steps = 24
 
+		train_test_ratio = 0.8
 		self._default_value = -1
 
 		#--------------------
 		# Create a dataset.
 
-		self._dataset = MyDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
+		self._dataset = MyDataset(data_dir_path, self._image_height, self._image_width, self._image_channel, train_test_ratio, max_char_count=model_output_time_steps)
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -365,11 +365,14 @@ class MyRunner(object):
 				print('Epoch {}:'.format(epoch + 1))
 
 				start_time = time.time()
-				train_loss = 0
-				correct_count, total_count = 0, 0
+				"""
+				train_loss, train_acc, num_examples = 0, 0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
 					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
-					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
+					# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+					#	If the number of classes increases, its computation time becomes much slower.
+					#_, batch_loss, batch_acc = sess.run(
+					#	[train_op, loss, accuracy],
 					_, batch_loss, batch_dense_labels_int = sess.run(
 						[train_op, loss, model_output['dense_label']],
 						feed_dict={
@@ -379,21 +382,103 @@ class MyRunner(object):
 						}
 					)
 
-					train_loss += batch_loss
-					correct_count += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
-					total_count += num_batch_examples
+					train_loss += batch_loss * num_batch_examples
+					#train_acc += batch_acc * num_batch_examples
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
 						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
-				print('\tTrain: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, correct_count / total_count, time.time() - start_time))
+				train_loss /= num_examples
+				train_acc /= num_examples
+				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				"""
+				train_loss, train_acc, num_examples = 0, None, 0
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+					_, batch_loss = sess.run(
+						[train_op, loss],
+						feed_dict={
+							input_ph: batch_data[0],
+							output_ph: batch_data[2],
+							model_output_len_ph: [model_output['time_step']] * num_batch_examples
+						}
+					)
+
+					train_loss += batch_loss * num_batch_examples
+					num_examples += num_batch_examples
+
+					if (batch_step + 1) % 100 == 0:
+						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+				train_loss /= num_examples
+				print('\tTrain:      loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+
+				#--------------------
+				if (epoch + 1) % 10 == 0:
+					start_time = time.time()
+					val_loss, val_acc, num_examples = 0, 0, 0
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+						#	If the number of classes increases, its computation time becomes much slower.
+						#batch_loss, batch_acc = sess.run(
+						#	[loss, accuracy],
+						batch_loss, batch_dense_labels_int = sess.run(
+							[loss, model_output['dense_label']],
+							feed_dict={
+								input_ph: batch_data[0],
+								output_ph: batch_data[2],
+								model_output_len_ph: [model_output['time_step']] * num_batch_examples
+							}
+						)
+
+						val_loss += batch_loss * num_batch_examples
+						#val_acc += batch_acc * num_batch_examples
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+						num_examples += num_batch_examples
+
+						# Show some results.
+						if 0 == batch_step:
+							preds, gts = list(), list()
+							for count, (pred, gt) in enumerate(zip(batch_dense_labels_int, batch_data[1])):
+								pred = self._dataset.decode_label(pred, self._default_value)
+								preds.append(pred)
+								gts.append(gt)
+								if (count + 1) >= 10:
+									break
+							print('\tValidation: G/T         = {}.'.format(gts))	
+							print('\tValidation: predictions = {}.'.format(preds))	
+					val_loss /= num_examples
+					val_acc /= num_examples
+					print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+				else:
+					start_time = time.time()
+					val_loss, val_acc, num_examples = 0, None, 0
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						batch_loss = sess.run(
+							loss,
+							feed_dict={
+								input_ph: batch_data[0],
+								output_ph: batch_data[2],
+								model_output_len_ph: [model_output['time_step']] * num_batch_examples
+							}
+						)
+
+						val_loss += batch_loss * num_batch_examples
+						num_examples += num_batch_examples
+					val_loss /= num_examples
+					print('\tValidation: loss = {:.6f}, accuracy = {}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 				#--------------------
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
 				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
 				print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+
+				sys.stdout.flush()
+				time.sleep(0)
 			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
-		return None
 
 	def infer(self, checkpoint_dir_path, batch_size):
 		graph = tf.Graph()
@@ -427,7 +512,8 @@ class MyRunner(object):
 			inferences, ground_truths = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
 				#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
-				# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
+				# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+				#	If the number of classes increases, its computation time becomes much slower.
 				batch_dense_labels_int = sess.run(
 					model_output['dense_label'],
 					feed_dict={
@@ -444,18 +530,28 @@ class MyRunner(object):
 
 				correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
 				for pred, gt in zip(inferences, ground_truths):
-					pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+					pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
 
 					correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
 					total_word_count += len(gt)
 					for ps, gs in zip(pred, gt):
 						correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
 						total_char_count += max(len(ps), len(gs))
+					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
+					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
 				print('Inference: word accurary = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 				print('Inference: character accurary = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+				# Output to a file.
+				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+					writer = csv.writer(csvfile, delimiter=',')
+
+					for pred, gt in zip(inferences, ground_truths):
+						pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
+						writer.writerow([gt, pred])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
-		return None
 
 #--------------------------------------------------------------------
 
@@ -463,17 +559,22 @@ def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-	num_epochs, batch_size = 10, 64  # batch_size affects training.
+	num_epochs, batch_size = 100, 64  # batch_size affects training.
 	initial_epoch = 0
 	is_training_resumed = False
 
-	checkpoint_dir_path = './tf_checkpoint'
+	#--------------------
+	output_dir_prefix = 'simple_english_crnn'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+
+	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
-		output_dir_prefix = 'simple_english_crnn'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = None
+	if not inference_dir_path:
+		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
 	runner = MyRunner()
@@ -488,8 +589,10 @@ def main():
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
+		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
+			os.makedirs(inference_dir_path, exist_ok=True)
 
-		runner.infer(checkpoint_dir_path, batch_size)
+		runner.infer(checkpoint_dir_path, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

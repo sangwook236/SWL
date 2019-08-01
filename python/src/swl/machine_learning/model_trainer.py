@@ -1,4 +1,4 @@
-import os, abc, math, time
+import sys, os, abc, math, time
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
@@ -170,6 +170,9 @@ class ModelTrainer(object):
 			print('\tElapsed time = {}'.format(time.time() - start_time))
 			print('\tTraining:   loss = {}, accuracy = {}'.format(train_loss, train_acc))
 			print('\tValidation: loss = {}, accuracy = {}'.format(val_loss, val_acc))
+
+			sys.stdout.flush()
+			time.sleep(0)
 
 		# Close writers.
 		if train_summary_writer is not None:

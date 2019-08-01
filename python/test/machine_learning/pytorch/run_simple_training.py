@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, argparse, time, datetime
+import sys, os, argparse, time, datetime
 import numpy as np
 import torch
 import torch.nn as nn
@@ -128,6 +128,8 @@ class MyRunner(object):
 					print('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 					running_loss = 0.0
 			print('\tTrain: time = {} secs.'.format(time.time() - start_time))
+			sys.stdout.flush()
+			time.sleep(0)
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
 		#--------------------

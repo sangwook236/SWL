@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, random, time, datetime, json
+import os, math, random, time, datetime, csv, json
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, LSTM, Input, Dense, Activation, Reshape, Lambda, BatchNormalization
@@ -43,7 +43,8 @@ class MyDataset(object):
 		for f in os.listdir(data_dir_path):
 			label_str = f.split('_')[0]
 			labels_set = labels_set.union(list(label_str))
-		self._labels = list(labels_set)
+		self._labels = ''.join(sorted(list(labels_set)))
+		print('[SWL] Info: labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -64,12 +65,6 @@ class MyDataset(object):
 	def num_classes(self):
 		return self._num_classes
 
-	def create_train_batch_generator(self, batch_size, shuffle=True):
-		return MyDataset._create_batch_generator(self._train_data, batch_size, shuffle)
-
-	def create_test_batch_generator(self, batch_size, shuffle=False):
-		return MyDataset._create_batch_generator(self._test_data, batch_size, shuffle)
-
 	# String label -> integer label.
 	def encode_label(self, label_str):
 		try:
@@ -85,6 +80,12 @@ class MyDataset(object):
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
+
+	def create_train_batch_generator(self, batch_size, shuffle=True, *args, **kwargs):
+		return MyDataset._create_batch_generator(self._train_data, batch_size, shuffle)
+
+	def create_test_batch_generator(self, batch_size, shuffle=False, *args, **kwargs):
+		return MyDataset._create_batch_generator(self._test_data, batch_size, shuffle)
 
 	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
@@ -190,62 +191,160 @@ class MyDataset(object):
 			return img_zeropadded
 
 class MyOnlineSyntheticDataset(object):
-	def __init__(self, image_height, image_width, image_channel, width_downsample_factor, num_classes, eos_token_label, blank_label):
-		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-		#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-		with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-			#hangeul_charset = fd.readlines()  # A string.
-			#hangeul_charset = fd.read().strip('\n')  # A list of strings.
-			#hangeul_charset = fd.read().splitlines()  # A list of strings.
-			hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
-		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+	def __init__(self, image_height, image_width, image_channel):
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._generator_batch_size = 32
 
-		self._charset = hangeul_charset
-		#self._charset = hangeul_charset + hangeul_jamo_charset
-		#self._charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset
-		#self._charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset
-		print('Charset =', len(self._charset), self._charset)
+		if True:
+			hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+			#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+			with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+				#hangeul_charset = fd.readlines()  # A string.
+				#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+				#hangeul_charset = fd.read().splitlines()  # A list of strings.
+				hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+			hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+			alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+			digit_charset = '0123456789'
+			symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		#--------------------
-		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
-		#characterTransformer = tg_util.IdentityTransformer()
-		characterTransformer = tg_util.RotationTransformer(-30, 30)
-		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+			charset = hangeul_charset
+			#charset = hangeul_charset + hangeul_jamo_charset
+			#charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset
+			#charset = hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset
 
-		#--------------------
-		self._num_char_repetitions_for_train, self._num_char_repetitions_for_test = 250, 5
-		self._min_char_count, self._max_char_count = 2, 10
-		self._min_font_size, self._max_font_size = 15, 30
-		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 2
+			#--------------------
+			characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+			#characterTransformer = tg_util.IdentityTransformer()
+			characterTransformer = tg_util.RotationTransformer(-30, 30)
+			#characterTransformer = tg_util.ImgaugAffineTransformer()
+			characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
+			textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
 
-		#self._font_color = (255, 255, 255)
-		#self._font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-		self._font_color = None  # Uses random font colors.
-		#self._bg_color = (0, 0, 0)
-		self._bg_color = None  # Uses random colors.
+			#--------------------
+			num_char_repetitions = 1000
+			min_char_count, max_char_count = 2, 10
+			min_font_size, max_font_size = 15, 30
+			min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	def create_train_batch_generator(self, batch_size):
-		return self._create_batch_generator(self._num_char_repetitions_for_train, batch_size)
+			#font_color = (255, 255, 255)
+			#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
+			font_color = None  # Uses random font colors.
+			#bg_color = (0, 0, 0)
+			bg_color = None  # Uses random colors.
 
-	def create_test_batch_generator(self, batch_size):
-		return self._create_batch_generator(self._num_char_repetitions_for_test, batch_size)
+			word_set = tg_util.generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, max_char_count)
+			self._generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), self._generator_batch_size, font_color, bg_color)
 
-	def _create_batch_generator(self, num_char_repetitions, batch_size):
-		word_set = tg_util.generate_repetitive_word_set(num_char_repetitions, self._charset, self._min_char_count, self._max_char_count)
-		return tg_util.generate_text_lines(word_set, self._textGenerator, (self._in_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, self._font_color, self._bg_color)
+		self._labels = ''.join(sorted(charset))
+		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
-		# FIXME [implement] >> Creates another generator from tg_util.generate_text_lines().
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+	@property
+	def num_classes(self):
+		return self._num_classes
+
+	# String label -> integer label.
+	def encode_label(self, label_str):
+		try:
+			return [self._labels.index(ch) for ch in label_str]
+		except Exception as ex:
+			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+			raise
+
+	# Integer label -> string label.
+	def decode_label(self, label_int, default_value=-1):
+		try:
+			return ''.join([self._labels[id] for id in label_int if id != default_value])
+		except Exception as ex:
+			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
+			raise
+
+	def create_train_batch_generator(self, batch_size, *args, **kwargs):
+		return self._create_batch_generator(batch_size)
+
+	def create_test_batch_generator(self, batch_size, *args, **kwargs):
+		return self._create_batch_generator(batch_size)
+
+	def _create_batch_generator(self, batch_size):
+		images, labels_str, labels_int, idx = list(), list(), list(), 0
+		for text_list, scene_list, _ in self._generator:
+			for text, scene in zip(text_list, scene_list):
+				image = cv2.cvtColor(scene, cv2.COLOR_BGR2GRAY)
+				image = MyOnlineSyntheticDataset._resize_image(image, self._image_height, self._image_width)
+				image, label_int = MyOnlineSyntheticDataset._preprocess_data(image, self.encode_label(text))
+
+				images.append(image)
+				labels_str.append(text)
+				labels_int.append(label_int)
+
+				idx += 1
+				if idx >= batch_size:
+					# (examples, height, width) -> (examples, width, height).
+					images = np.swapaxes(np.array(images), 1, 2)
+					images = np.reshape(images, images.shape + (1,))  # Image channel = 1.
+					labels_str = np.reshape(np.array(labels_str), (-1))
+					labels_int = np.reshape(np.array(labels_int), (-1))
+					labels_int = swl_ml_util.sequences_to_sparse(labels_int, dtype=np.int32)  # Sparse tensor.
+
+					yield (images, labels_str, labels_int), batch_size
+					images, labels_str, labels_int, idx = list(), list(), list(), 0
+
+	@staticmethod
+	def _preprocess_data(inputs, outputs):
+		if inputs is not None:
+			# Contrast limited adaptive histogram equalization (CLAHE).
+			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+			#inputs = np.array([clahe.apply(inp) for inp in inputs])
+
+			# TODO [check] >> Preprocessing has influence on recognition rate.
+
+			# Normalization, standardization, etc.
+			#inputs = inputs.astype(np.float32)
+
+			if False:
+				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+			elif False:
+				# NOTE [info] >> Not good.
+				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
+			elif False:
+				# NOTE [info] >> Not bad.
+				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
+				out_min, out_max = 0, 1 #-1, 1
+				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
+			elif False:
+				inputs /= 255.0  # Normalization.
+
+		if outputs is not None:
+			# One-hot encoding.
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			pass
+
+		return inputs, outputs
+
+	@staticmethod
+	def _resize_image(img, image_height, image_width):
+		r, c = img.shape
+		if c >= image_width:
+			return cv2.resize(img, (image_width, image_height))
+		else:
+			img_zeropadded = np.zeros((image_height, image_width))
+			ratio = image_height / r
+			img = cv2.resize(img, (int(c * ratio), image_height))
+			width = min(image_width, img.shape[1])
+			img_zeropadded[:, 0:width] = img[:, 0:width]
+			return img_zeropadded
 
 class MyFileBasedSyntheticDataset(object):
-	def __init__(self, image_height, image_width, image_channel, width_downsample_factor, num_classes, eos_token_label, blank_label):
+	def __init__(self, image_height, image_width, image_channel, num_classes, eos_token_label, blank_label):
 		self._eos_token_label = eos_token_label
-		self._model_output_time_steps = image_width // width_downsample_factor
 
 		print('Start loading dataset...')
 		start_time = time.time()
@@ -261,7 +360,7 @@ class MyFileBasedSyntheticDataset(object):
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
 
-	def create_train_batch_generator(self, batch_size, shuffle=True):
+	def create_train_batch_generator(self, batch_size, shuffle=True, *args, **kwargs):
 		# FIXME [improve] >> Stupid implementation.
 		if True:
 			model_output_lengths = np.full((self._train_images.shape[0],), self._model_output_time_steps)
@@ -270,7 +369,7 @@ class MyFileBasedSyntheticDataset(object):
 
 		return MyFileBasedSyntheticDataset._create_batch_generator(self._train_images, self._train_labels, model_output_lengths, batch_size, shuffle, self._eos_token_label)
 
-	def create_test_batch_generator(self, batch_size, shuffle=False):
+	def create_test_batch_generator(self, batch_size, shuffle=False, *args, **kwargs):
 		# FIXME [improve] >> Stupid implementation.
 		if True:
 			model_output_lengths = np.full((self._test_images.shape[0],), self._model_output_time_steps)
@@ -490,7 +589,7 @@ class MyKerasModel(object):
 		return y_pred
 
 class MyTensorFlowModel(object):
-	def __init__(self, image_width, image_height, image_channel):
+	def __init__(self, image_height, image_width, image_channel):
 		self._input_ph = tf.placeholder(tf.float32, [None, image_width, image_height, image_channel], name='input_ph')
 		self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
@@ -625,162 +724,29 @@ class MyTensorFlowModel(object):
 
 #--------------------------------------------------------------------
 
-class MyOldRunner(object):
-	def __init__(self):
-		image_height, image_width, image_channel = 64, 320, 1
-		num_labels = 2350
-		width_downsample_factor = 4  # Depends on models.
-
-		if False:
-			self._num_classes = num_labels
-		elif False:
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label in case of tf.nn.ctc_loss().
-			self._num_classes = num_labels + 1  # #labels + blank label.
-			blank_label = self._num_classes - 1
-		else:
-			# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label in case of tf.nn.ctc_loss().
-			self._num_classes = num_labels + 1 + 1  # #labels + EOS + blank label.
-			self._eos_token_label = self._num_classes - 2
-			blank_label = self._num_classes - 1
-
-		#--------------------
-		# Create a dataset.
-
-		self._dataset = MyFileBasedSyntheticDataset(image_height, image_width, image_channel, width_downsample_factor, self._num_classes, self._eos_token_label, blank_label)
-
-		#--------------------
-		# (samples, height, width, channels) -> (samples, width, height, channels).
-		#self._input_ph = tf.placeholder(tf.float32, shape=[None, image_height, image_width, image_channel], name='input_ph')  # NOTE [caution] >> (?, image_height, image_width, ?)
-		self._input_ph = tf.placeholder(tf.float32, shape=[None, image_width, image_height, image_channel], name='input_ph')  # NOTE [caution] >> (?, image_width, image_height, ?)
-		if False:
-			self._output_ph = tf.placeholder(tf.float32, shape=[None, max_label_len], name='output_ph')
-		else:
-			self._output_ph = tf.sparse.placeholder(tf.int32, name='output_ph')
-		self._output_length_ph = tf.placeholder(tf.int32, shape=[None], name='output_length_ph')
-		self._model_output_length_ph = tf.placeholder(tf.int32, shape=[None], name='model_time_step_ph')
-
-	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0):
-		with tf.Session() as sess:
-			# Create a model.
-			#model = MyKerasModel()
-			model = MyTensorFlowModel()
-			model_output = model.create_model(self._input_ph, self._model_output_length_ph, self._num_classes)
-
-			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
-
-			# Create a trainer.
-			loss = model.get_loss(model_output, self._output_ph, self._model_output_length_ph)
-			accuracy = model.get_accuracy(model_output, self._output_ph, self._model_output_length_ph, default_value=self._eos_token_label)
-
-			learning_rate = 0.001
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=learning_rate, rho=0.95, epsilon=1.0e-7, use_locking=False)
-
-			train_op = optimizer.minimize(loss)
-
-			#--------------------
-			print('Start training...')
-			start_total_time = time.time()
-			sess.run(tf.global_variables_initializer())
-			for epoch in range(num_epochs):
-				print('Epoch {}:'.format(epoch + 1))
-
-				#--------------------
-				start_time = time.time()
-				train_loss, train_acc, num_examples = 0, 0, 0
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
-					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
-					#_, batch_loss, batch_acc = sess.run([train_op, loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
-					_, batch_loss = sess.run([train_op, loss], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
-					train_loss += batch_loss * num_batch_examples
-					#train_acc += batch_acc * num_batch_examples
-					num_examples += num_batch_examples
-
-					if (batch_step + 1) % 100 == 0:
-						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
-				train_loss /= num_examples
-				#train_acc /= num_examples
-				print('\tTrain:      loss = {:.6f}: {} secs.'.format(train_loss, time.time() - start_time))
-				#print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
-
-				#--------------------
-				start_time = time.time()
-				val_loss, val_acc, num_examples = 0, 0, 0
-				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
-					#batch_loss, batch_acc = sess.run([loss, accuracy], feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
-					batch_loss = sess.run(loss, feed_dict={self._input_ph: batch_data[0], self._output_ph: batch_data[1], self._model_output_length_ph: batch_data[2]})
-					val_loss += batch_loss * num_batch_examples
-					#val_acc += batch_acc * num_batch_examples
-					num_examples += num_batch_examples
-				val_loss /= num_examples
-				#val_acc /= num_examples
-				print('\tValidation: loss = {:.6f}: {} secs.'.format(val_loss, time.time() - start_time))
-				#print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
-
-				#--------------------
-				print('Start saving a model...')
-				start_time = time.time()
-				saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt', initial_epoch + epoch)
-				print('End saving a model: {} secs.'.format(time.time() - start_time))
-			print('End training: {} secs.'.format(time.time() - start_total_time))
-
-	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
-		with tf.Session() as sess:
-			# Create a model.
-			#model = MyKerasModel()
-			model = MyTensorFlowModel()
-			model_output = model.create_model(self._input_ph, self._model_output_length_ph, self._num_classes)
-
-			# Load a model.
-			print('Start loading a model...')
-			start_time = time.time()
-			saver = tf.train.Saver()
-			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
-			saver.restore(sess, ckpt.model_checkpoint_path)
-			#saver.restore(sess, tf.train.latest_checkpoint(checkpoint_dir_path))
-			print('End loading a model: {} secs.'.format(time.time() - start_time))
-
-			#--------------------
-			print('Start inferring...')
-			start_time = time.time()
-			inferences, test_labels = list(), list()
-			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
-				inferences.append(sess.run(model_output, feed_dict={self._input_ph: batch_data[0]}))
-				test_labels.append(batch_data[1])
-			print('End inferring: {} secs.'.format(time.time() - start_time))
-
-			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
-			if inferences is not None:
-				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
-
-				inferences = np.argmax(inferences, -1)
-
-				print('**********', inferences[:10])
-				print('**********', test_labels[:10])
-			else:
-				print('[SWL] Warning: Invalid inference results.')
-
 class MyRunner(object):
 	def __init__(self):
 		data_dir_path = './kr_samples_100000'
 		#data_dir_path = './kr_samples_200000'
 
-		self._image_height, self._image_width, self._image_channel = 32, 160, 1  # TODO [modify] >> image_channel is fixed.
-		#self._image_height, self._image_width, self._image_channel = 64, 320, 1  # TODO [modify] >> image_channel is fixed.
-		train_test_ratio = 0.8
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
-		model_output_time_steps = 39
-		#model_output_time_steps = 79
+		if True:
+			self._image_height, self._image_width, self._image_channel = 32, 160, 1  # TODO [modify] >> image_channel is fixed.
+			model_output_time_steps = 39
+		else:
+			self._image_height, self._image_width, self._image_channel = 64, 320, 1  # TODO [modify] >> image_channel is fixed.
+			model_output_time_steps = 79
 
+		train_test_ratio = 0.8
 		self._default_value = -1
 
 		#--------------------
 		# Create a dataset.
 
-		self._dataset = MyDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
+		self._dataset = MyDataset(data_dir_path, self._image_height, self._image_width, self._image_channel, train_test_ratio, max_char_count=model_output_time_steps)
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -828,11 +794,14 @@ class MyRunner(object):
 				print('Epoch {}:'.format(epoch + 1))
 
 				start_time = time.time()
-				train_loss = 0
-				correct_count, total_count = 0, 0
+				"""
+				train_loss, train_acc, num_examples = 0, 0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
 					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
-					# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
+					# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+					#	If the number of classes increases, its computation time becomes much slower.
+					#_, batch_loss, batch_acc = sess.run(
+					#	[train_op, loss, accuracy],
 					_, batch_loss, batch_dense_labels_int = sess.run(
 						[train_op, loss, model_output['dense_label']],
 						feed_dict={
@@ -842,23 +811,105 @@ class MyRunner(object):
 						}
 					)
 
-					train_loss += batch_loss
-					correct_count += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
-					total_count += num_batch_examples
+					train_loss += batch_loss * num_batch_examples
+					#train_acc += batch_acc * num_batch_examples
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
 						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
-				print('\tTrain: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, correct_count / total_count, time.time() - start_time))
+				train_loss /= num_examples
+				train_acc /= num_examples
+				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+				"""
+				train_loss, train_acc, num_examples = 0, None, 0
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+					_, batch_loss = sess.run(
+						[train_op, loss],
+						feed_dict={
+							input_ph: batch_data[0],
+							output_ph: batch_data[2],
+							model_output_len_ph: [model_output['time_step']] * num_batch_examples
+						}
+					)
+
+					train_loss += batch_loss * num_batch_examples
+					num_examples += num_batch_examples
+
+					if (batch_step + 1) % 100 == 0:
+						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
+				train_loss /= num_examples
+				print('\tTrain:      loss = {:.6f}, accuracy = {}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+
+				#--------------------
+				if (epoch + 1) % 10 == 0:
+					start_time = time.time()
+					val_loss, val_acc, num_examples = 0, 0, 0
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+						#	If the number of classes increases, its computation time becomes much slower.
+						#batch_loss, batch_acc = sess.run(
+						#	[loss, accuracy],
+						batch_loss, batch_dense_labels_int = sess.run(
+							[loss, model_output['dense_label']],
+							feed_dict={
+								input_ph: batch_data[0],
+								output_ph: batch_data[2],
+								model_output_len_ph: [model_output['time_step']] * num_batch_examples
+							}
+						)
+
+						val_loss += batch_loss * num_batch_examples
+						#val_acc += batch_acc * num_batch_examples
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+						num_examples += num_batch_examples
+
+						# Show some results.
+						if 0 == batch_step:
+							preds, gts = list(), list()
+							for count, (pred, gt) in enumerate(zip(batch_dense_labels_int, batch_data[1])):
+								pred = self._dataset.decode_label(pred, self._default_value)
+								preds.append(pred)
+								gts.append(gt)
+								if (count + 1) >= 10:
+									break
+							print('\tValidation: G/T         = {}.'.format(gts))	
+							print('\tValidation: predictions = {}.'.format(preds))	
+					val_loss /= num_examples
+					val_acc /= num_examples
+					print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+				else:
+					start_time = time.time()
+					val_loss, val_acc, num_examples = 0, None, 0
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						batch_loss = sess.run(
+							loss,
+							feed_dict={
+								input_ph: batch_data[0],
+								output_ph: batch_data[2],
+								model_output_len_ph: [model_output['time_step']] * num_batch_examples
+							}
+						)
+
+						val_loss += batch_loss * num_batch_examples
+						num_examples += num_batch_examples
+					val_loss /= num_examples
+					print('\tValidation: loss = {:.6f}, accuracy = {}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
 
 				#--------------------
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
 				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch)
 				print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
-			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
-		return None
 
-	def infer(self, checkpoint_dir_path, batch_size):
+				sys.stdout.flush()
+				time.sleep(0)
+			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
+
+	def infer(self, checkpoint_dir_path, inference_dir_path, batch_size):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -890,7 +941,8 @@ class MyRunner(object):
 			inferences, ground_truths = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
 				#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
-				# TODO [improve] >> CTC beam search decoding runs on CPU (too slow).
+				# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+				#	If the number of classes increases, its computation time becomes much slower.
 				batch_dense_labels_int = sess.run(
 					model_output['dense_label'],
 					feed_dict={
@@ -907,18 +959,45 @@ class MyRunner(object):
 
 				correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
 				for pred, gt in zip(inferences, ground_truths):
-					pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+					pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
 
 					correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
 					total_word_count += len(gt)
 					for ps, gs in zip(pred, gt):
 						correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
 						total_char_count += max(len(ps), len(gs))
+					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
+					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
 				print('Inference: word accurary = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 				print('Inference: character accurary = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+				# Output to a file.
+				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+					writer = csv.writer(csvfile, delimiter=',')
+
+					for pred, gt in zip(inferences, ground_truths):
+						pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
+						writer.writerow([gt, pred])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
-		return None
+
+#--------------------------------------------------------------------
+
+def MyOnlineSyntheticDataset_test():
+	image_height, image_width, image_channel = 64, 320, 1
+	dataset = MyOnlineSyntheticDataset(image_height, image_width, image_channel)
+	for epoch in range(2):
+		for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(7)):
+			print('Epoch = {}, Batch = {}: #examples = {}.'.format(epoch, batch_step, num_batch_examples))
+			for image, label_str in zip(batch_data[0], batch_data[1]):
+				print('\tText = {}.'.format(label_str))
+				image = np.swapaxes(image, 0, 1)
+				cv2.imshow('Image', image.astype(np.uint8))
+				cv2.waitKey(0)
+			if (batch_step + 1) >= 3:
+				break
+	cv2.destroyAllWindows()
 
 #--------------------------------------------------------------------
 
@@ -926,49 +1005,44 @@ def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-	num_epochs, batch_size = 20, 32
+	if False:
+		MyOnlineSyntheticDataset_test()
+		return
+
+	num_epochs, batch_size = 500, 64
 	initial_epoch = 0
 	is_training_resumed = False
 
+	#--------------------
+	output_dir_prefix = 'simple_hangeul_crnn'
+	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+	#output_dir_suffix = '20190724T231604'
+	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+
 	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
-		output_dir_prefix = 'simple_hangeul_crnn'
-		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
-		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = None
+	if not inference_dir_path:
+		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
+	runner = MyRunner()
+
 	if True:
-		runner = MyRunner()
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		if True:
-			if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
-				os.makedirs(checkpoint_dir_path, exist_ok=True)
+		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
 
-			runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
+			os.makedirs(inference_dir_path, exist_ok=True)
 
-		if True:
-			if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-				print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
-				return
-
-			runner.infer(checkpoint_dir_path, batch_size)
-	else:
-		runner = MyOldRunner()
-
-		if True:
-			if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
-				os.makedirs(checkpoint_dir_path, exist_ok=True)
-
-			runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch)
-
-		if True:
-			if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
-				print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
-				return
-
-			runner.infer(checkpoint_dir_path)
+		runner.infer(checkpoint_dir_path, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

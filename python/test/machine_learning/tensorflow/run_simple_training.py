@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
-import os, argparse, time, datetime
+import sys, os, argparse, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -254,6 +254,8 @@ class MyRunner(object):
 				val_loss /= num_examples
 				val_accuracy /= num_examples
 				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
+				sys.stdout.flush()
+				time.sleep(0)
 			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
 
 			#--------------------

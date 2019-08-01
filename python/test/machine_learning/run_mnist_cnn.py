@@ -39,11 +39,9 @@ class MyRunner(object):
 
 	def train(self, checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, initial_epoch=0, is_training_resumed=False, device_name=None):
 		# Prepares directories.
-		inference_dir_path = os.path.join(output_dir_path, 'inference')
 		train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 		val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-		os.makedirs(inference_dir_path, exist_ok=True)
 		os.makedirs(train_summary_dir_path, exist_ok=True)
 		os.makedirs(val_summary_dir_path, exist_ok=True)
 
