@@ -90,10 +90,10 @@ class ModelTrainer(object):
 		val_summary_writer = tf.summary.FileWriter(self._val_summary_dir_path) if self._val_summary_dir_path is not None else None
 
 		history = {
-			'acc': [],
-			'loss': [],
-			'val_acc': [],
-			'val_loss': []
+			'acc': list(),
+			'loss': list(),
+			'val_acc': list(),
+			'val_loss': list()
 		}
 
 		best_val_acc = -math.inf

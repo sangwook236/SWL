@@ -66,92 +66,59 @@ def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, s
 
 #--------------------------------------------------------------------
 
-def main():
-	#random.seed(a=None, version=2)
-	#np.random.seed(None)
-	#tf.set_random_seed(1234)  # Sets a graph-level seed.
+class MyRunner(object):
+	def __init__(self, num_epochs, batch_size, is_sparse_output):
+		# Sets parameters.
+		self._num_epochs, self._batch_size = num_epochs, batch_size
+		self._is_sparse_output = is_sparse_output
 
-	#--------------------
-	# Sets parameters.
+		is_output_augmented = False  # Fixed.
+		is_augmented_in_parallel = True
+		is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
 
-	is_training_required, is_evaluation_required = True, True
-	is_training_resumed = False
+		self._sess_config = tf.ConfigProto()
+		#self._sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'.
+		self._sess_config.allow_soft_placement = True
+		#self._sess_config.log_device_placement = True
+		#self._sess_config.operation_timeout_in_ms = 50000
+		self._sess_config.gpu_options.allow_growth = True
+		#self._sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
 
-	output_dir_prefix = 'hangeul_crnn'
-	output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-	#output_dir_suffix = '20190320T134245'
+		#--------------------
+		# Prepares data.
 
-	initial_epoch = 0
+		self._dataGenerator = HangeulDataGenerator(self._num_epochs, self._is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
+		#self._label_sos_token, self._label_eos_token = self._dataGenerator.dataset.start_token, self._dataGenerator.dataset.end_token
+		self._label_eos_token = self._dataGenerator.dataset.end_token
 
-	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
-	is_sparse_output = True  # Fixed.
-	#is_time_major = False  # Fixed.
+		self._dataGenerator.initialize(self._batch_size)
 
-	batch_size = 256  # Number of samples per gradient update.
-	num_epochs = 1000  # Number of times to iterate over training data.
-	shuffle = True
+	def train(self, checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=0, is_training_resumed=False, device_name=None):
+		# Prepares directories.
+		train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
+		val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-	is_output_augmented = False  # Fixed.
-	is_augmented_in_parallel = True
-	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
+		os.makedirs(train_summary_dir_path, exist_ok=True)
+		os.makedirs(val_summary_dir_path, exist_ok=True)
 
-	sess_config = tf.ConfigProto()
-	#sess_config = tf.ConfigProto(device_count={'GPU': 2, 'CPU': 1})  # os.environ['CUDA_VISIBLE_DEVICES'] = '0,1'.
-	sess_config.allow_soft_placement = True
-	#sess_config.log_device_placement = True
-	#sess_config.operation_timeout_in_ms = 50000
-	sess_config.gpu_options.allow_growth = True
-	#sess_config.gpu_options.per_process_gpu_memory_fraction = 0.4  # Only allocate 40% of the total memory of each GPU.
-
-	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
-	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
-	train_device_name = None #'/device:GPU:0'
-	eval_device_name = None #'/device:GPU:0'
-	infer_device_name = None #'/device:GPU:0'
-
-	#--------------------
-	# Prepares directories.
-
-	output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
-	checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
-	inference_dir_path = os.path.join(output_dir_path, 'inference')
-	train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
-	val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
-
-	swl_util.make_dir(checkpoint_dir_path)
-	swl_util.make_dir(inference_dir_path)
-	swl_util.make_dir(train_summary_dir_path)
-	swl_util.make_dir(val_summary_dir_path)
-
-	#--------------------
-	# Prepares data.
-
-	dataGenerator = HangeulDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
-	image_height, image_width, image_channel, num_classes = dataGenerator.shapes
-	#label_sos_token, label_eos_token = dataGenerator.dataset.start_token, dataGenerator.dataset.end_token
-	label_eos_token = dataGenerator.dataset.end_token
-
-	dataGenerator.initialize(batch_size)
-
-	#%%------------------------------------------------------------------
-	# Trains.
-
-	if is_training_required:
+		#--------------------
 		# Creates a graph.
 		train_graph = tf.Graph()
 		with train_graph.as_default():
-			with tf.device(train_device_name):
+			with tf.device(device_name):
+				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
+
 				# Creates a model.
-				modelForTraining = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForTraining = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
-				modelTrainer = SimpleCrnnTrainer(modelForTraining, dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch)
+				modelTrainer = SimpleCrnnTrainer(modelForTraining, self._dataGenerator, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch)
 
 				initializer = tf.global_variables_initializer()
 
 		# Creates a session.
-		train_session = tf.Session(graph=train_graph, config=sess_config)
+		train_session = tf.Session(graph=train_graph, config=self._sess_config)
 
 		# Initializes.
 		train_session.run(initializer)
@@ -160,16 +127,16 @@ def main():
 		start_time = time.time()
 		with train_session.as_default() as sess:
 			with sess.graph.as_default():
-				dataGenerator.initializeTraining(batch_size, shuffle)
+				self._dataGenerator.initializeTraining(self._batch_size, shuffle)
 				if True:
-					modelTrainer.train(sess, batch_size, num_epochs, shuffle, is_training_resumed)
+					modelTrainer.train(sess, self._batch_size, self._num_epochs, shuffle, is_training_resumed)
 				else:
 					# Uses a training worker thread.
-					training_worker_thread = threading.Thread(target=training_worker_thread_proc, args=(sess, modelTrainer, batch_size, num_epochs, shuffle, is_training_resumed))
+					training_worker_thread = threading.Thread(target=training_worker_thread_proc, args=(sess, modelTrainer, self._batch_size, self._num_epochs, shuffle, is_training_resumed))
 					training_worker_thread.start()
 
 					training_worker_thread.join()
-				dataGenerator.finalizeTraining()
+				self._dataGenerator.finalizeTraining()
 		print('\tTotal training time = {}.'.format(time.time() - start_time))
 
 		#--------------------
@@ -179,30 +146,29 @@ def main():
 		#train_graph.reset_default_graph()
 		del train_graph
 
-	#%%------------------------------------------------------------------
-	# Evaluates.
-
-	if is_evaluation_required:
+	def evaluate(self, checkpoint_dir_path, shuffle=False, device_name=None):
 		# Creates a graph.
 		eval_graph = tf.Graph()
 		with eval_graph.as_default():
-			with tf.device(eval_device_name):
+			with tf.device(device_name):
+				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
+
 				# Creates a model.
-				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForEvaluation.create_evaluation_model()
 
 				# Creates an evaluator.
-				modelEvaluator = ModelEvaluator(modelForEvaluation, dataGenerator, checkpoint_dir_path)
+				modelEvaluator = ModelEvaluator(modelForEvaluation, self._dataGenerator, checkpoint_dir_path)
 
 		# Creates a session.
-		eval_session = tf.Session(graph=eval_graph, config=sess_config)
+		eval_session = tf.Session(graph=eval_graph, config=self._sess_config)
 
 		#--------------------
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
 				#modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)  # Exception: NotImplementedError is raised in dataGenerator.getValidationData().
-				modelEvaluator.evaluate(sess, batch_size=batch_size, shuffle=False)
+				modelEvaluator.evaluate(sess, batch_size=self._batch_size, shuffle=shuffle)
 		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
 		#--------------------
@@ -212,23 +178,22 @@ def main():
 		#eval_graph.reset_default_graph()
 		del eval_graph
 
-	#%%------------------------------------------------------------------
-	# Infers.
-
-	if True:
+	def infer(self, checkpoint_dir_path, shuffle=False, device_name=None):
 		# Creates a graph.
 		infer_graph = tf.Graph()
 		with infer_graph.as_default():
-			with tf.device(infer_device_name):
+			with tf.device(device_name):
+				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
+
 				# Creates a model.
-				modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output)
+				modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForInference.create_inference_model()
 
 				# Creates an inferrer.
 				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
 
 		# Creates a session.
-		infer_session = tf.Session(graph=infer_graph, config=sess_config)
+		infer_session = tf.Session(graph=infer_graph, config=self._sess_config)
 
 		#--------------------
 		start_time = time.time()
@@ -236,17 +201,17 @@ def main():
 			with sess.graph.as_default():
 				inferences, ground_truths = list(), list()
 				num_test_examples = 0
-				for batch_data, num_batch_examples in dataGenerator.getTestBatches(batch_size, shuffle=False):
+				for batch_data, num_batch_examples in self._dataGenerator.getTestBatches(batch_size=self._batch_size, shuffle=shuffle):
 					inferred = modelInferrer.infer(sess, batch_data[0])
 					if isinstance(inferred, tf.SparseTensorValue):
 						print('*******************', inferred.dense_shape)
 						# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-						dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=label_eos_token, dtype=np.int8)
+						dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=self._label_eos_token, dtype=np.int8)
 						inferences.append(dense_batch_inferences)
 					else:
 						inferences.append(inferred)
 					# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
+					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=self._label_eos_token, dtype=np.int8)
 					ground_truths.append(dense_batch_outputs)
 				# Variable-length numpy.arrays are not merged into a single numpy.array.
 				#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
@@ -258,7 +223,7 @@ def main():
 				num_correct_letters, num_letters = 0, 0
 				num_correct_texts, num_texts = 0, 0
 				for inference, ground_truth in zip(inferences, ground_truths):
-					inference, ground_truth = dataGenerator.dataset.to_string(np.argmax(inference, axis=-1)), dataGenerator.dataset.to_string(ground_truth)
+					inference, ground_truth = self._dataGenerator.dataset.to_string(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.to_string(ground_truth)
 					for inf, gt in zip(inference, ground_truth):
 						for ich, gch in zip(inf, gt):
 							if ich == gch:
@@ -268,8 +233,8 @@ def main():
 						if inf == gt:
 							num_correct_texts += 1
 						num_texts += 1
-						print('Inferred: {}, G/T: {}.'.format(inf, gt))
-				print('Letter accuracy = {}, Text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
+						print('\tInference: inferred: {}, G/T: {}.'.format(inf, gt))
+				print('\tInference: letter accuracy = {}, text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
 			else:
 				print('[SWL] Error: The lengths of inference results and ground truth are different.')
 		else:
@@ -282,8 +247,66 @@ def main():
 		#infer_graph.reset_default_graph()
 		del infer_graph
 
-#%%------------------------------------------------------------------
+def main():
+	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+	#random.seed(a=None, version=2)
+	#np.random.seed(None)
+	#tf.set_random_seed(1234)  # Sets a graph-level seed.
+
+	#--------------------
+	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
+	is_sparse_output = True  # Fixed.
+	#is_time_major = False  # Fixed.
+
+	num_epochs = 1000  # Number of times to iterate over training data.
+	batch_size = 256  # Number of samples per gradient update.
+	initial_epoch = 0
+	is_training_resumed = False
+
+	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
+	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
+	train_device_name = None #'/device:GPU:0'
+	eval_device_name = None #'/device:GPU:0'
+	infer_device_name = None #'/device:GPU:0'
+
+	#--------------------
+	output_dir_path = None
+	if not output_dir_path:
+		output_dir_prefix = 'hangeul_crnn'
+		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
+		#output_dir_suffix = '20190320T134245'
+		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+
+	checkpoint_dir_path = None
+	if not checkpoint_dir_path:
+		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+
+	#--------------------
+	runner = MyRunner(num_epochs, batch_size, is_sparse_output)
+
+	if True:
+		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
+			os.makedirs(checkpoint_dir_path, exist_ok=True)
+
+		runner.train(checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
+
+	if True:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.infer(checkpoint_dir_path, device_name=infer_device_name)
+
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	main()
