@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+sys.path.append('../../src')
+
 import sys, os, argparse, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
 import cv2
+import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -222,38 +226,56 @@ class MyRunner(object):
 					return
 				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
 
+			history = {
+				'acc': list(),
+				'loss': list(),
+				'val_acc': list(),
+				'val_loss': list()
+			}
+
 			#--------------------
-			print('[SWL] Info: Start training...')
+			if is_training_resumed:
+				print('[SWL] Info: Resume training...')
+			else:
+				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
-			for epoch in range(initial_epoch, initial_epoch + num_epochs):
-				print('Epoch {}:'.format(epoch + 1))
+			final_epoch = num_epochs + initial_epoch
+			for epoch in range(initial_epoch + 1, final_epoch + 1):
+				print('Epoch {}/{}:'.format(epoch, final_epoch))
 
 				#--------------------
 				start_time = time.time()
-				train_loss, train_accuracy, num_examples = 0, 0, 0
+				train_loss, train_acc, num_examples = 0.0, 0.0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
 					_, batch_loss, batch_accuracy = sess.run([train_op, loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					train_loss += batch_loss * num_batch_examples
-					train_accuracy += batch_accuracy * num_batch_examples
+					train_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
 						print('\tStep {}: {} secs.'.format(batch_step + 1, time.time() - start_time))
 				train_loss /= num_examples
-				train_accuracy /= num_examples
-				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_accuracy, time.time() - start_time))
+				train_acc /= num_examples
+				print('\tTrain:      loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(train_loss, train_acc, time.time() - start_time))
+
+				history['loss'].append(train_loss)
+				history['acc'].append(train_acc)
 
 				#--------------------
 				start_time = time.time()
-				val_loss, val_accuracy, num_examples = 0, 0, 0
+				val_loss, val_acc, num_examples = 0.0, 0.0, 0
 				for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
 					batch_loss, batch_accuracy = sess.run([loss, accuracy], feed_dict={input_ph: batch_data[0], output_ph: batch_data[1]})
 					val_loss += batch_loss * num_batch_examples
-					val_accuracy += batch_accuracy * num_batch_examples
+					val_acc += batch_accuracy * num_batch_examples
 					num_examples += num_batch_examples
 				val_loss /= num_examples
-				val_accuracy /= num_examples
-				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_accuracy, time.time() - start_time))
+				val_acc /= num_examples
+				print('\tValidation: loss = {:.6f}, accuracy = {:.6f}: {} secs.'.format(val_loss, val_acc, time.time() - start_time))
+
+				history['val_loss'].append(val_loss)
+				history['val_acc'].append(val_acc)
+
 				sys.stdout.flush()
 				time.sleep(0)
 			print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
@@ -263,6 +285,8 @@ class MyRunner(object):
 			start_time = time.time()
 			saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'))
 			print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+
+			return history
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		graph = tf.Graph()
@@ -410,12 +434,16 @@ def main():
 	initial_epoch = 0
 	is_training_resumed = False
 
-	checkpoint_dir_path = args.model_dir
-	if not checkpoint_dir_path:
+	#--------------------
+	output_dir_path = None
+	if not output_dir_path:
 		output_dir_prefix = 'simple_training'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		#output_dir_suffix = '20190724T231604'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
+
+	checkpoint_dir_path = args.model_dir
+	if not checkpoint_dir_path:
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
 
 	#--------------------
@@ -425,7 +453,12 @@ def main():
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
-		runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+		history = runner.train(checkpoint_dir_path, num_epochs, batch_size, initial_epoch, is_training_resumed)
+
+		#print('History =', history)
+		swl_ml_util.display_train_history(history)
+		if os.path.exists(output_dir_path):
+			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.infer:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):

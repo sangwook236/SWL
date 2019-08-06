@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+sys.path.append('../../src')
+
 import os, argparse, time, datetime, math
 import numpy as np
 import tensorflow as tf
@@ -10,6 +13,7 @@ from tensorflow.keras import backend as K
 #from sklearn import preprocessing
 import cv2
 import matplotlib.pyplot as plt
+import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -188,25 +192,6 @@ class MyModel(object):
 
 		return model
 
-def draw_history(history):
-	# Plot training & validation accuracy values.
-	plt.plot(history.history['acc'])
-	plt.plot(history.history['val_acc'])
-	plt.title('Model accuracy')
-	plt.ylabel('Accuracy')
-	plt.xlabel('Epoch')
-	plt.legend(['Train', 'Test'], loc='upper left')
-	plt.show()
-
-	# Plot training & validation loss values.
-	plt.plot(history.history['loss'])
-	plt.plot(history.history['val_loss'])
-	plt.title('Model loss')
-	plt.ylabel('Loss')
-	plt.xlabel('Epoch')
-	plt.legend(['Train', 'Test'], loc='upper left')
-	plt.show()
-
 #--------------------------------------------------------------------
 
 class MyRunner(object):
@@ -263,9 +248,6 @@ class MyRunner(object):
 			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
-		#print('History =', history.history)
-		draw_history(history)
-
 		#--------------------
 		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()
@@ -296,6 +278,8 @@ class MyRunner(object):
 		"""
 		model.save(model_filepath)
 		print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+
+		return history.history
 
 	def infer(self, model_filepath, batch_size=None, shuffle=False):
 		# Load a model.
@@ -458,7 +442,12 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
+		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
+
+		#print('History =', history)
+		swl_ml_util.display_train_history(history)
+		if os.path.exists(output_dir_path):
+			swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):

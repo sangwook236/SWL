@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: UTF-8 -*-
 
+import sys
+sys.path.append('../../src')
+
 import sys, os, argparse, time, datetime
 import numpy as np
 import torch
@@ -10,6 +13,7 @@ import torch.optim as optim
 import torchvision
 import torchvision.transforms as transforms
 import cv2
+#import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -92,11 +96,18 @@ class MyRunner(object):
 		criterion = nn.CrossEntropyLoss()
 		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
+		history = {
+			'acc': list(),
+			'loss': list(),
+			'val_acc': list(),
+			'val_loss': list()
+		}
+
 		#--------------------
 		print('[SWL] Info: Start training...')
 		start_total_time = time.time()
-		for epoch in range(num_epochs):
-			print('Epoch {}:'.format(epoch + 1))
+		for epoch in range(1, num_epochs + 1):
+			print('Epoch {}/{}'.format(epoch, num_epochs))
 
 			start_time = time.time()
 			running_loss = 0.0
@@ -127,7 +138,14 @@ class MyRunner(object):
 				if (batch_step + 1) % 100 == 0:
 					print('\tStep {}: loss = {:.6f}: {} secs.'.format(batch_step + 1, running_loss / 100, time.time() - start_time))
 					running_loss = 0.0
-			print('\tTrain: time = {} secs.'.format(time.time() - start_time))
+			print('\tTrain: {} secs.'.format(time.time() - start_time))
+
+			# TODO [implement] >>
+			#history['loss'].append(train_loss)
+			#history['acc'].append(train_acc)
+			#history['val_loss'].append(val_loss)
+			#history['val_acc'].append(val_acc)
+
 			sys.stdout.flush()
 			time.sleep(0)
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_total_time))
@@ -137,6 +155,8 @@ class MyRunner(object):
 		start_time = time.time()
 		torch.save(model, model_filepath)
 		print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+
+		return history
 
 	def infer(self, model_filepath, device):
 		# Load a model.
@@ -283,7 +303,12 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		runner.train(model_filepath, num_epochs, train_device)
+		history = runner.train(model_filepath, num_epochs, train_device)
+
+		#print('History =', history)
+		#swl_ml_util.display_train_history(history)
+		#if os.path.exists(output_dir_path):
+		#	swl_ml_util.save_train_history(history, output_dir_path)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):
