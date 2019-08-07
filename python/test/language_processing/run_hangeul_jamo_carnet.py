@@ -4,7 +4,8 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime, csv
+import os, time, datetime, functools, csv
+import multiprocessing as mp
 import numpy as np
 import tensorflow as tf
 import cv2
@@ -22,17 +23,21 @@ class MyDataset(object):
 		self._EOJC = '<EOJC>'  # Start-Of-Jamo-Character token.
 		self._UNKNOWN = '<UNK>'  # Unknown label token.
 
+		self._hangeul2jamo_functor = functools.partial(hg_util.hangeul2jamo, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
+		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
+
 		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 		digit_charset = '0123456789'
 		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
 		# Consider additional labels contained in dataset.
-		labels_set = set(hangeul_jamo_charset)
+		#labels_set = set(hangeul_jamo_charset)
+		labels_set = set(hangeul_jamo_charset + alphabet_charset + symbol_charset)
 		#labels_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
 		for f in os.listdir(data_dir_path):
 			label_str = f.split('_')[0]
-			label_str = hg_util.hangeul2jamo(label_str, self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
+			label_str = self._hangeul2jamo_functor(label_str)
 			labels_set = labels_set.union(label_str)
 		#labels_set.union([self._EOJC, self._UNKNOWN])
 		self._labels = sorted(labels_set)
@@ -41,6 +46,8 @@ class MyDataset(object):
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		self._default_value = -1
 
 		#--------------------
 		# Load data.
@@ -54,22 +61,47 @@ class MyDataset(object):
 		test_offset = round(train_test_ratio * num_examples)
 		self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
 
+		#--------------------
+		# Visualize data.
+		def visualize(data, phase):
+			images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
+			for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
+				print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
+				minval, maxval = np.min(image), np.max(image)
+				cv2.imshow('Image', (image - minval) / (maxval - minval))
+				ch = cv2.waitKey(2000)
+				if 27 == ch:  # ESC.
+					break
+				if idx >= 4:
+					break
+			cv2.destroyAllWindows()
+
+		visualize(self._train_data, 'Train')
+		visualize(self._test_data, 'Test')
+
 	@property
 	def num_classes(self):
 		return self._num_classes
 
+	@property
+	def default_value(self):
+		return self._default_value
+
 	# String label -> integer label.
-	def encode_label(self, label_str):
+	def encode_label(self, label_str, is_hangeul_jamo_label=False):
 		try:
+			if not is_hangeul_jamo_label:
+				label_str = self._hangeul2jamo_functor(label_str)
 			return [self._labels.index(ch) for ch in label_str]
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			raise
 
 	# Integer label -> string label.
-	def decode_label(self, label_int, default_value=-1):
+	def decode_label(self, label_int, is_hangeul_jamo_label=False):
 		try:
-			return ''.join([self._labels[id] for id in label_int if id != default_value])
+			label_str = ''.join([self._labels[id] for id in label_int if id != self._default_value])
+			return label_str if is_hangeul_jamo_label else self._jamo2hangeul_functor(label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
@@ -82,16 +114,27 @@ class MyDataset(object):
 
 	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
+		"""
 		examples = list()
-		for f in os.listdir(data_dir_path):
-			label_str = f.split('_')[0]
-			label_str = hg_util.hangeul2jamo(label_str, self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
+		for filepath in os.listdir(data_dir_path):
+			label_str = filepath.split('_')[0]
 			if len(label_str) > max_char_count:
 				continue
-			image = MyDataset._resize_image(os.path.join(data_dir_path, f), image_height, image_width)
+			image = MyDataset._resize_image(os.path.join(data_dir_path, filepath), image_height, image_width)
 			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
 			examples.append((image, label_str, label_int))
-
+		return examples
+		"""
+		def file2data(filepath):
+			label_str = filepath.split('_')[0]
+			if len(label_str) > max_char_count:
+				return None
+			image = MyDataset._resize_image(os.path.join(data_dir_path, filepath), image_height, image_width)
+			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
+			return image, label_str, label_int
+		with mp.Pool(processes=8) as pool:
+			results = pool.map_async(file2data, os.listdir(data_dir_path))
+			examples = list(filter(lambda x: x is not None, results.get(None)))
 		return examples
 
 	@staticmethod
@@ -145,7 +188,7 @@ class MyDataset(object):
 			# TODO [check] >> Preprocessing has influence on recognition rate.
 
 			# Normalization, standardization, etc.
-			#inputs = inputs.astype(np.float32)
+			inputs = inputs.astype(np.float32)
 
 			if False:
 				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
@@ -162,6 +205,8 @@ class MyDataset(object):
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
@@ -207,9 +252,9 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
 
 		if False:
-			create_cnn_functor = MyTensorFlowModel.create_cnn_without_batch_normalization
+			create_cnn_functor = MyModel.create_cnn_without_batch_normalization
 		else:
-			create_cnn_functor = MyTensorFlowModel.create_cnn_with_batch_normalization
+			create_cnn_functor = MyModel.create_cnn_with_batch_normalization
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
@@ -221,7 +266,7 @@ class MyModel(object):
 			# FIXME [decide] >> [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]] or [-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]] ?
 			#rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]])
 			rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]])
-			rnn_output = MyTensorFlowModel.create_bidirectionnal_rnn(rnn_input, seq_len)
+			rnn_output = MyModel.create_bidirectionnal_rnn(rnn_input, seq_len)
 
 		time_steps = rnn_input.shape.as_list()[1]  # Model output time-steps.
 		print('***** Model output time-steps = {}.'.format(time_steps))
@@ -359,13 +404,13 @@ class MyModel(object):
 	@staticmethod
 	def create_bidirectionnal_rnn(inputs, seq_len=None, kernel_initializer=None):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
-			fw_cell_1, bw_cell_1 = MyTensorFlowModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyTensorFlowModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
+			fw_cell_1, bw_cell_1 = MyModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
 
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, seq_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
 
 		with tf.variable_scope('birnn_2', reuse=tf.AUTO_REUSE):
-			fw_cell_2, bw_cell_2 = MyTensorFlowModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyTensorFlowModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
+			fw_cell_2, bw_cell_2 = MyModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
 
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, seq_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
@@ -385,7 +430,7 @@ class MyRunner(object):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
-		#	REF [function] >> MyTensorFlowModel.create_model().
+		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
 		if False:
 			self._image_height, self._image_width, self._image_channel = 32, 160, 1  # TODO [modify] >> image_channel is fixed.
@@ -393,8 +438,6 @@ class MyRunner(object):
 		else:
 			self._image_height, self._image_width, self._image_channel = 64, 320, 1  # TODO [modify] >> image_channel is fixed.
 			model_output_time_steps = 79
-
-		self._default_value = -1
 
 		#--------------------
 		# Create a dataset.
@@ -408,17 +451,16 @@ class MyRunner(object):
 			model = MyModel(self._image_height, self._image_width, self._image_channel)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._default_value)
+			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
 
 			loss = model.get_loss(model_output['logit'], output_ph, model_output_len_ph)
 			accuracy = model.get_accuracy(model_output['sparse_label'], output_ph)
 
 			# Create a trainer.
-			learning_rate = 0.0001
 			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=0.001, rho=0.95, epsilon=1e-08)
+			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			train_op = optimizer.minimize(loss)
 
 			# Create a saver.
@@ -481,7 +523,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -537,14 +579,14 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
 							for count, (pred, gt) in enumerate(zip(batch_dense_labels_int, batch_data[1])):
-								pred = self._dataset.decode_label(pred, self._default_value)
+								pred = self._dataset.decode_label(pred)
 								preds.append(pred)
 								gts.append(gt)
 								if (count + 1) >= 10:
@@ -598,7 +640,7 @@ class MyRunner(object):
 			model = MyModel(self._image_height, self._image_width, self._image_channel)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._default_value)
+			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -637,10 +679,31 @@ class MyRunner(object):
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 			if inferences and ground_truths:
-				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-				print('**********', inferences[:10])
-				print('**********', ground_truths[:10])
+				correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
+				for pred, gt in zip(inferences, ground_truths):
+					pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+
+					correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
+					total_word_count += len(gt)
+					for ps, gs in zip(pred, gt):
+						correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
+						total_char_count += max(len(ps), len(gs))
+					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
+					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
+				print('Inference: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+				print('Inference: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+
+				if os.path.exists(inference_dir_path):
+					# Output to a file.
+					csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+					with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+						writer = csv.writer(csvfile, delimiter=',')
+
+						for pred, gt in zip(inferences, ground_truths):
+							pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+							writer.writerow([gt, pred])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
@@ -650,7 +713,7 @@ def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-	num_epochs, batch_size = 1000, 128
+	num_epochs, batch_size = 100, 128
 	initial_epoch = 0
 	is_training_resumed = False
 
@@ -695,7 +758,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		runner.infer(checkpoint_dir_path, inference_dir_path)
+		runner.infer(checkpoint_dir_path, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

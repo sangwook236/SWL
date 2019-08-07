@@ -37,8 +37,8 @@ class MyDataset(object):
 		# There are words of Unicode Hangeul letters besides KS X 1001.
 		labels_set = set(hangeul_charset + hangeul_jamo_charset)
 		#labels_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-		for f in os.listdir(data_dir_path):
-			label_str = f.split('_')[0]
+		for filepath in os.listdir(data_dir_path):
+			label_str = filepath.split('_')[0]
 			labels_set = labels_set.union(label_str)
 		#self._labels = sorted(labels_set)
 		self._labels = ''.join(sorted(labels_set))
@@ -47,6 +47,8 @@ class MyDataset(object):
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		self._default_value = -1
 
 		#--------------------
 		# Load data.
@@ -60,9 +62,31 @@ class MyDataset(object):
 		test_offset = round(train_test_ratio * num_examples)
 		self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
 
+		#--------------------
+		# Visualize data.
+		def visualize(data, phase):
+			images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
+			for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
+				print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
+				minval, maxval = np.min(image), np.max(image)
+				cv2.imshow('Image', (image - minval) / (maxval - minval))
+				ch = cv2.waitKey(2000)
+				if 27 == ch:  # ESC.
+					break
+				if idx >= 4:
+					break
+			cv2.destroyAllWindows()
+
+		visualize(self._train_data, 'Train')
+		visualize(self._test_data, 'Test')
+
 	@property
 	def num_classes(self):
 		return self._num_classes
+
+	@property
+	def default_value(self):
+		return self._default_value
 
 	# String label -> integer label.
 	def encode_label(self, label_str):
@@ -73,9 +97,9 @@ class MyDataset(object):
 			raise
 
 	# Integer label -> string label.
-	def decode_label(self, label_int, default_value=-1):
+	def decode_label(self, label_int):
 		try:
-			return ''.join([self._labels[id] for id in label_int if id != default_value])
+			return ''.join([self._labels[id] for id in label_int if id != self._default_value])
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
@@ -89,11 +113,11 @@ class MyDataset(object):
 	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
 		examples = list()
-		for f in os.listdir(data_dir_path):
-			label_str = f.split('_')[0]
+		for filepath in os.listdir(data_dir_path):
+			label_str = filepath.split('_')[0]
 			if len(label_str) > max_char_count:
 				continue
-			image = MyDataset._resize_image(os.path.join(data_dir_path, f), image_height, image_width)
+			image = MyDataset._resize_image(os.path.join(data_dir_path, filepath), image_height, image_width)
 			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
 			examples.append((image, label_str, label_int))
 
@@ -150,7 +174,7 @@ class MyDataset(object):
 			# TODO [check] >> Preprocessing has influence on recognition rate.
 
 			# Normalization, standardization, etc.
-			#inputs = inputs.astype(np.float32)
+			inputs = inputs.astype(np.float32)
 
 			if False:
 				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
@@ -167,6 +191,8 @@ class MyDataset(object):
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
@@ -243,6 +269,8 @@ class MyOnlineSyntheticDataset(object):
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
+		self._default_value = -1
+
 	@property
 	def num_classes(self):
 		return self._num_classes
@@ -256,9 +284,9 @@ class MyOnlineSyntheticDataset(object):
 			raise
 
 	# Integer label -> string label.
-	def decode_label(self, label_int, default_value=-1):
+	def decode_label(self, label_int):
 		try:
-			return ''.join([self._labels[id] for id in label_int if id != default_value])
+			return ''.join([self._labels[id] for id in label_int if id != self._default_value])
 		except Exception as ex:
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
@@ -303,7 +331,7 @@ class MyOnlineSyntheticDataset(object):
 			# TODO [check] >> Preprocessing has influence on recognition rate.
 
 			# Normalization, standardization, etc.
-			#inputs = inputs.astype(np.float32)
+			inputs = inputs.astype(np.float32)
 
 			if False:
 				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
@@ -320,6 +348,8 @@ class MyOnlineSyntheticDataset(object):
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
@@ -710,8 +740,6 @@ class MyRunner(object):
 			self._image_height, self._image_width, self._image_channel = 64, 320, 1  # TODO [modify] >> image_channel is fixed.
 			model_output_time_steps = 79
 
-		self._default_value = -1
-
 		#--------------------
 		# Create a dataset.
 
@@ -724,17 +752,16 @@ class MyRunner(object):
 			model = MyModel(self._image_height, self._image_width, self._image_channel)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._default_value)
+			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
 
 			loss = model.get_loss(model_output['logit'], output_ph, model_output_len_ph)
 			accuracy = model.get_accuracy(model_output['sparse_label'], output_ph)
 
 			# Create a trainer.
-			learning_rate = 0.0001
 			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
 			##optimizer = keras.optimizers.Adadelta(lr=1.0, rho=0.95, epsilon=None, decay=0.0)
 			#optimizer = tf.keras.optimizers.Adadelta(lr=0.001, rho=0.95, epsilon=1e-07)
-			optimizer = tf.train.AdadeltaOptimizer(learning_rate=0.001, rho=0.95, epsilon=1e-08)
+			optimizer = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-08)
 			train_op = optimizer.minimize(loss)
 
 			# Create a saver.
@@ -797,7 +824,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -853,14 +880,14 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0], self._default_value), zip(batch_dense_labels_int, batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
 							for count, (pred, gt) in enumerate(zip(batch_dense_labels_int, batch_data[1])):
-								pred = self._dataset.decode_label(pred, self._default_value)
+								pred = self._dataset.decode_label(pred)
 								preds.append(pred)
 								gts.append(gt)
 								if (count + 1) >= 10:
@@ -914,7 +941,7 @@ class MyRunner(object):
 			model = MyModel(self._image_height, self._image_width, self._image_channel)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._default_value)
+			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -957,7 +984,7 @@ class MyRunner(object):
 
 				correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
 				for pred, gt in zip(inferences, ground_truths):
-					pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
+					pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
 
 					correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
 					total_word_count += len(gt)
@@ -969,14 +996,15 @@ class MyRunner(object):
 				print('Inference: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 				print('Inference: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
-				# Output to a file.
-				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
-				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-					writer = csv.writer(csvfile, delimiter=',')
+				if os.path.exists(inference_dir_path):
+					# Output to a file.
+					csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+					with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+						writer = csv.writer(csvfile, delimiter=',')
 
-					for pred, gt in zip(inferences, ground_truths):
-						pred = np.array(list(map(lambda x: self._dataset.decode_label(x, self._default_value), pred)))
-						writer.writerow([gt, pred])
+						for pred, gt in zip(inferences, ground_truths):
+							pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+							writer.writerow([gt, pred])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
