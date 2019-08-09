@@ -17,7 +17,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime
+import os, time, datetime, csv
 import numpy as np
 import tensorflow as tf
 from swl.machine_learning.model_trainer import SimpleModelTrainer, SimpleGradientClippingModelTrainer
@@ -141,7 +141,52 @@ class MyRunner(object):
 		#eval_graph.reset_default_graph()
 		del eval_graph
 
-	def infer(self, checkpoint_dir_path, device_name=None):
+	def test(self, checkpoint_dir_path, device_name=None):
+		# Creates a graph.
+		test_graph = tf.Graph()
+		with test_graph.as_default():
+			with tf.device(device_name):
+				encoder_input_shape, decoder_input_shape, decoder_output_shape = self._dataGenerator.shapes
+				start_token, end_token = self._dataGenerator.dataset.start_token, self._dataGenerator.dataset.end_token
+
+				# Creates a model.
+				modelForInference = create_model(encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, self._is_attentive, self._is_bidirectional, self._is_time_major)
+				modelForInference.create_inference_model()
+
+				# Creates a tester.
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
+
+		# Creates a session.
+		test_session = tf.Session(graph=test_graph, config=self._sess_config)
+
+		#--------------------
+		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+		# String data -> one-hot data.
+		test_inputs = self._dataGenerator.dataset.encode_data(test_strs)
+
+		start_time = time.time()
+		with test_session.as_default() as sess:
+			with sess.graph.as_default():
+				inferences = modelInferrer.infer(sess, test_inputs)
+		print('\tTotal test time = {}.'.format(time.time() - start_time))
+
+		if inferences is not None:
+			print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			# One-hot data -> string data.
+			inferences = self._dataGenerator.dataset.decode_data(inferences, has_start_token=False)
+			print('\tInference = {}, G/T = {}.'.format(inferences, test_strs))
+		else:
+			print('[SWL] Warning: Invalid test results.')
+
+		#--------------------
+		# Closes the session and the graph.
+		test_session.close()
+		del test_session
+		#test_graph.reset_default_graph()
+		del test_graph
+
+	def infer(self, checkpoint_dir_path, test_strs, inference_dir_path, device_name=None):
 		# Creates a graph.
 		infer_graph = tf.Graph()
 		with infer_graph.as_default():
@@ -160,7 +205,6 @@ class MyRunner(object):
 		infer_session = tf.Session(graph=infer_graph, config=self._sess_config)
 
 		#--------------------
-		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
 		# String data -> one-hot data.
 		test_inputs = self._dataGenerator.dataset.encode_data(test_strs)
 
@@ -174,8 +218,15 @@ class MyRunner(object):
 			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			# One-hot data -> string data.
-			inferred_strs = self._dataGenerator.dataset.decode_data(inferences, has_start_token=False)
-			print('\tTest strings = {}, inferred strings = {}.'.format(test_strs, inferred_strs))
+			inferences = self._dataGenerator.dataset.decode_data(inferences, has_start_token=False)
+
+			# Output to a file.
+			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+				writer = csv.writer(csvfile, delimiter=',')
+
+				for inp, inf in zip(test_strs, inferences):
+					writer.writerow([inp, inf])
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 
@@ -190,12 +241,13 @@ class MyRunner(object):
 
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#random.seed(a=None, version=2)
 	#np.random.seed(None)
 	#tf.set_random_seed(1234)  # Sets a graph-level seed.
 
+	#--------------------
 	# FIXME [modify] >> In order to use a time-major dataset, trainer, evaluator, and inferrer have to be modified.
 	is_time_major = False
 	is_dynamic = False  # Uses variable-length time steps.
@@ -209,12 +261,14 @@ def main():
 		num_epochs = 70  # Number of times to iterate over training data.
 	max_gradient_norm = 5
 	initial_epoch = 0
+	is_trained, is_evaluated, is_tested, is_inferred = True, True, True, False
 	is_training_resumed = False
 
 	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
 	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
 	train_device_name = None #'/device:GPU:0'
 	eval_device_name = None #'/device:GPU:0'
+	test_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
 
 	#--------------------
@@ -222,35 +276,47 @@ def main():
 	if not output_dir_path:
 		output_dir_prefix = 'reverse_function_seq2seq'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20181210T003513'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
 	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = None
+	if not inference_dir_path:
+		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
 	runner = MyRunner(is_time_major, is_dynamic, is_attentive, is_bidirectional)
 
-	if True:
+	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
 		runner.train(checkpoint_dir_path, output_dir_path, num_epochs, batch_size, shuffle=True, max_gradient_norm=max_gradient_norm, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
 
-	if True:
+	if is_evaluated:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
 
-	if True:
+	if is_tested:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
-		runner.infer(checkpoint_dir_path, device_name=infer_device_name)
+		runner.test(checkpoint_dir_path, device_name=test_device_name)
+
+	if is_inferred:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
+			os.makedirs(inference_dir_path, exist_ok=True)
+
+		test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
+		runner.infer(checkpoint_dir_path, test_strs, inference_dir_path, device_name=infer_device_name)
 
 #--------------------------------------------------------------------
 

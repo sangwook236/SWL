@@ -643,6 +643,9 @@ class Synth90kDataGenerator(Data2Generator):
 
 		return self._loadBatches(self._testFileBatchLoader, self._testDirMgr, phase='test')
 
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		return self._preprocessor(inputs, outputs, *args, **kwargs)
+
 	def _generateBatchesFromNpyFiles(self, augmenter, dirMgr, input_filepaths, output_filepaths, batch_size, shuffle, phase=''):
 		# NOTE [warning] >> An object constructed by self._manager.TwoStepWorkingDirectoryManager() is not an instance of class TwoStepWorkingDirectoryManager.
 		with (WorkingDirectoryGuard(dirMgr, self._lock, phase, True) if isinstance(dirMgr, WorkingDirectoryManager) else TwoStepWorkingDirectoryGuard(dirMgr, False, self._lock, phase, True)) as guard:

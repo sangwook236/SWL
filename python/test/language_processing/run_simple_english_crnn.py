@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime, csv
+import os, time, datetime, glob, csv
 import numpy as np
 import tensorflow as tf
 import cv2
@@ -30,35 +30,39 @@ class MyDataset(object):
 		self._default_value = -1
 
 		#--------------------
-		# Load data.
-		print('[SWL] Info: Start loading dataset...')
-		start_time = time.time()
-		examples = self._load_data(data_dir_path, image_height, image_width, image_channel, max_char_count)
-		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		if data_dir_path:
+			# Load data.
+			print('[SWL] Info: Start loading dataset...')
+			start_time = time.time()
+			examples = self._load_data(data_dir_path, image_height, image_width, image_channel, max_char_count)
+			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-		np.random.shuffle(examples)
-		num_examples = len(examples)
-		test_offset = round(train_test_ratio * num_examples)
-		self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
+			np.random.shuffle(examples)
+			num_examples = len(examples)
+			test_offset = round(train_test_ratio * num_examples)
+			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
 
-		#--------------------
-		# Visualize data.
-		def visualize(data, phase):
-			images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
-			for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
-				print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
-				#cv2.imshow('Image', image.astype(np.uint8))
-				minval, maxval = np.min(image), np.max(image)
-				cv2.imshow('Image', (image - minval) / (maxval - minval))
-				ch = cv2.waitKey(2000)
-				if 27 == ch:  # ESC.
-					break
-				if idx >= 4:
-					break
-			cv2.destroyAllWindows()
+			# Visualize data.
+			def visualize(data, phase):
+				images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
+				for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
+					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
+					#cv2.imshow('Image', image.astype(np.uint8))
+					minval, maxval = np.min(image), np.max(image)
+					cv2.imshow('Image', (image - minval) / (maxval - minval))
+					ch = cv2.waitKey(2000)
+					if 27 == ch:  # ESC.
+						break
+					if idx >= 4:
+						break
+				cv2.destroyAllWindows()
 
-		visualize(self._train_data, 'Train')
-		visualize(self._test_data, 'Test')
+			visualize(self._train_data, 'Train')
+			visualize(self._test_data, 'Test')
+		else:
+			print('[SWL] Info: Dataset were not loaded.')
+			self._train_data, self._test_data = None, None
+			num_examples = 0
 
 	@property
 	def num_classes(self):
@@ -93,15 +97,28 @@ class MyDataset(object):
 	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
 		examples = list()
-		for filepath in os.listdir(data_dir_path):
-			label_str = filepath.split('_')[0]
+		for fpath in os.listdir(data_dir_path):
+			label_str = fpath.split('_')[0]
 			if len(label_str) > max_char_count:
 				continue
-			image = MyDataset._resize_image(os.path.join(data_dir_path, filepath), image_height, image_width)
+			image = MyDataset._resize_image(os.path.join(data_dir_path, fpath), image_height, image_width)
 			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
 			examples.append((image, label_str, label_int))
 
 		return examples
+
+	@staticmethod
+	def load_images_from_files(image_filepaths, image_height, image_width, image_channel):
+		images = list()
+		for fpath in image_filepaths:
+			image = MyDataset._resize_image(fpath, image_height, image_width)
+			image, _ = MyDataset._preprocess_data(image, None)
+			images.append(image)
+
+		# (examples, height, width) -> (examples, width, height).
+		images = np.swapaxes(np.array(images), 1, 2)
+		images = np.reshape(images, images.shape + (1,))  # Image channel = 1.
+		return images
 
 	@staticmethod
 	def _create_batch_generator(data, batch_size, shuffle):
@@ -442,7 +459,7 @@ class MyRunner(object):
 				else:
 					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
-				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
+				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			history = {
 				'acc': list(),
@@ -583,7 +600,7 @@ class MyRunner(object):
 				print('[SWL] Info: Start saving a model...')
 				start_time = time.time()
 				saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'), global_step=epoch - 1)
-				print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+				print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 				sys.stdout.flush()
 				time.sleep(0)
@@ -591,7 +608,7 @@ class MyRunner(object):
 
 			return history
 
-	def infer(self, checkpoint_dir_path, inference_dir_path, batch_size):
+	def test(self, checkpoint_dir_path, test_dir_path, batch_size):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -615,10 +632,10 @@ class MyRunner(object):
 			else:
 				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start inferring...')
+			print('[SWL] Info: Start testing...')
 			start_time = time.time()
 			inferences, ground_truths = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
@@ -634,10 +651,10 @@ class MyRunner(object):
 				)
 				inferences.append(batch_dense_labels_int)
 				ground_truths.append(batch_data[1])
-			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
 			if inferences and ground_truths:
-				#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
 				for pred, gt in zip(inferences, ground_truths):
@@ -650,18 +667,101 @@ class MyRunner(object):
 						total_char_count += max(len(ps), len(gs))
 					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
 					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
-				print('Inference: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-				print('Inference: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+				print('Test: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+				print('Test: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
-				if os.path.exists(inference_dir_path):
-					# Output to a file.
-					csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
-					with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
-						writer = csv.writer(csvfile, delimiter=',')
+				# Output to a file.
+				csv_filepath = os.path.join(test_dir_path, 'test_results.csv')
+				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+					writer = csv.writer(csvfile, delimiter=',')
 
-						for pred, gt in zip(inferences, ground_truths):
-							pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
-							writer.writerow([gt, pred])
+					for pred, gt in zip(inferences, ground_truths):
+						pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+						writer.writerow([gt, pred])
+			else:
+				print('[SWL] Warning: Invalid test results.')
+
+	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size):
+		graph = tf.Graph()
+		with graph.as_default():
+			# Create a model.
+			model = MyModel(self._image_height, self._image_width, self._image_channel)
+			input_ph, output_ph, model_output_len_ph = model.placeholders
+
+			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
+
+			# Create a saver.
+			saver = tf.train.Saver()
+
+		with tf.Session(graph=graph).as_default() as sess:
+			# Load a model.
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+			if ckpt_filepath:
+				saver.restore(sess, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+
+			#--------------------
+			print('[SWL] Info: Start loading images...')
+			inf_images = MyDataset.load_images_from_files(image_filepaths, self._image_height, self._image_width, self._image_channel)
+			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+
+			num_examples = len(inf_images)
+			if batch_size is None:
+				batch_size = num_examples
+			if batch_size <= 0:
+				raise ValueError('Invalid batch size: {}'.format(batch_size))
+
+			indices = np.arange(num_examples)
+
+			#--------------------
+			print('[SWL] Info: Start inferring...')
+			start_time = time.time()
+			inferences = list()
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_images = inf_images[batch_indices]
+					if batch_images.size > 0:  # If batch_images is non-empty.
+						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
+						#	If the number of classes increases, its computation time becomes much slower.
+						batch_dense_labels_int = sess.run(
+							model_output['dense_label'],
+							feed_dict={
+								input_ph: batch_images,
+								model_output_len_ph: [model_output['time_step']] * len(batch_images)
+							}
+						)
+						inferences.append(batch_dense_labels_int)
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+
+			if inferences:
+				#print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+				inferences_str = list()
+				for inf in inferences:
+					inferences_str.extend(map(lambda x: self._dataset.decode_label(x), inf))
+
+				# Output to a file.
+				csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+					writer = csv.writer(csvfile, delimiter=',')
+
+					for fpath, inf in zip(image_filepaths, inferences_str):
+						writer.writerow([fpath, inf])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
@@ -669,28 +769,35 @@ class MyRunner(object):
 
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
+	#--------------------
 	num_epochs, batch_size = 50, 64  # batch_size affects training.
 	initial_epoch = 0
+	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
 
 	train_test_ratio = 0.8
 
-	#data_dir_path = './en_samples_100000'
-	data_dir_path = './en_samples_200000'
+	if is_trained or is_tested:
+		#data_dir_path = './en_samples_100000'
+		data_dir_path = './en_samples_200000'
+	else:
+		data_dir_path = None
 
 	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
 		output_dir_prefix = 'simple_english_crnn'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
 	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	test_dir_path = None
+	if not test_dir_path:
+		test_dir_path = os.path.join(output_dir_path, 'test')
 	inference_dir_path = None
 	if not inference_dir_path:
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
@@ -698,7 +805,7 @@ def main():
 	#--------------------
 	runner = MyRunner(data_dir_path, train_test_ratio)
 
-	if True:
+	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
@@ -709,14 +816,24 @@ def main():
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
-	if True:
+	if is_tested:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+		if test_dir_path and test_dir_path.strip() and not os.path.exists(test_dir_path):
+			os.makedirs(test_dir_path, exist_ok=True)
+
+		runner.test(checkpoint_dir_path, test_dir_path, batch_size)
+
+	if is_inferred:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		runner.infer(checkpoint_dir_path, inference_dir_path, batch_size)
+		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

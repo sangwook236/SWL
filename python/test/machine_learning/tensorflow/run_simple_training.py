@@ -2,9 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-sys.path.append('../../src')
+sys.path.append('../../../src')
 
-import sys, os, argparse, time, datetime
+import os, argparse, logging, time, datetime
 import numpy as np
 import tensorflow as tf
 #from sklearn import preprocessing
@@ -18,7 +18,7 @@ class MyDataset(object):
 		# Load data.
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset.load_data(image_height, image_width, image_channel, num_classes)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(image_height, image_width, image_channel, num_classes)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
@@ -33,6 +33,10 @@ class MyDataset(object):
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+
+	@property
+	def test_data(self):
+		return self._test_images, self._test_labels
 
 	def create_train_batch_generator(self, batch_size, shuffle=True):
 		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
@@ -73,7 +77,7 @@ class MyDataset(object):
 			start_idx = end_idx
 
 	@staticmethod
-	def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
+	def _preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -96,7 +100,7 @@ class MyDataset(object):
 			elif False:
 				inputs /= 255.0  # Normalization.
 
-			# Reshaping.
+			# Reshape.
 			inputs = np.reshape(inputs, (-1, image_height, image_width, image_channel))
 
 		if outputs is not None:
@@ -107,13 +111,13 @@ class MyDataset(object):
 		return inputs, outputs
 
 	@staticmethod
-	def load_data(image_height, image_width, image_channel, num_classes):
+	def _load_data(image_height, image_width, image_channel, num_classes):
 		# Pixel value: [0, 255].
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
-		# Preprocessing.
-		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		# Preprocess.
+		train_inputs, train_outputs = MyDataset._preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset._preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
@@ -130,7 +134,7 @@ class MyModel(object):
 		return self._input_ph, self._output_ph
 
 	def create_model(self, input_tensor):
-		# Preprocessing.
+		# Preprocess.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
 			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 
@@ -211,8 +215,8 @@ class MyRunner(object):
 		with tf.Session(graph=graph) as sess:
 			sess.run(initializer)
 
-			# Restore a model.
 			if is_training_resumed:
+				# Restore a model.
 				print('[SWL] Info: Start restoring a model...')
 				start_time = time.time()
 				ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
@@ -222,9 +226,9 @@ class MyRunner(object):
 					initial_epoch = int(ckpt_filepath.split('-')[1])
 					saver.restore(session, ckpt_filepath)
 				else:
-					print('[SWL] Info: Failed to restore a model from {}.'.format(checkpoint_dir_path))
+					print('[SWL] Error: Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
-				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
+				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			history = {
 				'acc': list(),
@@ -284,9 +288,62 @@ class MyRunner(object):
 			print('[SWL] Info: Start saving a model...')
 			start_time = time.time()
 			saved_model_path = saver.save(sess, os.path.join(checkpoint_dir_path, 'model.ckpt'))
-			print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 			return history
+
+	def test(self, checkpoint_dir_path, batch_size=None, shuffle=False):
+		graph = tf.Graph()
+		with graph.as_default():
+			# Create a model.
+			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			input_ph, output_ph = model.placeholders
+
+			model_output = model.create_model(input_ph)
+
+			# Create a saver.
+			saver = tf.train.Saver()
+
+		with tf.Session(graph=graph) as sess:
+			# Load a model.
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			ckpt = tf.train.get_checkpoint_state(checkpoint_dir_path)
+			ckpt_filepath = ckpt.model_checkpoint_path if ckpt else None
+			#ckpt_filepath = tf.train.latest_checkpoint(checkpoint_dir_path)
+			if ckpt_filepath:
+				saver.restore(sess, ckpt_filepath)
+			else:
+				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
+				return
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+
+			#--------------------
+			print('[SWL] Info: Start testing...')
+			start_time = time.time()
+			inferences, test_labels = list(), list()
+			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
+				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
+				test_labels.append(batch_data[1])
+			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
+
+			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
+			if inferences is not None and test_labels is not None:
+				print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+				if self._num_classes > 2:
+					inferences = np.argmax(inferences, -1)
+					ground_truths = np.argmax(test_labels, -1)
+				elif 2 == self._num_classes:
+					inferences = np.around(inferences)
+					ground_truths = test_labels
+				else:
+					raise ValueError('Invalid number of classes')
+
+				correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
+				print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			else:
+				print('[SWL] Warning: Invalid test results.')
 
 	def infer(self, checkpoint_dir_path, batch_size=None, shuffle=False):
 		graph = tf.Graph()
@@ -312,43 +369,71 @@ class MyRunner(object):
 			else:
 				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
+
+			#--------------------
+			inf_images, _ = self._dataset.test_data
+
+			num_examples = len(inf_images)
+			if batch_size is None:
+				batch_size = num_examples
+			if batch_size <= 0:
+				raise ValueError('Invalid batch size: {}'.format(batch_size))
+
+			indices = np.arange(num_examples)
+			if shuffle:
+				np.random.shuffle(indices)
 
 			#--------------------
 			print('[SWL] Info: Start inferring...')
 			start_time = time.time()
-			inferences, test_labels = list(), list()
-			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=shuffle):
-				inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data[0]}))
-				test_labels.append(batch_data[1])
+			inferences = list()
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data = inf_images[batch_indices]
+					if batch_data.size > 0:  # If batch_data is non-empty.
+						inferences.append(sess.run(model_output, feed_dict={input_ph: batch_data}))
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
-			inferences, test_labels = np.vstack(inferences), np.vstack(test_labels)
-			if inferences is not None and test_labels is not None:
+			inferences = np.vstack(inferences)
+			if inferences is not None:
 				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._num_classes > 2:
 					inferences = np.argmax(inferences, -1)
-					ground_truths = np.argmax(test_labels, -1)
 				elif 2 == self._num_classes:
 					inferences = np.around(inferences)
-					ground_truths = test_labels
 				else:
 					raise ValueError('Invalid number of classes')
-				correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-				print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+
+				print('Inference results: index,inference')
+				for idx, inf in enumerate(inferences):
+					print('{},{}'.format(idx, inf))
 			else:
 				print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
-	parser = argparse.ArgumentParser(description='Train and test a CNN model for MNIST dataset.')
+	parser = argparse.ArgumentParser(description='Train, test, or infer a CNN model for MNIST dataset.')
 
 	parser.add_argument(
 		'--train',
 		action='store_true',
 		help='Specify whether to train a model'
+	)
+	parser.add_argument(
+		'--test',
+		action='store_true',
+		help='Specify whether to test a trained model'
 	)
 	parser.add_argument(
 		'--infer',
@@ -411,23 +496,48 @@ def parse_command_line_options():
 		'-l',
 		'--log_level',
 		type=int,
-		help='Log level',
+		help='Log level, [0, 50]',  # {NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL}.
 		default=None
 	)
 
 	return parser.parse_args()
 
+def set_logger(log_level):
+	"""
+	# When log_level is string.
+	if log_level is not None:
+		log_level = getattr(logging, log_level.upper(), None)
+		if not isinstance(log_level, int):
+			raise ValueError('Invalid log level: {}'.format(log_level))
+	else:
+		log_level = logging.WARNING
+	"""
+	print('[SWL] Info: Log level = {}.'.format(log_level))
+
+	handler = logging.handlers.RotatingFileHandler('./simple_training.log', maxBytes=5000, backupCount=10)
+	formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+	handler.setFormatter(formatter)
+
+	#logger = logging.getLogger(__name__)
+	logger = logging.getLogger('simple_training_logger')
+	logger.addHandler(handler) 
+	logger.setLevel(log_level)
+
+	return logger
+
 def main():
 	args = parse_command_line_options()
 
-	if not args.train and not args.infer:
-		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+	if not args.train and not args.test:
+		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 
 	if args.gpu:
 		os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 	if args.log_level:
-		os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(args.log_level)
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
+
+	#logger = set_logger(args.log_level)
 
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
@@ -439,7 +549,6 @@ def main():
 	if not output_dir_path:
 		output_dir_prefix = 'simple_training'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
 	checkpoint_dir_path = args.model_dir
@@ -460,6 +569,13 @@ def main():
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
 
+	if args.test:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+
+		runner.test(checkpoint_dir_path)
+
 	if args.infer:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
@@ -470,7 +586,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --infer --epoch 30
+#	python run_simple_training.py --train --test --epoch 30
 
 if '__main__' == __name__:
 	main()

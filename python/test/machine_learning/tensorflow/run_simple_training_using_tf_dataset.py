@@ -2,7 +2,7 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-sys.path.append('../../src')
+sys.path.append('../../../src')
 
 import sys, os, time, datetime
 import numpy as np
@@ -19,7 +19,7 @@ class MyDataset(object):
 		# Load data.
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset.load_data(image_height, image_width, image_channel, num_classes)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(image_height, image_width, image_channel, num_classes)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
@@ -44,7 +44,7 @@ class MyDataset(object):
 		return self._test_images, self._test_labels
 
 	@staticmethod
-	def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
+	def _preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -67,7 +67,7 @@ class MyDataset(object):
 			elif False:
 				inputs /= 255.0  # Normalization.
 
-			# Reshaping.
+			# Reshap3.
 			inputs = np.reshape(inputs, (-1, image_height, image_width, image_channel))
 
 		if outputs is not None:
@@ -78,13 +78,13 @@ class MyDataset(object):
 		return inputs, outputs
 
 	@staticmethod
-	def load_data(image_height, image_width, image_channel, num_classes):
+	def _load_data(image_height, image_width, image_channel, num_classes):
 		# Pixel value: [0, 255].
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
-		# Preprocessing.
-		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		# Preprocess.
+		train_inputs, train_outputs = MyDataset._preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset._preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
@@ -101,7 +101,7 @@ class MyModel(object):
 		return self._input_ph, self._output_ph
 
 	def create_model(self, input_tensor):
-		# Preprocessing.
+		# Preprocess.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
 			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 
@@ -221,7 +221,7 @@ class MyRunner(object):
 				else:
 					print('[SWL] Info: Failed to restore a model from {}.'.format(checkpoint_dir_path))
 					return
-				print('[SWL] Info: End restoring a model: {} secs.'.format(time.time() - start_time))
+				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			history = {
 				'acc': list(),
@@ -298,11 +298,11 @@ class MyRunner(object):
 			print('[SWL] Info: Start saving a model...')
 			start_time = time.time()
 			saved_model_path = saver.save(sess, checkpoint_dir_path + '/model.ckpt')
-			print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End saving a model to {}: {} secs.'.format(saved_model_path, time.time() - start_time))
 
 			return history
 
-	def infer(self, checkpoint_dir_path, batch_size):
+	def test(self, checkpoint_dir_path, batch_size):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -326,10 +326,10 @@ class MyRunner(object):
 			else:
 				print('[SWL] Error: Failed to load a model from {}.'.format(checkpoint_dir_path))
 				return
-			print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(ckpt_filepath, time.time() - start_time))
 
 			#--------------------
-			print('[SWL] Info: Start inferring...')
+			print('[SWL] Info: Start testing...')
 			start_time = time.time()
 			# Switch to test data.
 			if not self._use_reinitializable_iterator:
@@ -346,11 +346,11 @@ class MyRunner(object):
 					inferences.append(sess.run(model_output))
 				except tf.errors.OutOfRangeError:
 					break
-			print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
 			inferences = np.vstack(inferences)
 			if inferences is not None:
-				print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._num_classes > 2:
 					inferences = np.argmax(inferences, -1)
@@ -360,16 +360,17 @@ class MyRunner(object):
 					ground_truths = test_labels
 				else:
 					raise ValueError('Invalid number of classes')
+
 				correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-				print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+				print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 			else:
-				print('[SWL] Warning: Invalid inference results.')
+				print('[SWL] Warning: Invalid test results.')
 
 #--------------------------------------------------------------------
 
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	num_epochs, batch_size = 30, 128
 	initial_epoch = 0
@@ -380,7 +381,6 @@ def main():
 	if not output_dir_path:
 		output_dir_prefix = 'simple_training'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
 	checkpoint_dir_path = None
@@ -406,7 +406,7 @@ def main():
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
-		runner.infer(checkpoint_dir_path, batch_size)
+		runner.test(checkpoint_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 

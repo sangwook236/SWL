@@ -2,9 +2,9 @@
 # -*- coding: UTF-8 -*-
 
 import sys
-sys.path.append('../../src')
+sys.path.append('../../../src')
 
-import os, argparse, time, datetime, math
+import os, math, argparse, logging, time, datetime
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -23,7 +23,7 @@ class MyDataset(object):
 		# Load data.
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset.load_data(image_height, image_width, image_channel, num_classes)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(image_height, image_width, image_channel, num_classes)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
@@ -56,13 +56,13 @@ class MyDataset(object):
 		return self._test_images, self._test_labels
 
 	def create_train_batch_generator(self, batch_size, shuffle=True):
-		return MyDataset._create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
+		return MyDataset.create_batch_generator(self._train_images, self._train_labels, batch_size, shuffle)
 
 	def create_test_batch_generator(self, batch_size, shuffle=False):
-		return MyDataset._create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
+		return MyDataset.create_batch_generator(self._test_images, self._test_labels, batch_size, shuffle)
 
 	@staticmethod
-	def _create_batch_generator(data1, data2, batch_size, shuffle):
+	def create_batch_generator(data1, data2, batch_size, shuffle):
 		num_examples = len(data1)
 		if len(data2) != num_examples:
 			raise ValueError('Invalid data length: {} != {}'.format(num_examples, len(data2)))
@@ -75,26 +75,45 @@ class MyDataset(object):
 		if shuffle:
 			np.random.shuffle(indices)
 
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
-					yield (batch_data1, batch_data2), batch_indices.size
+		if data2 is None:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1 = data1[batch_indices]
+					if batch_data1.size > 0:  # If batch_data1 is non-empty.
+						yield (batch_data1, None), batch_indices.size
+					else:
+						yield (None, None), 0
 				else:
 					yield (None, None), 0
-			else:
-				yield (None, None), 0
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			start_idx = 0
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2 = data1[batch_indices], data2[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0:  # If batch_data1 and batch_data2 are non-empty.
+						yield (batch_data1, batch_data2), batch_indices.size
+					else:
+						yield (None, None), 0
+				else:
+					yield (None, None), 0
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 
 	@staticmethod
-	def preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
+	def _preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -117,7 +136,7 @@ class MyDataset(object):
 			elif False:
 				inputs /= 255.0  # Normalization.
 
-			# Reshaping.
+			# Reshape.
 			inputs = np.reshape(inputs, (-1, image_height, image_width, image_channel))
 
 		if outputs is not None:
@@ -128,13 +147,13 @@ class MyDataset(object):
 		return inputs, outputs
 
 	@staticmethod
-	def load_data(image_height, image_width, image_channel, num_classes):
+	def _load_data(image_height, image_width, image_channel, num_classes):
 		# Pixel value: [0, 255].
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
-		# Preprocessing.
-		train_inputs, train_outputs = MyDataset.preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = MyDataset.preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		# Preprocess.
+		train_inputs, train_outputs = MyDataset._preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset._preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
@@ -144,7 +163,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 		self.batch_size = batch_size
 
 		self.num_examples = len(self.inputs)
-		if len(self.outputs) != self.num_examples:
+		if self.outputs is not None and len(self.outputs) != self.num_examples:
 			raise ValueError('Invalid data size: {} != {}'.format(self.num_examples, len(self.outputs)))
 		if self.batch_size is None:
 			self.batch_size = self.num_examples
@@ -164,8 +183,8 @@ class MyDataSequence(tf.keras.utils.Sequence):
 		batch_indices = self.indices[start_idx:end_idx]
 		if batch_indices.size > 0:  # If batch_indices is non-empty.
 			# FIXME [fix] >> Does not work correctly in time-major data.
-			batch_input, batch_output = self.inputs[batch_indices], self.outputs[batch_indices]
-			if batch_input.size > 0 and batch_output.size > 0:  # If batch_input and batch_output are non-empty.
+			batch_input, batch_output = self.inputs[batch_indices], None if self.outputs is None else self.outputs[batch_indices]
+			if batch_input.size > 0 and (batch_output is None or batch_output.size > 0):  # If batch_input and batch_output are non-empty.
 				return (batch_input, batch_output)
 		return (None, None)
 
@@ -214,10 +233,28 @@ class MyRunner(object):
 
 		self._dataset = MyDataset(self._image_height, self._image_width, self._image_channel, self._num_classes)
 
-	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0):
-		# Create a model.
-		model = MyModel().create_model((self._image_height, self._image_width, self._image_channel), self._num_classes)
-		#print('Model summary =', model.summary())
+	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
+		if is_training_resumed:
+			# Restore a model.
+			try:
+				print('[SWL] Info: Start restoring a model...')
+				start_time = time.time()
+				"""
+				# Load only a model's architecture.
+				model = keras.models.model_from_json(json_string)
+				#model = keras.models.model_from_yaml(yaml_string)
+				# Load only a model's weights.
+				model.load_weights(model_weight_filepath)
+				"""
+				model = tf.keras.models.load_model(model_filepath)
+				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+			except (ImportError, IOError):
+				print('[SWL] Error: Failed to restore a model from {}.'.format(model_filepath))
+				return
+		else:
+			# Create a model.
+			model = MyModel().create_model((self._image_height, self._image_width, self._image_channel), self._num_classes)
+			#print('Model summary =', model.summary())
 
 		# Create a trainer.
 		loss = tf.keras.losses.categorical_crossentropy
@@ -277,26 +314,30 @@ class MyRunner(object):
 		model.save_weights(model_weight_filepath)
 		"""
 		model.save(model_filepath)
-		print('[SWL] Info: End saving a model: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
 		return history.history
 
-	def infer(self, model_filepath, batch_size=None, shuffle=False):
+	def test(self, model_filepath, batch_size=None, shuffle=False):
 		# Load a model.
-		print('[SWL] Info: Start loading a model...')
-		start_time = time.time()
-		"""
-		# Load only a model's architecture.
-		model = keras.models.model_from_json(json_string)
-		#model = keras.models.model_from_yaml(yaml_string)
-		# Load only a model's weights.
-		model.load_weights(model_weight_filepath)
-		"""
-		model = tf.keras.models.load_model(model_filepath)
-		print('[SWL] Info: End loading a model: {} secs.'.format(time.time() - start_time))
+		try:
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			"""
+			# Load only a model's architecture.
+			model = keras.models.model_from_json(json_string)
+			#model = keras.models.model_from_yaml(yaml_string)
+			# Load only a model's weights.
+			model.load_weights(model_weight_filepath)
+			"""
+			model = tf.keras.models.load_model(model_filepath)
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+		except (ImportError, IOError):
+			print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+			return
 
 		#--------------------
-		print('[SWL] Info: Start inferring...')
+		print('[SWL] Info: Start testing...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use a Keras sequence.
@@ -312,10 +353,10 @@ class MyRunner(object):
 		else:
 			test_images, test_labels = self._dataset.test_data
 			inferences = model.predict(test_images, batch_size=batch_size)
-		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+		print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None and test_labels is not None:
-			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes > 2:
 				inferences = np.argmax(inferences, -1)
@@ -325,20 +366,80 @@ class MyRunner(object):
 				ground_truths = test_labels
 			else:
 				raise ValueError('Invalid number of classes')
+
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('Inference: accurary = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
-			print('[SWL] Warning: Invalid inference results.')
+			print('[SWL] Warning: Invalid test results.')
+
+	def infer(self, model_filepath, batch_size=None, shuffle=False):
+		# Load a model.
+		try:
+			print('[SWL] Info: Start loading a model...')
+			start_time = time.time()
+			"""
+			# Load only a model's architecture.
+			model = keras.models.model_from_json(json_string)
+			#model = keras.models.model_from_yaml(yaml_string)
+			# Load only a model's weights.
+			model.load_weights(model_weight_filepath)
+			"""
+			model = tf.keras.models.load_model(model_filepath)
+			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
+		except (ImportError, IOError):
+			print('[SWL] Error: Failed to load a model from {}.'.format(model_filepath))
+			return
+
+		#--------------------
+		inf_images, _ = self._dataset.test_data
+
+		#--------------------
+		print('[SWL] Info: Start inferring...')
+		start_time = time.time()
+		if self._use_keras_data_sequence:
+			# Use a Keras sequence.
+			test_sequence = MyDataSequence(inf_images, None, batch_size=batch_size, shuffle=shuffle)
+			inferences = model.predict_generator(test_sequence, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+		elif self._use_generator:
+			# Use a generator.
+			test_generator = self._dataset.create_batch_generator(inf_images, None, batch_size, shuffle=shuffle)
+			inferences = model.predict_generator(test_generator, steps=None if batch_size is None else math.ceil(self._dataset.test_data_length / batch_size), max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
+		else:
+			if shuffle:
+				np.random.shuffle(inf_images)
+			inferences = model.predict(inf_images, batch_size=batch_size)
+		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
+
+		if inferences is not None:
+			print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			if self._num_classes > 2:
+				inferences = np.argmax(inferences, -1)
+			elif 2 == self._num_classes:
+				inferences = np.around(inferences)
+			else:
+				raise ValueError('Invalid number of classes')
+
+			print('Inference results: index,inference')
+			for idx, inf in enumerate(inferences):
+				print('{},{}'.format(idx, inf))
+		else:
+			print('[SWL] Warning: Invalid test results.')
 
 #--------------------------------------------------------------------
 
 def parse_command_line_options():
-	parser = argparse.ArgumentParser(description='Train and test a CNN model for MNIST dataset.')
+	parser = argparse.ArgumentParser(description='Train, test, or infer a CNN model for MNIST dataset.')
 
 	parser.add_argument(
 		'--train',
 		action='store_true',
 		help='Specify whether to train a model'
+	)
+	parser.add_argument(
+		'--test',
+		action='store_true',
+		help='Specify whether to test a trained model'
 	)
 	parser.add_argument(
 		'--infer',
@@ -401,27 +502,53 @@ def parse_command_line_options():
 		'-l',
 		'--log_level',
 		type=int,
-		help='Log level',
+		help='Log level, [0, 50]',  # {NOTSET, DEBUG, INFO, WARNING, ERROR, CRITICAL}.
 		default=None
 	)
 
 	return parser.parse_args()
 
+def set_logger(log_level):
+	"""
+	# When log_level is string.
+	if log_level is not None:
+		log_level = getattr(logging, log_level.upper(), None)
+		if not isinstance(log_level, int):
+			raise ValueError('Invalid log level: {}'.format(log_level))
+	else:
+		log_level = logging.WARNING
+	"""
+	print('[SWL] Info: Log level = {}.'.format(log_level))
+
+	handler = logging.handlers.RotatingFileHandler('./simple_training.log', maxBytes=5000, backupCount=10)
+	formatter = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+	handler.setFormatter(formatter)
+
+	#logger = logging.getLogger(__name__)
+	logger = logging.getLogger('simple_training_logger')
+	logger.addHandler(handler) 
+	logger.setLevel(log_level)
+
+	return logger
+
 def main():
 	args = parse_command_line_options()
 
-	if not args.train and not args.infer:
-		print('[SWL] Error: At least one of command line options "--train" and "--infer" has to be specified.')
+	if not args.train and not args.test:
+		print('[SWL] Error: At least one of command line options "--train", "--test", and "--infer" has to be specified.')
 		return
 
 	if args.gpu:
 		os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
 	if args.log_level:
-		os.environ['TF_CPP_MIN_LOG_LEVEL'] = str(args.log_level)
+		os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
+
+	#logger = set_logger(args.log_level)
 
 	#--------------------
 	num_epochs, batch_size = args.epoch, args.batch_size
 	initial_epoch = 0
+	is_training_resumed = False
 
 	model_filepath = args.model_file
 	if model_filepath:
@@ -429,7 +556,6 @@ def main():
 	else:
 		output_dir_prefix = 'simple_training'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190724T231604'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.hdf5')
 		#model_weight_filepath = os.path.join(output_dir_path, 'model_weights.hdf5')
@@ -442,12 +568,19 @@ def main():
 		if output_dir_path and output_dir_path.strip() and not os.path.exists(output_dir_path):
 			os.makedirs(output_dir_path, exist_ok=True)
 
-		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch)
+		history = runner.train(model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch, is_training_resumed)
 
 		#print('History =', history)
 		swl_ml_util.display_train_history(history)
 		if os.path.exists(output_dir_path):
 			swl_ml_util.save_train_history(history, output_dir_path)
+
+	if args.test:
+		if not model_filepath or not os.path.exists(model_filepath):
+			print('[SWL] Error: Model file, {} does not exist.'.format(model_filepath))
+			return
+
+		runner.test(model_filepath)
 
 	if args.infer:
 		if not model_filepath or not os.path.exists(model_filepath):
@@ -459,7 +592,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --infer --epoch 30
+#	python run_simple_training.py --train --test --epoch 30
 
 if '__main__' == __name__:
 	main()

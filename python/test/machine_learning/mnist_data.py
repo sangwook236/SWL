@@ -296,3 +296,6 @@ class MnistDataGenerator(Data2Generator):
 			#return self._batch_generator_without_aug(self._preprocessor, self._test_inputs, self._test_outputs, batch_size, shuffle, *args, **kwargs)
 			# No data augmentation + no data preprocessing.
 			return self._batch_generator_without_aug(None, self._test_inputs, self._test_outputs, batch_size, shuffle, *args, **kwargs)
+
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		return self._preprocessor(inputs, outputs, *args, **kwargs)
