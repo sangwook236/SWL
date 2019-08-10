@@ -46,7 +46,7 @@ class MyDataset(object):
 			def visualize(data, phase):
 				images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
 				for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
-					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
+					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int)))
 					#cv2.imshow('Image', image.astype(np.uint8))
 					minval, maxval = np.min(image), np.max(image)
 					cv2.imshow('Image', (image - minval) / (maxval - minval))

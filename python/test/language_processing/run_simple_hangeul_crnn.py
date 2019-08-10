@@ -67,7 +67,8 @@ class MyDataset(object):
 			def visualize(data, phase):
 				images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
 				for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
-					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int, self._default_value)))
+					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int)))
+					#cv2.imshow('Image', image.astype(np.uint8))
 					minval, maxval = np.min(image), np.max(image)
 					cv2.imshow('Image', (image - minval) / (maxval - minval))
 					ch = cv2.waitKey(2000)
@@ -232,7 +233,7 @@ class MyDataset(object):
 			img_zeropadded[:, 0:width] = img[:, 0:width]
 			return img_zeropadded
 
-class MyOnlineSyntheticDataset(object):
+class MyRuntimeSyntheticDataset(object):
 	def __init__(self, image_height, image_width, image_channel):
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._generator_batch_size = 32
@@ -319,8 +320,8 @@ class MyOnlineSyntheticDataset(object):
 		for text_list, scene_list, _ in self._generator:
 			for text, scene in zip(text_list, scene_list):
 				image = cv2.cvtColor(scene, cv2.COLOR_BGR2GRAY)
-				image = MyOnlineSyntheticDataset._resize_image(image, self._image_height, self._image_width)
-				image, label_int = MyOnlineSyntheticDataset._preprocess_data(image, self.encode_label(text))
+				image = MyRuntimeSyntheticDataset._resize_image(image, self._image_height, self._image_width)
+				image, label_int = MyRuntimeSyntheticDataset._preprocess_data(image, self.encode_label(text))
 
 				images.append(image)
 				labels_str.append(text)
@@ -390,11 +391,14 @@ class MyOnlineSyntheticDataset(object):
 
 class MyFileBasedSyntheticDataset(object):
 	def __init__(self, image_height, image_width, image_channel, num_classes, eos_token_label, blank_label):
+		train_dataset_json_filepath = './text_train_dataset/text_dataset.json'
+		test_dataset_json_filepath = './text_test_dataset/text_dataset.json'
+
 		self._eos_token_label = eos_token_label
 
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyFileBasedSyntheticDataset.load_data_from_json(image_height, image_width, image_channel, num_classes, eos_token_label, blank_label)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyFileBasedSyntheticDataset.load_data_from_json(train_dataset_json_filepath, test_dataset_json_filepath, image_height, image_width, image_channel, num_classes, eos_token_label, blank_label)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		#max_label_len = max(self._train_labels.shape[-1], self._test_labels.shape[-1])
@@ -458,10 +462,7 @@ class MyFileBasedSyntheticDataset(object):
 			start_idx = end_idx
 
 	@staticmethod
-	def load_data_from_json(image_height, image_width, image_channel, num_classes, eos_token, blank_label):
-		train_dataset_json_filepath = './text_train_dataset_tmp/text_dataset.json'
-		test_dataset_json_filepath = './text_test_dataset_tmp/text_dataset.json'
-	
+	def load_data_from_json(train_dataset_json_filepath, test_dataset_json_filepath, image_height, image_width, image_channel, num_classes, eos_token, blank_label):
 		print('Start loading train dataset to numpy...')
 		start_time = time.time()
 		train_data, train_labels = MyFileBasedSyntheticDataset.text_dataset_to_numpy(train_dataset_json_filepath, image_height, image_width, image_channel, eos_token, blank_label)
@@ -1114,7 +1115,7 @@ class MyRunner(object):
 
 def MyOnlineSyntheticDataset_test():
 	image_height, image_width, image_channel = 64, 320, 1
-	dataset = MyOnlineSyntheticDataset(image_height, image_width, image_channel)
+	dataset = MyRuntimeSyntheticDataset(image_height, image_width, image_channel)
 	for epoch in range(2):
 		for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(7)):
 			print('Epoch = {}, Batch = {}: #examples = {}.'.format(epoch, batch_step, num_batch_examples))
