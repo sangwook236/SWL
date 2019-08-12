@@ -408,3 +408,17 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			pass
 
 		return inputs, outputs
+
+	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
+		examples = list()
+		for fpath in os.listdir(data_dir_path):
+			#label_str = fpath.split('_')[0]
+			label_str = self._hangeul2jamo_functor(fpath.split('_')[0])
+			if len(label_str) > max_char_count:
+				continue
+			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)
+			img = self.resize(img, None, image_height, image_width)
+			img, label_int = self.preprocess(img, self.encode_label(label_str))
+			examples.append((img, label_str, label_int))
+
+		return examples

@@ -236,10 +236,10 @@ class MyRunner(object):
 				korean_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
-			print('[SWL] Info: Start creating a Korean dataset...')
+			print('[SWL] Info: Start creating a Hangeul dataset...')
 			start_time = time.time()
-			dataset = text_line_data.RunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
-			print('[SWL] Info: End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
+			self._dataset = text_line_data.RunTimeTextLineDataset(set(korean_words), image_height, image_width, image_channel, max_char_count=model_output_time_steps)
+			print('[SWL] Info: End creating a Hangeul dataset: {} secs.'.format(time.time() - start_time))
 		else:
 			# When using TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.
 			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
@@ -594,30 +594,9 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def MyOnlineSyntheticDataset_test():
-	image_height, image_width, image_channel = 64, 320, 1
-	dataset = MyRuntimeSyntheticDataset(image_height, image_width, image_channel)
-	for epoch in range(2):
-		for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(7)):
-			print('Epoch = {}, Batch = {}: #examples = {}.'.format(epoch, batch_step, num_batch_examples))
-			for image, label_str in zip(batch_data[0], batch_data[1]):
-				print('\tText = {}.'.format(label_str))
-				image = np.swapaxes(image, 0, 1)
-				cv2.imshow('Image', image.astype(np.uint8))
-				cv2.waitKey(0)
-			if (batch_step + 1) >= 3:
-				break
-	cv2.destroyAllWindows()
-
-#--------------------------------------------------------------------
-
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
-
-	if False:
-		MyOnlineSyntheticDataset_test()
-		return
 
 	#--------------------
 	num_epochs, batch_size = 100, 64

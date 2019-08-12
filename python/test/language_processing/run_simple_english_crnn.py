@@ -233,7 +233,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			dataset = text_line_data.RunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel)
+			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_char_count=model_output_time_steps)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 		else:
 			# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.

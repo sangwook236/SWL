@@ -237,10 +237,10 @@ class MyRunner(object):
 				korean_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
-			print('[SWL] Info: Start creating a Korean dataset...')
+			print('[SWL] Info: Start creating a Hangeul jamo dataset...')
 			start_time = time.time()
-			dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
-			print('[SWL] Info: End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
+			self._dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(set(korean_words), image_height, image_width, image_channel, max_char_count=model_output_time_steps)
+			print('[SWL] Info: End creating a Hangeul jamo dataset: {} secs.'.format(time.time() - start_time))
 		else:
 			# When using TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.
 			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)

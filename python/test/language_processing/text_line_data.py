@@ -111,11 +111,14 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count, default_value=-1):
 		super().__init__(labels=None, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		self._word_set = word_set
+		if max_char_count > 0:
+			self._word_set = set(filter(lambda word: len(word) <= max_char_count, word_set))
+		else:
+			self._word_set = word_set
 
 	@property
 	def shape(self):
@@ -203,7 +206,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 	def create_test_batch_generator(self, batch_size, shuffle=False, *args, **kwargs):
 		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, self._font_color, self._bg_color)
 
-	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color):
+	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color, max_char_count):
 		for text_list, scene_list, _ in tg_util.generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color):
 			scene_list = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scene_list))
 			#scene_list, scene_text_mask_list = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scene_list, scene_text_mask_list))))
@@ -218,16 +221,14 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, max_char_count, default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
-
-		self._word_set = word_set
 
 		#--------------------
 		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
@@ -265,8 +266,8 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, max_char_count, default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
