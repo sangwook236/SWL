@@ -51,6 +51,11 @@ def generate_hangeul_font_list():
 		system_font_dir_path = 'C:/Windows/Fonts'
 		font_dir_path = 'D:/work/font'
 
+	# NOTE [caution] >>
+	#	Font가 깨져 (한글) 문자가 물음표로 표시되는 경우 발생.
+	#	생성된 (한글) 문자의 하단부가 일부 짤리는 경우 발생.
+	#	Image resizing에 의해 얇은 획이 사라지는 경우 발생.
+
 	"""
 	if 'posix' == os.name:
 		font_info_list = [
@@ -752,71 +757,65 @@ class MySimpleSceneProvider(MySceneProvider):
 #--------------------------------------------------------------------
 
 def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
+	if batch_size <= 0 or batch_size > len(word_set):
+		raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
+
 	sceneTextGenerator = MySceneTextGenerator(IdentityTransformer())
 
-	text_list, scene_list, scene_text_mask_list = list(), list(), list()
-	step = 0
 	while True:
-		font_size = random.randint(*font_size_interval)
-		char_space_ratio = random.uniform(*char_space_ratio_interval)
+		texts = random.sample(word_set, k=batch_size)
+		#texts = random.choices(word_set, k=batch_size)
 
-		text = random.sample(word_set, 1)[0]
-
-		char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
-		text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
-
-		if bg_color is None:
-			# Grayscale background.
-			bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
-		else:
-			bg = np.full_like(text_line, bg_color, dtype=np.uint8)
-
-		scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
-		text_list.append(text)
-		scene_list.append(scene)
-		scene_text_mask_list.append(scene_text_mask)
-
-		step += 1
-		if 0 == step % batch_size:
-			yield text_list, scene_list, scene_text_mask_list
-			text_list, scene_list, scene_text_mask_list = list(), list(), list()
-			step = 0
-
-def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval,  batch_size, font_color=None):
-	texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
-	step = 0
-	while True:
-		num_texts_per_image = random.randint(*text_count_interval)
-
-		texts, text_images, text_alphas = list(), list(), list()
-		for ii in range(num_texts_per_image):
+		text_list, scene_list, scene_text_mask_list = list(), list(), list()
+		for text in texts:
 			font_size = random.randint(*font_size_interval)
 			char_space_ratio = random.uniform(*char_space_ratio_interval)
 
-			text = random.sample(word_set, 1)[0]
-
 			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
-			text_line_image, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+			text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
 
-			texts.append(text)
-			text_images.append(text_line_image)
-			text_alphas.append(text_line_alpha)
+			if bg_color is None:
+				# Grayscale background.
+				bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
+			else:
+				bg = np.full_like(text_line, bg_color, dtype=np.uint8)
 
-		#--------------------
-		scene = sceneProvider()
-		if 3 == scene.ndim and 3 != scene.shape[-1]:
-			#raise ValueError('Invalid image shape')
-			print('Error: Invalid image shape.')
-			continue
+			scene, scene_text_mask, _ = sceneTextGenerator(bg, [text_line], [text_line_alpha])
+			text_list.append(text)
+			scene_list.append(scene)
+			scene_text_mask_list.append(scene_text_mask)
 
-		scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
-		texts_list.append(texts)
-		scene_list.append(scene)
-		scene_text_mask_list.append(scene_text_mask)
-		bboxes_list.append(bboxes)
+		yield text_list, scene_list, scene_text_mask_list
 
-		step += 1
-		if 0 == step % batch_size:
-			yield texts_list, scene_list, scene_text_mask_list, bboxes_list
-			texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
-			step = 0
+def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval, batch_size, font_color=None):
+	while True:
+		texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
+		for _ in range(batch_size):
+			num_texts_per_image = random.randint(*text_count_interval)
+			texts = random.choices(word_set, k=num_texts_per_image)
+
+			text_images, text_alphas = list(), list()
+			for text in texts:
+				font_size = random.randint(*font_size_interval)
+				char_space_ratio = random.uniform(*char_space_ratio_interval)
+
+				char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
+				text_line_image, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+
+				text_images.append(text_line_image)
+				text_alphas.append(text_line_alpha)
+
+			#--------------------
+			scene = sceneProvider()
+			if 3 == scene.ndim and 3 != scene.shape[-1]:
+				#raise ValueError('Invalid image shape')
+				print('Error: Invalid image shape.')
+				continue
+
+			scene, scene_text_mask, bboxes = sceneTextGenerator(scene, text_images, text_alphas)
+			texts_list.append(texts)
+			scene_list.append(scene)
+			scene_text_mask_list.append(scene_text_mask)
+			bboxes_list.append(bboxes)
+
+		yield texts_list, scene_list, scene_text_mask_list, bboxes_list

@@ -11,244 +11,8 @@ import tensorflow as tf
 import cv2
 import swl.machine_learning.util as swl_ml_util
 import hangeul_util as hg_util
-
-#--------------------------------------------------------------------
-
-class MyDataset(object):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
-		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
-			raise ValueError('Invalid train-test ratio')
-
-		#--------------------
-		self._EOJC = '<EOJC>'  # Start-Of-Jamo-Character token.
-		self._UNKNOWN = '<UNK>'  # Unknown label token.
-
-		self._hangeul2jamo_functor = functools.partial(hg_util.hangeul2jamo, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
-		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
-
-		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-		digit_charset = '0123456789'
-		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-
-		# Consider additional labels contained in dataset.
-		#labels_set = set(hangeul_jamo_charset)
-		labels_set = set(hangeul_jamo_charset + alphabet_charset + symbol_charset)
-		#labels_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
-		for f in os.listdir(data_dir_path):
-			label_str = f.split('_')[0]
-			label_str = self._hangeul2jamo_functor(label_str)
-			labels_set = labels_set.union(label_str)
-		#labels_set.union([self._EOJC, self._UNKNOWN])
-		self._labels = sorted(labels_set)
-		print('[SWL] Info: labels = {}.'.format(self._labels))
-		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
-
-		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
-		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		self._default_value = -1
-
-		#--------------------
-		if data_dir_path:
-			# Load data.
-			print('[SWL] Info: Start loading dataset...')
-			start_time = time.time()
-			examples = self._load_data(data_dir_path, image_height, image_width, image_channel, max_char_count)
-			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
-
-			np.random.shuffle(examples)
-			num_examples = len(examples)
-			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
-
-			# Visualize data.
-			def visualize(data, phase):
-				images, labels_str, labels_int = zip(*data)  # Tuples of np.arrays, strings, and lists.
-				for idx, (image, label_str, label_int) in enumerate(zip(images, labels_str, labels_int)):
-					print('Label (str) = {}, Label (int) = {}({}).'.format(label_str, label_int, self.decode_label(label_int)))
-					minval, maxval = np.min(image), np.max(image)
-					cv2.imshow('Image', (image - minval) / (maxval - minval))
-					ch = cv2.waitKey(2000)
-					if 27 == ch:  # ESC.
-						break
-					if idx >= 4:
-						break
-				cv2.destroyAllWindows()
-
-			visualize(self._train_data, 'Train')
-			visualize(self._test_data, 'Test')
-		else:
-			print('[SWL] Info: Dataset were not loaded.')
-			self._train_data, self._test_data = None, None
-			num_examples = 0
-
-	@property
-	def num_classes(self):
-		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
-
-	# String label -> integer label.
-	def encode_label(self, label_str, is_hangeul_jamo_label=False):
-		try:
-			if not is_hangeul_jamo_label:
-				label_str = self._hangeul2jamo_functor(label_str)
-			return [self._labels.index(ch) for ch in label_str]
-		except Exception as ex:
-			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-			raise
-
-	# Integer label -> string label.
-	def decode_label(self, label_int, is_hangeul_jamo_label=False):
-		try:
-			label_str = ''.join([self._labels[id] for id in label_int if id != self._default_value])
-			return label_str if is_hangeul_jamo_label else self._jamo2hangeul_functor(label_str)
-		except Exception as ex:
-			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
-			raise
-
-	def create_train_batch_generator(self, batch_size, shuffle=True, *args, **kwargs):
-		return MyDataset._create_batch_generator(self._train_data, batch_size, shuffle)
-
-	def create_test_batch_generator(self, batch_size, shuffle=False, *args, **kwargs):
-		return MyDataset._create_batch_generator(self._test_data, batch_size, shuffle)
-
-	# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
-		"""
-		examples = list()
-		for fpath in os.listdir(data_dir_path):
-			label_str = fpath.split('_')[0]
-			# TODO [check] >>
-			#if len(label_str) > max_char_count:
-			if len(self._hangeul2jamo_functor(label_str)) > max_char_count:
-				continue
-			image = MyDataset._resize_image(os.path.join(data_dir_path, fpath), image_height, image_width)
-			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
-			examples.append((image, label_str, label_int))
-		return examples
-		"""
-		def file2data(fpath):
-			label_str = fpath.split('_')[0]
-			# TODO [check] >>
-			#if len(label_str) > max_char_count:
-			if len(self._hangeul2jamo_functor(label_str)) > max_char_count:
-				return None
-			image = MyDataset._resize_image(os.path.join(data_dir_path, fpath), image_height, image_width)
-			image, label_int = MyDataset._preprocess_data(image, self.encode_label(label_str))
-			return image, label_str, label_int
-		with mp.Pool(processes=8) as pool:
-			results = pool.map_async(file2data, os.listdir(data_dir_path))
-			examples = list(filter(lambda x: x is not None, results.get(None)))
-		return examples
-
-	@staticmethod
-	def load_images_from_files(image_filepaths, image_height, image_width, image_channel):
-		images = list()
-		for fpath in image_filepaths:
-			image = MyDataset._resize_image(fpath, image_height, image_width)
-			image, _ = MyDataset._preprocess_data(image, None)
-			images.append(image)
-
-		# (examples, height, width) -> (examples, width, height).
-		images = np.swapaxes(np.array(images), 1, 2)
-		images = np.reshape(images, images.shape + (1,))  # Image channel = 1.
-		return images
-
-	@staticmethod
-	def _create_batch_generator(data, batch_size, shuffle):
-		images, labels_str, labels_int = zip(*data)
-
-		# (examples, height, width) -> (examples, width, height).
-		images = np.swapaxes(np.array(images), 1, 2)
-		images = np.reshape(images, images.shape + (1,))  # Image channel = 1.
-		labels_str = np.reshape(np.array(labels_str), (-1))
-		labels_int = np.reshape(np.array(labels_int), (-1))
-
-		num_examples = len(images)
-		if len(labels_str) != num_examples or len(labels_int) != num_examples:
-			raise ValueError('[SWL] Error: Invalid data length: {} != {} != {}'.format(num_examples, len(labels_str), len(labels_int)))
-		if batch_size is None:
-			batch_size = num_examples
-		if batch_size <= 0:
-			raise ValueError('[SWL] Error: Invalid batch size: {}'.format(batch_size))
-
-		indices = np.arange(num_examples)
-		if shuffle:
-			np.random.shuffle(indices)
-
-		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
-				batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
-				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
-				else:
-					yield (None, None, None), 0
-			else:
-				yield (None, None, None), 0
-
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
-
-	@staticmethod
-	def _preprocess_data(inputs, outputs):
-		if inputs is not None:
-			# Contrast limited adaptive histogram equalization (CLAHE).
-			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-			#inputs = np.array([clahe.apply(inp) for inp in inputs])
-
-			# TODO [check] >> Preprocessing has influence on recognition rate.
-
-			# Normalization, standardization, etc.
-			inputs = inputs.astype(np.float32)
-
-			if False:
-				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
-				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
-				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
-				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
-			elif False:
-				# NOTE [info] >> Not good.
-				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
-			elif False:
-				# NOTE [info] >> Not bad.
-				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
-				out_min, out_max = 0, 1 #-1, 1
-				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
-			elif False:
-				inputs /= 255.0  # Normalization.
-			elif True:
-				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
-
-		if outputs is not None:
-			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
-			pass
-
-		return inputs, outputs
-
-	@staticmethod
-	def _resize_image(image_filepath, image_height, image_width):
-		img = cv2.imread(image_filepath, cv2.IMREAD_GRAYSCALE)
-		r, c = img.shape
-		if c >= image_width:
-			return cv2.resize(img, (image_width, image_height))
-		else:
-			img_zeropadded = np.zeros((image_height, image_width))
-			ratio = image_height / r
-			img = cv2.resize(img, (int(c * ratio), image_height))
-			width = min(image_width, img.shape[1])
-			img_zeropadded[:, 0:width] = img[:, 0:width]
-			return img_zeropadded
+import text_line_data
+from TextRecognitionDataGenerator_data import HangeulJamoTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
 
 #--------------------------------------------------------------------
 
@@ -447,29 +211,45 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, data_dir_path, train_test_ratio):
+	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
 		#width_downsample_factor = 4
 		if False:
-			self._image_height, self._image_width, self._image_channel = 32, 160, 1  # TODO [modify] >> image_channel is fixed.
+			image_height, image_width, image_channel = 32, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 39
 		else:
-			self._image_height, self._image_width, self._image_channel = 64, 320, 1  # TODO [modify] >> image_channel is fixed.
+			image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 			model_output_time_steps = 79
 
 		#--------------------
 		# Create a dataset.
 
-		self._dataset = MyDataset(data_dir_path, self._image_height, self._image_width, self._image_channel, train_test_ratio, max_char_count=model_output_time_steps)
+		if is_dataset_generated_at_runtime:
+			print('[SWL] Info: Start loading a Korean dictionary...')
+			start_time = time.time()
+			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+			with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+				#korean_words = fd.readlines()
+				#korean_words = fd.read().strip('\n')
+				korean_words = fd.read().splitlines()
+			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
+
+			print('[SWL] Info: Start creating a Korean dataset...')
+			start_time = time.time()
+			dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+			print('[SWL] Info: End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
+		else:
+			# When using TextRecognitionDataGenerator_data.HangeulJamoTextRecognitionDataGeneratorTextLineDataset.
+			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel)
+			model = MyModel(*self._dataset.shape)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
 			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
@@ -528,7 +308,7 @@ class MyRunner(object):
 				"""
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
-					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 					# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 					#	If the number of classes increases, its computation time becomes much slower.
 					#_, batch_loss, batch_acc = sess.run(
@@ -558,7 +338,7 @@ class MyRunner(object):
 				"""
 				train_loss, train_acc, num_examples = 0.0, None, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
-					#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 					_, batch_loss = sess.run(
 						[train_op, loss],
 						feed_dict={
@@ -586,7 +366,7 @@ class MyRunner(object):
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, 0.0, 0
 					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
-						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 						#	If the number of classes increases, its computation time becomes much slower.
 						#batch_loss, batch_acc = sess.run(
@@ -626,7 +406,7 @@ class MyRunner(object):
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, None, 0
 					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
-						#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 						batch_loss = sess.run(
 							loss,
 							feed_dict={
@@ -660,7 +440,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel)
+			model = MyModel(*self._dataset.shape)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
 			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
@@ -687,7 +467,7 @@ class MyRunner(object):
 			start_time = time.time()
 			inferences, ground_truths = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
-				#batch_images, batch_labels_char, batch_sparse_labels_int = batch_data
+				#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 				# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 				#	If the number of classes increases, its computation time becomes much slower.
 				batch_dense_labels_int = sess.run(
@@ -733,7 +513,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel)
+			model = MyModel(*self._dataset.shape)
 			input_ph, output_ph, model_output_len_ph = model.placeholders
 
 			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
@@ -757,7 +537,7 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images = MyDataset.load_images_from_files(image_filepaths, self._image_height, self._image_width, self._image_channel)
+			inf_images = self._dataset.load_images_from_files(image_filepaths, self._image_height, self._image_width, self._image_channel)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 
 			num_examples = len(inf_images)
@@ -825,13 +605,13 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
 
-	train_test_ratio = 0.8
-
+	is_dataset_generated_at_runtime = False
 	if is_trained or is_tested:
 		#data_dir_path = './kr_samples_100000'
 		data_dir_path = './kr_samples_200000'
 	else:
 		data_dir_path = None
+	train_test_ratio = 0.8
 
 	#--------------------
 	output_dir_path = None
@@ -851,7 +631,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(data_dir_path, train_test_ratio)
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
