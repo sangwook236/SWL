@@ -35,17 +35,20 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		if ww >= width:
 			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
 		else:
-			image_zeropadded = np.zeros((height, width))
 			ratio = height / hh
-			input = cv2.resize(input, (int(ww * ratio), height), interpolation=cv2.INTER_AREA)
-			min_width = min(width, input.shape[1])
-			image_zeropadded[:,0:min_width] = input[:,0:min_width]
-			return image_zeropadded
+			min_width = min(width, int(ww * ratio))
+			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width), dtype=input.dtype)
+				image_zeropadded[:,0:min_width] = input[:,0:min_width]
+				return image_zeropadded
+			else:
+				return input
 
-	def create_train_batch_generator(self, batch_size, shuffle=True, *args, **kwargs):
+	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
 		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle)
 
-	def create_test_batch_generator(self, batch_size, shuffle=False, *args, **kwargs):
+	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
 		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle)
 
 	def visualize(self, batch_generator, num_examples=10):
@@ -95,7 +98,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 		# (examples, height, width) -> (examples, width, height).
 		images = np.swapaxes(np.array(images), 1, 2)
-		images = np.reshape(images, images.shape + (1,))  # Image channel = 1.
+		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
 		labels_str = np.reshape(np.array(labels_str), (-1))
 		labels_int = np.reshape(np.array(labels_int), (-1))
 

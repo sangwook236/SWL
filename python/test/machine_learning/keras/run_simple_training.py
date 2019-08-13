@@ -266,7 +266,10 @@ class MyRunner(object):
 		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 
 		#--------------------
-		print('[SWL] Info: Start training...')
+		if is_training_resumed:
+			print('[SWL] Info: Resume training...')
+		else:
+			print('[SWL] Info: Start training...')
 		start_time = time.time()
 		if self._use_keras_data_sequence:
 			# Use Keras sequences.

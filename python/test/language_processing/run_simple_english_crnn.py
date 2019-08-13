@@ -4,10 +4,9 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime, glob, csv
+import os, math, time, datetime, glob, csv
 import numpy as np
 import tensorflow as tf
-import cv2
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 from TextRecognitionDataGenerator_data import EnglishTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
@@ -46,9 +45,10 @@ class MyModel(object):
 		rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
-			# FIXME [decide] >> [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]] or [-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]] ?
-			#rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]])
 			rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]])
+			# FIXME [decide] >>
+			#rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+
 			rnn_output = MyModel.create_bidirectionnal_rnn(rnn_input, seq_len, kernel_initializer)
 
 		time_steps = rnn_input.shape.as_list()[1]  # Model output time-steps.
@@ -191,12 +191,15 @@ class MyModel(object):
 
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, seq_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
+			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
 
 		with tf.variable_scope('birnn_2', reuse=tf.AUTO_REUSE):
 			fw_cell_2, bw_cell_2 = MyModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
 
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, seq_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
+			# FIXME [decide] >>
+			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -235,9 +238,13 @@ class MyRunner(object):
 			start_time = time.time()
 			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_char_count=model_output_time_steps)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
+
+			self._examples_per_epoch = 200000 #500000
 		else:
 			# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.
 			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
+
+			self._examples_per_epoch = None
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -292,6 +299,7 @@ class MyRunner(object):
 			else:
 				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
+			steps_per_epoch = None if self._examples_per_epoch is None else math.ceil(self._examples_per_epoch / batch_size)
 			final_epoch = num_epochs + initial_epoch
 			for epoch in range(initial_epoch + 1, final_epoch + 1):
 				print('Epoch {}/{}:'.format(epoch, final_epoch))
@@ -299,7 +307,7 @@ class MyRunner(object):
 				start_time = time.time()
 				"""
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, steps_per_epoch, shuffle=True)):
 					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 					# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 					#	If the number of classes increases, its computation time becomes much slower.
@@ -329,7 +337,7 @@ class MyRunner(object):
 				history['acc'].append(train_acc)
 				"""
 				train_loss, train_acc, num_examples = 0.0, None, 0
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, shuffle=True)):
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, steps_per_epoch, shuffle=True)):
 					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 					_, batch_loss = sess.run(
 						[train_op, loss],
@@ -355,7 +363,7 @@ class MyRunner(object):
 				if epoch % 10 == 0:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, 0.0, 0
-					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False)):
 						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 						#	If the number of classes increases, its computation time becomes much slower.
@@ -395,7 +403,7 @@ class MyRunner(object):
 				else:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, None, 0
-					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, shuffle=False)):
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False)):
 						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 						batch_loss = sess.run(
 							loss,
@@ -455,8 +463,9 @@ class MyRunner(object):
 			#--------------------
 			print('[SWL] Info: Start testing...')
 			start_time = time.time()
+			steps_per_epoch = None if self._examples_per_epoch is None else math.ceil(self._examples_per_epoch / batch_size)
 			inferences, ground_truths = list(), list()
-			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, shuffle=False):
+			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False):
 				#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
 				# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
 				#	If the number of classes increases, its computation time becomes much slower.
@@ -596,7 +605,7 @@ def main():
 	is_training_resumed = False
 
 	is_dataset_generated_at_runtime = False
-	if is_trained or is_tested:
+	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		#data_dir_path = './en_samples_100000'
 		data_dir_path = './en_samples_200000'
 	else:
