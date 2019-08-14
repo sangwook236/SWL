@@ -19,6 +19,8 @@ class MyModel(object):
 		self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 
+		self._is_beam_search_decoded = True
+
 	@property
 	def placeholders(self):
 		return self._input_ph, self._output_ph, self._model_output_len_ph
@@ -46,7 +48,7 @@ class MyModel(object):
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]])
-			# FIXME [decide] >>
+			# TODO [decide] >>
 			#rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 			rnn_output = MyModel.create_bidirectionnal_rnn(rnn_input, seq_len, kernel_initializer)
@@ -54,30 +56,72 @@ class MyModel(object):
 		time_steps = rnn_input.shape.as_list()[1]  # Model output time-steps.
 		#print('***** Model output time-steps = {}.'.format(time_steps))
 
-		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
-			logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+		# TODO [decide] >>
+		if self._is_beam_search_decoded:
+			with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
+				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
-		logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
+			# CTC beam search decoding.
+			with tf.variable_scope('decoding', reuse=tf.AUTO_REUSE):
+				logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 
-		# Decoding.
-		with tf.variable_scope('decoding', reuse=tf.AUTO_REUSE):
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(logits, seq_len, beam_width=100, top_paths=1, merge_repeated=False)
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(logits, seq_len, beam_width=100, top_paths=1)
-			sparse_decoded = decoded[0]
-			dense_decoded = tf.sparse.to_dense(sparse_decoded, default_value=default_value)
+				# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
+				#	If the number of classes increases, its computation time becomes much slower.
+				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_len, beam_width=100, top_paths=1, merge_repeated=False)
+				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=seq_len, beam_width=100, top_paths=1)
+				sparse_decoded = decoded[0]
+				dense_decoded = tf.sparse.to_dense(sparse_decoded, default_value=default_value)
 
-		return {'logit': logits, 'sparse_label': sparse_decoded, 'dense_label': dense_decoded, 'time_step': time_steps}
+			return {'logit': logits, 'sparse_label': sparse_decoded, 'dense_label': dense_decoded, 'time_step': time_steps}
+		else:
+			with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
+				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
 
+			# No CTC beam search decoding.
+
+			#return {'logit': logits, 'sparse_label': None, 'dense_label': None, 'time_step': time_steps}
+			return {'logit': logits, 'time_step': time_steps}
+
+	# When logits are used as y.
 	def get_loss(self, y, t_sparse, y_len):
-		loss = tf.nn.ctc_loss(t_sparse, y, y_len)
-		#loss = tf.nn.ctc_loss_v2(t_sparse, y, t_len, y_len)
+		is_time_major = self._is_beam_search_decoded
+
+		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
+		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
+		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
 		loss = tf.reduce_mean(loss)
 
 		return loss
 
+	"""
+	# When logits are used as y.
+	def get_accuracy(self, y, t_sparse):
+		if self._is_beam_search_decoded:
+			# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
+			#	If the number of classes increases, its computation time becomes much slower.
+			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=seq_len, beam_width=100, top_paths=1, merge_repeated=False)
+			decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=y, sequence_length=seq_len, beam_width=100, top_paths=1)
+			y_sparse = decoded[0]
+		else:
+			y = np.argmax(y, axis=-1)
+			# Repetitive labels should be removed. REF [function] >> MyRunner._decode_label().
+			y_sparse = tf.contrib.layers.dense_to_sparse(y, eos_token=default_value)
+
+		# Inaccuracy: label error rate.
+		# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
+		#	Accuracy may not be calculated to speed up the training.
+		ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y_sparse, tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
+		acc = 1.0 - ler
+
+		return acc
+	"""
+	# When sparse labels which are decoded by CTC beam search are used as y.
 	def get_accuracy(self, y_sparse, t_sparse):
-		# The error rate.
-		acc = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t_sparse))
+		# Inaccuracy: label error rate.
+		# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
+		#	Accuracy may not be calculated to speed up the training.
+		ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y_sparse, tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
+		acc = 1.0 - ler
 
 		return acc
 
@@ -120,7 +164,7 @@ class MyModel(object):
 			# (None, width/4, height/16, 512).
 
 		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# FIXME [decide] >>
+			# TODO [decide] >>
 			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
 			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv5 = tf.nn.relu(conv5, name='relu')
@@ -164,7 +208,7 @@ class MyModel(object):
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
 			conv4 = tf.nn.relu(conv4, name='relu1')
 
-			# FIXME [decide] >>
+			# TODO [decide] >>
 			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
 			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
@@ -174,7 +218,7 @@ class MyModel(object):
 			# (None, width/4, height/16, 512).
 
 		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# FIXME [decide] >>
+			# TODO [decide] >>
 			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
 			conv5 = tf.layers.batch_normalization(conv5, name='batchnorm')
@@ -198,7 +242,7 @@ class MyModel(object):
 
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, seq_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
-			# FIXME [decide] >>
+			# TODO [decide] >>
 			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
@@ -220,6 +264,7 @@ class MyRunner(object):
 		#width_downsample_factor = 4
 		image_height, image_width, image_channel = 32, 100, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
 		model_output_time_steps = 24
+		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------
 		# Create a dataset.
@@ -236,15 +281,15 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating an English dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_char_count=model_output_time_steps)
+			self._dataset = text_line_data.RunTimeTextLineDataset(set(english_words), image_height, image_width, image_channel, max_label_len=max_label_len)
 			print('[SWL] Info: End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
-			self._examples_per_epoch = 200000 #500000
+			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
 			# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.
-			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count=model_output_time_steps)
+			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
-			self._examples_per_epoch = None
+			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -255,7 +300,8 @@ class MyRunner(object):
 
 			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
 
-			loss = model.get_loss(model_output['logit'], output_ph, model_output_len_ph)
+			loss = model.get_loss(model_output['logit'], output_ph, model_output_len_ph, is_time_major=True)
+			#accuracy = model.get_accuracy(model_output['logit'], output_ph)
 			accuracy = model.get_accuracy(model_output['sparse_label'], output_ph)
 
 			# Create a trainer.
@@ -299,7 +345,8 @@ class MyRunner(object):
 			else:
 				print('[SWL] Info: Start training...')
 			start_total_time = time.time()
-			steps_per_epoch = None if self._examples_per_epoch is None else math.ceil(self._examples_per_epoch / batch_size)
+			train_steps_per_epoch = None if self._train_examples_per_epoch is None else math.ceil(self._train_examples_per_epoch / batch_size)
+			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
 			final_epoch = num_epochs + initial_epoch
 			for epoch in range(initial_epoch + 1, final_epoch + 1):
 				print('Epoch {}/{}:'.format(epoch, final_epoch))
@@ -307,24 +354,26 @@ class MyRunner(object):
 				start_time = time.time()
 				"""
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, steps_per_epoch, shuffle=True)):
-					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
-					# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
-					#	If the number of classes increases, its computation time becomes much slower.
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True)):
+					#batch_images, batch_labels_str, batch_labels_int = batch_data
 					#_, batch_loss, batch_acc = sess.run(
 					#	[train_op, loss, accuracy],
-					_, batch_loss, batch_dense_labels_int = sess.run(
+					#_, batch_loss, batch_labels_logits = sess.run(
+					#	[train_op, loss, model_output['logit']],
+					_, batch_loss, batch_labels_int = sess.run(
 						[train_op, loss, model_output['dense_label']],
 						feed_dict={
 							input_ph: batch_data[0],
-							output_ph: batch_data[2],
+							#output_ph: batch_data[2],  # Sparse tensor.
+							output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
 							model_output_len_ph: [model_output['time_step']] * num_batch_examples
 						}
 					)
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
+					#train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyRunner._decode_label(batch_labels_logits), batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -337,13 +386,14 @@ class MyRunner(object):
 				history['acc'].append(train_acc)
 				"""
 				train_loss, train_acc, num_examples = 0.0, None, 0
-				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, steps_per_epoch, shuffle=True)):
-					#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
+				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True)):
+					#batch_images, batch_labels_str, batch_labels_int = batch_data
 					_, batch_loss = sess.run(
 						[train_op, loss],
 						feed_dict={
 							input_ph: batch_data[0],
-							output_ph: batch_data[2],
+							#output_ph: batch_data[2],  # Sparse tensor.
+							output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
 							model_output_len_ph: [model_output['time_step']] * num_batch_examples
 						}
 					)
@@ -363,30 +413,32 @@ class MyRunner(object):
 				if epoch % 10 == 0:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, 0.0, 0
-					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False)):
-						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
-						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
-						#	If the number of classes increases, its computation time becomes much slower.
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, test_steps_per_epoch, shuffle=False)):
+						#batch_images, batch_labels_str, batch_labels_int = batch_data
 						#batch_loss, batch_acc = sess.run(
 						#	[loss, accuracy],
-						batch_loss, batch_dense_labels_int = sess.run(
+						#batch_loss, batch_labels_logits = sess.run(
+						#	[loss, model_output['logit']],
+						batch_loss, batch_labels_int = sess.run(
 							[loss, model_output['dense_label']],
 							feed_dict={
 								input_ph: batch_data[0],
-								output_ph: batch_data[2],
+								#output_ph: batch_data[2],  # Sparse tensor.
+								output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
 								model_output_len_ph: [model_output['time_step']] * num_batch_examples
 							}
 						)
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_dense_labels_int, batch_data[1]))))
+						#val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyRunner._decode_label(batch_labels_logits), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
-							for count, (pred, gt) in enumerate(zip(batch_dense_labels_int, batch_data[1])):
+							for count, (pred, gt) in enumerate(zip(batch_labels_int, batch_data[1])):
 								pred = self._dataset.decode_label(pred)
 								preds.append(pred)
 								gts.append(gt)
@@ -403,13 +455,14 @@ class MyRunner(object):
 				else:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, None, 0
-					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False)):
-						#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
+					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, test_steps_per_epoch, shuffle=False)):
+						#batch_images, batch_labels_str, batch_labels_int = batch_data
 						batch_loss = sess.run(
 							loss,
 							feed_dict={
 								input_ph: batch_data[0],
-								output_ph: batch_data[2],
+								#output_ph: batch_data[2],  # Sparse tensor.
+								output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
 								model_output_len_ph: [model_output['time_step']] * num_batch_examples
 							}
 						)
@@ -463,20 +516,21 @@ class MyRunner(object):
 			#--------------------
 			print('[SWL] Info: Start testing...')
 			start_time = time.time()
-			steps_per_epoch = None if self._examples_per_epoch is None else math.ceil(self._examples_per_epoch / batch_size)
+			test_steps_per_epoch = None if self._test_examples_per_epoch is None else math.ceil(self._test_examples_per_epoch / batch_size)
 			inferences, ground_truths = list(), list()
-			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, steps_per_epoch, shuffle=False):
-				#batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
-				# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
-				#	If the number of classes increases, its computation time becomes much slower.
-				batch_dense_labels_int = sess.run(
+			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, test_steps_per_epoch, shuffle=False):
+				#batch_images, batch_labels_str, batch_labels_int = batch_data
+				#batch_labels_logits = sess.run(
+				#	model_output['logit'],
+				batch_labels_int = sess.run(
 					model_output['dense_label'],
 					feed_dict={
 						input_ph: batch_data[0],
 						model_output_len_ph: [model_output['time_step']] * num_batch_examples
 					}
 				)
-				inferences.append(batch_dense_labels_int)
+				#inferences.append(MyRunner._decode_label(batch_labels_logits))
+				inferences.append(batch_labels_int)
 				ground_truths.append(batch_data[1])
 			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
@@ -508,7 +562,7 @@ class MyRunner(object):
 			else:
 				print('[SWL] Warning: Invalid test results.')
 
-	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size):
+	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size=None):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
@@ -559,16 +613,17 @@ class MyRunner(object):
 					# FIXME [fix] >> Does not work correctly in time-major data.
 					batch_images = inf_images[batch_indices]
 					if batch_images.size > 0:  # If batch_images is non-empty.
-						# TODO [improve] >> CTC beam search decoding is too slow. It seems to run on CPU.
-						#	If the number of classes increases, its computation time becomes much slower.
-						batch_dense_labels_int = sess.run(
+						#batch_labels_logits = sess.run(
+						#	model_output['logit'],
+						batch_labels_int = sess.run(
 							model_output['dense_label'],
 							feed_dict={
 								input_ph: batch_images,
 								model_output_len_ph: [model_output['time_step']] * len(batch_images)
 							}
 						)
-						inferences.append(batch_dense_labels_int)
+						#inferences.append(MyRunner._decode_label(batch_labels_logits))
+						inferences.append(batch_labels_int)
 
 				if end_idx >= num_examples:
 					break
@@ -591,6 +646,11 @@ class MyRunner(object):
 						writer.writerow([fpath, inf])
 			else:
 				print('[SWL] Warning: Invalid inference results.')
+
+	@staticmethod
+	def _decode_label(labels):
+		labels = np.argmax(labels, axis=-1)
+		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 import os, random, functools, time
 import numpy as np
 import cv2
-import swl.machine_learning.util as swl_ml_util
+#import swl.machine_learning.util as swl_ml_util
 import hangeul_util as hg_util
 import text_line_data
 
@@ -53,15 +53,16 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
-			batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
+			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
 			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
-			print('Label (int): shape = {}, type = {}.'.format(batch_sparse_labels_int[2], type(batch_sparse_labels_int)))
+			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
+			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
 
 			# (examples, width, height, channels) -> (examples, height, width, channels).
 			batch_images = batch_images.transpose((0, 2, 1, 3))
-			batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_sparse_labels_int, dtype=np.int32)
+			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
 
 			minval, maxval = np.min(batch_images), np.max(batch_images)
 			for idx, (img, lbl_str, lbl_int) in enumerate(zip(batch_images, batch_labels_str, batch_labels_int)):
@@ -121,8 +122,9 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			if batch_indices.size > 0:  # If batch_indices is non-empty.
 				# FIXME [fix] >> Does not work correctly in time-major data.
 				batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
-				batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
-				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+				#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
+				#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
 					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
 				else:
 					yield (None, None, None), 0
@@ -137,7 +139,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 #	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
-		super().__init__(image_height, image_width, image_channel, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')
@@ -154,7 +156,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -215,7 +217,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
-		super().__init__(image_height, image_width, image_channel, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')
@@ -243,7 +245,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -306,7 +308,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
-		super().__init__(image_height, image_width, image_channel, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')
@@ -335,7 +337,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 		label_set = functools.reduce(lambda x, fpath: x.union(self._hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), label_set)
 		self._labels = sorted(label_set)
 		#self._labels = ''.join(sorted(label_set))
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.

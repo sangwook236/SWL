@@ -15,10 +15,14 @@ import swl.machine_learning.util as swl_ml_util
 
 class MyDataset(object):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
+
+		#--------------------
 		# Load data.
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(image_height, image_width, image_channel, num_classes)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
@@ -33,6 +37,14 @@ class MyDataset(object):
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._image_channel
+
+	@property
+	def num_classes(self):
+		return self._num_classes
 
 	@property
 	def test_data(self):
@@ -179,19 +191,16 @@ class MyModel(object):
 
 class MyRunner(object):
 	def __init__(self):
-		self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
-		self._num_classes = 10
-
-		#--------------------
 		# Create a dataset.
-
-		self._dataset = MyDataset(self._image_height, self._image_width, self._image_channel, self._num_classes)
+		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+		num_classes = 10
+		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -292,11 +301,11 @@ class MyRunner(object):
 
 			return history
 
-	def test(self, checkpoint_dir_path, batch_size=None, shuffle=False):
+	def test(self, checkpoint_dir_path, batch_size, shuffle=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)
@@ -349,7 +358,7 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(self._image_height, self._image_width, self._image_channel, self._num_classes)
+			model = MyModel(*self._dataset.shape, self._dataset.num_classes)
 			input_ph, output_ph = model.placeholders
 
 			model_output = model.create_model(input_ph)

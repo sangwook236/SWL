@@ -14,6 +14,10 @@ class TextLineDatasetBase(abc.ABC):
 		self._labels = labels
 		self._default_value = default_value
 
+	@property
+	def default_value(self):
+		return self._default_value
+
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
@@ -69,15 +73,16 @@ class TextLineDatasetBase(abc.ABC):
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
-			batch_images, batch_labels_str, batch_sparse_labels_int = batch_data
+			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
 			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
-			print('Label (int): shape = {}, type = {}.'.format(batch_sparse_labels_int[2], type(batch_sparse_labels_int)))
+			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
+			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
 
 			# (examples, width, height, channels) -> (examples, height, width, channels).
 			batch_images = batch_images.transpose((0, 2, 1, 3))
-			batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_sparse_labels_int, dtype=np.int32)
+			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
 
 			minval, maxval = np.min(batch_images), np.max(batch_images)
 			for idx, (img, lbl_str, lbl_int) in enumerate(zip(batch_images, batch_labels_str, batch_labels_int)):
@@ -111,12 +116,13 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count=0, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
 		super().__init__(labels=None, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
-		if max_char_count > 0:
-			self._word_set = set(filter(lambda word: len(word) <= max_char_count, word_set))
+		self._num_classes = num_classes
+		if max_label_len > 0:
+			self._word_set = set(filter(lambda word: len(word) <= max_label_len, word_set))
 		else:
 			self._word_set = word_set
 
@@ -127,10 +133,6 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 	@property
 	def num_classes(self):
 		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -216,15 +218,15 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 			# (examples, height, width, channels) -> (examples, width, height, channels).
 			scenes = scenes.transpose((0, 2, 1, 3))
 			texts_int = list(map(lambda txt: self.encode_label(txt), text_list))
-			texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, text_list, texts_int), batch_size
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
 
 # This class is independent of language.
 class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, max_char_count, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 
@@ -236,7 +238,7 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -268,8 +270,8 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_char_count=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, max_char_count, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -285,7 +287,7 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		label_set = functools.reduce(lambda x, word: x.union(self._hangeul2jamo_functor(word)), self._word_set, set())
 		self._labels = sorted(label_set)
 		#self._labels = ''.join(sorted(label_set))  # Error.
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -359,10 +361,11 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, default_value=-1):
+	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1):
 		super().__init__(labels=None, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
 
 	@property
 	def shape(self):
@@ -371,10 +374,6 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 	@property
 	def num_classes(self):
 		return self._num_classes
-
-	@property
-	def default_value(self):
-		return self._default_value
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -471,9 +470,9 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 				# FIXME [fix] >> Does not work correctly in time-major data.
 				batch_images, batch_labels_str = images[batch_indices], labels_str[batch_indices]
 				if batch_images.size > 0 and batch_labels_str.size > 0:  # If batch_images and batch_labels_str are non-empty.
-					batch_sparse_labels_int = list(map(lambda lbl: self.encode_label(lbl), batch_labels_str))
-					batch_sparse_labels_int = swl_ml_util.sequences_to_sparse(batch_sparse_labels_int, dtype=np.int32)  # Sparse tensor.
-					yield (batch_images, batch_labels_str, batch_sparse_labels_int), batch_indices.size
+					batch_labels_int = list(map(lambda lbl: self.encode_label(lbl), batch_labels_str))
+					#batch_labels_int = swl_ml_util.sequences_to_sparse(batch_labels_int, dtype=np.int32)  # Sparse tensor.
+					yield (batch_images, batch_labels_str, batch_labels_int), batch_indices.size
 				else:
 					yield (None, None, None), 0
 			else:
@@ -534,7 +533,7 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 # This class is independent of language.
 class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=default_value)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -545,7 +544,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 		#self._labels = sorted(set(train_charset + test_charset))
 		self._labels = ''.join(sorted(set(train_charset + test_charset)))
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
@@ -571,7 +570,7 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 # This class is independent of language.
 class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -593,7 +592,7 @@ class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		label_set = set(self._hangeul2jamo_functor(list(set(train_charset + test_charset))))
 		self._labels = sorted(label_set)
 		#self._labels = ''.join(sorted(label_set))  # Error.
-		print('[SWL] Info: labels = {}.'.format(self._labels))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
 		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.

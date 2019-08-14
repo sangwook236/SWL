@@ -19,8 +19,15 @@ import cv2
 
 class MyDataset(object):
 	def __init__(self):
+		#self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
+		self._num_classes = 10
+
 		# Preprocess.
 		self._transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+	@property
+	def num_classes(self):
+		return self._num_classes
 
 	def create_train_data_loader(self, batch_size, shuffle=True, num_workers=4):
 		train_set = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=self._transform)
@@ -62,12 +69,7 @@ class MyModel(nn.Module):
 
 class MyRunner(object):
 	def __init__(self, batch_size):
-		#image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
-		self._num_classes = 10
-
-		#--------------------
 		# Create a dataset.
-
 		print('Start loading dataset...')
 		start_time = time.time()
 		self._dataset = MyDataset()
@@ -132,7 +134,7 @@ class MyRunner(object):
 
 				"""
 				# One-hot encoding.
-				batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._num_classes)
+				batch_outputs_onehot = torch.LongTensor(batch_outputs.shape[0], self._dataset.num_classes)
 				batch_outputs_onehot.zero_()
 				batch_outputs_onehot.scatter_(1, batch_outputs.view(batch_outputs.shape[0], -1), 1)
 				"""
@@ -233,13 +235,13 @@ class MyRunner(object):
 		#--------------------
 		inf_loader = self._dataset.create_test_data_loader(batch_size, shuffle=shuffle, num_workers=4)
 
-		inf_images_list = list(batch_data[0] for batch_data in inf_loader)
+		inf_images = list(batch_data[0] for batch_data in inf_loader)
 
 		#--------------------
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences = list()
-		for batch_images in inf_images_list:
+		for batch_images in inf_images:
 			batch_images = batch_images.to(device)
 			model_outputs = model(batch_images)
 

@@ -20,10 +20,14 @@ import swl.machine_learning.util as swl_ml_util
 # REF [class] >> MyDataset in ${SWL_PYTHON_HOME}/test/machine_learning/tensorflow/run_simple_training.py.
 class MyDataset(object):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
+
+		#--------------------
 		# Load data.
 		print('Start loading dataset...')
 		start_time = time.time()
-		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(image_height, image_width, image_channel, num_classes)
+		self._train_images, self._train_labels, self._test_images, self._test_labels = MyDataset._load_data(self._image_height, self._image_width, self._image_channel, self._num_classes)
 		print('End loading dataset: {} secs.'.format(time.time() - start_time))
 
 		self._num_train_examples = len(self._train_images)
@@ -38,6 +42,14 @@ class MyDataset(object):
 		print('Train label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_labels.shape, self._train_labels.dtype, np.min(self._train_labels), np.max(self._train_labels)))
 		print('Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_images.shape, self._test_images.dtype, np.min(self._test_images), np.max(self._test_images)))
 		print('Test label: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_labels.shape, self._test_labels.dtype, np.min(self._test_labels), np.max(self._test_labels)))
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._image_channel
+
+	@property
+	def num_classes(self):
+		return self._num_classes
 
 	@property
 	def train_data_length(self):
@@ -191,10 +203,8 @@ class MyDataSequence(tf.keras.utils.Sequence):
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	def __init__(self):
-		pass
-
-	def create_model(self, input_shape, num_classes):
+	#classmethod
+	def create_model(cls, input_shape, num_classes):
 		model = Sequential()
 
 		# Layer 1.
@@ -215,9 +225,6 @@ class MyModel(object):
 
 class MyRunner(object):
 	def __init__(self):
-		self._image_height, self._image_width, self._image_channel = 28, 28, 1  # 784 = 28 * 28.
-		self._num_classes = 10
-
 		self._max_queue_size, self._num_workers = 10, 8
 		self._use_multiprocessing = True
 
@@ -230,8 +237,9 @@ class MyRunner(object):
 
 		#--------------------
 		# Create a dataset.
-
-		self._dataset = MyDataset(self._image_height, self._image_width, self._image_channel, self._num_classes)
+		image_height, image_width, image_channel = 28, 28, 1  # 784 = 28 * 28.
+		num_classes = 10
+		self._dataset = MyDataset(image_height, image_width, image_channel, num_classes)
 
 	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
@@ -240,12 +248,13 @@ class MyRunner(object):
 				print('[SWL] Info: Start restoring a model...')
 				start_time = time.time()
 				"""
-				# Load only a model's architecture.
-				model = keras.models.model_from_json(json_string)
-				#model = keras.models.model_from_yaml(yaml_string)
-				# Load only a model's weights.
+				# Load only the architecture of a model.
+				model = tf.keras.models.model_from_json(json_string)
+				#model = tf.keras.models.model_from_yaml(yaml_string)
+				# Load only the weights of a model.
 				model.load_weights(model_weight_filepath)
 				"""
+				# Load a model.
 				model = tf.keras.models.load_model(model_filepath)
 				print('[SWL] Info: End restoring a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 			except (ImportError, IOError):
@@ -253,7 +262,7 @@ class MyRunner(object):
 				return
 		else:
 			# Create a model.
-			model = MyModel().create_model((self._image_height, self._image_width, self._image_channel), self._num_classes)
+			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes)
 			#print('Model summary =', model.summary())
 
 		# Create a trainer.
@@ -303,19 +312,20 @@ class MyRunner(object):
 		else:
 			val_images, val_labels = self._dataset.test_data
 			score = model.evaluate(val_images, val_labels, batch_size=batch_size, sample_weight=None)
-		print('\tValidation: loss = {}, accuracy = {}.'.format(*score))
+		print('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		print('[SWL] Info: End evaluating: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
 		print('[SWL] Info: Start saving a model...')
 		start_time = time.time()
 		"""
-		# Save only a model's architecture.
+		# Save only the architecture of a model.
 		json_string = model.to_json()
 		#yaml_string = model.to_yaml()
-		# Save only a model's weights.
+		# Save only the weights of a model.
 		model.save_weights(model_weight_filepath)
 		"""
+		# Save a model.
 		model.save(model_filepath)
 		print('[SWL] Info: End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
@@ -327,12 +337,13 @@ class MyRunner(object):
 			print('[SWL] Info: Start loading a model...')
 			start_time = time.time()
 			"""
-			# Load only a model's architecture.
-			model = keras.models.model_from_json(json_string)
-			#model = keras.models.model_from_yaml(yaml_string)
-			# Load only a model's weights.
+			# Load only the architecture of a model.
+			model = tf.keras.models.model_from_json(json_string)
+			#model = tf.keras.models.model_from_yaml(yaml_string)
+			# Load only the weights of a model.
 			model.load_weights(model_weight_filepath)
 			"""
+			# Load a model.
 			model = tf.keras.models.load_model(model_filepath)
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 		except (ImportError, IOError):
@@ -381,12 +392,13 @@ class MyRunner(object):
 			print('[SWL] Info: Start loading a model...')
 			start_time = time.time()
 			"""
-			# Load only a model's architecture.
-			model = keras.models.model_from_json(json_string)
-			#model = keras.models.model_from_yaml(yaml_string)
-			# Load only a model's weights.
+			# Load only the architecture of a model.
+			model = tf.keras.models.model_from_json(json_string)
+			#model = tf.keras.models.model_from_yaml(yaml_string)
+			# Load only the weights of a model.
 			model.load_weights(model_weight_filepath)
 			"""
+			# Load a model.
 			model = tf.keras.models.load_model(model_filepath)
 			print('[SWL] Info: End loading a model from {}: {} secs.'.format(model_filepath, time.time() - start_time))
 		except (ImportError, IOError):
@@ -414,7 +426,7 @@ class MyRunner(object):
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
-			print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if self._num_classes > 2:
 				inferences = np.argmax(inferences, -1)
