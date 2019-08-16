@@ -181,6 +181,7 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 
 	@abc.abstractmethod
 	def _get_accuracy(self, y, t, y_len):
+		raise NotImplementedError
 
 	@abc.abstractmethod
 	def _create_single_model(self, inputs, input_shape, num_classes, is_training):
