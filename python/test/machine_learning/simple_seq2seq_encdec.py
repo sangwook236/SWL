@@ -8,7 +8,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleAuxiliaryInputTensorFlowModel):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape, start_token, end_token, is_bidirectional=True, is_time_major=False):
 		self._input_seq_lens_ph = tf.placeholder(tf.int32, [None], name='encoder_input_seq_lens_ph')
 		self._output_seq_lens_ph = tf.placeholder(tf.int32, [None], name='decoder_output_seq_lens_ph')
-		self._batch_size_ph = tf.placeholder(tf.int32, [None], name='batch_size_ph')
+		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
 
 		self._start_token = start_token
 		self._end_token = end_token
@@ -30,7 +30,7 @@ class SimpleSeq2SeqEncoderDecoder(SimpleAuxiliaryInputTensorFlowModel):
 				encoder_input_seq_lens = np.full(encoder_inputs.shape[0], encoder_inputs.shape[1], np.int32)
 				decoder_output_seq_lens = np.full(encoder_inputs.shape[0], encoder_inputs.shape[1], np.int32)
 
-			feed_dict = {self._input_ph: data[0], self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: num_data}
+			feed_dict = {self._input_ph: data[0], self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: [num_data]}
 		elif 3 == len_data:
 			encoder_inputs, decoder_inputs, decoder_outputs = data
 
@@ -48,9 +48,9 @@ class SimpleSeq2SeqEncoderDecoder(SimpleAuxiliaryInputTensorFlowModel):
 					decoder_output_seq_lens = np.full(decoder_outputs.shape[0], decoder_outputs.shape[1], np.int32)
 
 			if decoder_inputs is None or decoder_outputs is None:
-				feed_dict = {self._input_ph: encoder_inputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: num_data}
+				feed_dict = {self._input_ph: encoder_inputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: [num_data]}
 			else:
-				feed_dict = {self._input_ph: encoder_inputs, self._aux_input_ph: decoder_inputs, self._output_ph: decoder_outputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: num_data}
+				feed_dict = {self._input_ph: encoder_inputs, self._aux_input_ph: decoder_inputs, self._output_ph: decoder_outputs, self._input_seq_lens_ph: encoder_input_seq_lens, self._output_seq_lens_ph: decoder_output_seq_lens, self._batch_size_ph: [num_data]}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict

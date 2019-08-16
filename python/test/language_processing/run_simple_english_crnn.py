@@ -4,7 +4,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, time, datetime, glob, csv
+import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
@@ -82,9 +82,9 @@ class MyModel(object):
 			# TODO [decide] >>
 			if is_beam_search_decoded:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
-				logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 
 				# CTC beam search decoding.
+				logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 				# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
 				#	If the number of classes increases, its computation time becomes much slower.
 				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1, merge_repeated=False)
@@ -100,7 +100,7 @@ class MyModel(object):
 				decoded = tf.argmax(logits, axis=-1)
 				# FIXME [implemented] >> The below logic has to be implemented in TensorFlow.
 				#	Refer to MyModel.decode_label().
-				#decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), decoded))  # Removes repetitive labels.
+				#decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), decoded))  # Removes repetitive labels.
 
 				return {'logit': logits, 'decoded_label': decoded}
 
@@ -259,15 +259,17 @@ class MyModel(object):
 		#return tf.nn.rnn_cell.GRUCell(num_units, kernel_initializer=kernel_initializer, name=name)
 
 	@staticmethod
-	def decode_label(labels):
+	def decode_label(labels, blank_label):
 		#labels = np.argmax(labels, axis=-1)
-		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), labels))  # Removes repetitive labels.
+		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
+		self._is_beam_search_decoded = True
+
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
@@ -278,7 +280,6 @@ class MyRunner(object):
 
 		#--------------------
 		# Create a dataset.
-
 		if is_dataset_generated_at_runtime:
 			print('[SWL] Info: Start loading an English dictionary...')
 			start_time = time.time()
@@ -301,12 +302,19 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
+		#--------------------
+		if self._is_beam_search_decoded:
+			#self._decode_functor = lambda args: args  # Dense tensor.
+			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
+		else:
+			self._decode_functor = functools.partial(MyModel.decode_label, blank_label=self._dataset.num_classes - 1)
+
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=True)
+			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=True)
 
 			# Create a trainer.
 			learning_rate = 0.0001
@@ -369,8 +377,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
-					#train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyModel.decode_label(batch_labels_int), batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(self._decode_functor(batch_labels_int), batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -416,14 +423,13 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
-						#val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyModel.decode_label(batch_labels_int), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(self._decode_functor(batch_labels_int), batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
-							for count, (pred, gt) in enumerate(zip(batch_labels_int, batch_data[1])):
+							for count, (pred, gt) in enumerate(zip(self._decode_functor(batch_labels_int), batch_data[1])):
 								pred = self._dataset.decode_label(pred)
 								preds.append(pred)
 								gts.append(gt)
@@ -472,7 +478,7 @@ class MyRunner(object):
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			model_output = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=False)
+			model_output = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -502,9 +508,7 @@ class MyRunner(object):
 					model_output['decoded_label'],
 					feed_dict=model.get_feed_dict((batch_data[0],), num_batch_examples)
 				)
-				#inferences.append(batch_labels_int)
-				inferences.append(swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32))  # Sparse tensor.
-				#inferences.append(MyModel.decode_label(batch_labels_int))
+				inferences.append(self._decode_functor(batch_labels_int))
 				ground_truths.append(batch_data[1])
 			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
@@ -541,7 +545,7 @@ class MyRunner(object):
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			model_output = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=False)
+			model_output = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -589,9 +593,7 @@ class MyRunner(object):
 							model_output['decoded_label'],
 							feed_dict=model.get_feed_dict((batch_images,), len(batch_images))
 						)
-						#inferences.append(batch_labels_int)
-						inferences.append(swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32))  # Sparse tensor.
-						#inferences.append(MyModel.decode_label(batch_labels_int))
+						inferences.append(self._decode_functor(batch_labels_int))
 
 				if end_idx >= num_examples:
 					break
@@ -622,7 +624,7 @@ def main():
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	num_epochs, batch_size = 50, 64  # batch_size affects training.
+	num_epochs, batch_size = 20, 64  # batch_size affects training.
 	initial_epoch = 0
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False

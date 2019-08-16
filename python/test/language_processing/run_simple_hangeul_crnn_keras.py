@@ -150,9 +150,9 @@ class MyModel(object):
 		return K.ctc_batch_cost(labels, model_outputs, model_output_length, label_length)
 
 	@staticmethod
-	def decode_label(labels):
+	def decode_label(labels, blank_label):
 		labels = np.argmax(labels, axis=-1)
-		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), labels))  # Removes repetitive labels.
+		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 
@@ -310,7 +310,7 @@ class MyRunner(object):
 		inferences, ground_truths = list(), list()
 		for batch_images, batch_labels in zip(batch_images_list, batch_labels_list):
 			batch_outputs = model.predict(batch_images, batch_size=batch_size)
-			batch_outputs = MyModel.decode_label(batch_outputs)
+			batch_outputs = MyModel.decode_label(batch_outputs, self._dataset.num_classes - 1)
 
 			inferences.extend(batch_outputs)
 			ground_truths.extend(list(batch_labels))
@@ -378,7 +378,7 @@ class MyRunner(object):
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences = model.predict(inf_images, batch_size=batch_size)
-		inferences = MyModel.decode_label(inferences)
+		inferences = MyModel.decode_label(inferences, self._dataset.num_classes - 1)
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
@@ -395,12 +395,6 @@ class MyRunner(object):
 					writer.writerow([fpath, inf])
 		else:
 			print('[SWL] Warning: Invalid test results.')
-
-	@staticmethod
-	def _decode_label(labels):
-		# TODO [check] >> The first couple of RNN outputs tend to be garbage. (???)
-		labels = np.argmax(labels[:, 2:], axis=-1)
-		return [k for k, g in itertools.groupby(labels)]  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 

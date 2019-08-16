@@ -101,7 +101,7 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 		dtype (numpy.dtype): A data type.
 	Output:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
-			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			indices (numpy.array): The indices of non-zero elements in a dense tensor.
 			values (numpy.array): The values of non-zero elements in a dense tensor.
 			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
@@ -121,7 +121,7 @@ def sparse_to_sequences(indices, values, dense_shape, dtype=np.int32):
 	"""Change a 2D sparse representention to a list of sequences.
 	Inputs:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
-			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			indices (numpy.array): The indices of non-zero elements in a dense tensor.
 			values (numpy.array): The values of non-zero elements in a dense tensor.
 			dense_shape (numpy.array): The shape of a dense tensor.
 		dtype (numpy.dtype): A data type.
@@ -150,7 +150,7 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 		dtype (numpy.dtype): A data type.
 	Returns:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
-			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			indices (numpy.array): The indices of non-zero elements in a dense tensor.
 			values (numpy.array): The values of non-zero elements in a dense tensor.
 			dense_shape (numpy.array): The shape of a dense tensor.
 	"""
@@ -173,7 +173,7 @@ def sparse_to_dense(indices, values, dense_shape, default_value=0, dtype=np.int3
 	"""Change a 2D sparse representation of a tensor to a dense tensor.
 	Inputs:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
-			indices (numpy.array): The indices of non-zero elements in a dense tensor..
+			indices (numpy.array): The indices of non-zero elements in a dense tensor.
 			values (numpy.array): The values of non-zero elements in a dense tensor.
 			dense_shape (numpy.array): The shape of a dense tensor.
 		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).

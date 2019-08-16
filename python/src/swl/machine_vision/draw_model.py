@@ -28,8 +28,6 @@ class DRAW(object):
 
 		#--------------------
 		self._input_ph = tf.placeholder(tf.float32, shape=(self._batch_size, self._img_size), name='input_ph')  # (batch_size * image_size).
-		#self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
-		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and inference steps.
 		self._model_output = None
