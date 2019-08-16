@@ -9,34 +9,33 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 	def __init__(self, input_shape, output_shape, num_classes, is_sparse_output):
 		super().__init__(input_shape, output_shape, num_classes, is_sparse_output, is_time_major=False)
 
-	@abc.abstractmethod
-	def _get_final_output(self, y):
-		# Model output (sparse tensor), model output for loss (3D dense tensor), model output lengths.
-		raise NotImplementedError
+		self._model_output_len = 0
 
-	def get_feed_dict(self, data, *args, **kwargs):
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
 		if 1 == len_data:
-			batch_size = [data[0].shape[0]]
-			feed_dict = {self._input_tensor_ph: data[0], self._batch_size_ph: batch_size}
+			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: [self._model_output_len] * num_data}
 		elif 2 == len_data:
-			batch_size = [data[0].shape[0]]
-			feed_dict = {self._input_tensor_ph: data[0], self._output_tensor_ph: data[1], self._batch_size_ph: batch_size}
+			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: [self._model_output_len] * num_data}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
 
-	def _create_single_model(self, input_tensor, input_shape, num_classes, is_training):
+	def _create_single_model(self, inputs, input_shape, num_classes, is_training):
 		with tf.variable_scope('hangeul_crnn', reuse=tf.AUTO_REUSE):
-			crnn_outputs = self._create_crnn(input_tensor, num_classes, is_training)
-			return self._get_final_output(crnn_outputs)
+			return self._create_crnn(inputs, num_classes, is_training)
 
-	def _create_crnn(self, input_tensor, num_classes, is_training):
+	def _create_crnn(self, inputs, num_classes, is_training):
+		#kernel_initializer = None
+		#kernel_initializer = tf.initializers.he_normal()
+		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
+		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
+
 		# Preprocessing.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
-			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+			inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 			# (samples, height, width, channels) -> (samples, width, height, channels).
-			input_tensor = tf.transpose(input_tensor, perm=[0, 2, 1, 3], name='transpose')
+			inputs = tf.transpose(inputs, perm=(0, 2, 1, 3), name='transpose')
 
 		#--------------------
 		# Convolutional layer.
@@ -45,21 +44,19 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 		num_cnn_features = 64
 
 		with tf.variable_scope('convolutional_layer', reuse=tf.AUTO_REUSE):
-			cnn_outputs = self._create_convolutional_layer(input_tensor, num_cnn_features, is_training)
+			cnn_outputs = self._create_convolutional_layer(inputs, num_cnn_features, kernel_initializer, is_training)
 
 		#--------------------
 		# Recurrent layer.
 		with tf.variable_scope('recurrent_layer', reuse=tf.AUTO_REUSE):
-			rnn_outputs = self._create_recurrent_layer(cnn_outputs, is_training)
+			rnn_outputs = self._create_recurrent_layer(cnn_outputs, model_output_len, kernel_initializer, is_training)
 
 		#--------------------
 		# Transcription layer.
 		with tf.variable_scope('transcription_layer', reuse=tf.AUTO_REUSE):
-			return self._create_transcription_layer(rnn_outputs, num_classes, is_training)
+			return self._create_transcription_layer(rnn_outputs, num_classes, kernel_initializer, is_training)
 
-	def _create_convolutional_layer(self, inputs, num_features, is_training):
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
-
+	def _create_convolutional_layer(self, inputs, num_features, kernel_initializer, is_training):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv1 = tf.layers.batch_normalization(conv1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
@@ -102,20 +99,20 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 			conv5 = self._create_dilation_layer(conv5, conv5_shape[-1], is_training)
 
 		with tf.variable_scope('dense', reuse=tf.AUTO_REUSE):
-			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + [-1], name='reshape')
-			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + [conv5_shape[2] * conv5_shape[3]], name='reshape')
-			outputs = tf.reshape(conv5, shape=[-1, conv5_shape[1], conv5_shape[2] * conv5_shape[3]], name='reshape')
+			self._model_output_len = conv5_shape[1]
+
+			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + (-1,), name='reshape')
+			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + (conv5_shape[2] * conv5_shape[3]), name='reshape')
+			outputs = tf.reshape(conv5, shape=(-1, conv5_shape[1], conv5_shape[2] * conv5_shape[3]), name='reshape')
 			return tf.layers.dense(outputs, num_features, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')  # (None, ???, 64).
 
 	def _create_dilation_layer(self, inputs, num_features, is_training):
 		return inputs
 
-	def _create_recurrent_layer(self, inputs, is_training):
+	def _create_recurrent_layer(self, inputs, input_len, kernel_initializer, is_training):
 		num_hidden_units = 256
 		keep_prob = 1.0
 		#keep_prob = 0.5
-
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
 
 		with tf.variable_scope('rnn1', reuse=tf.AUTO_REUSE):
 			cell_fw1 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'fw_unit_cell')  # Forward cell.
@@ -123,9 +120,8 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 			cell_bw1 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'bw_unit_cell')  # Backward cell.
 			#cell_bw1 = tf.contrib.rnn.DropoutWrapper(cell_bw1, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
-			#rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs1 = tf.concat(rnn_outputs1, axis=-1)
+			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
+			rnn_outputs1 = tf.concat(rnn_outputs1, axis=2)
 			rnn_outputs1 = tf.layers.batch_normalization(rnn_outputs1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states1 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states1[0].c, rnn_states1[1].c), axis=-1), tf.concat((rnn_states1[0].h, rnn_states1[1].h), axis=-1))
 			#rnn_states1 = tf.layers.batch_normalization(rnn_states1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
@@ -136,18 +132,15 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 			cell_bw2 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'bw_unit_cell')  # Backward cell.
 			#cell_bw2 = tf.contrib.rnn.DropoutWrapper(cell_bw2, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
-			#rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs2 = tf.concat(rnn_outputs2, axis=-1)
+			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
+			rnn_outputs2 = tf.concat(rnn_outputs2, axis=2)
 			rnn_outputs2 = tf.layers.batch_normalization(rnn_outputs2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states2 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states2[0].c, rnn_states2[1].c), axis=-1), tf.concat((rnn_states2[0].h, rnn_states2[1].h), axis=-1))
 			#rnn_states2 = tf.layers.batch_normalization(rnn_states2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 
 			return rnn_outputs2
 
-	def _create_transcription_layer(self, inputs, num_classes, is_training):
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
-
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
 		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 
@@ -164,9 +157,9 @@ class HangeulCrnnWithCrossEntropyLoss(HangeulCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes, is_sparse_output=False)
 
-	def _get_loss(self, y, t, y_lens):
+	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			masks = tf.sequence_mask(y_lens, tf.reduce_max(y_lens), dtype=tf.float32)
+			masks = tf.sequence_mask(lengths=y_len, maxlen=tf.reduce_max(y_len), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
 			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
 			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
@@ -174,7 +167,7 @@ class HangeulCrnnWithCrossEntropyLoss(HangeulCrnn):
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t):
+	def _get_accuracy(self, y, t, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
 			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
@@ -182,33 +175,31 @@ class HangeulCrnnWithCrossEntropyLoss(HangeulCrnn):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-	def _get_final_output(self, y):
-		# Model output (sparse tensor), model output for loss (3D dense tensor), model output lengths.
-		return y, y, tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-
 #--------------------------------------------------------------------
 
 class HangeulCrnnWithCtcLoss(HangeulCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 
-	def _get_loss(self, y, t_sparse, y_lens):
+	def _get_loss(self, y, t_sparse, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			# NOTE [info] >> The first couple of RNN outputs might be garbage (2:).
-			#y = y[:, 2:, :]
-			#y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y_sparse, t_sparse):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# TODO [check] >> Which accuracy?
 			"""
+			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+
+			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
+			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
+			y_sparse = decoded[0]  # tf.SparseTensor.
+
 			# Inaccuracy: label error rate.
 			# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
 			#	Accuracy may not be calculated to speed up the training.
@@ -220,16 +211,6 @@ class HangeulCrnnWithCtcLoss(HangeulCrnn):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-	def _get_final_output(self, y):
-		y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-
-		decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, beam_width=100, top_paths=1, merge_repeated=True)
-		#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
-		decoded_best = decoded[0]  # tf.SparseTensor.
-
-		# Model output (sparse tensor), model output for loss (3D dense tensor), model output lengths.
-		return decoded_best, y, y_lens
-
 #--------------------------------------------------------------------
 
 class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
@@ -239,31 +220,22 @@ class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
 		# FIXME [fix] >>
 		self._eos_token = 2350
 
-	def _get_loss(self, y, t_sparse, y_lens):
+	def _get_loss(self, y, t_sparse, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			t_dense = tf.sparse.to_dense(t_sparse, default_value=self._eos_token)
-			t_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), t_sparse.dense_shape[1])  # Batch-major.
-
-			# NOTE [info] >> The first couple of RNN outputs might be garbage (2:).
-			y_lens = tf.reshape(y_lens, (-1, 1))
-			#y = y[:, 2:, :]
-			#y_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), y.shape[1])  # Batch-major.
-
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t_dense, y, y_lens, t_lens))
+			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t, y, y_len, t_len))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t_sparse):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# TODO [check] >> Which accuracy?
 			"""
-			# TODO [check] >> Which y_sparse?
-			#y_sparse = tf.contrib.layers.dense_to_sparse(y, eos_token=self._eos_token)  # Memory error.
-			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
+			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+
+			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
+			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
 			y_sparse = decoded[0]  # tf.SparseTensor.
 
 			# Inaccuracy: label error rate.
@@ -277,32 +249,33 @@ class HangeulCrnnWithKerasCtcLoss(HangeulCrnn):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-	def _get_final_output(self, y):
-		return y, y, tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-
 #--------------------------------------------------------------------
 
 class HangeulDilatedCrnnWithCtcLoss(HangeulCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 
-	def _get_loss(self, y, t_sparse, y_lens):
+	def _get_loss(self, y, t_sparse, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# NOTE [info] >> The first couple of RNN outputs might be garbage (2:).
-			#y = y[:, 2:, :]
-			#y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
 
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_lens, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y_sparse, t_sparse):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# TODO [check] >> Which accuracy?
 			"""
+			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+
+			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
+			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
+			y_sparse = decoded[0]  # tf.SparseTensor.
+
 			# Inaccuracy: label error rate.
 			# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
 			#	Accuracy may not be calculated to speed up the training.
@@ -313,16 +286,6 @@ class HangeulDilatedCrnnWithCtcLoss(HangeulCrnn):
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
-
-	def _get_final_output(self, y):
-		y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-
-		decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, beam_width=100, top_paths=1, merge_repeated=True)
-		#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
-		decoded_best = decoded[0]  # tf.SparseTensor.
-
-		# Model output (sparse tensor), model output for loss (3D dense tensor), model output lengths.
-		return decoded_best, y, y_lens
 
 	def _create_dilation_layer(self, inputs, num_features, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
@@ -386,31 +349,22 @@ class HangeulDilatedCrnnWithKerasCtcLoss(HangeulCrnn):
 		# FIXME [fix] >>
 		self._eos_token = 2350
 
-	def _get_loss(self, y, t_sparse, y_lens):
+	def _get_loss(self, y, t_sparse, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			t_dense = tf.sparse.to_dense(t_sparse, default_value=self._eos_token)
-			t_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), t_sparse.dense_shape[1])  # Batch-major.
-
-			# NOTE [info] >> The first couple of RNN outputs might be garbage (2:).
-			y_lens = tf.reshape(y_lens, (-1, 1))
-			#y = y[:, 2:, :]
-			#y_lens = tf.fill(tf.concat([self._batch_size_ph, [1]], axis=0), y.shape[1])  # Batch-major.
-
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t_dense, y, y_lens, t_lens))
+			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t, y, y_len, t_len))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t_sparse):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# TODO [check] >> Which accuracy?
 			"""
-			# TODO [check] >> Which y_sparse?
-			#y_sparse = tf.contrib.layers.dense_to_sparse(y, eos_token=self._eos_token)  # Memory error.
-			y_lens = tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=tf.transpose(y, (1, 0, 2)), sequence_length=y_lens, merge_repeated=True)
+			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+
+			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
+			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
 			y_sparse = decoded[0]  # tf.SparseTensor.
 
 			# Inaccuracy: label error rate.
@@ -423,9 +377,6 @@ class HangeulDilatedCrnnWithKerasCtcLoss(HangeulCrnn):
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
-
-	def _get_final_output(self, y):
-		return y, y, tf.fill(self._batch_size_ph, y.shape[1])  # Batch-major.
 
 	def _create_dilation_layer(self, inputs, num_features, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):

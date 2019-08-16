@@ -28,7 +28,7 @@ class TensorFlowModel(LearningModel):
 		return self._accuracy
 
 	@abc.abstractmethod
-	def get_feed_dict(self, data, *args, **kwargs):
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		raise NotImplementedError
 
 	def _get_loss(self, y, t):
@@ -77,28 +77,28 @@ class SimpleTensorFlowModel(TensorFlowModel):
 		self._input_shape = input_shape
 		self._output_shape = output_shape
 
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
-		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_ph')
+		self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
+		#self._output_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_ph')
 
 	@abc.abstractmethod
-	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
+	def _create_single_model(self, inputs, input_shape, output_shape, is_training):
 		raise NotImplementedError
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, True)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._output_shape, True)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._output_shape, False)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
@@ -120,29 +120,29 @@ class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
 		self._aux_input_shape = aux_input_shape
 		self._output_shape = output_shape
 
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
-		self._aux_input_tensor_ph = tf.placeholder(tf.float32, shape=self._aux_input_shape, name='aux_input_tensor_ph')
-		self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
-		#self._output_tensor_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_tensor_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_ph')
+		self._aux_input_ph = tf.placeholder(tf.float32, shape=self._aux_input_shape, name='aux_input_ph')
+		self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
+		#self._output_ph = tf.placeholder(tf.float32, shape=self._output_shape, name='output_ph')
 
 	@abc.abstractmethod
-	def _create_single_model(self, input_tensor, aux_input_tensor, input_shape, aux_input_shape, output_shape, is_training):
+	def _create_single_model(self, inputs, aux_inputs, input_shape, aux_input_shape, output_shape, is_training):
 		raise NotImplementedError
 
 	def create_training_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, True)
+		self._model_output = self._create_single_model(self._input_ph, self._aux_input_ph, self._input_shape, self._aux_input_shape, self._output_shape, True)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph)
 
 	def create_evaluation_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_ph, self._aux_input_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
 
-		self._loss = self._get_loss(self._model_output, self._output_tensor_ph)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph)
 
 	def create_inference_model(self):
-		self._model_output = self._create_single_model(self._input_tensor_ph, self._aux_input_tensor_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
+		self._model_output = self._create_single_model(self._input_ph, self._aux_input_ph, self._input_shape, self._aux_input_shape, self._output_shape, False)
 
 		self._loss = None
 		self._accuracy = None
@@ -166,35 +166,44 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 		self._is_sparse_output = is_sparse_output
 		self._is_time_major = is_time_major
 
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_tensor_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=self._input_shape, name='input_ph')
 		if self._is_sparse_output:
-			self._output_tensor_ph = tf.sparse_placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
+			self._output_ph = tf.sparse_placeholder(tf.int32, shape=self._output_shape, name='output_ph')
 		else:
-			self._output_tensor_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_tensor_ph')
-		self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+			self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
+			self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
+		#self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
+		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 
 	@abc.abstractmethod
-	def _get_loss(self, y, t, y_lens):
+	def _get_loss(self, y, t, y_len, t_len):
 		raise NotImplementedError
 
 	@abc.abstractmethod
-	def _create_single_model(self, input_tensor, input_shape, num_classes, is_training):
+	def _get_accuracy(self, y, t, y_len):
+
+	@abc.abstractmethod
+	def _create_single_model(self, inputs, input_shape, num_classes, is_training):
 		raise NotImplementedError
 
 	def create_training_model(self):
-		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, True)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._num_classes, True)
 
-		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		# FIXME [implement] >>
+		#self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, None)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph, self._model_output_len_ph)
 
 	def create_evaluation_model(self):
-		self._model_output, model_output_for_loss, model_output_lens = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, False)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._num_classes, False)
 
-		self._loss = self._get_loss(model_output_for_loss, self._output_tensor_ph, model_output_lens)
-		self._accuracy = self._get_accuracy(self._model_output, self._output_tensor_ph)
+		# FIXME [implement] >>
+		#self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
+		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, None)
+		self._accuracy = self._get_accuracy(self._model_output, self._output_ph, self._model_output_len_ph)
 
 	def create_inference_model(self):
-		self._model_output, _, _ = self._create_single_model(self._input_tensor_ph, self._input_shape, self._num_classes, False)
+		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._num_classes, False)
 
 		self._loss = None
 		self._accuracy = None

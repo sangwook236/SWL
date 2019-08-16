@@ -16,26 +16,26 @@ class DilationNet(SimpleTensorFlowModel):
 		self._is_final_relu_applied = is_final_relu_applied
 		self._model_name = model_name
 
-	def get_feed_dict(self, data, *args, **kwargs):
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
 		if 1 == len_data:
-			feed_dict = {self._input_tensor_ph: data[0]}
+			feed_dict = {self._input_ph: data[0]}
 		elif 2 == len_data:
-			feed_dict = {self._input_tensor_ph: data[0], self._output_tensor_ph: data[1]}
+			feed_dict = {self._input_ph: data[0], self._output_ph: data[1]}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
 
-	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
+	def _create_single_model(self, inputs, input_shape, output_shape, is_training):
 		num_classes = output_shape[-1]
 		with tf.variable_scope(self._model_name, reuse=tf.AUTO_REUSE):
 			# Preprocessing.
 			with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
-				input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+				inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 
 			#--------------------
 			with tf.variable_scope('front_end_module', reuse=tf.AUTO_REUSE):
-				front_end_outputs = self._create_front_end_module(input_tensor, num_classes, self._is_final_relu_applied, is_training)
+				front_end_outputs = self._create_front_end_module(inputs, num_classes, self._is_final_relu_applied, is_training)
 
 			#--------------------
 			with tf.variable_scope('context_module', reuse=tf.AUTO_REUSE):

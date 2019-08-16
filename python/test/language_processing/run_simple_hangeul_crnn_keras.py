@@ -4,15 +4,13 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime, glob, csv
+import os, math, time, datetime, glob, csv
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Reshape, Lambda, BatchNormalization
-from tensorflow.keras.layers import Input, Dense, Activation
-from tensorflow.keras.layers.recurrent import LSTM
-from tensorflow.keras.layers.merge import add, concatenate
+from tensorflow.keras.layers import Conv2D, LSTM, MaxPooling2D, Reshape, Lambda, BatchNormalization
+from tensorflow.keras.layers import Input, Dense, Activation, add, concatenate
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
 from TextRecognitionDataGenerator_data import HangeulTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
@@ -110,7 +108,7 @@ class MyModel(object):
 		# (None, width/4, height/16, 512).
 
 		#--------------------
-		rnn_input_shape = x.output_shape
+		rnn_input_shape = x.shape
 		x = Reshape(target_shape=((rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3])), name='reshape')(x)
 		# TODO [decide] >>
 		x = Dense(64, activation='relu', kernel_initializer=kernel_initializer, name='dense6')(x)
@@ -146,16 +144,29 @@ class MyModel(object):
 
 	@staticmethod
 	def compute_ctc_loss(args):
-		model_outputs, labels, input_length, label_length = args
+		model_outputs, labels, model_output_length, label_length = args
 		# TODO [check] >> The first couple of RNN outputs tend to be garbage. (???)
 		model_outputs = model_outputs[:, 2:, :]
-		return K.ctc_batch_cost(labels, model_outputs, input_length, label_length)
+		return K.ctc_batch_cost(labels, model_outputs, model_output_length, label_length)
+
+	@staticmethod
+	def decode_label(labels):
+		labels = np.argmax(labels, axis=-1)
+		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
+		self._max_queue_size, self._num_workers = 10, 8
+		self._use_multiprocessing = True
+
+		#sess = tf.Session(config=config)
+		#K.set_session(sess)
+		#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
+		#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
+
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
@@ -216,7 +227,7 @@ class MyRunner(object):
 				return
 		else:
 			# Create a model.
-			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes, max_label_len, is_training=True)
+			model = MyModel.create_model(self._dataset.shape, self._dataset.num_classes, self._max_label_len, is_training=True)
 			#print('Model summary =', model.summary())
 
 		# Create a trainer.
@@ -239,7 +250,7 @@ class MyRunner(object):
 		start_time = time.time()
 		train_sequence = MyDataSequence(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True), train_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
 		val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), val_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
-		history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=train_steps_per_epoch, validation_data=val_generator, validation_steps=val_steps_per_epoch, shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+		history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=train_steps_per_epoch, validation_data=val_sequence, validation_steps=val_steps_per_epoch, shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
@@ -299,7 +310,7 @@ class MyRunner(object):
 		inferences, ground_truths = list(), list()
 		for batch_images, batch_labels in zip(batch_images_list, batch_labels_list):
 			batch_outputs = model.predict(batch_images, batch_size=batch_size)
-			batch_outputs = MyRunner._decode_label(batch_outputs)
+			batch_outputs = MyModel.decode_label(batch_outputs)
 
 			inferences.extend(batch_outputs)
 			ground_truths.extend(list(batch_labels))
@@ -367,7 +378,7 @@ class MyRunner(object):
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
 		inferences = model.predict(inf_images, batch_size=batch_size)
-		inferences = MyRunner._decode_label(inferences)
+		inferences = MyModel.decode_label(inferences)
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
@@ -416,7 +427,7 @@ def main():
 	if model_filepath:
 		output_dir_path = os.path.dirname(model_filepath)
 	else:
-		output_dir_prefix = 'simple_training'
+		output_dir_prefix = 'simple_hangeul_crnn_keras'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 		model_filepath = os.path.join(output_dir_path, 'model.hdf5')

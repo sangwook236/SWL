@@ -27,8 +27,8 @@ class DRAW(object):
 		self._write_op = self._write_with_attention if use_write_attention else self._write_without_attention
 
 		#--------------------
-		self._input_tensor_ph = tf.placeholder(tf.float32, shape=(self._batch_size, self._img_size), name='input_tensor_ph')  # (batch_size * image_size).
-		#self._batch_size_ph = tf.placeholder(tf.int32, [1], name='batch_size_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=(self._batch_size, self._img_size), name='input_ph')  # (batch_size * image_size).
+		#self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 		#self._is_training_tensor_ph = tf.placeholder(tf.bool, name='is_training_tensor_ph')
 
 		# model_output is used in training, evaluation, and inference steps.
@@ -55,20 +55,20 @@ class DRAW(object):
 		return self._accuracy
 
 	def get_feed_dict(self, data, **kwargs):
-		feed_dict = {self._input_tensor_ph: data}
+		feed_dict = {self._input_ph: data}
 		return feed_dict
 
 	def create_training_model(self):
-		self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_tensor_ph, self._batch_size, self._num_time_steps, True)
+		self._model_output, mus, logsigmas, sigmas = self._create_single_model(self._input_ph, self._batch_size, self._num_time_steps, True)
 
-		self._loss = self._get_loss(self._model_output, self._input_tensor_ph, mus, logsigmas, sigmas)
+		self._loss = self._get_loss(self._model_output, self._input_ph, mus, logsigmas, sigmas)
 		self._accuracy = None
 
 	def create_evaluation_model(self):
 		raise NotImplementedError
 
 	def create_inference_model(self):
-		self._model_output, _, _, _ = self._create_single_model(self._input_tensor_ph, self._batch_size, self._num_time_steps, False)
+		self._model_output, _, _, _ = self._create_single_model(self._input_ph, self._batch_size, self._num_time_steps, False)
 
 		self._loss = None
 		self._accuracy = None

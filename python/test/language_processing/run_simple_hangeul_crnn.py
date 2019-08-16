@@ -17,15 +17,41 @@ class MyModel(object):
 	def __init__(self, image_height, image_width, image_channel):
 		self._input_ph = tf.placeholder(tf.float32, [None, image_width, image_height, image_channel], name='input_ph')
 		self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
+		#self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 
+		self._default_value = default_value
 		self._is_beam_search_decoded = True
+		self._model_output_len = 0
 
-	@property
-	def placeholders(self):
-		return self._input_ph, self._output_ph, self._model_output_len_ph
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
+		len_data = len(data)
+		if 1 == len_data:
+			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: [self._model_output_len] * num_data}
+		elif 2 == len_data:
+			#feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: [self._model_output_len] * num_data}
+			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._model_output_len_ph: [self._model_output_len] * num_data}  # Sparse tensor.
+		else:
+			raise ValueError('Invalid number of feed data: {}'.format(len_data))
+		return feed_dict
 
-	def create_model(self, inputs, seq_len, num_classes, default_value=-1):
+	def create_model(self, num_classes, is_beam_search_decoded=True, default_value=-1, is_training=False):
+		model_output = self._create_model(self._input_ph, num_classes, is_beam_search_decoded, default_value)
+
+		if is_training:
+			loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, None)
+			#loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
+			if is_beam_search_decoded:
+				accuracy = self._get_accuracy_from_sparse_label(model_output['decoded_label'], self._output_ph)
+			else:
+				# FIXME [implement] >>
+				#accuracy = self._get_accuracy(model_output['decoded_label'], self._output_ph)
+				accuracy = None
+			return model_output, loss, accuracy
+		else:
+			return model_output
+
+	def _create_model(self, inputs, num_classes, is_beam_search_decoded, default_value):
 		#kernel_initializer = None
 		kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
@@ -36,88 +62,69 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
 
 		if False:
-			create_cnn_functor = MyModel.create_cnn_without_batch_normalization
+			create_cnn_functor = MyModel._create_cnn_without_batch_normalization
 		else:
-			create_cnn_functor = MyModel.create_cnn_with_batch_normalization
+			create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
 			cnn_output = create_cnn_functor(inputs, kernel_initializer)
 
-		rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
-
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
-			rnn_input = tf.reshape(cnn_output, [-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]])
+			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
+			self._model_output_len = rnn_input_shape[1]  # Model output time-steps.
+
+			rnn_input = tf.reshape(cnn_output, (-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]), name='reshape')
 			# TODO [decide] >>
 			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
-			rnn_output = MyModel.create_bidirectionnal_rnn(rnn_input, seq_len)
+			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
 
-		time_steps = rnn_input.shape.as_list()[1]  # Model output time-steps.
-		print('***** Model output time-steps = {}.'.format(time_steps))
-
-		# TODO [decide] >>
-		if self._is_beam_search_decoded:
-			with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
+		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
+			# TODO [decide] >>
+			if is_beam_search_decoded:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
-
-			# CTC beam search decoding.
-			with tf.variable_scope('decoding', reuse=tf.AUTO_REUSE):
 				logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 
+				# CTC beam search decoding.
 				# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
 				#	If the number of classes increases, its computation time becomes much slower.
-				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=seq_len, beam_width=100, top_paths=1, merge_repeated=False)
-				#decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=seq_len, beam_width=100, top_paths=1)
-				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=seq_len, beam_width=10, top_paths=1)
-				sparse_decoded = decoded[0]
-				dense_decoded = tf.sparse.to_dense(sparse_decoded, default_value=default_value)
+				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1, merge_repeated=False)
+				#decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1)
+				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=10, top_paths=1)
+				decoded_best = decoded[0]  # Sparse tensor.
+				#decoded_best = tf.sparse.to_dense(decoded[0], default_value=default_value)  # Dense tensor.
 
-			return {'logit': logits, 'sparse_label': sparse_decoded, 'dense_label': dense_decoded, 'time_step': time_steps}
-		else:
-			with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
+				return {'logit': logits, 'decoded_label': decoded_best}
+			else:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
 
-			# No CTC beam search decoding.
+				# Decoding.
+				decoded = tf.argmax(logits, axis=-1)
+				# FIXME [implemented] >> The below logic has to be implemented in TensorFlow.
+				#	Refer to MyModel.decode_label().
+				#decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), decoded))  # Removes repetitive labels.
 
-			#return {'logit': logits, 'sparse_label': None, 'dense_label': None, 'time_step': time_steps}
-			return {'logit': logits, 'time_step': time_steps}
+				return {'logit': logits, 'decoded_label': decoded}
 
 	# When logits are used as y.
-	def get_loss(self, y, t_sparse, y_len):
-		is_time_major = self._is_beam_search_decoded
-
-		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
-		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
-		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
+	def _get_loss(self, y, t_sparse, y_len, t_len):
+		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False)
+		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=self._output_len_ph, logit_length=y_len, logits_time_major=False, unique=None, blank_index=None)
+		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=self._output_len_ph, logit_length=y_len, logits_time_major=False, unique=None, blank_index=None)
 		loss = tf.reduce_mean(loss)
 
 		return loss
 
-	"""
-	# When logits are used as y.
-	def get_accuracy(self, y_logits, t_sparse):
-		if True:
-			# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
-			#	If the number of classes increases, its computation time becomes much slower.
-			#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y_logits, sequence_length=seq_len, beam_width=100, top_paths=1, merge_repeated=False)
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=y_logits, sequence_length=seq_len, beam_width=100, top_paths=1)
-			y_sparse = decoded[0]
-		else:
-			y = np.argmax(y, axis=-1)
-			# Repetitive labels should be removed. REF [function] >> MyRunner._decode_label().
-			y_sparse = tf.contrib.layers.dense_to_sparse(y, eos_token=default_value)
+	def _get_accuracy(self, y, t):
+		#correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
+		correct_prediction = tf.equal(y, t)
+		accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-		# Inaccuracy: label error rate.
-		# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
-		#	Accuracy may not be calculated to speed up the training.
-		ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y_sparse, tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
-		acc = 1.0 - ler
+		return accuracy
 
-		return acc
-	"""
 	# When sparse labels which are decoded by CTC beam search are used as y.
-	def get_accuracy(self, y_sparse, t_sparse):
+	def _get_accuracy_from_sparse_label(self, y_sparse, t_sparse):
 		# Inaccuracy: label error rate.
 		# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
 		#	Accuracy may not be calculated to speed up the training.
@@ -127,18 +134,18 @@ class MyModel(object):
 		return acc
 
 	@staticmethod
-	def create_cnn_without_batch_normalization(inputs, kernel_initializer=None):
+	def _create_cnn_without_batch_normalization(inputs, kernel_initializer=None):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=[2, 2], strides=2, name='maxpool')
+			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
 
 			# (None, width/2, height/2, 64).
 
 		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
 			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=[2, 2], strides=2, name='maxpool')
+			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
 
 			# (None, width/4, height/4, 128).
 
@@ -149,7 +156,7 @@ class MyModel(object):
 
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=[2, 2], strides=[1, 2], padding='same', name='maxpool')
+			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
 
 			# (None, width/4, height/8, 256).
 
@@ -160,7 +167,7 @@ class MyModel(object):
 
 			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=[2, 2], strides=[1, 2], padding='same', name='maxpool')
+			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
 
 			# (None, width/4, height/16, 512).
 
@@ -175,12 +182,12 @@ class MyModel(object):
 		return conv5
 
 	@staticmethod
-	def create_cnn_with_batch_normalization(inputs, kernel_initializer=None):
+	def _create_cnn_with_batch_normalization(inputs, kernel_initializer=None):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv1 = tf.layers.batch_normalization(conv1, name='batchnorm')
 			conv1 = tf.nn.relu(conv1, name='relu')
-			conv1 = tf.layers.max_pooling2d(conv1, pool_size=[2, 2], strides=2, name='maxpool')
+			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
 
 			# (None, width/2, height/2, 64).
 
@@ -188,7 +195,7 @@ class MyModel(object):
 			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv2 = tf.layers.batch_normalization(conv2, name='batchnorm')
 			conv2 = tf.nn.relu(conv2, name='relu')
-			conv2 = tf.layers.max_pooling2d(conv2, pool_size=[2, 2], strides=2, name='maxpool')
+			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
 
 			# (None, width/4, height/4, 128).
 
@@ -200,7 +207,7 @@ class MyModel(object):
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=[1, 2], strides=[1, 2], padding='same', name='maxpool')
+			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
 
 			# (None, width/4, height/8, 256).
 
@@ -214,7 +221,7 @@ class MyModel(object):
 			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=[1, 2], strides=[1, 2], padding='same', name='maxpool')
+			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
 
 			# (None, width/4, height/16, 512).
 
@@ -230,18 +237,18 @@ class MyModel(object):
 		return conv5
 
 	@staticmethod
-	def create_bidirectionnal_rnn(inputs, seq_len=None, kernel_initializer=None):
+	def _create_bidirectionnal_rnn(inputs, input_len=None, kernel_initializer=None):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
-			fw_cell_1, bw_cell_1 = MyModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
+			fw_cell_1, bw_cell_1 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
-			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, seq_len, dtype=tf.float32)
+			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
 			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
 
 		with tf.variable_scope('birnn_2', reuse=tf.AUTO_REUSE):
-			fw_cell_2, bw_cell_2 = MyModel.create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel.create_unit_cell(256, kernel_initializer, 'bw_cell')
+			fw_cell_2, bw_cell_2 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
-			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, seq_len, dtype=tf.float32)
+			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
 			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
@@ -249,10 +256,15 @@ class MyModel(object):
 		return outputs_2
 
 	@staticmethod
-	def create_unit_cell(num_units, kernel_initializer=None, name=None):
+	def _create_unit_cell(num_units, kernel_initializer=None, name=None):
 		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
 		return tf.nn.rnn_cell.LSTMCell(num_units, forget_bias=1.0, initializer=kernel_initializer, name=name)
 		#return tf.nn.rnn_cell.GRUCell(num_units, kernel_initializer=kernel_initializer, name=name)
+
+	@staticmethod
+	def decode_label(labels):
+		#labels = np.argmax(labels, axis=-1)
+		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl)), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
 
@@ -301,13 +313,10 @@ class MyRunner(object):
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			input_ph, output_ph, model_output_len_ph = model.placeholders
+			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=True)
 
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
-
-			loss = model.get_loss(model_output['logit'], output_ph, model_output_len_ph, is_time_major=True)
-			#accuracy = model.get_accuracy(model_output['logit'], output_ph)
-			accuracy = model.get_accuracy(model_output['sparse_label'], output_ph)
+			loss = model.get_loss(model_output['logit'], output_ph)
+			accuracy = model.get_accuracy(model_output['logit'], output_ph)
 
 			# Create a trainer.
 			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
@@ -365,22 +374,15 @@ class MyRunner(object):
 					#batch_images, batch_labels_str, batch_labels_int = batch_data
 					#_, batch_loss, batch_acc = sess.run(
 					#	[train_op, loss, accuracy],
-					#_, batch_loss, batch_labels_logits = sess.run(
-					#	[train_op, loss, model_output['logit']],
 					_, batch_loss, batch_labels_int = sess.run(
-						[train_op, loss, model_output['dense_label']],
-						feed_dict={
-							input_ph: batch_data[0],
-							#output_ph: batch_data[2],  # Sparse tensor.
-							output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
-							model_output_len_ph: [model_output['time_step']] * num_batch_examples
-						}
+						[train_op, loss, model_output['decoded_label']],
+						feed_dict=model.get_feed_dict((batch_data[0], batch_data[2]), num_batch_examples)
 					)
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					#train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyRunner._decode_label(batch_labels_logits), batch_data[1]))))
 					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
+					#train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyModel.decode_label(batch_labels_int), batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -397,12 +399,7 @@ class MyRunner(object):
 					#batch_images, batch_labels_str, batch_labels_int = batch_data
 					_, batch_loss = sess.run(
 						[train_op, loss],
-						feed_dict={
-							input_ph: batch_data[0],
-							#output_ph: batch_data[2],  # Sparse tensor.
-							output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
-							model_output_len_ph: [model_output['time_step']] * num_batch_examples
-						}
+						feed_dict=model.get_feed_dict((batch_data[0], batch_data[2]), num_batch_examples)
 					)
 
 					train_loss += batch_loss * num_batch_examples
@@ -426,22 +423,15 @@ class MyRunner(object):
 						#batch_images, batch_labels_str, batch_labels_int = batch_data
 						#batch_loss, batch_acc = sess.run(
 						#	[loss, accuracy],
-						#batch_loss, batch_labels_logits = sess.run(
-						#	[loss, model_output['logit']],
 						batch_loss, batch_labels_int = sess.run(
-							[loss, model_output['dense_label']],
-							feed_dict={
-								input_ph: batch_data[0],
-								#output_ph: batch_data[2],  # Sparse tensor.
-								output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
-								model_output_len_ph: [model_output['time_step']] * num_batch_examples
-							}
+							[loss, model_output['decoded_label']],
+							feed_dict=model.get_feed_dict((batch_data[0], batch_data[2]), num_batch_examples)
 						)
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						#val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyRunner._decode_label(batch_labels_logits), batch_data[1]))))
 						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(batch_labels_int, batch_data[1]))))
+						#val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(MyModel.decode_label(batch_labels_int), batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
@@ -468,12 +458,7 @@ class MyRunner(object):
 						#batch_images, batch_labels_str, batch_labels_int = batch_data
 						batch_loss = sess.run(
 							loss,
-							feed_dict={
-								input_ph: batch_data[0],
-								#output_ph: batch_data[2],  # Sparse tensor.
-								output_ph: swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32),
-								model_output_len_ph: [model_output['time_step']] * num_batch_examples
-							}
+							feed_dict=model.get_feed_dict((batch_data[0], batch_data[2]), num_batch_examples)
 						)
 
 						val_loss += batch_loss * num_batch_examples
@@ -501,9 +486,7 @@ class MyRunner(object):
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			input_ph, output_ph, model_output_len_ph = model.placeholders
-
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
+			model_output = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -529,17 +512,12 @@ class MyRunner(object):
 			inferences, ground_truths = list(), list()
 			for batch_data, num_batch_examples in self._dataset.create_test_batch_generator(batch_size, test_steps_per_epoch, shuffle=False):
 				#batch_images, batch_labels_str, batch_labels_int = batch_data
-				#batch_labels_logits = sess.run(
-				#	model_output['logit'],
 				batch_labels_int = sess.run(
-					model_output['dense_label'],
-					feed_dict={
-						input_ph: batch_data[0],
-						model_output_len_ph: [model_output['time_step']] * num_batch_examples
-					}
+					model_output['decoded_label'],
+					feed_dict=model.get_feed_dict((batch_data[0],), num_batch_examples)
 				)
-				#inferences.append(MyRunner._decode_label(batch_labels_logits))
 				inferences.append(batch_labels_int)
+				#inferences.append(MyModel.decode_label(batch_labels_int))
 				ground_truths.append(batch_data[1])
 			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
@@ -576,9 +554,7 @@ class MyRunner(object):
 		with graph.as_default():
 			# Create a model.
 			model = MyModel(*self._dataset.shape)
-			input_ph, output_ph, model_output_len_ph = model.placeholders
-
-			model_output = model.create_model(input_ph, model_output_len_ph, self._dataset.num_classes, self._dataset.default_value)
+			model_output = model.create_model(self._dataset.num_classes, default_value=self._dataset.default_value, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -622,17 +598,12 @@ class MyRunner(object):
 					# FIXME [fix] >> Does not work correctly in time-major data.
 					batch_images = inf_images[batch_indices]
 					if batch_images.size > 0:  # If batch_images is non-empty.
-						#batch_labels_logits = sess.run(
-						#	model_output['logit'],
 						batch_labels_int = sess.run(
-							model_output['dense_label'],
-							feed_dict={
-								input_ph: batch_images,
-								model_output_len_ph: [model_output['time_step']] * len(batch_images)
-							}
+							model_output['decoded_label'],
+							feed_dict=model.get_feed_dict((batch_images,), len(batch_images))
 						)
-						#inferences.append(MyRunner._decode_label(batch_labels_logits))
 						inferences.append(batch_labels_int)
+						#inferences.append(MyModel.decode_label(batch_labels_int))
 
 				if end_idx >= num_examples:
 					break

@@ -80,11 +80,11 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
+	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
 		examples = list()
 		for fpath in os.listdir(data_dir_path):
 			label_str = fpath.split('_')[0]
-			if len(label_str) > max_char_count:
+			if len(label_str) > max_label_len:
 				continue
 			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)
 			img = self.resize(img, None, image_height, image_width)
@@ -138,7 +138,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 #	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -167,7 +167,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_char_count)
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)
@@ -216,7 +216,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -256,7 +256,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_char_count)
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)
@@ -307,7 +307,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_char_count):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -348,7 +348,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_char_count)
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)
@@ -414,12 +414,12 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 
 		return inputs, outputs
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_char_count):
+	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
 		examples = list()
 		for fpath in os.listdir(data_dir_path):
 			#label_str = fpath.split('_')[0]
 			label_str = self._hangeul2jamo_functor(fpath.split('_')[0])
-			if len(label_str) > max_char_count:
+			if len(label_str) > max_label_len:
 				continue
 			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)
 			img = self.resize(img, None, image_height, image_width)

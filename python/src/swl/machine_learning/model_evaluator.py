@@ -51,9 +51,9 @@ class ModelEvaluator(object):
 		val_loss, val_acc = 0.0, 0.0
 		num_val_examples = 0
 		for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle):
-			#batch_loss = loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-			#batch_acc = accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-			batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+			#batch_loss = loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+			#batch_acc = accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+			batch_loss, batch_acc = session.run([loss, accuracy], feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
 
 			# TODO [check] >> Is val_loss or val_acc correct?
 			val_loss += batch_loss * num_batch_examples

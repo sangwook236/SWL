@@ -98,15 +98,15 @@ class ModelTrainer(object):
 
 		best_val_acc = -math.inf
 		for epoch in range(1, num_epochs + 1):
-			print('Epoch {}/{}'.format(epoch, num_epochs))
+			print('Epoch {}/{}:'.format(epoch, num_epochs))
 
 			start_time = time.time()
 
 			# Train.
-			for batch_data, _ in self._dataGenerator.getTrainBatches(batch_size, shuffle=shuffle):
-				#summary = self._merged_summary.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=True))
-				#self._train_operation.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=True))
-				summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._model.get_feed_dict(batch_data, is_training=True))
+			for batch_data, num_batch_examples in self._dataGenerator.getTrainBatches(batch_size, shuffle=shuffle):
+				#summary = self._merged_summary.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=True))
+				#self._train_operation.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=True))
+				summary, _ = session.run([self._merged_summary, self._train_operation], feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=True))
 				if train_summary_writer is not None:
 					train_summary_writer.add_summary(summary, epoch)
 
@@ -117,10 +117,10 @@ class ModelTrainer(object):
 				#for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=shuffle):
 				for batch_data, num_batch_examples in self._dataGenerator.getTrainBatchesForEvaluation(batch_size, shuffle=False):
 					if self._accuracy is None:
-						batch_loss = self._loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-						#batch_acc = self._accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+						batch_loss = self._loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+						#batch_acc = self._accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
 					else:
-						batch_loss, batch_acc = session.run([self._loss, self._accuracy], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+						batch_loss, batch_acc = session.run([self._loss, self._accuracy], feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
 
 					# TODO [check] >> Is train_loss or train_acc correct?
 					train_loss += batch_loss * num_batch_examples
@@ -140,12 +140,12 @@ class ModelTrainer(object):
 				#for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=shuffle):
 				for batch_data, num_batch_examples in self._dataGenerator.getValidationBatches(batch_size, shuffle=False):
 					if self._accuracy is None:
-						summary, batch_loss = session.run([self._merged_summary, self._loss], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+						summary, batch_loss = session.run([self._merged_summary, self._loss], feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
 					else:
-						#summary = self._merged_summary.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-						#batch_loss = self._loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-						#batch_acc = self._accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
-						summary, batch_loss, batch_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._model.get_feed_dict(batch_data, is_training=False))
+						#summary = self._merged_summary.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+						#batch_loss = self._loss.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+						#batch_acc = self._accuracy.eval(session=session, feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
+						summary, batch_loss, batch_acc = session.run([self._merged_summary, self._loss, self._accuracy], feed_dict=self._model.get_feed_dict(batch_data, num_batch_examples, is_training=False))
 					if val_summary_writer is not None:
 						val_summary_writer.add_summary(summary, epoch)
 

@@ -7,31 +7,31 @@ class MnistCnn(SimpleTensorFlowModel):
 	def __init__(self, input_shape, output_shape):
 		super().__init__(input_shape, output_shape)
 
-	def get_feed_dict(self, data, *args, **kwargs):
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
 		if 1 == len_data:
-			feed_dict = {self._input_tensor_ph: data[0]}
+			feed_dict = {self._input_ph: data[0]}
 		elif 2 == len_data:
-			feed_dict = {self._input_tensor_ph: data[0], self._output_tensor_ph: data[1]}
+			feed_dict = {self._input_ph: data[0], self._output_ph: data[1]}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
 
-	def _create_single_model(self, input_tensor, input_shape, output_shape, is_training):
+	def _create_single_model(self, inputs, input_shape, output_shape, is_training):
 		num_classes = output_shape[-1]
 		with tf.variable_scope('mnist_cnn', reuse=tf.AUTO_REUSE):
-			return self._create_model(input_tensor, num_classes, is_training)
+			return self._create_model(inputs, num_classes, is_training)
 
-	def _create_model(self, input_tensor, num_classes, is_training):
+	def _create_model(self, inputs, num_classes, is_training):
 		dropout_prob = 0.25
 
 		# Preprocessing.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
-			input_tensor = tf.nn.local_response_normalization(input_tensor, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+			inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 
 		#--------------------
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
-			conv1 = tf.layers.conv2d(input_tensor, 32, 5, activation=tf.nn.relu, name='conv')
+			conv1 = tf.layers.conv2d(inputs, 32, 5, activation=tf.nn.relu, name='conv')
 			conv1 = tf.layers.max_pooling2d(conv1, 2, 2, name='maxpool')
 
 		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):

@@ -39,8 +39,8 @@ class ModelInferrer(object):
 
 		print('[SWL] Info: Start inferring...')
 		start_time = time.time()
-		#inferences = self._model.model_output.eval(session=session, feed_dict=self._model.get_feed_dict((inputs,), is_training=False))
-		inferences = session.run(self._model.model_output, feed_dict=self._model.get_feed_dict((inputs,), is_training=False))
+		#inferences = self._model.model_output.eval(session=session, feed_dict=self._model.get_feed_dict((inputs,), len(inputs), is_training=False))
+		inferences = session.run(self._model.model_output, feed_dict=self._model.get_feed_dict((inputs,), len(inputs), is_training=False))
 		print('\tInference time = {} secs.'.format(time.time() - start_time))
 		print('[SWL] Info: End inferring.')
 
