@@ -37,8 +37,8 @@ class MyModel(object):
 		model_output = self._create_model(self._input_ph, num_classes, is_beam_search_decoded, default_value)
 
 		if is_training:
-			loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, None)
-			#loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
+			loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, None, is_time_major=is_beam_search_decoded)
+			#loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph, is_time_major=is_beam_search_decoded)
 			if is_beam_search_decoded:
 				accuracy = self._get_accuracy_from_sparse_label(model_output['decoded_label'], self._output_ph)
 			else:
@@ -105,10 +105,10 @@ class MyModel(object):
 				return {'logit': logits, 'decoded_label': decoded}
 
 	# When logits are used as y.
-	def _get_loss(self, y, t_sparse, y_len, t_len):
-		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False)
-		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=False, unique=None, blank_index=None)
-		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=False, unique=None, blank_index=None)
+	def _get_loss(self, y, t_sparse, y_len, t_len, is_time_major):
+		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
+		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
+		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
 		loss = tf.reduce_mean(loss)
 
 		return loss
@@ -507,7 +507,8 @@ class MyRunner(object):
 					model_output['decoded_label'],
 					feed_dict=model.get_feed_dict((batch_data[0],), num_batch_examples)
 				)
-				inferences.append(batch_labels_int)
+				#inferences.append(batch_labels_int)
+				inferences.append(swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32))  # Sparse tensor.
 				#inferences.append(MyModel.decode_label(batch_labels_int))
 				ground_truths.append(batch_data[1])
 			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
@@ -593,7 +594,8 @@ class MyRunner(object):
 							model_output['decoded_label'],
 							feed_dict=model.get_feed_dict((batch_images,), len(batch_images))
 						)
-						inferences.append(batch_labels_int)
+						#inferences.append(batch_labels_int)
+						inferences.append(swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32))  # Sparse tensor.
 						#inferences.append(MyModel.decode_label(batch_labels_int))
 
 				if end_idx >= num_examples:
@@ -690,7 +692,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')  # TODO [modify] >>
 		runner.test(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

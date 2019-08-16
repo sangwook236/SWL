@@ -471,7 +471,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')  # TODO [modify] >>
 		runner.infer(model_filepath, image_filepaths, inference_dir_path)
 
 #--------------------------------------------------------------------
