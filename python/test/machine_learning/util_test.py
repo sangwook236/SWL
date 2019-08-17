@@ -119,7 +119,30 @@ def sparse_to_sequences_test():
 	dense_shape = np.array([4, 4], dtype=np.int32)
 
 	sequences = swl_ml_util.sparse_to_sequences(sparse_indices, sparse_values, dense_shape, dtype=np.int32)
-	print('Sequeses =\n', sequences)
+	print('Sequenses =\n', sequences)
+
+def sequences_to_dense_test():
+	sequences = [
+		[2, 0],
+		[2],
+		[1, 2],
+		[2, 0, 1, 2]
+	]
+	
+	dense = swl_ml_util.sequences_to_dense(sequences, default_value=-1, dtype=np.int32)
+	print('Dense tensor =\n', dense)
+
+def dense_to_sequences_test():
+	default_value = -1
+	dense = np.array([
+		[2, 0, default_value, default_value],
+		[2, default_value, default_value, default_value],
+		[1, 2, default_value, default_value],
+		[2, 0, 1, 2]
+	])
+
+	sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
+	print('Sequenses =\n', sequences)
 
 def dense_to_sparse_test():
 	default_value = -1
@@ -130,7 +153,7 @@ def dense_to_sparse_test():
 		[2, 0, 1, 2]
 	])
 
-	sparse_indices, sparse_values, dense_shape = swl_ml_util.dense_to_sparse(dense, default_value=-1, dtype=np.int32)
+	sparse_indices, sparse_values, dense_shape = swl_ml_util.dense_to_sparse(dense, default_value=default_value, dtype=np.int32)
 	print('Sparse indices =\n', sparse_indices)
 	print('Sparse values =\n', sparse_values)
 	print('Dense shape =\n', dense_shape)
@@ -151,6 +174,8 @@ def main():
 
 	sequences_to_sparse_test()
 	sparse_to_sequences_test()
+	sequences_to_dense_test()
+	dense_to_sequences_test()
 	dense_to_sparse_test()
 	sparse_to_dense_test()
 

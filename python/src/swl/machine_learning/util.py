@@ -1,4 +1,4 @@
-import os, math
+import os, math, functools
 import numpy as np
 import tensorflow as tf
 #import keras
@@ -107,8 +107,8 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 	"""
 
 	indices, values = list(), list()
-	for n, seq in enumerate(sequences):
-		indices.extend(zip([n] * len(seq), range(len(seq))))
+	for idx, seq in enumerate(sequences):
+		indices.extend(zip([idx] * len(seq), range(len(seq))))
 		values.extend(seq)
 
 	indices = np.asarray(indices, dtype=np.int64)
@@ -141,11 +141,46 @@ def sparse_to_sequences(indices, values, dense_shape, dtype=np.int32):
 
 	return list(map(extract, dense))
 
-# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
-def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
-	"""Change a dense tensor to a 2D sparse representention.
+def sequences_to_dense(sequences, default_value=0, dtype=np.int32):
+	"""Change a list of sequences to a 2D dense tensor.
 	Inputs:
-		np_arr (numpy.array): A numpy array of type dtype.
+		sequences(a list of lists): A list of lists of type dtype where each element is a sequence.
+		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
+		dtype (numpy.dtype): A data type.
+	Returns:
+		A dense tensor (numpy.array): A numpy array of type dtype.
+	"""
+
+	max_len = functools.reduce(lambda x, seq: max(x, len(seq)), sequences, 0)
+	dense = np.full((len(sequences), max_len), default_value, dtype=dtype)
+	for idx, seq in enumerate(sequences):
+		dense[idx,:len(seq)] = seq
+	return dense
+
+def dense_to_sequences(dense, default_value=0, dtype=np.int32):
+	"""Change a 2D dense tensor to a list of sequences.
+	Inputs:
+		dense (numpy.array): A numpy array of type dtype.
+		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
+		dtype (numpy.dtype): A data type.
+	Returns:
+		sequences(a list of lists): A list of lists of type dtype where each element is a sequence.
+	"""
+
+	sequences = list()
+	for idx, row in enumerate(dense):
+		default_indices = np.where(row == default_value)[0]
+		if default_indices.size > 0:
+			row = row[:default_indices[0]]
+		sequences.append(list(row))
+
+	return sequences
+
+# REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
+def dense_to_sparse(dense, default_value=0, dtype=np.int32):
+	"""Change a 2D dense tensor to a 2D sparse representention.
+	Inputs:
+		dense (numpy.array): A numpy array of type dtype.
 		default_value (int): It is part of the target label that signifies the end of a sentence (EOS).
 		dtype (numpy.dtype): A data type.
 	Returns:
@@ -156,21 +191,21 @@ def dense_to_sparse(np_arr, default_value=0, dtype=np.int32):
 	"""
 
 	indices, values = list(), list()
-	for n, subarr in enumerate(np_arr):
-		default_indices = np.where(subarr == default_value)[0]
-		if 0 != default_indices.size:
-			subarr = subarr[:default_indices[0]]
-		indices.extend(zip([n] * len(subarr), range(len(subarr))))
-		values.extend(subarr)
+	for idx, row in enumerate(dense):
+		default_indices = np.where(row == default_value)[0]
+		if default_indices.size > 0:
+			row = row[:default_indices[0]]
+		indices.extend(zip([idx] * len(row), range(len(row))))
+		values.extend(row)
 
 	indices = np.asarray(indices, dtype=np.int64)
 	values = np.asarray(values, dtype=dtype)
-	dense_shape = np.asarray([len(np_arr), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
+	dense_shape = np.asarray([len(dense), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
 def sparse_to_dense(indices, values, dense_shape, default_value=0, dtype=np.int32):
-	"""Change a 2D sparse representation of a tensor to a dense tensor.
+	"""Change a 2D sparse representation of a tensor to a 2D dense tensor.
 	Inputs:
 		A sparse tensor (tuple): A tuple with (indices, values, dense_shape).
 			indices (numpy.array): The indices of non-zero elements in a dense tensor.

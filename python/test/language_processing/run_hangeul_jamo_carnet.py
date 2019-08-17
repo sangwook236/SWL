@@ -14,42 +14,86 @@ from TextRecognitionDataGenerator_data import HangeulJamoTextRecognitionDataGene
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	def __init__(self, image_height, image_width, image_channel):
+	def __init__(self, image_height, image_width, image_channel, blank_label, default_value=-1):
+		self._is_sparse_output = False
+		self._model_output_len = 0
+		self._default_value = default_value
+
 		self._input_ph = tf.placeholder(tf.float32, [None, image_width, image_height, image_channel], name='input_ph')
-		self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
-		#self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
+		if self._is_sparse_output:
+			self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
+		else:
+			self._output_ph = tf.placeholder(tf.int32, [None, None], name='output_ph')
+		# Use output lengths.
+		self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 
-		self._model_output_len = 0
+		#--------------------
+		if self._is_sparse_output:
+			#self._decode_functor = lambda args: args  # Dense tensor.
+			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
+			self._get_feed_dict_functor = self._get_feed_dict_for_sparse
+		else:
+			self._decode_functor = functools.partial(MyModel._decode_label, blank_label=blank_label)
+			self._get_feed_dict_functor = self._get_feed_dict_for_dense
 
 	def get_feed_dict(self, data, num_data, *args, **kwargs):
-		len_data = len(data)
-		if 1 == len_data:
-			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: [self._model_output_len] * num_data}
-		elif 2 == len_data:
-			#feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: [self._model_output_len] * num_data}
-			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._model_output_len_ph: [self._model_output_len] * num_data}  # Sparse tensor.
-		else:
-			raise ValueError('Invalid number of feed data: {}'.format(len_data))
-		return feed_dict
+		return self._get_feed_dict_functor(data, num_data, *args, **kwargs)
 
-	def create_model(self, num_classes, is_beam_search_decoded=True, default_value=-1, is_training=False):
-		model_output = self._create_model(self._input_ph, num_classes, is_beam_search_decoded, default_value)
+	def create_model(self, num_classes, is_training=False):
+		model_output = self._create_model(self._input_ph, num_classes)
 
 		if is_training:
-			loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, None, is_time_major=is_beam_search_decoded)
-			#loss = self._get_loss(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph, is_time_major=is_beam_search_decoded)
-			if is_beam_search_decoded:
+			if self._is_sparse_output:
+				#loss = self._get_loss_from_sparse_label(model_output['logit'], self._output_ph, self._model_output_len_ph, None)
+				# Use output lengths.
+				loss = self._get_loss_from_sparse_label(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
 				accuracy = self._get_accuracy_from_sparse_label(model_output['decoded_label'], self._output_ph)
 			else:
-				# FIXME [implement] >>
-				#accuracy = self._get_accuracy(model_output['decoded_label'], self._output_ph)
-				accuracy = None
+				loss = self._get_loss_from_dense_label(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
+				accuracy = self._get_accuracy_from_logit(model_output['logit'], self._output_ph)
+				#accuracy = None
 			return model_output, loss, accuracy
 		else:
 			return model_output
 
-	def _create_model(self, inputs, num_classes, is_beam_search_decoded, default_value):
+	def decode_label(self, labels):
+		return self._decode_functor(labels)
+
+	def _get_feed_dict_for_sparse(self, data, num_data, *args, **kwargs):
+		len_data = len(data)
+		model_output_len = [self._model_output_len] * num_data
+		if 1 == len_data:
+			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: model_output_len}
+		elif 2 == len_data:
+			"""
+			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._model_output_len_ph: model_output_len}
+			"""
+			# Use output lengths.
+			output_len = list(map(lambda lbl: len(lbl), data[1]))
+			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
+		else:
+			raise ValueError('Invalid number of feed data: {}'.format(len_data))
+		return feed_dict
+
+	def _get_feed_dict_for_dense(self, data, num_data, *args, **kwargs):
+		len_data = len(data)
+		model_output_len = [self._model_output_len] * num_data
+		if 1 == len_data:
+			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: model_output_len}
+		elif 2 == len_data:
+			"""
+			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_dense(data[1], default_value=self._default_value, dtype=np.int32), self._model_output_len_ph: model_output_len}
+			"""
+			# Use output lengths.
+			output_len = list(map(lambda lbl: len(lbl), data[1]))
+			feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_dense(data[1], default_value=self._default_value, dtype=np.int32), self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
+		else:
+			raise ValueError('Invalid number of feed data: {}'.format(len_data))
+		return feed_dict
+
+	def _create_model(self, inputs, num_classes):
+		# TODO [decide] >>
 		#kernel_initializer = None
 		kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
@@ -59,10 +103,9 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
 
-		if False:
-			create_cnn_functor = MyModel._create_cnn_without_batch_normalization
-		else:
-			create_cnn_functor = MyModel._create_cnn_with_batch_normalization
+		# TODO [decide] >>
+		#create_cnn_functor = MyModel._create_cnn_without_batch_normalization
+		create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
@@ -80,7 +123,7 @@ class MyModel(object):
 
 		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
 			# TODO [decide] >>
-			if is_beam_search_decoded:
+			if self._is_sparse_output:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 				# CTC beam search decoding.
@@ -90,32 +133,42 @@ class MyModel(object):
 				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1, merge_repeated=False)
 				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1)
 				decoded_best = decoded[0]  # Sparse tensor.
-				#decoded_best = tf.sparse.to_dense(decoded[0], default_value=default_value)  # Dense tensor.
+				#decoded_best = tf.sparse.to_dense(decoded[0], default_value=self._default_value)  # Dense tensor.
 
 				return {'logit': logits, 'decoded_label': decoded_best}
 			else:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
 
+				"""
 				# Decoding.
+				# FIXME [implement] >> The below logic has to be implemented in TensorFlow.
+				#	Refer to MyModel._decode_label().
 				decoded = tf.argmax(logits, axis=-1)
-				# FIXME [implemented] >> The below logic has to be implemented in TensorFlow.
-				#	Refer to MyModel.decode_label().
-				#decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), decoded))  # Removes repetitive labels.
+				decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < self._blank_label), decoded))  # Removes repetitive labels.
 
 				return {'logit': logits, 'decoded_label': decoded}
+				"""
+				# No decoding.
+				return {'logit': logits, 'decoded_label': None}
 
-	# When logits are used as y.
-	def _get_loss(self, y, t_sparse, y_len, t_len, is_time_major):
-		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
-		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
-		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=None)
+	def _get_loss_from_sparse_label(self, y, t_sparse, y_len, t_len, is_time_major=True):
+		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=t_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
+		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=self._blank_label)
+		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=self._blank_label)
 		loss = tf.reduce_mean(loss)
 
 		return loss
 
-	def _get_accuracy(self, y, t):
-		#correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
-		correct_prediction = tf.equal(y, t)
+	def _get_loss_from_dense_label(self, y, t, y_len, t_len):
+		y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+		loss = tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y, input_length=y_len, label_length=t_len)
+		loss = tf.reduce_mean(loss)
+
+		return loss
+
+	# When logits are used as y.
+	def _get_accuracy_from_logit(self, y, t):
+		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
 		accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 		return accuracy
@@ -126,9 +179,9 @@ class MyModel(object):
 		# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
 		#	Accuracy may not be calculated to speed up the training.
 		ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y_sparse, tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
-		acc = 1.0 - ler
+		accuracy = 1.0 - ler
 
-		return acc
+		return accuracy
 
 	@staticmethod
 	def _create_cnn_without_batch_normalization(inputs, kernel_initializer=None):
@@ -240,12 +293,15 @@ class MyModel(object):
 
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
+			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
 
 		with tf.variable_scope('birnn_2', reuse=tf.AUTO_REUSE):
 			fw_cell_2, bw_cell_2 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
+			# TODO [decide] >>
+			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -256,8 +312,8 @@ class MyModel(object):
 		#return tf.nn.rnn_cell.GRUCell(num_units, kernel_initializer=kernel_initializer, name=name)
 
 	@staticmethod
-	def decode_label(labels, blank_label):
-		#labels = np.argmax(labels, axis=-1)
+	def _decode_label(labels, blank_label):
+		labels = np.argmax(labels, axis=-1)
 		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), labels))  # Removes repetitive labels.
 
 #--------------------------------------------------------------------
@@ -265,8 +321,6 @@ class MyModel(object):
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
-		self._is_beam_search_decoded = True
-
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
@@ -303,19 +357,12 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
-		#--------------------
-		if self._is_beam_search_decoded:
-			#self._decode_functor = lambda args: args  # Dense tensor.
-			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
-		else:
-			self._decode_functor = functools.partial(MyModel.decode_label, blank_label=self._dataset.num_classes - 1)
-
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape)
-			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=True)
+			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
+			model_output, loss, accuracy = model.create_model(self._dataset.num_classes, is_training=True)
 
 			# Create a trainer.
 			#optimizer = tf.train.AdamOptimizer(learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-08)
@@ -380,7 +427,7 @@ class MyRunner(object):
 
 					train_loss += batch_loss * num_batch_examples
 					#train_acc += batch_acc * num_batch_examples
-					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(self._decode_functor(batch_labels_int), batch_data[1]))))
+					train_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 					num_examples += num_batch_examples
 
 					if (batch_step + 1) % 100 == 0:
@@ -428,13 +475,13 @@ class MyRunner(object):
 
 						val_loss += batch_loss * num_batch_examples
 						#val_acc += batch_acc * num_batch_examples
-						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(self._decode_functor(batch_labels_int), batch_data[1]))))
+						val_acc += len(list(filter(lambda x: x[1] == self._dataset.decode_label(x[0]), zip(model.decode_label(batch_labels_int), batch_data[1]))))
 						num_examples += num_batch_examples
 
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
-							for count, (pred, gt) in enumerate(zip(self._decode_functor(batch_labels_int), batch_data[1])):
+							for count, (pred, gt) in enumerate(zip(model.decode_label(batch_labels_int), batch_data[1])):
 								pred = self._dataset.decode_label(pred)
 								preds.append(pred)
 								gts.append(gt)
@@ -482,8 +529,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape)
-			model_output = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
+			model_output = model.create_model(self._dataset.num_classes, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -513,7 +560,7 @@ class MyRunner(object):
 					model_output['decoded_label'],
 					feed_dict=model.get_feed_dict((batch_data[0],), num_batch_examples)
 				)
-				inferences.append(self._decode_functor(batch_labels_int))
+				inferences.append(model.decode_label(batch_labels_int))
 				ground_truths.append(batch_data[1])
 			print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
@@ -549,8 +596,8 @@ class MyRunner(object):
 		graph = tf.Graph()
 		with graph.as_default():
 			# Create a model.
-			model = MyModel(*self._dataset.shape)
-			model_output = model.create_model(self._dataset.num_classes, is_beam_search_decoded=self._is_beam_search_decoded, default_value=self._dataset.default_value, is_training=False)
+			model = MyModel(*self._dataset.shape, blank_label=self._dataset.num_classes - 1, default_value=self._dataset.default_value)
+			model_output = model.create_model(self._dataset.num_classes, is_training=False)
 
 			# Create a saver.
 			saver = tf.train.Saver()
@@ -571,7 +618,7 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images = self._dataset.load_images_from_files(image_filepaths, self._image_height, self._image_width, self._image_channel)
+			inf_images = self._dataset.load_images_from_files(image_filepaths)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 
 			num_examples = len(inf_images)
@@ -598,7 +645,7 @@ class MyRunner(object):
 							model_output['decoded_label'],
 							feed_dict=model.get_feed_dict((batch_images,), len(batch_images))
 						)
-						inferences.append(self._decode_functor(batch_labels_int))
+						inferences.append(model.decode_label(batch_labels_int))
 
 				if end_idx >= num_examples:
 					break
@@ -629,7 +676,7 @@ def main():
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
-	num_epochs, batch_size = 100, 128
+	num_epochs, batch_size = 50, 128
 	initial_epoch = 0
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
@@ -690,7 +737,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')  # TODO [modify] >>
-		runner.test(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
+		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
 
