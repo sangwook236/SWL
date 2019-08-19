@@ -15,7 +15,14 @@ from TextRecognitionDataGenerator_data import EnglishTextRecognitionDataGenerato
 
 class MyModel(object):
 	def __init__(self, image_height, image_width, image_channel, blank_label, default_value=-1):
-		self._is_sparse_output = False
+		# TODO [decide] >>
+		#	When _is_sparse_output = True, CTC loss, CTC beam search decoding, and edit distance are applied.
+		#		tf.nn.ctc_loss() is used to calculate a loss.
+		#		tf.nn.ctc_beam_search_decoder() and tf.edit_distance() are too slow.
+		#		Because computing accuracy requires heavy computation resources, model_output['decoded_label'] can be used to compute an accuracy.
+		#	When _is_sparse_output = False, CTC loss is only applied.
+		#		tf.keras.backend.ctc_batch_cost() is used to calculate a loss.
+		self._is_sparse_output = True
 		self._model_output_len = 0
 		self._default_value = default_value
 
@@ -49,10 +56,11 @@ class MyModel(object):
 				# Use output lengths.
 				loss = self._get_loss_from_sparse_label(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
 				accuracy = self._get_accuracy_from_sparse_label(model_output['decoded_label'], self._output_ph)
+				#accuracy = None
 			else:
 				loss = self._get_loss_from_dense_label(model_output['logit'], self._output_ph, self._model_output_len_ph, self._output_len_ph)
-				accuracy = self._get_accuracy_from_logit(model_output['logit'], self._output_ph)
-				#accuracy = None
+				#accuracy = self._get_accuracy_from_logit(model_output['logit'], self._output_ph)
+				accuracy = None
 			return model_output, loss, accuracy
 		else:
 			return model_output
@@ -141,18 +149,20 @@ class MyModel(object):
 
 				"""
 				# Decoding.
-				# FIXME [implement] >> The below logic has to be implemented in TensorFlow.
-				#	Refer to MyModel._decode_label().
 				decoded = tf.argmax(logits, axis=-1)
-				decoded = list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < self._blank_label), decoded))  # Removes repetitive labels.
+				# FIXME [fix] >> This does not work correctly.
+				#	Refer to MyModel._decode_label().
+				decoded = tf.numpy_function(lambda x: list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < self._blank_label), x)), [decoded], [tf.int32])  # Removes repetitive labels.
 
 				return {'logit': logits, 'decoded_label': decoded}
 				"""
 				# No decoding.
-				return {'logit': logits, 'decoded_label': None}
+				#return {'logit': logits}
+				return {'logit': logits, 'decoded_label': logits}
 
 	def _get_loss_from_sparse_label(self, y, t_sparse, y_len, t_len, is_time_major=True):
-		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=t_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
+		# TODO [decide] >> Which one should be used, sequence_length=y_len or sequence_length=t_len?
+		loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=is_time_major)
 		#loss = tf.nn.ctc_loss_v2(labels=t_sparse, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=self._blank_label)
 		#loss = tf.nn.ctc_loss_v2(labels=t, logits=y, label_length=t_len, logit_length=y_len, logits_time_major=is_time_major, unique=None, blank_index=self._blank_label)
 		loss = tf.reduce_mean(loss)
@@ -168,10 +178,20 @@ class MyModel(object):
 
 	# When logits are used as y.
 	def _get_accuracy_from_logit(self, y, t):
-		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
+		"""
+		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: Time-steps are different.
 		accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 		return accuracy
+		"""
+		"""
+		# FIXME [implement] >> The below logic has to be implemented in TensorFlow.
+		correct_prediction = len(list(filter(lambda xx: len(list(filter(lambda x: x[0] == x[1], zip(xx[0], xx[1])))) == max(len(xx[0]), len(xx[1])), zip(tf.argmax(y, axis=-1), t))))
+		accuracy = correct_prediction / max(len(y), len(t))
+
+		return accuracy
+		"""
+		raise NotImplementedError
 
 	# When sparse labels which are decoded by CTC beam search are used as y.
 	def _get_accuracy_from_sparse_label(self, y_sparse, t_sparse):
@@ -408,7 +428,6 @@ class MyRunner(object):
 				print('Epoch {}/{}:'.format(epoch, final_epoch))
 
 				start_time = time.time()
-				"""
 				train_loss, train_acc, num_examples = 0.0, 0.0, 0
 				for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True)):
 					#batch_images, batch_labels_str, batch_labels_int = batch_data
@@ -451,9 +470,11 @@ class MyRunner(object):
 
 				history['loss'].append(train_loss)
 				#history['acc'].append(train_acc)
+				"""
 
 				#--------------------
-				if epoch % 10 == 0:
+				#if epoch % 10 == 0:
+				if True:
 					start_time = time.time()
 					val_loss, val_acc, num_examples = 0.0, 0.0, 0
 					for batch_step, (batch_data, num_batch_examples) in enumerate(self._dataset.create_test_batch_generator(batch_size, test_steps_per_epoch, shuffle=False)):
@@ -570,8 +591,8 @@ class MyRunner(object):
 						total_char_count += max(len(ps), len(gs))
 					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
 					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
-				print('Test: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-				print('Test: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+				print('\tTest: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+				print('\tTest: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 				# Output to a file.
 				csv_filepath = os.path.join(test_dir_path, 'test_results.csv')
