@@ -138,9 +138,9 @@ class MyModel(object):
 				logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 				# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
 				#	If the number of classes increases, its computation time becomes much slower.
-				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1, merge_repeated=False)
-				#decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=100, top_paths=1)
-				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=10, top_paths=1)
+				beam_width = 10 #100
+				#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1, merge_repeated=False)
+				decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1)
 				decoded_best = decoded[0]  # Sparse tensor.
 				#decoded_best = tf.sparse.to_dense(decoded[0], default_value=self._default_value)  # Dense tensor.
 
@@ -173,6 +173,10 @@ class MyModel(object):
 	def _get_loss_from_dense_label(self, y, t, y_len, t_len):
 		y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
 		loss = tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y, input_length=y_len, label_length=t_len)
+		# NOTE [info] >> This model is not trained when using tf.nn.ctc_loss() instead of tf.keras.backend.ctc_batch_cost().
+		#	I don't know why.
+		#t_sparse = tf.contrib.layers.dense_to_sparse(t, eos_token=self._default_value)
+		#loss = tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False)
 		loss = tf.reduce_mean(loss)
 
 		return loss

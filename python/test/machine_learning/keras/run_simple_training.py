@@ -203,7 +203,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 #--------------------------------------------------------------------
 
 class MyModel(object):
-	#classmethod
+	@classmethod
 	def create_model(cls, input_shape, num_classes):
 		model = Sequential()
 
@@ -370,19 +370,19 @@ class MyRunner(object):
 		print('[SWL] Info: End testing: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None and test_labels is not None:
-			print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			if self._num_classes > 2:
+			if self._dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
 				ground_truths = np.argmax(test_labels, -1)
-			elif 2 == self._num_classes:
+			elif 2 == self._dataset.num_classes:
 				inferences = np.around(inferences)
 				ground_truths = test_labels
 			else:
 				raise ValueError('Invalid number of classes')
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			print('\tTest: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
 			print('[SWL] Warning: Invalid test results.')
 
@@ -426,18 +426,20 @@ class MyRunner(object):
 		print('[SWL] Info: End inferring: {} secs.'.format(time.time() - start_time))
 
 		if inferences is not None:
-			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			if self._num_classes > 2:
+			if self._dataset.num_classes > 2:
 				inferences = np.argmax(inferences, -1)
-			elif 2 == self._num_classes:
+			elif 2 == self._dataset.num_classes:
 				inferences = np.around(inferences)
 			else:
 				raise ValueError('Invalid number of classes')
 
-			print('Inference results: index,inference')
+			print('\tInference results: index,inference')
 			for idx, inf in enumerate(inferences):
 				print('{},{}'.format(idx, inf))
+				if (idx + 1) >= 10:
+					break
 		else:
 			print('[SWL] Warning: Invalid test results.')
 
@@ -607,7 +609,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --epoch 30
+#	python run_simple_training.py --train --test --infer --epoch 30
 
 if '__main__' == __name__:
 	main()

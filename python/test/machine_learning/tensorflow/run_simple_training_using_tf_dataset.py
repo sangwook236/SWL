@@ -360,7 +360,7 @@ class MyRunner(object):
 
 			inferences = np.vstack(inferences)
 			if inferences is not None:
-				print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+				print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				if self._num_classes > 2:
 					inferences = np.argmax(inferences, -1)
@@ -372,7 +372,7 @@ class MyRunner(object):
 					raise ValueError('Invalid number of classes')
 
 				correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-				print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+				print('\tTest: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 			else:
 				print('[SWL] Warning: Invalid test results.')
 

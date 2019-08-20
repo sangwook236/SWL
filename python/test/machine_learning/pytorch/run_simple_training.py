@@ -208,10 +208,10 @@ class MyRunner(object):
 
 		inferences, ground_truths = np.array(inferences), np.array(ground_truths)
 		if inferences is not None and ground_truths is not None:
-			print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			correct_estimation_count = np.count_nonzero(np.equal(inferences, ground_truths))
-			print('Test: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
+			print('\tTest: accuracy = {} / {} = {}.'.format(correct_estimation_count, ground_truths.size, correct_estimation_count / ground_truths.size))
 		else:
 			print('[SWL] Warning: Invalid test results.')
 
@@ -251,11 +251,13 @@ class MyRunner(object):
 
 		inferences = np.array(inferences)
 		if inferences is not None:
-			print('Inference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+			print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			print('Inference results: index,inference')
+			print('\tInference results: index,inference')
 			for idx, inf in enumerate(inferences):
 				print('{},{}'.format(idx, inf))
+				if (idx + 1) >= 10:
+					break
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 
@@ -425,7 +427,7 @@ def main():
 #--------------------------------------------------------------------
 
 # Usage:
-#	python run_simple_training.py --train --test --epoch 30
+#	python run_simple_training.py --train --test --infer --epoch 30
 
 if '__main__' == __name__:
 	main()
