@@ -12,10 +12,10 @@ import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
 def generate_random_word_set_test():
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
 		#data = fd.readlines()  # A string.
 		#data = fd.read().strip('\n')  # A list of strings.
 		#data = fd.read().splitlines()  # A list of strings.
@@ -61,10 +61,10 @@ def generate_random_word_set_test():
 	print('Generated word set =', word_set)
 
 def generate_repetitive_word_set_test():
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
 		#data = fd.readlines()  # A string.
 		#data = fd.read().strip('\n')  # A list of strings.
 		#data = fd.read().splitlines()  # A list of strings.
@@ -258,8 +258,8 @@ def generate_simple_text_lines_test():
 
 	#--------------------
 	step = 1
-	for scene_list, scene_text_mask_list in generator:
-		for scene, scene_text_mask in zip(scene_list, scene_text_mask_list):
+	for text_list, scene_list, scene_text_mask_list in generator:
+		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
 			if 'posix' == os.name:
 				cv2.imwrite('./scene.png', scene)
 				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
@@ -432,10 +432,10 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	make_dir(scene_dir_path)
 	make_dir(mask_dir_path)
 
-	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
-	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
-	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
 		#data = fd.readlines()  # A string.
 		#data = fd.read().strip('\n')  # A list of strings.
 		#data = fd.read().splitlines()  # A list of strings.
@@ -598,6 +598,68 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	image_filepaths, mask_filepaths, gt_texts, gt_boxes = load_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename)
 	print('Generated scene dataset: #images = {}, #masks = {}, #texts = {}, #boxes = {}.'.format(len(image_filepaths), len(mask_filepaths), len(gt_texts), len(gt_boxes)))
 
+
+def generate_single_letter_dataset():
+	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#data = fd.readlines()  # A string.
+		#data = fd.read().strip('\n')  # A list of strings.
+		#data = fd.read().splitlines()  # A list of strings.
+		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
+	count = 80
+	hangeul_charset = str()
+	for idx in range(0, len(data), count):
+		txt = ''.join(data[idx:idx+count])
+		#hangeul_charset += ('' if 0 == idx else '\n') + txt
+		hangeul_charset += txt
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+	digit_charset = '0123456789'
+	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+
+	charsets = [
+		hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset,
+	]
+
+	num_char_repetitions = 2
+	min_char_count, max_char_count = 1, 1
+	word_set = set()
+	for charset in charsets:
+		word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, max_char_count))
+
+	#--------------------
+	characterTransformer = tg_util.IdentityTransformer()
+	#characterTransformer = tg_util.RotationTransformer(-30, 30)
+	#characterTransformer = tg_util.ImgaugAffineTransformer()
+	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
+	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+
+	#--------------------
+	font_size = 64
+	min_font_size, max_font_size = int(font_size * 0.8), int(font_size * 1.25)
+	min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+
+	#font_color = (255, 255, 255)
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))sili
+	font_color = None  # Uses random font colors.
+	#bg_color = (0, 0, 0)
+	bg_color = None  # Uses random colors.
+
+	batch_size = 1024
+	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+
+	#--------------------
+	idx = 1
+	for text_list, scene_list, scene_text_mask_list in generator:
+		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
+			cv2.imwrite('./{}_{}.png'.format(idx, text), scene)
+			#cv2.imwrite('./{}_{}_mask.png'.format(idx, text), scene_text_mask)
+			idx += 1
+
 def main():
 	#generate_random_word_set_test()
 	#generate_repetitive_word_set_test()
@@ -611,8 +673,10 @@ def main():
 
 	# Create a text generator.
 	#generate_simple_text_lines_test()
-	generate_text_lines_test()
+	#generate_text_lines_test()
 	#generate_scene_texts_test()
+
+	generate_single_letter_dataset()
 
 #--------------------------------------------------------------------
 

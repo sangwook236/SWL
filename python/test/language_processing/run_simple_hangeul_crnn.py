@@ -38,7 +38,7 @@ class MyModel(object):
 		#--------------------
 		if self._is_sparse_output:
 			#self._decode_functor = lambda args: args  # Dense tensor.
-			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
+			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32) if args[1].size else list()  # Sparse tensor.
 			self._get_feed_dict_functor = self._get_feed_dict_for_sparse
 		else:
 			self._decode_functor = functools.partial(MyModel._decode_label, blank_label=blank_label)
@@ -184,7 +184,7 @@ class MyModel(object):
 	# When logits are used as y.
 	def _get_accuracy_from_logit(self, y, t):
 		"""
-		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: Time-steps are different.
+		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: The time-steps of y and t are different.
 		accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 		return accuracy
@@ -338,6 +338,8 @@ class MyModel(object):
 
 	@staticmethod
 	def _decode_label(labels, blank_label):
+		#if 0 == labels.size:
+		#	return list()
 		labels = np.argmax(labels, axis=-1)
 		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), labels))  # Removes repetitive labels.
 

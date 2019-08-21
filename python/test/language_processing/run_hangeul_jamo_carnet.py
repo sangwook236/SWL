@@ -38,7 +38,7 @@ class MyModel(object):
 		#--------------------
 		if self._is_sparse_output:
 			#self._decode_functor = lambda args: args  # Dense tensor.
-			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32)  # Sparse tensor.
+			self._decode_functor = lambda args: swl_ml_util.sparse_to_sequences(*args, dtype=np.int32) if args[1].size else list()  # Sparse tensor.
 			self._get_feed_dict_functor = self._get_feed_dict_for_sparse
 		else:
 			self._decode_functor = functools.partial(MyModel._decode_label, blank_label=blank_label)
@@ -184,7 +184,7 @@ class MyModel(object):
 	# When logits are used as y.
 	def _get_accuracy_from_logit(self, y, t):
 		"""
-		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: Time-steps are different.
+		correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: The time-steps of y and t are different.
 		accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 		return accuracy
@@ -316,6 +316,20 @@ class MyModel(object):
 		with tf.variable_scope('birnn_1', reuse=tf.AUTO_REUSE):
 			fw_cell_1, bw_cell_1 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
+			# Attention.
+			num_attention_units = 128
+			if True:
+				# Additive attention.
+				# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
+				attention_mechanism = tf.contrib.seq2seq.BahdanauAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+			else:
+				# Multiplicative attention.
+				# REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
+				attention_mechanism = tf.contrib.seq2seq.LuongAttention(num_attention_units, memory=inputs, memory_sequence_length=input_len)
+			# TODO [decide] >> Are different attention_mechanisms used for fw_cell_1 and bw_cell_1?
+			fw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(fw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
+			bw_cell_1 = tf.contrib.seq2seq.AttentionWrapper(bw_cell_1, attention_mechanism, attention_layer_size=num_attention_units)
+
 			outputs_1, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_1, bw_cell_1, inputs, input_len, dtype=tf.float32)
 			outputs_1 = tf.concat(outputs_1, 2)
 			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
@@ -338,6 +352,8 @@ class MyModel(object):
 
 	@staticmethod
 	def _decode_label(labels, blank_label):
+		#if 0 == labels.size:
+		#	return list()
 		labels = np.argmax(labels, axis=-1)
 		return list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < blank_label), labels))  # Removes repetitive labels.
 

@@ -26,6 +26,11 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			return self._create_crnn(inputs, num_classes, is_training)
 
 	def _create_crnn(self, inputs, num_classes, is_training):
+		#kernel_initializer = None
+		#kernel_initializer = tf.initializers.he_normal()
+		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
+		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
+
 		# Preprocessing.
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
 			inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
@@ -39,21 +44,19 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		num_cnn_features = 64
 
 		with tf.variable_scope('convolutional_layer', reuse=tf.AUTO_REUSE):
-			cnn_outputs = self._create_convolutional_layer(inputs, num_cnn_features, is_training)
+			cnn_outputs = self._create_convolutional_layer(inputs, num_cnn_features, kernel_initializer, is_training)
 
 		#--------------------
 		# Recurrent layer.
 		with tf.variable_scope('recurrent_layer', reuse=tf.AUTO_REUSE):
-			rnn_outputs = self._create_recurrent_layer(cnn_outputs, is_training)
+			rnn_outputs = self._create_recurrent_layer(cnn_outputs, kernel_initializer, is_training)
 
 		#--------------------
 		# Transcription layer.
 		with tf.variable_scope('transcription_layer', reuse=tf.AUTO_REUSE):
-			return self._create_transcription_layer(rnn_outputs, num_classes, is_training)
+			return self._create_transcription_layer(rnn_outputs, num_classes, kernel_initializer, is_training)
 
-	def _create_convolutional_layer(self, inputs, num_features, is_training):
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
-
+	def _create_convolutional_layer(self, inputs, num_features, kernel_initializer, is_training):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
 			conv1 = tf.layers.conv2d(inputs, filters=64, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv1 = tf.layers.batch_normalization(conv1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
@@ -101,12 +104,10 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 			return outputs
 
-	def _create_recurrent_layer(self, inputs, is_training):
+	def _create_recurrent_layer(self, inputs, kernel_initializer, is_training):
 		num_hidden_units = 256
 		keep_prob = 1.0
 		#keep_prob = 0.5
-
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
 
 		with tf.variable_scope('rnn1', reuse=tf.AUTO_REUSE):
 			cell_fw1 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'fw_unit_cell')  # Forward cell.
@@ -136,9 +137,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 			return rnn_outputs2
 
-	def _create_transcription_layer(self, inputs, num_classes, is_training):
-		kernel_initializer = tf.variance_scaling_initializer(scale=2.0, mode='fan_in', distribution='truncated_normal')
-
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
 		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 
