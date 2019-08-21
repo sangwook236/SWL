@@ -653,6 +653,9 @@ def generate_single_letter_dataset():
 	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
 
 	#--------------------
+	data_dir_path = './single_letters'
+	os.makedirs(data_dir_path, exist_ok=True)
+
 	idx = 1
 	for text_list, scene_list, scene_text_mask_list in generator:
 		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
