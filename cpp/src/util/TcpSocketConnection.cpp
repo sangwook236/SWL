@@ -33,8 +33,11 @@ TcpSocketConnection::~TcpSocketConnection()
 void TcpSocketConnection::start()
 {
 	// put the socket into non-blocking mode.
+	/*
 	boost::asio::ip::tcp::socket::non_blocking_io non_blocking_io(true);
 	socket_.io_control(non_blocking_io);
+	*/
+	socket_.non_blocking(true);
 
 	doStartOperation();
 }

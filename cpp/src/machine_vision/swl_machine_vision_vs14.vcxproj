@@ -88,7 +88,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.0.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
@@ -98,7 +98,7 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;swl_based.lib;opencv_calib3d400d.lib;opencv_imgproc400d.lib;opencv_highgui400d.lib;opencv_core400d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;swl_based.lib;opencv_calib3d410d.lib;opencv_imgproc410d.lib;opencv_highgui410d.lib;opencv_core410d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -112,7 +112,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.0.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -121,7 +121,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;swl_based.lib;opencv_calib3d400d.lib;opencv_imgproc400d.lib;opencv_highgui400d.lib;opencv_core400d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_utild.lib;swl_mathd.lib;swl_based.lib;opencv_calib3d410d.lib;opencv_imgproc410d.lib;opencv_highgui410d.lib;opencv_core410d.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -133,7 +133,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.0.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -141,7 +141,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;swl_base.lib;opencv_calib3d400.lib;opencv_imgproc400.lib;opencv_highgui400.lib;opencv_core400.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;swl_base.lib;opencv_calib3d410.lib;opencv_imgproc410.lib;opencv_highgui410.lib;opencv_core410.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -156,7 +156,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.0.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../inc;$(MY_USR_LOCAL_INCLUDE)/opencv-4.1.0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;_USRDLL;SWL_MACHINE_VISION_EXPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -164,7 +164,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;swl_base.lib;opencv_calib3d400.lib;opencv_imgproc400.lib;opencv_highgui400.lib;opencv_core400.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>swl_rnd_util.lib;swl_math.lib;swl_base.lib;opencv_calib3d410.lib;opencv_imgproc410.lib;opencv_highgui410.lib;opencv_core410.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>

@@ -196,7 +196,7 @@ void image_erosion_example()
 	cv::Mat src(cv::imread(img_filepath, cv::IMREAD_GRAYSCALE));
 	if (src.empty())
 	{
-		std::cout << "Image not found: " << img_filepath << std::endl;
+		std::cout << "Failed to load an image file: " << img_filepath << std::endl;
 		return;
 	}
 
@@ -219,9 +219,9 @@ void image_erosion_example()
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, kernelSize, roi_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Erosion (parallel_for + ROI points) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		cv::imshow("Erosion Result 1", dst);
+		cv::imshow("Erosion (parallel_for + ROI points)", dst);
 	}
 
 	//--------------------
@@ -264,10 +264,10 @@ void image_erosion_example()
 			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopErode<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
 
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Erosion (parallel_for + ROI boundary points) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		//cv::imshow("Erosion Result 2", dst);
-		cv::imshow("Erosion Result 2", src - dst > 0);
+		//cv::imshow("Erosion (parallel_for + ROI boundary)", dst);
+		cv::imshow("Erosion (parallel_for + ROI boundary points)", src - dst > 0);
 	}
 
 	//--------------------
@@ -282,9 +282,9 @@ void image_erosion_example()
 			//cv::erode(src, dst, cv::Mat(), anchor, delta, cv::BORDER_DEFAULT);
 			cv::erode(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Erosion (cv::erode) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		cv::imshow("Erosion Result 3", dst);
+		cv::imshow("Erosion (cv::erode)", dst);
 	}
 
 	cv::waitKey(0);
@@ -296,7 +296,7 @@ void image_dilation_example()
 	cv::Mat src(cv::imread(img_filepath, cv::IMREAD_GRAYSCALE));
 	if (src.empty())
 	{
-		std::cout << "Image not found: " << img_filepath << std::endl;
+		std::cout << "Failed to load an image file: " << img_filepath << std::endl;
 		return;
 	}
 	
@@ -319,9 +319,9 @@ void image_dilation_example()
 			cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, kernelSize, roi_points));
 			//cv::parallel_for_(cv::Range(0, (int)roi_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_points));
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Dilation (parallel_for + ROI points) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		cv::imshow("Dilation Result 1", dst);
+		cv::imshow("Dilation (parallel_for + ROI points)", dst);
 	}
 
 	//--------------------
@@ -365,10 +365,10 @@ void image_dilation_example()
 			//cv::parallel_for_(cv::Range(0, (int)roi_ext_boundary_points.size()), ParallelLoopDilate<uint8_t>(src, dst, cv::Mat::ones(kernelSize, src.type()), roi_ext_boundary_points));
 
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Dilation (parallel_for + ROI boundary points) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		//cv::imshow("Dilation Result 2", dst);
-		cv::imshow("Dilation Result 2", src + dst > 0);
+		//cv::imshow("Dilation (parallel_for + ROI boundary points)", dst);
+		cv::imshow("Dilation (parallel_for + ROI boundary points)", src + dst > 0);
 	}
 
 	//--------------------
@@ -383,9 +383,9 @@ void image_dilation_example()
 			//cv::dilate(src, dst, cv::Mat(), anchor, iterations, cv::BORDER_DEFAULT);
 			cv::dilate(src, dst, kernel, anchor, iterations, cv::BORDER_DEFAULT);
 			const auto endTime(std::chrono::high_resolution_clock::now());
-			std::cout << "Took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
+			std::cout << "Dilation (cv::dilate) took " << std::chrono::duration<double, std::milli>(endTime - startTime).count() << " ms." << std::endl;
 		}
-		cv::imshow("Dilation Result 3", dst);
+		cv::imshow("Dilation (cv::dilate)", dst);
 	}
 
 	cv::waitKey(0);

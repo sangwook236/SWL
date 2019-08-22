@@ -80,7 +80,7 @@ double compare_histogram(const cv::Mat &histo1, const cv::Mat &histo2)
 	//else if (std::fabs(sums1[0]) >= eps && std::fabs(sums2[0]) < eps) return std::numeric_limits<double>::max();
 	else if (std::fabs(sums1[0]) < eps && std::fabs(sums2[0]) < eps) return 0.0;
 
-	return cv::compareHist(histo1, histo2, CV_COMP_BHATTACHARYYA);
+	return cv::compareHist(histo1, histo2, cv::HISTCMP_BHATTACHARYYA);
 #endif
 }
 
