@@ -2,6 +2,7 @@ import abc
 import numpy as np
 import tensorflow as tf
 from swl.machine_learning.tensorflow_model import SimpleSequentialTensorFlowModel
+#import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -13,10 +14,18 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
+		model_output_len = [self._model_output_len] * num_data
 		if 1 == len_data:
-			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: [self._model_output_len] * num_data}
+			feed_dict = {self._input_ph: data[0], self._model_output_len_ph: model_output_len}
 		elif 2 == len_data:
-			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: [self._model_output_len] * num_data}
+			"""
+			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: model_output_len}
+			#feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._model_output_len_ph: model_output_len}
+			"""
+			# Use output lengths.
+			output_len = list(map(lambda lbl: len(lbl), data[1]))
+			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
+			#feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
@@ -54,7 +63,14 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		#--------------------
 		# Transcription layer.
 		with tf.variable_scope('transcription_layer', reuse=tf.AUTO_REUSE):
-			return self._create_transcription_layer(rnn_outputs, num_classes, kernel_initializer, is_training)
+			logits = self._create_transcription_layer(rnn_outputs, num_classes, kernel_initializer, is_training)
+
+		#--------------------
+		# Decoding layer.
+		with tf.variable_scope('decoding_layer', reuse=tf.AUTO_REUSE):
+			decoded = self._create_decoding_layer(logits)
+
+		return {'logit': logits, 'decoded_label': decoded}
 
 	def _create_convolutional_layer(self, inputs, num_features, kernel_initializer, is_training):
 		with tf.variable_scope('conv1', reuse=tf.AUTO_REUSE):
@@ -137,11 +153,13 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 			return rnn_outputs2
 
+	@abc.abstractmethod
 	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
-		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
-		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+		raise NotImplementedError
 
-		return outputs
+	@abc.abstractmethod
+	def _create_decoding_layer(self, logits):
+		raise NotImplementedError
 
 	def _create_unit_cell(self, num_units, kernel_initializer, name):
 		#return tf.nn.rnn_cell.RNNCell(num_units, name=name)
@@ -154,19 +172,28 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes, is_sparse_output=False)
 
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
+		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
+		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+
+		return outputs
+
+	def _create_decoding_layer(self, logits):
+		return None
+
 	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			masks = tf.sequence_mask(lengths=y_len, maxlen=tf.reduce_max(y_len), dtype=tf.float32)
 			# Weighted cross-entropy loss for a sequence of logits.
-			#loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=t, weights=masks)
-			loss = tf.contrib.seq2seq.sequence_loss(logits=y, targets=tf.argmax(t, axis=-1), weights=masks)
+			#loss = tf.contrib.seq2seq.sequence_loss(logits=y['logit'], targets=t, weights=masks)
+			loss = tf.contrib.seq2seq.sequence_loss(logits=y['logit'], targets=tf.argmax(t, axis=-1), weights=masks)
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
 	def _get_accuracy(self, y, t, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.argmax(t, axis=-1))
+			correct_prediction = tf.equal(tf.argmax(y['logit'], axis=-1), tf.argmax(t, axis=-1))
 			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
 			tf.summary.scalar('accuracy', accuracy)
@@ -178,35 +205,41 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 
-	def _get_loss(self, y, t, y_len, t_len):
-		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			# NOTE [info] >> The first couple of outputs of RNN might be garbage (2:).
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
+		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 
+		return outputs  # (None, ???, num_classes).
+
+	def _create_decoding_layer(self, logits):
+		# CTC beam search decoding.
+		y = tf.transpose(logits, (1, 0, 2))  # Time-major.
+		# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
+		#	If the number of classes increases, its computation time becomes much slower.
+		beam_width = 10 #100
+		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1, merge_repeated=True)
+		decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1)
+		#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits, sequence_length=self._model_output_len_ph, merge_repeated=True)
+		return decoded[0]  # Sparse tensor.
+		#return tf.sparse.to_dense(decoded[0], default_value=self._default_value)  # Dense tensor.
+
+	def _get_loss(self, y, t_sparse, y_len, t_len):
+		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y['logit'], sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t, y_len):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			# TODO [check] >> Which accuracy?
-			"""
-			y = tf.transpose(y, (1, 0, 2))  # Time-major.
-
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
-			y_sparse = decoded[0]  # tf.SparseTensor.
-
 			# Inaccuracy: label error rate.
-			# NOTE [info] >> tf.edit_distance() is too slow.
-			#	I guess that this function is run on CPU, not GPU.
-			#	We do not need to compute accuracy to train.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t, normalize=True))  # int64 -> int32.
+			# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
+			#	Accuracy may not be calculated to speed up the training.
+			ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y['decoded_label'], tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
-			"""
-			accuracy = tf.constant(-1, tf.float32)
+			#accuracy = tf.constant(-1, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
@@ -220,30 +253,46 @@ class Synth90kCrnnWithKerasCtcLoss(Synth90kCrnn):
 		# FIXME [fix] >>
 		self._eos_token = 36
 
-	def _get_loss(self, y, t_sparse, y_len, t_len):
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
+		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
+		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+
+		return outputs  # (None, ???, num_classes).
+
+	def _create_decoding_layer(self, logits):
+		"""
+		# Decoding.
+		decoded = tf.argmax(logits, axis=-1)
+		# FIXME [fix] >> This does not work correctly.
+		#	Refer to MyModel._decode_label() in ${SWL_PYTHON_HOME}/test/language_processing/run_simple_hangeul_crrn.py.
+		decoded = tf.numpy_function(lambda x: list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < self._blank_label), x)), [decoded], [tf.int32])  # Removes repetitive labels.
+		return decoded
+		"""
+		return None
+
+	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t, y, y_len, t_len))
+			y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y['logit'], input_length=y_len, label_length=t_len))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t_sparse, y_len):
+	def _get_accuracy(self, y, t, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			# TODO [check] >> Which accuracy?
 			"""
-			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: The time-steps of y and t are different.
+			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
-			y_sparse = decoded[0]  # tf.SparseTensor.
+			return accuracy
+			"""
+			"""
+			# FIXME [implement] >> The below logic has to be implemented in TensorFlow.
+			correct_prediction = len(list(filter(lambda xx: len(list(filter(lambda x: x[0] == x[1], zip(xx[0], xx[1])))) == max(len(xx[0]), len(xx[1])), zip(tf.argmax(y, axis=-1), t))))
+			accuracy = correct_prediction / max(len(y), len(t))
 
-			# Inaccuracy: label error rate.
-			# NOTE [info] >> tf.edit_distance() is too slow.
-			#	I guess that this function is run on CPU, not GPU.
-			#	We do not need to compute accuracy to train.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t_sparse, normalize=True))  # int64 -> int32.
-			accuracy = 1.0 - ler
+			return accuracy
 			"""
 			accuracy = tf.constant(-1.0, tf.float32)
 
@@ -256,35 +305,42 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
 		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
 
-	def _get_loss(self, y, t, y_len, t_len):
-		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
-			# NOTE [info] >> The first couple of outputs of RNN might be garbage (2:).
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
+		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
+		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
 
+		return outputs  # (None, ???, num_classes).
+
+	def _create_decoding_layer(self, logits):
+		# CTC beam search decoding.
+		y = tf.transpose(logits, (1, 0, 2))  # Time-major.
+		# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
+		#	If the number of classes increases, its computation time becomes much slower.
+		beam_width = 10 #100
+		#decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1, merge_repeated=True)
+		decoded, log_prob = tf.nn.ctc_beam_search_decoder_v2(inputs=logits, sequence_length=self._model_output_len_ph, beam_width=beam_width, top_paths=1)
+		#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=logits, sequence_length=self._model_output_len_ph, merge_repeated=True)
+		return decoded[0]  # Sparse tensor.
+		#return tf.sparse.to_dense(decoded[0], default_value=self._default_value)  # Dense tensor.
+
+	def _get_loss(self, y, t_sparse, y_len, t_len):
+		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
 			# TODO [check] >> The case of preprocess_collapse_repeated=True & ctc_merge_repeated=True is untested.
-			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
+			loss = tf.reduce_mean(tf.nn.ctc_loss(labels=t_sparse, inputs=y, sequence_length=y_len, preprocess_collapse_repeated=False, ctc_merge_repeated=True, ignore_longer_outputs_than_inputs=False, time_major=False))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t, y_len):
+	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			# TODO [check] >> Which accuracy?
-			"""
-			y = tf.transpose(y, (1, 0, 2))  # Time-major.
-
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
-			y_sparse = decoded[0]  # tf.SparseTensor.
-
 			# Inaccuracy: label error rate.
 			# NOTE [info] >> tf.edit_distance() is too slow.
 			#	I guess that this function is run on CPU, not GPU.
 			#	We do not need to compute accuracy to train.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t, normalize=True))  # int64 -> int32.
+			ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y['decoded_label'], tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
-			"""
-			accuracy = tf.constant(-1, tf.float32)
+			#accuracy = tf.constant(-1, tf.float32)
 
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
@@ -351,30 +407,46 @@ class Synth90kDilatedCrnnWithKerasCtcLoss(Synth90kCrnn):
 		# FIXME [fix] >>
 		self._eos_token = 36
 
-	def _get_loss(self, y, t_sparse, y_len, t_len):
+	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
+		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
+		#outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, activity_regularizer=tf.contrib.layers.l2_regularizer(0.0001), name='dense')
+
+		return outputs  # (None, ???, num_classes).
+
+	def _create_decoding_layer(self, logits):
+		"""
+		# Decoding.
+		decoded = tf.argmax(logits, axis=-1)
+		# FIXME [fix] >> This does not work correctly.
+		#	Refer to MyModel._decode_label() in ${SWL_PYTHON_HOME}/test/language_processing/run_simple_hangeul_crrn.py.
+		decoded = tf.numpy_function(lambda x: list(map(lambda lbl: list(k for k, g in itertools.groupby(lbl) if k < self._blank_label), x)), [decoded], [tf.int32])  # Removes repetitive labels.
+		return decoded
+		"""
+		return None
+
+	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
-			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(t, y, y_len, t_len))
+			y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y['logit'], input_length=y_len, label_length=t_len))
 
 			tf.summary.scalar('loss', loss)
 			return loss
 
-	def _get_accuracy(self, y, t_sparse, y_len):
+	def _get_accuracy(self, y, t, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
-			# TODO [check] >> Which accuracy?
 			"""
-			y = tf.transpose(y, (1, 0, 2))  # Time-major.
+			correct_prediction = tf.equal(tf.argmax(y, axis=-1), tf.cast(t, tf.int64))  # Error: The time-steps of y and t are different.
+			accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
 
-			decoded, log_prob = tf.nn.ctc_beam_search_decoder(inputs=y, sequence_length=y_len, beam_width=100, top_paths=1, merge_repeated=True)
-			#decoded, log_prob = tf.nn.ctc_greedy_decoder(inputs=y, sequence_length=y_len, merge_repeated=True)
-			y_sparse = decoded[0]  # tf.SparseTensor.
+			return accuracy
+			"""
+			"""
+			# FIXME [implement] >> The below logic has to be implemented in TensorFlow.
+			correct_prediction = len(list(filter(lambda xx: len(list(filter(lambda x: x[0] == x[1], zip(xx[0], xx[1])))) == max(len(xx[0]), len(xx[1])), zip(tf.argmax(y, axis=-1), t))))
+			accuracy = correct_prediction / max(len(y), len(t))
 
-			# Inaccuracy: label error rate.
-			# NOTE [info] >> tf.edit_distance() is too slow.
-			#	I guess that this function is run on CPU, not GPU.
-			#	We do not need to compute accuracy to train.
-			ler = tf.reduce_mean(tf.edit_distance(tf.cast(y_sparse, tf.int32), t_sparse, normalize=True))  # int64 -> int32.
-			accuracy = 1.0 - ler
+			return accuracy
 			"""
 			accuracy = tf.constant(-1.0, tf.float32)
 

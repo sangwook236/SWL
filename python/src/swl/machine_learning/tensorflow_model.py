@@ -171,8 +171,7 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 			self._output_ph = tf.sparse_placeholder(tf.int32, shape=self._output_shape, name='output_ph')
 		else:
 			self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
-			self._output_ph = tf.placeholder(tf.int32, shape=self._output_shape, name='output_ph')
-		#self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
+		self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
 		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
 
 	@abc.abstractmethod
@@ -190,17 +189,13 @@ class SimpleSequentialTensorFlowModel(TensorFlowModel):
 	def create_training_model(self):
 		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._num_classes, True)
 
-		# FIXME [implement] >>
-		#self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
-		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, None)
+		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_ph, self._model_output_len_ph)
 
 	def create_evaluation_model(self):
 		self._model_output = self._create_single_model(self._input_ph, self._input_shape, self._num_classes, False)
 
-		# FIXME [implement] >>
-		#self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
-		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, None)
+		self._loss = self._get_loss(self._model_output, self._output_ph, self._model_output_len_ph, self._output_len_ph)
 		self._accuracy = self._get_accuracy(self._model_output, self._output_ph, self._model_output_len_ph)
 
 	def create_inference_model(self):
