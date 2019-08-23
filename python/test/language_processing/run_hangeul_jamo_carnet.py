@@ -123,14 +123,13 @@ class MyModel(object):
 			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
 			self._model_output_len = rnn_input_shape[1]  # Model output time-steps.
 
-			rnn_input = tf.reshape(cnn_output, (-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]), name='reshape')
+			rnn_input = tf.reshape(cnn_output, (-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]), name='reshape')
 			# TODO [decide] >>
 			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
 
 		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
 			if self._is_sparse_output:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
@@ -215,14 +214,14 @@ class MyModel(object):
 			conv1 = tf.nn.relu(conv1, name='relu')
 			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
 
-			# (None, width/2, height/2, 64).
+			# (None, height/2, width/2, 64).
 
 		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
 			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv2 = tf.nn.relu(conv2, name='relu')
 			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
 
-			# (None, width/4, height/4, 128).
+			# (None, height/4, width/4, 128).
 
 		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
 			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
@@ -231,10 +230,13 @@ class MyModel(object):
 
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
+			# TODO [decide] >>
+			#conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
+			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
 
-			# (None, width/4, height/8, 256).
+			# (None, height/4, width/8, 256) -> (None, height/8, width/8, 256).
 
+		# TODO [decide] >> Is these layers required?
 		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
 			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
 			conv4 = tf.nn.relu(conv4, name='relu1')
@@ -242,17 +244,19 @@ class MyModel(object):
 
 			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
+			# TODO [decide] >>
+			#conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 2), padding='same', name='maxpool')
+			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 1), padding='same', name='maxpool')
 
-			# (None, width/4, height/16, 512).
+			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
 
 		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
+			# TODO [decide] >> filters = 512?
 			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
 			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			conv5 = tf.nn.relu(conv5, name='relu')
 
-			# (None, width/4, height/16, 512).
+			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
 
 		return conv5
 
@@ -264,7 +268,7 @@ class MyModel(object):
 			conv1 = tf.nn.relu(conv1, name='relu')
 			conv1 = tf.layers.max_pooling2d(conv1, pool_size=(2, 2), strides=2, name='maxpool')
 
-			# (None, width/2, height/2, 64).
+			# (None, height/2, width/2, 64).
 
 		with tf.variable_scope('conv2', reuse=tf.AUTO_REUSE):
 			conv2 = tf.layers.conv2d(conv1, filters=128, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv')
@@ -272,7 +276,7 @@ class MyModel(object):
 			conv2 = tf.nn.relu(conv2, name='relu')
 			conv2 = tf.layers.max_pooling2d(conv2, pool_size=(2, 2), strides=2, name='maxpool')
 
-			# (None, width/4, height/4, 128).
+			# (None, height/4, width/4, 128).
 
 		with tf.variable_scope('conv3', reuse=tf.AUTO_REUSE):
 			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
@@ -282,10 +286,13 @@ class MyModel(object):
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv3 = tf.layers.batch_normalization(conv3, name='batchnorm2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
-			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
+			# TODO [decide] >>
+			#conv3 = tf.layers.max_pooling2d(conv3, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
+			conv3 = tf.layers.max_pooling2d(conv3, pool_size=(2, 2), strides=(2, 2), padding='same', name='maxpool')
 
-			# (None, width/4, height/8, 256).
+			# (None, height/4, width/8, 256) -> (None, height/8, width/8, 256).
 
+		# TODO [decide] >> Is these layers required?
 		with tf.variable_scope('conv4', reuse=tf.AUTO_REUSE):
 			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv1')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm')
@@ -296,18 +303,20 @@ class MyModel(object):
 			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
-			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
+			# TODO [decide] >>
+			#conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
+			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(2, 2), strides=(1, 1), padding='same', name='maxpool')
 
-			# (None, width/4, height/16, 512).
+			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
 
 		with tf.variable_scope('conv5', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
+			# TODO [decide] >> filters = 512?
 			conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='same', kernel_initializer=kernel_initializer, name='conv')
 			#conv5 = tf.layers.conv2d(conv4, filters=512, kernel_size=(2, 2), padding='valid', kernel_initializer=kernel_initializer, name='conv')
 			conv5 = tf.layers.batch_normalization(conv5, name='batchnorm')
 			conv5 = tf.nn.relu(conv5, name='relu')
 
-			# (None, width/4, height/16, 512).
+			# (None, height/4, width/16, 512) -> (None, height/8, width/8, 512).
 
 		return conv5
 
@@ -318,6 +327,7 @@ class MyModel(object):
 
 			# Attention.
 			num_attention_units = 128
+			# TODO [decide] >>
 			if True:
 				# Additive attention.
 				# REF [paper] >> "Neural Machine Translation by Jointly Learning to Align and Translate", arXiv 2016.
@@ -335,6 +345,8 @@ class MyModel(object):
 			outputs_1 = tf.layers.batch_normalization(outputs_1, name='batchnorm')
 
 		with tf.variable_scope('birnn_2', reuse=tf.AUTO_REUSE):
+			# TODO [decide] >> Are attention_mechanisms applied to the second Bi-RNN?
+
 			fw_cell_2, bw_cell_2 = MyModel._create_unit_cell(256, kernel_initializer, 'fw_cell'), MyModel._create_unit_cell(256, kernel_initializer, 'bw_cell')
 
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
@@ -724,8 +736,8 @@ def main():
 
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		#data_dir_path = './kr_samples_100000'
-		data_dir_path = './kr_samples_200000'
+		#data_dir_path = './single_letters_100000'
+		data_dir_path = './single_letters_200000'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -777,7 +789,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./single_letters_10000/*.jpg')  # TODO [modify] >>
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

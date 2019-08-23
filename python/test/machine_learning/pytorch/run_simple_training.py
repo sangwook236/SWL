@@ -7,11 +7,7 @@ sys.path.append('../../../src')
 import os, argparse, logging, time, datetime
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 import torchvision
-import torchvision.transforms as transforms
 import cv2
 #import swl.machine_learning.util as swl_ml_util
 
@@ -23,7 +19,7 @@ class MyDataset(object):
 		self._num_classes = 10
 
 		# Preprocess.
-		self._transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+		self._transform = torchvision.transforms.Compose([torchvision.transforms.ToTensor(), torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
 	@property
 	def num_classes(self):
@@ -43,26 +39,26 @@ class MyDataset(object):
 
 #--------------------------------------------------------------------
 
-class MyModel(nn.Module):
+class MyModel(torch.nn.Module):
 	def __init__(self):
 		super(MyModel, self).__init__()
 
-		#self.conv1 = nn.Conv2d(1, 32, 5)
-		self.conv1 = nn.Conv2d(1, 32, 5, padding=2)
-		self.pool = nn.MaxPool2d(2, 2)
-		#self.conv2 = nn.Conv2d(32, 64, 3)
-		self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
-		#self.fc1 = nn.Linear(64 * 5 * 5, 1024)
-		self.fc1 = nn.Linear(64 * 7 * 7, 1024)
-		self.fc2 = nn.Linear(1024, 10)
+		#self.conv1 = torch.nn.Conv2d(1, 32, 5)
+		self.conv1 = torch.nn.Conv2d(1, 32, 5, padding=2)
+		self.pool = torch.nn.MaxPool2d(2, 2)
+		#self.conv2 = torch.nn.Conv2d(32, 64, 3)
+		self.conv2 = torch.nn.Conv2d(32, 64, 3, padding=1)
+		#self.fc1 = torch.nn.Linear(64 * 5 * 5, 1024)
+		self.fc1 = torch.nn.Linear(64 * 7 * 7, 1024)
+		self.fc2 = torch.nn.Linear(1024, 10)
 
 	def forward(self, x):
-		x = self.pool(F.relu(self.conv1(x)))
-		x = self.pool(F.relu(self.conv2(x)))
+		x = self.pool(torch.nn.functional.relu(self.conv1(x)))
+		x = self.pool(torch.nn.functional.relu(self.conv2(x)))
 		#x = x.view(-1, 64 * 5 * 5)
 		x = x.view(-1, 64 * 7 * 7)
-		x = F.relu(self.fc1(x))
-		x = F.softmax(self.fc2(x), dim=1)
+		x = torch.nn.functional.relu(self.fc1(x))
+		x = torch.nn.functional.softmax(self.fc2(x), dim=1)
 		return x
 
 #--------------------------------------------------------------------
@@ -108,8 +104,8 @@ class MyRunner(object):
 		model = model.to(device)
 
 		# Create a trainer.
-		criterion = nn.CrossEntropyLoss()
-		optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+		criterion = torch.nn.CrossEntropyLoss()
+		optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 		history = {
 			'acc': list(),

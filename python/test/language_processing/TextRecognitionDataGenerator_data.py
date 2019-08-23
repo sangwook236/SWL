@@ -7,11 +7,12 @@ import text_line_data
 
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
 class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1):
+	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
+		self._use_NWHC = use_NWHC
 
 	@property
 	def shape(self):
@@ -46,10 +47,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				return input
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle)
+		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle)
+		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -60,9 +61,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
 			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
 
-			# (examples, width, height, channels) -> (examples, height, width, channels).
-			batch_images = batch_images.transpose((0, 2, 1, 3))
-			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
+			if self._use_NWHC:
+				# (examples, width, height, channels) -> (examples, height, width, channels).
+				batch_images = batch_images.transpose((0, 2, 1, 3))
+				#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
 
 			minval, maxval = np.min(batch_images), np.max(batch_images)
 			for idx, (img, lbl_str, lbl_int) in enumerate(zip(batch_images, batch_labels_str, batch_labels_int)):
@@ -94,11 +96,12 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		return examples
 
 	@staticmethod
-	def _create_batch_generator(data, batch_size, shuffle):
+	def _create_batch_generator(data, batch_size, shuffle, use_NWHC=True):
 		images, labels_str, labels_int = zip(*data)
 
-		# (examples, height, width) -> (examples, width, height).
-		images = np.swapaxes(np.array(images), 1, 2)
+		if use_NWHC:
+			# (examples, height, width) -> (examples, width, height).
+			images = np.swapaxes(np.array(images), 1, 2)
 		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
 		labels_str = np.reshape(np.array(labels_str), (-1))
 		labels_int = np.reshape(np.array(labels_int), (-1))
@@ -139,7 +142,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 #	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')
@@ -217,7 +220,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')
@@ -308,7 +311,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1)
+		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
 			raise ValueError('Invalid train-test ratio')

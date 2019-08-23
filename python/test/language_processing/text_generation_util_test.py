@@ -598,7 +598,6 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	image_filepaths, mask_filepaths, gt_texts, gt_boxes = load_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename)
 	print('Generated scene dataset: #images = {}, #masks = {}, #texts = {}, #boxes = {}.'.format(len(image_filepaths), len(mask_filepaths), len(gt_texts), len(gt_boxes)))
 
-
 def generate_single_letter_dataset():
 	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
@@ -644,7 +643,7 @@ def generate_single_letter_dataset():
 	min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
 
 	#font_color = (255, 255, 255)
-	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))sili
+	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
 	font_color = None  # Uses random font colors.
 	#bg_color = (0, 0, 0)
 	bg_color = None  # Uses random colors.
@@ -653,15 +652,22 @@ def generate_single_letter_dataset():
 	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
 
 	#--------------------
-	data_dir_path = './single_letters'
+	num_texts = 10000
+	data_dir_path = './single_letters_{}'.format(num_texts)
 	os.makedirs(data_dir_path, exist_ok=True)
 
-	idx = 1
+	is_finished = False
+	idx = 0
 	for text_list, scene_list, scene_text_mask_list in generator:
 		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
-			cv2.imwrite('./{}_{}.png'.format(idx, text), scene)
-			#cv2.imwrite('./{}_{}_mask.png'.format(idx, text), scene_text_mask)
+			cv2.imwrite(os.path.join(data_dir_path, '{}_{}.jpg'.format(text, idx)), scene)
+			#cv2.imwrite(os.path.join(data_dir_path, '{}_{}_mask.jpg'.format(text, idx)), scene_text_mask)
 			idx += 1
+			if idx >= num_texts:
+				is_finished = True
+				break
+		if is_finished:
+			break
 
 def main():
 	#generate_random_word_set_test()

@@ -131,7 +131,6 @@ class MyModel(object):
 			rnn_output = MyModel._create_bidirectionnal_rnn(rnn_input, self._model_output_len_ph, kernel_initializer)
 
 		with tf.variable_scope('transcription', reuse=tf.AUTO_REUSE):
-			# TODO [decide] >>
 			if self._is_sparse_output:
 				logits = tf.layers.dense(rnn_output, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
