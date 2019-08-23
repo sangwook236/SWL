@@ -16,16 +16,10 @@ def generate_random_word_set_test():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#data = fd.readlines()  # A string.
-		#data = fd.read().strip('\n')  # A list of strings.
-		#data = fd.read().splitlines()  # A list of strings.
-		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	count = 80
-	hangeul_charset = str()
-	for idx in range(0, len(data), count):
-		txt = ''.join(data[idx:idx+count])
-		#hangeul_charset += ('' if 0 == idx else '\n') + txt
-		hangeul_charset += txt
+		#hangeul_charset = fd.readlines()  # A string.
+		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
@@ -65,16 +59,10 @@ def generate_repetitive_word_set_test():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#data = fd.readlines()  # A string.
-		#data = fd.read().strip('\n')  # A list of strings.
-		#data = fd.read().splitlines()  # A list of strings.
-		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	count = 80
-	hangeul_charset = str()
-	for idx in range(0, len(data), count):
-		txt = ''.join(data[idx:idx+count])
-		#hangeul_charset += ('' if 0 == idx else '\n') + txt
-		hangeul_charset += txt
+		#hangeul_charset = fd.readlines()  # A string.
+		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
@@ -436,16 +424,10 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#data = fd.readlines()  # A string.
-		#data = fd.read().strip('\n')  # A list of strings.
-		#data = fd.read().splitlines()  # A list of strings.
-		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	count = 80
-	hangeul_charset = str()
-	for idx in range(0, len(data), count):
-		txt = ''.join(data[idx:idx+count])
-		#hangeul_charset += ('' if 0 == idx else '\n') + txt
-		hangeul_charset += txt
+		#hangeul_charset = fd.readlines()  # A string.
+		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
@@ -603,16 +585,10 @@ def generate_single_letter_dataset():
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangeul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#data = fd.readlines()  # A string.
-		#data = fd.read().strip('\n')  # A list of strings.
-		#data = fd.read().splitlines()  # A list of strings.
-		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	count = 80
-	hangeul_charset = str()
-	for idx in range(0, len(data), count):
-		txt = ''.join(data[idx:idx+count])
-		#hangeul_charset += ('' if 0 == idx else '\n') + txt
-		hangeul_charset += txt
+		#hangeul_charset = fd.readlines()  # A string.
+		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
@@ -621,7 +597,9 @@ def generate_single_letter_dataset():
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
 	charsets = [
-		hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset,
+		#hangeul_charset + alphabet_charset + digit_charset,
+		hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset,
+		#hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset,
 	]
 
 	num_char_repetitions = 2

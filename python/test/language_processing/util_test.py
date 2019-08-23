@@ -13,15 +13,10 @@ def hangul_example():
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF8') as fd:
-		#data = fd.readlines()  # A string.
-		#data = fd.read().strip('\n')  # A list of strings.
-		#data = fd.read().splitlines()  # A list of strings.
-		data = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	count = 80
-	hangul_str = str()
-	for idx in range(0, len(data), count):
-		txt = ''.join(data[idx:idx+count])
-		hangul_str += ('' if 0 == idx else '\n') + txt
+		#hangul_str = fd.readlines()  # A string.
+		#hangul_str = fd.read().strip('\n')  # A list of strings.
+		#hangul_str = fd.read().splitlines()  # A list of strings.
+		hangul_str = fd.read().replace(' ', '').replace('\n', '')  # A string.
 	#print(hangul_str)
 
 	if 'posix' == os.name:

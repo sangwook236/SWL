@@ -102,6 +102,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		if use_NWHC:
 			# (examples, height, width) -> (examples, width, height).
 			images = np.swapaxes(np.array(images), 1, 2)
+		else:
+			images = np.array(images)
 		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
 		labels_str = np.reshape(np.array(labels_str), (-1))
 		labels_int = np.reshape(np.array(labels_int), (-1))
@@ -420,8 +422,8 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
 		examples = list()
 		for fpath in os.listdir(data_dir_path):
-			#label_str = fpath.split('_')[0]
-			label_str = self._hangeul2jamo_functor(fpath.split('_')[0])
+			label_str = fpath.split('_')[0]
+			#label_str = self._hangeul2jamo_functor(fpath.split('_')[0])
 			if len(label_str) > max_label_len:
 				continue
 			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)

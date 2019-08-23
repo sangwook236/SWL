@@ -121,9 +121,9 @@ class MyModel(object):
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
-			self._model_output_len = rnn_input_shape[1]  # Model output time-steps.
-
 			rnn_input = tf.reshape(cnn_output, (-1, rnn_input_shape[1] * rnn_input_shape[2], rnn_input_shape[3]), name='reshape')
+			self._model_output_len = rnn_input.shape[1]  # Model output time-steps.
+
 			# TODO [decide] >>
 			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
@@ -377,13 +377,13 @@ class MyRunner(object):
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
-		#width_downsample_factor = 4
+		#width_downsample_factor = 8
 		if False:
 			image_height, image_width, image_channel = 32, 160, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 39
+			model_output_time_steps = 80  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		else:
 			image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-			model_output_time_steps = 79
+			model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
 		max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
 
 		#--------------------

@@ -121,9 +121,9 @@ class MyModel(object):
 
 		with tf.variable_scope('rnn', reuse=tf.AUTO_REUSE):
 			rnn_input_shape = cnn_output.shape #cnn_output.shape.as_list()
-			self._model_output_len = rnn_input_shape[1]  # Model output time-steps.
-
 			rnn_input = tf.reshape(cnn_output, (-1, rnn_input_shape[1], rnn_input_shape[2] * rnn_input_shape[3]), name='reshape')
+			self._model_output_len = rnn_input.shape[1]  # Model output time-steps.
+
 			# TODO [decide] >>
 			rnn_input = tf.layers.dense(rnn_input, 64, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
