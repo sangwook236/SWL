@@ -26,14 +26,14 @@ class MyModel(object):
 		self._model_output_len = 0
 		self._default_value = default_value
 
-		self._input_ph = tf.placeholder(tf.float32, [None, image_width, image_height, image_channel], name='input_ph')
+		self._input_ph = tf.placeholder(tf.float32, shape=(None, image_width, image_height, image_channel), name='input_ph')
 		if self._is_sparse_output:
 			self._output_ph = tf.sparse_placeholder(tf.int32, name='output_ph')
 		else:
-			self._output_ph = tf.placeholder(tf.int32, [None, None], name='output_ph')
+			self._output_ph = tf.placeholder(tf.int32, shape=(None, None), name='output_ph')
 		# Use output lengths.
-		self._output_len_ph = tf.placeholder(tf.int32, [None], name='output_len_ph')
-		self._model_output_len_ph = tf.placeholder(tf.int32, [None], name='model_output_len_ph')
+		self._output_len_ph = tf.placeholder(tf.int32, shape=(None,), name='output_len_ph')
+		self._model_output_len_ph = tf.placeholder(tf.int32, shape=(None,), name='model_output_len_ph')
 
 		#--------------------
 		if self._is_sparse_output:
@@ -171,7 +171,7 @@ class MyModel(object):
 		return loss
 
 	def _get_loss_from_dense_label(self, y, t, y_len, t_len):
-		y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+		y_len, t_len = tf.reshape(y_len, (-1, 1)), tf.reshape(t_len, (-1, 1))
 		loss = tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y, input_length=y_len, label_length=t_len)
 		# NOTE [info] >> This model is not trained when using tf.nn.ctc_loss() instead of tf.keras.backend.ctc_batch_cost().
 		#	I don't know why.

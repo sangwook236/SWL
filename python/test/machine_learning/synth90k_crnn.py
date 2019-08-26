@@ -170,7 +170,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None, num_classes], num_classes, is_sparse_output=False)
+		super().__init__((None, image_height, image_width, image_channel), (None, None, num_classes), num_classes, is_sparse_output=False)
 
 	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.softmax, kernel_initializer=kernel_initializer, name='dense')
@@ -248,7 +248,7 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 
 class Synth90kCrnnWithKerasCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
+		super().__init__((None, image_height, image_width, image_channel), (None, None), num_classes, is_sparse_output=True)
 
 		# FIXME [fix] >>
 		self._eos_token = 36
@@ -273,7 +273,7 @@ class Synth90kCrnnWithKerasCtcLoss(Synth90kCrnn):
 	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
-			y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+			y_len, t_len = tf.reshape(y_len, (-1, 1)), tf.reshape(t_len, (-1, 1))
 			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y['logit'], input_length=y_len, label_length=t_len))
 
 			tf.summary.scalar('loss', loss)
@@ -303,7 +303,7 @@ class Synth90kCrnnWithKerasCtcLoss(Synth90kCrnn):
 
 class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
+		super().__init__((None, image_height, image_width, image_channel), (None, None), num_classes, is_sparse_output=True)
 
 	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
@@ -347,41 +347,41 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _create_dilation_layer(self, inputs, num_features, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv1 = tf.pad(inputs, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
 			conv1 = tf.nn.relu(conv1, name='relu1')
 
-			conv1 = tf.pad(conv1, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv1 = tf.pad(conv1, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 2.
 			conv1 = tf.layers.conv2d(conv1, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv2')
 			conv1 = tf.nn.relu(conv1, name='relu2')
 
 		with tf.variable_scope('ctx_atrous_conv', reuse=tf.AUTO_REUSE):
-			conv2 = tf.pad(conv1, [[0, 0], [2, 2], [2, 2], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv2 = tf.pad(conv1, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 3.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=2, padding='valid', name='atrous_conv1')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(2, 2), padding='valid', name='conv1')
 			conv2 = tf.nn.relu(conv2, name='relu1')
 
-			conv2 = tf.pad(conv2, [[0, 0], [4, 4], [4, 4], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv2 = tf.pad(conv2, ((0, 0), (4, 4), (4, 4), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 4.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=4, padding='valid', name='atrous_conv2')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(4, 4), padding='valid', name='conv2')
 			conv2 = tf.nn.relu(conv2, name='relu2')
 
-			conv2 = tf.pad(conv2, [[0, 0], [8, 8], [8, 8], [0, 0]], mode='CONSTANT', constant_values=0, name='pad3')
+			conv2 = tf.pad(conv2, ((0, 0), (8, 8), (8, 8), (0, 0)), mode='CONSTANT', constant_values=0, name='pad3')
 
 			# Layer 5.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=8, padding='valid', name='atrous_conv3')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(8, 8), padding='valid', name='conv3')
 			conv2 = tf.nn.relu(conv2, name='relu3')
 
-			conv2 = tf.pad(conv2, [[0, 0], [16, 16], [16, 16], [0, 0]], mode='CONSTANT', constant_values=0, name='pad4')
+			conv2 = tf.pad(conv2, ((0, 0), (16, 16), (16, 16), (0, 0)), mode='CONSTANT', constant_values=0, name='pad4')
 
 			# Layer 6.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=16, padding='valid', name='atrous_conv4')
@@ -389,7 +389,7 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 			conv2 = tf.nn.relu(conv2, name='relu4')
 
 		with tf.variable_scope('ctx_final', reuse=tf.AUTO_REUSE):
-			dense_final = tf.pad(conv2, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			dense_final = tf.pad(conv2, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 7.
 			dense_final = tf.layers.conv2d(dense_final, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='dense1')
@@ -402,7 +402,7 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 
 class Synth90kDilatedCrnnWithKerasCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
+		super().__init__((None, image_height, image_width, image_channel), (None, None), num_classes, is_sparse_output=True)
 
 		# FIXME [fix] >>
 		self._eos_token = 36
@@ -427,7 +427,7 @@ class Synth90kDilatedCrnnWithKerasCtcLoss(Synth90kCrnn):
 	def _get_loss(self, y, t, y_len, t_len):
 		with tf.variable_scope('loss', reuse=tf.AUTO_REUSE):
 			# Connectionist temporal classification (CTC) loss.
-			y_len, t_len = tf.reshape(y_len, [-1, 1]), tf.reshape(t_len, [-1, 1])
+			y_len, t_len = tf.reshape(y_len, (-1, 1)), tf.reshape(t_len, (-1, 1))
 			loss = tf.reduce_mean(tf.keras.backend.ctc_batch_cost(y_true=t, y_pred=y['logit'], input_length=y_len, label_length=t_len))
 
 			tf.summary.scalar('loss', loss)
@@ -455,41 +455,41 @@ class Synth90kDilatedCrnnWithKerasCtcLoss(Synth90kCrnn):
 
 	def _create_dilation_layer(self, inputs, num_features, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv1 = tf.pad(inputs, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
 			conv1 = tf.nn.relu(conv1, name='relu1')
 
-			conv1 = tf.pad(conv1, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv1 = tf.pad(conv1, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 2.
 			conv1 = tf.layers.conv2d(conv1, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv2')
 			conv1 = tf.nn.relu(conv1, name='relu2')
 
 		with tf.variable_scope('ctx_atrous_conv', reuse=tf.AUTO_REUSE):
-			conv2 = tf.pad(conv1, [[0, 0], [2, 2], [2, 2], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv2 = tf.pad(conv1, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 3.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=2, padding='valid', name='atrous_conv1')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(2, 2), padding='valid', name='conv1')
 			conv2 = tf.nn.relu(conv2, name='relu1')
 
-			conv2 = tf.pad(conv2, [[0, 0], [4, 4], [4, 4], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv2 = tf.pad(conv2, ((0, 0), (4, 4), (4, 4), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 4.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=4, padding='valid', name='atrous_conv2')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(4, 4), padding='valid', name='conv2')
 			conv2 = tf.nn.relu(conv2, name='relu2')
 
-			conv2 = tf.pad(conv2, [[0, 0], [8, 8], [8, 8], [0, 0]], mode='CONSTANT', constant_values=0, name='pad3')
+			conv2 = tf.pad(conv2, ((0, 0), (8, 8), (8, 8), (0, 0)), mode='CONSTANT', constant_values=0, name='pad3')
 
 			# Layer 5.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=8, padding='valid', name='atrous_conv3')
 			conv2 = tf.layers.conv2d(conv2, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(8, 8), padding='valid', name='conv3')
 			conv2 = tf.nn.relu(conv2, name='relu3')
 
-			conv2 = tf.pad(conv2, [[0, 0], [16, 16], [16, 16], [0, 0]], mode='CONSTANT', constant_values=0, name='pad4')
+			conv2 = tf.pad(conv2, ((0, 0), (16, 16), (16, 16), (0, 0)), mode='CONSTANT', constant_values=0, name='pad4')
 
 			# Layer 6.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_features, num_features), rate=16, padding='valid', name='atrous_conv4')
@@ -497,7 +497,7 @@ class Synth90kDilatedCrnnWithKerasCtcLoss(Synth90kCrnn):
 			conv2 = tf.nn.relu(conv2, name='relu4')
 
 		with tf.variable_scope('ctx_final', reuse=tf.AUTO_REUSE):
-			dense_final = tf.pad(conv2, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			dense_final = tf.pad(conv2, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 7.
 			dense_final = tf.layers.conv2d(dense_final, filters=num_features, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='dense1')

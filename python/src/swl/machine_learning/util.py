@@ -369,7 +369,7 @@ def display_train_history(history):
 		elif not 'val_acc' in history:
 			plt.legend(['train'], loc='upper left')
 		else:
-			plt.legend(['train', 'test'], loc='upper left')
+			plt.legend(['train', 'test'], loc='lower right')
 		plt.show()
 		plt.close(fig)
 
