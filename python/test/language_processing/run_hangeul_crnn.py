@@ -18,7 +18,7 @@ from hangeul_data import HangeulDataGenerator
 
 #--------------------------------------------------------------------
 
-def create_learning_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
+def create_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
 		#return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
 		return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
@@ -109,7 +109,7 @@ class MyRunner(object):
 				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
 
 				# Creates a model.
-				modelForTraining = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
+				modelForTraining = create_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForTraining.create_training_model()
 
 				# Creates a trainer.
@@ -154,7 +154,7 @@ class MyRunner(object):
 				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
 
 				# Creates a model.
-				modelForEvaluation = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
+				modelForEvaluation = create_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForEvaluation.create_evaluation_model()
 
 				# Creates an evaluator.
@@ -178,52 +178,56 @@ class MyRunner(object):
 		#eval_graph.reset_default_graph()
 		del eval_graph
 
-	def infer(self, checkpoint_dir_path, shuffle=False, device_name=None):
+	def test(self, checkpoint_dir_path, shuffle=False, device_name=None):
 		# Creates a graph.
-		infer_graph = tf.Graph()
-		with infer_graph.as_default():
+		test_graph = tf.Graph()
+		with test_graph.as_default():
 			with tf.device(device_name):
 				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
 
 				# Creates a model.
-				modelForInference = create_learning_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
+				modelForInference = create_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
 				modelForInference.create_inference_model()
 
-				# Creates an inferrer.
+				# Creates a tester.
 				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
 
 		# Creates a session.
-		infer_session = tf.Session(graph=infer_graph, config=self._sess_config)
+		test_session = tf.Session(graph=test_graph, config=self._sess_config)
 
 		#--------------------
 		start_time = time.time()
-		with infer_session.as_default() as sess:
+		with test_session.as_default() as sess:
 			with sess.graph.as_default():
+				label_eos_token = self._dataGenerator.dataset.end_token
+
 				inferences, ground_truths = list(), list()
 				num_test_examples = 0
-				for batch_data, num_batch_examples in self._dataGenerator.getTestBatches(batch_size=self._batch_size, shuffle=shuffle):
+				for batch_data, num_batch_examples in self._dataGenerator.getTestBatches(self._batch_size, shuffle=shuffle):
 					inferred = modelInferrer.infer(sess, batch_data[0])
 					if isinstance(inferred, tf.SparseTensorValue):
 						print('*******************', inferred.dense_shape)
 						# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-						dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=self._label_eos_token, dtype=np.int8)
+						dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=label_eos_token, dtype=np.int8)
 						inferences.append(dense_batch_inferences)
 					else:
 						inferences.append(inferred)
 					# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
-					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=self._label_eos_token, dtype=np.int8)
+					dense_batch_outputs = swl_ml_util.sparse_to_dense(*batch_data[1], default_value=label_eos_token, dtype=np.int8)
 					ground_truths.append(dense_batch_outputs)
 				# Variable-length numpy.arrays are not merged into a single numpy.array.
 				#inferences, ground_truths = np.array(inferences), np.array(ground_truths)
-		print('\tTotal inference time = {}.'.format(time.time() - start_time))
+		print('\tTotal test time = {}.'.format(time.time() - start_time))
 
 		#--------------------
-		if inferences is not None:
+		if inferences is not None and ground_truths is not None:
+			#print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
 			if len(inferences) == len(ground_truths):
 				num_correct_letters, num_letters = 0, 0
 				num_correct_texts, num_texts = 0, 0
 				for inference, ground_truth in zip(inferences, ground_truths):
-					inference, ground_truth = self._dataGenerator.dataset.to_string(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.to_string(ground_truth)
+					inference, ground_truth = self._dataGenerator.dataset.decode_label(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.decode_label(ground_truth)
 					for inf, gt in zip(inference, ground_truth):
 						for ich, gch in zip(inf, gt):
 							if ich == gch:
@@ -233,10 +237,107 @@ class MyRunner(object):
 						if inf == gt:
 							num_correct_texts += 1
 						num_texts += 1
-						print('\tInference: inferred: {}, G/T: {}.'.format(inf, gt))
-				print('\tInference: letter accuracy = {}, text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
+						print('\tInferred: {}, G/T: {}.'.format(inf, gt))
+				print('\tLetter accuracy = {}, Text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
 			else:
-				print('[SWL] Error: The lengths of inference results and ground truth are different.')
+				print('[SWL] Error: The lengths of test results and ground truth are different.')
+		else:
+			print('[SWL] Warning: Invalid test results.')
+
+		#--------------------
+		# Closes the session and the graph.
+		test_session.close()
+		del test_session
+		#test_graph.reset_default_graph()
+		del test_graph
+
+	def infer(self, checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size=None, shuffle=False, device_name=None):
+		# Creates a graph.
+		infer_graph = tf.Graph()
+		with infer_graph.as_default():
+			with tf.device(device_name):
+				image_height, image_width, image_channel, num_classes = self._dataGenerator.shapes
+
+				# Creates a model.
+				modelForInference = create_model(image_height, image_width, image_channel, num_classes, self._is_sparse_output)
+				modelForInference.create_inference_model()
+
+				# Creates an inferrer.
+				modelInferrer = ModelInferrer(modelForInference, checkpoint_dir_path)
+
+		# Creates a session.
+		infer_session = tf.Session(graph=infer_graph, config=self._sess_config)
+
+		#--------------------
+		print('[SWL] Info: Start loading images...')
+		inf_images = list()
+		for fpath in image_filepaths:
+			img = cv2.imread(fpath)
+			if image_channel != img.shape[2]:
+				print('[SWL] Warning: Failed to load an image from {}.'.format(fpath))
+				continue
+			if image_height != img.shape[0] or image_width != img.shape[1]:
+				img = cv2.resize(img, (image_width, image_height))
+			img, _ = self._dataGenerator.preprocess(img, None)
+			inf_images.append(img)
+		inf_images = np.array(inf_images)
+		print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+
+		num_examples = len(inf_images)
+		if batch_size is None:
+			batch_size = num_examples
+		if batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(batch_size))
+
+		indices = np.arange(num_examples)
+
+		#--------------------
+		start_time = time.time()
+		with infer_session.as_default() as sess:
+			with sess.graph.as_default():
+				label_eos_token = self._dataGenerator.dataset.end_token
+
+				inferences = list()
+				start_idx = 0
+				while True:
+					end_idx = start_idx + batch_size
+					batch_indices = indices[start_idx:end_idx]
+					if batch_indices.size > 0:  # If batch_indices is non-empty.
+						# FIXME [fix] >> Does not work correctly in time-major data.
+						batch_images = inf_images[batch_indices]
+						if batch_images.size > 0:  # If batch_images is non-empty.
+							inferred = modelInferrer.infer(sess, batch_images)
+							if isinstance(inferred, tf.SparseTensorValue):
+								print('*******************', inferred.dense_shape)
+								# A sparse tensor expressed by a tuple with (indices, values, dense_shape) -> a dense tensor of dense_shape.
+								dense_batch_inferences = swl_ml_util.sparse_to_dense(inferred.indices, inferred.values, inferred.dense_shape, default_value=label_eos_token, dtype=np.int8)
+								inferences.append(dense_batch_inferences)
+							else:
+								inferences.append(inferred)
+
+					if end_idx >= num_examples:
+						break
+					start_idx = end_idx
+				# Variable-length numpy.arrays are not merged into a single numpy.array.
+				#inferences = np.array(inferences)
+		print('\tTotal inference time = {}.'.format(time.time() - start_time))
+
+		#--------------------
+		if inferences is not None:
+			#print('\tInference: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
+
+			inferences_str = list()
+			for inference in inferences:
+				inference = self._dataGenerator.dataset.decode_label(np.argmax(inference, axis=-1))
+				inferences_str.extend(inference)
+
+			# Output to a file.
+			csv_filepath = os.path.join(inference_dir_path, 'inference_results.csv')
+			with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
+				writer = csv.writer(csvfile, delimiter=',')
+
+				for fpath, inf in zip(image_filepaths, inferences_str):
+					writer.writerow([fpath, inf])
 		else:
 			print('[SWL] Warning: Invalid inference results.')
 
@@ -263,12 +364,14 @@ def main():
 	num_epochs = 1000  # Number of times to iterate over training data.
 	batch_size = 256  # Number of samples per gradient update.
 	initial_epoch = 0
+	is_trained, is_evaluated, is_tested, is_inferred = True, True, True, False
 	is_training_resumed = False
 
 	# REF [site] >> https://www.tensorflow.org/api_docs/python/tf/Graph#device
 	# Can use os.environ['CUDA_VISIBLE_DEVICES'] to specify devices.
 	train_device_name = None #'/device:GPU:0'
 	eval_device_name = None #'/device:GPU:0'
+	test_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
 
 	#--------------------
@@ -276,35 +379,48 @@ def main():
 	if not output_dir_path:
 		output_dir_prefix = 'hangeul_crnn'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
-		#output_dir_suffix = '20190320T134245'
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 
 	checkpoint_dir_path = None
 	if not checkpoint_dir_path:
 		checkpoint_dir_path = os.path.join(output_dir_path, 'tf_checkpoint')
+	inference_dir_path = None
+	if not inference_dir_path:
+		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
 	runner = MyRunner(num_epochs, batch_size, is_sparse_output)
 
-	if True:
+	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
 			os.makedirs(checkpoint_dir_path, exist_ok=True)
 
 		runner.train(checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=initial_epoch, is_training_resumed=is_training_resumed, device_name=train_device_name)
 
-	if True:
+	if is_evaluated:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
 		runner.evaluate(checkpoint_dir_path, device_name=eval_device_name)
 
-	if True:
+	if is_tested:
 		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
 			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
 			return
 
-		runner.infer(checkpoint_dir_path, device_name=infer_device_name)
+		runner.test(checkpoint_dir_path, device_name=test_device_name)
+
+	if is_inferred:
+		if not checkpoint_dir_path or not os.path.exists(checkpoint_dir_path):
+			print('[SWL] Error: Model directory, {} does not exist.'.format(checkpoint_dir_path))
+			return
+		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
+			os.makedirs(inference_dir_path, exist_ok=True)
+
+		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		# TODO [check] >> Not yet tested.
+		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, device_name=infer_device_name)
 
 #--------------------------------------------------------------------
 
