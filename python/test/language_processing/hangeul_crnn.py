@@ -12,7 +12,7 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 
 		self._model_output_len = 0
 
-	def _get_feed_dict(self, data, num_data, *args, **kwargs):
+	def get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
 		model_output_len = [self._model_output_len] * num_data
 		if 1 == len_data:
