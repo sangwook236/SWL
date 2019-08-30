@@ -1,5 +1,5 @@
-import hgtk
 import functools, operator
+import hgtk
 
 def hangeul2jamo(text, eojc_str, compose_code='\u1d25', use_separate_consonants=False, use_separate_vowels=False):
 	"""Convert a string to a list of jamos and letters.
@@ -8,8 +8,8 @@ def hangeul2jamo(text, eojc_str, compose_code='\u1d25', use_separate_consonants=
 		text (str): Input string.
 		eojc_str (str): End-of-Jamo-Character string.
 		compose_code (str): A code to split sets of jamos which consists of each letter.
-		use_separate_consonants (bool): Decides whether consonants which consist of two consonants are used or not. e.g.) ㄼ -> ㄹㅂ if True.
-		use_separate_vowels (bool): Decides whether vowels which consist of two vowels are used or not. e.g.) ㅘ -> ㅗㅏ if True.
+		use_separate_consonants (bool): Specifies whether consonants which consist of two consonants are used or not. e.g.) ㄼ -> ㄹㅂ if True.
+		use_separate_vowels (bool): Specifies whether vowels which consist of two vowels are used or not. e.g.) ㅘ -> ㅗㅏ if True.
 	Outputs:
 		jamo_text (a list of str): A list of jamos decomposed from the input string.
 	"""
@@ -20,14 +20,14 @@ def hangeul2jamo(text, eojc_str, compose_code='\u1d25', use_separate_consonants=
 	jamo_text = list(hgtk.text.decompose(text, latin_filter=True, compose_code=compose_code))
 	if use_separate_consonants:
 		jamo_text = list(map(lambda jm: list(consonants[jm]) if jm in consonants else jm, jamo_text))
-		jamo_text = functools.reduce(operator.iconcat, jamo_text, [])
+		jamo_text = functools.reduce(operator.iconcat, jamo_text, list())
 	if use_separate_vowels:
 		jamo_text = list(map(lambda jm: list(vowels[jm]) if jm in vowels else jm, jamo_text))
-		jamo_text = functools.reduce(operator.iconcat, jamo_text, [])
+		jamo_text = functools.reduce(operator.iconcat, jamo_text, list())
 	return list(map(lambda x: eojc_str if x == compose_code else x, jamo_text))
 	"""
 	jamo_text = list(map(lambda ch: hgtk.letter.decompose(ch) + (eojc_str,) if hgtk.checker.is_hangul(ch) else ch, text))
-	jamo_text = functools.reduce(operator.iconcat, jamo_text, [])
+	jamo_text = functools.reduce(operator.iconcat, jamo_text, list())
 	return list(filter(lambda x: x, jamo_text))  # Removes empty strings.
 	"""
 
@@ -38,8 +38,8 @@ def jamo2hangeul(jamo_text, eojc_str, compose_code='\u1d25', use_separate_conson
 		jamo_text (a list of str): A list of jamos decomposed from the input string.
 		eojc_str (str): End-of-Jamo-Character string.
 		compose_code (str): A code to split sets of jamos which consists of each letter.
-		use_separate_consonants (bool): Decides whether consonants which consist of two consonants are used or not. e.g.) ㄹㅂ -> ㄼ if True.
-		use_separate_vowels (bool): Decides whether vowels which consist of two vowels are used or not. e.g.) ㅗㅏ -> ㅘ if True.
+		use_separate_consonants (bool): Specifies whether consonants which consist of two consonants are used or not. e.g.) ㄹㅂ -> ㄼ if True.
+		use_separate_vowels (bool): Specifies whether vowels which consist of two vowels are used or not. e.g.) ㅗㅏ -> ㅘ if True.
 	Outputs:
 		text (str): Input string.
 	"""

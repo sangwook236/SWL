@@ -5,6 +5,14 @@ import sys
 sys.path.append('../../src')
 
 import hangeul_util as hg_util
+import hgtk
+
+def hgtk_error_case_test():
+	# NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
+	print("hgtk.text.decompose('ㆍ') =", hgtk.text.decompose('ㆍ'))
+	print("hgtk.text.decompose('가ㆍ나') =", hgtk.text.decompose('가ㆍ나'))
+	print("hgtk.text.decompose('ㆅ') =", hgtk.text.decompose('ㆅ'))
+	print("hgtk.text.decompose('ㆆ') =", hgtk.text.decompose('ㆆ'))
 
 def hangeul_jamo_set_test():
 	jamo1 = 'ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ'.replace(' ', '')
@@ -113,6 +121,8 @@ def hangeul_jamo_conversion_test():
 	print('Comparison =', text == text2)
 
 def main():
+	hgtk_error_case_test()
+
 	#hangeul_jamo_set_test()
 
 	hangeul_jamo_conversion_test()

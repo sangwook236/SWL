@@ -2,7 +2,7 @@ import abc
 import numpy as np
 import tensorflow as tf
 from swl.machine_learning.tensorflow_model import SimpleSequentialTensorFlowModel
-#import swl.machine_learning.util as swl_ml_util
+import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
@@ -12,7 +12,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 		self._model_output_len = 0
 
-	def get_feed_dict(self, data, num_data, *args, **kwargs):
+	def _get_feed_dict(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
 		model_output_len = [self._model_output_len] * num_data
 		if 1 == len_data:
@@ -20,12 +20,10 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		elif 2 == len_data:
 			"""
 			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._model_output_len_ph: model_output_len}
-			#feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._model_output_len_ph: model_output_len}
 			"""
 			# Use output lengths.
 			output_len = list(map(lambda lbl: len(lbl), data[1]))
 			feed_dict = {self._input_ph: data[0], self._output_ph: data[1], self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
-			#feed_dict = {self._input_ph: data[0], self._output_ph: swl_ml_util.sequences_to_sparse(data[1], dtype=np.int32), self._output_len_ph: output_len, self._model_output_len_ph: model_output_len}
 		else:
 			raise ValueError('Invalid number of feed data: {}'.format(len_data))
 		return feed_dict
@@ -58,7 +56,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		#--------------------
 		# Recurrent layer.
 		with tf.variable_scope('recurrent_layer', reuse=tf.AUTO_REUSE):
-			rnn_outputs = self._create_recurrent_layer(cnn_outputs, kernel_initializer, is_training)
+			rnn_outputs = self._create_recurrent_layer(cnn_outputs, self._model_output_len_ph, kernel_initializer, is_training)
 
 		#--------------------
 		# Transcription layer.
@@ -120,7 +118,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 
 			return outputs
 
-	def _create_recurrent_layer(self, inputs, kernel_initializer, is_training):
+	def _create_recurrent_layer(self, inputs, input_len, kernel_initializer, is_training):
 		num_hidden_units = 256
 		keep_prob = 1.0
 		#keep_prob = 0.5
@@ -131,8 +129,8 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			cell_bw1 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'bw_unit_cell')  # Backward cell.
 			#cell_bw1 = tf.contrib.rnn.DropoutWrapper(cell_bw1, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
-			#rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
+			#rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
+			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs1 = tf.concat(rnn_outputs1, axis=-1)
 			rnn_outputs1 = tf.layers.batch_normalization(rnn_outputs1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states1 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states1[0].c, rnn_states1[1].c), axis=-1), tf.concat((rnn_states1[0].h, rnn_states1[1].h), axis=-1))
@@ -144,8 +142,8 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			cell_bw2 = self._create_unit_cell(num_hidden_units, kernel_initializer, 'bw_unit_cell')  # Backward cell.
 			#cell_bw2 = tf.contrib.rnn.DropoutWrapper(cell_bw2, input_keep_prob=keep_prob, output_keep_prob=1.0, state_keep_prob=keep_prob)
 
-			#rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_seq_lens, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
+			#rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
+			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs2 = tf.concat(rnn_outputs2, axis=-1)
 			rnn_outputs2 = tf.layers.batch_normalization(rnn_outputs2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states2 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states2[0].c, rnn_states2[1].c), axis=-1), tf.concat((rnn_states2[0].h, rnn_states2[1].h), axis=-1))
@@ -213,7 +211,7 @@ class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _create_decoding_layer(self, logits):
 		# CTC beam search decoding.
-		y = tf.transpose(logits, (1, 0, 2))  # Time-major.
+		logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 		# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
 		#	If the number of classes increases, its computation time becomes much slower.
 		beam_width = 10 #100
@@ -313,7 +311,7 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 
 	def _create_decoding_layer(self, logits):
 		# CTC beam search decoding.
-		y = tf.transpose(logits, (1, 0, 2))  # Time-major.
+		logits = tf.transpose(logits, (1, 0, 2))  # Time-major.
 		# NOTE [info] >> CTC beam search decoding is too slow. It seems to run on CPU, not GPU.
 		#	If the number of classes increases, its computation time becomes much slower.
 		beam_width = 10 #100

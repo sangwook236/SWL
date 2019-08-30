@@ -325,6 +325,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
 		#self._UNKNOWN = '<UNK>'  # Unknown label token.
 
+        # NOTE [info] >> Some special Hangeul jamos (e.g. 'ㆍ', 'ㆅ', 'ㆆ') are ignored in the hgtk library.
 		self._hangeul2jamo_functor = functools.partial(hg_util.hangeul2jamo, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
 		self._jamo2hangeul_functor = functools.partial(hg_util.jamo2hangeul, eojc_str=self._EOJC, use_separate_consonants=False, use_separate_vowels=True)
 
@@ -369,7 +370,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
 			label_str = self._hangeul2jamo_functor(label_str)
-			return [self._labels.index(ch) for ch in label_str]
+			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			raise

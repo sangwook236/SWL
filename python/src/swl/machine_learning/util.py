@@ -113,7 +113,7 @@ def sequences_to_sparse(sequences, dtype=np.int32):
 
 	indices = np.asarray(indices, dtype=np.int64)
 	values = np.asarray(values, dtype=dtype)
-	dense_shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
+	dense_shape = np.asarray([len(sequences), indices.max(axis=0)[1] + 1], dtype=np.int64)
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 
@@ -200,7 +200,7 @@ def dense_to_sparse(dense, default_value=0, dtype=np.int32):
 
 	indices = np.asarray(indices, dtype=np.int64)
 	values = np.asarray(values, dtype=dtype)
-	dense_shape = np.asarray([len(dense), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
+	dense_shape = np.asarray([len(dense), indices.max(axis=0)[1] + 1], dtype=np.int64)
 
 	return indices, values, dense_shape   # Refer to tf.SparseTensorValue.
 

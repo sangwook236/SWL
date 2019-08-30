@@ -697,6 +697,50 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
+def check_data(data_dir_path, train_test_ratio, num_epochs, batch_size):
+	default_value = -1
+
+	image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
+	model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
+	max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
+	dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+
+	train_examples_per_epoch, test_examples_per_epoch = None, None
+	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
+	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
+
+	for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
+		#batch_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
+
+		if 0 == batch_step:
+			print('type(batch_data) = {}, len(batch_data) = {}.'.format(type(batch_data), len(batch_data)))
+			print('type(batch_data[0]) = {}.'.format(type(batch_data[0])))
+			print('\tbatch_data[0].shape = {}, batch_data[0].dtype = {}, (min, max) = ({}, {}).'.format(batch_data[0].shape, batch_data[0].dtype, np.min(batch_data[0]), np.max(batch_data[0])))
+			print('type(batch_data[1]) = {}, len(batch_data[1]) = {}.'.format(type(batch_data[1]), len(batch_data[1])))
+			print('type(batch_data[2]) = {}, len(batch_data[2]) = {}.'.format(type(batch_data[2]), len(batch_data[2])))
+
+		if batch_size != batch_data[0].shape[0]:
+			print('Invalid image size: {} != {}.'format(batch_size, batch_data[0].shape[0]))
+		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
+			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
+
+		for idx, (lbl, lbl_int) in enumerate(zip(batch_data[1], batch_data[2])):
+			if len(lbl) != len(lbl_int):
+				print('Unmatched label length: {} != {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+			if 0 == len(lbl_int):
+				print('Zero-length label: {}, {} ({}: {}).'.format(lbl, lbl_int, idx, batch_data[1]))
+
+		sparse = swl_ml_util.sequences_to_sparse(batch_data[2], dtype=np.int32)
+		sequences = swl_ml_util.sparse_to_sequences(*sparse, dtype=np.int32)
+		#print('Sparse tensor = {}.'.format(sparse))
+		dense = swl_ml_util.sequences_to_dense(batch_data[2], default_value=default_value, dtype=np.int32)
+		sequences = swl_ml_util.dense_to_sequences(dense, default_value=default_value, dtype=np.int32)
+		#print('Dense tensor = {}.'.format(dense))
+
+		#break
+
+#--------------------------------------------------------------------
+
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
@@ -709,11 +753,24 @@ def main():
 
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
+		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
+		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000
+		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
+		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000
+
 		#data_dir_path = './kr_samples_100000'
 		data_dir_path = './kr_samples_200000'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
+
+	#--------------------
+	if False:
+		print('[SWL] Info: Start checking data...')
+		start_time = time.time()
+		check_data(data_dir_path, train_test_ratio, num_epochs, batch_size)
+		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
+		return
 
 	#--------------------
 	output_dir_path = None

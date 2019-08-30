@@ -260,6 +260,7 @@ class Synth90kDataVisualizer(object):
 				if 27 == ch:  # ESC.
 					break
 
+			#cv.destroyAllWindows()
 		return num_examples
 
 #--------------------------------------------------------------------

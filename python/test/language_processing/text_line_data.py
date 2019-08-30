@@ -21,7 +21,7 @@ class TextLineDatasetBase(abc.ABC):
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
-			return [self._labels.index(ch) for ch in label_str]
+			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label {}.'.format(label_str))
 			raise
@@ -321,7 +321,7 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
 			label_str = self._hangeul2jamo_functor(label_str)
-			return [self._labels.index(ch) for ch in label_str]
+			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			raise
@@ -619,7 +619,7 @@ class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 	def encode_label(self, label_str, *args, **kwargs):
 		try:
 			label_str = self._hangeul2jamo_functor(label_str)
-			return [self._labels.index(ch) for ch in label_str]
+			return list(self._labels.index(ch) for ch in label_str)
 		except Exception as ex:
 			print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 			raise

@@ -20,13 +20,13 @@ from hangeul_data import HangeulDataGenerator
 
 def create_model(image_height, image_width, image_channel, num_classes, is_sparse_output):
 	if is_sparse_output:
-		#return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
-		return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)  # Failed to train.
+		return HangeulCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
 		#return HangeulDilatedCrnnWithCtcLoss(image_height, image_width, image_channel, num_classes)
-		#return HangeulDilatedCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
 	else:
+		# NOTE [info] >> The time-steps of model outputs and ground truths are different.
 		#return HangeulCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
-		raise TypeError('HangeulCrnnWithCrossEntropyLoss with dense outputs cannot be used')
+		return HangeulCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
+		#return HangeulDilatedCrnnWithKerasCtcLoss(image_height, image_width, image_channel, num_classes)
 
 #--------------------------------------------------------------------
 
@@ -348,6 +348,59 @@ class MyRunner(object):
 		#infer_graph.reset_default_graph()
 		del infer_graph
 
+#--------------------------------------------------------------------
+
+def check_data(is_sparse_output, num_epochs, batch_size, shuffle):
+	is_output_augmented = False  # Fixed.
+	is_augmented_in_parallel = True
+	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
+
+	dataGenerator = HangeulDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
+	label_eos_token = dataGenerator.dataset.end_token
+	dataGenerator.initialize(batch_size)
+
+	dataGenerator.initializeTraining(batch_size, shuffle=shuffle)
+
+	if is_sparse_output:
+		for batch_step, (batch_data, num_batch_examples) in enumerate(dataGenerator.getTrainBatches(batch_size, shuffle=shuffle)):
+			#batch_images (np.array), batch_labels (a sparse tensor, a tuple of (indices, values, dense_shape)) = batch_data
+
+			if 0 == batch_step:
+				print('type(batch_data) = {}, len(batch_data) = {}.'.format(type(batch_data), len(batch_data)))
+				print('type(batch_data[0]) = {}.'.format(type(batch_data[0])))
+				print('\tbatch_data[0].shape = {}, batch_data[0].dtype = {}, (min, max) = ({}, {}).'.format(batch_data[0].shape, batch_data[0].dtype, np.min(batch_data[0]), np.max(batch_data[0])))
+				print('type(batch_data[1]) = {}, len(batch_data[1]) = {}.'.format(type(batch_data[1]), len(batch_data[1])))
+				print('\tbatch_data[1][0] = {}, batch_data[1][1] = {}, batch_data[1][2] = {}.'.format(batch_data[1][0], batch_data[1][1], batch_data[1][2]))
+
+			if batch_size != batch_data[0].shape[0]:
+				print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
+			if batch_size != batch_data[1][2][0]:
+				print('Invalid label size: {} != {}.'.format(batch_size, batch_data[1][2][0]))
+
+			#break
+	else:
+		for batch_step, (batch_data, num_batch_examples) in enumerate(dataGenerator.getTrainBatches(batch_size, shuffle=shuffle)):
+			# TODO [check] >> Not yet tested.
+			#batch_images (np.array), batch_labels (np.array) = batch_data
+
+			if 0 == batch_step:
+				print('type(batch_data) = {}, len(batch_data) = {}.'.format(type(batch_data), len(batch_data)))
+				print('type(batch_data[0]) = {}.'.format(type(batch_data[0])))
+				print('\tbatch_data[0].shape = {}, batch_data[0].dtype = {}, (min, max) = ({}, {}).'.format(batch_data[0].shape, batch_data[0].dtype, np.min(batch_data[0]), np.max(batch_data[0])))
+				print('type(batch_data[1]) = {}.'.format(type(batch_data[1])))
+				print('\tbatch_data[1].shape = {}, batch_data[1].dtype = {}, (min, max) = ({}, {}).'.format(batch_data[1].shape, batch_data[1].dtype, np.min(batch_data[1]), np.max(batch_data[1])))
+
+			if batch_size != batch_data[0].shape[0]:
+				print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
+			if batch_size != batch_data[1].shape[0]:
+				print('Invalid label size: {} != {}.'.format(batch_size, batch_data[1].shape[0]))
+
+			#break
+
+	dataGenerator.finalizeTraining()
+
+#--------------------------------------------------------------------
+
 def main():
 	#os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	#os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
@@ -358,7 +411,7 @@ def main():
 
 	#--------------------
 	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
-	is_sparse_output = True  # Fixed.
+	is_sparse_output = True
 	#is_time_major = False  # Fixed.
 
 	num_epochs = 1000  # Number of times to iterate over training data.
@@ -373,6 +426,14 @@ def main():
 	eval_device_name = None #'/device:GPU:0'
 	test_device_name = None #'/device:GPU:0'
 	infer_device_name = None #'/device:GPU:0'
+
+	#--------------------
+	if False:
+		print('[SWL] Info: Start checking data...')
+		start_time = time.time(is_sparse_output, num_epochs, batch_size, shuffle=False)
+		check_data()
+		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
+		return
 
 	#--------------------
 	output_dir_path = None
