@@ -365,9 +365,9 @@ def display_train_history(history):
 		plt.xlabel('epochs')
 		plt.ylabel('accuracy')
 		if not 'acc' in history:
-			plt.legend(['test'], loc='upper left')
+			plt.legend(['test'], loc='lower right')
 		elif not 'val_acc' in history:
-			plt.legend(['train'], loc='upper left')
+			plt.legend(['train'], loc='lower right')
 		else:
 			plt.legend(['train', 'test'], loc='lower right')
 		plt.show()
