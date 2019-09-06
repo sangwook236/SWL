@@ -7,10 +7,8 @@ sys.path.append('../../../src')
 import os, math, argparse, logging, time, datetime
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras import backend as K
-#from sklearn import preprocessing
+#import sklearn
 import cv2
 import matplotlib.pyplot as plt
 import swl.machine_learning.util as swl_ml_util
@@ -135,10 +133,10 @@ class MyDataset(object):
 			inputs = inputs.astype(np.float32)
 
 			if False:
-				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
-				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
-				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
-				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+				inputs = sklearn.preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+				#inputs = sklearn.preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+				#inputs = sklearn.preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+				#inputs = sklearn.preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
 			elif True:
 				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
 			elif False:
@@ -205,7 +203,7 @@ class MyDataSequence(tf.keras.utils.Sequence):
 class MyModel(object):
 	@classmethod
 	def create_model(cls, input_shape, num_classes):
-		model = Sequential()
+		model = tf.keras.models.Sequential()
 
 		# Layer 1.
 		model.add(Conv2D(filters=32, kernel_size=5, strides=1, activation='relu', input_shape=input_shape))
@@ -225,15 +223,16 @@ class MyModel(object):
 
 class MyRunner(object):
 	def __init__(self):
+		# Set parameters.
+		self._use_keras_data_sequence, self._use_generator = True, False
+
 		self._max_queue_size, self._num_workers = 10, 8
 		self._use_multiprocessing = True
 
-		self._use_keras_data_sequence, self._use_generator = True, False
-
-		#sess = tf.Session(config=config)
-		#K.set_session(sess)
-		#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
-		#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
+		#self._sess = tf.Session(config=config)
+		#tf.keras.backend.set_session(self._sess)
+		#tf.keras.backend.set_learning_phase(0)  # Sets the learning phase to 'test'.
+		#tf.keras.backend.set_learning_phase(1)  # Sets the learning phase to 'train'.
 
 		#--------------------
 		# Create a dataset.

@@ -7,8 +7,6 @@ sys.path.append('../../src')
 import os, math, time, datetime, glob, csv
 import numpy as np
 import tensorflow as tf
-from tensorflow.keras import backend as K
-from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Conv2D, LSTM, MaxPooling2D, Reshape, Lambda, BatchNormalization
 from tensorflow.keras.layers import Input, Dense, Activation, add, concatenate
 import swl.machine_learning.util as swl_ml_util
@@ -17,6 +15,7 @@ from TextRecognitionDataGenerator_data import HangeulTextRecognitionDataGenerato
 
 #--------------------------------------------------------------------
 
+"""
 class MyDataSequence(tf.keras.utils.Sequence):
 	def __init__(self, batch_generator, steps_per_epoch, max_label_len, model_output_time_steps, default_value, encode_labels_functor):
 		self._batch_generator = batch_generator
@@ -25,13 +24,13 @@ class MyDataSequence(tf.keras.utils.Sequence):
 		self._encode_labels_functor = encode_labels_functor
 
 	def __len__(self):
-		return self._steps_per_epoch if self._steps_per_epoch is not None else -1
+		return self._steps_per_epoch if self._steps_per_epoch is not None else 0
 
 	def __getitem__(self, idx):
 		for batch_data, num_batch_examples in self._batch_generator:
-			#batch_images, batch_labels_str, batch_labels_int = batch_data
+			#batch_images, batch_labels_str, batch_labels_int (sparse tensor) = batch_data
 			batch_images, batch_labels_str, _ = batch_data
-			batch_labels_int = self._encode_labels_functor(batch_labels_str)
+			batch_labels_int = self._encode_labels_functor(batch_labels_str)  # Densor tensor.
 
 			if batch_labels_int.shape[1] < self._max_label_len:
 				labels = np.full((num_batch_examples, self._max_label_len), self._default_value)
@@ -51,6 +50,60 @@ class MyDataSequence(tf.keras.utils.Sequence):
 			}
 			outputs = {'ctc_loss': np.zeros([num_batch_examples])}  # Dummy.
 			yield (inputs, outputs)
+"""
+
+class MyDataSequence(tf.keras.utils.Sequence):
+	def __init__(self, examples, max_label_len, model_output_time_steps, default_value, encode_labels_functor, batch_size=None, shuffle=False):
+		self._examples = np.array(examples)
+		self._max_label_len, self._model_output_time_steps, self._default_value = max_label_len, model_output_time_steps, default_value
+		self._encode_labels_functor = encode_labels_functor
+		self._batch_size = batch_size
+
+		self._num_examples = len(self._examples)
+		if self._batch_size is None:
+			self._batch_size = self._num_examples
+		if self._batch_size <= 0:
+			raise ValueError('Invalid batch size: {}'.format(self._batch_size))
+
+		self._indices = np.arange(self._num_examples)
+		if shuffle:
+			np.random.shuffle(self._indices)
+
+	def __len__(self):
+		return math.ceil(self._num_examples / self._batch_size)
+
+	def __getitem__(self, idx):
+		start_idx = idx * self._batch_size
+		end_idx = start_idx + self._batch_size
+		batch_indices = self._indices[start_idx:end_idx]
+		if batch_indices.size > 0:  # If batch_indices is non-empty.
+			# FIXME [fix] >> Does not work correctly in time-major data.
+			batch_data = self._examples[batch_indices]
+			num_batch_examples = len(batch_indices)
+			if batch_data.size > 0:  # If batch_data is non-empty.
+				#batch_images, batch_labels_str, batch_labels_int (sparse tensor) = batch_data
+				batch_images, batch_labels_str, _ = zip(*batch_data)
+				batch_labels_int = self._encode_labels_functor(batch_labels_str)  # Densor tensor.
+
+				if batch_labels_int.shape[1] < self._max_label_len:
+					labels = np.full((num_batch_examples, self._max_label_len), self._default_value)
+					labels[:,:batch_labels_int.shape[1]] = batch_labels_int
+					batch_labels_int = labels
+				elif batch_labels_int.shape[1] > self._max_label_len:
+					print('[SWL] Warning: Invalid label length, {} > {}.'.format(batch_labels_int.shape[1], self._max_label_len))
+
+				model_output_length = np.full((num_batch_examples, 1), self._model_output_time_steps)
+				label_length = np.array(list(len(lbl) for lbl in batch_labels_int))
+
+				inputs = {
+					'inputs': batch_images,
+					'outputs': batch_labels_int,
+					'model_output_length': model_output_length,
+					'output_length': label_length
+				}
+				outputs = {'ctc_loss': np.zeros((num_batch_examples,))}  # Dummy.
+				return (inputs, outputs)
+		return (None, None)
 
 #--------------------------------------------------------------------
 
@@ -130,24 +183,24 @@ class MyModel(object):
 		model_outputs = Dense(num_classes, activation='softmax', kernel_initializer=kernel_initializer, name='dense9')(x)
 
 		#--------------------
-		labels = Input(shape=[max_label_len], dtype='float32', name='outputs')  # (None, max_label_len).
-		model_output_length = Input(shape=[1], dtype='int64', name='model_output_length')  # (None, 1).
-		label_length = Input(shape=[1], dtype='int64', name='output_length')  # (None, 1).
+		labels = Input(shape=(max_label_len,), dtype='float32', name='outputs')  # (None, max_label_len).
+		model_output_length = Input(shape=(1,), dtype='int64', name='model_output_length')  # (None, 1).
+		label_length = Input(shape=(1,), dtype='int64', name='output_length')  # (None, 1).
 
 		# Currently Keras does not support loss functions with extra parameters so CTC loss is implemented in a lambda layer.
 		loss = Lambda(MyModel.compute_ctc_loss, output_shape=(1,), name='ctc_loss')([model_outputs, labels, model_output_length, label_length])  # (None, 1).
 
 		if is_training:
-			return Model(inputs=[inputs, labels, model_output_length, label_length], outputs=loss)
+			return tf.keras.models.Model(inputs=[inputs, labels, model_output_length, label_length], outputs=loss)
 		else:
-			return Model(inputs=[inputs], outputs=model_outputs)
+			return tf.keras.models.Model(inputs=[inputs], outputs=model_outputs)
 
 	@staticmethod
 	def compute_ctc_loss(args):
 		model_outputs, labels, model_output_length, label_length = args
 		# TODO [check] >> The first couple of RNN outputs tend to be garbage. (???)
 		model_outputs = model_outputs[:, 2:, :]
-		return K.ctc_batch_cost(labels, model_outputs, model_output_length, label_length)
+		return tf.keras.backend.ctc_batch_cost(labels, model_outputs, model_output_length, label_length)
 
 	@staticmethod
 	def decode_label(labels, blank_label):
@@ -159,14 +212,6 @@ class MyModel(object):
 class MyRunner(object):
 	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
 		# Set parameters.
-		self._max_queue_size, self._num_workers = 10, 8
-		self._use_multiprocessing = True
-
-		#sess = tf.Session(config=config)
-		#K.set_session(sess)
-		#K.set_learning_phase(0)  # Sets the learning phase to 'test'.
-		#K.set_learning_phase(1)  # Sets the learning phase to 'train'.
-
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
 		#	REF [function] >> MyModel.create_model().
@@ -180,6 +225,14 @@ class MyRunner(object):
 		# TODO [check] >> The first couple of RNN outputs tend to be garbage. (???)
 		self._model_output_time_steps -= 2
 		self._max_label_len = self._model_output_time_steps  # max_label_len <= model_output_time_steps.
+
+		self._max_queue_size, self._num_workers = 10, 8
+		self._use_multiprocessing = True
+
+		#self._sess = tf.Session(config=config)
+		#tf.keras.backend.set_session(self._sess)
+		#tf.keras.backend.set_learning_phase(0)  # Sets the learning phase to 'test'.
+		#tf.keras.backend.set_learning_phase(1)  # Sets the learning phase to 'train'.
 
 		#--------------------
 		# Create a dataset.
@@ -204,7 +257,7 @@ class MyRunner(object):
 			# When using TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.
 			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=self._max_label_len)
 
-			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = None, None, None
+			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = self._dataset.num_train_examples, self._dataset.num_test_examples, self._dataset.num_test_examples
 
 	def train(self, model_filepath, model_checkpoint_filepath, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		if is_training_resumed:
@@ -248,15 +301,20 @@ class MyRunner(object):
 		else:
 			print('[SWL] Info: Start training...')
 		start_time = time.time()
-		train_sequence = MyDataSequence(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True), train_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
-		val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), val_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
+		# NOTE [error] >> TypeError("can't pickle generator objects").
+		#train_sequence = MyDataSequence(self._dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=True), train_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
+		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), val_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
+		train_sequence = MyDataSequence(self._dataset.train_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=True)
+		val_sequence = MyDataSequence(self._dataset.test_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=False)
 		history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=train_steps_per_epoch, validation_data=val_sequence, validation_steps=val_steps_per_epoch, shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
 		print('[SWL] Info: Start evaluating...')
 		start_time = time.time()
-		val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), val_steps_per_epoch, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
+		# NOTE [error] >> TypeError("can't pickle generator objects").
+		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), , self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
+		val_sequence = MyDataSequence(self._dataset.test_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=False)
 		score = model.evaluate_generator(val_sequence, steps=val_steps_per_epoch, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
 		print('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		print('[SWL] Info: End evaluating: {} secs.'.format(time.time() - start_time))
@@ -394,7 +452,7 @@ class MyRunner(object):
 				for fpath, inf in zip(image_filepaths, inferences):
 					writer.writerow([fpath, inf])
 		else:
-			print('[SWL] Warning: Invalid test results.')
+			print('[SWL] Warning: Invalid inference results.')
 
 #--------------------------------------------------------------------
 
@@ -456,7 +514,7 @@ def main():
 		if test_dir_path and test_dir_path.strip() and not os.path.exists(test_dir_path):
 			os.makedirs(test_dir_path, exist_ok=True)
 
-		runner.test(model_filepath, test_dir_path)
+		runner.test(model_filepath, test_dir_path, batch_size)
 
 	if is_inferred:
 		if not model_filepath or not os.path.exists(model_filepath):
@@ -465,7 +523,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./kr_samples_1000/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(model_filepath, image_filepaths, inference_dir_path)
 
 #--------------------------------------------------------------------

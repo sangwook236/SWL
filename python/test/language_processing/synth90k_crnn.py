@@ -42,7 +42,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 		with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
 			inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
 			# (samples, height, width, channels) -> (samples, width, height, channels).
-			inputs = tf.transpose(inputs, perm=[0, 2, 1, 3], name='transpose')
+			inputs = tf.transpose(inputs, perm=(0, 2, 1, 3), name='transpose')
 
 		#--------------------
 		# Convolutional layer.
@@ -87,6 +87,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			conv3 = tf.layers.conv2d(conv2, filters=256, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv1')
 			conv3 = tf.layers.batch_normalization(conv3, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm1')
 			conv3 = tf.nn.relu(conv3, name='relu1')
+
 			conv3 = tf.layers.conv2d(conv3, filters=256, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv3 = tf.layers.batch_normalization(conv3, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm2')
 			conv3 = tf.nn.relu(conv3, name='relu2')
@@ -96,6 +97,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			conv4 = tf.layers.conv2d(conv3, filters=512, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv1')
 			conv4 = tf.layers.batch_normalization(conv4, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm1')
 			conv4 = tf.nn.relu(conv4, name='relu1')
+
 			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), strides=(1, 1), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
@@ -114,9 +116,7 @@ class Synth90kCrnn(SimpleSequentialTensorFlowModel):
 			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + (-1,), name='reshape')
 			#dense = tf.reshape(conv5, shape=conv5_shape[:2] + (conv5_shape[2] * conv5_shape[3]), name='reshape')
 			outputs = tf.reshape(conv5, shape=(-1, conv5_shape[1], conv5_shape[2] * conv5_shape[3]), name='reshape')
-			outputs = tf.layers.dense(outputs, num_features, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
-
-			return outputs
+			return tf.layers.dense(outputs, num_features, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
 
 	def _create_recurrent_layer(self, inputs, input_len, kernel_initializer, is_training):
 		num_hidden_units = 256
@@ -201,7 +201,7 @@ class Synth90kCrnnWithCrossEntropyLoss(Synth90kCrnn):
 
 class Synth90kCrnnWithCtcLoss(Synth90kCrnn):
 	def __init__(self, image_height, image_width, image_channel, num_classes):
-		super().__init__([None, image_height, image_width, image_channel], [None, None], num_classes, is_sparse_output=True)
+		super().__init__((None, image_height, image_width, image_channel), (None, None), num_classes, is_sparse_output=True)
 
 	def _create_transcription_layer(self, inputs, num_classes, kernel_initializer, is_training):
 		outputs = tf.layers.dense(inputs, num_classes, activation=tf.nn.relu, kernel_initializer=kernel_initializer, name='dense')
@@ -333,9 +333,8 @@ class Synth90kDilatedCrnnWithCtcLoss(Synth90kCrnn):
 	def _get_accuracy(self, y, t_sparse, y_len):
 		with tf.variable_scope('accuracy', reuse=tf.AUTO_REUSE):
 			# Inaccuracy: label error rate.
-			# NOTE [info] >> tf.edit_distance() is too slow.
-			#	I guess that this function is run on CPU, not GPU.
-			#	We do not need to compute accuracy to train.
+			# NOTE [info] >> tf.edit_distance() is too slow. It seems to run on CPU, not GPU.
+			#	Accuracy may not be calculated to speed up the training.
 			ler = tf.reduce_mean(tf.edit_distance(hypothesis=tf.cast(y['decoded_label'], tf.int32), truth=t_sparse, normalize=True))  # int64 -> int32.
 			accuracy = 1.0 - ler
 			#accuracy = tf.constant(-1, tf.float32)

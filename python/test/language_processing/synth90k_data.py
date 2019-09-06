@@ -1,5 +1,4 @@
-import os, time
-from functools import partial
+import os, functools, time
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import threading
@@ -771,7 +770,7 @@ class Synth90kDataGenerator(Data2Generator):
 		timeout = None
 		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(functools.partial(Synth90kDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
@@ -783,7 +782,7 @@ class Synth90kDataGenerator(Data2Generator):
 		timeout = None
 		with mp.Pool(processes=num_processes, initializer=Synth90kDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(Synth90kDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(functools.partial(Synth90kDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))

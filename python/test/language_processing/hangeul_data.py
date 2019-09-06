@@ -1,5 +1,4 @@
-import os, time, json
-from functools import partial, reduce
+import os, functools, time, json
 import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import threading
@@ -52,7 +51,7 @@ class HangeulDataset(object):
 		print('\tThe length of loaded test data = {}.'.format(len(self._test_image_filepaths)))
 		print('End loading Hangeul dataset info: {} secs.'.format(time.time() - start_time))
 
-		self._max_label_len = reduce(lambda lhs, rhs: max(lhs, len(rhs)), self._train_labels + self._test_labels, 0)  # Max length of labels.
+		self._max_label_len = functools.reduce(lambda lhs, rhs: max(lhs, len(rhs)), self._train_labels + self._test_labels, 0)  # Max length of labels.
 
 		#--------------------
 		# Prepares characters.
@@ -787,7 +786,7 @@ class HangeulDataGenerator(Data2Generator):
 		timeout = None
 		with mp.Pool(processes=num_processes, initializer=HangeulDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(HangeulDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(functools.partial(HangeulDataGenerator.npy_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_filepaths, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End npy augmentation worker thread.'.format(os.getpid(), threading.get_ident()))
@@ -799,7 +798,7 @@ class HangeulDataGenerator(Data2Generator):
 		timeout = None
 		with mp.Pool(processes=num_processes, initializer=HangeulDataGenerator.initialize_lock, initargs=(lock,)) as pool:
 			is_output_augmented, is_time_major = False, False  # Don't care.
-			data_augmentation_results = pool.map_async(partial(HangeulDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
+			data_augmentation_results = pool.map_async(functools.partial(HangeulDataGenerator.image_augmentation_worker_process_proc, augmenter, is_output_augmented, dirMgr_mp, input_filepaths, output_seqs, image_height, image_width, image_channels, num_loaded_files_at_a_time, batch_size, shuffle, is_time_major, batch_info_csv_filename), [epoch for epoch in range(num_epochs)])
 
 			data_augmentation_results.get(timeout)
 		print('\t{}({}): End image augmentation worker thread.'.format(os.getpid(), threading.get_ident()))

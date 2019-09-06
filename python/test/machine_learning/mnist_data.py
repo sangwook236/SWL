@@ -1,4 +1,4 @@
-from functools import partial
+import functools
 import numpy as np
 #from sklearn import preprocessing
 import cv2 as cv
@@ -44,7 +44,7 @@ class ImgaugDataAugmenter(object):
 				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
 
 				iaa.Invert(0.5, per_channel=True),  # Invert color channels.
-				iaa.LinearContrast((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
+				iaa.ContrastNormalization((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
 
 				#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
 				#iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
@@ -198,9 +198,9 @@ class MnistDataGenerator(Data2Generator):
 		else:
 			if self._is_augmented_in_parallel:
 				num_processes, chunksize = 4, 5
-				self._batch_generator = partial(imgaug_util.generateBatchesInParallelWithOutputAugmentation, num_processes, chunksize, self._augmenter._augmenter) if is_output_augmented else partial(imgaug_util.generateBatchesInParallelWithoutOutputAugmentation, num_processes, chunksize, self._augmenter._augmenter)
+				self._batch_generator = functools.partial(imgaug_util.generateBatchesInParallelWithOutputAugmentation, num_processes, chunksize, self._augmenter._augmenter) if is_output_augmented else functools.partial(imgaug_util.generateBatchesInParallelWithoutOutputAugmentation, num_processes, chunksize, self._augmenter._augmenter)
 			else:
-				self._batch_generator = partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
+				self._batch_generator = functools.partial(MnistDataGenerator._generateBatchesWithAugmentation, self._augmenter)
 		self._batch_generator_without_aug = MnistDataGenerator._generateBatchesWithoutAugmentation
 
 	@property

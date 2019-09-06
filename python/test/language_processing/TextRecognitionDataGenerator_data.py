@@ -14,6 +14,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		self._num_classes = num_classes
 		self._use_NWHC = use_NWHC
 
+		self._train_data, self._test_data = None, None
+
 	@property
 	def shape(self):
 		return self._image_height, self._image_width, self._image_channel
@@ -25,6 +27,22 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 	@property
 	def default_value(self):
 		return self._default_value
+
+	@property
+	def train_examples(self):
+		return self._train_data
+
+	@property
+	def test_examples(self):
+		return self._test_data
+
+	@property
+	def num_train_examples(self):
+		return 0 if self._train_data is None else len(self._train_data)
+
+	@property
+	def num_test_examples(self):
+		return 0 if self._test_data is None else len(self._test_data)
 
 	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
 		if height is None:
@@ -147,7 +165,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
-			raise ValueError('Invalid train-test ratio')
+			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
 		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
@@ -225,7 +243,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
-			raise ValueError('Invalid train-test ratio')
+			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
 		hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
@@ -316,7 +334,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
-			raise ValueError('Invalid train-test ratio')
+			raise ValueError('Invalid train-test ratio: {}'.format(train_test_ratio))
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.

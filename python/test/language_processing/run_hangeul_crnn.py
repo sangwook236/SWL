@@ -3,11 +3,11 @@
 import sys
 sys.path.append('../../src')
 
-import os, time, datetime
-from functools import partial
+import os, time, datetime, glob, csv
 import threading
 import numpy as np
 import tensorflow as tf
+import cv2
 from swl.machine_learning.model_trainer import ModelTrainer
 from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
@@ -67,10 +67,10 @@ def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, s
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, num_epochs, batch_size, is_sparse_output):
+	def __init__(self, is_sparse_output, num_epochs, batch_size):
 		# Sets parameters.
-		self._num_epochs, self._batch_size = num_epochs, batch_size
 		self._is_sparse_output = is_sparse_output
+		self._num_epochs, self._batch_size = num_epochs, batch_size
 
 		is_output_augmented = False  # Fixed.
 		is_augmented_in_parallel = True
@@ -88,8 +88,6 @@ class MyRunner(object):
 		# Prepares data.
 
 		self._dataGenerator = HangeulDataGenerator(self._num_epochs, self._is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
-		#self._label_sos_token, self._label_eos_token = self._dataGenerator.dataset.start_token, self._dataGenerator.dataset.end_token
-		self._label_eos_token = self._dataGenerator.dataset.end_token
 
 		self._dataGenerator.initialize(self._batch_size)
 
@@ -167,7 +165,7 @@ class MyRunner(object):
 		start_time = time.time()
 		with eval_session.as_default() as sess:
 			with sess.graph.as_default():
-				#modelEvaluator.evaluate(sess, batch_size=None, shuffle=False)  # Exception: NotImplementedError is raised in dataGenerator.getValidationData().
+				#modelEvaluator.evaluate(sess, batch_size=None, shuffle=shuffle)  # Exception: NotImplementedError is raised in dataGenerator.getValidationData().
 				modelEvaluator.evaluate(sess, batch_size=self._batch_size, shuffle=shuffle)
 		print('\tTotal evaluation time = {}.'.format(time.time() - start_time))
 
@@ -356,7 +354,6 @@ def check_data(is_sparse_output, num_epochs, batch_size, shuffle):
 	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
 
 	dataGenerator = HangeulDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
-	label_eos_token = dataGenerator.dataset.end_token
 	dataGenerator.initialize(batch_size)
 
 	dataGenerator.initializeTraining(batch_size, shuffle=shuffle)
@@ -430,8 +427,8 @@ def main():
 	#--------------------
 	if False:
 		print('[SWL] Info: Start checking data...')
-		start_time = time.time(is_sparse_output, num_epochs, batch_size, shuffle=False)
-		check_data()
+		start_time = time.time()
+		check_data(is_sparse_output, num_epochs, batch_size, shuffle=False)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 
@@ -450,7 +447,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(num_epochs, batch_size, is_sparse_output)
+	runner = MyRunner(is_sparse_output, num_epochs, batch_size)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -479,7 +476,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./images/*.jpg', recursive=False)  # TODO [modify] >>
 		# TODO [check] >> Not yet tested.
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, device_name=infer_device_name)
 

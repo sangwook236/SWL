@@ -66,7 +66,7 @@ class MyModel(object):
 			return model_output
 
 	def decode_label(self, labels):
-		return self._decode_functor(labels)
+		return self._decode_functor(labels) if labels[2][1] > 0 else list()
 
 	def _get_feed_dict_for_sparse(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
@@ -861,9 +861,9 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		#image_filepaths = glob.glob('./single_letters_10000/*.jpg')
-		#image_filepaths = glob.glob('./double_letters_10000/*.jpg')
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg')
+		#image_filepaths = glob.glob('./single_letters_10000/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./double_letters_10000/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./kr_samples_1000/*.jpg', recursive=False)
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

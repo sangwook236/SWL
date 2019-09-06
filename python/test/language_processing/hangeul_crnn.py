@@ -138,7 +138,7 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 
 			#rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs1, rnn_states1 = tf.nn.bidirectional_dynamic_rnn(cell_fw1, cell_bw1, inputs, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs1 = tf.concat(rnn_outputs1, axis=2)
+			rnn_outputs1 = tf.concat(rnn_outputs1, axis=-1)
 			rnn_outputs1 = tf.layers.batch_normalization(rnn_outputs1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states1 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states1[0].c, rnn_states1[1].c), axis=-1), tf.concat((rnn_states1[0].h, rnn_states1[1].h), axis=-1))
 			#rnn_states1 = tf.layers.batch_normalization(rnn_states1, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
@@ -151,7 +151,7 @@ class HangeulCrnn(SimpleSequentialTensorFlowModel):
 
 			#rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=None, time_major=False, dtype=tf.float32, scope='rnn')
 			rnn_outputs2, rnn_states2 = tf.nn.bidirectional_dynamic_rnn(cell_fw2, cell_bw2, rnn_outputs1, sequence_length=input_len, time_major=False, dtype=tf.float32, scope='rnn')
-			rnn_outputs2 = tf.concat(rnn_outputs2, axis=2)
+			rnn_outputs2 = tf.concat(rnn_outputs2, axis=-1)
 			rnn_outputs2 = tf.layers.batch_normalization(rnn_outputs2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')
 			#rnn_states2 = tf.contrib.rnn.LSTMStateTuple(tf.concat((rnn_states2[0].c, rnn_states2[1].c), axis=-1), tf.concat((rnn_states2[0].h, rnn_states2[1].h), axis=-1))
 			#rnn_states2 = tf.layers.batch_normalization(rnn_states2, axis=-1, momentum=0.99, epsilon=0.001, center=True, scale=True, training=is_training, name='batchnorm')

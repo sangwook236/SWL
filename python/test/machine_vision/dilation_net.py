@@ -128,7 +128,7 @@ class PascalVocDilationNet(DilationNet):
 
 	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [33, 33], [33, 33], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			conv1 = tf.pad(inputs, ((0, 0), (33, 33), (33, 33), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=2 * num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
@@ -179,41 +179,41 @@ class CamVidDilationNet(DilationNet):
 
 	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv1 = tf.pad(inputs, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
 			conv1 = tf.nn.relu(conv1, name='relu1')
 
-			conv1 = tf.pad(conv1, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv1 = tf.pad(conv1, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 2.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv2')
 			conv1 = tf.nn.relu(conv1, name='relu2')
 
 		with tf.variable_scope('ctx_atrous_conv', reuse=tf.AUTO_REUSE):
-			conv2 = tf.pad(conv1, [[0, 0], [2, 2], [2, 2], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv2 = tf.pad(conv1, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 3.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=2, padding='valid', name='atrous_conv1')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(2, 2), padding='valid', name='conv1')
 			conv2 = tf.nn.relu(conv2, name='relu1')
 
-			conv2 = tf.pad(conv2, [[0, 0], [4, 4], [4, 4], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv2 = tf.pad(conv2, ((0, 0), (4, 4), (4, 4), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 4.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=4, padding='valid', name='atrous_conv2')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(4, 4), padding='valid', name='conv2')
 			conv2 = tf.nn.relu(conv2, name='relu2')
 
-			conv2 = tf.pad(conv2, [[0, 0], [8, 8], [8, 8], [0, 0]], mode='CONSTANT', constant_values=0, name='pad3')
+			conv2 = tf.pad(conv2, ((0, 0), (8, 8), (8, 8), (0, 0)), mode='CONSTANT', constant_values=0, name='pad3')
 
 			# Layer 5.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=8, padding='valid', name='atrous_conv3')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(8, 8), padding='valid', name='conv3')
 			conv2 = tf.nn.relu(conv2, name='relu3')
 
-			conv2 = tf.pad(conv2, [[0, 0], [16, 16], [16, 16], [0, 0]], mode='CONSTANT', constant_values=0, name='pad4')
+			conv2 = tf.pad(conv2, ((0, 0), (16, 16), (16, 16), (0, 0)), mode='CONSTANT', constant_values=0, name='pad4')
 
 			# Layer 6.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=16, padding='valid', name='atrous_conv4')
@@ -221,7 +221,7 @@ class CamVidDilationNet(DilationNet):
 			conv2 = tf.nn.relu(conv2, name='relu4')
 
 		with tf.variable_scope('ctx_final', reuse=tf.AUTO_REUSE):
-			dense_final = tf.pad(conv2, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			dense_final = tf.pad(conv2, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 7.
 			dense_final = tf.layers.conv2d(dense_final, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='dense1')
@@ -242,34 +242,34 @@ class KittiDilationNet(DilationNet):
 
 	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv1 = tf.pad(inputs, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
 			conv1 = tf.nn.relu(conv1, name='relu1')
 
-			conv1 = tf.pad(conv1, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv1 = tf.pad(conv1, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 2.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv2')
 			conv1 = tf.nn.relu(conv1, name='relu2')
 
 		with tf.variable_scope('ctx_atrous_conv', reuse=tf.AUTO_REUSE):
-			conv2 = tf.pad(conv1, [[0, 0], [2, 2], [2, 2], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv2 = tf.pad(conv1, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 3.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=2, padding='valid', name='atrous_conv1')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(2, 2), padding='valid', name='conv1')
 			conv2 = tf.nn.relu(conv2, name='relu1')
 
-			conv2 = tf.pad(conv2, [[0, 0], [4, 4], [4, 4], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv2 = tf.pad(conv2, ((0, 0), (4, 4), (4, 4), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 4.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=4, padding='valid', name='atrous_conv2')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(4, 4), padding='valid', name='conv2')
 			conv2 = tf.nn.relu(conv2, name='relu2')
 
-			conv2 = tf.pad(conv2, [[0, 0], [8, 8], [8, 8], [0, 0]], mode='CONSTANT', constant_values=0, name='pad3')
+			conv2 = tf.pad(conv2, ((0, 0), (8, 8), (8, 8), (0, 0)), mode='CONSTANT', constant_values=0, name='pad3')
 
 			# Layer 5.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=8, padding='valid', name='atrous_conv3')
@@ -277,7 +277,7 @@ class KittiDilationNet(DilationNet):
 			conv2 = tf.nn.relu(conv2, name='relu3')
 
 		with tf.variable_scope('ctx_final', reuse=tf.AUTO_REUSE):
-			dense_final = tf.pad(conv2, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			dense_final = tf.pad(conv2, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 6.
 			dense_final = tf.layers.conv2d(dense_final, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='dense1')
@@ -298,55 +298,55 @@ class CityscapesDilationNet(DilationNet):
 
 	def _create_context_module(self, inputs, num_classes, is_training):
 		with tf.variable_scope('ctx_conv', reuse=tf.AUTO_REUSE):
-			conv1 = tf.pad(inputs, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv1 = tf.pad(inputs, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 1.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv1')
 			conv1 = tf.nn.relu(conv1, name='relu1')
 
-			conv1 = tf.pad(conv1, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv1 = tf.pad(conv1, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 2.
 			conv1 = tf.layers.conv2d(conv1, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='conv2')
 			conv1 = tf.nn.relu(conv1, name='relu2')
 
 		with tf.variable_scope('ctx_atrous_conv', reuse=tf.AUTO_REUSE):
-			conv2 = tf.pad(conv1, [[0, 0], [2, 2], [2, 2], [0, 0]], mode='CONSTANT', constant_values=0, name='pad1')
+			conv2 = tf.pad(conv1, ((0, 0), (2, 2), (2, 2), (0, 0)), mode='CONSTANT', constant_values=0, name='pad1')
 
 			# Layer 3.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=2, padding='valid', name='atrous_conv1')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(2, 2), padding='valid', name='conv1')
 			conv2 = tf.nn.relu(conv2, name='relu1')
 
-			conv2 = tf.pad(conv2, [[0, 0], [4, 4], [4, 4], [0, 0]], mode='CONSTANT', constant_values=0, name='pad2')
+			conv2 = tf.pad(conv2, ((0, 0), (4, 4), (4, 4), (0, 0)), mode='CONSTANT', constant_values=0, name='pad2')
 
 			# Layer 4.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=4, padding='valid', name='atrous_conv2')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(4, 4), padding='valid', name='conv2')
 			conv2 = tf.nn.relu(conv2, name='relu2')
 
-			conv2 = tf.pad(conv2, [[0, 0], [8, 8], [8, 8], [0, 0]], mode='CONSTANT', constant_values=0, name='pad3')
+			conv2 = tf.pad(conv2, ((0, 0), (8, 8), (8, 8), (0, 0)), mode='CONSTANT', constant_values=0, name='pad3')
 
 			# Layer 5.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=8, padding='valid', name='atrous_conv3')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(8, 8), padding='valid', name='conv3')
 			conv2 = tf.nn.relu(conv2, name='relu3')
 
-			conv2 = tf.pad(conv2, [[0, 0], [16, 16], [16, 16], [0, 0]], mode='CONSTANT', constant_values=0, name='pad4')
+			conv2 = tf.pad(conv2, ((0, 0), (16, 16), (16, 16), (0, 0)), mode='CONSTANT', constant_values=0, name='pad4')
 
 			# Layer 6.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=16, padding='valid', name='atrous_conv4')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(16, 16), padding='valid', name='conv4')
 			conv2 = tf.nn.relu(conv2, name='relu4')
 
-			conv2 = tf.pad(conv2, [[0, 0], [32, 32], [32, 32], [0, 0]], mode='CONSTANT', constant_values=0, name='pad5')
+			conv2 = tf.pad(conv2, ((0, 0), (32, 32), (32, 32), (0, 0)), mode='CONSTANT', constant_values=0, name='pad5')
 
 			# Layer 7.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=32, padding='valid', name='atrous_conv5')
 			conv2 = tf.layers.conv2d(conv2, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(32, 32), padding='valid', name='conv5')
 			conv2 = tf.nn.relu(conv2, name='relu5')
 
-			conv2 = tf.pad(conv2, [[0, 0], [64, 64], [64, 64], [0, 0]], mode='CONSTANT', constant_values=0, name='pad6')
+			conv2 = tf.pad(conv2, ((0, 0), (64, 64), (64, 64), (0, 0)), mode='CONSTANT', constant_values=0, name='pad6')
 
 			# Layer 8.
 			#conv2 = tf.nn.atrous_conv2d(conv2, filters=(3, 3, num_classes, num_classes), rate=64, padding='valid', name='atrous_conv6')
@@ -354,7 +354,7 @@ class CityscapesDilationNet(DilationNet):
 			conv2 = tf.nn.relu(conv2, name='relu6')
 
 		with tf.variable_scope('ctx_final', reuse=tf.AUTO_REUSE):
-			dense_final = tf.pad(conv2, [[0, 0], [1, 1], [1, 1], [0, 0]], mode='CONSTANT', constant_values=0, name='pad')
+			dense_final = tf.pad(conv2, ((0, 0), (1, 1), (1, 1), (0, 0)), mode='CONSTANT', constant_values=0, name='pad')
 
 			# Layer 9.
 			dense_final = tf.layers.conv2d(dense_final, filters=num_classes, kernel_size=(3, 3), strides=(1, 1), dilation_rate=(1, 1), padding='valid', name='dense1')

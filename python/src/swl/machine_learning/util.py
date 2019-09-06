@@ -29,7 +29,7 @@ def time_based_learning_rate(epoch, initial_learning_rate, decay_rate):
 def drop_based_learning_rate(epoch, initial_learning_rate, drop_rate, epoch_drop):
 	return initial_learning_rate * math.pow(drop_rate, math.floor((1.0 + epoch) / epoch_drop))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def standardize_samplewise(data):
 	for idx in range(data.shape[0]):
@@ -91,7 +91,7 @@ def normalize_featurewise_by_min_max(data):
 				data[:,r,c,:] = (data[:,r,c,:] - dmin) / (dmax - dmin)
 	return data
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> https://github.com/igormq/ctc_tensorflow_example/blob/master/utils.py
 def sequences_to_sparse(sequences, dtype=np.int32):
@@ -248,7 +248,7 @@ def generate_batch_list(data, labels, batch_size, shuffle=True, is_time_major=Fa
 
 	return data_batch_list, label_batch_list
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> https://www.pyimagesearch.com/2016/11/07/intersection-over-union-iou-for-object-detection/
 def compute_intersection_over_union_of_aabb(aabb1, aabb2):
@@ -271,7 +271,7 @@ def compute_intersection_over_union_of_aabb(aabb1, aabb2):
 	#	dividing it by the sum of prediction + ground-truth areas - the interesection area.
 	return interArea / float(aabb1Area + aabb2Area - interArea)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def visualize_activation(session, input_tensor, feed_dict, output_dir_path):
 	import tf_cnnvis
@@ -348,7 +348,7 @@ def visualize_by_partial_occlusion(session, nnInferrer, vis_images, vis_labels, 
 
 	return occluded_probilities
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def display_train_history(history):
 	# List all data in history.

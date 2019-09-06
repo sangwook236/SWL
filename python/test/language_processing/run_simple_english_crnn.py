@@ -67,7 +67,7 @@ class MyModel(object):
 			return model_output
 
 	def decode_label(self, labels):
-		return self._decode_functor(labels)
+		return self._decode_functor(labels) if labels[2][1] > 0 else list()
 
 	def _get_feed_dict_for_sparse(self, data, num_data, *args, **kwargs):
 		len_data = len(data)
@@ -714,7 +714,7 @@ def check_data(data_dir_path, train_test_ratio, num_epochs, batch_size):
 			print('type(batch_data[2]) = {}, len(batch_data[2]) = {}.'.format(type(batch_data[2]), len(batch_data[2])))
 
 		if batch_size != batch_data[0].shape[0]:
-			print('Invalid image size: {} != {}.'format(batch_size, batch_data[0].shape[0]))
+			print('Invalid image size: {} != {}.'.format(batch_size, batch_data[0].shape[0]))
 		if batch_size != len(batch_data[1]) or batch_size != len(batch_data[2]):
 			print('Invalid label size: {0} != {1} or {0} != {2}.'.format(batch_size, len(batch_data[1]), len(batch_data[1])))
 
@@ -813,7 +813,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./en_samples_1000/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./en_samples_1000/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

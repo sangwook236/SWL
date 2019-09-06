@@ -4,7 +4,6 @@ import sys
 sys.path.append('../../src')
 
 import os, time, datetime, glob, csv
-from functools import partial
 import threading
 import numpy as np
 import tensorflow as tf
@@ -82,10 +81,10 @@ def training_worker_thread_proc(session, modelTrainer, batch_size, num_epochs, s
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, num_epochs, batch_size, is_sparse_output):
+	def __init__(self, is_sparse_output, num_epochs, batch_size):
 		# Sets parameters.
-		self._num_epochs, self._batch_size = num_epochs, batch_size
 		self._is_sparse_output = is_sparse_output
+		self._num_epochs, self._batch_size = num_epochs, batch_size
 
 		is_output_augmented = False  # Fixed.
 		is_augmented_in_parallel = True
@@ -108,11 +107,9 @@ class MyRunner(object):
 
 	def train(self, checkpoint_dir_path, output_dir_path, shuffle=True, initial_epoch=0, is_training_resumed=False, device_name=None):
 		# Prepares directories.
-		inference_dir_path = os.path.join(output_dir_path, 'inference')
 		train_summary_dir_path = os.path.join(output_dir_path, 'train_log')
 		val_summary_dir_path = os.path.join(output_dir_path, 'val_log')
 
-		os.makedirs(inference_dir_path, exist_ok=True)
 		os.makedirs(train_summary_dir_path, exist_ok=True)
 		os.makedirs(val_summary_dir_path, exist_ok=True)
 
@@ -371,7 +368,6 @@ def check_data(is_sparse_output, num_epochs, batch_size, shuffle):
 	is_npy_files_used_as_input = True  # Specifies whether npy files or image files are used as input. Using npy files is faster.
 
 	dataGenerator = Synth90kDataGenerator(num_epochs, is_sparse_output, is_output_augmented, is_augmented_in_parallel, is_npy_files_used_as_input)
-	label_eos_token = dataGenerator.dataset.end_token
 	dataGenerator.initialize(batch_size)
 
 	dataGenerator.initializeTraining(batch_size, shuffle=shuffle)
@@ -425,14 +421,6 @@ def main():
 	#tf.set_random_seed(1234)  # Sets a graph-level seed.
 
 	#--------------------
-	if False:
-		print('[SWL] Info: Start checking data...')
-		start_time = time.time()
-		check_data(is_sparse_output, num_epochs, batch_size, shuffle=False)
-		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
-		return
-
-	#--------------------
 	# When outputs are not sparse, CRNN model's output shape = (samples, 32, num_classes) and dataset's output shape = (samples, 23, num_classes).
 	is_sparse_output = True
 	#is_time_major = False  # Fixed.
@@ -451,6 +439,14 @@ def main():
 	infer_device_name = None #'/device:GPU:0'
 
 	#--------------------
+	if False:
+		print('[SWL] Info: Start checking data...')
+		start_time = time.time()
+		check_data(is_sparse_output, num_epochs, batch_size, shuffle=False)
+		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
+		return
+
+	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
 		output_dir_prefix = 'synth90k_crnn'
@@ -465,7 +461,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(num_epochs, batch_size, is_sparse_output)
+	runner = MyRunner(is_sparse_output, num_epochs, batch_size)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
@@ -494,7 +490,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./images/*.jpg')  # TODO [modify] >>
+		image_filepaths = glob.glob('./images/*.jpg', recursive=False)  # TODO [modify] >>
 		# TODO [check] >> Not yet tested.
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, device_name=infer_device_name)
 
