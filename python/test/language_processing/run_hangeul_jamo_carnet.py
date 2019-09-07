@@ -116,6 +116,11 @@ class MyModel(object):
 		create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
+		# Preprocessing.
+		#with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+		#	inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+
+		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
 			cnn_output = create_cnn_functor(inputs, kernel_initializer)
 
@@ -792,16 +797,16 @@ def main():
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# REF [function] >> generate_single_letter_dataset() in ${SWL_PYTHON_HOME}/test/language_processing/text_generation_util_test.py.
 		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
-		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000
-		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
-		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000
+		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000_h64
+		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000_h64
+		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000_h64
 
 		#data_dir_path = './single_letters_100000'
 		#data_dir_path = './single_letters_200000'
 		#data_dir_path = './double_letters_100000'
 		#data_dir_path = './double_letters_200000'
-		#data_dir_path = './kr_samples_100000'
-		data_dir_path = './kr_samples_200000'
+		#data_dir_path = './kr_samples_100000_h64'
+		data_dir_path = './kr_samples_200000_h64'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -863,7 +868,7 @@ def main():
 
 		#image_filepaths = glob.glob('./single_letters_10000/*.jpg', recursive=False)
 		#image_filepaths = glob.glob('./double_letters_10000/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./kr_samples_1000_h64/*.jpg', recursive=False)
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

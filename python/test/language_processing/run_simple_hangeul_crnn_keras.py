@@ -468,8 +468,13 @@ def main():
 
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		#data_dir_path = './kr_samples_100000'
-		data_dir_path = './kr_samples_200000'
+		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
+		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000_h64
+		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000_h64
+		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000_h64
+
+		#data_dir_path = './kr_samples_100000_h64'
+		data_dir_path = './kr_samples_200000_h64'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -523,7 +528,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg', recursive=False)  # TODO [modify] >>
+		image_filepaths = glob.glob('./kr_samples_1000_h64/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(model_filepath, image_filepaths, inference_dir_path)
 
 #--------------------------------------------------------------------

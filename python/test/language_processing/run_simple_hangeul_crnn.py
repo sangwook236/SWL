@@ -116,6 +116,11 @@ class MyModel(object):
 		create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
+		# Preprocessing.
+		#with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+		#	inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+
+		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
 			cnn_output = create_cnn_functor(inputs, kernel_initializer)
 
@@ -291,8 +296,8 @@ class MyModel(object):
 			conv4 = tf.nn.relu(conv4, name='relu1')
 
 			# TODO [decide] >>
-			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
-			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
+			#conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=None, name='conv2')
+			conv4 = tf.layers.conv2d(conv4, filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_initializer, name='conv2')
 			conv4 = tf.layers.batch_normalization(conv4, name='batchnorm2')
 			conv4 = tf.nn.relu(conv4, name='relu2')
 			conv4 = tf.layers.max_pooling2d(conv4, pool_size=(1, 2), strides=(1, 2), padding='same', name='maxpool')
@@ -325,7 +330,7 @@ class MyModel(object):
 			outputs_2, _ = tf.nn.bidirectional_dynamic_rnn(fw_cell_2, bw_cell_2, outputs_1, input_len, dtype=tf.float32)
 			outputs_2 = tf.concat(outputs_2, 2)
 			# TODO [decide] >>
-			#outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
+			outputs_2 = tf.layers.batch_normalization(outputs_2, name='batchnorm')
 
 		return outputs_2
 
@@ -754,12 +759,12 @@ def main():
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
-		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000
-		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
-		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000
+		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000_h64
+		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000_h64
+		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000_h64
 
-		#data_dir_path = './kr_samples_100000'
-		data_dir_path = './kr_samples_200000'
+		#data_dir_path = './kr_samples_100000_h64'
+		data_dir_path = './kr_samples_200000_h64'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -819,7 +824,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./kr_samples_1000/*.jpg', recursive=False)  # TODO [modify] >>
+		image_filepaths = glob.glob('./kr_samples_1000_h64/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

@@ -117,6 +117,11 @@ class MyModel(object):
 		#create_cnn_functor = MyModel._create_cnn_with_batch_normalization
 
 		#--------------------
+		# Preprocessing.
+		#with tf.variable_scope('preprocessing', reuse=tf.AUTO_REUSE):
+		#	inputs = tf.nn.local_response_normalization(inputs, depth_radius=5, bias=1, alpha=1, beta=0.5, name='lrn')
+
+		#--------------------
 		with tf.variable_scope('cnn', reuse=tf.AUTO_REUSE):
 			cnn_output = create_cnn_functor(inputs, kernel_initializer)
 
@@ -748,12 +753,12 @@ def main():
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
-		#	python run.py -c 100000 -w 1 -f 32 -t 8 --output_dir en_samples_100000
-		#	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
-		#	python run.py -c 1000 -w 1 -f 32 -t 8 --output_dir en_samples_1000
+		#	python run.py -c 100000 -w 1 -f 32 -t 8 --output_dir en_samples_100000_h32
+		#	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000_h32
+		#	python run.py -c 1000 -w 1 -f 32 -t 8 --output_dir en_samples_1000_h32
 
-		#data_dir_path = './en_samples_100000'
-		data_dir_path = './en_samples_200000'
+		#data_dir_path = './en_samples_100000_h32'
+		data_dir_path = './en_samples_200000_h32'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -813,7 +818,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./en_samples_1000/*.jpg', recursive=False)  # TODO [modify] >>
+		image_filepaths = glob.glob('./en_samples_1000_h32/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
