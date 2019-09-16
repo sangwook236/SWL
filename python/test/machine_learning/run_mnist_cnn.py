@@ -6,6 +6,7 @@ sys.path.append('../../src')
 import os, time, datetime, glob, csv
 import numpy as np
 import tensorflow as tf
+import cv2
 from swl.machine_learning.model_trainer import SimpleModelTrainer
 from swl.machine_learning.model_evaluator import ModelEvaluator
 from swl.machine_learning.model_inferrer import ModelInferrer
@@ -177,6 +178,7 @@ class MyRunner(object):
 
 		#--------------------
 		print('[SWL] Info: Start loading images...')
+		start_time = time.time()
 		inf_images = list()
 		for fpath in image_filepaths:
 			img = cv2.imread(fpath)
@@ -184,7 +186,8 @@ class MyRunner(object):
 				print('[SWL] Warning: Failed to load an image from {}.'.format(fpath))
 				continue
 			if self._input_shape[1] != img.shape[0] or self._input_shape[2] != img.shape[1]:
-				img = cv2.resize(img, (image_width, image_height))
+				#img = cv2.resize(img, (image_width, image_height))
+				img = cv2.resize(img, (self._input_shape[2], self._input_shape[1]))
 			img, _ = self._dataGenerator.preprocess(img, None)
 			inf_images.append(img)
 		inf_images = np.array(inf_images)

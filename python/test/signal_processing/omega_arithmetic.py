@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import scipy
+import scipy.integrate
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -51,7 +52,7 @@ def intf(a, fs, f_lo=0.0, f_hi=1.0e12, times=1, winlen=1, unwin=False):
 	"""
 
 	a = a - a.mean()                        # Convert time series to zero-mean
-	if np.mod(a.size,2) != 0:               # Check for even length time series
+	if 0 != np.mod(a.size,2):               # Check for even length time series
 		odd = True
 		a = np.append(a, 0)                 # If not, append zero to array
 	else:
@@ -92,11 +93,11 @@ def intf(a, fs, f_lo=0.0, f_hi=1.0e12, times=1, winlen=1, unwin=False):
 	EPS = 1e-5
 	#--E [] 2018/07/15: Sang-Wook Lee.
 
-	if times == 2:                          # Double integration
+	if 2 == times:                          # Double integration
 		FFTspec = -FFTspec_a*w / (w+EPS)**3
-	elif times == 1:                        # Single integration
+	elif 1 == times:                        # Single integration
 		FFTspec = FFTspec_a*iw / (iw+EPS)**2
-	elif times == 0:                        # No integration
+	elif 0 == times:                        # No integration
 		FFTspec = FFTspec_a
 	else:
 		print('Error')
@@ -105,12 +106,12 @@ def intf(a, fs, f_lo=0.0, f_hi=1.0e12, times=1, winlen=1, unwin=False):
 
 	out_w = np.fft.irfft(FFTspec)           # Return to time domain
 
-	if unwin == True:
+	if unwin:
 		out = out_w*window/(window+EPS)**2  # Remove window from time series
 	else:
 		out = out_w
 
-	if odd == True:                         # Check for even length time series
+	if odd:                         # Check for even length time series
 		return out[:-1]                     # If not, remove last entry
 	else:
 		return out
@@ -146,7 +147,7 @@ def main():
 	#plot_fft_test()
 	intf_test()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()
