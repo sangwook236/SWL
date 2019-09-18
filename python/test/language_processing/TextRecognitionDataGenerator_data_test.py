@@ -15,8 +15,8 @@ import TextRecognitionDataGenerator_data
 #	python run.py -c 200000 -w 1 -f 32 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir en_samples_200000_h32
 #	python run.py -c 1000 -w 1 -f 32 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir en_samples_1000_h32
 def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './en_samples_100000'
-	#data_dir_path = './en_samples_200000'
+	data_dir_path = './en_samples_100000_h32'
+	#data_dir_path = './en_samples_200000_h32'
 
 	image_height, image_width, image_channel = 32, 100, 1
 	train_test_ratio = 0.8
@@ -41,8 +41,8 @@ def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir kr_samples_200000_h64
 #	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir kr_samples_1000_h64
 def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './kr_samples_100000'
-	#data_dir_path = './kr_samples_200000'
+	data_dir_path = './kr_samples_100000_h64'
+	#data_dir_path = './kr_samples_200000_h64'
 
 	#image_height, image_width, image_channel = 32, 160, 1
 	image_height, image_width, image_channel = 64, 320, 1
@@ -68,8 +68,8 @@ def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
 #	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir kr_samples_200000_h64
 #	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir kr_samples_1000_h64
 def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './kr_samples_100000'
-	#data_dir_path = './kr_samples_200000'
+	data_dir_path = './kr_samples_100000_h64'
+	#data_dir_path = './kr_samples_200000_h64'
 
 	#image_height, image_width, image_channel = 32, 160, 1
 	image_height, image_width, image_channel = 64, 320, 1

@@ -1,4 +1,4 @@
-import os, random, functools, time
+import os, random, functools, time, glob
 import numpy as np
 import cv2
 #import sklearn
@@ -6,8 +6,8 @@ import cv2
 import hangeul_util as hg_util
 import text_line_data
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDatasetBase):
+# REF [site] >> https://github.com/tmbdev/ocropy
+class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
 
@@ -66,10 +66,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				return input
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return OcropusTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return OcropusTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -102,15 +102,22 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		cv2.destroyAllWindows()
 
 	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
+		image_filepaths, label_filepaths = glob.glob(data_dir_path + '/**/*.bin.png', recursive=False), glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False)
+		image_filepaths.sort()
+		label_filepaths.sort()
+
 		examples = list()
-		for fpath in os.listdir(data_dir_path):
-			label_str = fpath.split('_')[0]
+		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
+			with open(lbl_fpath, 'r', encoding='UTF8') as fd:
+				#label_str = fd.read()
+				#label_str = fd.read().rstrip()
+				label_str = fd.read().rstrip('\n')
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE)
 			if img is None:
-				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fpath)))
+				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
 
 			img = self.resize(img, None, image_height, image_width)
@@ -172,9 +179,9 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				break
 			start_idx = end_idx
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
-class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
+# REF [site] >> https://github.com/tmbdev/ocropy
+#	ocropus-linegen -t tomsawyer.txt -F eng_font_list.txt
+class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
@@ -186,11 +193,9 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		digit_charset = '0123456789'
 		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		label_set = set(alphabet_charset + digit_charset)
-		#label_set = set(alphabet_charset + digit_charset + symbol_charset)
+		#label_set = set(alphabet_charset + digit_charset)
+		label_set = set(alphabet_charset + digit_charset + symbol_charset)
 
-		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -250,9 +255,9 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
-class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
+# REF [site] >> https://github.com/tmbdev/ocropy
+#	ocropus-linegen -t korean_modern_novel_1.txt:korean_modern_novel_2.txt -F kor_font_list.txt
+class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
@@ -275,11 +280,9 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		digit_charset = '0123456789'
 		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		label_set = set(hangeul_charset + hangeul_jamo_charset)
-		#label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		#label_set = set(hangeul_charset + hangeul_jamo_charset)
+		label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
 
-		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -341,9 +344,9 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
-class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
+# REF [site] >> https://github.com/tmbdev/ocropy
+#	ocropus-linegen -t korean_modern_novel_1.txt:korean_modern_novel_2.txt -F kor_font_list.txt
+class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
 
@@ -369,11 +372,10 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 		digit_charset = '0123456789'
 		symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
 
-		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
-		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
+		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		label_set.add(self._EOJC)
 
-		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(self._hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), label_set)
 		self._labels = sorted(label_set)
 		#self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))

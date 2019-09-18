@@ -123,7 +123,7 @@ class MyDataset(object):
 				start_idx = end_idx
 
 	@staticmethod
-	def _preprocess_data(inputs, outputs, image_height, image_width, image_channel, num_classes):
+	def _preprocess(inputs, outputs, image_height, image_width, image_channel, num_classes):
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -162,8 +162,8 @@ class MyDataset(object):
 		(train_inputs, train_outputs), (test_inputs, test_outputs) = tf.keras.datasets.mnist.load_data()
 
 		# Preprocess.
-		train_inputs, train_outputs = MyDataset._preprocess_data(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
-		test_inputs, test_outputs = MyDataset._preprocess_data(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
+		train_inputs, train_outputs = MyDataset._preprocess(train_inputs, train_outputs, image_height, image_width, image_channel, num_classes)
+		test_inputs, test_outputs = MyDataset._preprocess(test_inputs, test_outputs, image_height, image_width, image_channel, num_classes)
 
 		return train_inputs, train_outputs, test_inputs, test_outputs
 
