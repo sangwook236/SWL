@@ -7,6 +7,7 @@ import hangeul_util as hg_util
 import text_line_data
 
 # REF [site] >> https://github.com/tmbdev/ocropy
+
 class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
@@ -179,8 +180,6 @@ class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-# REF [site] >> https://github.com/tmbdev/ocropy
-#	ocropus-linegen -t tomsawyer.txt -F eng_font_list.txt
 class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
@@ -255,8 +254,6 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/tmbdev/ocropy
-#	ocropus-linegen -t korean_modern_novel_1.txt:korean_modern_novel_2.txt -F kor_font_list.txt
 class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
@@ -344,8 +341,6 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/tmbdev/ocropy
-#	ocropus-linegen -t korean_modern_novel_1.txt:korean_modern_novel_2.txt -F kor_font_list.txt
 class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)

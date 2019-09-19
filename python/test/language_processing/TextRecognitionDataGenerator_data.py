@@ -2,11 +2,14 @@ import os, random, functools, time
 import numpy as np
 import cv2
 #import sklearn
+#import imgaug as ia
+from imgaug import augmenters as iaa
 #import swl.machine_learning.util as swl_ml_util
 import hangeul_util as hg_util
 import text_line_data
 
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
+
 class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
@@ -66,10 +69,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				return input
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_data_augmented=True, use_NWHC=self._use_NWHC)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return TextRecognitionDataGeneratorTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_data_augmented=False, use_NWHC=self._use_NWHC)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -115,7 +118,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 			img = self.resize(img, None, image_height, image_width)
 			try:
-				img, label_int = self.preprocess(img, self.encode_label(label_str))
+				#img, label_int = self.preprocess(img, self.encode_label(label_str))
+				label_int = self.encode_label(label_str)
 			except Exception:
 				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
 				continue
@@ -127,8 +131,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 
 		return examples
 
-	@staticmethod
-	def _create_batch_generator(data, batch_size, shuffle, use_NWHC=True):
+	def _create_batch_generator(self, data, batch_size, shuffle, is_data_augmented=False, use_NWHC=True):
 		images, labels_str, labels_int = zip(*data)
 
 		if use_NWHC:
@@ -162,6 +165,9 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
 				#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
 				#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+					if is_data_augmented:
+						batch_data1, _ = self.augment(batch_data1, None)
+					batch_data1, _ = self.preprocess(batch_data1, None)
 					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
 				else:
 					yield (None, None, None), 0
@@ -172,8 +178,6 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				break
 			start_idx = end_idx
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run.py -c 200000 -w 1 -f 32 -t 8 --output_dir en_samples_200000
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
@@ -200,6 +204,51 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
+		self._augmenter = iaa.Sequential([
+			iaa.OneOf([
+				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
+				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+			]),
+			iaa.Sometimes(0.5, iaa.SomeOf(1, [
+				iaa.Affine(
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				),
+				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
+				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
+				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
+
+				#iaa.Invert(0.5, per_channel=True),  # Invert color channels.
+				iaa.LinearContrast((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
+
+				iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
+				iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
+
+				# Search either for all edges or for directed edges, blend the result with the original image using a blobby mask.
+				#iaa.SimplexNoiseAlpha(iaa.OneOf([
+				#	iaa.EdgeDetect(alpha=(0.5, 1.0)),
+				#	iaa.DirectedEdgeDetect(alpha=(0.5, 1.0), direction=(0.0, 1.0)),
+				#])),
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05 * 255), per_channel=True),  # Add Gaussian noise to images.
+			])),
+			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+		])
+
+		#--------------------
 		if data_dir_path:
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
@@ -215,6 +264,13 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -250,8 +306,6 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
@@ -341,8 +395,6 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		return inputs, outputs
 
-# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
@@ -371,6 +423,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 
 		label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset)
 		#label_set = set(hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+		label_set.add(self._EOJC)
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
 		label_set = functools.reduce(lambda x, fpath: x.union(self._hangeul2jamo_functor(fpath.split('_')[0])), os.listdir(data_dir_path), label_set)

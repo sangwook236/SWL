@@ -55,6 +55,14 @@ class TextLineDatasetBase(abc.ABC):
 				return None
 		return list(map(int2str, labels_int))
 
+	"""
+	@abc.abstractmethod
+	def augment(self, inputs, outputs, *args, **kwargs):
+		raise NotImplementedError
+	"""
+	def augment(self, inputs, outputs, *args, **kwargs):
+		return inputs, outputs
+
 	@abc.abstractmethod
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		raise NotImplementedError

@@ -14,6 +14,12 @@ import TextRecognitionDataGenerator_data
 #	python run.py -c 100000 -w 1 -f 32 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir en_samples_100000_h32
 #	python run.py -c 200000 -w 1 -f 32 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir en_samples_200000_h32
 #	python run.py -c 1000 -w 1 -f 32 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 2 -t 8 --output_dir en_samples_1000_h32
+#	python run.py -c 100000 -w 1 -f 32 -rs -t 8 --output_dir en_samples_100000_h32
+#	python run.py -c 200000 -w 1 -f 32 -rs -t 8 --output_dir en_samples_200000_h32
+#	python run.py -c 1000 -w 1 -f 32 -rs -t 8 --output_dir en_samples_1000_h32
+#	python run.py -c 100000 -w 1 -f 32 -rs -num -sym -t 8 --output_dir en_samples_100000_h32
+#	python run.py -c 200000 -w 1 -f 32 -rs -num -sym -t 8 --output_dir en_samples_200000_h32
+#	python run.py -c 1000 -w 1 -f 32 -rs -num -sym -t 8 --output_dir en_samples_1000_h32
 def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
 	data_dir_path = './en_samples_100000_h32'
 	#data_dir_path = './en_samples_200000_h32'
