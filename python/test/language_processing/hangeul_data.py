@@ -3,7 +3,7 @@ import multiprocessing as mp
 from multiprocessing.managers import BaseManager
 import threading
 import numpy as np
-#from sklearn import preprocessing
+#import sklearn
 import cv2 as cv
 #import imgaug as ia
 from imgaug import augmenters as iaa
@@ -240,10 +240,10 @@ class HangeulDataPreprocessor(object):
 			inputs = inputs.astype(np.float32)
 
 			"""
-			inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
-			#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
-			#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
-			#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+			inputs = sklearn.preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+			#inputs = sklearn.preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+			#inputs = sklearn.preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+			#inputs = sklearn.preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
 			"""
 
 			inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.

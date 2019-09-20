@@ -759,6 +759,8 @@ def main():
 
 		#data_dir_path = './en_samples_100000_h32'
 		data_dir_path = './en_samples_200000_h32'
+		#data_dir_path = './en_samples_100000_h16'
+		#data_dir_path = './en_samples_200000_h16'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -819,6 +821,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./en_samples_1000_h32/*.jpg', recursive=False)  # TODO [modify] >>
+		#image_filepaths = glob.glob('./en_samples_1000_h16/*.jpg', recursive=False)  # TODO [modify] >>
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------
