@@ -795,18 +795,13 @@ def main():
 
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		# REF [function] >> generate_single_letter_dataset() in ${SWL_PYTHON_HOME}/test/language_processing/text_generation_util_test.py.
-		# REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator/
-		#	python run_sangwook.py -l kr -c 100000 -w 1 -f 64 -t 8 --output_dir kr_samples_100000_h64
-		#	python run_sangwook.py -l kr -c 200000 -w 1 -f 64 -t 8 --output_dir kr_samples_200000_h64
-		#	python run_sangwook.py -l kr -c 1000 -w 1 -f 64 -t 8 --output_dir kr_samples_1000_h64
+		# Data generation.
+		#	REF [function] >> generate_single_letter_dataset() in text_generation_util_test.py.
+		#	REF [function] >> HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
 
-		#data_dir_path = './single_letters_100000'
-		#data_dir_path = './single_letters_200000'
-		#data_dir_path = './double_letters_100000'
-		#data_dir_path = './double_letters_200000'
-		#data_dir_path = './kr_samples_100000_h64'
-		data_dir_path = './kr_samples_200000_h64'
+		#data_dir_path = './single_letters_train'
+		#data_dir_path = './double_letters_train'
+		data_dir_path = './kr_samples_train'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -866,9 +861,9 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		#image_filepaths = glob.glob('./single_letters_10000/*.jpg', recursive=False)
-		#image_filepaths = glob.glob('./double_letters_10000/*.jpg', recursive=False)
-		image_filepaths = glob.glob('./kr_samples_1000_h64/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./single_letters_test/*.jpg', recursive=False)
+		#image_filepaths = glob.glob('./double_letters_test/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./kr_samples_test/**/*.jpg', recursive=False)
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

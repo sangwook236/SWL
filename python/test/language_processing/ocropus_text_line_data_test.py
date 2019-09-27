@@ -72,7 +72,7 @@ def main():
 	#HangeulOcropusTextLineDataset_test()
 	#HangeulJamoOcropusTextLineDataset_test()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

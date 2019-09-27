@@ -78,7 +78,7 @@ def main():
 	HangeulTesseractTextLineDataset_test()
 	#HangeulJamoTesseractTextLineDataset_test()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

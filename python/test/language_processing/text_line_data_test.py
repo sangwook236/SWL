@@ -186,7 +186,7 @@ def main():
 	#JsonBasedTextLineDataset_test()
 	#HangeulJamoJsonBasedTextLineDataset_test()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

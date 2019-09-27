@@ -104,16 +104,70 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
+	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None):
+		if label_filename is None:
+			return self._load_data_with_label_in_filename(data_dir_path, image_height, image_width, image_channel, max_label_len)
+		else:
+			return self._load_data_with_label_file(data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len)
+
+	def _load_data_with_label_in_filename(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
 		examples = list()
-		for fpath in os.listdir(data_dir_path):
-			label_str = fpath.split('_')[0]
+		for fname in os.listdir(data_dir_path):
+			label_str = fname.split('_')
+			if 2 != len(label_str):
+				print('[SWL] Warning: Invalid file name: {}.'.format(fname))
+				continue
+			label_str = label_str[0]
+				
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(os.path.join(data_dir_path, fpath), cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(os.path.join(data_dir_path, fname), cv2.IMREAD_GRAYSCALE)
 			if img is None:
-				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fpath)))
+				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fname)))
+				continue
+
+			img = self.resize(img, None, image_height, image_width)
+			try:
+				#img, label_int = self.preprocess(img, self.encode_label(label_str))
+				label_int = self.encode_label(label_str)
+			except Exception:
+				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+				continue
+			if label_str != self.decode_label(label_int):
+				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+				continue
+
+			examples.append((img, label_str, label_int))
+
+		return examples
+
+	def _load_data_with_label_file(self, data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len):
+		try:
+			with open(os.path.join(data_dir_path, label_filename), 'r') as fd:
+				lines = fd.readlines()
+		except FileNotFoundError:
+			print('[SWL] Error: File not found: {}.'.format(os.path.join(data_dir_path, label_filename)))
+			return None
+
+		examples = list()
+		for line in lines:
+			line = line.rstrip('\n')
+			if not line:
+				continue
+
+			pos = line.find(' ')
+			if -1 == pos:
+				print('[SWL] Warning: Invalid image-label pair: {}.'.format(line))
+				continue
+			fname, label_str = line[:pos], line[pos+1:]
+				
+			if len(label_str) > max_label_len:
+				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+				continue
+			img = cv2.imread(os.path.join(data_dir_path, fname), cv2.IMREAD_GRAYSCALE)
+			if img is None:
+				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fname)))
 				continue
 
 			img = self.resize(img, None, image_height, image_width)
@@ -194,7 +248,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		label_set = set(alphabet_charset + digit_charset + symbol_charset)
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
+		#label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -253,7 +307,9 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
+			label_filename = 'labels.txt'
+			#label_filename = None
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)
@@ -333,7 +389,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
 
 		# There are words of Unicode Hangeul letters besides KS X 1001.
-		label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
+		#label_set = functools.reduce(lambda x, fpath: x.union(fpath.split('_')[0]), os.listdir(data_dir_path), label_set)
 		#self._labels = sorted(label_set)
 		self._labels = ''.join(sorted(label_set))
 		print('[SWL] Info: Labels = {}.'.format(self._labels))
@@ -347,7 +403,9 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
+			label_filename = 'labels.txt'
+			#label_filename = None
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)
@@ -415,7 +473,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 
 		#--------------------
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
 		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 		digit_charset = '0123456789'
@@ -440,7 +498,9 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			# Load data.
 			print('[SWL] Info: Start loading dataset...')
 			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
+			label_filename = 'labels.txt'
+			#label_filename = None
+			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			np.random.shuffle(examples)

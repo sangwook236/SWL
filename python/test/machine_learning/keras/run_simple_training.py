@@ -270,8 +270,15 @@ class MyRunner(object):
 
 		model.compile(loss=loss, optimizer=optimizer, metrics=['accuracy'])
 
-		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=5)
 		model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(model_checkpoint_filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
+		early_stopping_callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10)
+		def lr_schedule(epoch, learning_rate):
+			return learning_rate
+		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=lr_schedule)
+		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
+		csv_logger_callback = tf.keras.callbacks.CSVLogger('./simple_training.csv')  # epoch, acc, loss, lr, val_acc, val_loss.
+		#callbacks = [model_checkpoint_callback, early_stopping_callback, lr_schedule_callback, lr_reduce_callback, csv_logger_callback]
+		callbacks = [model_checkpoint_callback, early_stopping_callback, csv_logger_callback]
 
 		#--------------------
 		if is_training_resumed:
@@ -285,15 +292,15 @@ class MyRunner(object):
 			train_sequence = MyDataSequence(train_images, train_labels, batch_size=batch_size, shuffle=True)
 			val_images, val_labels = self._dataset.test_data
 			val_sequence = MyDataSequence(val_images, val_labels, batch_size=batch_size, shuffle=False)
-			history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit_generator(train_sequence, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_sequence, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
 		elif self._use_generator:
 			# Use generators.
 			train_generator = self._dataset.create_train_batch_generator(batch_size, shuffle=True)
 			val_generator = self._dataset.create_test_batch_generator(batch_size, shuffle=False)
-			history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit_generator(train_generator, epochs=num_epochs, steps_per_epoch=None if batch_size is None else math.ceil(self._dataset.train_data_length / batch_size), validation_data=val_generator, validation_steps=math.ceil(self._dataset.test_data_length / batch_size), shuffle=True, initial_epoch=initial_epoch, class_weight=None, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing, callbacks=callbacks)
 		else:
 			train_images, train_labels = self._dataset.train_data
-			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=[early_stopping_callback, model_checkpoint_callback])
+			history = model.fit(train_images, train_labels, batch_size=batch_size, epochs=num_epochs, validation_split=0.2, shuffle=True, initial_epoch=initial_epoch, class_weight=None, sample_weight=None, callbacks=callbacks)
 		print('[SWL] Info: End training: {} secs.'.format(time.time() - start_time))
 
 		#--------------------

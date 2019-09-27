@@ -3,6 +3,13 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 
+def compute_text_size(text, font_type, font_index, font_size):
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+	text_size = font.getsize(text)  # (width, height).
+	font_offset = font.getoffset(text)  # (x, y).
+
+	return text_size[0] + font_offset[0], text_size[1] + font_offset[1]
+
 def generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False):
 	if image_size is None:
 		image_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
