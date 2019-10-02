@@ -649,7 +649,7 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images = self._dataset.load_images_from_files(image_filepaths)
+			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
 
 			num_examples = len(inf_images)
@@ -761,7 +761,7 @@ def main():
 		# Data generation.
 		#	REF [function] >> HangeulTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
 
-		data_dir_path = './kr_samples_train'
+		data_dir_path = './text_line_samples_kr_train'
 	else:
 		data_dir_path = None
 	train_test_ratio = 0.8
@@ -821,7 +821,7 @@ def main():
 		if inference_dir_path and inference_dir_path.strip() and not os.path.exists(inference_dir_path):
 			os.makedirs(inference_dir_path, exist_ok=True)
 
-		image_filepaths = glob.glob('./kr_samples_test/**/*.jpg', recursive=False)
+		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

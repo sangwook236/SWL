@@ -3,10 +3,11 @@
 import sys
 sys.path.append('../../src')
 
-import os
+import os, math, glob
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import cv2
-from swl.language_processing.util import generate_text_image, draw_text_on_image
+import swl.language_processing.util as swl_langproc_util
 
 def hangul_example():
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
@@ -26,7 +27,7 @@ def hangul_example():
 		font_type = 'C:/Windows/Fonts/gulim.ttc'  # 굴림, 굴림체, 돋움, 돋움체.
 	font_index = 1
 
-	img = generate_text_image(hangul_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1500, 1000), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(hangul_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1500, 1000), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./hangul.png')
 
 def alphabet_example():
@@ -37,7 +38,7 @@ def alphabet_example():
 	font_index = 0
 
 	alphabet_str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-	img = generate_text_image(alphabet_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1000, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(alphabet_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1000, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./alphabet.png')
 
 def digit_example():
@@ -48,7 +49,7 @@ def digit_example():
 	font_index = 0
 
 	digit_str = '0123456789'
-	img = generate_text_image(digit_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(200, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(digit_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(200, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./digit.png')
 
 def punctuation_example():
@@ -59,7 +60,7 @@ def punctuation_example():
 	font_index = 0
 
 	punctuation_str = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-	img = generate_text_image(punctuation_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(punctuation_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./punctuation.png')
 
 def symbol_example():
@@ -70,7 +71,7 @@ def symbol_example():
 	font_index = 0
 
 	symbol_str = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-	img = generate_text_image(symbol_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(symbol_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./symbol.png')
 
 def all_font_example():
@@ -82,7 +83,7 @@ def all_font_example():
 	font_index = 1
 
 	all_text = """(학교] school is 178 좋34,지."""
-	img = generate_text_image(all_text, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
+	img = swl_langproc_util.generate_text_image(all_text, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
 	img.save('./all_text.png')
 
 def generate_text_image_test():
@@ -113,7 +114,7 @@ def draw_text_on_image_test():
 	draw_text_border = False
 	image_size = (500, 500)
 
-	text = generate_text_image('가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+	text = swl_langproc_util.generate_text_image('가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
 	text = np.asarray(text, dtype=np.uint8)
 
 	mask = np.zeros_like(text)
@@ -133,7 +134,7 @@ def draw_text_on_image_test():
 	text_offset = (100, 300)
 	rotation_angle = None
 
-	scene2, text_mask, text_bbox = draw_text_on_image(scene2, '가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, text_offset=text_offset, rotation_angle=rotation_angle)
+	scene2, text_mask, text_bbox = swl_langproc_util.draw_text_on_image(scene2, '가나다라마바사아자차카타파하', font_type, font_index, font_size, font_color, text_offset=text_offset, rotation_angle=rotation_angle)
 
 	text_bbox = np.round(text_bbox).astype(np.int)
 	#cv2.drawContours(scene2, [text_bbox], 0, (0, 0, 255), 1, cv2.LINE_8)
@@ -148,9 +149,258 @@ def draw_text_on_image_test():
 	cv2.waitKey(0)
 	cv2.destroyAllWindows()
 
+def transform_text_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font/eng'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font/eng'
+
+	#os.path.sep = '/'
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+
+	font_list = list()
+	for fpath in font_filepaths:
+		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
+
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
+
+	#--------------------
+	texts = ['bd', 'ace', 'ABC', 'defghijklmn', 'opqrSTU']
+	text = ' '.join(texts)
+	tx, ty = 500, 500  # Translation. [pixel].
+	rotation_angle = 15  # [deg].
+
+	paper_height, paper_width, paper_channel = 1000, 1000, 3
+
+	font_type, font_index = font_list[0]
+	font_size = 32
+	if True:
+		font_color = (255,) * 3
+		bg_color = 0
+	else:
+		# NOTE [warning] >> Invalid text masks are generated.
+		font_color = (0,) * 3
+		bg_color = 255
+
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+	#--------------------
+	img = np.full((paper_height, paper_width, paper_channel), bg_color, dtype=np.uint8)
+
+	#text_bbox = swl_langproc_util.transform_text(text, tx, ty, rotation_angle, font)
+	text_bbox, img, text_mask = swl_langproc_util.transform_text_on_image(text, tx, ty, rotation_angle, img, font, font_color, bg_color)
+
+	#--------------------
+	bbox_img = np.zeros_like(img)
+
+	text_bbox = np.round(text_bbox).astype(np.int)
+	if False:
+		cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), 1, cv2.LINE_8)
+	else:
+		cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), cv2.FILLED)
+	#if np.linalg.norm(text_bbox[0] - text_bbox[1]) > np.linalg.norm(text_bbox[2] - text_bbox[1]):
+	if abs(text_bbox[0][0] - text_bbox[1][0]) > abs(text_bbox[2][0] - text_bbox[1][0]):
+		cv2.line(bbox_img, tuple(text_bbox[0]), tuple(text_bbox[1]), (255, 0, 0), 2, cv2.LINE_8)
+		cv2.line(bbox_img, tuple(text_bbox[2]), tuple(text_bbox[3]), (255, 0, 0), 2, cv2.LINE_8)
+	else:
+		cv2.line(bbox_img, tuple(text_bbox[1]), tuple(text_bbox[2]), (255, 0, 0), 2, cv2.LINE_8)
+		cv2.line(bbox_img, tuple(text_bbox[3]), tuple(text_bbox[0]), (255, 0, 0), 2, cv2.LINE_8)
+
+	cv2.circle(img, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+	cv2.circle(text_mask, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+	cv2.circle(bbox_img, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+
+	cv2.imshow('Image (Text)', img)
+	cv2.imshow('Text Mask (Text)', text_mask)
+	cv2.imshow('Text Bounding Box Image (Text)', bbox_img)
+	cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def transform_texts_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font/eng'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font/eng'
+
+	#os.path.sep = '/'
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+
+	font_list = list()
+	for fpath in font_filepaths:
+		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
+
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
+
+	#--------------------
+	texts = ['bd', 'ace', 'ABC', 'defghijklmn', 'opqrSTU']
+	tx, ty = 500, 500  # Translation. [pixel].
+	rotation_angle = 15  # [deg].
+
+	paper_height, paper_width, paper_channel = 1000, 1000, 3
+
+	font_type, font_index = font_list[0]
+	font_size = 32
+	if True:
+		font_color = (255,) * 3
+		bg_color = 0
+	else:
+		# NOTE [warning] >> Invalid text masks are generated.
+		font_color = (0,) * 3
+		bg_color = 255
+
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+	#--------------------
+	img = np.full((paper_height, paper_width, paper_channel), bg_color, dtype=np.uint8)
+
+	#text_bboxes = swl_langproc_util.transform_texts(texts, tx, ty, rotation_angle, font)
+	text_bboxes, img, text_mask = swl_langproc_util.transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_color, bg_color)
+
+	#--------------------
+	bbox_img = np.zeros_like(img)
+
+	pt1, pt4 = text_bboxes[0][0] + 0.25 * (text_bboxes[0][3] - text_bboxes[0][0]), text_bboxes[0][0] + 0.75 * (text_bboxes[0][3] - text_bboxes[0][0])
+	pt2, pt3 = text_bboxes[-1][1] + 0.25 * (text_bboxes[-1][2] - text_bboxes[-1][1]), text_bboxes[-1][1] + 0.75 * (text_bboxes[-1][2] - text_bboxes[-1][1])
+	cv2.drawContours(bbox_img, [np.round([pt1, pt2, pt3, pt4]).astype(np.int)], 0, (0, 255, 0), cv2.FILLED)
+
+	text_bboxes = np.round(text_bboxes).astype(np.int)
+	for text_bbox in text_bboxes:
+		if False:
+			cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), 1, cv2.LINE_8)
+		else:
+			cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), cv2.FILLED)
+		#if np.linalg.norm(text_bbox[0] - text_bbox[1]) > np.linalg.norm(text_bbox[2] - text_bbox[1]):
+		if abs(text_bbox[0][0] - text_bbox[1][0]) > abs(text_bbox[2][0] - text_bbox[1][0]):
+			cv2.line(bbox_img, tuple(text_bbox[0]), tuple(text_bbox[1]), (255, 0, 0), 2, cv2.LINE_8)
+			cv2.line(bbox_img, tuple(text_bbox[2]), tuple(text_bbox[3]), (255, 0, 0), 2, cv2.LINE_8)
+		else:
+			cv2.line(bbox_img, tuple(text_bbox[1]), tuple(text_bbox[2]), (255, 0, 0), 2, cv2.LINE_8)
+			cv2.line(bbox_img, tuple(text_bbox[3]), tuple(text_bbox[0]), (255, 0, 0), 2, cv2.LINE_8)
+
+	cv2.circle(img, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+	cv2.circle(text_mask, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+	cv2.circle(bbox_img, (tx, ty), 3, (255, 0, 255), cv2.FILLED)
+
+	cv2.imshow('Image (Texts)', img)
+	cv2.imshow('Text Mask (Texts)', text_mask)
+	cv2.imshow('Text Bounding Box Image (Texts)', bbox_img)
+	cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def transform_text_line_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font/eng'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font/eng'
+
+	#os.path.sep = '/'
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+
+	font_list = list()
+	for fpath in font_filepaths:
+		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
+
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
+
+	#--------------------
+	texts = ['bd', 'ace', 'ABC', 'defghijklmn', 'opqrSTU']
+	text = ' '.join(texts)
+	tx, ty = 500, 500  # Translation. [pixel].
+	rotation_angle = 15  # [deg].
+
+	paper_height, paper_width, paper_channel =  1000, 1000, 3
+
+	font_type, font_index = font_list[0]
+	font_size = 32
+	if True:
+		font_color = (255,) * 3
+		bg_color = 0
+	else:
+		# NOTE [warning] >> Invalid text masks are generated.
+		font_color = (0,) * 3
+		bg_color = 255
+
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+	#--------------------
+	img = np.full((paper_height, paper_width, paper_channel), bg_color, dtype=np.uint8)
+	bg_img = Image.fromarray(img)
+
+	text_offset = (0, 0)  # (x, y).
+	text_size = font.getsize(text)  # (width, height).
+	#text_size = draw.textsize(text, font=font)  # (width, height).
+	font_offset = font.getoffset(text)  # (x, y).
+	text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+
+	#--------------------
+	#text_img = Image.new('RGBA', text_size, (0, 0, 0, 0))
+	text_img = Image.new('RGBA', text_size, (255, 255, 255, 0))
+	sx0, sy0 = text_img.size
+
+	text_draw = ImageDraw.Draw(text_img)
+	text_draw.text(xy=(0, 0), text=text, font=font, fill=font_color)
+
+	text_img = text_img.rotate(rotation_angle, expand=1)  # Rotates the image around the top-left corner point.
+
+	sx, sy = text_img.size
+	bg_img.paste(text_img, (text_offset[0], text_offset[1], text_offset[0] + sx, text_offset[1] + sy), text_img)
+
+	text_mask = Image.new('L', bg_img.size, (0,))
+	text_mask.paste(text_img, (text_offset[0], text_offset[1], text_offset[0] + sx, text_offset[1] + sy), text_img)
+
+	dx, dy = (sx0 - sx) / 2, (sy0 - sy) / 2
+	x1, y1, x2, y2 = text_rect
+	rect = (((x1 + x2) / 2, (y1 + y2) / 2), (x2 - x1, y2 - y1), -rotation_angle)
+	text_bbox = cv2.boxPoints(rect)
+	text_bbox = list(map(lambda xy: [xy[0] - dx, xy[1] - dy], text_bbox))
+
+	#--------------------
+	img = np.asarray(bg_img, dtype=img.dtype)
+	text_mask = np.asarray(text_mask, dtype=np.uint8)
+
+	text_bbox = np.round(text_bbox).astype(np.int)
+	
+	bbox_img = np.zeros_like(img)
+	if False:
+		cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), 1, cv2.LINE_8)
+	else:
+		cv2.drawContours(bbox_img, [text_bbox], 0, (0, 0, 255), cv2.FILLED)
+	#if np.linalg.norm(text_bbox[0] - text_bbox[1]) > np.linalg.norm(text_bbox[2] - text_bbox[1]):
+	if abs(text_bbox[0][0] - text_bbox[1][0]) > abs(text_bbox[2][0] - text_bbox[1][0]):
+		cv2.line(bbox_img, tuple(text_bbox[0]), tuple(text_bbox[1]), (255, 0, 0), 2, cv2.LINE_8)
+		cv2.line(bbox_img, tuple(text_bbox[2]), tuple(text_bbox[3]), (255, 0, 0), 2, cv2.LINE_8)
+	else:
+		cv2.line(bbox_img, tuple(text_bbox[1]), tuple(text_bbox[2]), (255, 0, 0), 2, cv2.LINE_8)
+		cv2.line(bbox_img, tuple(text_bbox[3]), tuple(text_bbox[0]), (255, 0, 0), 2, cv2.LINE_8)
+	
+	cv2.imshow('Image (Text line)', img)
+	cv2.imshow('Text Mask (Text line)', text_mask)
+	cv2.imshow('Text Bounding Box Image (Text line)', bbox_img)
+	cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
 def main():
 	#generate_text_image_test()
-	draw_text_on_image_test()
+	#draw_text_on_image_test()  # Not so good.
+
+	# NOTE [info] >> Bounding boxes of transform_text() and transform_texts() are different.
+	#	I don't know why.
+	transform_text_test()
+	transform_texts_test()
+
+	#transform_text_line_test()  # Not so good.
 
 #%%------------------------------------------------------------------
 

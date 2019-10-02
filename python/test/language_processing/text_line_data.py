@@ -110,16 +110,23 @@ class TextLineDatasetBase(abc.ABC):
 
 	def load_images_from_files(self, image_filepaths):
 		images = list()
+		error_filepaths = list()
 		for fpath in image_filepaths:
 			img = cv2.imread(fpath, cv2.IMREAD_GRAYSCALE)
+			if img is None:
+				print('[SWL] Warning: Failed to load an image: {}.'.format(fpath))
+				error_filepaths.append(fpath)
+				continue
 			img = self.resize(img)
 			img, _ = self.preprocess(img, None)
 			images.append(img)
+		for fpath in error_filepaths:
+			image_filepaths.remove(fpath)
 
 		# (examples, height, width) -> (examples, width, height).
 		images = np.swapaxes(np.array(images), 1, 2)
 		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
-		return images
+		return images, image_filepaths
 
 #--------------------------------------------------------------------
 
