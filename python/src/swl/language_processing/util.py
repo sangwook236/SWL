@@ -1,4 +1,4 @@
-import math
+import math, functools
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
@@ -24,19 +24,19 @@ def generate_text_image(text, font_type, font_index, font_size, font_color, bg_c
 	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
 	draw = ImageDraw.Draw(img)
 
-	#text_size = draw.textsize(text, font=font)  # (x, y).
-	text_area = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+	#text_size = draw.textsize(text, font=font)  # (width, height).
+	text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
 
 	# Draws text.
 	draw.text(xy=text_offset, text=text, font=font, fill=font_color)
 
 	# Draws rectangle surrounding text.
 	if draw_text_border:
-		draw.rectangle(text_area, outline='red', width=5)
+		draw.rectangle(text_rect, outline='red', width=5)
 
 	# Crops text area.
 	if crop_text_area:
-		img = img.crop(text_area)
+		img = img.crop(text_rect)
 
 	return img
 
@@ -45,7 +45,7 @@ def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, 
 	text_size = font.getsize(text)  # (width, height).
 	#text_size = draw.textsize(text, font=font)  # (width, height).
 	font_offset = font.getoffset(text)  # (x, y).
-	text_area = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+	text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
 
 	bg_img = Image.fromarray(img)
 
@@ -58,7 +58,7 @@ def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, 
 		mask_draw = ImageDraw.Draw(text_mask)
 		mask_draw.text(xy=text_offset, text=text, font=font, fill=(255,))
 
-		x1, y1, x2, y2 = text_area
+		x1, y1, x2, y2 = text_rect
 		text_bbox = [[x1, y1], [x2, y1], [x2, y2], [x1, y2]]
 	else:
 		#text_img = Image.new('RGBA', text_size, (0, 0, 0, 0))
@@ -77,7 +77,7 @@ def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, 
 		text_mask.paste(text_img, (text_offset[0], text_offset[1], text_offset[0] + sx, text_offset[1] + sy), text_img)
 
 		dx, dy = (sx0 - sx) / 2, (sy0 - sy) / 2
-		x1, y1, x2, y2 = text_area
+		x1, y1, x2, y2 = text_rect
 		rect = (((x1 + x2) / 2, (y1 + y2) / 2), (x2 - x1, y2 - y1), -rotation_angle)
 		text_bbox = cv2.boxPoints(rect)
 		text_bbox = list(map(lambda xy: [xy[0] - dx, xy[1] - dy], text_bbox))
@@ -107,9 +107,9 @@ def transform_text(text, tx, ty, rotation_angle, font, text_offset=None):
 
 	##x0, y0 = xmin, -zmax
 	#text_bbox = np.array([[x1, -z1], [x2, -z2], [x3, -z3], [x4, -z4]])
-	dy = -zmax - ty
-	#x0, y0 = xmin, -zmax - dy
-	text_bbox = np.array([[x1, -z1 - dy], [x2, -z2 - dy], [x3, -z3 - dy], [x4, -z4 - dy]])
+	dx, dy = xmin - tx, -zmax - ty
+	#x0, y0 = xmin - dx, -zmax - dy
+	text_bbox = np.array([[x1 - dx, -z1 - dy], [x2 - dx, -z2 - dy], [x3 - dx, -z3 - dy], [x4 - dx, -z4 - dy]])
 
 	return text_bbox
 
@@ -134,9 +134,9 @@ def transform_text_on_image(text, tx, ty, rotation_angle, img, font, font_color,
 
 	#x0, y0 = xmin, -zmax
 	#text_bbox = np.array([[x1, -z1], [x2, -z2], [x3, -z3], [x4, -z4]])
-	dy = -zmax - ty
-	x0, y0 = xmin, -zmax - dy
-	text_bbox = np.array([[x1, -z1 - dy], [x2, -z2 - dy], [x3, -z3 - dy], [x4, -z4 - dy]])
+	dx, dy = xmin - tx, -zmax - ty
+	x0, y0 = xmin - dx, -zmax - dy
+	text_bbox = np.array([[x1 - dx, -z1 - dy], [x2 - dx, -z2 - dy], [x3 - dx, -z3 - dy], [x4 - dx, -z4 - dy]])
 
 	#text_img = Image.new('RGBA', text_size, (0, 0, 0, 0))
 	text_img = Image.new('RGBA', text_size, (255, 255, 255, 0))
@@ -212,24 +212,26 @@ def transform_texts(texts, tx, ty, rotation_angle, font, text_offsets=None):
 		#x0, y0 = xmin, -zmax
 
 		text_bboxes.append([[x1, -z1], [x2, -z2], [x3, -z3], [x4, -z4]])
+
+	return np.array(text_bboxes)
 	"""
-	dy = None
-	for text, text_offset, text_size in zip(reversed(texts), reversed(text_offsets), reversed(text_sizes)):
+	xy0_list = list()
+	for text_offset, text_size in zip(text_offsets, text_sizes):
 		# z = -y.
 		#	xy: left-handed, xz: right-handed.
 		x1, z1 = transform(text_offset[0], -text_offset[1])
 		x2, z2 = transform(text_offset[0] + text_size[0], -text_offset[1])
 		x3, z3 = transform(text_offset[0] + text_size[0], -(text_offset[1] + text_size[1]))
 		x4, z4 = transform(text_offset[0], -(text_offset[1] + text_size[1]))
-		xmin, zmax = min([x1, x2, x3, x4]), max([z1, z2, z3, z4])
+		xy0_list.append((min([x1, x2, x3, x4]), -max([z1, z2, z3, z4])))
 
-		if dy is None:
-			dy = -zmax - ty
-		x0, y0 = xmin, -zmax - dy
-		text_bboxes.append([[x1, -z1 - dy], [x2, -z2 - dy], [x3, -z3 - dy], [x4, -z4 - dy]])
-	text_bboxes.reverse()
+		text_bboxes.append([[x1, -z1], [x2, -z2], [x3, -z3], [x4, -z4]])
+	text_bboxes = np.array(text_bboxes)
 
-	return np.array(text_bboxes)
+	dxy = functools.reduce(lambda xym, xy0: (min(xym[0], xy0[0] - tx), min(xym[1], xy0[1] - ty)), xy0_list, (0, 0))
+	text_bboxes[:,:] -= dxy
+
+	return text_bboxes
 
 def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_color, bg_color, text_offsets=None):
 	cos_angle, sin_angle = math.cos(math.radians(rotation_angle)), math.sin(math.radians(rotation_angle))
@@ -300,20 +302,24 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 		bg_img.paste(text_img, text_rect, text_img)
 		text_mask.paste(text_img, text_rect, text_img)
 	"""
-	dy = None
-	for text, text_offset, text_size in zip(reversed(texts), reversed(text_offsets), reversed(text_sizes)):
+	xy0_list = list()
+	for text_offset, text_size in zip(text_offsets, text_sizes):
 		# z = -y.
 		#	xy: left-handed, xz: right-handed.
 		x1, z1 = transform(text_offset[0], -text_offset[1])
 		x2, z2 = transform(text_offset[0] + text_size[0], -text_offset[1])
 		x3, z3 = transform(text_offset[0] + text_size[0], -(text_offset[1] + text_size[1]))
 		x4, z4 = transform(text_offset[0], -(text_offset[1] + text_size[1]))
-		xmin, zmax = min([x1, x2, x3, x4]), max([z1, z2, z3, z4])
+		xy0_list.append((min([x1, x2, x3, x4]), -max([z1, z2, z3, z4])))
 
-		if dy is None:
-			dy = -zmax - ty
-		x0, y0 = xmin, -zmax - dy
-		text_bboxes.append([[x1, -z1 - dy], [x2, -z2 - dy], [x3, -z3 - dy], [x4, -z4 - dy]])
+		text_bboxes.append([[x1, -z1], [x2, -z2], [x3, -z3], [x4, -z4]])
+	text_bboxes = np.array(text_bboxes)
+
+	dxy = functools.reduce(lambda xym, xy0: (min(xym[0], xy0[0] - tx), min(xym[1], xy0[1] - ty)), xy0_list, (0, 0))
+	text_bboxes[:,:] -= dxy
+
+	for text, text_size, xy0 in zip(texts, text_sizes, xy0_list):
+		x0, y0 = xy0[0] - dxy[0], xy0[1] - dxy[1]
 
 		#text_img = Image.new('RGBA', text_size, (0, 0, 0, 0))
 		text_img = Image.new('RGBA', text_size, (255, 255, 255, 0))
@@ -326,9 +332,7 @@ def transform_texts_on_image(texts, tx, ty, rotation_angle, img, font, font_colo
 
 		bg_img.paste(text_img, text_rect, text_img)
 		text_mask.paste(text_img, text_rect, text_img)
-	text_bboxes.reverse()
 
-	text_bboxes = np.array(text_bboxes)
 	img = np.asarray(bg_img, dtype=img.dtype)
 	text_mask = np.asarray(text_mask, dtype=np.uint8)
 
