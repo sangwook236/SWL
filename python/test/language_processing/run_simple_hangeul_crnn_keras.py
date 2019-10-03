@@ -316,7 +316,7 @@ class MyRunner(object):
 		#val_sequence = MyDataSequence(self._dataset.create_test_batch_generator(batch_size, val_steps_per_epoch, shuffle=False), , self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels)
 		val_sequence = MyDataSequence(self._dataset.test_examples, self._max_label_len, self._model_output_time_steps, self._dataset.default_value, self._dataset.encode_labels, batch_size, shuffle=False)
 		score = model.evaluate_generator(val_sequence, steps=val_steps_per_epoch, max_queue_size=self._max_queue_size, workers=self._num_workers, use_multiprocessing=self._use_multiprocessing)
-		print('\tValidation: loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
+		print('\tValidation: Loss = {:.6f}, accuracy = {:.6f}.'.format(*score))
 		print('[SWL] Info: End evaluating: {} secs.'.format(time.time() - start_time))
 
 		#--------------------
@@ -377,19 +377,19 @@ class MyRunner(object):
 		if inferences is not None and ground_truths is not None:
 			#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
+			correct_text_count, total_text_count, correct_char_count, total_char_count = 0, 0, 0, 0
 			for pred, gt in zip(inferences, ground_truths):
 				pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
 
-				correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
-				total_word_count += len(gt)
+				correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
+				total_text_count += len(gt)
 				for ps, gs in zip(pred, gt):
 					correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
 					total_char_count += max(len(ps), len(gs))
 				#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
 				#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
-			print('Test: word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-			print('Test: character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+			print('Test: Text accuracy      = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+			print('Test: Character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 			# Output to a file.
 			csv_filepath = os.path.join(test_dir_path, 'test_results.csv')

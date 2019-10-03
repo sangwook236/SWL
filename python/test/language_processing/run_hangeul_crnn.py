@@ -222,21 +222,21 @@ class MyRunner(object):
 			#print('\tTest: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 			if len(inferences) == len(ground_truths):
-				num_correct_letters, num_letters = 0, 0
+				num_correct_chars, num_chars = 0, 0
 				num_correct_texts, num_texts = 0, 0
 				for inference, ground_truth in zip(inferences, ground_truths):
 					inference, ground_truth = self._dataGenerator.dataset.decode_label(np.argmax(inference, axis=-1)), self._dataGenerator.dataset.decode_label(ground_truth)
 					for inf, gt in zip(inference, ground_truth):
 						for ich, gch in zip(inf, gt):
 							if ich == gch:
-								num_correct_letters += 1
-						num_letters += max(len(inf), len(gt))
+								num_correct_chars += 1
+						num_chars += max(len(inf), len(gt))
 
 						if inf == gt:
 							num_correct_texts += 1
 						num_texts += 1
 						print('\tInferred: {}, G/T: {}.'.format(inf, gt))
-				print('\tLetter accuracy = {}, Text accuracy = {}.'.format(num_correct_letters / num_letters, num_correct_texts / num_texts))
+				print('\tCharacter accuracy = {}, text accuracy = {}.'.format(num_correct_chars / num_chars, num_correct_texts / num_texts))
 			else:
 				print('[SWL] Error: The lengths of test results and ground truth are different.')
 		else:
