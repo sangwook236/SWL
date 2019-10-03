@@ -512,9 +512,9 @@ class MyRunner(object):
 						# Show some results.
 						if 0 == batch_step:
 							preds, gts = list(), list()
-							for count, (pred, gt) in enumerate(zip(model.decode_label(batch_labels_int), batch_data[1])):
-								pred = self._dataset.decode_label(pred)
-								preds.append(pred)
+							for count, (inf, gt) in enumerate(zip(model.decode_label(batch_labels_int), batch_data[1])):
+								inf = self._dataset.decode_label(inf)
+								preds.append(inf)
 								gts.append(gt)
 								if (count + 1) >= 10:
 									break
@@ -599,16 +599,16 @@ class MyRunner(object):
 				#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
 				correct_text_count, total_text_count, correct_char_count, total_char_count = 0, 0, 0, 0
-				for pred, gt in zip(inferences, ground_truths):
-					pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
+				for inf, gt in zip(inferences, ground_truths):
+					inf = np.array(list(map(lambda x: self._dataset.decode_label(x), inf)))
 
-					correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
+					correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(inf, gt))))
 					total_text_count += len(gt)
-					for ps, gs in zip(pred, gt):
+					for ps, gs in zip(inf, gt):
 						correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
 						total_char_count += max(len(ps), len(gs))
-					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
-					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
+					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(inf, gt), 0)
+					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(inf, gt), 0)
 				print('\tTest: Text accuracy      = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 				print('\tTest: Character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
@@ -617,9 +617,9 @@ class MyRunner(object):
 				with open(csv_filepath, 'w', newline='', encoding='UTF8') as csvfile:
 					writer = csv.writer(csvfile, delimiter=',')
 
-					for pred, gt in zip(inferences, ground_truths):
-						pred = np.array(list(map(lambda x: self._dataset.decode_label(x), pred)))
-						writer.writerow([gt, pred])
+					for inf, gt in zip(inferences, ground_truths):
+						inf = np.array(list(map(lambda x: self._dataset.decode_label(x), inf)))
+						writer.writerow([gt, inf])
 			else:
 				print('[SWL] Warning: Invalid test results.')
 
@@ -822,6 +822,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./text_line_samples_kr_test/**/*.jpg', recursive=False)
+		image_filepaths.sort()
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, batch_size)
 
 #--------------------------------------------------------------------

@@ -477,6 +477,7 @@ def main():
 			os.makedirs(inference_dir_path, exist_ok=True)
 
 		image_filepaths = glob.glob('./images/*.jpg', recursive=False)  # TODO [modify] >>
+		image_filepaths.sort()
 		# TODO [check] >> Not yet tested.
 		runner.infer(checkpoint_dir_path, image_filepaths, inference_dir_path, device_name=infer_device_name)
 

@@ -8,7 +8,7 @@ import os, math, time, csv
 import numpy as np
 
 def compare_text_recognition_results_in_csv(inference_filepath, ground_truth_filepath):
-	print('[SWL] Info: Start loading labels...')
+	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
 	try:
 		inf_filepaths, inf_labels = list(), list()
@@ -41,10 +41,10 @@ def compare_text_recognition_results_in_csv(inference_filepath, ground_truth_fil
 	except FileNotFoundError as ex:
 		print('[SWL] Error: Failed to load a ground-truth label file {}.'.format(ground_truth_filepath))
 		return
-	print('[SWL] Info: End loading labels: {} secs.'.format(time.time() - start_time))
+	print('[SWL] Info: End loading text recognition results: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	print('[SWL] Info: Start checking label validity...')
+	print('[SWL] Info: Start checking filepath validity...')
 	start_time = time.time()
 	unmatched_lines = list()
 	for gt_line in gt_lines:
@@ -65,25 +65,25 @@ def compare_text_recognition_results_in_csv(inference_filepath, ground_truth_fil
 			gt_labels.append(gt[1])
 		else:
 			print('[SWL] Warning: Unmatched filepath {} != {}.'.format(inf[0], gt[0]))
-	print('[SWL] Info: End checking label validity: {} secs.'.format(time.time() - start_time))
+	print('[SWL] Info: End checking filepath validity: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
-	print('[SWL] Info: Start comparing labels...')
+	print('[SWL] Info: Start comparing text recognition results...')
 	start_time = time.time()
-	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
-	for pred, gt in zip(inf_labels, gt_labels):
-		#correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(pred, gt))))
-		correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(pred, gt))))
-		total_word_count += len(gt)
-		for ps, gs in zip(pred, gt):
+	correct_text_count, total_text_count, correct_char_count, total_char_count = 0, 0, 0, 0
+	for inf, gt in zip(inf_labels, gt_labels):
+		#correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(inf, gt))))
+		correct_text_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf, gt))))
+		total_text_count += len(gt)
+		for ps, gs in zip(inf, gt):
 			#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
 			correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(ps, gs))))
 			total_char_count += max(len(ps), len(gs))
-		#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(pred, gt), 0)
-		#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(pred, gt), 0)
-	print('[SWL] Info: End comparing labels: {} secs.'.format(time.time() - start_time))
-	print('\tTest: Word accuracy      = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
-	print('\tTest: Character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+		#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(inf, gt), 0)
+		#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(inf, gt), 0)
+	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	print('\tText accuracy      = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('\tCharacter accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 #--------------------------------------------------------------------
 
