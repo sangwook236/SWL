@@ -6,6 +6,7 @@ sys.path.append('../../src')
 
 import os, math, time, csv
 import numpy as np
+import swl.language_processing.util as swl_langproc_util
 
 def compare_text_recognition_results_in_csv(inference_filepath, ground_truth_filepath):
 	print('[SWL] Info: Start loading text recognition results...')
@@ -70,26 +71,17 @@ def compare_text_recognition_results_in_csv(inference_filepath, ground_truth_fil
 	#--------------------
 	print('[SWL] Info: Start comparing text recognition results...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_char_count, total_char_count = 0, 0, 0, 0
-	for inf, gt in zip(inf_labels, gt_labels):
-		#correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(inf, gt))))
-		correct_text_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf, gt))))
-		total_text_count += len(gt)
-		for ps, gs in zip(inf, gt):
-			#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
-			correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(ps, gs))))
-			total_char_count += max(len(ps), len(gs))
-		#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(inf, gt), 0)
-		#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(inf, gt), 0)
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_text_recognition_accuracy(inf_labels, gt_labels)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
-	print('\tText accuracy      = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-	print('\tCharacter accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 #--------------------------------------------------------------------
 
 def main():
 	# Inference results by run_simple_english_crnn.py or run_simple_hangeul_crnn.py.
-	inference_filepath = 'D:/depot/download/inference_results_v15_revised.csv'
+	inference_filepath = 'D:/depot/download/inference_results_v17.csv'
 	# ICDAR SROIE dataset.
 	#	REF [site] >> https://rrc.cvc.uab.es/?ch=13
 	ground_truth_filepath = 'D:/work/dataset/text/receipt_icdar2019/labels.txt'

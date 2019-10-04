@@ -3,11 +3,24 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, glob
+import os, math, glob, time
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 import swl.language_processing.util as swl_langproc_util
+
+def compute_text_recognition_accuracy_test():
+	inferred_texts     = ['abc', 'df',  'ghijk', 'ab cde', 'fhijk lmno', 'pqrst uvwy', 'abc defg hijklmn opqr', 'abc deg hijklmn opqr', 'abc df hijklmn opqr', '',    'zyx']
+	ground_truth_texts = ['abc', 'def', 'gijk',  'ab cde', 'fghijk lmo', 'pqst uvwxy', 'abc defg hijklmn opqr', 'abc defg hiklmn opqr', 'abc defg hijklmn pr', 'xyz', '']
+	# #texts = 11, #words = 23, #characters = 103.
+
+	print('[SWL] Info: Start computing text recognition accuracy...')
+	start_time = time.time()
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_text_recognition_accuracy(inferred_texts, ground_truth_texts)
+	print('[SWL] Info: End computing text recognition accuracy: {} secs.'.format(time.time() - start_time))
+	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 def hangul_example():
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
@@ -392,13 +405,15 @@ def transform_text_line_test():
 	cv2.destroyAllWindows()
 
 def main():
+	compute_text_recognition_accuracy_test()
+
 	#generate_text_image_test()
 	#draw_text_on_image_test()  # Not so good.
 
 	# NOTE [info] >> Bounding boxes of transform_text() and transform_texts() are different.
 	#	I don't know why.
-	transform_text_test()
-	transform_texts_test()
+	#transform_text_test()
+	#transform_texts_test()
 
 	#transform_text_line_test()  # Not so good.
 

@@ -598,19 +598,26 @@ class MyRunner(object):
 			if inferences and ground_truths:
 				#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-				correct_text_count, total_text_count, correct_char_count, total_char_count = 0, 0, 0, 0
-				for inf, gt in zip(inferences, ground_truths):
-					inf = np.array(list(map(lambda x: self._dataset.decode_label(x), inf)))
+				# REF [function] >> compute_text_recognition_accuracy() in ${SWL_PYTHON_HOME}/src/swl/language_processing/util.py.
+				correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
+				total_text_count = max(len(inferences), len(ground_truths))
+				for inf_lbl, gt_lbl in zip(inferences, ground_truths):
+					inf_lbl = np.array(list(map(lambda x: self._dataset.decode_label(x), inf_lbl)))
 
-					correct_text_count += len(list(filter(lambda x: x[0] == x[1], zip(inf, gt))))
-					total_text_count += len(gt)
-					for ps, gs in zip(inf, gt):
-						correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(ps, gs))))
-						total_char_count += max(len(ps), len(gs))
-					#correct_char_count += functools.reduce(lambda l, pgs: l + len(list(filter(lambda pg: pg[0] == pg[1], zip(pgs[0], pgs[1])))), zip(inf, gt), 0)
-					#total_char_count += functools.reduce(lambda l, pg: l + max(len(pg[0]), len(pg[1])), zip(inf, gt), 0)
-				print('\tTest: Text accuracy      = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
-				print('\tTest: Character accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
+					if inf_lbl == gt_lbl:
+						correct_text_count += 1
+
+					inf_words, gt_words = inf_lbl.split(' '), gt_lbl.split(' ')
+					total_word_count += max(len(inf_words), len(gt_words))
+					#correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
+					correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_words, gt_words))))
+
+					total_char_count += max(len(inf_lbl), len(gt_lbl))
+					#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_lbl, gt_lbl))))
+					correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_lbl, gt_lbl))))
+				print('\tTest: Text accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
+				print('\tTest: Word accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
+				print('\tTest: Char accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
 				# Output to a file.
 				csv_filepath = os.path.join(test_dir_path, 'test_results.csv')

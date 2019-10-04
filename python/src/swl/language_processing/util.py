@@ -3,6 +3,28 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 
+def compute_text_recognition_accuracy(inferred_texts, ground_truth_texts):
+	if len(inferred_texts) != len(ground_truth_texts):
+		print('[SWL] Error: Unmatch text lengths {} != {}.'.format(len(inferred_texts), len(ground_truth_texts)))
+		return
+
+	total_text_count = max(len(inferred_texts), len(ground_truth_texts))
+	correct_text_count = len(list(filter(lambda x: x[0] == x[1], zip(inferred_texts, ground_truth_texts))))
+	#correct_text_count = len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inferred_texts, ground_truth_texts))))
+
+	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
+	for inf_text, gt_text in zip(inferred_texts, ground_truth_texts):
+		inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
+		total_word_count += max(len(inf_words), len(gt_words))
+		correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
+		#correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_words, gt_words))))
+
+		total_char_count += max(len(inf_text), len(gt_text))
+		correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
+		#correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_text, gt_text))))
+
+	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
+
 def compute_text_size(text, font_type, font_index, font_size):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 	text_size = font.getsize(text)  # (width, height).
