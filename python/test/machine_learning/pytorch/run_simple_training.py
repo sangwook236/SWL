@@ -167,7 +167,7 @@ class MyRunner(object):
 		#--------------------
 		print('[SWL] Info: Start saving a model...')
 		start_time = time.time()
-		torch.save(model, model_filepath)
+		torch.save(model, model_filepath)  # Saves a model using either a .pt or .pth file extension.
 		print('[SWL] Info: End saving a model to {}: {} secs.'.format(model_filepath, time.time() - start_time))
 
 		return history

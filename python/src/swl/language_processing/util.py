@@ -3,25 +3,21 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
 
-def compute_text_recognition_accuracy(inferred_texts, ground_truth_texts):
-	if len(inferred_texts) != len(ground_truth_texts):
-		print('[SWL] Error: Unmatch text lengths {} != {}.'.format(len(inferred_texts), len(ground_truth_texts)))
-		return
-
-	total_text_count = max(len(inferred_texts), len(ground_truth_texts))
-	correct_text_count = len(list(filter(lambda x: x[0] == x[1], zip(inferred_texts, ground_truth_texts))))
-	#correct_text_count = len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inferred_texts, ground_truth_texts))))
+def compute_text_recognition_accuracy(text_pairs):
+	total_text_count = len(text_pairs)
+	correct_text_count = len(list(filter(lambda x: x[0] == x[1], text_pairs)))
+	#correct_text_count = len(list(filter(lambda x: x[0].lower() == x[1].lower(), text_pairs)))
 
 	correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0
-	for inf_text, gt_text in zip(inferred_texts, ground_truth_texts):
+	for inf_text, gt_text in text_pairs:
 		inf_words, gt_words = inf_text.split(' '), gt_text.split(' ')
 		total_word_count += max(len(inf_words), len(gt_words))
-		correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
-		#correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_words, gt_words))))
+		#correct_word_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_words, gt_words))))
+		correct_word_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_words, gt_words))))
 
 		total_char_count += max(len(inf_text), len(gt_text))
-		correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
-		#correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_text, gt_text))))
+		#correct_char_count += len(list(filter(lambda x: x[0] == x[1], zip(inf_text, gt_text))))
+		correct_char_count += len(list(filter(lambda x: x[0].lower() == x[1].lower(), zip(inf_text, gt_text))))
 
 	return correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count
 
