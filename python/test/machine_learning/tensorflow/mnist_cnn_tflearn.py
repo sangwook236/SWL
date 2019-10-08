@@ -2,7 +2,7 @@ import tflearn
 import tensorflow as tf
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCnnUsingTfLearn(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape):

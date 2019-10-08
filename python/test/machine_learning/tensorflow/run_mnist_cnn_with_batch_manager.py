@@ -21,13 +21,13 @@ import swl.util.util as swl_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_cnn_tf import MnistCnnUsingTF
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_mnist_cnn(input_shape, output_shape):
 	model_type = 0  # {0, 1}.
 	return MnistCnnUsingTF(input_shape, output_shape, model_type)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def load_data(image_shape):
 	# Pixel value: [0, 255].
@@ -42,7 +42,7 @@ def load_data(image_shape):
 
 	return train_images, train_labels, test_images, test_labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def get_imgaug_augmenter(image_height, image_width):
 	return iaa.Sequential([
@@ -76,7 +76,7 @@ class ImgaugAugmenter(object):
 		images = self._augmenter.augment_images(images)
 		return images, labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def mnist_batch_manager(method=0):
 	#np.random.seed(7)
@@ -187,7 +187,7 @@ def mnist_batch_manager(method=0):
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Trains and evaluates.
 
 	if does_need_training:
@@ -302,7 +302,7 @@ def mnist_batch_manager(method=0):
 		else:
 			raise ValueError('[SWL] Error: Invalid batch manager method: {}.'.format(method))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infers.
 
 	if method in (0, 1, 4):
@@ -362,7 +362,7 @@ def main():
 	# Method #5: ImgaugFileBatchManager without background processes.
 	mnist_batch_manager(method=4)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

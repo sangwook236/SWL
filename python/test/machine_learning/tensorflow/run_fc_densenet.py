@@ -28,7 +28,7 @@ import densenet_fc as dc
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 from swl.machine_learning.data_loader import DataLoader
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 config = tf.ConfigProto()
 #config.allow_soft_placement = True
@@ -43,7 +43,7 @@ K.set_learning_phase(0)
 
 #keras_backend = 'tf'
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Load data.
 
 if 'posix' == os.name:
@@ -107,7 +107,7 @@ make_dir(test_summary_dir_path)
 #else:
 #	raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 #num_examples = train_dataset.num_examples
 num_examples = 0
@@ -141,7 +141,7 @@ tf_label_ph = tf.placeholder(tf.float32, shape=tf_label_shape)
 ##	validation_dataset.labels = keras.utils.to_categorical(validation_dataset.labels, num_classes).reshape(validation_dataset.labels.shape[:-1] + (-1,))
 ##	test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a data generator.
 
 # REF [site] >> https://keras.io/preprocessing/image/
@@ -264,7 +264,7 @@ train_dataset_gen = zip(train_data_gen, train_label_gen)
 validation_dataset_gen = zip(validation_data_gen, validation_label_gen)
 test_dataset_gen = zip(test_data_gen, test_label_gen)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a FC-DenseNet model.
 
 print('Create a FC-DenseNet model.')
@@ -276,7 +276,7 @@ fc_densenet_model_output = fc_densenet_model(tf_data_ph)
 # Display the model summary.
 #fc_densenet_model.summary()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare training.
 
 print('Prepare training.')
@@ -309,7 +309,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 # Saves a model every 2 hours and maximum 5 latest models are saved.
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Train the FC-DenseNet model.
 
 TRAINING_MODE = 0  # Start training a model.
@@ -382,7 +382,7 @@ with sess.as_default():
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
 
 print('Start testing...')
@@ -406,7 +406,7 @@ with sess.as_default():
 
 print('End testing...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 train_summary_writer.close()
 test_summary_writer.close()

@@ -1,5 +1,3 @@
-# REF [site] >> https://github.com/fchollet/keras/issues/3338
-
 import os, re, math, csv
 import numpy as np
 from PIL import Image
@@ -28,6 +26,38 @@ def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
 	offsetw = 0 if rangew == 0 else np.random.randint(rangew)
 	offseth = 0 if rangeh == 0 else np.random.randint(rangeh)
 	return x[:, offsetw:offsetw+random_crop_size[0], offseth:offseth+random_crop_size[1]]
+
+#--------------------------------------------------------------------
+
+def crop_or_zeropad(input, height, width):
+	output = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+	hmin, wmin = min(input.shape[0], height), min(input.shape[1], width)
+	output[:hmin,:wmin] = input[:hmin,:wmin]
+	return output
+
+def shrink_or_zeropad(input, height, width, is_aspect_ratio_maintained=True, interpolation=cv2.INTER_LINEAR):
+	hi, wi = input.shape[:2]
+	min_aspect_ratio = min(height / hi, width / wi)
+
+	output = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+	if min_aspect_ratio >= 1:  # Zeropad.
+		output[:hi,:wi] = input[:hi,:wi]
+	else:  # Resize.
+		hh, ww = (int(round(hi * min_aspect_ratio)), int(round(wi * min_aspect_ratio))) if is_aspect_ratio_maintained else (min(height, hi), min(width, wi))
+		output[:hh,:ww] = cv2.resize(input, (ww, hh), interpolation=interpolation)
+	return output
+
+def resize_or_zeropad(input, height, width, is_aspect_ratio_maintained=True, interpolation=cv2.INTER_LINEAR):
+	if is_aspect_ratio_maintained:  # Zeropad.
+		hi, wi = input.shape[:2]
+		min_aspect_ratio = min(height / hi, width / wi)
+		hh, ww = int(round(hi * min_aspect_ratio)), int(round(wi * min_aspect_ratio))
+
+		output = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		output[:hh,:ww] = cv2.resize(input, (ww, hh), interpolation=interpolation)
+		return output
+	else:  # Resize.
+		return cv2.resize(input, (width, height), interpolation=interpolation)
 
 #--------------------------------------------------------------------
 
@@ -95,7 +125,7 @@ def stack_images_vertically(images):
 
 	return stacked_img
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def load_images_from_files(image_filepaths, height, width, channels):
 	images, valid_indices = list(), list()
@@ -160,7 +190,7 @@ def save_images_to_npy_files(image_filepaths, labels, image_height, image_width,
 
 			npy_file_idx += 1
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # Load images or label images as a list by PIL.
 def load_image_list_by_pil(dir_path, file_suffix, file_extension, is_recursive=False):

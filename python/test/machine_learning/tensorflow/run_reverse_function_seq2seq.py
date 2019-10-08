@@ -43,9 +43,8 @@ import swl.machine_learning.tensorflow.util as swl_tf_util
 from reverse_function_util import ReverseFunctionDataset
 from simple_seq2seq_encdec import SimpleSeq2SeqEncoderDecoder
 from simple_seq2seq_encdec_tf_attention import SimpleSeq2SeqEncoderDecoderWithTfAttention
-import traceback
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset, is_attentive, is_bidirectional, is_time_major):
 	if is_attentive:
@@ -55,7 +54,7 @@ def create_seq2seq_encoder_decoder(encoder_input_shape, decoder_input_shape, dec
 		# Sequence-to-sequence encoder-decoder model w/o attention.
 		return SimpleSeq2SeqEncoderDecoder(encoder_input_shape, decoder_input_shape, decoder_output_shape, dataset.start_token, dataset.end_token, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -197,7 +196,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Train and evaluate.
 
 	if does_need_training:
@@ -213,7 +212,7 @@ def main():
 				swl_tf_util.evaluate_neural_net_with_decoder_input(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infer.
 
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
@@ -244,15 +243,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	try:
-		main()
-	except:
-		#ex = sys.exc_info()  # (type, exception object, traceback).
-		##print('{} raised: {}.'.format(ex[0], ex[1]))
-		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
-		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
-		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
-		traceback.print_exc(limit=None, file=sys.stdout)
+	main()

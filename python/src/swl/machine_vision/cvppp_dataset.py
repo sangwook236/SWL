@@ -6,7 +6,7 @@ else:
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import numpy as np
 import keras
@@ -16,7 +16,7 @@ from swl.machine_learning.data_loader import DataLoader
 from swl.machine_learning.util import standardize_samplewise, standardize_featurewise
 from swl.machine_vision.util import load_images_by_pil, load_labels_by_pil
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare dataset.
 
 def prepare_cvppp_dataset(X, Y=None):
@@ -46,7 +46,7 @@ def preprocess_cvppp_dataset(X, Y, num_classes):
 
 	return X, Y
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Load a CVPPP dataset.
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_vision/util_test.py
@@ -72,7 +72,7 @@ def load_cvppp_dataset(train_data_dir_path, train_label_dir_path, data_suffix=''
 	return train_data, train_labels, num_classes
 	#return train_data, train_labels, test_data, test_labels, num_classes
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def get_cvppp_dataset_generator(data_preprocessing_function, label_preprocessing_function):
 	train_data_generator = ImageDataGenerator(
@@ -160,7 +160,7 @@ def get_cvppp_dataset_generator_with_crop(data_preprocessing_function, label_pre
 		cval=0.0)
 	return train_data_generator, train_label_generator
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a CVPPP data generator.
 
 # REF [site] >> https://keras.io/preprocessing/image/
@@ -247,7 +247,7 @@ def create_cvppp_generator_from_directory(train_data_dir_path, train_label_dir_p
 	train_dataset_gen = zip(train_data_gen, train_label_gen)
 	return train_dataset_gen
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a CVPPP data generator using imgaug in https://github.com/aleju/imgaug.
 
 # REF [file] >> ${SWL_PYTHON_HOME}/test/machine_learning/image_augmentation_test.py

@@ -28,7 +28,7 @@ import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from synth90k_crnn import Synth90kCrnnWithCrossEntropyLoss, Synth90kCrnnWithCtcLoss
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_synth90k_crnn(image_height, image_width, image_channel, num_classes, label_eos_token, is_sparse_output):
 	if is_sparse_output:
@@ -36,7 +36,7 @@ def create_synth90k_crnn(image_height, image_width, image_channel, num_classes, 
 	else:
 		return Synth90kCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
@@ -52,7 +52,7 @@ class SimpleCrnnTrainer(NeuralNetTrainer):
 
 		super().__init__(neuralNet, optimizer, global_step)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_imgaug_augmenter():
 	return iaa.Sequential([
@@ -89,7 +89,7 @@ class ImgaugAugmenter(object):
 		else:
 			return self._augmenter.augment_images(inputs), outputs
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class Synth90kPreprocessor(object):
 	def __init__(self, is_sparse_output):
@@ -140,7 +140,7 @@ def load_data(synth90k_base_dir_path):
 
 	return train_input_filepaths, train_output_filepaths, val_input_filepaths, val_output_filepaths, test_input_filepaths, test_output_filepaths
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def initialize_lock(lock):
 	global global_lock
@@ -189,7 +189,7 @@ def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_file
 	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
 	print('\t{}: End augmentation worker process.'.format(os.getpid()))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -367,7 +367,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Trains and evaluates.
 
 	if does_need_training:
@@ -421,7 +421,7 @@ def main():
 				swl_tf_util.evaluate_neural_net_by_file_batch_loader(sess, nnEvaluator, valFileBatchLoader, valDirMgr, eval_saver, checkpoint_dir_path, False, False)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infers.
 
 	testDirMgr = WorkingDirectoryManager(test_batch_dir_path_prefix, num_test_batch_dirs)
@@ -475,7 +475,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

@@ -12,6 +12,62 @@ import swl.util.util as swl_util
 #import swl.machine_learning.util as swl_ml_util
 import swl.machine_vision.util as swl_cv_util
 
+def crop_or_zeropad_test():
+	if False:
+		image_height, image_width = 500, 500
+		img = np.full((image_height, image_width), 255, dtype=np.uint8)
+	else:
+		image_height, image_width, image_channel = 500, 500, 3
+		img = np.full((image_height, image_width, image_channel), 255, dtype=np.uint8)
+	img[int(round(image_height * 0.25)):int(round(image_height * 0.75)),int(round(image_width * 0.25)):int(round(image_width * 0.75))] = 127
+
+	sizes = [(300, 300), (300, 800), (800, 300), (800, 800)]
+	for height, width in sizes:
+		transformed = swl_cv_util.crop_or_zeropad(img, height, width)
+
+		cv2.imshow('Image', img)
+		cv2.imshow('Transformed', transformed)
+		cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+def shrink_or_zeropad_test():
+	if False:
+		image_height, image_width = 500, 500
+		img = np.full((image_height, image_width), 255, dtype=np.uint8)
+	else:
+		image_height, image_width, image_channel = 500, 500, 3
+		img = np.full((image_height, image_width, image_channel), 255, dtype=np.uint8)
+	img[int(round(image_height * 0.25)):int(round(image_height * 0.75)),int(round(image_width * 0.25)):int(round(image_width * 0.75))] = 127
+
+	sizes = [(300, 300), (300, 800), (800, 300), (800, 800)]
+	for is_aspect_ratio_maintained in [True, False]:
+		for height, width in sizes:
+			transformed = swl_cv_util.shrink_or_zeropad(img, height, width, is_aspect_ratio_maintained, interpolation=cv2.INTER_AREA)
+
+			cv2.imshow('Image', img)
+			cv2.imshow('Transformed', transformed)
+			cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
+def resize_or_zeropad_test():
+	if False:
+		image_height, image_width = 500, 500
+		img = np.full((image_height, image_width), 255, dtype=np.uint8)
+	else:
+		image_height, image_width, image_channel = 500, 500, 3
+		img = np.full((image_height, image_width, image_channel), 255, dtype=np.uint8)
+	img[int(round(image_height * 0.25)):int(round(image_height * 0.75)),int(round(image_width * 0.25)):int(round(image_width * 0.75))] = 127
+
+	sizes = [(300, 300), (300, 800), (800, 300), (800, 800)]
+	for is_aspect_ratio_maintained in [True, False]:
+		for height, width in sizes:
+			transformed = swl_cv_util.resize_or_zeropad(img, height, width, is_aspect_ratio_maintained, interpolation=cv2.INTER_AREA)
+
+			cv2.imshow('Image', img)
+			cv2.imshow('Transformed', transformed)
+			cv2.waitKey(0)
+	cv2.destroyAllWindows()
+
 def blend_image_test():
 	if True:
 		fg = np.full((500, 500, 3), (0, 0, 1), dtype=np.float32)
@@ -295,7 +351,11 @@ def show_image_and_label_in_npz_pair():
 	cv2.destroyAllWindows()
 
 def main():
-	blend_image_test()
+	#crop_or_zeropad_test()
+	shrink_or_zeropad_test()
+	#resize_or_zeropad_test()
+
+	#blend_image_test()
 	#load_images_test()
 
 	#--------------------
@@ -306,7 +366,7 @@ def main():
 	#show_image_in_npz()
 	#show_image_and_label_in_npz_pair()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

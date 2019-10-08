@@ -19,9 +19,8 @@ from swl.machine_learning.tensorflow.neural_net_inferrer import NeuralNetInferre
 import swl.util.util as swl_util
 import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
-import traceback
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleRnnBase(abc.ABC):
 	def __init__(self, input_tensor_ph, output_tensor_ph, seq_lens_ph, num_classes, is_time_major=False):
@@ -227,7 +226,7 @@ def create_rnn(num_features, num_classes, label_eos_token, is_time_major=False, 
 	else:
 		return SimpleRnnWithDenseLabel(num_features, num_classes, label_eos_token, is_time_major=is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleRnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
@@ -242,7 +241,7 @@ class SimpleRnnTrainer(NeuralNetTrainer):
 
 		super().__init__(neuralNet, optimizer, global_step)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -398,7 +397,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Train and evaluate.
 
 	if does_need_training:
@@ -419,7 +418,7 @@ def main():
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, val_inputs, val_outputs, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infer.
 
 	start_time = time.time()
@@ -448,15 +447,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	try:
-		main()
-	except:
-		#ex = sys.exc_info()  # (type, exception object, traceback).
-		##print('{} raised: {}.'.format(ex[0], ex[1]))
-		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
-		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
-		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
-		traceback.print_exc(limit=None, file=sys.stdout)
+	main()

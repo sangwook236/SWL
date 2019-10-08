@@ -16,7 +16,7 @@ import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_crnn import MnistCrnnWithCrossEntropyLoss, MnistCrnnWithCtcLoss
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_crnn(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major, is_sparse_label, label_eos_token):
 	if is_sparse_label:
@@ -24,7 +24,7 @@ def create_crnn(image_height, image_width, image_channel, num_classes, num_time_
 	else:
 		return MnistCrnnWithCrossEntropyLoss(image_height, image_width, image_channel, num_classes, num_time_steps, is_time_major=is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleCrnnTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0):
@@ -80,7 +80,7 @@ class SimpleCrnnGradientClippingTrainer(GradientClippingNeuralNetTrainer):
 
 		super().__init__(neuralNet, optimizer, max_gradient_norm, global_step)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def visualize_dataset(images, labels, max_example_count=0):
 	print('Image shape = {}, label shape = {}'.format(images.shape, labels.shape))
@@ -230,7 +230,7 @@ def prepare_single_character_dataset(image_shape, num_classes, max_time_steps, s
 			test_sliced_labels[:,step,:] = test_labels
 		return train_sliced_images, train_sliced_labels, test_sliced_images, test_sliced_labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -391,7 +391,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Train and evaluate.
 
 	if does_need_training:
@@ -421,7 +421,7 @@ def main():
 					swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path, is_time_major, is_sparse_label)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infer.
 
 	start_time = time.time()
@@ -477,7 +477,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

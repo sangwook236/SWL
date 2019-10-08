@@ -24,13 +24,13 @@ from swl.machine_learning.batch_loader import NpzFileBatchLoader
 from swl.util.working_directory_manager import WorkingDirectoryManager, TwoStepWorkingDirectoryManager
 from mnist_cnn_tf import MnistCnnUsingTF
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_mnist_cnn(input_shape, output_shape):
 	model_type = 0  # {0, 1}.
 	return MnistCnnUsingTF(input_shape, output_shape, model_type)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_imgaug_augmenter():
 	return iaa.Sequential([
@@ -100,7 +100,7 @@ def load_data(image_shape):
 
 	return train_images, train_labels, test_images, test_labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def initialize_lock(lock):
 	global global_lock
@@ -148,7 +148,7 @@ def augmentation_worker_proc(augmenter, is_output_augmented, batch_info_csv_file
 	print('\t{}: Returned a directory: {}.'.format(os.getpid(), dir_path))
 	print('\t{}: End augmentation worker process.'.format(os.getpid()))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -287,7 +287,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Trains and evaluates.
 
 	if does_need_training:
@@ -402,7 +402,7 @@ def main():
 					swl_tf_util.evaluate_neural_net_by_batch_generator(sess, nnEvaluator, valBatchGenerator, eval_saver, checkpoint_dir_path, False, False)
 			print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infers.
 
 	if use_file_batch_loader:
@@ -463,7 +463,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

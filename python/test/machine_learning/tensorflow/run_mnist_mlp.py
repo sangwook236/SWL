@@ -30,16 +30,15 @@ import swl.machine_learning.util as swl_ml_util
 import swl.machine_learning.tensorflow.util as swl_tf_util
 from mnist_mlp import MnistMLP
 #from keras import backend as K
-import traceback
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def create_mnist_mlp(input_shape, output_shape):
 	model_type = 4  # {1, 4}.
 	max_neuron_count = 200000
 	return MnistMLP(input_shape, output_shape, model_type, max_neuron_count)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def preprocess_data(data, labels, num_classes, axis=0):
 	if data is not None:
@@ -74,7 +73,7 @@ def load_data(image_shape):
 
 	return train_images, train_labels, test_images, test_labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -198,7 +197,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Trains and evaluates.
 
 	if does_need_training:
@@ -218,7 +217,7 @@ def main():
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_images, test_labels, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infers.
 
 	start_time = time.time()
@@ -252,15 +251,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	try:
-		main()
-	except:
-		#ex = sys.exc_info()  # (type, exception object, traceback).
-		##print('{} raised: {}.'.format(ex[0], ex[1]))
-		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
-		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
-		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
-		traceback.print_exc(limit=None, file=sys.stdout)
+	main()

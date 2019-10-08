@@ -1,7 +1,7 @@
 import math
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class DrawAttentionBase(object):
 	@staticmethod
@@ -22,7 +22,7 @@ class DrawAttentionBase(object):
 		b = tf.get_variable('b', [output_dim], initializer=tf.constant_initializer(0.0))
 		return tf.matmul(x, W) + b
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [paper] >> "DRAW: A Recurrent Neural Network For Image Generation", arXiv 2015
 #	REF [site] >> https://github.com/ericjang/draw
@@ -79,7 +79,7 @@ class DrawAttention(DrawAttentionBase):
 		Fy = Fy / tf.maximum(tf.reduce_sum(Fy, 2, keepdims=True), eps)
 		return Fx, Fy
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [paper] >> "End-to-End Instance Segmentation with Recurrent Attention", arXiv 2017
 #	REF [site] >> https://github.com/renmengye/rec-attend-public

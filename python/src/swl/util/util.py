@@ -33,7 +33,7 @@ def bottom_k_indices(iterable, k):
 	# In descending order.
 	#return sorted(range(len(iterable)), key=lambda i: iterable[i], reverse=True)[-k:]  # Bottom-k indices.
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def make_dir(dir_path):
 	if not os.path.exists(dir_path):
@@ -68,7 +68,7 @@ def extract_subset_of_data(data, subset_ratio):
 	np.random.shuffle(indices)
 	return data[indices[:num_sub_data]]
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def load_filepaths_from_npy_file_info(npy_file_csv_filepath):
 	input_filepaths, output_filepaths, example_counts = list(), list(), list()

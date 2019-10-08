@@ -1,11 +1,11 @@
-from tf.keras.models import Sequential
-from tf.keras.layers import Input, Dense, Dropout, Flatten
-from tf.keras.layers import Conv2D, MaxPooling2D
-#from keras import optimizers, callbacks
 import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Input, Dense, Dropout, Flatten
+from tensorflow.keras.layers import Conv2D, MaxPooling2D
+#from tensorflow.keras import optimizers, callbacks
 from swl.machine_learning.tensorflow.simple_neural_net import SimpleNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class MnistCnnUsingKeras(SimpleNeuralNet):
 	def __init__(self, input_shape, output_shape, model_type=0):

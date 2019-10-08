@@ -37,9 +37,8 @@ import swl.machine_learning.tensorflow.util as swl_tf_util
 from rda_plant_util import RdaPlantDataset
 from fc_densenet_keras import FcDenseNetUsingKeras
 from keras import backend as K
-import traceback
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Infer full-size images from patches.
 
 from PIL import Image
@@ -126,7 +125,7 @@ def infer_full_size_images_from_patches(sess, nnInferrer, image_list, label_list
 		plt.imshow(lbl, cmap='gray')
 		plt.imshow(np.not_equal(inf, lbl), cmap='gray')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [function] >> plot_conv_filters() in ${SWDT_HOME}/sw_dev/python/rnd/test/machine_learning/tensorflow/tensorflow_visualization_filter.py.
 def plot_conv_filters(sess, filter_variable, num_columns=5, figsize=None):
@@ -156,7 +155,7 @@ def plot_conv_activations(activations, num_columns=5, figsize=None):
 def compute_layer_activations(sess, layer_tensor, feed_dict):
 	return sess.run(layer_tensor, feed_dict=feed_dict)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Visualize filters in a convolutional layer.
 
 def visualize_filters(sess):
@@ -171,7 +170,7 @@ def visualize_filters(sess):
 			#plot_conv_filters(sess, filters)
 			print('**************************', filters.op)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Visualize activations(layer ouputs) in a convolutional layer.
 
 def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_height, patch_width, num_classes, batch_size, npy_dir_path):
@@ -212,7 +211,7 @@ def visualize_activations(sess, denseNetModel, nnInferrer, image_list, patch_hei
 	end_time = time.time()
 	print('\tElapsed time = {}'.format(end_time - start_time))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -375,7 +374,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Train and evaluate.
 
 	if does_need_training:
@@ -395,7 +394,7 @@ def main():
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, test_image_patches, test_label_patches, batch_size, eval_saver, checkpoint_dir_path)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infer.
 
 	start_time = time.time()
@@ -418,7 +417,7 @@ def main():
 	else:
 		print('[SWL] Warning: Invalid inference results.')
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 
 	print('[SWL] Info: Start inferring full-size images using patches...')
 	with infer_session.as_default() as sess:
@@ -459,15 +458,7 @@ def main():
 	default_session.close()
 	del default_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	try:
-		main()
-	except:
-		#ex = sys.exc_info()  # (type, exception object, traceback).
-		##print('{} raised: {}.'.format(ex[0], ex[1]))
-		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
-		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
-		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
-		traceback.print_exc(limit=None, file=sys.stdout)
+	main()

@@ -21,7 +21,7 @@ from swl.machine_learning.keras.unet import UNet
 from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
 from swl.machine_learning.data_loader import DataLoader
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 config = tf.ConfigProto()
 #config.allow_soft_placement = True
@@ -36,7 +36,7 @@ K.set_learning_phase(0)
 
 keras_backend = 'tf'
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Load data.
 
 if 'posix' == os.name:
@@ -90,7 +90,7 @@ for train_label in train_dataset.labels:
 
 assert train_dataset.data.shape[0] == train_dataset.labels.shape[0] and train_dataset.data.shape[1] == train_dataset.labels.shape[1] and train_dataset.data.shape[2] == train_dataset.labels.shape[2], 'ERROR: Image and label size mismatched.'
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 2.
@@ -114,7 +114,7 @@ train_dataset.labels = train_dataset.labels.astype(np.float32)
 #if num_classes > 2:
 #	train_dataset.labels = keras.utils.to_categorical(train_dataset.labels, num_classes).reshape(train_dataset.labels.shape[:-1] + (-1,))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a data generator.
 
 # REF [site] >> https://keras.io/preprocessing/image/
@@ -174,7 +174,7 @@ train_label_gen = train_label_generator.flow(train_dataset.labels, batch_size=ba
 # Combine generators into one which yields image and labels.
 train_dataset_gen = zip(train_data_gen, train_label_gen)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a U-Net model.
 
 print('Create a U-Net model.')
@@ -188,7 +188,7 @@ with tf.name_scope('unet'):
 #else:   
 #	unet_model.summary()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare training.
 
 print('Prepare training.')
@@ -223,7 +223,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 # Saves a model every 2 hours and maximum 5 latest models are saved.
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Train the U-Net model.
 
 TRAINING_MODE = 0  # Start training a model.
@@ -285,7 +285,7 @@ with sess.as_default():
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Evaluate the U-Net model.
 
 print('Start testing...')
@@ -313,7 +313,7 @@ with sess.as_default():
 
 print('End testing...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 train_summary_writer.close()
 test_summary_writer.close()

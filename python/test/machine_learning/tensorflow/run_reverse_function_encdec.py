@@ -43,9 +43,8 @@ import swl.machine_learning.tensorflow.util as swl_tf_util
 from reverse_function_util import ReverseFunctionDataset
 from simple_encdec import SimpleEncoderDecoder
 from simple_encdec_attention import SimpleEncoderDecoderWithAttention
-import traceback
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> https://talbaumel.github.io/attention/
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
@@ -57,7 +56,7 @@ def create_encoder_decoder(input_shape, output_shape, is_attentive, is_dynamic, 
 		# Encoder-decoder model w/o attention.
 		return SimpleEncoderDecoder(input_shape, output_shape, is_dynamic=is_dynamic, is_bidirectional=is_bidirectional, is_time_major=is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def main():
 	#np.random.seed(7)
@@ -192,7 +191,7 @@ def main():
 	if does_need_training:
 		train_session.run(initializer)
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Train and evaluate.
 
 	if does_need_training:
@@ -208,7 +207,7 @@ def main():
 				swl_tf_util.evaluate_neural_net(sess, nnEvaluator, val_encoder_input_seqs, val_decoder_output_seqs, batch_size, eval_saver, checkpoint_dir_path, is_time_major)
 		print('\tTotal evaluation time = {}'.format(time.time() - start_time))
 
-	#%%------------------------------------------------------------------
+	#--------------------------------------------------------------------
 	# Infer.
 
 	test_strs = ['abc', 'cba', 'dcb', 'abcd', 'dcba', 'cdacbd', 'bcdaabccdb']
@@ -239,15 +238,7 @@ def main():
 	infer_session.close()
 	del infer_session
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
-	try:
-		main()
-	except:
-		#ex = sys.exc_info()  # (type, exception object, traceback).
-		##print('{} raised: {}.'.format(ex[0], ex[1]))
-		#print('{} raised: {}.'.format(ex[0].__name__, ex[1]))
-		#traceback.print_tb(ex[2], limit=None, file=sys.stdout)
-		#traceback.print_exception(*sys.exc_info(), limit=None, file=sys.stdout)
-		traceback.print_exc(limit=None, file=sys.stdout)
+	main()

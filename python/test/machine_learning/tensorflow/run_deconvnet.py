@@ -21,7 +21,7 @@ from swl.machine_learning.keras.deconvnet import DeconvNet
 from swl.machine_learning.keras.loss import dice_coeff, dice_coeff_loss
 from swl.machine_learning.data_loader import DataLoader
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 config = tf.ConfigProto()
 #config.allow_soft_placement = True
@@ -36,7 +36,7 @@ K.set_learning_phase(0)
 
 keras_backend = 'tf'
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Load data.
 
 if 'posix' == os.name:
@@ -100,7 +100,7 @@ elif 1 == test_dataset.data.ndim - test_dataset.labels.ndim:
 else:
 	raise ValueError('test_dataset.data.ndim or test_dataset.labels.ndim is invalid.')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 num_examples = train_dataset.num_examples
 num_classes = np.unique(train_dataset.labels).shape[0]  # 11 + 1.
@@ -128,7 +128,7 @@ test_dataset.labels = test_dataset.labels.astype(np.float32)
 #	validation_dataset.labels = keras.utils.to_categorical(validation_dataset.labels, num_classes).reshape(validation_dataset.labels.shape[:-1] + (-1,))
 #	test_dataset.labels = keras.utils.to_categorical(test_dataset.labels, num_classes).reshape(test_dataset.labels.shape[:-1] + (-1,))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a data generator.
 
 # REF [site] >> https://keras.io/preprocessing/image/
@@ -253,7 +253,7 @@ train_dataset_gen = zip(train_data_gen, train_label_gen)
 validation_dataset_gen = zip(validation_data_gen, validation_label_gen)
 test_dataset_gen = zip(test_data_gen, test_label_gen)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a DeconvNet model.
 
 print('Create a DeconvNet model.')
@@ -272,7 +272,7 @@ with tf.name_scope('deconvnet'):
 #images_placeholder = tf.get_default_graph().get_tensor_by_name('input_10:0')
 #seg_score = tf.get_default_graph().get_tensor_by_name('deconvnet/seg-score/Sigmoid')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare training.
 
 print('Prepare training.')
@@ -303,7 +303,7 @@ test_summary_writer = tf.summary.FileWriter(test_summary_dir_path)
 # Saves a model every 2 hours and maximum 5 latest models are saved.
 saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Train the DeconvNet model.
 
 TRAINING_MODE = 0  # Start training a model.
@@ -365,7 +365,7 @@ with sess.as_default():
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Evaluate the DeconvNet model.
 
 print('Start testing...')
@@ -392,7 +392,7 @@ with sess.as_default():
 
 print('End testing...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 train_summary_writer.close()
 test_summary_writer.close()

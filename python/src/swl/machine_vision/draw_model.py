@@ -1,7 +1,7 @@
 import tensorflow as tf
 from swl.machine_vision.draw_attention import DrawAttention
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [paper] >> "DRAW: A Recurrent Neural Network For Image Generation", arXiv 2015
 #	REF [site] >> https://github.com/ericjang/draw
