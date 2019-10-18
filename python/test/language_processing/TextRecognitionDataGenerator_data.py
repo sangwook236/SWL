@@ -54,19 +54,27 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		if width is None:
 			width = self._image_width
 
-		hh, ww = input.shape
-		if ww >= width:
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
 			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
 		else:
-			ratio = height / hh
-			min_width = min(width, int(ww * ratio))
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
 			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
 			if min_width < width:
-				image_zeropadded = np.zeros((height, width), dtype=input.dtype)
-				image_zeropadded[:,0:min_width] = input[:,0:min_width]
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
 				return image_zeropadded
 			else:
 				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+		return zeropadded
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
 		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_data_augmented=True, use_NWHC=self._use_NWHC)
@@ -473,7 +481,7 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 
 		#--------------------
 		#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
-		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+		hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 		#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
 		alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 		digit_charset = '0123456789'
