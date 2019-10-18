@@ -217,7 +217,7 @@ def main():
 	#two_step_working_directory_manager_test()
 	#multi_step_working_directory_manager_test()  # Not yet implemented.
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

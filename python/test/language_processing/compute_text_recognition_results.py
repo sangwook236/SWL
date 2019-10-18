@@ -14,15 +14,18 @@ import swl.language_processing.util as swl_langproc_util
 #	tesseract --tessdata-dir ~/lib_repo/cpp/tesseract_tessdata_best_github file_list.txt tess_ocr_results -l eng --oem 3 --psm 3 --dpi 70
 def load_tesseract_results():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019_tesseract'
+		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019/tesseract_70h'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019_tesseract'
+		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019/tesseract_70h'
 
 	filepath = receipt_icdar2019_base_dir_path + '/tess_ocr_results_70h.txt'
 	try:
 		with open(filepath, 'r', encoding='UTF8') as fd:
 			data = fd.read()
 	except FileNotFoundError as ex:
+		print('[SWL] Error: Failed to load a file: {}.'.format(filepath))
+		return None
+	except UnicodeDecodeError as ex:
 		print('[SWL] Error: Failed to load a file: {}.'.format(filepath))
 		return None
 
@@ -41,7 +44,7 @@ def load_tesseract_results():
 		id = 'image/{:05}.jpg'.format(idx)
 		if id in text_dict:
 			print('[SWL] Warning: Duplicate ID {}.'.format(id))
-			continue
+			#continue
 		text_dict[id] = data[start_pos:end_pos].rstrip('\n')
 		start_pos = end_pos + 1
 		idx += 1
@@ -55,9 +58,9 @@ def load_tesseract_results():
 #	ocropus-rpred -Q 4 -m ~/lib_repo/python/ocropy_github/models/en-default.pyrnn.gz 'receipt_icdar2019_ocropy/bin/?????.bin.png'
 def load_ocropy_results():
 	if 'posix' == os.name:
-		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019_ocropy'
+		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019/ocropy'
 	else:
-		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019_ocropy'
+		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019/ocropy'
 
 	filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/bin/*.txt')
 	if filepaths is None:
@@ -72,7 +75,10 @@ def load_ocropy_results():
 				lines = fd.readlines()
 		except FileNotFoundError as ex:
 			print('[SWL] Error: Failed to load a file: {}.'.format(fpath))
-			return None
+			continue
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Failed to load a file: {}.'.format(fpath))
+			continue
 
 		if 1 != len(lines):
 			print('[SWL] Warning: Invalid number of texts: {} != 1 in {}.'.format(len(lines), fpath))
@@ -86,7 +92,7 @@ def load_ocropy_results():
 			continue
 		if id in text_dict:
 			print('[SWL] Warning: Duplicate ID {}.'.format(fpath))
-			continue
+			#continue
 		text_dict[id] = lines[0].rstrip('\n')
 
 	return dict(sorted(text_dict.items()))
@@ -103,25 +109,30 @@ def load_abbyy_results():
 
 	#--------------------
 	# The recognition results of ABBYY FineReaderOCR 15.
-	filepath = receipt_icdar2019_base_dir_path + '/abbyy/abbyy_finereader_15_receipt_icdar2019_results.txt'
-	try:
-		with open(filepath, 'r', encoding='UTF8') as fd:
-			lines = fd.readlines()
-	except FileNotFoundError as ex:
-		print('[SWL] Error: Failed to load a file: {}.'.format(filepath))
-		return None
+	if False:
+		filepath = receipt_icdar2019_base_dir_path + '/abbyy/abbyy_finereader_15_receipt_icdar2019_results.txt'
+		try:
+			with open(filepath, 'r', encoding='UTF8') as fd:
+				lines = fd.readlines()
+		except FileNotFoundError as ex:
+			print('[SWL] Error: Failed to load a file: {}.'.format(filepath))
+			return None
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Failed to load a file: {}.'.format(filepath))
+			return None
 
-	for idx, line in enumerate(lines):
-		id = 'image/{:05}.jpg'.format(idx)
-		if id in text_dict:
-			print('[SWL] Warning: Duplicate ID {}.'.format(id))
-			continue
-		#text_dict[id] = line.rstrip('\n')
-		text_dict[id] = line.rstrip(' \n')
+		for idx, line in enumerate(lines):
+			id = 'image/{:05}.jpg'.format(idx)
+			if id in text_dict:
+				print('[SWL] Warning: Duplicate ID {}.'.format(id))
+				#continue
+			#text_dict[id] = line.rstrip('\n')
+			text_dict[id] = line.rstrip(' \n')
 
 	#--------------------
 	# The recognition results of ABBYY Cloud OCR SDK.
-	filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/abbyy/Python/results/*.txt')
+	#filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/abbyy/Python/results/*.txt')
+	filepaths = glob.glob(receipt_icdar2019_base_dir_path + '/abbyy/ICDAR2019_Recipt (Abbyy)/abbyy/*.txt')
 	if filepaths is None:
 		print('[SWL] Error: Failed to load recognition results.')
 		return None
@@ -133,13 +144,16 @@ def load_abbyy_results():
 				lines = fd.readlines()
 		except FileNotFoundError as ex:
 			print('[SWL] Error: Failed to load a file: {}.'.format(fpath))
-			return None
+			continue
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Failed to load a file: {}.'.format(fpath))
+			continue
 
 		if 0 == len(lines):
-			print('[SWL] Warning: Invalid number of texts: {} == = in {}.'.format(len(lines), fpath))
+			print('[SWL] Warning: Invalid number of texts: {} == 0 in {}.'.format(len(lines), fpath))
 			continue
-		if len(lines) > 1:  # Multiple text lines.
-			print('[SWL] Warning: Invalid number of texts: {} > 1 in {}.'.format(len(lines), fpath))
+		#if len(lines) > 1:  # Multiple text lines.
+		#	print('[SWL] Warning: Invalid number of texts: {} > 1 in {}.'.format(len(lines), fpath))
 
 		fname = os.path.splitext(os.path.basename(fpath))[0]
 		try:
@@ -149,7 +163,7 @@ def load_abbyy_results():
 			continue
 		if id in text_dict:
 			print('[SWL] Warning: Duplicate ID {}.'.format(fpath))
-			continue
+			#continue
 		#text_dict[id] = lines[0].rstrip('\n')
 		text_dict[id] = lines[0].lstrip('\ufeff').rstrip('\n')
 
@@ -158,7 +172,12 @@ def load_abbyy_results():
 # Generates my recognition results:
 #	REF [file] >> run_simple_english_crnn.py or run_simple_hangeul_crnn.py
 def load_my_text_recognition_results():
-	inference_filepath = 'D:/depot/download/inference_results_v17.csv'
+	if 'posix' == os.name:
+		receipt_icdar2019_base_dir_path = '/home/sangwook/work/dataset/text/receipt_icdar2019'
+	else:
+		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019'
+
+	inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_v17.csv'
 
 	id_prefix = './receipt_icdar2019/'
 	id_prefix_len = len(id_prefix)
@@ -181,11 +200,15 @@ def load_my_text_recognition_results():
 					id = row[0][id_prefix_len:]
 					if id in text_dict:
 						print('[SWL] Warning: Duplicate inference ID {}.'.format(row[0]))
-						continue
+						#continue
 					text_dict[id] = row[1]
 		except FileNotFoundError as ex:
 			print('[SWL] Error: Failed to load an inference file {}.'.format(inference_filepath))
 			return None
+		except UnicodeDecodeError as ex:
+			print('[SWL] Error: Failed to load an inference file: {}.'.format(inference_filepath))
+			return None
+			 
 	else:
 		separator = ','  # ID(filepath),text.
 		#separator = ' '  # ID(filepath) text.
@@ -215,7 +238,7 @@ def load_my_text_recognition_results():
 
 			if id in text_dict:
 				print('[SWL] Warning: Duplicate inference ID {}.'.format(id))
-				continue
+				#continue
 			text_dict[id] = text
 
 	return dict(sorted(text_dict.items()))
@@ -272,12 +295,12 @@ def load_ground_truth_of_receipt_icdar2019():
 
 			if id in text_dict:
 				print('[SWL] Warning: Duplicate ground-truth ID {}.'.format(id))
-				continue
+				#continue
 			text_dict[id] = text
 
 	return dict(sorted(text_dict.items()))
 
-def compute_text_recognition_results():
+def compute_simple_text_recognition_accuracy_results():
 	print('[SWL] Info: Start loading text recognition results...')
 	start_time = time.time()
 	gt_text_dict = load_ground_truth_of_receipt_icdar2019()
@@ -291,10 +314,11 @@ def compute_text_recognition_results():
 	else:
 		inf_text_dict = load_my_text_recognition_results()
 	print('[SWL] Info: End loading text recognition results: {} secs.'.format(time.time() - start_time))
-	if gt_text_dict is None:
+
+	if gt_text_dict is None or 0 == len(gt_text_dict):
 		print('[SWL] Error: Failed to load the ground-truth info.')
 		return
-	if inf_text_dict is None:
+	if inf_text_dict is None or 0 == len(inf_text_dict):
 		print('[SWL] Error: Failed to load the inference info.')
 		return
 
@@ -308,23 +332,69 @@ def compute_text_recognition_results():
 		else:
 			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
 
-	if len(text_pairs) != len(gt_text_dict):
+	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
 		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
 	print('[SWL] Info: End checking ID validity: {} secs.'.format(time.time() - start_time))
 
 	#--------------------
 	print('[SWL] Info: Start comparing text recognition results...')
 	start_time = time.time()
-	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_text_recognition_accuracy(text_pairs)
+	correct_text_count, total_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = swl_langproc_util.compute_simple_text_recognition_accuracy(text_pairs, case_sensitive=False)
 	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
 	print('\tText accuracy = {} / {} = {}.'.format(correct_text_count, total_text_count, correct_text_count / total_text_count))
 	print('\tWord accuracy = {} / {} = {}.'.format(correct_word_count, total_word_count, correct_word_count / total_word_count))
 	print('\tChar accuracy = {} / {} = {}.'.format(correct_char_count, total_char_count, correct_char_count / total_char_count))
 
+def compute_string_distance_results():
+	print('[SWL] Info: Start loading text recognition results...')
+	start_time = time.time()
+	gt_text_dict = load_ground_truth_of_receipt_icdar2019()
+
+	if False:
+		inf_text_dict = load_tesseract_results()
+	elif False:
+		inf_text_dict = load_ocropy_results()
+	elif False:
+		inf_text_dict = load_abbyy_results()
+	else:
+		inf_text_dict = load_my_text_recognition_results()
+	print('[SWL] Info: End loading text recognition results: {} secs.'.format(time.time() - start_time))
+
+	if gt_text_dict is None or 0 == len(gt_text_dict):
+		print('[SWL] Error: Failed to load the ground-truth info.')
+		return
+	if inf_text_dict is None or 0 == len(inf_text_dict):
+		print('[SWL] Error: Failed to load the inference info.')
+		return
+
+	#--------------------
+	print('[SWL] Info: Start checking ID validity...')
+	start_time = time.time()
+	text_pairs = list()
+	for key in inf_text_dict:
+		if key not in gt_text_dict:
+			print('[SWL] Warning: Nonexistent inference ID {}.'.format(key))
+		else:
+			text_pairs.append((inf_text_dict[key], gt_text_dict[key]))
+
+	if 0 == len(text_pairs) or len(text_pairs) != len(gt_text_dict):
+		print('[SWL] Warning: Unmatched lengths of text pairs and ground-truth texts: {} != {}.'.format(len(text_pairs), len(gt_text_dict)))	
+	print('[SWL] Info: End checking ID validity: {} secs.'.format(time.time() - start_time))
+
+	#--------------------
+	print('[SWL] Info: Start comparing text recognition results...')
+	start_time = time.time()
+	text_distance, word_distance, char_distance, total_text_count, total_word_count, total_char_count = swl_langproc_util.compute_string_distance(text_pairs, case_sensitive=False)
+	print('[SWL] Info: End comparing text recognition results: {} secs.'.format(time.time() - start_time))
+	print('\tText: Distance = {0}, average distance = {0} / {1} = {2}.'.format(text_distance, total_text_count, text_distance / total_text_count))
+	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
+	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
+
 #--------------------------------------------------------------------
 
 def main():
-	compute_text_recognition_results()
+	compute_simple_text_recognition_accuracy_results()
+	compute_string_distance_results()
 
 #--------------------------------------------------------------------
 

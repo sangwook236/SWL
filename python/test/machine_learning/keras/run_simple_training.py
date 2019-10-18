@@ -276,7 +276,7 @@ class MyRunner(object):
 			return learning_rate
 		lr_schedule_callback = tf.keras.callbacks.LearningRateScheduler(schedule=lr_schedule)
 		lr_reduce_callback = tf.keras.callbacks.ReduceLROnPlateau(factor=np.sqrt(0.1), cooldown=0, patience=5, min_lr=0.5e-6)
-		csv_logger_callback = tf.keras.callbacks.CSVLogger('./simple_training.csv')  # epoch, acc, loss, lr, val_acc, val_loss.
+		csv_logger_callback = tf.keras.callbacks.CSVLogger('./train_log.csv')  # epoch, acc, loss, lr, val_acc, val_loss.
 		#callbacks = [model_checkpoint_callback, early_stopping_callback, lr_schedule_callback, lr_reduce_callback, csv_logger_callback]
 		callbacks = [model_checkpoint_callback, early_stopping_callback, csv_logger_callback]
 

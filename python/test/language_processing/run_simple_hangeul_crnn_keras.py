@@ -377,11 +377,11 @@ class MyRunner(object):
 		if inferences is not None and ground_truths is not None:
 			#print('Test: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inferences.shape, inferences.dtype, np.min(inferences), np.max(inferences)))
 
-			# REF [function] >> compute_text_recognition_accuracy() in ${SWL_PYTHON_HOME}/src/swl/language_processing/util.py.
+			# REF [function] >> compute_simple_text_recognition_accuracy() in ${SWL_PYTHON_HOME}/src/swl/language_processing/util.py.
 			correct_text_count, correct_word_count, total_word_count, correct_char_count, total_char_count = 0, 0, 0, 0, 0
 			total_text_count = max(len(inferences), len(ground_truths))
 			for inf_lbl, gt_lbl in zip(inferences, ground_truths):
-				inf_lbl = np.array(list(map(lambda x: self._dataset.decode_label(x), inf_lbl)))
+				inf_lbl = self._dataset.decode_label(inf_lbl)
 
 				if inf_lbl == gt_lbl:
 					correct_text_count += 1
@@ -404,7 +404,7 @@ class MyRunner(object):
 				writer = csv.writer(csvfile, delimiter=',')
 
 				for inf, gt in zip(inferences, ground_truths):
-					inf = np.array(list(map(lambda x: self._dataset.decode_label(x), inf)))
+					inf = self._dataset.decode_label(inf)
 					writer.writerow([gt, inf])
 		else:
 			print('[SWL] Warning: Invalid test results.')

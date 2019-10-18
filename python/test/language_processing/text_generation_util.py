@@ -8,7 +8,6 @@ import swl.language_processing.util as swl_langproc_util
 from swl.language_processing.text_generator import Transformer, HangeulJamoGenerator, HangeulLetterGenerator, TextGenerator, SceneProvider, SceneTextGenerator
 import swl.language_processing.hangeul_handwriting_dataset as hg_hw_dataset
 import swl.machine_vision.util as swl_cv_util
-from swl.util.util import make_dir
 
 def generate_random_word_set(num_words, charset, min_char_count, max_char_count):
 	charset_len = len(charset)
