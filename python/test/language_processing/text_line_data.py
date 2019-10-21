@@ -84,7 +84,7 @@ class TextLineDatasetBase(abc.ABC):
 			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
-			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_str), type(batch_labels_str)))
+			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
 			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
 
@@ -611,8 +611,10 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		self._train_labels = np.reshape(np.array(self._train_labels), -1)
-		self._test_labels = np.reshape(np.array(self._test_labels), -1)
+		#self._train_labels = np.array(self._train_labels).flatten()
+		#self._test_labels = np.array(self._test_labels).flatten()
+		self._train_labels = np.array(self._train_labels)
+		self._test_labels = np.array(self._test_labels)
 
 		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
@@ -652,8 +654,10 @@ class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		self._train_labels = np.reshape(np.array(self._train_labels), -1)
-		self._test_labels = np.reshape(np.array(self._test_labels), -1)
+		#self._train_labels = np.array(self._train_labels).flatten()
+		#self._test_labels = np.array(self._test_labels).flatten()
+		self._train_labels = np.array(self._train_labels)
+		self._test_labels = np.array(self._test_labels)
 
 		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))

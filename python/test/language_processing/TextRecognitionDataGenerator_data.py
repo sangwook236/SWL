@@ -133,7 +133,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				print('[SWL] Warning: Invalid file name: {}.'.format(fname))
 				continue
 			label_str = label_str[0]
-				
+
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
@@ -183,7 +183,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				print('[SWL] Warning: Invalid image-label pair: {}.'.format(line))
 				continue
 			fname, label_str = line[:pos], line[pos+1:]
-				
+
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
@@ -217,8 +217,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			images = np.array(images)
 		if 3 == images.ndim:
 			images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
-		labels_str = np.reshape(np.array(labels_str), -1)
-		labels_int = np.reshape(np.array(labels_int), -1)
+		#labels_str = np.array(labels_str).flatten()
+		#labels_int = np.array(labels_int).flatten()
+		labels_str = np.array(labels_str)
+		labels_int = np.array(labels_int)
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
@@ -285,8 +287,8 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			iaa.OneOf([
 				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
 				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
-				iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
-				iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
 			]),
 			iaa.Sometimes(0.5, iaa.SomeOf(1, [
 				iaa.Affine(

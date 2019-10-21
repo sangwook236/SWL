@@ -8,21 +8,21 @@ import os, time
 import TextRecognitionDataGenerator_data
 
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run.py -c 100000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir en_samples_100000_h32
-#	python run.py -c 200000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir en_samples_200000_h32
-#	python run.py -c 1000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir en_samples_1000_h32
-#	python run.py -c 100000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir en_samples_100000_h32
-#	python run.py -c 200000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir en_samples_200000_h32
-#	python run.py -c 1000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir en_samples_1000_h32
-#	python run.py -c 100000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir en_samples_100000_h32
-#	python run.py -c 200000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir en_samples_200000_h32
-#	python run.py -c 1000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir en_samples_1000_h32
-#	python run.py -c 100000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir en_samples_100000_h32
-#	python run.py -c 200000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir en_samples_200000_h32
-#	python run.py -c 1000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir en_samples_1000_h32
+#	python run.py -c 100000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_100000_h32
+#	python run.py -c 200000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_200000_h32
+#	python run.py -c 1000 -f 32 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_1000_h32
+#	python run.py -c 100000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_100000_h32
+#	python run.py -c 200000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_200000_h32
+#	python run.py -c 1000 -f 32 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_1000_h32
+#	python run.py -c 100000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_100000_h32
+#	python run.py -c 200000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_200000_h32
+#	python run.py -c 1000 -f 32 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_1000_h32
+#	python run.py -c 100000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_100000_h32
+#	python run.py -c 200000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_200000_h32
+#	python run.py -c 1000 -f 32 -w 1 -rs -num -sym -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_1000_h32
 def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './en_samples_100000_h32'
-	#data_dir_path = './en_samples_200000_h32'
+	data_dir_path = './text_line_samples_en_100000_h32'
+	#data_dir_path = './text_line_samples_en_200000_h32'
 
 	image_height, image_width, image_channel = 32, 100, 1
 	train_test_ratio = 0.8
@@ -40,15 +40,15 @@ def EnglishTextRecognitionDataGeneratorTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_100000_h64
-#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_200000_h64
-#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_1000_h64
-#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_100000_h64
-#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_200000_h64
-#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_1000_h64
+#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_100000_h64
+#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_200000_h64
+#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_1000_h64
+#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_100000_h64
+#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_200000_h64
+#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_1000_h64
 def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './kr_samples_100000_h64'
-	#data_dir_path = './kr_samples_200000_h64'
+	data_dir_path = './text_line_samples_kr_100000_h64'
+	#data_dir_path = './text_line_samples_kr_200000_h64'
 
 	#image_height, image_width, image_channel = 32, 160, 1
 	image_height, image_width, image_channel = 64, 320, 1
@@ -67,15 +67,15 @@ def HangeulTextRecognitionDataGeneratorTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 # REF [site] >> https://github.com/Belval/TextRecognitionDataGenerator
-#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_100000_h64
-#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_200000_h64
-#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir kr_samples_1000_h64
-#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_100000_h64
-#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_200000_h64
-#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir kr_samples_1000_h64
+#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_100000_h64
+#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_200000_h64
+#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_1000_h64
+#	python run_sangwook.py -l kr -c 100000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_100000_h64
+#	python run_sangwook.py -l kr -c 200000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_200000_h64
+#	python run_sangwook.py -l kr -c 1000 -f 64 -w 1 -k 5 -rk -d 3 -do 2 -b 4 -rbl -b 1 -t 8 --name_format 2 --output_dir text_line_samples_kr_1000_h64
 def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
-	data_dir_path = './kr_samples_100000_h64'
-	#data_dir_path = './kr_samples_200000_h64'
+	data_dir_path = './text_line_samples_kr_100000_h64'
+	#data_dir_path = './text_line_samples_kr_200000_h64'
 
 	#image_height, image_width, image_channel = 32, 160, 1
 	image_height, image_width, image_channel = 64, 320, 1

@@ -146,12 +146,13 @@ def HangeulJamoRunTimeTextLineDataset_test():
 		dataset.visualize(test_generator, num_examples=10)
 
 def JsonBasedTextLineDataset_test():
+	# REF [function] >> generate_text_datasets() in ${DataAnalysis_HOME}/app/text_recognition/generate_text_dataset.py.
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
 	print('Start creating a JsonBasedTextLineDataset...')
 	start_time = time.time()
-	image_height, image_width, image_channel = 32, 320, 1
+	image_height, image_width, image_channel = 64, 640, 1
 	dataset = text_line_data.JsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
 	print('End creating a JsonBasedTextLineDataset: {} secs.'.format(time.time() - start_time))
 
@@ -162,12 +163,13 @@ def JsonBasedTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 def HangeulJamoJsonBasedTextLineDataset_test():
+	# REF [function] >> generate_text_datasets() in ${DataAnalysis_HOME}/app/text_recognition/generate_text_dataset.py.
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
 	print('Start creating a HangeulJamoJsonBasedTextLineDataset...')
 	start_time = time.time()
-	image_height, image_width, image_channel = 32, 160, 1
+	image_height, image_width, image_channel = 64, 640, 1
 	dataset = text_line_data.HangeulJamoJsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
 	print('End creating a HangeulJamoJsonBasedTextLineDataset: {} secs.'.format(time.time() - start_time))
 
