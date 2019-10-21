@@ -1,4 +1,4 @@
-import os, abc, random, functools, time, json
+import os, abc, random, functools, time, glob, json
 import numpy as np
 import cv2
 import swl.machine_learning.util as swl_ml_util
@@ -84,7 +84,7 @@ class TextLineDatasetBase(abc.ABC):
 			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
-			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_str), type(batch_labels_str)))
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
 			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
 
@@ -118,14 +118,11 @@ class TextLineDatasetBase(abc.ABC):
 				error_filepaths.append(fpath)
 				continue
 			img = self.resize(img)
-			img, _ = self.preprocess(img, None)
 			images.append(img)
 		for fpath in error_filepaths:
 			image_filepaths.remove(fpath)
 
-		# (examples, height, width) -> (examples, width, height).
-		images = np.swapaxes(np.array(images), 1, 2)
-		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
+		images, _ = self.preprocess(images, None)
 		return images, image_filepaths
 
 #--------------------------------------------------------------------
@@ -186,11 +183,14 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 		inputs = (inputs / 255.0) * 2 - 1  # [-1, 1].
 
-		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
-		#outputs = outputs.astype(np.int16)
+		if 3 == inputs.ndim:
+			inputs = inputs.reshape(inputs.shape + (-1,))  # Image channel = 1.
 
 		# (examples, height, width, channels) -> (examples, width, height, channels).
-		#inputs = inputs.transpose((0, 2, 1, 3))
+		inputs = inputs.transpose((0, 2, 1, 3))
+
+		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
+		#outputs = outputs.astype(np.int16)
 
 		return inputs, outputs
 
@@ -236,10 +236,7 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 			scene_list = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scene_list))
 			#scene_list, scene_text_mask_list = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scene_list, scene_text_mask_list))))
 			scenes = np.array(scene_list, dtype=np.float32)
-			scenes = scenes.reshape(scenes.shape + (-1,))  # Image channel = 1.
 			scenes, _ = self.preprocess(scenes, None)
-			# (examples, height, width, channels) -> (examples, width, height, channels).
-			scenes = scenes.transpose((0, 2, 1, 3))
 			texts_int = list(map(lambda txt: self.encode_label(txt), text_list))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, text_list, texts_int), batch_size
@@ -268,6 +265,22 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
+		if 'posix' == os.name:
+			system_font_dir_path = '/usr/share/fonts'
+			#font_dir_path = '/home/sangwook/work/font/eng'
+			font_dir_path = '/home/sangwook/work/font/kor'
+		else:
+			system_font_dir_path = 'C:/Windows/Fonts'
+			#font_dir_path = 'D:/work/font/eng'
+			font_dir_path = 'D:/work/font/kor'
+
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		#font_list = tg_util.generate_font_list(font_filepaths)
+		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+		handwriting_dict = None
+
+		#--------------------
 		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
 		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
 
@@ -281,9 +294,9 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -317,6 +330,22 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
+		if 'posix' == os.name:
+			system_font_dir_path = '/usr/share/fonts'
+			#font_dir_path = '/home/sangwook/work/font/eng'
+			font_dir_path = '/home/sangwook/work/font/kor'
+		else:
+			system_font_dir_path = 'C:/Windows/Fonts'
+			#font_dir_path = 'D:/work/font/eng'
+			font_dir_path = 'D:/work/font/kor'
+
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		#font_list = tg_util.generate_font_list(font_filepaths)
+		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+		handwriting_dict = None
+
+		#--------------------
 		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
 		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
 
@@ -330,9 +359,9 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -435,11 +464,14 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 		"""
 		inputs = (inputs / 255.0) * 2 - 1  # [-1, 1].
 
-		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
-		#outputs = outputs.astype(np.int16)
+		if 3 == inputs.ndim:
+			inputs = inputs.reshape(inputs.shape + (-1,))  # Image channel = 1.
 
 		# (examples, height, width, channels) -> (examples, width, height, channels).
-		#inputs = inputs.transpose((0, 2, 1, 3))
+		inputs = inputs.transpose((0, 2, 1, 3))
+
+		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
+		#outputs = outputs.astype(np.int16)
 
 		return inputs, outputs
 
@@ -543,14 +575,19 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 
 		image_list, label_list = list(), list()
 		for idx, datum in enumerate(dataset['data']):
-			img, _ = self.preprocess(self.resize(cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE)), None)
+			img = cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE)
+			if img is None:
+				print('[SWL] Warning: Failed to load an image: {}.'.format(datum['file']))
+				continue
+			img = self.resize(img)
 			image_list.append(img)
 			if False:  # Char ID.
 				label_list.append(datum['char_id'])
 			else:  # Unicode -> char ID.
 				label_list.append(''.join(list(chr(id) for id in datum['char_id'])))
 
-		return np.array(image_list), label_list, charset
+		images, _ = self.preprocess(np.array(image_list), None)
+		return images, label_list, charset
 
 # REF [function] >> generate_simple_text_lines_test() and generate_text_lines_test() in text_generation_util_test.py.
 # This class is independent of language.
@@ -574,15 +611,8 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		self._train_images = self._train_images.reshape(self._train_images.shape + (-1,))  # Image channel = 1.
-		self._test_images = self._test_images.reshape(self._test_images.shape + (-1,))  # Image channel = 1.
-
-		# (examples, height, width, channels) -> (examples, width, height, channels).
-		self._train_images = self._train_images.transpose((0, 2, 1, 3))
-		self._test_images = self._test_images.transpose((0, 2, 1, 3))
-
-		self._train_labels = np.reshape(np.array(self._train_labels), (-1))
-		self._test_labels = np.reshape(np.array(self._test_labels), (-1))
+		self._train_labels = np.reshape(np.array(self._train_labels), -1)
+		self._test_labels = np.reshape(np.array(self._test_labels), -1)
 
 		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))
@@ -622,15 +652,8 @@ class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		self._train_images = self._train_images.reshape(self._train_images.shape + (-1,))  # Image channel = 1.
-		self._test_images = self._test_images.reshape(self._test_images.shape + (-1,))  # Image channel = 1.
-
-		# (examples, height, width, channels) -> (examples, width, height, channels).
-		self._train_images = self._train_images.transpose((0, 2, 1, 3))
-		self._test_images = self._test_images.transpose((0, 2, 1, 3))
-
-		self._train_labels = np.reshape(np.array(self._train_labels), (-1))
-		self._test_labels = np.reshape(np.array(self._test_labels), (-1))
+		self._train_labels = np.reshape(np.array(self._train_labels), -1)
+		self._test_labels = np.reshape(np.array(self._test_labels), -1)
 
 		#--------------------
 		print('Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_images.shape, self._train_images.dtype, np.min(self._train_images), np.max(self._train_images)))

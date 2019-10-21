@@ -119,6 +119,13 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			return self._load_data_with_label_file(data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len)
 
 	def _load_data_with_label_in_filename(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
+		if 1 == image_channel:
+			flags = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flags = cv2.IMREAD_COLOR
+		else:
+			raise ValueError('[SWL] Error: Invalid channels {}'.format(image_channel))
+
 		examples = list()
 		for fname in os.listdir(data_dir_path):
 			label_str = fname.split('_')
@@ -130,7 +137,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(os.path.join(data_dir_path, fname), cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(os.path.join(data_dir_path, fname), flags)
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fname)))
 				continue
@@ -151,6 +158,13 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		return examples
 
 	def _load_data_with_label_file(self, data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len):
+		if 1 == image_channel:
+			flags = cv2.IMREAD_GRAYSCALE
+		elif 3 == image_channel:
+			flags = cv2.IMREAD_COLOR
+		else:
+			raise ValueError('[SWL] Error: Invalid channels {}'.format(image_channel))
+
 		try:
 			with open(os.path.join(data_dir_path, label_filename), 'r') as fd:
 				lines = fd.readlines()
@@ -173,7 +187,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(os.path.join(data_dir_path, fname), cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(os.path.join(data_dir_path, fname), flags)
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(os.path.join(data_dir_path, fname)))
 				continue
@@ -201,9 +215,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			images = np.swapaxes(np.array(images), 1, 2)
 		else:
 			images = np.array(images)
-		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
-		labels_str = np.reshape(np.array(labels_str), (-1))
-		labels_int = np.reshape(np.array(labels_int), (-1))
+		if 3 == images.ndim:
+			images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
+		labels_str = np.reshape(np.array(labels_str), -1)
+		labels_int = np.reshape(np.array(labels_int), -1)
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:

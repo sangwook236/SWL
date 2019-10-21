@@ -50,11 +50,12 @@ def create_data_loader(input_shape, batch_size, shuffle, num_workers=0):
 
 	return train_data_loader, val_data_loader
 
+# REF [function] >> resnet_test() in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/keras/keras_applications_test.py.
 def create_resnet(input_shape, num_classes):
 	kwargs = {'backend': tf.keras.backend, 'layers': tf.keras.layers, 'models': tf.keras.models, 'utils': tf.keras.utils}
 
-	# ResNet50, ResNet101, ResNet152.
-	model = keras_applications.resnet.ResNet50(
+	# ResNet50V2, ResNet101V2, ResNet152V2.
+	model = keras_applications.resnet_v2.ResNet50V2(
 		include_top=True,
 		weights='imagenet',
 		input_tensor=None,
@@ -67,6 +68,7 @@ def create_resnet(input_shape, num_classes):
 
 	return model
 
+# REF [function] >> densenet_test() in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/keras/keras_applications_test.py.
 def create_densenet(input_shape, num_classes):
 	kwargs = {'backend': tf.keras.backend, 'layers': tf.keras.layers, 'models': tf.keras.models, 'utils': tf.keras.utils}
 
@@ -84,6 +86,7 @@ def create_densenet(input_shape, num_classes):
 
 	return model
 
+# REF [function] >> nasnet_test() in ${SWDT_PYTHON_HOME}/rnd/test/machine_learning/keras/keras_applications_test.py.
 def create_nasnet(input_shape, num_classes):
 	kwargs = {'backend': tf.keras.backend, 'layers': tf.keras.layers, 'models': tf.keras.models, 'utils': tf.keras.utils}
 

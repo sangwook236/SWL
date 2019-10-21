@@ -4,10 +4,9 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, random, json
+import os, math, random, glob, json
 import numpy as np
 import cv2
-from swl.util.util import make_dir
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
@@ -97,13 +96,113 @@ def generate_repetitive_word_set_test():
 	print('#generated word set =', len(word_set))
 	print('Generated word set =', word_set)
 
+def generate_font_list_test():
+	texts = [
+		'ABCDEFGHIJKLMnopqrstuvwxyz',
+		'abcdefghijklmNOPQRSTUVWXYZ',
+		'0123456789',
+		' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?',
+	]
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font/eng'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font/eng'
+
+	#os.path.sep = '/'
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	font_list = tg_util.generate_font_list(font_filepaths)
+
+	#--------------------
+	text_offset = (0, 0)
+	crop_text_area = True
+	draw_text_border = False
+
+	for font_type, font_index in font_list:  # Font filepath, font index.
+		print('Font: {}, font index: {}.'.format(font_type, font_index))
+		for text in texts:
+			font_size = random.randint(20, 40)
+			#image_size = (math.ceil(font_size * 1.1) * len(text), math.ceil(font_size * 1.1))
+			image_size = None
+			#font_color = (255, 255, 255)
+			font_color = None
+			#bg_color = (0, 0, 0)
+			bg_color = None
+			alpha = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+
+			cv2.imshow('Text', np.array(alpha))
+			cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def generate_hangeul_font_list_test():
+	texts = [
+		'가나다라마바사앙잦찿캌탙팦핳',
+		'각난닫랄맘밥삿아자차카타파하',
+		'ABCDEFGHIJKLMnopqrstuvwxyz',
+		'abcdefghijklmNOPQRSTUVWXYZ',
+		'0123456789',
+		' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?',
+	]
+
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_dir_path = 'D:/work/font/kor'
+
+	#os.path.sep = '/'
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+
+	#--------------------
+	text_offset = (0, 0)
+	crop_text_area = True
+	draw_text_border = False
+
+	for font_type, font_index in font_list:  # Font filepath, font index.
+		print('Font: {}, font index: {}.'.format(font_type, font_index))
+		for text in texts:
+			font_size = random.randint(20, 40)
+			#image_size = (math.ceil(font_size * 1.1) * len(text), math.ceil(font_size * 1.1))
+			image_size = None
+			#font_color = (255, 255, 255)
+			font_color = None
+			#bg_color = (0, 0, 0)
+			bg_color = None
+			alpha = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+
+			cv2.imshow('Text', np.array(alpha))
+			cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
 def text_generator_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
 	font_size = 32
 	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
 	font_color = None  # Uses random font colors.
 	char_space_ratio = 1.2
 
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -145,10 +244,26 @@ def text_generator_test():
 	cv2.destroyAllWindows()
 
 def scene_text_generator_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
 	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
 	font_color = None  # Uses random font colors.
 
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -225,11 +340,27 @@ def generate_simple_text_lines_test():
 	word_set.add('67890')
 
 	#--------------------
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
@@ -280,7 +411,23 @@ def generate_text_lines_test():
 	word_set.add('67890')
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
+	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -347,7 +494,23 @@ def generate_scene_texts_test():
 	word_set.add('67890')
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
+	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -416,9 +579,9 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	scene_dir_path = os.path.join(dir_path, scene_subdir_name)
 	mask_dir_path = os.path.join(dir_path, mask_subdir_name)
 
-	make_dir(dir_path)
-	make_dir(scene_dir_path)
-	make_dir(mask_dir_path)
+	os.makedirs(dir_path, exist_ok=True)
+	os.makedirs(scene_dir_path, exist_ok=True)
+	os.makedirs(mask_dir_path, exist_ok=True)
 
 	hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangeul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
@@ -547,7 +710,23 @@ def load_scene_text_dataset(dir_path, json_filename):
 	return image_filepaths, mask_filepaths, gt_texts, gt_boxes
 
 def generate_hangeul_synthetic_scene_text_dataset():
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator()
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
+	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
@@ -609,11 +788,27 @@ def generate_single_letter_dataset():
 		word_set = word_set.union(tg_util.generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, max_char_count))
 
 	#--------------------
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		#font_dir_path = '/home/sangwook/work/font/eng'
+		font_dir_path = '/home/sangwook/work/font/kor'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		#font_dir_path = 'D:/work/font/eng'
+		font_dir_path = 'D:/work/font/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+	#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+	handwriting_dict = None
+
+	#--------------------
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner)
+	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
 
 	#--------------------
 	font_size = 64
@@ -651,11 +846,16 @@ def main():
 	#generate_random_word_set_test()
 	#generate_repetitive_word_set_test()
 
+	#generate_font_list_test()
+	#generate_hangeul_font_list_test()
+
 	#--------------------
 	#text_generator_test()
 	#scene_text_generator_test()
 
+	#--------------------
 	# Application.
+
 	#generate_hangeul_synthetic_scene_text_dataset()
 
 	# Create a text generator.
@@ -663,7 +863,7 @@ def main():
 	#generate_text_lines_test()
 	#generate_scene_texts_test()
 
-	generate_single_letter_dataset()
+	#generate_single_letter_dataset()
 
 #--------------------------------------------------------------------
 

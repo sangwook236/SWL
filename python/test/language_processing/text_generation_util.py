@@ -42,62 +42,27 @@ def generate_repetitive_word_set(num_char_repetitions, charset, min_char_count, 
 
 #--------------------------------------------------------------------
 
-def generate_hangeul_font_list():
-	if 'posix' == os.name:
-		system_font_dir_path = '/usr/share/fonts'
-		font_dir_path = '/home/sangwook/work/font'
-	else:
-		system_font_dir_path = 'C:/Windows/Fonts'
-		font_dir_path = 'D:/work/font'
+def generate_font_list(font_filepaths):
+	num_fonts = 1
+	font_list = list()
+	for fpath in font_filepaths:
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
 
+	return font_list
+
+def generate_hangeul_font_list(font_filepaths):
 	# NOTE [caution] >>
 	#	Font가 깨져 (한글) 문자가 물음표로 표시되는 경우 발생.
 	#	생성된 (한글) 문자의 하단부가 일부 짤리는 경우 발생.
 	#	Image resizing에 의해 얇은 획이 사라지는 경우 발생.
 
-	"""
-	if 'posix' == os.name:
-		font_info_list = [
-			(system_font_dir_path + '/truetype/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-			(system_font_dir_path + '/truetype/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-		]
-	else:
-		font_info_list = [
-			(system_font_dir_path + '/gulim.ttc', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-			(system_font_dir_path + '/batang.ttc', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-		]
-	font_info_list += [
-	"""
-	font_info_list = [
-		(font_dir_path + '/gulim.ttf', 4),  # 굴림, 굴림체, 돋움, 돋움체.
-		(font_dir_path + '/batang.ttf', 4),  # 바탕, 바탕체, 궁서, 궁서체.
-		(font_dir_path + '/gabia_bombaram.ttf', 1),
-		#(font_dir_path + '/gabia_napjakBlock.ttf', 1),  # 한글 하단부 잘림.
-		(font_dir_path + '/gabia_solmee.ttf', 1),
-		(font_dir_path + '/godoMaum.ttf', 1),
-		#(font_dir_path + '/godoRoundedR.ttf', 1),  # 한글 깨짐.
-		#(font_dir_path + '/HS1.ttf', 1),  # HS가을생각체1.0 Regular.ttf
-		(font_dir_path + '/HS2.ttf', 1),  # HS가을생각체2.0.ttf
-		(font_dir_path + '/HS3.ttf', 1),  # HS겨울눈꽃체.ttf
-		#(font_dir_path + '/HS4.ttf', 1),  # HS두꺼비체.ttf  # 한글/영문/숫자/기호 하단부 잘림.
-		#(font_dir_path + '/HS5.ttf', 1),  # HS봄바람체1.0.ttf
-		(font_dir_path + '/HS6.ttf', 1),  # HS봄바람체2.0.ttf
-		(font_dir_path + '/HS7.ttf', 1),  # HS여름물빛체.ttf
-		(font_dir_path + '/NanumBarunGothic.ttf', 1),
-		(font_dir_path + '/NanumBarunpenR.ttf', 1),
-		(font_dir_path + '/NanumBrush.ttf', 1),
-		(font_dir_path + '/NanumGothic.ttf', 1),
-		(font_dir_path + '/NanumMyeongjo.ttf', 1),
-		(font_dir_path + '/NanumPen.ttf', 1),
-		(font_dir_path + '/NanumSquareR.ttf', 1),
-		#(font_dir_path + '/NanumSquareRoundR.ttf', 1),
-		(font_dir_path + '/SDMiSaeng.ttf', 1),
-	]
-
 	font_list = list()
-	for font_filepath, font_count in font_info_list:
-		for font_idx in range(font_count):
-			font_list.append((font_filepath, font_idx))
+	for fpath in font_filepaths:
+		num_fonts = 4 if os.path.basename(fpath).lower() in ['gulim.ttf', 'batang.ttf'] else 1
+
+		for font_idx in range(num_fonts):
+			font_list.append((fpath, font_idx))
 
 	return font_list
 
@@ -427,7 +392,7 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 	"""Generates an alpha-matte [0, 1] for a character which reflects the proportion of foreground (when alpha=1) and background (when alpha=0).
 	"""
 
-	def __init__(self):
+	def __init__(self, font_list, handwriting_dict=None):
 		"""Constructor.
 		"""
 
@@ -437,9 +402,8 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 
 		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
-		self._font_list = generate_hangeul_font_list()
-		#self._handwriting_dict = generate_phd08_dict(from_npy=True)
-		self._handwriting_dict = dict()
+		self._font_list = font_list
+		self._handwriting_dict = handwriting_dict
 
 	def __call__(self, char, font_size, *args, **kwargs):
 		"""Generates a character and its mask of numpy.array.
@@ -453,7 +417,7 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 
 		image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
 
-		if char in self._handwriting_dict:
+		if self._handwriting_dict is not None and char in self._handwriting_dict:
 			use_printed_letter = 0 == random.randrange(2)
 		else:
 			use_printed_letter = True
@@ -508,7 +472,7 @@ class MySimplePrintedHangeulTextGenerator(object):
 	"""Generates a simple printed Hangeul text line and masks for individual characters.
 	"""
 
-	def __init__(self, characterTransformer, characterPositioner):
+	def __init__(self, characterTransformer, characterPositioner, font_list, handwriting_dict=None):
 		"""Constructor.
 
 		Inputs:
@@ -525,8 +489,8 @@ class MySimplePrintedHangeulTextGenerator(object):
 
 		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
-		self._font_list = generate_hangeul_font_list()
-		#self._handwriting_dict = generate_phd08_dict(from_npy=True)
+		self._font_list = font_list
+		self._handwriting_dict = handwriting_dict  # FIXME [fix] >> Currently not used.
 
 	def __call__(self, text, char_space_ratio, font_size, *args, **kwargs):
 		"""Generates a single text line and masks for individual characters.
