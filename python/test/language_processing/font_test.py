@@ -51,16 +51,18 @@ def font_display_test():
 	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/receipt_eng'
+	#font_dir_path = font_base_dir_path + '/receipt_kor'
 
 	font_filepaths = glob.glob(font_dir_path + '/*.ttf')
-	#font_list = generate_font_list(font_filepaths)
-	font_list = generate_hangeul_font_list(font_filepaths)
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
 
 	"""
 	gabia_solmee.ttf: 일부 자음 없음.
@@ -69,14 +71,17 @@ def font_display_test():
 	HS여름물빛체.ttf: 위아래 글자 겹침.
 	"""
 
+	output_dir_path = './font_test_results'
+	os.makedirs(output_dir_path, exist_ok=True)
 	for font_fpath, font_index in font_list:
 		print('Font filepath: {}, font index: {}.'.format(os.path.basename(font_fpath), font_index))
 
 		img = swl_langproc_util.generate_text_image(text, font_fpath, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
 
+		img.save(os.path.join(output_dir_path, os.path.basename(font_fpath) + '_{}.png'.format(font_index)))
+		#cv2.imwrite(os.path.join(output_dir_path, os.path.basename(font_fpath) + '_{}.png'.format(font_index)), np.array(img))
 		#cv2.imshow('Text', np.array(img))
 		#cv2.waitKey(0)
-		cv2.imwrite(os.path.basename(font_fpath) + '.png', np.array(img))
 
 	#cv2.destroyAllWindows()
 
