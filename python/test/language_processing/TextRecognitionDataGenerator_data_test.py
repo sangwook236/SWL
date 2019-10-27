@@ -103,20 +103,11 @@ def HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test():
 #	python run.py -c 100000 -f 64 -w 1 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_train/rs_h64_w1
 #	python run.py -c 100000 -f 64 -w 2 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_train/rs_h64_w2
 #	python run.py -c 100000 -f 64 -w 3 -rs -b 1 -t 8 --name_format 2 --output_dir text_line_samples_en_train/rs_h64_w3
+# REF [file] >> ./generate_TextRecognitionDataGenerator_data.sh
 def merge_generated_data_directories():
 	if True:
 		src_base_data_dir_path = './text_line_samples_en_train'
-		dir_prefixes = ['dic', 'rs']
-		font_sizes = [16, 24, 32, 40, 48]
-		word_counts = [1, 2, 3]
-		src_data_dir_paths = list()
-		for dir_prefix in dir_prefixes:
-			for font_size in font_sizes:
-				for word_count in word_counts:
-					src_data_dir_paths.append('{}/{}_h{}_w{}'.format(src_base_data_dir_path, dir_prefix, font_size, word_count))
-		dst_data_dir_path = src_base_data_dir_path
-	elif False:
-		src_base_data_dir_path = './text_line_samples_en_test'
+		#src_base_data_dir_path = './text_line_samples_en_test'
 		dir_prefixes = ['dic', 'rs']
 		font_sizes = [16, 24, 32, 40, 48]
 		word_counts = [1, 2, 3]
@@ -128,17 +119,7 @@ def merge_generated_data_directories():
 		dst_data_dir_path = src_base_data_dir_path
 	elif False:
 		src_base_data_dir_path = './text_line_samples_kr_train'
-		dir_prefixes = ['dic', 'rs']
-		font_sizes = [32, 48, 64, 80, 96]
-		word_counts = [1, 2, 3]
-		src_data_dir_paths = list()
-		for dir_prefix in dir_prefixes:
-			for font_size in font_sizes:
-				for word_count in word_counts:
-					src_data_dir_paths.append('{}/{}_h{}_w{}'.format(src_base_data_dir_path, dir_prefix, font_size, word_count))
-		dst_data_dir_path = src_base_data_dir_path
-	elif False:
-		src_base_data_dir_path = './text_line_samples_kr_test'
+		#src_base_data_dir_path = './text_line_samples_kr_test'
 		dir_prefixes = ['dic', 'rs']
 		font_sizes = [32, 48, 64, 80, 96]
 		word_counts = [1, 2, 3]

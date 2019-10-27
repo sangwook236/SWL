@@ -106,10 +106,11 @@ def generate_font_list_test():
 
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		font_dir_path = '/home/sangwook/work/font/eng'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		font_dir_path = 'D:/work/font/eng'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
 
 	#os.path.sep = '/'
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
@@ -149,10 +150,11 @@ def generate_hangeul_font_list_test():
 
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	#os.path.sep = '/'
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
@@ -183,12 +185,12 @@ def generate_hangeul_font_list_test():
 def text_generator_test():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -246,12 +248,12 @@ def text_generator_test():
 def scene_text_generator_test():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -342,12 +344,12 @@ def generate_simple_text_lines_test():
 	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -413,12 +415,12 @@ def generate_text_lines_test():
 	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -496,12 +498,12 @@ def generate_scene_texts_test():
 	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -712,12 +714,12 @@ def load_scene_text_dataset(dir_path, json_filename):
 def generate_hangeul_synthetic_scene_text_dataset():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)
@@ -790,12 +792,12 @@ def generate_single_letter_dataset():
 	#--------------------
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
-		#font_dir_path = '/home/sangwook/work/font/eng'
-		font_dir_path = '/home/sangwook/work/font/kor'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
 		system_font_dir_path = 'C:/Windows/Fonts'
-		#font_dir_path = 'D:/work/font/eng'
-		font_dir_path = 'D:/work/font/kor'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
 
 	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 	#font_list = tg_util.generate_font_list(font_filepaths)

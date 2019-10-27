@@ -31,6 +31,8 @@ then
 			python ${CMD} -c 1000 -f ${FONT_SIZE} -w ${WORDS} -rs -b 1 -t 8 --name_format 2 --output_dir ${TEST_DATA_DIR}/rs_h${FONT_SIZE}_w${WORDS}
 		done
 	done
+
+	# Run merge_generated_data_directories() in ./TextRecognitionDataGenerator_data_test.py to genereate labels.txt.
 else
 	echo "Usage: $0 lang dataset-version"
 	echo "          lang = en or kr"

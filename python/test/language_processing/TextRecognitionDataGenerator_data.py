@@ -77,10 +77,10 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		return zeropadded
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_data_augmented=True, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle, is_data_augmented=True)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_data_augmented=False, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle, is_data_augmented=False)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
@@ -112,11 +112,28 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None):
+	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len, label_filename=None, use_NWHC=True):
 		if label_filename is None:
-			return self._load_data_with_label_in_filename(data_dir_path, image_height, image_width, image_channel, max_label_len)
+			images, labels_str, labels_int = self._load_data_with_label_in_filename(data_dir_path, image_height, image_width, image_channel, max_label_len)
 		else:
-			return self._load_data_with_label_file(data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len)
+			images, labels_str, labels_int = self._load_data_with_label_file(data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len)
+
+		images = np.array(images)
+		if use_NWHC:
+			# (examples, height, width) -> (examples, width, height).
+			images = np.swapaxes(images, 1, 2)
+		if 3 == images.ndim:
+			images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
+		#labels_str = np.array(labels_str).flatten()
+		#labels_int = np.array(labels_int).flatten()
+		labels_str = np.array(labels_str)
+		labels_int = np.array(labels_int)
+
+		num_examples = len(images)
+		if len(labels_str) != num_examples or len(labels_int) != num_examples:
+			raise ValueError('[SWL] Error: Unmatched data sizes, {0} != {1} or {0} != {2}'.format(num_examples, len(labels_str), len(labels_int)))
+
+		return images, labels_str, labels_int, num_examples
 
 	def _load_data_with_label_in_filename(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
 		if 1 == image_channel:
@@ -126,7 +143,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 		else:
 			raise ValueError('[SWL] Error: Invalid channels {}'.format(image_channel))
 
-		examples = list()
+		images, labels_str, labels_int = list(), list(), list()
+		#images, labels_str, labels_int = None, list(), list()
 		for fname in os.listdir(data_dir_path):
 			label_str = fname.split('_')
 			if 2 != len(label_str):
@@ -153,9 +171,13 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
 				continue
 
-			examples.append((img, label_str, label_int))
+			images.append(img)
+			#images = np.expand_dims(img, axis=0) if images is None else np.append(images, np.expand_dims(img, axis=0), axis=0)  # Too much slow.
+			#images = np.expand_dims(img, axis=0) if images is None else np.vstack([images, np.expand_dims(img, axis=0)])  # Too much slow.
+			labels_str.append(label_str)
+			labels_int.append(label_int)
 
-		return examples
+		return images, labels_str, labels_int
 
 	def _load_data_with_label_file(self, data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len):
 		if 1 == image_channel:
@@ -172,7 +194,8 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			print('[SWL] Error: File not found: {}.'.format(os.path.join(data_dir_path, label_filename)))
 			return None
 
-		examples = list()
+		images, labels_str, labels_int = list(), list(), list()
+		#images, labels_str, labels_int = None, list(), list()
 		for line in lines:
 			line = line.rstrip('\n')
 			if not line:
@@ -203,24 +226,16 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
 				continue
 
-			examples.append((img, label_str, label_int))
+			images.append(img)
+			#images = np.expand_dims(img, axis=0) if images is None else np.append(images, np.expand_dims(img, axis=0), axis=0)  # Too much slow.
+			#images = np.expand_dims(img, axis=0) if images is None else np.vstack([images, np.expand_dims(img, axis=0)])  # Too much slow.
+			labels_str.append(label_str)
+			labels_int.append(label_int)
 
-		return examples
+		return images, labels_str, labels_int
 
-	def _create_batch_generator(self, data, batch_size, shuffle, is_data_augmented=False, use_NWHC=True):
-		images, labels_str, labels_int = zip(*data)
-
-		if use_NWHC:
-			# (examples, height, width) -> (examples, width, height).
-			images = np.swapaxes(np.array(images), 1, 2)
-		else:
-			images = np.array(images)
-		if 3 == images.ndim:
-			images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
-		#labels_str = np.array(labels_str).flatten()
-		#labels_int = np.array(labels_int).flatten()
-		labels_str = np.array(labels_str)
-		labels_int = np.array(labels_int)
+	def _create_batch_generator(self, data, batch_size, shuffle, is_data_augmented=False):
+		images, labels_str, labels_int = data
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
@@ -258,7 +273,7 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			start_idx = end_idx
 
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -316,13 +331,11 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 				iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
 				iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
-
-				# Search either for all edges or for directed edges, blend the result with the original image using a blobby mask.
-				#iaa.SimplexNoiseAlpha(iaa.OneOf([
-				#	iaa.EdgeDetect(alpha=(0.5, 1.0)),
-				#	iaa.DirectedEdgeDetect(alpha=(0.5, 1.0), direction=(0.0, 1.0)),
-				#])),
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.0, 0.05 * 255), per_channel=True),  # Add Gaussian noise to images.
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.5 * 255), per_channel=False),  # Add Gaussian noise to images.
+				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
 			])),
 			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 		])
@@ -334,13 +347,17 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
+			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
 			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
+			indices = np.arange(num_examples)
+			if shuffle:
+				np.random.shuffle(indices)
+			train_indices = indices[:test_offset]
+			test_indices = indices[test_offset:]
+			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
+			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
@@ -388,7 +405,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		return inputs, outputs
 
 class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -430,13 +447,17 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
+			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
 			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
+			indices = np.arange(num_examples)
+			if shuffle:
+				np.random.shuffle(indices)
+			train_indices = indices[:test_offset]
+			test_indices = indices[test_offset:]
+			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
+			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
@@ -479,7 +500,7 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 		return inputs, outputs
 
 class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -525,13 +546,17 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			start_time = time.time()
 			label_filename = 'labels.txt'
 			#label_filename = None
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename)
+			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
 			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
 			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
+			indices = np.arange(num_examples)
+			if shuffle:
+				np.random.shuffle(indices)
+			train_indices = indices[:test_offset]
+			test_indices = indices[test_offset:]
+			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
+			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
