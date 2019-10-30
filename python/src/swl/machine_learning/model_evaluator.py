@@ -1,7 +1,7 @@
 import abc, time
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ModelEvaluator.
 
 #class ModelEvaluator(abc.ABC):

@@ -108,11 +108,13 @@ class TextLineDatasetBase(abc.ABC):
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
-	def load_images_from_files(self, image_filepaths):
+	def load_images_from_files(self, image_filepaths, is_grayscale=True):
+		flags = cv2.IMREAD_GRAYSCALE if is_grayscale else cv2.IMREAD_COLOR
+
 		images = list()
 		error_filepaths = list()
 		for fpath in image_filepaths:
-			img = cv2.imread(fpath, cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(fpath, flags)
 			if img is None:
 				print('[SWL] Warning: Failed to load an image: {}.'.format(fpath))
 				error_filepaths.append(fpath)
@@ -121,9 +123,24 @@ class TextLineDatasetBase(abc.ABC):
 			images.append(img)
 		for fpath in error_filepaths:
 			image_filepaths.remove(fpath)
+		images = np.array(images)
+		images = self._transform_images(images, use_NWHC=True)
 
 		images, _ = self.preprocess(images, None)
 		return images, image_filepaths
+
+	def _transform_images(self, images, use_NWHC=True):
+		if 3 == images.ndim:
+			images = images.reshape(images.shape + (-1,))  # Image channel = 1.
+			#images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
+
+		if use_NWHC:
+			# (examples, height, width) -> (examples, width, height).
+			images = np.swapaxes(images, 1, 2)
+			# (examples, height, width, channels) -> (examples, width, height, channels).
+			#images = images.transpose((0, 2, 1, 3))
+
+		return images
 
 #--------------------------------------------------------------------
 
@@ -173,24 +190,15 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
-
-		return inputs, outputs
 		"""
-		inputs = (inputs / 255.0) * 2 - 1  # [-1, 1].
-
-		if 3 == inputs.ndim:
-			inputs = inputs.reshape(inputs.shape + (-1,))  # Image channel = 1.
-
-		# (examples, height, width, channels) -> (examples, width, height, channels).
-		inputs = inputs.transpose((0, 2, 1, 3))
-
-		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
-		#outputs = outputs.astype(np.int16)
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs
 
@@ -236,6 +244,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 			scene_list = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scene_list))
 			#scene_list, scene_text_mask_list = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scene_list, scene_text_mask_list))))
 			scenes = np.array(scene_list, dtype=np.float32)
+			scenes = self._transform_images(scenes, use_NWHC=True)
+
 			scenes, _ = self.preprocess(scenes, None)
 			texts_int = list(map(lambda txt: self.encode_label(txt), text_list))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
@@ -454,24 +464,15 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
-
-		return inputs, outputs
 		"""
-		inputs = (inputs / 255.0) * 2 - 1  # [-1, 1].
-
-		if 3 == inputs.ndim:
-			inputs = inputs.reshape(inputs.shape + (-1,))  # Image channel = 1.
-
-		# (examples, height, width, channels) -> (examples, width, height, channels).
-		inputs = inputs.transpose((0, 2, 1, 3))
-
-		#outputs = tf.keras.utils.to_categorical(outputs, self._num_classes, np.int16)
-		#outputs = outputs.astype(np.int16)
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs
 
@@ -573,20 +574,22 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 		charset = list(dataset['charset'].values())
 		#charset = sorted(charset)
 
-		image_list, label_list = list(), list()
+		images, label_list = list(), list()
 		for idx, datum in enumerate(dataset['data']):
 			img = cv2.imread(datum['file'], cv2.IMREAD_GRAYSCALE)
 			if img is None:
 				print('[SWL] Warning: Failed to load an image: {}.'.format(datum['file']))
 				continue
 			img = self.resize(img)
-			image_list.append(img)
+			images.append(img)
 			if False:  # Char ID.
 				label_list.append(datum['char_id'])
 			else:  # Unicode -> char ID.
 				label_list.append(''.join(list(chr(id) for id in datum['char_id'])))
+		images = np.array(images)
+		images = self._transform_images(images, use_NWHC=True)
 
-		images, _ = self.preprocess(np.array(image_list), None)
+		images, _ = self.preprocess(images, None)
 		return images, label_list, charset
 
 # REF [function] >> generate_simple_text_lines_test() and generate_text_lines_test() in text_generation_util_test.py.

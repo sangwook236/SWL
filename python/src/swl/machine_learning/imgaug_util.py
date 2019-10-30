@@ -2,7 +2,7 @@ import numpy as np
 import imgaug as ia
 #from imgaug import augmenters as iaa
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def generateBatchesInParallelWithoutOutputAugmentation(processes, chunksize, imgaug_augmenter, preprocessor, inputs, outputs, batch_size, shuffle=True, *args, **kwargs):
 	#if not isinstance(imgaug_augmenter, iaa.Sequential):

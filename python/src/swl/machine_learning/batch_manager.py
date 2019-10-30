@@ -1,7 +1,7 @@
 import os, abc
 import numpy as np
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # BatchManager.
 #	Abstract batch manager.
 class BatchManager(abc.ABC):
@@ -13,7 +13,7 @@ class BatchManager(abc.ABC):
 	def getBatches(self, *args, **kwargs):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # FileBatchManager.
 #	Loads, saves, and augments batches using files.
 class FileBatchManager(abc.ABC):
@@ -29,7 +29,7 @@ class FileBatchManager(abc.ABC):
 	def putBatches(self, dir_path, *args, **kwargs):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # SimpleBatchManager.
 #	Generates batches without augmentation.
 class SimpleBatchManager(BatchManager):
@@ -65,7 +65,7 @@ class SimpleBatchManager(BatchManager):
 				if batch_images.size > 0 and batch_labels.size > 0:  # If batch_images and batch_labels are non-empty.
 					yield batch_images, batch_labels
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # SimpleBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates batches without augmentation.
@@ -80,7 +80,7 @@ class SimpleBatchManagerWithFileInput(SimpleBatchManager):
 
 		super().__init__(images, labels, batch_size, shuffle, is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # SimpleFileBatchManager.
 #	Generates, saves, and loads batches through npy files without augmentation.
 class SimpleFileBatchManager(FileBatchManager):
@@ -126,7 +126,7 @@ class SimpleFileBatchManager(FileBatchManager):
 					np.save(os.path.join(dir_path, self._image_file_format.format(step)), batch_images)
 					np.save(os.path.join(dir_path, self._label_file_format.format(step)), batch_labels)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # SimpleFileBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates, saves, and loads batches through npy files without augmentation.

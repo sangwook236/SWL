@@ -1,7 +1,7 @@
 import abc
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
 class AttentionMechanism(abc.ABC):

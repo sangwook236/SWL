@@ -177,7 +177,8 @@ def load_my_text_recognition_results():
 	else:
 		receipt_icdar2019_base_dir_path = 'D:/work/dataset/text/receipt_icdar2019'
 
-	inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_v17.csv'
+	#inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_17.csv'
+	inference_filepath = receipt_icdar2019_base_dir_path + '/inference_results_densenet_01.csv'
 
 	id_prefix = './receipt_icdar2019/'
 	id_prefix_len = len(id_prefix)

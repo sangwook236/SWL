@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
 def train_neural_net_by_batch_generator(session, nnTrainer, trainBatchGenerator, valBatchGenerator, num_epochs, does_resume_training, saver, output_dir_path, checkpoint_dir_path, train_summary_dir_path, val_summary_dir_path, is_time_major, is_sparse_output):
@@ -767,7 +767,7 @@ def train_neural_net_unsupervisedly(session, nnTrainer, train_inputs, val_inputs
 	builder.save(as_text=False)
 	"""
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
 def evaluate_neural_net_by_batch_generator(session, nnEvaluator, valBatchGenerator, saver=None, checkpoint_dir_path=None, is_time_major=False, is_sparse_output=False):
@@ -1028,7 +1028,7 @@ def evaluate_neural_net_with_decoder_input(session, nnEvaluator, val_encoder_inp
 	else:
 		print('[SWL] Error: The numbers of validation inputs and outputs are not equal.')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # Supports lists of dense or sparse outputs.
 def infer_by_neural_net_and_batch_generator(session, nnInferrer, testBatchGenerator, saver=None, checkpoint_dir_path=None, is_time_major=False):

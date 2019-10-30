@@ -4,7 +4,7 @@ import tensorflow as tf
 import imgaug as ia
 from imgaug import augmenters as iaa
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class NeuralNetTrainer(object):
 	def __init__(self, model, optimizer, global_step=None, augmenter=None, is_output_augmented=False):
@@ -860,7 +860,7 @@ class NeuralNetTrainer(object):
 			train_op = self._optimizer.minimize(loss, global_step=global_step)
 			return train_op
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class GradientClippingNeuralNetTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, optimizer, max_gradient_norm, global_step=None, augmenter=None, is_output_augmented=False):

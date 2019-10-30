@@ -656,8 +656,9 @@ class MyRunner(object):
 
 			#--------------------
 			print('[SWL] Info: Start loading images...')
-			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths)
+			inf_images, image_filepaths = self._dataset.load_images_from_files(image_filepaths, is_grayscale=False)
 			print('[SWL] Info: End loading images: {} secs.'.format(time.time() - start_time))
+			print('[SWL] Info: Loaded images: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(inf_images.shape, inf_images.dtype, np.min(inf_images), np.max(inf_images)))
 
 			num_examples = len(inf_images)
 			if batch_size is None:

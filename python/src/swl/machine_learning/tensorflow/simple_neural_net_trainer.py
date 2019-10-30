@@ -1,7 +1,7 @@
 import tensorflow as tf
 from swl.machine_learning.tensorflow.neural_net_trainer import NeuralNetTrainer, GradientClippingNeuralNetTrainer
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleNeuralNetTrainer(NeuralNetTrainer):
 	def __init__(self, neuralNet, initial_epoch=0, augmenter=None, is_output_augmented=False):

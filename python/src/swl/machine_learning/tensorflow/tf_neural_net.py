@@ -1,7 +1,7 @@
 import abc
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class TensorFlowNeuralNet(abc.ABC):
 	def __init__(self, input_shape, output_shape):
@@ -67,7 +67,7 @@ class TensorFlowNeuralNet(abc.ABC):
 	def _get_accuracy(self, y, t):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class TensorFlowBasicSeq2SeqNeuralNet(abc.ABC):
 	def __init__(self, input_shape, output_shape):
@@ -143,7 +143,7 @@ class TensorFlowBasicSeq2SeqNeuralNet(abc.ABC):
 	def _get_accuracy(self, y, t):
 		raise NotImplementedError
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class TensorFlowSeq2SeqNeuralNet(abc.ABC):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):

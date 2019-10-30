@@ -205,10 +205,30 @@ class MyRunner(object):
 			# Create a trainer.
 			learning_rate = 0.001
 			#optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate)
-			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
 			#optimizer = tf.train.MomentumOptimizer(learning_rate=learning_rate, momentum=0.9, use_nesterov=False)
-
-			train_op = optimizer.minimize(loss)
+			optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, beta1=0.9, beta2=0.999)
+			#optimizer = tf.train.RMSPropOptimizer(learning_rate=learning_rate, decay=0.9, momentum=0.9, epsilon=1e-10)
+			if True:
+				train_op = optimizer.minimize(loss)
+			else:  # Gradient clipping.
+				max_gradient_norm = 5
+				global_step = None
+				var_list = None #tf.trainable_variables()
+				# Method 1.
+				gradients = optimizer.compute_gradients(loss, var_list=var_list)
+				for i, (g, v) in enumerate(gradients):
+					if g is not None:
+						gradients[i] = (tf.clip_by_norm(g, max_gradient_norm), v)  # Clip gradients.
+				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
+				"""
+				# Method 2.
+				#	REF [site] >> https://www.tensorflow.org/tutorials/seq2seq
+				if var_list is None:
+					var_list = tf.trainable_variables()
+				gradients = tf.gradients(loss, var_list)
+				clipped_gradients, _ = tf.clip_by_global_norm(gradients, max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(clipped_gradients, var_list), global_step=global_step)
+				"""
 
 			# Create a saver.
 			saver = tf.train.Saver(max_to_keep=5, keep_checkpoint_every_n_hours=2)

@@ -2,7 +2,7 @@ import abc
 import tensorflow as tf
 from swl.machine_learning.tensorflow.tf_neural_net import TensorFlowNeuralNet, TensorFlowBasicSeq2SeqNeuralNet, TensorFlowSeq2SeqNeuralNet
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleNeuralNet(TensorFlowNeuralNet):
 	def __init__(self, input_shape, output_shape):
@@ -61,7 +61,7 @@ class SimpleNeuralNet(TensorFlowNeuralNet):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
 	def __init__(self, input_shape, output_shape):
@@ -119,7 +119,7 @@ class BasicSeq2SeqNeuralNet(TensorFlowBasicSeq2SeqNeuralNet):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleSeq2SeqNeuralNet(TensorFlowSeq2SeqNeuralNet):
 	def __init__(self, encoder_input_shape, decoder_input_shape, decoder_output_shape):

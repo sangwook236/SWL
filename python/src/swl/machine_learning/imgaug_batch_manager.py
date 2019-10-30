@@ -3,7 +3,7 @@ import numpy as np
 import imgaug as ia
 from swl.machine_learning.batch_manager import BatchManager, FileBatchManager
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ImgaugBatchManager.
 #	Generates and augments batches using imgaug library in background processes.
 class ImgaugBatchManager(BatchManager):
@@ -96,7 +96,7 @@ class ImgaugBatchManager(BatchManager):
 					#yield ia.Batch(images=batch_images, data=batch_labels)
 					yield ia.Batch(images=batch_images, keypoints=batch_labels)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ImgaugBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates and augment batches using imgaug library in background processes.
@@ -111,7 +111,7 @@ class ImgaugBatchManagerWithFileInput(ImgaugBatchManager):
 
 		super().__init__(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ImgaugFileBatchManager.
 #	Generates, augments, saves, and loads batches through npy files using imgaug library.
 class ImgaugFileBatchManager(FileBatchManager):
@@ -166,7 +166,7 @@ class ImgaugFileBatchManager(FileBatchManager):
 					np.save(os.path.join(dir_path, self._image_file_format.format(step)), batch_images)
 					np.save(os.path.join(dir_path, self._label_file_format.format(step)), batch_labels)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ImgaugFileBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates, augments, saves, and loads batches through npy files using imgaug library.

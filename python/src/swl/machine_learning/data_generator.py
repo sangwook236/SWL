@@ -1,7 +1,7 @@
 import abc
 import numpy as np
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # DataGenerator.
 
 class DataGenerator(abc.ABC):
@@ -45,7 +45,7 @@ class DataGenerator(abc.ABC):
 	def finalizeTraining(self, *args, **kwargs):
 		pass
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Data2Generator.
 
 # Data generator with 2 data.
@@ -137,7 +137,7 @@ class Data2Generator(DataGenerator):
 					break
 				start_idx = end_idx
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Data3Generator.
 
 # Data generator with 3 data.

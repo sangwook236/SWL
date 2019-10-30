@@ -3,7 +3,7 @@ from functools import partial
 import numpy as np
 from swl.machine_learning.batch_manager import BatchManager, FileBatchManager
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # AugmentationBatchManager.
 #	Generates and augments batches.
 #	An augmenter has to support a function, augment(images, labels, is_label_augmented=False). 
@@ -64,7 +64,7 @@ class AugmentationBatchManager(BatchManager):
 				# augmenter.augment() can be run in an individual thread or process.
 				return augmenter.augment(batch_images, batch_labels, is_label_augmented)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # AugmentationBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates and augments batches.
@@ -80,7 +80,7 @@ class AugmentationBatchManagerWithFileInput(AugmentationBatchManager):
 
 		super().__init__(augmenter, images, labels, batch_size, shuffle, is_label_augmented, is_time_major, process_pool)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # AugmentationFileBatchManager.
 #	Generates, augments, saves, and loads batches through npy files.
 #	An augmenter has to support a function, augment(images, labels, is_label_augmented=False). 
@@ -141,7 +141,7 @@ class AugmentationFileBatchManager(FileBatchManager):
 				np.save(os.path.join(dir_path, image_file_format.format(step)), batch_images)
 				np.save(os.path.join(dir_path, label_file_format.format(step)), batch_labels)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # AugmentationFileBatchManagerWithFileInput.
 #	Loads dataset from multiple npy files.
 #	Generates, augments, saves, and loads batches through npy files.

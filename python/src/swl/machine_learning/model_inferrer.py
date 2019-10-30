@@ -1,7 +1,7 @@
 import abc, time
 import tensorflow as tf
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ModelInferrer.
 
 #class ModelInferrer(abc.ABC):

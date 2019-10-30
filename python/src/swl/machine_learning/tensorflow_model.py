@@ -2,7 +2,7 @@ import abc
 import tensorflow as tf
 from swl.machine_learning.learning_model import LearningModel
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class TensorFlowModel(LearningModel):
 	"""Learning model for TensorFlow library.
@@ -62,7 +62,7 @@ class TensorFlowModel(LearningModel):
 			tf.summary.scalar('accuracy', accuracy)
 			return accuracy
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleTensorFlowModel(TensorFlowModel):
 	"""Single-input single-output learning model for TensorFlow library.
@@ -103,7 +103,7 @@ class SimpleTensorFlowModel(TensorFlowModel):
 		self._loss = None
 		self._accuracy = None
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
 	"""Single-input single-output learning model for TensorFlow library.
@@ -147,7 +147,7 @@ class SimpleAuxiliaryInputTensorFlowModel(TensorFlowModel):
 		self._loss = None
 		self._accuracy = None
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleSequentialTensorFlowModel(TensorFlowModel):
 	"""Single-input single-output learning model for TensorFlow library.

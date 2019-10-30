@@ -119,15 +119,12 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			images, labels_str, labels_int = self._load_data_with_label_file(data_dir_path, label_filename, image_height, image_width, image_channel, max_label_len)
 
 		images = np.array(images)
-		if use_NWHC:
-			# (examples, height, width) -> (examples, width, height).
-			images = np.swapaxes(images, 1, 2)
-		if 3 == images.ndim:
-			images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
 		#labels_str = np.array(labels_str).flatten()
 		#labels_int = np.array(labels_int).flatten()
 		labels_str = np.array(labels_str)
 		labels_int = np.array(labels_int)
+
+		images = self._transform_images(images, use_NWHC=use_NWHC)
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
@@ -348,7 +345,6 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			label_filename = 'labels.txt'
 			#label_filename = None
 			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
-			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			test_offset = round(train_test_ratio * num_examples)
 			indices = np.arange(num_examples)
@@ -358,6 +354,14 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			test_indices = indices[test_offset:]
 			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
 			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
+
+			#--------------------
+			print('[SWL] Info: Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_data[0].shape, self._train_data[0].dtype, np.min(self._train_data[0]), np.max(self._train_data[0])))
+			print('[SWL] Info: Train string label: shape = {}, dtype = {}.'.format(self._train_data[1].shape, self._train_data[1].dtype))
+			print('[SWL] Info: Train integer label: shape = {}, dtype = {}, element type = {}.'.format(self._train_data[2].shape, self._train_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
+			print('[SWL] Info: Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_data[0].shape, self._test_data[0].dtype, np.min(self._test_data[0]), np.max(self._test_data[0])))
+			print('[SWL] Info: Test string label: shape = {}, dtype = {}.'.format(self._test_data[1].shape, self._test_data[1].dtype))
+			print('[SWL] Info: Test integer label: shape = {}, dtype = {}, element type = {}.'.format(self._test_data[2].shape, self._test_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
@@ -371,6 +375,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
+		"""
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -396,11 +401,15 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
 			elif False:
 				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
 
 		if outputs is not None:
 			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
+		"""
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs
 
@@ -458,12 +467,24 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			test_indices = indices[test_offset:]
 			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
 			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
+
+			#--------------------
+			print('[SWL] Info: Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_data[0].shape, self._train_data[0].dtype, np.min(self._train_data[0]), np.max(self._train_data[0])))
+			print('[SWL] Info: Train string label: shape = {}, dtype = {}.'.format(self._train_data[1].shape, self._train_data[1].dtype))
+			print('[SWL] Info: Train integer label: shape = {}, dtype = {}, element type = {}.'.format(self._train_data[2].shape, self._train_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
+			print('[SWL] Info: Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_data[0].shape, self._test_data[0].dtype, np.min(self._test_data[0]), np.max(self._test_data[0])))
+			print('[SWL] Info: Test string label: shape = {}, dtype = {}.'.format(self._test_data[1].shape, self._test_data[1].dtype))
+			print('[SWL] Info: Test integer label: shape = {}, dtype = {}, element type = {}.'.format(self._test_data[2].shape, self._test_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
 			num_examples = 0
 
+	def augment(self, inputs, outputs, *args, **kwargs):
+		raise NotImplementedError
+
 	def preprocess(self, inputs, outputs, *args, **kwargs):
+		"""
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -494,8 +515,10 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		if outputs is not None:
 			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
+		"""
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs
 
@@ -557,6 +580,14 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			test_indices = indices[test_offset:]
 			self._train_data = images[train_indices], labels_str[train_indices], labels_int[train_indices]
 			self._test_data = images[test_indices], labels_str[test_indices], labels_int[test_indices]
+
+			#--------------------
+			print('[SWL] Info: Train image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._train_data[0].shape, self._train_data[0].dtype, np.min(self._train_data[0]), np.max(self._train_data[0])))
+			print('[SWL] Info: Train string label: shape = {}, dtype = {}.'.format(self._train_data[1].shape, self._train_data[1].dtype))
+			print('[SWL] Info: Train integer label: shape = {}, dtype = {}, element type = {}.'.format(self._train_data[2].shape, self._train_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
+			print('[SWL] Info: Test image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(self._test_data[0].shape, self._test_data[0].dtype, np.min(self._test_data[0]), np.max(self._test_data[0])))
+			print('[SWL] Info: Test string label: shape = {}, dtype = {}.'.format(self._test_data[1].shape, self._test_data[1].dtype))
+			print('[SWL] Info: Test integer label: shape = {}, dtype = {}, element type = {}.'.format(self._test_data[2].shape, self._test_data[2].dtype, type(self._test_data[2][0]) if len(self._test_data[2]) > 0 else '?'))
 		else:
 			print('[SWL] Info: Dataset were not loaded.')
 			self._train_data, self._test_data = None, None
@@ -579,7 +610,11 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
+	def augment(self, inputs, outputs, *args, **kwargs):
+		raise NotImplementedError
+
 	def preprocess(self, inputs, outputs, *args, **kwargs):
+		"""
 		if inputs is not None:
 			# Contrast limited adaptive histogram equalization (CLAHE).
 			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -610,7 +645,9 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 
 		if outputs is not None:
 			# One-hot encoding.
-			#outputs = tf.keras.utils.to_categorical(outputs, num_classes).astype(np.uint8)
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
+		"""
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
 
 		return inputs, outputs

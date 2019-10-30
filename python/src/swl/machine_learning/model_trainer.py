@@ -3,7 +3,7 @@ import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # ModelTrainer.
 
 #class ModelTrainer(abc.ABC):
@@ -187,7 +187,7 @@ class ModelTrainer(object):
 			train_op = self._optimizer.minimize(loss, global_step=global_step, var_list=var_list)
 			return train_op
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class GradientClippingModelTrainer(ModelTrainer):
 	def __init__(self, model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, global_step=None, var_list=None):
@@ -209,11 +209,11 @@ class GradientClippingModelTrainer(ModelTrainer):
 				var_list = tf.trainable_variables()
 			gradients = tf.gradients(loss, var_list)
 			clipped_gradients, _ = tf.clip_by_global_norm(gradients, self._max_gradient_norm)  # Clip gradients.
-			train_op = self._optimizer.apply_gradients(zip(clipped_gradients, params), global_step=global_step)
+			train_op = self._optimizer.apply_gradients(zip(clipped_gradients, var_list), global_step=global_step)
 			"""
 			return train_op
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleModelTrainer(ModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, initial_epoch=0, var_list=None):
@@ -229,7 +229,7 @@ class SimpleModelTrainer(ModelTrainer):
 
 		super().__init__(model, optimizer, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, global_step, var_list)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 class SimpleGradientClippingModelTrainer(GradientClippingModelTrainer):
 	def __init__(self, model, dataGenerator, output_dir_path, model_save_dir_path, train_summary_dir_path, val_summary_dir_path, max_gradient_norm, initial_epoch=0, var_list=None):
