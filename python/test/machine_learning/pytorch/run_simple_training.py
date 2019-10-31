@@ -145,7 +145,18 @@ class MyRunner(object):
 				model_outputs = model(batch_inputs)
 				loss = criterion(model_outputs, batch_outputs)
 				loss.backward()
+				"""
+				# Gradient clipping.
+				max_norm = 5
+				torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm, norm_type=2)
+				#for p in model.parameters():
+				#	if p.grad is not None:
+				#		p.grad.data.clamp_(min=-max_norm, max=max_norm)
+				"""
+				# Update weights.
 				optimizer.step()
+				#for p in model.parameters():
+				#	p.data.add_(-lr, p.grad.data)  # p.data = p.data + (-lr * p.grad.data).
 
 				# Print statistics.
 				running_loss += loss.item()
