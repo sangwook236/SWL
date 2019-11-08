@@ -345,6 +345,7 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			label_filename = 'labels.txt'
 			#label_filename = None
 			images, labels_str, labels_int, num_examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len, label_filename, use_NWHC=self._use_NWHC)
+			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
 
 			test_offset = round(train_test_ratio * num_examples)
 			indices = np.arange(num_examples)

@@ -35,6 +35,68 @@ def create_charsets():
 
 	return hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset
 
+def BasicRunTimeTextLineDataset_test():
+	print('Start loading a Korean dictionary...')
+	start_time = time.time()
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#korean_words = fd.readlines()
+		#korean_words = fd.read().strip('\n')
+		korean_words = fd.read().splitlines()
+	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
+
+	print('Start loading an English dictionary...')
+	start_time = time.time()
+	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#english_words = fd.readlines()
+		#english_words = fd.read().strip('\n')
+		english_words = fd.read().splitlines()
+	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+
+	korean_word_set = set(korean_words)
+	english_word_set = set(english_words)
+	all_word_set = set(korean_words + english_words)
+
+	if False:
+		print('Start creating a Korean dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 64, 640, 1
+		dataset = text_line_data.BasicRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
+	if False:
+		print('Start creating an English dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 32, 320, 1
+		dataset = text_line_data.BasicRunTimeTextLineDataset(english_word_set, image_height, image_width, image_channel)
+		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
+	if True:
+		print('Start creating a Korean+English dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 64, 640, 1
+		dataset = text_line_data.BasicRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
 def RunTimeTextLineDataset_test():
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
@@ -179,14 +241,83 @@ def HangeulJamoJsonBasedTextLineDataset_test():
 	dataset.visualize(train_generator, num_examples=10)
 	dataset.visualize(test_generator, num_examples=10)
 
+def RunTimePairedCorruptedTextLineDataset_test():
+	print('Start loading a Korean dictionary...')
+	start_time = time.time()
+	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
+	with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#korean_words = fd.readlines()
+		#korean_words = fd.read().strip('\n')
+		korean_words = fd.read().splitlines()
+	print('End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
+
+	print('Start loading an English dictionary...')
+	start_time = time.time()
+	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
+		#english_words = fd.readlines()
+		#english_words = fd.read().strip('\n')
+		english_words = fd.read().splitlines()
+	print('End loading an English dictionary: {} secs.'.format(time.time() - start_time))
+
+	korean_word_set = set(korean_words)
+	english_word_set = set(english_words)
+	all_word_set = set(korean_words + english_words)
+
+	if False:
+		print('Start creating a Korean dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 64, 640, 1
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
+	if False:
+		print('Start creating an English dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 32, 320, 1
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(english_word_set, image_height, image_width, image_channel)
+		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
+	if True:
+		print('Start creating a Korean+English dataset...')
+		start_time = time.time()
+		image_height, image_width, image_channel = 64, 640, 1
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
+
+		train_generator = dataset.create_train_batch_generator(batch_size=32)
+		test_generator = dataset.create_test_batch_generator(batch_size=32)
+
+		dataset.visualize(train_generator, num_examples=10)
+		dataset.visualize(test_generator, num_examples=10)
+
 def main():
 	#hangeul_charset, alphabet_charset, digit_charset, symbol_charset, hangeul_jamo_charset = create_charsets()
 
+	#--------------------
+	#BasicRunTimeTextLineDataset_test()
+
+	#--------------------
 	#RunTimeTextLineDataset_test()
-	HangeulJamoRunTimeTextLineDataset_test()
+	#HangeulJamoRunTimeTextLineDataset_test()
 
 	#JsonBasedTextLineDataset_test()
 	#HangeulJamoJsonBasedTextLineDataset_test()
+
+	#--------------------
+	RunTimePairedCorruptedTextLineDataset_test()
 
 #--------------------------------------------------------------------
 

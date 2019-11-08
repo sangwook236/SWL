@@ -84,9 +84,10 @@ class TextLineDatasetBase(abc.ABC):
 			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
-			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			#print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			print('Label (str): shape = {}, dtype = {}, element type = {}.'.format(len(batch_labels_str), type(batch_labels_str), type(batch_labels_str[0])))
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
-			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
+			print('Label (int): length = {}, type = {}, element type = {}.'.format(len(batch_labels_int), type(batch_labels_int), type(batch_labels_int[0])))
 
 			# (examples, width, height, channels) -> (examples, height, width, channels).
 			batch_images = batch_images.transpose((0, 2, 1, 3))
@@ -123,8 +124,7 @@ class TextLineDatasetBase(abc.ABC):
 			images.append(img)
 		for fpath in error_filepaths:
 			image_filepaths.remove(fpath)
-		images = np.array(images)
-		images = self._transform_images(images, use_NWHC=True)
+		images = self._transform_images(np.array(images), use_NWHC=True)
 
 		images, _ = self.preprocess(images, None)
 		return images, image_filepaths
@@ -240,21 +240,97 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, self._font_color, self._bg_color)
 
 	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
-		for step, (text_list, scene_list, _) in enumerate(tg_util.generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
-			scene_list = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scene_list))
-			#scene_list, scene_text_mask_list = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scene_list, scene_text_mask_list))))
-			scenes = np.array(scene_list, dtype=np.float32)
-			scenes = self._transform_images(scenes, use_NWHC=True)
+		for step, (texts, scenes, _) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
+			#scenes = list(map(lambda image: self.resize(image), scenes))
+			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
+			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
 
 			scenes, _ = self.preprocess(scenes, None)
-			texts_int = list(map(lambda txt: self.encode_label(txt), text_list))
+			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (scenes, text_list, texts_int), batch_size
+			yield (scenes, texts, texts_int), batch_size
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
 
 # This class is independent of language.
-class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
+class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+
+		#--------------------
+		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+
+		#--------------------
+		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		#self._labels = sorted(label_set)
+		self._labels = ''.join(sorted(label_set))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		#--------------------
+		if 'posix' == os.name:
+			system_font_dir_path = '/usr/share/fonts'
+			#font_dir_path = '/home/sangwook/work/font/eng'
+			font_dir_path = '/home/sangwook/work/font/kor'
+		else:
+			system_font_dir_path = 'C:/Windows/Fonts'
+			#font_dir_path = 'D:/work/font/eng'
+			font_dir_path = 'D:/work/font/kor'
+
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		#font_list = tg_util.generate_font_list(font_filepaths)
+		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+		handwriting_dict = None
+
+		#--------------------
+		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+
+		#self._font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+		#self._font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+		self._font_color = None  # Uses a random font color.
+		#self._bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+		#self._bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+		self._bg_color = None  # Uses a random background color.
+
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+
+#--------------------------------------------------------------------
+
+class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, default_value)
+
+	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
+		for step, (texts, scenes, _) in enumerate(tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
+			#scenes = list(map(lambda image: self.resize(image), scenes))
+			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
+			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
+
+			scenes, _ = self.preprocess(scenes, None)
+			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (scenes, texts, texts_int), batch_size
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
+
+# This class is independent of language.
+class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
 
@@ -303,19 +379,19 @@ class RunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
+		characterPositioner = tg_util.MyCharacterPositioner()
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+		characterPositioner = tg_util.MyCharacterPositioner()
+		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 		"""
 
 # This class is independent of language.
-class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
+class HangeulJamoRunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
 
@@ -368,15 +444,15 @@ class HangeulJamoRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
+		characterPositioner = tg_util.MyCharacterPositioner()
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
-		characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-		self._textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+		characterPositioner = tg_util.MyCharacterPositioner()
+		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 		"""
 
 	# String label -> integer label.
@@ -586,8 +662,7 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 				label_list.append(datum['char_id'])
 			else:  # Unicode -> char ID.
 				label_list.append(''.join(list(chr(id) for id in datum['char_id'])))
-		images = np.array(images)
-		images = self._transform_images(images, use_NWHC=True)
+		images = self._transform_images(images = np.array(images), use_NWHC=True)
 
 		images, _ = self.preprocess(images, None)
 		return images, label_list, charset
@@ -708,3 +783,274 @@ class HangeulJamoJsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 			except ValueError:
 				return None
 		return list(map(int2str, labels_int))
+
+#--------------------------------------------------------------------
+
+class PairedTextLineDatasetBase(TextLineDatasetBase):
+	"""A base dataset for paired text lines, input & output text line images.
+	"""
+
+	def __init__(self, labels=None, default_value=-1):
+		super().__init__(labels, default_value=default_value)
+
+	def visualize(self, batch_generator, num_examples=10):
+		for batch_data, num_batch_examples in batch_generator:
+			batch_input_images, batch_output_images, batch_labels_str, batch_labels_int = batch_data
+
+			print('Input Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_input_images.shape, batch_input_images.dtype, np.min(batch_input_images), np.max(batch_input_images)))
+			print('Output Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_output_images.shape, batch_output_images.dtype, np.min(batch_output_images), np.max(batch_output_images)))
+			#print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			print('Label (str): shape = {}, dtype = {}, element type = {}.'.format(len(batch_labels_str), type(batch_labels_str), type(batch_labels_str[0])))
+			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
+			print('Label (int): length = {}, type = {}, element type = {}.'.format(len(batch_labels_int), type(batch_labels_int), type(batch_labels_int[0])))
+
+			# (examples, width, height, channels) -> (examples, height, width, channels).
+			batch_input_images = batch_input_images.transpose((0, 2, 1, 3))
+			batch_output_images = batch_output_images.transpose((0, 2, 1, 3))
+			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
+
+			inp_minval, inp_maxval = np.min(batch_input_images), np.max(batch_input_images)
+			outp_minval, outp_maxval = np.min(batch_output_images), np.max(batch_output_images)
+			for idx, (inp, outp, lbl_str, lbl_int) in enumerate(zip(batch_input_images, batch_output_images, batch_labels_str, batch_labels_int)):
+				print('Label (str) = {}, Label (int) = {}({}).'.format(lbl_str, lbl_int, self.decode_label(lbl_int)))
+
+				#inp = ((inp - inp_minval) * (255 / (inp_maxval - inp_minval))).astype(np.uint8)
+				inp = ((inp - inp_minval) / (inp_maxval - inp_minval)).astype(np.float32)
+				#outp = ((outp - outp_minval) * (255 / (outp_maxval - outp_minval))).astype(np.uint8)
+				outp = ((outp - outp_minval) / (outp_maxval - outp_minval)).astype(np.float32)
+				#cv2.imwrite('./input_text_{}.png'.format(idx), inp)
+				#cv2.imwrite('./output_text_{}.png'.format(idx), outp)
+				cv2.imshow('Input Text', inp)
+				cv2.imshow('Output Text', outp)
+				ch = cv2.waitKey(2000)
+				if 27 == ch:  # ESC.
+					break
+				if (idx + 1) >= num_examples:
+					break
+			break  # For a single batch.
+		cv2.destroyAllWindows()
+
+#--------------------------------------------------------------------
+
+class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
+		super().__init__(labels=None, default_value=default_value)
+
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+		self._num_classes = num_classes
+		if max_label_len > 0:
+			self._word_set = set(filter(lambda word: len(word) <= max_label_len, word_set))
+		else:
+			self._word_set = word_set
+
+	@property
+	def shape(self):
+		return self._image_height, self._image_width, self._image_channel
+
+	@property
+	def num_classes(self):
+		return self._num_classes
+
+	def preprocess(self, inputs, outputs, *args, **kwargs):
+		"""
+		if inputs is not None:
+			# Contrast limited adaptive histogram equalization (CLAHE).
+			#clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+			#inputs = np.array([clahe.apply(inp) for inp in inputs])
+
+			# TODO [check] >> Preprocessing has influence on recognition rate.
+
+			# Normalization, standardization, etc.
+			#inputs = inputs.astype(np.float32)
+
+			if False:
+				inputs = preprocessing.scale(inputs, axis=0, with_mean=True, with_std=True, copy=True)
+				#inputs = preprocessing.minmax_scale(inputs, feature_range=(0, 1), axis=0, copy=True)  # [0, 1].
+				#inputs = preprocessing.maxabs_scale(inputs, axis=0, copy=True)  # [-1, 1].
+				#inputs = preprocessing.robust_scale(inputs, axis=0, with_centering=True, with_scaling=True, quantile_range=(25.0, 75.0), copy=True)
+			elif False:
+				# NOTE [info] >> Not good.
+				inputs = (inputs - np.mean(inputs, axis=None)) / np.std(inputs, axis=None)  # Standardization.
+			elif False:
+				# NOTE [info] >> Not bad.
+				in_min, in_max = 0, 255 #np.min(inputs), np.max(inputs)
+				out_min, out_max = 0, 1 #-1, 1
+				inputs = (inputs - in_min) * (out_max - out_min) / (in_max - in_min) + out_min  # Normalization.
+			elif False:
+				inputs /= 255.0  # Normalization.
+			elif True:
+				inputs = (inputs / 255.0) * 2.0 - 1.0  # Normalization.
+
+		if outputs is not None:
+			# One-hot encoding.
+			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
+			pass
+		"""
+		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
+
+		return inputs, outputs
+
+	def resize(self, input, output=None, height=None, width=None, *args, **kwargs):
+		if height is None:
+			height = self._image_height
+		if width is None:
+			width = self._image_width
+
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
+			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		else:
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
+			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+			if min_width < width:
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
+				return image_zeropadded
+			else:
+				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+		return zeropadded
+		"""
+		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		"""
+
+	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
+		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, self._font_color, self._bg_color)
+
+	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
+		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, self._font_color, self._bg_color)
+
+	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
+		raise NotImplementedError
+
+# This class is independent of language.
+class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+
+		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
+
+		#--------------------
+		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
+		#self._EOS = '<EOS>'  # All strings will end with the End-Of-String token.
+
+		#--------------------
+		label_set = functools.reduce(lambda x, word: x.union(word), self._word_set, set())
+		#self._labels = sorted(label_set)
+		self._labels = ''.join(sorted(label_set))
+		print('[SWL] Info: Labels = {}.'.format(self._labels))
+		print('[SWL] Info: #labels = {}.'.format(len(self._labels)))
+
+		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
+		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		#--------------------
+		if 'posix' == os.name:
+			system_font_dir_path = '/usr/share/fonts'
+			#font_dir_path = '/home/sangwook/work/font/eng'
+			font_dir_path = '/home/sangwook/work/font/kor'
+		else:
+			system_font_dir_path = 'C:/Windows/Fonts'
+			#font_dir_path = 'D:/work/font/eng'
+			font_dir_path = 'D:/work/font/kor'
+
+		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+		#font_list = tg_util.generate_font_list(font_filepaths)
+		font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+		#handwriting_dict = tg_util.generate_phd08_dict(from_npy=True)
+		handwriting_dict = None
+
+		#--------------------
+		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+
+		#self._font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+		#self._font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+		self._font_color = None  # Uses a random font color.
+		#self._bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+		#self._bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+		self._bg_color = None  # Uses a random background color.
+
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+
+		#--------------------
+		#import imgaug as ia
+		from imgaug import augmenters as iaa
+
+		self._augmenter = iaa.Sequential([
+			iaa.Sometimes(0.2, iaa.OneOf([
+				iaa.Affine(
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				),
+				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
+				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
+				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
+				iaa.MotionBlur(k=(5, 11), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			])),
+			iaa.Sometimes(0.2, iaa.OneOf([
+				#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+				#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+				#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),  # Improve or worsen the contrast.
+
+				iaa.Invert(p=1, per_channel=False),  # Invert color channels.
+
+				#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
+				iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
+			])),
+			iaa.Sometimes(0.3, iaa.OneOf([
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.5 * 255), per_channel=False),  # Add Gaussian noise to images.
+				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.4 * 255), per_channel=False),
+				#iaa.AdditivePoissonNoise(lam=(32, 96), per_channel=False),
+				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			])),
+			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+		])
+
+	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
+		for step, (texts, scenes, scene_text_masks) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
+			#scenes = list(map(lambda image: self.resize(image), scenes))
+			#scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
+			scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
+
+			corrupted_scenes, _ = self._corrupt(scenes, None)
+			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
+			scenes, _ = self.preprocess(scenes, None)
+			#scenes, _ = self.preprocess(scene_text_masks, None)
+			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
+			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
+			yield (corrupted_scenes, scenes, texts, texts_int), batch_size
+			if steps_per_epoch and (step + 1) >= steps_per_epoch:
+				break
+
+	def _corrupt(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)

@@ -387,20 +387,22 @@ class ImgaugPerspectiveTransformer(object):
 		seq_det = self._seq.to_deterministic()  # Call this for each batch again, NOT only once at the start.
 		return seq_det.augment_images(input), seq_det.augment_images(mask)
 
-#class MyHangeulCharacterAlphaMatteGenerator(CharacterAlphaMatteGenerator):
-class MyHangeulCharacterAlphaMatteGenerator(object):
+#class MyCharacterAlphaMatteGenerator(CharacterAlphaMatteGenerator):
+class MyCharacterAlphaMatteGenerator(object):
 	"""Generates an alpha-matte [0, 1] for a character which reflects the proportion of foreground (when alpha=1) and background (when alpha=0).
 	"""
 
 	def __init__(self, font_list, handwriting_dict=None):
 		"""Constructor.
+
+		Inputs:
+			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
+			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
 		"""
 
 		self._text_offset = (0, 0)
 		self._crop_text_area = True
 		self._draw_text_border = False
-
-		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 		self._font_list = font_list
 		self._handwriting_dict = handwriting_dict
@@ -423,7 +425,7 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 			use_printed_letter = True
 
 		if use_printed_letter:
-			#print('Generate a printed Hangeul letter.')
+			#print('Generate a printed letter.')
 			font_id = random.randrange(len(self._font_list))
 			font_type, font_index = self._font_list[font_id]
 
@@ -440,36 +442,79 @@ class MyHangeulCharacterAlphaMatteGenerator(object):
 
 		return alpha
 
-#class MyCharacterAlphaMattePositioner(CharacterAlphaMattePositioner):
-class MyCharacterAlphaMattePositioner(object):
+#class MyCharacterPositioner(CharacterPositioner):
+class MyCharacterPositioner(object):
 	"""Place characters to construct a text line.
 	"""
 
-	def __call__(self, char_alpha_list, char_space_ratio, *args, **kwargs):
+	def __call__(self, char_image_list, char_space_ratio, *args, **kwargs):
 		"""Places characters to construct a single text line.
 
 		Inputs:
-			char_alpha_list (a list of numpy.array): A list of character alpha mattes of type numpy.array to compose a text line.
+			char_image_list (a list of numpy.array): A list of character images of type numpy.array to compose a text line.
 			char_space_ratio (float): A ratio of space between characters.
 		Outputs:
-			A list of coordinates of character alpha mattes (a list of (int, int)): A list of (y position, x position) of the character alpha mattes.
+			A list of coordinates of character images (a list of (int, int)): A list of (y position, x position) of the character images.
 		"""
 
-		max_height = reduce(lambda x, y: max(x, y.shape[0]), char_alpha_list, 0)
+		max_height = reduce(lambda x, y: max(x, y.shape[0]), char_image_list, 0)
 
-		char_alpha_coordinate_list = list()
+		char_image_coordinate_list = list()
 		sx = 0
-		for idx, alpha in enumerate(char_alpha_list):
-			sy = (max_height - alpha.shape[0]) // 2  # Vertical center.
+		for idx, img in enumerate(char_image_list):
+			sy = (max_height - img.shape[0]) // 2  # Vertical center.
 
-			char_alpha_coordinate_list.append((sy, sx))
+			char_image_coordinate_list.append((sy, sx))
 
-			sx += math.ceil(alpha.shape[1] * char_space_ratio)
+			sx += math.ceil(img.shape[1] * char_space_ratio)
 
-		return char_alpha_coordinate_list
+		return char_image_coordinate_list
 
-class MySimplePrintedHangeulTextGenerator(object):
-	"""Generates a simple printed Hangeul text line and masks for individual characters.
+class MyBasicPrintedTextGenerator(object):
+	"""Generates a basic printed text line for individual characters.
+	"""
+
+	def __init__(self, font_list):
+		"""Constructor.
+
+		Inputs:
+			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
+		"""
+
+		self._text_offset = (0, 0)
+		self._crop_text_area = True
+		self._draw_text_border = False
+
+		self._font_list = font_list
+
+	def __call__(self, text, font_size, font_color, bg_color, char_space_ratio=None, font_id=None, *args, **kwargs):
+		"""Generates a single text line for individual characters.
+
+		Inputs:
+			text (str): Characters to compose a text line.
+			font_size (int): A font size for the characters.
+			font_color (a list of ints): A font color.
+			bg_color (a list of ints): A background color.
+			char_space_ratio (float): A space ratio between two characters.
+			font_id (int): A font ID to use.
+		Outputs:
+			text_image (numpy.array): A generated text image.
+			font_id (int): The used font ID.
+		"""
+
+		#image_size = (math.ceil(len(text) * font_size * 2), math.ceil(font_size * 2))
+		image_size = None
+
+		if font_id is None:
+			font_id = random.randrange(len(self._font_list))
+		font_type, font_index = self._font_list[font_id]
+
+		text_image = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio)
+
+		return np.array(text_image), font_id
+
+class MySimpleTextAlphaMatteGenerator(object):
+	"""Generates a simple text line and masks for individual characters.
 	"""
 
 	def __init__(self, characterTransformer, characterPositioner, font_list, handwriting_dict=None):
@@ -478,6 +523,8 @@ class MySimplePrintedHangeulTextGenerator(object):
 		Inputs:
 			characterTransformer (Transformer): An object to tranform each character.
 			characterPositioner (CharacterPositioner): An object to place characters.
+			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
+			handwriting_dict (a dict of (character, a list of images)): A dictionary of characters and their corresponding list of images.
 		"""
 
 		self._characterTransformer = characterTransformer
@@ -486,8 +533,6 @@ class MySimplePrintedHangeulTextGenerator(object):
 		self._text_offset = (0, 0)
 		self._crop_text_area = True
 		self._draw_text_border = False
-
-		#self._clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
 
 		self._font_list = font_list
 		self._handwriting_dict = handwriting_dict  # FIXME [fix] >> Currently not used.
@@ -500,14 +545,13 @@ class MySimplePrintedHangeulTextGenerator(object):
 			char_space_ratio (float): A ratio of space between characters.
 			font_size (int): A font size for the characters.
 		Outputs:
-			char_alpha_list (a list of numpy.array): A list of character alpha mattes.
+			char_alpha_list (a list of numpy.array): A list of character images.
 			char_alpha_coordinate_list (a list of (int, int)): A list of (y position, x position) of character alpha mattes.
-				A text line can be constructed by MyTextGenerator.constructTextLine().
+				A text line can be constructed by MyTextAlphaMatteGenerator.constructTextLine().
 		"""
 
 		image_size = (math.ceil(font_size * 1.1), math.ceil(font_size * 1.1))
 
-		#print('Generate a printed Hangeul letter.')
 		font_id = random.randrange(len(self._font_list))
 		font_type, font_index = self._font_list[font_id]
 
@@ -524,8 +568,8 @@ class MySimplePrintedHangeulTextGenerator(object):
 		char_alpha_coordinate_list = self._characterPositioner(char_alpha_list, char_space_ratio, *args, **kwargs)
 		return char_alpha_list, char_alpha_coordinate_list
 
-#class MyTextGenerator(TextGenerator):
-class MyTextGenerator(object):
+#class MyTextAlphaMatteGenerator(TextAlphaMatteGenerator):
+class MyTextAlphaMatteGenerator(object):
 	"""Generates a single text line and masks for individual characters.
 	"""
 
@@ -552,7 +596,7 @@ class MyTextGenerator(object):
 		Outputs:
 			char_alpha_list (a list of numpy.array): A list of character alpha mattes.
 			char_alpha_coordinate_list (a list of (int, int)): A list of (y position, x position) of character alpha mattes.
-				A text line can be constructed by MyTextGenerator.constructTextLine().
+				A text line can be constructed by MyTextAlphaMatteGenerator.constructTextLine().
 		"""
 
 		char_alpha_list = list()
@@ -601,8 +645,8 @@ class MyTextGenerator(object):
 		#return text_line, text_line_alpha
 		return np.round(text_line * 255).astype(np.uint8), text_line_alpha
 
-#class MySceneTextGenerator(SceneTextGenerator):
-class MySceneTextGenerator(object):
+#class MyAlphaMatteSceneTextGenerator(AlphaMatteSceneTextGenerator):
+class MyAlphaMatteSceneTextGenerator(object):
 	"""Generates a scene containing multiple transformed text lines in a background.
 	"""
 
@@ -719,11 +763,35 @@ class MySimpleSceneProvider(MySceneProvider):
 
 #--------------------------------------------------------------------
 
-def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
+def generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
 	if batch_size <= 0 or batch_size > len(word_set):
 		raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
 
-	sceneTextGenerator = MySceneTextGenerator(IdentityTransformer())
+	while True:
+		texts = random.sample(word_set, k=batch_size)
+		#texts = random.choices(word_set, k=batch_size)
+
+		text_list, image_list, mask_list = list(), list(), list()
+		for text in texts:
+			font_size = random.randint(*font_size_interval)
+			char_space_ratio = random.uniform(*char_space_ratio_interval)
+
+			text_line, font_id = textGenerator(text, font_size, font_color, bg_color, char_space_ratio, font_id=None)
+			mask, _ = textGenerator(text, font_size, (255, 255, 255), (0, 0, 0), char_space_ratio, font_id=font_id)
+			#mask, _ = textGenerator(text, font_size, None, None, char_space_ratio, font_id=font_id)
+			mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+
+			text_list.append(text)
+			image_list.append(text_line)
+			mask_list.append(mask)
+
+		yield text_list, image_list, mask_list
+
+def generate_alpha_matte_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color=None, bg_color=None):
+	if batch_size <= 0 or batch_size > len(word_set):
+		raise ValueError('Invalid batch size: 0 < batch_size <= len(word_set)')
+
+	sceneTextGenerator = MyAlphaMatteSceneTextGenerator(IdentityTransformer())
 
 	while True:
 		texts = random.sample(word_set, k=batch_size)
@@ -735,7 +803,7 @@ def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_
 			char_space_ratio = random.uniform(*char_space_ratio_interval)
 
 			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
-			text_line, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+			text_line, text_line_alpha = MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
 
 			if bg_color is None:
 				# Grayscale background.
@@ -750,7 +818,7 @@ def generate_text_lines(word_set, textGenerator, font_size_interval, char_space_
 
 		yield text_list, scene_list, scene_text_mask_list
 
-def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval, batch_size, font_color=None):
+def generate_alpha_matte_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, text_count_interval, font_size_interval, char_space_ratio_interval, batch_size, font_color=None):
 	while True:
 		texts_list, scene_list, scene_text_mask_list, bboxes_list = list(), list(), list(), list()
 		for _ in range(batch_size):
@@ -763,7 +831,7 @@ def generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenera
 				char_space_ratio = random.uniform(*char_space_ratio_interval)
 
 				char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio, font_size)
-				text_line_image, text_line_alpha = MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
+				text_line_image, text_line_alpha = MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color)
 
 				text_images.append(text_line_image)
 				text_alphas.append(text_line_alpha)

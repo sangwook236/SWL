@@ -163,12 +163,78 @@ def merge_generated_data_directories():
 		for line in new_lines:
 			fd.write('{}\n'.format(line))
 
+def check_label_distribution():
+	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
+	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
+	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
+		#hangeul_charset = fd.readlines()  # A string.
+		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	#hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
+	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'
+	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+	digit_charset = '0123456789'
+	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+
+	#label_set = set(hangeul_charset + hangeul_jamo_charset + alphabet_charset + digit_charset + symbol_charset)
+	label_set = set(alphabet_charset + digit_charset + symbol_charset)
+
+	#label_charset = sorted(label_set)
+	label_charset = ''.join(sorted(label_set))
+
+	#--------------------
+	label_filepath = './text_line_samples_en_train/labels.txt'
+	#label_filepath = './text_line_samples_en_test/labels.txt'
+
+	try:
+		with open(label_filepath, 'r') as fd:
+			lines = fd.readlines()
+	except FileNotFoundError:
+		print('[SWL] Error: File not found: {}.'.format(label_filepath))
+		return
+
+	label_dict = dict()
+	for ch in label_charset:
+		label_dict[ch] = 0
+
+	for line in lines:
+		line = line.rstrip('\n')
+		if not line:
+			continue
+
+		pos = line.find(' ')
+		if -1 == pos:
+			print('[SWL] Warning: Invalid image-label pair: {}.'.format(line))
+			continue
+		fname, label = line[:pos], line[pos+1:]
+
+		for ch in label:
+			label_dict[ch] += 1
+
+	#--------------------
+	import numpy as np
+	import matplotlib.pyplot as plt
+
+	fig = plt.figure(figsize=(10, 6))
+	x_label = np.arange(len(label_dict.keys()))
+	plt.bar(x_label, label_dict.values(), align='center', alpha=0.5)
+	plt.xticks(x_label, label_dict.keys())
+	plt.show()
+
+	fig.savefig('./label_distribution.png')
+	plt.close(fig)
+
 def main():
 	#EnglishTextRecognitionDataGeneratorTextLineDataset_test()
 	#HangeulTextRecognitionDataGeneratorTextLineDataset_test()
 	#HangeulJamoTextRecognitionDataGeneratorTextLineDataset_test()
 
 	merge_generated_data_directories()
+
+	#check_label_distribution()
 
 #--------------------------------------------------------------------
 

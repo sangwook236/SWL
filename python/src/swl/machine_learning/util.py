@@ -1,6 +1,5 @@
 import os, math, functools
 import numpy as np
-import tensorflow as tf
 #import keras
 import matplotlib.pyplot as plt
 
@@ -298,6 +297,8 @@ def visualize_by_partial_occlusion(session, nnInferrer, vis_images, vis_labels, 
 		return None
 
 	if saver is not None and model_dir_path is not None:
+		import tensorflow as tf
+
 		# Load a model.
 		ckpt = tf.train.get_checkpoint_state(model_dir_path)
 		saver.restore(session, ckpt.model_checkpoint_path)

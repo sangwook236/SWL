@@ -182,7 +182,115 @@ def generate_hangeul_font_list_test():
 
 	cv2.destroyAllWindows()
 
-def text_generator_test():
+def basic_printed_text_generator_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+
+	#--------------------
+	font_size = 32
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	char_space_ratio = 0.5
+	#char_space_ratio = None  # Uses default character space.
+
+	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+
+	#text = '가나다라마바사아자차카타파하'
+	text = 'abcdefghijklmNOPQRSTUVWXYZ'
+	text_line, font_id = textGenerator(text, font_size, font_color, bg_color, char_space_ratio, font_id=None)
+
+	#--------------------
+	# No background.
+	if 'posix' == os.name:
+		cv2.imwrite('./text_line.png', text_line)
+	else:
+		cv2.imshow('Text line', text_line)
+		cv2.waitKey(0)
+
+	cv2.destroyAllWindows()
+
+def generate_basic_text_lines_test():
+	word_set = set()
+	word_set.add('abc')
+	word_set.add('defg')
+	word_set.add('hijklmn')
+	word_set.add('가나')
+	word_set.add('다라마바사')
+	word_set.add('자차카타파하')
+	word_set.add('123')
+	word_set.add('45')
+	word_set.add('67890')
+
+	#--------------------
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	#font_dir_path = font_base_dir_path + '/eng'
+	font_dir_path = font_base_dir_path + '/kor'
+
+	font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
+	#font_list = tg_util.generate_font_list(font_filepaths)
+	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
+
+	#--------------------
+	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+
+	#--------------------
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.2, 1.5
+
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+
+	batch_size = 4
+	generator = tg_util.generate_basic_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+
+	#--------------------
+	step = 1
+	for text_list, image_list, mask_list in generator:
+		for text, img, mask in zip(text_list, image_list, mask_list):
+			#mask[mask > 15] = 255
+			#mask[mask <= 15] = 0
+			#minval, maxval = np.min(mask), np.max(mask)
+			#mask = (mask.astype(np.float32) - minval) / (maxval - minval)
+
+			print('Text = {}.'.format(text))
+			if 'posix' == os.name:
+				cv2.imwrite('./text.png', img)
+				cv2.imwrite('./text_mask.png', mask)
+			else:
+				cv2.imshow('Text', img)
+				cv2.imshow('Text Mask', mask)
+				cv2.waitKey(0)
+
+		if step >= 3:
+			break
+		step += 1
+
+	cv2.destroyAllWindows()
+
+def text_alpha_matte_generator_test():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -200,19 +308,19 @@ def text_generator_test():
 
 	#--------------------
 	font_size = 32
-	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a random font color.
 	font_color = None  # Uses random font colors.
 	char_space_ratio = 1.2
 
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio, font_size)
-	text_line, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None)
+	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None)
 
 	#--------------------
 	# No background.
@@ -225,7 +333,7 @@ def text_generator_test():
 		#cv2.destroyAllWindows()
 
 	#--------------------
-	sceneTextGenerator = tg_util.MySceneTextGenerator(tg_util.IdentityTransformer())
+	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(tg_util.IdentityTransformer())
 
 	# Grayscale background.
 	bg = np.full_like(text_line, random.randrange(256), dtype=np.uint8)
@@ -245,7 +353,7 @@ def text_generator_test():
 
 	cv2.destroyAllWindows()
 
-def scene_text_generator_test():
+def scene_text_alpha_matte_generator_test():
 	if 'posix' == os.name:
 		system_font_dir_path = '/usr/share/fonts'
 		font_base_dir_path = '/home/sangwook/work/font'
@@ -262,33 +370,33 @@ def scene_text_generator_test():
 	handwriting_dict = None
 
 	#--------------------
-	#font_color = (random.randint(0, 255),) * 3  # Uses a random font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a random font color.
 	font_color = None  # Uses random font colors.
 
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
 	texts, text_alphas = list(), list()
 
 	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio=0.9, font_size=32)
-	text_line, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
 	#char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ', char_space_ratio=1.6, font_size=24)
 	char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLM', char_space_ratio=1.6, font_size=24)
-	text_line, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
 	#char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklmnopqrstuvwxyz', char_space_ratio=2.0, font_size=16)
 	char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklm', char_space_ratio=2.0, font_size=16)
-	text_line, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
@@ -297,7 +405,7 @@ def scene_text_generator_test():
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MySceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
 		sceneProvider = tg_util.MySceneProvider()
@@ -329,7 +437,7 @@ def scene_text_generator_test():
 
 		cv2.destroyAllWindows()
 
-def generate_simple_text_lines_test():
+def generate_alpha_matte_text_lines_test_1():
 	word_set = set()
 	word_set.add('abc')
 	word_set.add('defg')
@@ -361,8 +469,8 @@ def generate_simple_text_lines_test():
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
@@ -375,12 +483,13 @@ def generate_simple_text_lines_test():
 	bg_color = None  # Uses random colors.
 
 	batch_size = 4
-	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
 
 	#--------------------
 	step = 1
 	for text_list, scene_list, scene_text_mask_list in generator:
 		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
+			print('Text = {}.'.format(text))
 			if 'posix' == os.name:
 				cv2.imwrite('./scene.png', scene)
 				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
@@ -400,7 +509,7 @@ def generate_simple_text_lines_test():
 
 	cv2.destroyAllWindows()
 
-def generate_text_lines_test():
+def generate_alpha_matte_text_lines_test_2():
 	word_set = set()
 	word_set.add('abc')
 	word_set.add('defg')
@@ -429,12 +538,12 @@ def generate_text_lines_test():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
 	min_font_size, max_font_size = 15, 30
@@ -447,12 +556,13 @@ def generate_text_lines_test():
 	bg_color = None  # Uses random colors.
 
 	batch_size = 4
-	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
 
 	#--------------------
 	step = 1
 	for text_list, scene_list, scene_text_mask_list in generator:
 		for text, scene, scene_text_mask in zip(text_list, scene_list, scene_text_mask_list):
+			print('Text = {}.'.format(text))
 			if 'posix' == os.name:
 				cv2.imwrite('./scene.png', scene)
 				cv2.imwrite('./scene_text_mask.png', scene_text_mask)
@@ -483,7 +593,7 @@ def generate_text_lines_test():
 
 	cv2.destroyAllWindows()
 
-def generate_scene_texts_test():
+def generate_alpha_matte_scene_texts_test():
 	word_set = set()
 	word_set.add('abc')
 	word_set.add('defg')
@@ -512,19 +622,19 @@ def generate_scene_texts_test():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
 	if True:
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MySceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
 		sceneProvider = tg_util.MySceneProvider()
@@ -542,7 +652,7 @@ def generate_scene_texts_test():
 	font_color = None  # Uses random font colors.
 
 	batch_size = 4
-	generator = tg_util.generate_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, (min_text_count_per_image, max_text_count_per_image), (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color)
+	generator = tg_util.generate_alpha_matte_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, (min_text_count_per_image, max_text_count_per_image), (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color)
 
 	#--------------------
 	step = 1
@@ -622,7 +732,7 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			font_size = random.randint(min_font_size, max_font_size)
 			char_space_ratio = random.uniform(min_char_space_ratio, max_char_space_ratio)
 
-			#font_color = (random.randint(0, 255),) * 3  # Uses a random text color.
+			#font_color = (random.randrange(256),) * 3  # Uses a random text color.
 			font_color = None  # Uses random font colors.
 
 			num_chars_per_text = random.randint(min_char_count_per_text, max_char_count_per_text)
@@ -637,7 +747,7 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			text = ''.join(list(charset[random.randrange(charset_len)] for _ in range(num_chars_per_text)))
 
 			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio=char_space_ratio, font_size=font_size)
-			text_line_image, text_line_alpha = tg_util.MyTextGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+			text_line_image, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 
 			texts.append(text)
 			text_images.append(text_line_image)
@@ -728,19 +838,19 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyHangeulCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MyTextGenerator(characterAlphaMatteGenerator, characterTransformer, characterAlphaMattePositioner)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
 	if True:
 		textTransformer = tg_util.PerspectiveTransformer()
 	else:
 		textTransformer = tg_util.ProjectiveTransformer()
-	sceneTextGenerator = tg_util.MySceneTextGenerator(textTransformer)
+	sceneTextGenerator = tg_util.MyAlphaMatteSceneTextGenerator(textTransformer)
 
 	if True:
 		sceneProvider = tg_util.MySimpleSceneProvider()
@@ -809,8 +919,8 @@ def generate_single_letter_dataset():
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterAlphaMattePositioner = tg_util.MyCharacterAlphaMattePositioner()
-	textGenerator = tg_util.MySimplePrintedHangeulTextGenerator(characterTransformer, characterAlphaMattePositioner, font_list, handwriting_dict)
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
 
 	#--------------------
 	font_size = 64
@@ -824,7 +934,7 @@ def generate_single_letter_dataset():
 	bg_color = None  # Uses random colors.
 
 	batch_size = 1024
-	generator = tg_util.generate_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
 
 	#--------------------
 	num_texts = 10000
@@ -852,18 +962,22 @@ def main():
 	#generate_hangeul_font_list_test()
 
 	#--------------------
-	#text_generator_test()
-	#scene_text_generator_test()
+	#basic_printed_text_generator_test()
+
+	generate_basic_text_lines_test()
+
+	#--------------------
+	#text_alpha_matte_generator_test()
+	#scene_text_alpha_matte_generator_test()
+
+	#generate_alpha_matte_text_lines_test_1()
+	#generate_alpha_matte_text_lines_test_2()
+	#generate_alpha_matte_scene_texts_test()
 
 	#--------------------
 	# Application.
 
 	#generate_hangeul_synthetic_scene_text_dataset()
-
-	# Create a text generator.
-	#generate_simple_text_lines_test()
-	#generate_text_lines_test()
-	#generate_scene_texts_test()
 
 	#generate_single_letter_dataset()
 
