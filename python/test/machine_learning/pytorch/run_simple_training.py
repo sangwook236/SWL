@@ -147,11 +147,11 @@ class MyRunner(object):
 				loss.backward()
 				"""
 				# Gradient clipping.
-				max_norm = 5
-				torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm, norm_type=2)
+				max_gradient_norm = 5
+				torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=max_gradient_norm, norm_type=2)
 				#for p in model.parameters():
 				#	if p.grad is not None:
-				#		p.grad.data.clamp_(min=-max_norm, max=max_norm)
+				#		p.grad.data.clamp_(min=-max_gradient_norm, max=max_gradient_norm)
 				"""
 				# Update weights.
 				optimizer.step()

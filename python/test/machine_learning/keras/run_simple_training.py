@@ -15,6 +15,13 @@ import swl.machine_learning.util as swl_ml_util
 
 #--------------------------------------------------------------------
 
+def swish(x, beta=1):
+	return (x * tf.keras.backend.sigmoid(beta * x))
+tf.keras.utils.get_custom_objects().update({'swish': tf.keras.layers.Activation(swish)})
+#tf.keras.layers.Dense(256, activation='swish')
+
+#--------------------------------------------------------------------
+
 # REF [class] >> MyDataset in ${SWL_PYTHON_HOME}/test/machine_learning/tensorflow/run_simple_training.py.
 class MyDataset(object):
 	def __init__(self, image_height, image_width, image_channel, num_classes):

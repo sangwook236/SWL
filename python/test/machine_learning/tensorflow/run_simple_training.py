@@ -222,9 +222,7 @@ class MyRunner(object):
 				var_list = None #tf.trainable_variables()
 				# Method 1.
 				gradients = optimizer.compute_gradients(loss, var_list=var_list)
-				for i, (g, v) in enumerate(gradients):
-					if g is not None:
-						gradients[i] = (tf.clip_by_norm(g, max_gradient_norm), v)  # Clip gradients.
+				gradients = list(map(lambda gv: (tf.clip_by_norm(gv[0], clip_norm=max_gradient_norm), gv[1]), gradients))
 				train_op = optimizer.apply_gradients(gradients, global_step=global_step)
 				"""
 				# Method 2.
@@ -232,8 +230,8 @@ class MyRunner(object):
 				if var_list is None:
 					var_list = tf.trainable_variables()
 				gradients = tf.gradients(loss, var_list)
-				clipped_gradients, _ = tf.clip_by_global_norm(gradients, max_gradient_norm)  # Clip gradients.
-				train_op = optimizer.apply_gradients(zip(clipped_gradients, var_list), global_step=global_step)
+				gradients, _ = tf.clip_by_global_norm(gradients, clip_norm=max_gradient_norm)  # Clip gradients.
+				train_op = optimizer.apply_gradients(zip(gradients, var_list), global_step=global_step)
 				"""
 
 			# Create a saver.
