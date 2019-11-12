@@ -159,7 +159,7 @@ def RunTimeTextLineDataset_test():
 		dataset.visualize(train_generator, num_examples=10)
 		dataset.visualize(test_generator, num_examples=10)
 
-def HangeulJamoRunTimeTextLineDataset_test():
+def RunTimeHangeulJamoTextLineDataset_test():
 	print('Start loading a Korean dictionary...')
 	start_time = time.time()
 	korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
@@ -185,7 +185,7 @@ def HangeulJamoRunTimeTextLineDataset_test():
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(korean_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -198,7 +198,7 @@ def HangeulJamoRunTimeTextLineDataset_test():
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(all_word_set, image_height, image_width, image_channel)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -224,16 +224,16 @@ def JsonBasedTextLineDataset_test():
 	dataset.visualize(train_generator, num_examples=10)
 	dataset.visualize(test_generator, num_examples=10)
 
-def HangeulJamoJsonBasedTextLineDataset_test():
+def JsonBasedHangeulJamoTextLineDataset_test():
 	# REF [function] >> generate_text_datasets() in ${DataAnalysis_HOME}/app/text_recognition/generate_text_dataset.py.
 	train_json_filepath = './text_train_dataset/text_dataset.json'
 	test_json_filepath = './text_test_dataset/text_dataset.json'
 
-	print('Start creating a HangeulJamoJsonBasedTextLineDataset...')
+	print('Start creating a JsonBasedHangeulJamoTextLineDataset...')
 	start_time = time.time()
 	image_height, image_width, image_channel = 64, 640, 1
-	dataset = text_line_data.HangeulJamoJsonBasedTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
-	print('End creating a HangeulJamoJsonBasedTextLineDataset: {} secs.'.format(time.time() - start_time))
+	dataset = text_line_data.JsonBasedHangeulJamoTextLineDataset(train_json_filepath, test_json_filepath, image_height, image_width, image_channel)
+	print('End creating a JsonBasedHangeulJamoTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32)
 	test_generator = dataset.create_test_batch_generator(batch_size=32)
@@ -311,10 +311,10 @@ def main():
 
 	#--------------------
 	#RunTimeTextLineDataset_test()
-	#HangeulJamoRunTimeTextLineDataset_test()
+	#RunTimeHangeulJamoTextLineDataset_test()
 
 	#JsonBasedTextLineDataset_test()
-	#HangeulJamoJsonBasedTextLineDataset_test()
+	#JsonBasedHangeulJamoTextLineDataset_test()
 
 	#--------------------
 	RunTimePairedCorruptedTextLineDataset_test()

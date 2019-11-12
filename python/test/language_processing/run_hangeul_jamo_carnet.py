@@ -405,7 +405,7 @@ class MyRunner(object):
 
 			print('[SWL] Info: Start creating a Hangeul jamo dataset...')
 			start_time = time.time()
-			self._dataset = text_line_data.HangeulJamoRunTimeTextLineDataset(set(korean_words), image_height, image_width, image_channel, max_label_len=max_label_len)
+			self._dataset = text_line_data.RunTimeHangeulJamoTextLineDataset(set(korean_words), image_height, image_width, image_channel, max_label_len=max_label_len)
 			print('[SWL] Info: End creating a Hangeul jamo dataset: {} secs.'.format(time.time() - start_time))
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
