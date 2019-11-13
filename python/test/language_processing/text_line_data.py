@@ -8,10 +8,11 @@ import hangeul_util as hg_util
 #--------------------------------------------------------------------
 
 class TextLineDatasetBase(abc.ABC):
-	def __init__(self, labels=None, default_value=-1):
+	def __init__(self, labels=None, use_NWHC=True, default_value=-1):
 		super().__init__()
 
 		self._labels = labels
+		self._use_NWHC = use_NWHC
 		self._default_value = default_value
 
 	@property
@@ -124,7 +125,7 @@ class TextLineDatasetBase(abc.ABC):
 			images.append(img)
 		for fpath in error_filepaths:
 			image_filepaths.remove(fpath)
-		images = self._transform_images(np.array(images), use_NWHC=True)
+		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
 
 		images, _ = self.preprocess(images, None)
 		return images, image_filepaths
@@ -144,8 +145,8 @@ class TextLineDatasetBase(abc.ABC):
 #--------------------------------------------------------------------
 
 class RunTimeTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
-		super().__init__(labels=None, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -258,8 +259,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
-			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 
 			scenes, _ = self.preprocess(scenes, None)
 			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
@@ -271,8 +272,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 
 # This class is independent of language.
 class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 
@@ -315,8 +316,8 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, default_value)
 
 	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
 		for step, (texts, scenes, _) in enumerate(tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
@@ -324,8 +325,8 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
-			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 
 			scenes, _ = self.preprocess(scenes, None)
 			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
@@ -337,8 +338,8 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 
@@ -392,8 +393,8 @@ class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -493,8 +494,8 @@ class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
-	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1):
-		super().__init__(labels=None, default_value=default_value)
+	def __init__(self, image_height, image_width, image_channel, num_classes=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -656,7 +657,7 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 				label_list.append(datum['char_id'])
 			else:  # Unicode -> char ID.
 				label_list.append(''.join(list(chr(id) for id in datum['char_id'])))
-		images = self._transform_images(images = np.array(images), use_NWHC=True)
+		images = self._transform_images(images = np.array(images), use_NWHC=self._use_NWHC)
 
 		images, _ = self.preprocess(images, None)
 		return images, label_list, charset
@@ -664,8 +665,8 @@ class JsonBasedTextLineDatasetBase(TextLineDatasetBase):
 # REF [function] >> generate_simple_text_lines_test() and generate_text_lines_test() in text_generation_util_test.py.
 # This class is independent of language.
 class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=default_value)
+	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, num_classes=0, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		print('[SWL] Info: Start loading dataset...')
@@ -696,8 +697,8 @@ class JsonBasedTextLineDataset(JsonBasedTextLineDatasetBase):
 
 # This class is independent of language.
 class JsonBasedHangeulJamoTextLineDataset(JsonBasedTextLineDatasetBase):
-	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, default_value=-1):
-		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=default_value)
+	def __init__(self, train_json_filepath, test_json_filepath, image_height, image_width, image_channel, use_NWHC=True, default_value=-1):
+		super().__init__(image_height, image_width, image_channel, num_classes=0, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOJC = '<SOJC>'  # All Hangeul jamo strings will start with the Start-Of-Jamo-Character token.
@@ -784,8 +785,8 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 	"""A base dataset for paired text lines, input & output text line images.
 	"""
 
-	def __init__(self, labels=None, default_value=-1):
-		super().__init__(labels, default_value=default_value)
+	def __init__(self, labels=None, use_NWHC=True, default_value=-1):
+		super().__init__(labels, use_NWHC=use_NWHC, default_value=default_value)
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -920,8 +921,8 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 #--------------------------------------------------------------------
 
 class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, default_value=-1):
-		super().__init__(labels=None, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
@@ -940,8 +941,8 @@ class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, default_value=-1):
-		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, default_value=default_value)
+	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
 		#self._SOS = '<SOS>'  # All strings will start with the Start-Of-String token.
@@ -998,7 +999,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 				#),
 				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 				#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(15.0, 45.0), sigma=(3.0, 5.0)),  # Move pixels locally around (with random strengths).
+				iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
 			])),
 			iaa.SomeOf((1, 2), [
 				iaa.OneOf([
@@ -1027,8 +1028,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
 				#]),
 			], random_order=True)
-		#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
-	])
+		])
 
 	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
 		for step, (texts, scenes, scene_text_masks) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
@@ -1039,9 +1039,9 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
 
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=True)
-			scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=True)
-			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=True)
+			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			scenes, _ = self.preprocess(scenes, None)
