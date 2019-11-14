@@ -28,7 +28,7 @@ from keras.layers import Input, Dense, LSTM, Bidirectional
 from keras import optimizers
 from keras import backend as K
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Generate a toy problem.
 # REF [site] >> https://talbaumel.github.io/attention/
 
@@ -151,7 +151,7 @@ val_input_data = keras.utils.to_categorical(val_input_data, VOCAB_SIZE).reshape(
 val_output_data = keras.utils.to_categorical(val_output_data, VOCAB_SIZE).reshape(val_output_data.shape + (-1,))
 val_output_data_ahead_of_one_timestep = keras.utils.to_categorical(val_output_data_ahead_of_one_timestep, VOCAB_SIZE).reshape(val_output_data_ahead_of_one_timestep.shape + (-1,))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def display_history(history):
 	# List all data in history.
@@ -221,7 +221,7 @@ def decode_sequence(encoder_model, decoder_model, input_seq):
 
 	return decoded_sentence
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Simple RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
@@ -277,7 +277,7 @@ prediction = simple_rnn_model.predict(test_datum)
 predicted_seq = decode_predicted_sequence(prediction)
 print('Predicted sequence of {} = {}'.format(input_seq, predicted_seq))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Bidirectional RNN.
 # REF [site] >> https://talbaumel.github.io/attention/
 
@@ -336,7 +336,7 @@ prediction = bi_rnn_model.predict(test_datum)
 predicted_seq = decode_predicted_sequence(prediction)
 print('Predicted sequence of {} = {}'.format(input_seq, predicted_seq))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Encoder-decoder model.
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 # REF [site] >> https://talbaumel.github.io/attention/
@@ -412,7 +412,7 @@ input_seq = 'abc'
 decoded_seq = decode_sequence(encdec_inf_encoder_model, encdec_inf_decoder_model, preprocess_string(input_seq))
 print('Predicted sequence of {} = {}'.format(input_seq, decoded_seq))
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Attention model.
 # REF [site] >> https://talbaumel.github.io/attention/
 

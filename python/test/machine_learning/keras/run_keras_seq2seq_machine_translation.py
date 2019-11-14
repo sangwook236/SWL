@@ -1,6 +1,6 @@
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import os, sys
 if 'posix' == os.name:
@@ -10,14 +10,14 @@ else:
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import numpy as np
 import keras
 from keras.models import Model
 from keras.layers import Input, LSTM, Dense
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Parameters.
 
 batch_size = 64  # Batch size for training.
@@ -25,7 +25,7 @@ num_epochs = 100  # Number of epochs to train for.
 latent_dim = 256  # Latent dimensionality of the encoding space.
 num_samples = 10000  # Number of samples to train on.
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare dataset.
 
 if 'posix' == os.name:
@@ -88,7 +88,7 @@ for i, (input_text, target_text) in enumerate(zip(input_texts, target_texts)):
 			# decoder_target_data will be ahead by one timestep and will not include the start character.
 			decoder_target_data[i, t - 1, target_token_index[char]] = 1.0
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Training.
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 
@@ -122,7 +122,7 @@ model.fit([encoder_input_data, decoder_input_data], decoder_target_data,
 # Save model.
 model.save('seq2seq_machine_translation.h5')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Inference (sampling).
 # REF [site] >> https://blog.keras.io/a-ten-minute-introduction-to-sequence-to-sequence-learning-in-keras.html
 

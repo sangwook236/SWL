@@ -5,7 +5,7 @@
 # REF [paper] >> "Effective Approaches to Attention-based Neural Machine Translation", arXiv 2015.
 # REF [paper] >> "Show, Attend and Tell: Neural Image Caption Generation with Visual Attention", ICML 2015.
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import os, sys
 if 'posix' == os.name:
@@ -15,7 +15,7 @@ else:
 
 sys.path.append(swl_python_home_dir_path + '/src')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import numpy as np
 import keras

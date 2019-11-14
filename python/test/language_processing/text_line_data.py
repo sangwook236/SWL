@@ -148,6 +148,8 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(labels=None, use_NWHC=use_NWHC, default_value=default_value)
 
+		self._textGenerator = None
+
 		self._image_height, self._image_width, self._image_channel = image_height, image_width, image_channel
 		self._num_classes = num_classes
 		if max_label_len > 0:
@@ -294,12 +296,12 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		#--------------------
 		if 'posix' == os.name:
 			system_font_dir_path = '/usr/share/fonts'
-			#font_dir_path = '/home/sangwook/work/font/eng'
-			font_dir_path = '/home/sangwook/work/font/kor'
+			font_base_dir_path = '/home/sangwook/work/font'
 		else:
 			system_font_dir_path = 'C:/Windows/Fonts'
-			#font_dir_path = 'D:/work/font/eng'
-			font_dir_path = 'D:/work/font/kor'
+			font_base_dir_path = 'D:/work/font'
+		#font_dir_path = font_base_dir_path + '/eng'
+		font_dir_path = font_base_dir_path + '/kor'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -360,12 +362,12 @@ class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		#--------------------
 		if 'posix' == os.name:
 			system_font_dir_path = '/usr/share/fonts'
-			#font_dir_path = '/home/sangwook/work/font/eng'
-			font_dir_path = '/home/sangwook/work/font/kor'
+			font_base_dir_path = '/home/sangwook/work/font'
 		else:
 			system_font_dir_path = 'C:/Windows/Fonts'
-			#font_dir_path = 'D:/work/font/eng'
-			font_dir_path = 'D:/work/font/kor'
+			font_base_dir_path = 'D:/work/font'
+		#font_dir_path = font_base_dir_path + '/eng'
+		font_dir_path = font_base_dir_path + '/kor'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -419,12 +421,12 @@ class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		#--------------------
 		if 'posix' == os.name:
 			system_font_dir_path = '/usr/share/fonts'
-			#font_dir_path = '/home/sangwook/work/font/eng'
-			font_dir_path = '/home/sangwook/work/font/kor'
+			font_base_dir_path = '/home/sangwook/work/font'
 		else:
 			system_font_dir_path = 'C:/Windows/Fonts'
-			#font_dir_path = 'D:/work/font/eng'
-			font_dir_path = 'D:/work/font/kor'
+			font_base_dir_path = 'D:/work/font'
+		#font_dir_path = font_base_dir_path + '/eng'
+		font_dir_path = font_base_dir_path + '/kor'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -788,6 +790,8 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 	def __init__(self, labels=None, use_NWHC=True, default_value=-1):
 		super().__init__(labels, use_NWHC=use_NWHC, default_value=default_value)
 
+		self._textGenerator = None
+
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
 		if inputs is not None:
@@ -823,7 +827,7 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 			#outputs = tf.keras.utils.to_categorical(outputs, num_classes, np.uint16)
 			pass
 		"""
-		inputs = (inputs.astype(np.float32) / 255.0) * 2.0 - 1.0  # Normalization.
+		inputs = inputs.astype(np.float32) / 255.0  # Normalization.
 
 		return inputs, outputs
 
@@ -961,12 +965,12 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		#--------------------
 		if 'posix' == os.name:
 			system_font_dir_path = '/usr/share/fonts'
-			#font_dir_path = '/home/sangwook/work/font/eng'
-			font_dir_path = '/home/sangwook/work/font/kor'
+			font_base_dir_path = '/home/sangwook/work/font'
 		else:
 			system_font_dir_path = 'C:/Windows/Fonts'
-			#font_dir_path = 'D:/work/font/eng'
-			font_dir_path = 'D:/work/font/kor'
+			font_base_dir_path = 'D:/work/font'
+		#font_dir_path = font_base_dir_path + '/eng'
+		font_dir_path = font_base_dir_path + '/kor'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -1034,21 +1038,20 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		for step, (texts, scenes, scene_text_masks) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
 			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt(np.expand_dims(image, axis=0)))), scenes))
 
-			#scenes = list(map(lambda image: self.resize(image), scenes))
-			#scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
-			scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
+			#clean_scenes = list(map(lambda image: self.resize(image), scenes))
+			#clean_scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
+			clean_scenes = list(map(lambda image: self.resize(image), scene_text_masks))
+			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
 
-			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
-			scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
-			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=True)
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=True)
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
-			scenes, _ = self.preprocess(scenes, None)
-			#scenes, _ = self.preprocess(scene_text_masks, None)
+			clean_scenes, _ = self.preprocess(clean_scenes, None)
 			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
-			yield (corrupted_scenes, scenes, texts, texts_int), batch_size
+			yield (corrupted_scenes, clean_scenes, texts, texts_int), batch_size
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
 

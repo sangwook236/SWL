@@ -2,7 +2,7 @@
 # REF [paper] >> "The One Hundred Layers Tiramisu: Fully Convolutional DenseNets for Semantic Segmentation", arXiv 2016.
 # REF [site] >> https://github.com/titu1994/Fully-Connected-DenseNets-Semantic-Segmentation
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import os
 if 'posix' == os.name:
@@ -14,7 +14,7 @@ os.chdir(swl_python_home_dir_path + '/test/machine_learning/keras')
 import sys
 sys.path.append('../../../src')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import numpy as np
 import keras
@@ -24,7 +24,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.datasets import cifar10
 from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 # REF [site] >> https://keras.io/preprocessing/image/
 
@@ -56,8 +56,8 @@ from swl.machine_learning.keras.preprocessing import ImageDataGeneratorWithCrop
 #	validation_steps=800)
 
 
-#%%------------------------------------------------------------------
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Example 1.
 #	Labels are given to each image.
 # REF [fie] >> ${KERAS_HOME}/examples/cifar10_cnn.py
@@ -149,8 +149,8 @@ model.fit_generator(
 	validation_data=(x_test, y_test))
 
 
-#%%------------------------------------------------------------------
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Example 2.
 #	Images are only given.
 #	Labels are given to each image.
@@ -277,8 +277,8 @@ model.fit_generator(
 	epochs=num_epochs)
 
 
-#%%------------------------------------------------------------------
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Example 3.
 #	The pair of images & label(mask) images is given.
 #	Labels are given to each pixel.

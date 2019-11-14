@@ -5,7 +5,7 @@
 # Path to libcudnn.so.
 #export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 import os, sys
 if 'posix' == os.name:
@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 from swl.machine_learning.machine_vision import preprocess_camvid_dataset, load_camvid_dataset
 #from swl.machine_vision.util import load_images_by_pil, load_labels_by_pil
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 config = tf.ConfigProto()
 #config.allow_soft_placement = True
@@ -47,7 +47,7 @@ K.set_learning_phase(0)
 
 #keras_backend = 'tf'
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare directories.
 
 output_dir_path = './result/fc_densenet_using_camvid_loader'
@@ -90,7 +90,7 @@ model_weight_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_weigh
 #model_filepath = model_dir_path + '/fc_densenet_using_camvid_loader_epoch{}.hdf5'  # For a full model.
 model_filepath = model_checkpoint_best_filepath
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare dataset.
 
 if 'posix' == os.name:
@@ -133,7 +133,7 @@ train_images, train_labels = preprocess_camvid_dataset(train_images, train_label
 val_images, val_labels = preprocess_camvid_dataset(val_images, val_labels, num_classes)
 test_images, test_labels = preprocess_camvid_dataset(test_images, test_labels, num_classes)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Parameters.
 
 np.random.seed(7)
@@ -151,7 +151,7 @@ num_epochs = 2000  # Number of times to iterate over training data.
 
 shuffle = False
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Create a FC-DenseNet model.
 
 print('Create a FC-DenseNet model.')
@@ -162,7 +162,7 @@ with tf.name_scope('fc-densenet'):
 # Display the model summary.
 #fc_densenet_model.summary()
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Prepare training.
 
 class_weighting = [
@@ -211,7 +211,7 @@ optimizer = optimizers.RMSprop(lr=1.0e-2, decay=1.0e-8, rho=0.9, epsilon=1.0e-8)
 #optimizer = optimizers.Adamax(lr=0.002, decay=0.0, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 #optimizer = optimizers.Nadam(lr=0.002, schedule_decay=0.004, beta_1=0.9, beta_2=0.999, epsilon=1.0e-8)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 def display_history(history):
 	# List all data in history.
@@ -240,7 +240,7 @@ def display_history(history):
 	fig.savefig(output_dir_path + '/model_loss.png')
 	plt.close(fig)
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Train the FC-DenseNet model.
 
 TRAINING_MODE = 0  # Start training a model.
@@ -295,7 +295,7 @@ if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 if 0 == TRAINING_MODE or 1 == TRAINING_MODE:
 	print('End training...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Evaluate the FC-DenseNet model.
 
 print('Start testing...')
@@ -305,7 +305,7 @@ print('Test loss = {}, test accuracy = {}'.format(test_loss, test_accuracy))
 
 print('End testing...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Predict.
 
 print('Start prediction...')
@@ -320,7 +320,7 @@ for idx in range(predictions.shape[0]):
 
 print('End prediction...')
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 # Display.
 
 idx = 0
