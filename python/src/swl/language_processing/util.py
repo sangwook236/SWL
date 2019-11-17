@@ -66,13 +66,19 @@ def compute_text_size(text, font_type, font_index, font_size):
 
 	return text_size[0] + font_offset[0], text_size[1] + font_offset[1]
 
-def generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None):
+def generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None, mode='RGB', mask=False, mask_mode='1'):
 	if char_space_ratio is None or 1 == char_space_ratio:
-		return generate_simple_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
+		if mask:
+			return generate_simple_text_image_and_mask(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border, mode, mask_mode)
+		else:
+			return generate_simple_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border, mode)
 	else:
-		return generate_per_character_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border, char_space_ratio)
+		if mask:
+			return generate_per_character_text_image_and_mask(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border, char_space_ratio, mode, mask_mode)
+		else:
+			return generate_per_character_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border, char_space_ratio, mode)
 
-def generate_simple_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False):
+def generate_simple_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='RGB'):
 	if image_size is None:
 		image_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
 	if text_offset is None:
@@ -86,16 +92,19 @@ def generate_simple_text_image(text, font_type, font_index, font_size, font_colo
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
-	img = Image.new(mode='RGB', size=image_size, color=bg_color)
+	img = Image.new(mode=mode, size=image_size, color=bg_color)
+	#img = Image.new(mode='RGB', size=image_size, color=bg_color)
 	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
+	#img = Image.new(mode='L', size=image_size, color=bg_color)
+	#img = Image.new(mode='1', size=image_size, color=bg_color)
 	draw = ImageDraw.Draw(img)
 
 	# Draws text.
 	draw.text(xy=text_offset, text=text, font=font, fill=font_color)
 
 	if draw_text_border or crop_text_area:
-		text_size = font.getsize(text)  # (width, height).
-		#text_size = draw.textsize(text, font=font)  # (width, height).
+		#text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
+		text_size = draw.textsize(text, font=font)  # (width, height).
 		font_offset = font.getoffset(text)  # (x, y).
 		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
 
@@ -109,10 +118,57 @@ def generate_simple_text_image(text, font_type, font_index, font_size, font_colo
 
 	return img
 
-def generate_per_character_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None):
-	num_chars = len(text)
+def generate_simple_text_image_and_mask(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, mode='RGB', mask_mode='1'):
 	if image_size is None:
-		image_size = (math.ceil(num_chars * font_size * char_space_ratio * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
+		image_size = (math.ceil(len(text) * font_size * 1.1), math.ceil((text.count('\n') + 1) * font_size * 1.1))
+	if text_offset is None:
+		text_offset = (0, 0)
+	if font_color is None:
+		#font_color = (random.randrange(256),) * 3  # Uses a random grayscale font color.
+		font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB font color.
+	if bg_color is None:
+		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random RGB background color.
+
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+	img = Image.new(mode=mode, size=image_size, color=bg_color)
+	#img = Image.new(mode='RGB', size=image_size, color=bg_color)
+	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
+	#img = Image.new(mode='L', size=image_size, color=bg_color)
+	#img = Image.new(mode='1', size=image_size, color=bg_color)
+	draw_img = ImageDraw.Draw(img)
+
+	msk = Image.new(mode=mask_mode, size=image_size, color=0)
+	#msk = Image.new(mode='1', size=image_size, color=0)  # {0, 1}, bool.
+	#msk = Image.new(mode='L', size=image_size, color=0)  # [0, 255], uint8.
+	draw_msk = ImageDraw.Draw(msk)
+
+	# Draws text.
+	draw_img.text(xy=text_offset, text=text, font=font, fill=font_color)
+	draw_msk.text(xy=text_offset, text=text, font=font, fill=255)
+
+	if draw_text_border or crop_text_area:
+		#text_size = font.getsize(text)  # (width, height). This is erroneous for multiline text.
+		text_size = draw_img.textsize(text, font=font)  # (width, height).
+		font_offset = font.getoffset(text)  # (x, y).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+
+		# Draws a rectangle surrounding text.
+		if draw_text_border:
+			draw_img.rectangle(text_rect, outline='red', width=5)
+
+		# Crops text area.
+		if crop_text_area:
+			img = img.crop(text_rect)
+			msk = msk.crop(text_rect)
+
+	return img, msk
+
+def generate_per_character_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None, mode='RGB'):
+	num_chars, num_newlines = len(text), text.count('\n')
+	if image_size is None:
+		image_size = (math.ceil(num_chars * font_size * char_space_ratio * 1.1), math.ceil((num_newlines + 1) * font_size * 1.1))
 	if text_offset is None:
 		text_offset = (0, 0)
 	if bg_color is None:
@@ -121,32 +177,45 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
 
-	img = Image.new(mode='RGB', size=image_size, color=bg_color)
+	img = Image.new(mode=mode, size=image_size, color=bg_color)
+	#img = Image.new(mode='RGB', size=image_size, color=bg_color)
 	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
+	#img = Image.new(mode='L', size=image_size, color=bg_color)
+	#img = Image.new(mode='1', size=image_size, color=bg_color)
 	draw = ImageDraw.Draw(img)
 
 	# Draws text.
 	char_offset = list(text_offset)
 	char_space = math.ceil(font_size * char_space_ratio)
 	if font_color is None:
-		for idx, ch in enumerate(text):
-			char_offset[0] = text_offset[0] + char_space * idx
+		for ch in text:
+			if '\n' == ch:
+				char_offset[0] = text_offset[0]
+				char_offset[1] += font_size
+				continue
 			draw.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(3)))  # Random font color.
+			char_offset[0] += char_space
 	#elif len(font_colors) == num_chars:
 	#	for idx, (ch, fcolor) in enumerate(zip(text, font_colors)):
 	#		char_offset[0] = text_offset[0] + char_space * idx
 	#		draw.text(xy=char_offset, text=ch, font=font, fill=fcolor)
 	else:
-		for idx, ch in enumerate(text):
-			char_offset[0] = text_offset[0] + char_space * idx
+		for ch in text:
+			if '\n' == ch:
+				char_offset[0] = text_offset[0]
+				char_offset[1] += font_size
+				continue
 			draw.text(xy=char_offset, text=ch, font=font, fill=font_color)
+			char_offset[0] += char_space
 
 	if draw_text_border or crop_text_area:
-		text_size = list(font.getsize(text))  # (width, height).
-		#text_size = draw.textsize(text, font=font)  # (width, height).
+		#text_size = list(font.getsize(text))  # (width, height). This is erroneous for multiline text.
+		text_size = list(draw.textsize(text, font=font))  # (width, height).
 		if num_chars > 1:
-			#text_size[0] = char_space * (num_chars - 1) + font_size
-			text_size[0] = char_space * (num_chars - 1) + font.getsize(text[-1])[0]
+			max_chars_in_line = functools.reduce(lambda ll, line: max(ll, len(line)), text.splitlines(), 0)
+			#text_size[0] = char_space * (max_chars_in_line - 1) + font_size
+			text_size[0] = char_space * (max_chars_in_line - 1) + font.getsize(text[-1])[0]
+			text_size[1] = (num_newlines + 1) * font_size
 		font_offset = font.getoffset(text)  # (x, y).
 		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
 
@@ -159,6 +228,79 @@ def generate_per_character_text_image(text, font_type, font_index, font_size, fo
 			img = img.crop(text_rect)
 
 	return img
+
+def generate_per_character_text_image_and_mask(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=None, mode='RGB', mask_mode='1'):
+	num_chars, num_newlines = len(text), text.count('\n')
+	if image_size is None:
+		image_size = (math.ceil(num_chars * font_size * char_space_ratio * 1.1), math.ceil((num_newlines + 1) * font_size * 1.1))
+	if text_offset is None:
+		text_offset = (0, 0)
+	if bg_color is None:
+		#bg_color = (random.randrange(256),) * 3  # Uses a random grayscale background color.
+		bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a random background color.
+
+	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)
+
+	img = Image.new(mode=mode, size=image_size, color=bg_color)
+	#img = Image.new(mode='RGB', size=image_size, color=bg_color)
+	#img = Image.new(mode='RGBA', size=image_size, color=bg_color)
+	#img = Image.new(mode='L', size=image_size, color=bg_color)
+	#img = Image.new(mode='1', size=image_size, color=bg_color)
+	draw_img = ImageDraw.Draw(img)
+
+	msk = Image.new(mode=mask_mode, size=image_size, color=0)
+	#msk = Image.new(mode='1', size=image_size, color=0)  # {0, 1}, bool.
+	#msk = Image.new(mode='L', size=image_size, color=0)  # [0, 255], uint8.
+	draw_msk = ImageDraw.Draw(msk)
+
+	# Draws text.
+	char_offset = list(text_offset)
+	char_space = math.ceil(font_size * char_space_ratio)
+	if font_color is None:
+		for ch in text:
+			if '\n' == ch:
+				char_offset[0] = text_offset[0]
+				char_offset[1] += font_size
+				continue
+			draw_img.text(xy=char_offset, text=ch, font=font, fill=tuple(random.randrange(256) for _ in range(3)))  # Random font color.
+			draw_msk.text(xy=char_offset, text=ch, font=font, fill=255)
+			char_offset[0] += char_space
+	#elif len(font_colors) == num_chars:
+	#	for idx, (ch, fcolor) in enumerate(zip(text, font_colors)):
+	#		char_offset[0] = text_offset[0] + char_space * idx
+	#		draw_img.text(xy=char_offset, text=ch, font=font, fill=fcolor)
+	#		draw_msk.text(xy=char_offset, text=ch, font=font, fill=255)
+	else:
+		for ch in text:
+			if '\n' == ch:
+				char_offset[0] = text_offset[0]
+				char_offset[1] += font_size
+				continue
+			draw_img.text(xy=char_offset, text=ch, font=font, fill=font_color)
+			draw_msk.text(xy=char_offset, text=ch, font=font, fill=255)
+			char_offset[0] += char_space
+
+	if draw_text_border or crop_text_area:
+		#text_size = list(font.getsize(text))  # (width, height). This is erroneous for multiline text.
+		text_size = list(draw_img.textsize(text, font=font))  # (width, height).
+		if num_chars > 1:
+			max_chars_in_line = functools.reduce(lambda ll, line: max(ll, len(line)), text.splitlines(), 0)
+			#text_size[0] = char_space * (max_chars_in_line - 1) + font_size
+			text_size[0] = char_space * (max_chars_in_line - 1) + font.getsize(text[-1])[0]
+			text_size[1] = (num_newlines + 1) * font_size
+		font_offset = font.getoffset(text)  # (x, y).
+		text_rect = (text_offset[0], text_offset[1], text_offset[0] + text_size[0] + font_offset[0], text_offset[1] + text_size[1] + font_offset[1])
+
+		# Draws a rectangle surrounding text.
+		if draw_text_border:
+			draw_img.rectangle(text_rect, outline='red', width=5)
+
+		# Crops text area.
+		if crop_text_area:
+			img = img.crop(text_rect)
+			msk = msk.crop(text_rect)
+
+	return img, msk
 
 def draw_text_on_image(img, text, font_type, font_index, font_size, font_color, text_offset=(0, 0), rotation_angle=None):
 	font = ImageFont.truetype(font=font_type, size=font_size, index=font_index)

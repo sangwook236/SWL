@@ -128,9 +128,13 @@ def generate_font_list_test():
 			#image_size = (math.ceil(font_size * 1.1) * len(text), math.ceil(font_size * 1.1))
 			image_size = None
 			#font_color = (255, 255, 255)
-			font_color = None
+			#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+			#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+			font_color = None  # Uses a random font color.
 			#bg_color = (0, 0, 0)
-			bg_color = None
+			#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+			#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+			bg_color = None  # Uses a random background color.
 			alpha = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
 
 			cv2.imshow('Text', np.array(alpha))
@@ -172,9 +176,13 @@ def generate_hangeul_font_list_test():
 			#image_size = (math.ceil(font_size * 1.1) * len(text), math.ceil(font_size * 1.1))
 			image_size = None
 			#font_color = (255, 255, 255)
-			font_color = None
+			#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+			#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+			font_color = None  # Uses a random font color.
 			#bg_color = (0, 0, 0)
-			bg_color = None
+			#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+			#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+			bg_color = None  # Uses a random background color.
 			alpha = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, text_offset, crop_text_area, draw_text_border)
 
 			cv2.imshow('Text', np.array(alpha))
@@ -198,27 +206,24 @@ def basic_printed_text_generator_test():
 
 	#--------------------
 	font_size = 32
-	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-	font_color = None  # Uses a random font color.
-	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-	bg_color = None  # Uses a random background color.
 	char_space_ratio = 0.5
-	#char_space_ratio = None  # Uses default character space.
 
-	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+	#textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (font_size, font_size), None)
+	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (font_size, font_size), (char_space_ratio, char_space_ratio))
 
 	#text = '가나다라마바사아자차카타파하'
 	text = 'abcdefghijklmNOPQRSTUVWXYZ'
-	text_line, font_id = textGenerator(text, font_size, font_color, bg_color, char_space_ratio, font_id=None)
+	text_line, text_mask = textGenerator(text)
 
 	#--------------------
 	# No background.
+	text_mask[text_mask > 0] = 255
 	if 'posix' == os.name:
 		cv2.imwrite('./text_line.png', text_line)
+		cv2.imwrite('./text_mask.png', text_mask)
 	else:
-		cv2.imshow('Text line', text_line)
+		cv2.imshow('Text Line', text_line)
+		cv2.imshow('Text Mask', text_mask)
 		cv2.waitKey(0)
 
 	cv2.destroyAllWindows()
@@ -250,30 +255,20 @@ def generate_basic_text_lines_test():
 	font_list = tg_util.generate_hangeul_font_list(font_filepaths)
 
 	#--------------------
-	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
-
-	#--------------------
 	min_font_size, max_font_size = 15, 30
 	min_char_space_ratio, max_char_space_ratio = 0.2, 1.5
 
-	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-	font_color = None  # Uses a random font color.
-	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-	bg_color = None  # Uses a random background color.
+	#textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
+	textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 
 	batch_size = 4
-	generator = tg_util.generate_basic_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = textGenerator.create_generator(word_set, batch_size)
 
 	#--------------------
 	step = 1
 	for text_list, image_list, mask_list in generator:
 		for text, img, mask in zip(text_list, image_list, mask_list):
-			#mask[mask > 15] = 255
-			#mask[mask <= 15] = 0
-			#minval, maxval = np.min(mask), np.max(mask)
-			#mask = (mask.astype(np.float32) - minval) / (maxval - minval)
+			mask[mask > 0] = 255
 
 			print('Text = {}.'.format(text))
 			if 'posix' == os.name:
@@ -308,19 +303,23 @@ def text_alpha_matte_generator_test():
 
 	#--------------------
 	font_size = 32
-	#font_color = (random.randrange(256),) * 3  # Uses a random font color.
-	font_color = None  # Uses random font colors.
 	char_space_ratio = 1.2
 
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (font_size, font_size), (char_space_ratio, char_space_ratio))
 
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio, font_size)
-	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None)
+	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('가나다라마바사아자차카타파하')
+	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=None)
 
 	#--------------------
 	# No background.
@@ -370,33 +369,38 @@ def scene_text_alpha_matte_generator_test():
 	handwriting_dict = None
 
 	#--------------------
-	#font_color = (random.randrange(256),) * 3  # Uses a random font color.
-	font_color = None  # Uses random font colors.
-
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+
 	texts, text_alphas = list(), list()
 
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('가나다라마바사아자차카타파하', char_space_ratio=0.9, font_size=32)
-	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(32, 32), char_space_ratio_interval=(0.9, 0.9))
+	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('가나다라마바사아자차카타파하')
+	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	#char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ', char_space_ratio=1.6, font_size=24)
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('ABCDEFGHIJKLM', char_space_ratio=1.6, font_size=24)
-	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(24, 24), char_space_ratio_interval=(1.6, 1.6))
+	#char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
+	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('ABCDEFGHIJKLM')
+	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
-	#char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklmnopqrstuvwxyz', char_space_ratio=2.0, font_size=16)
-	char_alpha_list, char_alpha_coordinate_list = textGenerator('abcdefghijklm', char_space_ratio=2.0, font_size=16)
-	text_line, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(16, 16), char_space_ratio_interval=(2.0, 2.0))
+	#char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('abcdefghijklmnopqrstuvwxyz')
+	char_alpha_list, char_alpha_coordinate_list = textAlphaMatteGenerator('abcdefghijklm')
+	text_line, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 	texts.append(text_line)
 	text_alphas.append(text_line_alpha)
 
@@ -466,24 +470,17 @@ def generate_alpha_matte_text_lines_test_1():
 	handwriting_dict = None
 
 	#--------------------
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
 	characterTransformer = tg_util.IdentityTransformer()
 	#characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
-
-	#--------------------
-	min_font_size, max_font_size = 15, 30
-	min_char_space_ratio, max_char_space_ratio = 0.8, 2
-
-	#font_color = (255, 255, 255)
-	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-	font_color = None  # Uses random font colors.
-	#bg_color = (0, 0, 0)
-	bg_color = None  # Uses random colors.
+	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode='1')
 
 	batch_size = 4
-	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = textGenerator.create_generator(word_set, batch_size)
 
 	#--------------------
 	step = 1
@@ -538,25 +535,20 @@ def generate_alpha_matte_text_lines_test_2():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
-
-	#--------------------
-	min_font_size, max_font_size = 15, 30
-	min_char_space_ratio, max_char_space_ratio = 0.8, 2
-
-	#font_color = (255, 255, 255)
-	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-	font_color = None  # Uses random font colors.
-	#bg_color = (0, 0, 0)
-	bg_color = None  # Uses random colors.
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
+	#textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), None)
 
 	batch_size = 4
-	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = textAlphaMatteGenerator.create_generator(word_set, batch_size)
 
 	#--------------------
 	step = 1
@@ -572,7 +564,7 @@ def generate_alpha_matte_text_lines_test_2():
 				minval, maxval = np.min(scene_text_mask), np.max(scene_text_mask)
 				scene_text_mask = (scene_text_mask.astype(np.float32) - minval) / (maxval - minval)
 
-				if True:
+				if False:
 					if 'posix' == os.name:
 						font_dir_path = '/home/sangwook/work/font'
 					else:
@@ -581,7 +573,6 @@ def generate_alpha_matte_text_lines_test_2():
 					font_size = random.randrange(min_font_size, max_font_size)
 					cv2.imshow('Naive Font Image', np.array(swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size=None, text_offset=None, crop_text_area=True, draw_text_border=False)))
 
-				print('Text =', text)
 				cv2.imshow('Scene', scene)
 				cv2.imshow('Scene (Gray)', cv2.cvtColor(scene, cv2.COLOR_BGRA2GRAY))
 				cv2.imshow('Scene Mask', scene_text_mask)
@@ -622,12 +613,17 @@ def generate_alpha_matte_scene_texts_test():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	min_font_size, max_font_size = 15, 30
+	min_char_space_ratio, max_char_space_ratio = 0.8, 2
+
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
+	#textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=None)
 
 	#--------------------
 	if True:
@@ -645,14 +641,14 @@ def generate_alpha_matte_scene_texts_test():
 
 	#--------------------
 	min_text_count_per_image, max_text_count_per_image = 2, 10
-	min_font_size, max_font_size = 15, 30
-	min_char_space_ratio, max_char_space_ratio = 0.8, 2
 
-	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-	font_color = None  # Uses random font colors.
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
 
 	batch_size = 4
-	generator = tg_util.generate_alpha_matte_scene_texts(word_set, sceneTextGenerator, sceneProvider, textGenerator, (min_text_count_per_image, max_text_count_per_image), (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color)
+	generator = sceneTextGenerator.create_generator(textAlphaMatteGenerator, sceneProvider, list(word_set)	, batch_size, (min_text_count_per_image, max_text_count_per_image), font_color)
 
 	#--------------------
 	step = 1
@@ -732,8 +728,10 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			font_size = random.randint(min_font_size, max_font_size)
 			char_space_ratio = random.uniform(min_char_space_ratio, max_char_space_ratio)
 
-			#font_color = (random.randrange(256),) * 3  # Uses a random text color.
-			font_color = None  # Uses random font colors.
+			#font_color = (255, 255, 255)
+			#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+			#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+			font_color = None  # Uses a random font color.
 
 			num_chars_per_text = random.randint(min_char_count_per_text, max_char_count_per_text)
 
@@ -747,7 +745,7 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 			text = ''.join(list(charset[random.randrange(charset_len)] for _ in range(num_chars_per_text)))
 
 			char_alpha_list, char_alpha_coordinate_list = textGenerator(text, char_space_ratio=char_space_ratio, font_size=font_size)
-			text_line_image, text_line_alpha = tg_util.MyTextAlphaMatteGenerator.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
+			text_line_image, text_line_alpha = tg_util.constructTextLine(char_alpha_list, char_alpha_coordinate_list, font_color=font_color)
 
 			texts.append(text)
 			text_images.append(text_line_image)
@@ -838,12 +836,13 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	handwriting_dict = None
 
 	#--------------------
-	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+	characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='1')
+	#characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode='L')
 	#characterTransformer = tg_util.IdentityTransformer()
 	characterTransformer = tg_util.RotationTransformer(-30, 30)
 	#characterTransformer = tg_util.ImgaugAffineTransformer()
 	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
+	textAlphaMatteGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
 
 	#--------------------
 	if True:
@@ -865,7 +864,7 @@ def generate_hangeul_synthetic_scene_text_dataset():
 	#scene_text_dataset_dir_path = './scene_text_dataset_for_ms_d_net_pytorch'
 	scene_text_dataset_json_filename = 'scene_text_dataset.json'
 	num_images = 50000
-	generate_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename, sceneTextGenerator, sceneProvider, textGenerator, num_images)
+	generate_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename, sceneTextGenerator, sceneProvider, textAlphaMatteGenerator, num_images)
 
 	# Load a scene dataset.
 	image_filepaths, mask_filepaths, gt_texts, gt_boxes = load_scene_text_dataset(scene_text_dataset_dir_path, scene_text_dataset_json_filename)
@@ -916,25 +915,18 @@ def generate_single_letter_dataset():
 	handwriting_dict = None
 
 	#--------------------
-	characterTransformer = tg_util.IdentityTransformer()
-	#characterTransformer = tg_util.RotationTransformer(-30, 30)
-	#characterTransformer = tg_util.ImgaugAffineTransformer()
-	characterPositioner = tg_util.MyCharacterPositioner()
-	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
-
-	#--------------------
 	font_size = 64
 	min_font_size, max_font_size = int(font_size * 0.8), int(font_size * 1.25)
 	min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
 
-	#font_color = (255, 255, 255)
-	#font_color = (random.randrange(256), random.randrange(256), random.randrange(256))
-	font_color = None  # Uses random font colors.
-	#bg_color = (0, 0, 0)
-	bg_color = None  # Uses random colors.
+	characterTransformer = tg_util.IdentityTransformer()
+	#characterTransformer = tg_util.RotationTransformer(-30, 30)
+	#characterTransformer = tg_util.ImgaugAffineTransformer()
+	characterPositioner = tg_util.MyCharacterPositioner()
+	textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositionerfont_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode='1')
 
 	batch_size = 1024
-	generator = tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), batch_size, font_color, bg_color)
+	generator = textGenerator.create_generator(word_set, batch_size)
 
 	#--------------------
 	num_texts = 10000
@@ -962,9 +954,9 @@ def main():
 	#generate_hangeul_font_list_test()
 
 	#--------------------
-	#basic_printed_text_generator_test()
+	basic_printed_text_generator_test()
 
-	generate_basic_text_lines_test()
+	#generate_basic_text_lines_test()
 
 	#--------------------
 	#text_alpha_matte_generator_test()

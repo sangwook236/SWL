@@ -7,6 +7,7 @@ sys.path.append('../../src')
 import os, math, random, glob
 import numpy as np
 import cv2
+from PIL import Image, ImageDraw, ImageFont
 import swl.language_processing.util as swl_langproc_util
 import text_generation_util as tg_util
 
@@ -85,8 +86,56 @@ def font_display_test():
 
 	#cv2.destroyAllWindows()
 
+def is_valid_font(font_filepath, height=64, width=64, char_pair=('C', 'M')):
+	font = ImageFont.truetype(font_filepath, size=height - 6)
+
+	img1 = Image.new(mode='1', size=(width, height))
+	draw = ImageDraw.Draw(img1)
+	draw.text(xy=(3, 3), text=char_pair[0], font=font, fill=(1))
+	img_data1 = list(img1.getdata())
+
+	img2 = Image.new(mode='1', size=(width, height))
+	draw = ImageDraw.Draw(img2)
+	draw.text(xy=(3, 3), text=char_pair[1], font=font, fill=(1))
+	img_data2 = list(img2.getdata())
+
+	is_same = (img_data1 == img_data2)
+
+	"""
+	if is_same:
+		img1.show('C')
+		img2.show('M')
+	"""
+
+	return not is_same
+
+def font_validity_test():
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
+	#font_dir_path = font_base_dir_path + '/kor'
+	#font_dir_path = font_base_dir_path + '/receipt_eng'
+	#font_dir_path = font_base_dir_path + '/receipt_kor'
+
+	num_invalids = 0
+	for font in os.listdir(font_dir_path):
+		font_fpath = os.path.join(font_dir_path, font)
+		#is_valid = is_valid_font(font_fpath)
+		is_valid = is_valid_font(font_fpath, char_pair=('가', '너'))
+		if not is_valid:
+			print('Invalid font: {}.'.format(font_fpath))
+			#os.remove(font_fpath)
+			num_invalids += 1
+	print('#invalid fonts = {}.'.format(num_invalids))
+
 def main():
-	font_display_test()
+	#font_display_test()
+
+	font_validity_test()
 
 #--------------------------------------------------------------------
 

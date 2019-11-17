@@ -103,13 +103,14 @@ class MyModel(object):
 	def _create_model(self, inputs, num_classes):
 		# TODO [decide] >>
 		#kernel_initializer = None
-		kernel_initializer = tf.initializers.he_normal()
+		#kernel_initializer = tf.initializers.he_normal()
 		#kernel_initializer = tf.initializers.he_uniform()
 		#kernel_initializer = tf.initializers.truncated_normal(mean=0.0, stddev=1.0)
 		#kernel_initializer = tf.initializers.uniform_unit_scaling(factor=1.0)
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
+		kernel_initializer = tf.initializers.orthogonal()
 
 		# TODO [decide] >>
 		#create_cnn_functor = MyModel._create_cnn_without_batch_normalization

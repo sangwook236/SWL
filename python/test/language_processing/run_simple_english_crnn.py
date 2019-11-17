@@ -111,6 +111,7 @@ class MyModel(object):
 		#kernel_initializer = tf.initializers.variance_scaling(scale=1.0, mode='fan_in', distribution='truncated_normal')
 		#kernel_initializer = tf.initializers.glorot_normal()  # Xavier normal initialization.
 		#kernel_initializer = tf.initializers.glorot_uniform()  # Xavier uniform initialization.
+		#kernel_initializer = tf.initializers.orthogonal()
 
 		# TODO [decide] >>
 		create_cnn_functor = MyModel._create_cnn_without_batch_normalization

@@ -3,7 +3,7 @@
 import sys
 sys.path.append('../../src')
 
-import os, math, glob, time
+import os, math, glob, time, string
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 import cv2
@@ -35,90 +35,249 @@ def compute_string_distance_test():
 	print('\tWord: Distance = {0}, average distance = {0} / {1} = {2}.'.format(word_distance, total_word_count, word_distance / total_word_count))
 	print('\tChar: Distance = {0}, average distance = {0} / {1} = {2}.'.format(char_distance, total_char_count, char_distance / total_char_count))
 
-def hangul_example():
+def hangeul_example(need_mask=False):
 	hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF8') as fd:
-		#hangul_str = fd.readlines()  # A string.
-		#hangul_str = fd.read().strip('\n')  # A list of strings.
-		#hangul_str = fd.read().splitlines()  # A list of strings.
-		hangul_str = fd.read().replace(' ', '').replace('\n', '')  # A string.
-	#print(hangul_str)
+		#hangeul_str = fd.readlines()  # A list of strings.
+		#hangeul_str = fd.read().replace(' ', '').splitlines()  # A list of strings.
+		#hangeul_str = fd.read().replace(' ', '').strip('\n')  # A string.
+		hangeul_str = fd.read().replace(' ', '').rstrip()  # A string.
+	#print(hangeul_str)
 
 	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/gulim.ttf'  # 굴림, 굴림체, 돋움, 돋움체.
-		#font_type = '/usr/share/fonts/truetype/batang.ttf'  # 바탕, 바탕체, 궁서, 궁서체.
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
 	else:
-		font_type = 'C:/Windows/Fonts/gulim.ttc'  # 굴림, 굴림체, 돋움, 돋움체.
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+
+	font_type = os.path.join(font_dir_path, 'gulim.ttf')
 	font_index = 1
 
-	img = swl_langproc_util.generate_text_image(hangul_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1500, 1000), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./hangul.png')
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (1000, 3000)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
 
-def alphabet_example():
-	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/Arial.ttf'
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text_image(hangeul_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./hangeul_text.png')
+		msk.save('./hangeul_mask.png')
 	else:
-		font_type = 'C:/Windows/Fonts/Arial.ttf'
+		img = swl_langproc_util.generate_text_image(hangeul_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./hangeul.png')
+
+def alphabet_example(need_mask=False):
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
+
+	font_type = os.path.join(font_dir_path, 'arial.ttf')
 	font_index = 0
 
-	alphabet_str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-	img = swl_langproc_util.generate_text_image(alphabet_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(1000, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./alphabet.png')
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (1000, 40)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
 
-def digit_example():
-	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/Arial.ttf'
+	#alphabet_str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+	alphabet_str = string.ascii_letters
+	#alphabet_str = string.ascii_lowercase
+	#alphabet_str = string.ascii_uppercase
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text_image(alphabet_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./alphabet_text.png')
+		msk.save('./alphabet_mask.png')
 	else:
-		font_type = 'C:/Windows/Fonts/Arial.ttf'
+		img = swl_langproc_util.generate_text_image(alphabet_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./alphabet.png')
+
+def digit_example(need_mask=False):
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
+
+	font_type = os.path.join(font_dir_path, 'arial.ttf')
 	font_index = 0
 
-	digit_str = '0123456789'
-	img = swl_langproc_util.generate_text_image(digit_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(200, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./digit.png')
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (200, 40)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
 
-def punctuation_example():
-	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/Arial.ttf'
+	#digit_str = '0123456789'
+	digit_str = string.digits
+	#digit_str = string.hexdigits
+	#digit_str = string.octdigits
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text(digit_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./digit_text.png')
+		msk.save('./digit_mask.png')
 	else:
-		font_type = 'C:/Windows/Fonts/Arial.ttf'
+		img = swl_langproc_util.generate_text_image(digit_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./digit.png')
+
+def punctuation_example(need_mask=False):
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
+
+	font_type = os.path.join(font_dir_path, 'arial.ttf')
 	font_index = 0
 
-	punctuation_str = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-	img = swl_langproc_util.generate_text_image(punctuation_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./punctuation.png')
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (500, 40)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
 
-def symbol_example():
-	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/Arial.ttf'
+	#punctuation_str = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
+	punctuation_str = string.punctuation
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text_image(punctuation_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./punctuation_text.png')
+		msk.save('./punctuation_mask.png')
 	else:
-		font_type = 'C:/Windows/Fonts/Arial.ttf'
+		img = swl_langproc_util.generate_text_image(punctuation_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./punctuation.png')
+
+def symbol_example(need_mask=False):
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/eng'
+
+	font_type = os.path.join(font_dir_path, 'arial.ttf')
 	font_index = 0
+
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (500, 40)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
 
 	symbol_str = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'
-	img = swl_langproc_util.generate_text_image(symbol_str, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./symbol.png')
-
-def all_font_example():
-	if 'posix' == os.name:
-		font_type = '/usr/share/fonts/truetype/gulim.ttf'  # 굴림, 굴림체, 돋움, 돋움체.
-		#font_type = '/usr/share/fonts/truetype/batang.ttf'  # 바탕, 바탕체, 궁서, 궁서체.
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text_image(symbol_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./symbol_text.png')
+		msk.save('./symbol_mask.png')
 	else:
-		font_type = 'C:/Windows/Fonts/gulim.ttc'  # 굴림, 굴림체, 돋움, 돋움체.
+		img = swl_langproc_util.generate_text_image(symbol_str, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./symbol.png')
+
+def mixed_example(need_mask=False):
+	if 'posix' == os.name:
+		system_font_dir_path = '/usr/share/fonts'
+		font_base_dir_path = '/home/sangwook/work/font'
+	else:
+		system_font_dir_path = 'C:/Windows/Fonts'
+		font_base_dir_path = 'D:/work/font'
+	font_dir_path = font_base_dir_path + '/kor'
+
+	font_type = os.path.join(font_dir_path, 'gulim.ttf')
 	font_index = 1
 
-	all_text = """(학교] school is 178 좋34,지."""
-	img = swl_langproc_util.generate_text_image(all_text, font_type=font_type, font_index=font_index, font_size=30, font_color=(0, 0, 0), bg_color=(240, 240, 240), image_size=(500, 40), text_offset=None, crop_text_area=True, draw_text_border=False)
-	img.save('./all_text.png')
+	font_size = 30
+	#font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	font_color = None  # Uses a random font color.
+	#bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	bg_color = None  # Uses a random background color.
+	#image_size = (500, 40)  # (width, height).
+	image_size = None
+	#char_space_ratio = 0.8
+	char_space_ratio = None
+
+	mixed_text = """(학교] school is 178 좋34,지."""
+	#mixed_text = string.printable
+	#mixed_text = string.whitespace
+	if need_mask:
+		img, msk = swl_langproc_util.generate_text_image(mixed_text, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio, mask=True)
+		img.save('./mixed_text.png')
+		msk.save('./mixed_mask.png')
+	else:
+		img = swl_langproc_util.generate_text_image(mixed_text, font_type=font_type, font_index=font_index, font_size=font_size, font_color=font_color, bg_color=bg_color, image_size=image_size, text_offset=None, crop_text_area=True, draw_text_border=False, char_space_ratio=char_space_ratio)
+		img.save('./mixed.png')
 
 def generate_text_image_test():
-	hangul_example()
-	alphabet_example()
-	digit_example()
-	punctuation_example()
-	#symbol_example()  # Not yet implemented.
-	all_font_example()
+	hangeul_example(need_mask=False)
+	alphabet_example(need_mask=False)
+	digit_example(need_mask=False)
+	punctuation_example(need_mask=False)
+	#symbol_example(need_mask=False)  # Not yet implemented.
+	mixed_example(need_mask=False)
+
+def generate_text_image_and_mask_test():
+	hangeul_example(need_mask=True)
+	alphabet_example(need_mask=True)
+	digit_example(need_mask=True)
+	punctuation_example(need_mask=True)
+	#symbol_example(need_mask=True)  # Not yet implemented.
+	mixed_example(need_mask=True)
 
 def draw_text_on_image_test():
 	if 'posix' == os.name:
@@ -130,11 +289,14 @@ def draw_text_on_image_test():
 
 	is_white_background = False  # Uses white or black background.
 	font_size = 32
-	#font_color = None  # Uses random colors.
-	#font_color = (0, 0, 0) if is_white_background else (255, 255, 255)
-	#font_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 	font_color = (255, 255, 255)
+	#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
+	#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+	#font_color = None  # Uses a random font color.
 	bg_color = (0, 0, 0)
+	#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
+	#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+	#bg_color = None  # Uses a random background color.
 	text_offset = (0, 0)
 	crop_text_area = True
 	draw_text_border = False
@@ -418,10 +580,11 @@ def transform_text_line_test():
 	cv2.destroyAllWindows()
 
 def main():
-	compute_simple_text_recognition_accuracy_test()
-	compute_string_distance_test()
+	#compute_simple_text_recognition_accuracy_test()
+	#compute_string_distance_test()
 
 	#generate_text_image_test()
+	generate_text_image_and_mask_test()
 	#draw_text_on_image_test()  # Not so good.
 
 	# NOTE [info] >> Bounding boxes of transform_text() and transform_texts() are different.
@@ -431,7 +594,7 @@ def main():
 
 	#transform_text_line_test()  # Not so good.
 
-#%%------------------------------------------------------------------
+#--------------------------------------------------------------------
 
 if '__main__' == __name__:
 	main()

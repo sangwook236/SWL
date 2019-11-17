@@ -236,36 +236,26 @@ class RunTimeTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-		font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-		#font_color = None  # Uses a random font color.
-		#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-		#bg_color = None  # Uses a random background color.
-
-		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, font_color, bg_color)
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-		font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-		#font_color = None  # Uses a random font color.
-		#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-		#bg_color = None  # Uses a random background color.
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
 
-		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, font_color, bg_color)
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+		generator = textGenerator.create_generator(word_set, batch_size)
+		for step, (texts, scenes, _) in enumerate(generator):
+			# For using RGB images.
+			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+			# For using grayscale images.
+			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
-	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
-		for step, (texts, scenes, _) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
-			#scenes = list(map(lambda image: self.resize(image), scenes))
-			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+			scenes = list(map(lambda image: self.resize(image), scenes))
 			scenes = self._transform_images(np.array(scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#scene_text_masks = list(map(lambda image: self.resize(image), scene_text_masks))
 			#scene_text_masks = self._transform_images(np.array(scene_text_masks, dtype=np.float32), use_NWHC=self._use_NWHC)
 
 			scenes, _ = self.preprocess(scenes, None)
-			#scene_text_masks = scene_text_masks.astype(np.float32) / 255
+			#scene_text_masks, _ = self.preprocess(scene_text_masks, None)
 			texts_int = list(map(lambda txt: self.encode_label(txt), texts))
 			#texts_int = swl_ml_util.sequences_to_sparse(texts_int, dtype=np.int32)  # Sparse tensor.
 			yield (scenes, texts, texts_int), batch_size
@@ -310,10 +300,11 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
 
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 
 #--------------------------------------------------------------------
 
@@ -321,8 +312,9 @@ class RunTimeAlphaMatteTextLineDatasetBase(RunTimeTextLineDatasetBase):
 	def __init__(self, word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes, max_label_len, use_NWHC, default_value)
 
-	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
-		for step, (texts, scenes, _) in enumerate(tg_util.generate_alpha_matte_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+		generator = textGenerator.create_generator(word_set, batch_size)
+		for step, (texts, scenes, _) in enumerate(generator):
 			#scenes = list(map(lambda image: self.resize(image), scenes))
 			scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
 			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
@@ -376,21 +368,22 @@ class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
+		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio))
 		"""
 
 # This class is independent of language.
@@ -435,21 +428,22 @@ class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
 		#characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list, handwriting_dict)
+		self._textGenerator = tg_util.MySimpleTextAlphaMatteGenerator(characterTransformer, characterPositioner, font_list=font_list, handwriting_dict=handwriting_dict, font_size_interval=(min_font_size, max_font_size), char_space_ratio_interval=(min_char_space_ratio, max_char_space_ratio), mode=alpha_matte_mode)
 		"""
-		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict)
+		characterAlphaMatteGenerator = tg_util.MyCharacterAlphaMatteGenerator(font_list, handwriting_dict, mode=alpha_matte_mode)
 		#characterTransformer = tg_util.IdentityTransformer()
 		characterTransformer = tg_util.RotationTransformer(-30, 30)
 		#characterTransformer = tg_util.ImgaugAffineTransformer()
 		characterPositioner = tg_util.MyCharacterPositioner()
-		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner)
+		self._textGenerator = tg_util.MyTextAlphaMatteGenerator(characterAlphaMatteGenerator, characterTransformer, characterPositioner, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 		"""
 
 	# String label -> integer label.
@@ -863,26 +857,12 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-		font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-		#font_color = None  # Uses a random font color.
-		#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-		#bg_color = None  # Uses a random background color.
-
-		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, font_color, bg_color)
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-		font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
-		#font_color = None  # Uses a random font color.
-		#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
-		#bg_color = None  # Uses a random background color.
+		return self._create_batch_generator(self._textGenerator, self._word_set, batch_size, steps_per_epoch)
 
-		return self._create_batch_generator(self._word_set, self._textGenerator, (self._min_font_size, self._max_font_size), (self._min_char_space_ratio, self._max_char_space_ratio), batch_size, steps_per_epoch, font_color, bg_color)
-
-	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
 		raise NotImplementedError
 
 	def visualize(self, batch_generator, num_examples=10):
@@ -979,10 +959,11 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		self._min_font_size, self._max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		self._min_char_space_ratio, self._max_char_space_ratio = 0.8, 1.2
+		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
 
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list)
+		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
 
 		#--------------------
 		#import imgaug as ia
@@ -1034,18 +1015,22 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			], random_order=True)
 		])
 
-	def _create_batch_generator(self, word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, steps_per_epoch, font_color, bg_color):
-		for step, (texts, scenes, scene_text_masks) in enumerate(tg_util.generate_basic_text_lines(word_set, textGenerator, font_size_interval, char_space_ratio_interval, batch_size, font_color, bg_color)):
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt(np.expand_dims(image, axis=0)))), scenes))
+	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+		for step, (texts, scenes, scene_text_masks) in enumerate(textGenerator.create_generator(word_set, batch_size)):
+			# For using RGB images.
+			scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+			# For using grayscale images.
+			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
-			#clean_scenes = list(map(lambda image: self.resize(image), scenes))
-			#clean_scenes = list(map(lambda image: cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), scenes))
-			clean_scenes = list(map(lambda image: self.resize(image), scene_text_masks))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (self.resize(image), self.resize(mask)), scenes, scene_text_masks))))
-			#scenes, scene_text_masks = list(zip(*list(map(lambda image, mask: (cv2.cvtColor(self.resize(image), cv2.COLOR_BGR2GRAY), self.resize(mask)), scenes, scene_text_masks))))
+			corrupted_scenes = scenes
+			#corrupted_scenes = scene_text_masks
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 
-			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=True)
-			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=True)
+			#clean_scenes = scenes
+			clean_scenes = scene_text_masks
+			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
+			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			clean_scenes, _ = self.preprocess(clean_scenes, None)

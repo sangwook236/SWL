@@ -310,14 +310,14 @@ def main():
 	#BasicRunTimeTextLineDataset_test()
 
 	#--------------------
-	#RunTimeTextLineDataset_test()
+	RunTimeTextLineDataset_test()
 	#RunTimeHangeulJamoTextLineDataset_test()
 
 	#JsonBasedTextLineDataset_test()
 	#JsonBasedHangeulJamoTextLineDataset_test()
 
 	#--------------------
-	RunTimePairedCorruptedTextLineDataset_test()
+	#RunTimePairedCorruptedTextLineDataset_test()
 
 #--------------------------------------------------------------------
 
