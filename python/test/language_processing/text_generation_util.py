@@ -510,13 +510,14 @@ class MyBasicPrintedTextGenerator(object):
 	"""Generates a basic printed text line for individual characters.
 	"""
 
-	def __init__(self, font_list, font_size_interval, char_space_ratio_interval=None):
+	def __init__(self, font_list, font_size_interval, char_space_ratio_interval=None, mask_mode='1'):
 		"""Constructor.
 
 		Inputs:
 			font_list (a list of (font file path, font index) pairs): A list of the file paths and the font indices of fonts.
 			font_size_interval (a tuple of two ints): A font size interval for the characters.
 			char_space_ratio_interval (a tuple of two floats): A space ratio interval between two characters.
+			mask_mode (str): Black-white mode ('1') or grayscale mode ('L').
 		"""
 
 		self._text_offset = (0, 0)
@@ -526,6 +527,7 @@ class MyBasicPrintedTextGenerator(object):
 		self._font_list = font_list
 		self._font_size_interval = font_size_interval
 		self._char_space_ratio_interval = char_space_ratio_interval
+		self._mask_mode = mask_mode
 
 	def __call__(self, text, *args, **kwargs):
 		"""Generates a single text line for individual characters.
@@ -554,7 +556,7 @@ class MyBasicPrintedTextGenerator(object):
 		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
 		#bg_color = None  # Uses a random background color.
 
-		text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mask=True)
+		text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mask=True, mask_mode=self._mask_mode)
 
 		#return np.array(text_image), np.array(text_mask)  # text_mask: np.bool.
 		return np.array(text_image), np.array(text_mask, dtype=np.uint8)

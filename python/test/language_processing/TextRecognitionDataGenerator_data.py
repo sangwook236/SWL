@@ -296,13 +296,13 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		#--------------------
 		self._augmenter = iaa.Sequential([
-			iaa.OneOf([
-				#iaa.Sometimes(0.5, iaa.Crop(px=(0, 100))),  # Crop images from each side by 0 to 16px (randomly chosen).
-				iaa.Sometimes(0.5, iaa.Crop(percent=(0, 0.1))), # Crop images by 0-10% of their height/width.
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
 				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
 				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
-			]),
-			iaa.Sometimes(0.5, iaa.SomeOf(1, [
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
 				iaa.Affine(
 					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
 					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
@@ -319,20 +319,31 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
 			])),
 			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
-				iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
-				iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
+				iaa.OneOf([
+					iaa.GaussianBlur(sigma=(1.5, 2.5)),
+					iaa.AverageBlur(k=(3, 6)),
+					iaa.MedianBlur(k=(3, 5)),
+					iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+				]),
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+					#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+				]),
+				#iaa.OneOf([
+				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
 
-				#iaa.Invert(0.5, per_channel=True),  # Invert color channels.
-				iaa.LinearContrast((0.5, 1.5), per_channel=True),  # Improve or worsen the contrast.
+				#	iaa.Invert(p=1, per_channel=False),
 
-				iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
-				iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
-			])),
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.5 * 255), per_channel=False),  # Add Gaussian noise to images.
-				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+				#]),
 			])),
 			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
 		])

@@ -301,7 +301,7 @@ class BasicRunTimeTextLineDataset(RunTimeTextLineDatasetBase):
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
 		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
@@ -369,7 +369,7 @@ class RunTimeTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
@@ -429,7 +429,7 @@ class RunTimeHangeulJamoTextLineDataset(RunTimeAlphaMatteTextLineDatasetBase):
 
 		#--------------------
 		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 		alpha_matte_mode = '1' #'L'
 
 		characterTransformer = tg_util.IdentityTransformer()
@@ -925,7 +925,7 @@ class RunTimePairedTextLineDatasetBase(PairedTextLineDatasetBase):
 
 # This class is independent of language.
 class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
-	def __init__(self, word_set, image_height, image_width, image_channel, max_label_len=0, use_NWHC=True, default_value=-1):
+	def __init__(self, word_set, image_height, image_width, image_channel, corrupt_functor, max_label_len=0, use_NWHC=True, default_value=-1):
 		super().__init__(word_set, image_height, image_width, image_channel, num_classes=0, max_label_len=max_label_len, use_NWHC=use_NWHC, default_value=default_value)
 
 		#--------------------
@@ -941,6 +941,8 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
+
+		self._corrupt_functor = corrupt_functor
 
 		#--------------------
 		if 'posix' == os.name:
@@ -959,78 +961,44 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		min_char_space_ratio, max_char_space_ratio = 0.8, 1.2
+		#min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
+		min_font_size, max_font_size = 16, 32
+		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
-		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None)
-		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio))
-
-		#--------------------
-		#import imgaug as ia
-		from imgaug import augmenters as iaa
-
-		self._augmenter = iaa.Sequential([
-			iaa.Sometimes(0.5, iaa.OneOf([
-				#iaa.Affine(
-				#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-				#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-				#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-				#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
-				#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-				#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-				#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-				#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				#),
-				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-				#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
-			])),
-			iaa.SomeOf((1, 2), [
-				iaa.OneOf([
-					iaa.GaussianBlur(sigma=(0, 3.0)),  # Blur images with a sigma between 0 and 3.0.
-					iaa.AverageBlur(k=(2, 7)),  # Blur image using local means with kernel sizes between 2 and 7.
-					iaa.MedianBlur(k=(3, 11)),  # Blur image using local medians with kernel sizes between 2 and 7.
-					iaa.MotionBlur(k=(5, 11), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-				]),
-				iaa.OneOf([
-					iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.5 * 255), per_channel=False),  # Add Gaussian noise to images.
-					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.4 * 255), per_channel=False),
-					#iaa.AdditivePoissonNoise(lam=(32, 96), per_channel=False),
-					iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
-				]),
-				#iaa.OneOf([
-				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),  # Improve or worsen the contrast.
-
-				#	iaa.Invert(p=1, per_channel=False),  # Invert color channels.
-
-				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),  # Sharpen images.
-				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),  # Emboss images.
-				#]),
-			], random_order=True)
-		])
+		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
+		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mask_mode='L')
 
 	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
-		for step, (texts, scenes, scene_text_masks) in enumerate(textGenerator.create_generator(word_set, batch_size)):
+		generator = textGenerator.create_generator(word_set, batch_size)
+		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
-			scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
+			#scene_text_masks = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_GRAY2BGR), scene_text_masks))
 			# For using grayscale images.
-			#scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
+			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
-			#corrupted_scenes = scene_text_masks
-			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: cv2.resize(image, (round(image.shape[1] * self._image_height / image.shape[0]), self._image_height), interpolation=cv2.INTER_AREA), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			"""
+			corrupted_scenes = scene_text_masks
+			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
+			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
+			#corrupted_scenes = 255 - corrupted_scenes  # Invert.
+			"""
 
-			#clean_scenes = scenes
-			clean_scenes = scene_text_masks
+			"""
+			clean_scenes = scenes
 			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
 			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			"""
+			clean_scenes = scene_text_masks
+			# FIXME [enhance] >> Resizing clean images is not a good idea.
+			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
+			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
+			#clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
+			#clean_scenes = 255 - clean_scenes  # Invert.
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			clean_scenes, _ = self.preprocess(clean_scenes, None)
@@ -1039,13 +1007,3 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			yield (corrupted_scenes, clean_scenes, texts, texts_int), batch_size
 			if steps_per_epoch and (step + 1) >= steps_per_epoch:
 				break
-
-	def _corrupt(self, inputs, *args, **kwargs):
-		return self._augmenter.augment_images(inputs)
-
-	def _corrupt2(self, inputs, outputs, *args, **kwargs):
-		if outputs is None:
-			return self._augmenter.augment_images(inputs), None
-		else:
-			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)

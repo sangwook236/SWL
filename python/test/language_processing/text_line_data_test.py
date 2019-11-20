@@ -264,11 +264,65 @@ def RunTimePairedCorruptedTextLineDataset_test():
 	english_word_set = set(english_words)
 	all_word_set = set(korean_words + english_words)
 
+	#--------------------
+	#import imgaug as ia
+	from imgaug import augmenters as iaa
+
+	corrupter = iaa.Sequential([
+		iaa.Sometimes(0.5, iaa.OneOf([
+			#iaa.Affine(
+			#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+			#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+			#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+			#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
+			#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+			#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+			#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+			#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+			#),
+			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+			iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
+		])),
+		iaa.SomeOf((1, 2), [
+			iaa.OneOf([
+				iaa.GaussianBlur(sigma=(1.5, 2.5)),
+				iaa.AverageBlur(k=(3, 6)),
+				iaa.MedianBlur(k=(3, 5)),
+				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+			]),
+			iaa.OneOf([
+				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
+				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			]),
+			#iaa.OneOf([
+			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+			#	iaa.Invert(p=1, per_channel=False),
+
+			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+			#]),
+		], random_order=True)
+	])
+
+	def corrupt(inputs, *args, **kwargs):
+		return corrupter.augment_images(inputs)
+
+	#--------------------
 	if False:
 		print('Start creating a Korean dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(korean_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(korean_word_set, image_height, image_width, image_channel, corrupt_functor=corrupt)
 		print('End creating a Korean dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -281,7 +335,7 @@ def RunTimePairedCorruptedTextLineDataset_test():
 		print('Start creating an English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 32, 320, 1
-		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(english_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(english_word_set, image_height, image_width, image_channel, corrupt_functor=corrupt)
 		print('End creating an English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
@@ -294,7 +348,7 @@ def RunTimePairedCorruptedTextLineDataset_test():
 		print('Start creating a Korean+English dataset...')
 		start_time = time.time()
 		image_height, image_width, image_channel = 64, 640, 1
-		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(all_word_set, image_height, image_width, image_channel)
+		dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(all_word_set, image_height, image_width, image_channel, corrupt_functor=corrupt)
 		print('End creating a Korean+English dataset: {} secs.'.format(time.time() - start_time))
 
 		train_generator = dataset.create_train_batch_generator(batch_size=32)
