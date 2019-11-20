@@ -90,9 +90,10 @@ class TextLineDatasetBase(abc.ABC):
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
 			print('Label (int): length = {}, type = {}, element type = {}.'.format(len(batch_labels_int), type(batch_labels_int), type(batch_labels_int[0])))
 
-			# (examples, width, height, channels) -> (examples, height, width, channels).
-			batch_images = batch_images.transpose((0, 2, 1, 3))
-			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
+			if self._use_NWHC:
+				# (examples, width, height, channels) -> (examples, height, width, channels).
+				batch_images = batch_images.transpose((0, 2, 1, 3))
+				#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
 
 			minval, maxval = np.min(batch_images), np.max(batch_images)
 			for idx, (img, lbl_str, lbl_int) in enumerate(zip(batch_images, batch_labels_str, batch_labels_int)):
@@ -876,10 +877,11 @@ class PairedTextLineDatasetBase(TextLineDatasetBase):
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
 			print('Label (int): length = {}, type = {}, element type = {}.'.format(len(batch_labels_int), type(batch_labels_int), type(batch_labels_int[0])))
 
-			# (examples, width, height, channels) -> (examples, height, width, channels).
-			batch_input_images = batch_input_images.transpose((0, 2, 1, 3))
-			batch_output_images = batch_output_images.transpose((0, 2, 1, 3))
-			#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
+			if self._use_NWHC:
+				# (examples, width, height, channels) -> (examples, height, width, channels).
+				batch_input_images = batch_input_images.transpose((0, 2, 1, 3))
+				batch_output_images = batch_output_images.transpose((0, 2, 1, 3))
+				#batch_labels_int = swl_ml_util.sparse_to_sequences(*batch_labels_int, dtype=np.int32)  # Sparse tensor.
 
 			inp_minval, inp_maxval = np.min(batch_input_images), np.max(batch_input_images)
 			outp_minval, outp_maxval = np.min(batch_output_images), np.max(batch_output_images)
@@ -961,14 +963,19 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 		handwriting_dict = None
 
 		#--------------------
-		#min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
-		min_font_size, max_font_size = 16, 32
+		min_font_size, max_font_size = int(image_height * 0.8), int(image_height * 1.25)
 		min_char_space_ratio, max_char_space_ratio = 0.8, 1.25
 
 		#self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), None, mask_mode='L')
 		self._textGenerator = tg_util.MyBasicPrintedTextGenerator(font_list, (min_font_size, max_font_size), (min_char_space_ratio, max_char_space_ratio), mask_mode='L')
 
 	def _create_batch_generator(self, textGenerator, word_set, batch_size, steps_per_epoch):
+		def reduce_image(image, min_height, max_height):
+			height = random.randint(min_height, max_height)
+			interpolation = random.choice([cv2.INTER_NEAREST, cv2.INTER_LINEAR, cv2.INTER_CUBIC, cv2.INTER_AREA, cv2.INTER_LANCZOS4])
+			return cv2.resize(image, (round(image.shape[1] * height / image.shape[0]), height), interpolation=interpolation)
+
+		min_height, max_height = 16, 32
 		generator = textGenerator.create_generator(word_set, batch_size)
 		for step, (texts, scenes, scene_text_masks) in enumerate(generator):
 			# For using RGB images.
@@ -977,7 +984,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
-			corrupted_scenes = list(map(lambda image: cv2.resize(image, (round(image.shape[1] * self._image_height / image.shape[0]), self._image_height), interpolation=cv2.INTER_AREA), corrupted_scenes))
+			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			"""

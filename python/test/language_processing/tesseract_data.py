@@ -6,9 +6,9 @@ import cv2
 import hangeul_util as hg_util
 import text_line_data
 
-# REF [site] >> https://github.com/tmbdev/ocropy
+# REF [site] >> https://github.com/tesseract-ocr
 
-class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
+class TesseractTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 	def __init__(self, image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True):
 		super().__init__(labels=None, default_value=default_value)
 
@@ -52,34 +52,46 @@ class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 		if width is None:
 			width = self._image_width
 
-		hh, ww = input.shape
-		if ww >= width:
+		"""
+		hi, wi = input.shape[:2]
+		if wi >= width:
 			return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
 		else:
-			ratio = height / hh
-			min_width = min(width, int(ww * ratio))
+			aspect_ratio = height / hi
+			min_width = min(width, int(wi * aspect_ratio))
 			input = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
 			if min_width < width:
-				image_zeropadded = np.zeros((height, width), dtype=input.dtype)
-				image_zeropadded[:,0:min_width] = input[:,0:min_width]
+				image_zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+				image_zeropadded[:,:min_width] = input[:,:min_width]
 				return image_zeropadded
 			else:
 				return input
+		"""
+		hi, wi = input.shape[:2]
+		aspect_ratio = height / hi
+		min_width = min(width, int(wi * aspect_ratio))
+		zeropadded = np.zeros((height, width) + input.shape[2:], dtype=input.dtype)
+		zeropadded[:,:min_width] = cv2.resize(input, (min_width, height), interpolation=cv2.INTER_AREA)
+		return zeropadded
+		"""
+		return cv2.resize(input, (width, height), interpolation=cv2.INTER_AREA)
+		"""
 
 	def create_train_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=True, *args, **kwargs):
-		return OcropusTextLineDatasetBase._create_batch_generator(self._train_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._train_data, batch_size, shuffle)
 
 	def create_test_batch_generator(self, batch_size, steps_per_epoch=None, shuffle=False, *args, **kwargs):
-		return OcropusTextLineDatasetBase._create_batch_generator(self._test_data, batch_size, shuffle, use_NWHC=self._use_NWHC)
+		return self._create_batch_generator(self._test_data, batch_size, shuffle)
 
 	def visualize(self, batch_generator, num_examples=10):
 		for batch_data, num_batch_examples in batch_generator:
 			batch_images, batch_labels_str, batch_labels_int = batch_data
 
 			print('Image: shape = {}, dtype = {}, (min, max) = ({}, {}).'.format(batch_images.shape, batch_images.dtype, np.min(batch_images), np.max(batch_images)))
-			print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			#print('Label (str): shape = {}, dtype = {}.'.format(batch_labels_str.shape, batch_labels_str.dtype))
+			print('Label (str): shape = {}, dtype = {}, element type = {}.'.format(len(batch_labels_str), type(batch_labels_str), type(batch_labels_str[0])))
 			#print('Label (int): shape = {}, type = {}.'.format(batch_labels_int[2], type(batch_labels_int)))  # Sparse tensor.
-			print('Label (int): length = {}, type = {}.'.format(len(batch_labels_int), type(batch_labels_int)))
+			print('Label (int): length = {}, type = {}, element type = {}.'.format(len(batch_labels_int), type(batch_labels_int), type(batch_labels_int[0])))
 
 			if self._use_NWHC:
 				# (examples, width, height, channels) -> (examples, height, width, channels).
@@ -102,51 +114,76 @@ class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 			break  # For a single batch.
 		cv2.destroyAllWindows()
 
-	def _load_data(self, data_dir_path, image_height, image_width, image_channel, max_label_len):
-		image_filepaths, label_filepaths = glob.glob(data_dir_path + '/**/*.bin.png', recursive=False), glob.glob(data_dir_path + '/**/*.gt.txt', recursive=False)
-		image_filepaths.sort()
-		label_filepaths.sort()
-
-		examples = list()
-		for img_fpath, lbl_fpath in zip(image_filepaths, label_filepaths):
-			with open(lbl_fpath, 'r', encoding='UTF8') as fd:
-				#label_str = fd.read()
-				#label_str = fd.read().rstrip()
-				label_str = fd.read().rstrip('\n')
-			if len(label_str) > max_label_len:
-				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
-				continue
-			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE)
-			if img is None:
+	def _load_data(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, max_label_len):
+		images, labels_str, labels_int = list(), list(), list()
+		for img_fpath, box_fpath in zip(image_filepaths, box_filepaths):
+			retval, images = cv2.imreadmulti(img_fpath, flags=cv2.IMREAD_GRAYSCALE)
+			if not retval or images is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue
 
-			img = self.resize(img, None, image_height, image_width)
-			try:
-				img, label_int = self.preprocess(img, self.encode_label(label_str))
-			except Exception:
-				#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
-				continue
-			if label_str != self.decode_label(label_int):
-				print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
-				continue
+			with open(box_fpath, 'r', encoding='UTF8') as fd:
+				lines = fd.readlines()
 
-			examples.append((img, label_str, label_int))
+			for line in lines:
+				#line = line
+				#line = line.rstrip()
+				line = line.rstrip('\n')
 
-		return examples
+				pos = line.find('#')
+				if -1 == pos:  # Not found.
+					# End-of-textline.
+					box_info = line.split(' ')
+					if 6 != len(box_info) or '\t' != box_info[0]:
+						print('[SWL] Warning: Invalid box info: {}.'.format(box_info))
+					continue
+				else:
+					box_info = line[:pos-1].split()
+					if 6 != len(box_info) or 'WordStr' != box_info[0]:
+						print('[SWL] Warning: Invalid box info: {}.'.format(box_info))
+						continue
+					left, bottom, right, top, page = list(map(int, box_info[1:]))
 
-	@staticmethod
-	def _create_batch_generator(data, batch_size, shuffle, use_NWHC=True):
-		images, labels_str, labels_int = zip(*data)
+					img = images[page]
+					if 2 != img.ndim:
+						print('[SWL] Error: Invalid image dimension: {}.'.format(img.ndim))
+						continue
 
-		if use_NWHC:
-			# (examples, height, width) -> (examples, width, height).
-			images = np.swapaxes(np.array(images), 1, 2)
-		else:
-			images = np.array(images)
-		images = np.reshape(images, images.shape + (-1,))  # Image channel = 1.
-		labels_str = np.reshape(np.array(labels_str), (-1))
-		labels_int = np.reshape(np.array(labels_int), (-1))
+					bottom, top = img.shape[0] - bottom, img.shape[0] - top
+					label_str = line[pos+1:]
+
+				if len(label_str) > max_label_len:
+					print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
+					continue
+
+				if bottom < 0 or top < 0 or left < 0 or right < 0 or \
+					bottom >= img.shape[0] or top >= img.shape[0] or left >= img.shape[1] or right >= img.shape[1]:
+					print('[SWL] Warning: Invalid text line size: {}, {}, {}, {}.'.format(left, bottom, right, top))
+					continue
+
+				textline = img[top:bottom+1,left:right+1]
+				textline = self.resize(textline, None, image_height, image_width)
+				try:
+					label_int = self.encode_label(label_str)
+				except Exception:
+					#print('[SWL] Error: Failed to encode a label: {}.'.format(label_str))
+					continue
+				if label_str != self.decode_label(label_int):
+					print('[SWL] Error: Mismatched encoded and decoded labels: {} != {}.'.format(label_str, self.decode_label(label_int)))
+					continue
+
+				images.append(textline)
+				labels_str.append(label_str)
+				labels_int.append(label_int)
+
+		#images = list(map(lambda image: self.resize(image), images))
+		images = self._transform_images(np.array(images), use_NWHC=self._use_NWHC)
+		images, _ = self.preprocess(images, None)
+
+		return images, labels_str, labels_int
+
+	def _create_batch_generator(self, data, batch_size, shuffle):
+		images, labels_str, labels_int = data
 
 		num_examples = len(images)
 		if len(labels_str) != num_examples or len(labels_int) != num_examples:
@@ -180,8 +217,8 @@ class OcropusTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 				break
 			start_idx = end_idx
 
-class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+class EnglishTesseractTextLineDataset(TesseractTextLineDatasetBase):
+	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -204,21 +241,19 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		if data_dir_path:
-			# Load data.
-			print('[SWL] Info: Start loading dataset...')
-			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
-			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		# Load data.
+		print('[SWL] Info: Start loading dataset...')
+		start_time = time.time()
+		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
-			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
-		else:
-			print('[SWL] Info: Dataset were not loaded.')
-			self._train_data, self._test_data = None, None
-			num_examples = 0
+		num_examples = len(images)
+		indices = np.arange(num_examples)
+		np.random.shuffle(indices)
+		test_offset = round(train_test_ratio * num_examples)
+		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -254,8 +289,8 @@ class EnglishOcropusTextLineDataset(OcropusTextLineDatasetBase):
 
 		return inputs, outputs
 
-class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+class HangeulTesseractTextLineDataset(TesseractTextLineDatasetBase):
+	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=True)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -289,21 +324,19 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		if data_dir_path:
-			# Load data.
-			print('[SWL] Info: Start loading dataset...')
-			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
-			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		# Load data.
+		print('[SWL] Info: Start loading dataset...')
+		start_time = time.time()
+		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
-			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
-		else:
-			print('[SWL] Info: Dataset were not loaded.')
-			self._train_data, self._test_data = None, None
-			num_examples = 0
+		num_examples = len(images)
+		indices = np.arange(num_examples)
+		np.random.shuffle(indices)
+		test_offset = round(train_test_ratio * num_examples)
+		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		if inputs is not None:
@@ -341,8 +374,8 @@ class HangeulOcropusTextLineDataset(OcropusTextLineDatasetBase):
 
 		return inputs, outputs
 
-class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
-	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len):
+class HangeulJamoTesseractTextLineDataset(TesseractTextLineDatasetBase):
+	def __init__(self, image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_label_len):
 		super().__init__(image_height, image_width, image_channel, num_classes=0, default_value=-1, use_NWHC=False)
 
 		if train_test_ratio < 0.0 or train_test_ratio > 1.0:
@@ -380,21 +413,19 @@ class HangeulJamoOcropusTextLineDataset(OcropusTextLineDatasetBase):
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
 
 		#--------------------
-		if data_dir_path:
-			# Load data.
-			print('[SWL] Info: Start loading dataset...')
-			start_time = time.time()
-			examples = self._load_data(data_dir_path, self._image_height, self._image_width, self._image_channel, max_label_len)
-			print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		# Load data.
+		print('[SWL] Info: Start loading dataset...')
+		start_time = time.time()
+		images, labels_str, labels_int = self._load_data(image_filepaths, box_filepaths, self._image_height, self._image_width, self._image_channel, max_label_len)
+		print('[SWL] Info: End loading dataset: {} secs.'.format(time.time() - start_time))
+		labels_str, labels_int = np.array(labels_str), np.array(labels_int)
 
-			np.random.shuffle(examples)
-			num_examples = len(examples)
-			test_offset = round(train_test_ratio * num_examples)
-			self._train_data, self._test_data = examples[:test_offset], examples[test_offset:]
-		else:
-			print('[SWL] Info: Dataset were not loaded.')
-			self._train_data, self._test_data = None, None
-			num_examples = 0
+		num_examples = len(images)
+		indices = np.arange(num_examples)
+		np.random.shuffle(indices)
+		test_offset = round(train_test_ratio * num_examples)
+		train_indices, test_indices = indices[:test_offset], indices[test_offset:]
+		self._train_data, self._test_data = (images[train_indices], labels_str[train_indices], labels_int[train_indices]), (images[test_indices], labels_str[test_indices], labels_int[test_indices])
 
 	# String label -> integer label.
 	def encode_label(self, label_str, *args, **kwargs):

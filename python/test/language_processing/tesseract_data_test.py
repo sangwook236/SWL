@@ -5,7 +5,7 @@ import sys
 sys.path.append('../../src')
 
 import time
-import tesseract_text_line_data
+import tesseract_data
 
 # REF [site] >> https://github.com/tesseract-ocr
 #	text2image --fonts_dir /path/to/font --font 'Arial' --text /path/to/eng_training.txt --outputbase ./eng_training
@@ -20,7 +20,7 @@ def EnglishTesseractTextLineDataset_test():
 
 	print('Start creating an EnglishTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_text_line_data.EnglishTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+	dataset = tesseract_data.EnglishTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating an EnglishTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -42,7 +42,7 @@ def HangeulTesseractTextLineDataset_test():
 
 	print('Start creating a HangeulTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_text_line_data.HangeulTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+	dataset = tesseract_data.HangeulTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -64,7 +64,7 @@ def HangeulJamoTesseractTextLineDataset_test():
 
 	print('Start creating a HangeulJamoTesseractTextLineDataset...')
 	start_time = time.time()
-	dataset = tesseract_text_line_data.HangeulJamoTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
+	dataset = tesseract_data.HangeulJamoTesseractTextLineDataset(image_filepaths, box_filepaths, image_height, image_width, image_channel, train_test_ratio, max_char_count)
 	print('End creating a HangeulJamoTesseractTextLineDataset: {} secs.'.format(time.time() - start_time))
 
 	train_generator = dataset.create_train_batch_generator(batch_size=32, shuffle=True)
@@ -74,8 +74,8 @@ def HangeulJamoTesseractTextLineDataset_test():
 	dataset.visualize(test_generator, num_examples=10)
 
 def main():
-	#EnglishTesseractTextLineDataset_test()
-	HangeulTesseractTextLineDataset_test()
+	EnglishTesseractTextLineDataset_test()
+	#HangeulTesseractTextLineDataset_test()
 	#HangeulJamoTesseractTextLineDataset_test()
 
 #--------------------------------------------------------------------
