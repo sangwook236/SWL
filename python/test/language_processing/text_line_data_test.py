@@ -12,10 +12,10 @@ def create_charsets():
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.readlines()  # A string.
-		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		#hangeul_charset = fd.read().strip('\n')  # A strings.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 
 	#hangeul_jamo_charset = 'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
 	hangeul_jamo_charset = 'ㄱㄲㄳㄴㄵㄶㄷㄸㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅃㅄㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎㅏㅐㅑㅒㅓㅔㅕㅖㅗㅛㅜㅠㅡㅣ'
@@ -283,23 +283,26 @@ def RunTimePairedCorruptedTextLineDataset_test():
 			#),
 			#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 			#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
+			iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
 		])),
-		iaa.SomeOf((1, 2), [
+		iaa.OneOf([
 			iaa.OneOf([
-				iaa.GaussianBlur(sigma=(1.5, 2.5)),
-				iaa.AverageBlur(k=(3, 6)),
-				iaa.MedianBlur(k=(3, 5)),
-				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
 			]),
-			iaa.OneOf([
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
-				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
 			]),
 			#iaa.OneOf([
 			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
@@ -311,7 +314,7 @@ def RunTimePairedCorruptedTextLineDataset_test():
 			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
 			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
 			#]),
-		], random_order=True)
+		])
 	])
 
 	def corrupt(inputs, *args, **kwargs):

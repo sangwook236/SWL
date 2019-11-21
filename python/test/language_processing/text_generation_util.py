@@ -549,11 +549,15 @@ class MyBasicPrintedTextGenerator(object):
 
 		#font_color = (255, 255, 255)
 		#font_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB font color.
-		font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+		#font_color = (random.randrange(256),) * 3  # Uses a specific grayscale font color.
+		font_color = (random.randrange(0, 128),) * 3  # Uses a specific black font color.
+		#font_color = (random.randrange(128, 256),) * 3  # Uses a specific white font color.
 		#font_color = None  # Uses a random font color.
 		#bg_color = (0, 0, 0)
 		#bg_color = tuple(random.randrange(256) for _ in range(3))  # Uses a specific RGB background color.
-		bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+		#bg_color = (random.randrange(256),) * 3  # Uses a specific grayscale background color.
+		#bg_color = (random.randrange(0, 128),) * 3  # Uses a specific black background color.
+		bg_color = (random.randrange(128, 256),) * 3  # Uses a specific white background color.
 		#bg_color = None  # Uses a random background color.
 
 		text_image, text_mask = swl_langproc_util.generate_text_image(text, font_type, font_index, font_size, font_color, bg_color, image_size, self._text_offset, self._crop_text_area, self._draw_text_border, char_space_ratio, mask=True, mask_mode=self._mask_mode)

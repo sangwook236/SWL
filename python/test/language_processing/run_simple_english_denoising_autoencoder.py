@@ -189,23 +189,26 @@ class MyRunner(object):
 			#	#),
 			#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 			#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-			#	iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
+			#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
 			#])),
-			iaa.SomeOf((1, 2), [
+			iaa.OneOf([
 				iaa.OneOf([
-					iaa.GaussianBlur(sigma=(1.5, 2.5)),
-					iaa.AverageBlur(k=(3, 6)),
-					iaa.MedianBlur(k=(3, 5)),
-					iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+					iaa.GaussianBlur(sigma=(0.5, 1.5)),
+					iaa.AverageBlur(k=(2, 4)),
+					iaa.MedianBlur(k=(3, 3)),
+					iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
 				]),
-				iaa.OneOf([
-					iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-					#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
-					iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+				iaa.Sequential([
+					iaa.OneOf([
+						iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+						#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+						iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+						iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+					]),
+					iaa.GaussianBlur(sigma=(0.7, 1.0)),
 				]),
 				#iaa.OneOf([
 				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
@@ -217,7 +220,7 @@ class MyRunner(object):
 				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
 				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
 				#]),
-			], random_order=True)
+			])
 		])
 
 		#--------------------
@@ -555,23 +558,26 @@ def check_data(num_epochs, batch_size):
 		#	#),
 		#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
 		#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-		#	iaa.ElasticTransformation(alpha=(20.0, 50.0), sigma=(6.5, 8.5)),  # Move pixels locally around (with random strengths).
+		#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
 		#])),
-		iaa.SomeOf((1, 2), [
+		iaa.OneOf([
 			iaa.OneOf([
-				iaa.GaussianBlur(sigma=(1.5, 2.5)),
-				iaa.AverageBlur(k=(3, 6)),
-				iaa.MedianBlur(k=(3, 5)),
-				iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+				iaa.GaussianBlur(sigma=(0.5, 1.5)),
+				iaa.AverageBlur(k=(2, 4)),
+				iaa.MedianBlur(k=(3, 3)),
+				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
 			]),
-			iaa.OneOf([
-				iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-				#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
-				iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-				iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+			iaa.Sequential([
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+				]),
+				iaa.GaussianBlur(sigma=(0.7, 1.0)),
 			]),
 			#iaa.OneOf([
 			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
@@ -583,7 +589,7 @@ def check_data(num_epochs, batch_size):
 			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
 			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
 			#]),
-		], random_order=True)
+		])
 	])
 
 	def corrupt(inputs, *args, **kwargs):
@@ -670,7 +676,7 @@ def main():
 	#--------------------
 	output_dir_path = None
 	if not output_dir_path:
-		output_dir_prefix = 'simple_english_autoencoder'
+		output_dir_prefix = 'simple_english_denoising_autoencoder'
 		output_dir_suffix = datetime.datetime.now().strftime('%Y%m%dT%H%M%S')
 		output_dir_path = os.path.join('.', '{}_{}'.format(output_dir_prefix, output_dir_suffix))
 

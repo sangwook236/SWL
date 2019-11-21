@@ -884,10 +884,10 @@ def generate_scene_text_dataset(dir_path, json_filename, sceneTextGenerator, sce
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF-8') as fd:
-		#hangeul_charset = fd.readlines()  # A string.
-		#hangeul_charset = fd.read().strip('\n')  # A list of strings.
-		#hangeul_charset = fd.read().splitlines()  # A list of strings.
+		#hangeul_charset = fd.read().strip('\n')  # A strings.
 		hangeul_charset = fd.read().replace(' ', '').replace('\n', '')  # A string.
+		#hangeul_charset = fd.readlines()  # A list of string.
+		#hangeul_charset = fd.read().splitlines()  # A list of strings.
 	alphabet_charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
 	digit_charset = '0123456789'
 	symbol_charset = ' `~!@#$%^&*()-_=+[]{}\\|;:\'\",.<>/?'

@@ -954,7 +954,9 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			system_font_dir_path = 'C:/Windows/Fonts'
 			font_base_dir_path = 'D:/work/font'
 		#font_dir_path = font_base_dir_path + '/eng'
-		font_dir_path = font_base_dir_path + '/kor'
+		#font_dir_path = font_base_dir_path + '/kor'
+		font_dir_path = font_base_dir_path + '/receipt_eng'
+		#font_dir_path = font_base_dir_path + '/receipt_kor'
 
 		font_filepaths = glob.glob(os.path.join(font_dir_path, '*.ttf'))
 		#font_list = tg_util.generate_font_list(font_filepaths)
@@ -984,6 +986,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			scenes = list(map(lambda image: cv2.cvtColor(image, cv2.COLOR_BGR2GRAY), scenes))
 
 			corrupted_scenes = scenes
+			#corrupted_scenes = cv2.pyrUp(cv2.pyrUp(cv2.pyrDown(cv2.pyrDown(corrupted_scenes))))
 			corrupted_scenes = list(map(lambda image: reduce_image(image, min_height, max_height), corrupted_scenes))
 			corrupted_scenes = list(map(lambda image: self.resize(np.squeeze(self._corrupt_functor(np.expand_dims(image, axis=0)))), corrupted_scenes))
 			corrupted_scenes = self._transform_images(np.array(corrupted_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
@@ -1005,7 +1008,7 @@ class RunTimePairedCorruptedTextLineDataset(RunTimePairedTextLineDatasetBase):
 			clean_scenes = list(map(lambda image: self.resize(image), clean_scenes))
 			clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32), use_NWHC=self._use_NWHC)
 			#clean_scenes = self._transform_images(np.array(clean_scenes, dtype=np.float32) * 255, use_NWHC=self._use_NWHC)
-			#clean_scenes = 255 - clean_scenes  # Invert.
+			clean_scenes = 255 - clean_scenes  # Invert.
 
 			corrupted_scenes, _ = self.preprocess(corrupted_scenes, None)
 			clean_scenes, _ = self.preprocess(clean_scenes, None)

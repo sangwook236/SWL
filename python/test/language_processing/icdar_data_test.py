@@ -33,11 +33,11 @@ def generate_icdar2019_sorie_text_line_data():
 	for image_fpath, text_fpath in zip(image_filepaths, text_filepaths):
 		try:
 			with open(text_fpath, 'r', encoding='UTF8') as fd:
-				lines = list(line.rstrip() for line in fd.readlines())
+				lines = fd.read().splitlines()
 		except FileNotFoundError as ex:
-			print('File not found: {}.'.format('data.txt'))
+			print('File not found: {}.'.format(text_fpath))
 		except UnicodeDecodeError as ex:
-			print('Unicode decode error: {}.'.format('data.txt'))
+			print('Unicode decode error: {}.'.format(text_fpath))
 
 		img = cv2.imread(image_fpath, cv2.IMREAD_COLOR)
 		if img is None:

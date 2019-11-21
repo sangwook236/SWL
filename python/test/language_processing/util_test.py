@@ -40,10 +40,10 @@ def hangeul_example(need_mask=False):
 	#hangul_letter_filepath = '../../data/language_processing/hangul_ksx1001_1.txt'
 	#hangul_letter_filepath = '../../data/language_processing/hangul_unicode.txt'
 	with open(hangul_letter_filepath, 'r', encoding='UTF8') as fd:
-		#hangeul_str = fd.readlines()  # A list of strings.
-		#hangeul_str = fd.read().replace(' ', '').splitlines()  # A list of strings.
 		#hangeul_str = fd.read().replace(' ', '').strip('\n')  # A string.
 		hangeul_str = fd.read().replace(' ', '').rstrip()  # A string.
+		#hangeul_str = fd.readlines()  # A list of strings.
+		#hangeul_str = fd.read().replace(' ', '').splitlines()  # A list of strings.
 	#print(hangeul_str)
 
 	if 'posix' == os.name:
