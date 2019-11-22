@@ -474,6 +474,8 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, False
 	is_training_resumed = False
 
+	train_test_ratio = 0.8
+
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
 		# Data generation.
@@ -482,7 +484,6 @@ def main():
 		data_dir_path = './text_line_samples_kr_train'
 	else:
 		data_dir_path = None
-	train_test_ratio = 0.8
 
 	#--------------------
 	model_filepath = None

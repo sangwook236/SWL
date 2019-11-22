@@ -2,8 +2,6 @@ import os, random, functools, time
 import numpy as np
 import cv2
 #import sklearn
-#import imgaug as ia
-from imgaug import augmenters as iaa
 #import swl.machine_learning.util as swl_ml_util
 import hangeul_util as hg_util
 import text_line_data

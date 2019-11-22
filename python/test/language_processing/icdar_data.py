@@ -127,7 +127,7 @@ class Icdar2019SorieTextLineDatasetBase(text_line_data.TextLineDatasetBase):
 			if len(label_str) > max_label_len:
 				print('[SWL] Warning: Too long label: {} > {}.'.format(len(label_str), max_label_len))
 				continue
-			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE)
+			img = cv2.imread(img_fpath, cv2.IMREAD_GRAYSCALE if 1 == image_channel else cv2.IMREAD_COLOR)
 			if img is None:
 				print('[SWL] Error: Failed to load an image: {}.'.format(img_fpath))
 				continue

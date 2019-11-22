@@ -8,7 +8,7 @@ import os, math, time, datetime, functools, itertools, glob, csv
 import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
-import text_line_data
+import text_line_data, icdar_data
 from TextRecognitionDataGenerator_data import EnglishTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
 import my_keras_applications
 
@@ -268,7 +268,7 @@ class MyModel(object):
 #--------------------------------------------------------------------
 
 class MyRunner(object):
-	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8):
+	def __init__(self, is_dataset_generated_at_runtime, data_dir_path=None, train_test_ratio=0.8, is_fine_tuned=False):
 		# Set parameters.
 		# TODO [modify] >> Depends on a model.
 		#	model_output_time_steps = image_width / width_downsample_factor or image_width / width_downsample_factor - 1.
@@ -297,8 +297,11 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
-			# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.
-			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			if is_fine_tuned:
+				self._dataset = icdar_data.Icdar2019SorieTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			else:
+				# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.
+				self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
 
@@ -667,7 +670,7 @@ def check_data(data_dir_path, train_test_ratio, num_epochs, batch_size):
 #--------------------------------------------------------------------
 
 def main():
-	os.environ['CUDA_VISIBLE_DEVICES'] = '1'
+	os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 	os.environ['TF_CPP_MIN_LOG_LEVEL'] = '0'  # [0, 3].
 
 	#--------------------
@@ -676,15 +679,25 @@ def main():
 	is_trained, is_tested, is_inferred = True, True, True
 	is_training_resumed = False
 
+	train_test_ratio = 0.8
+	is_fine_tuned = False
+
 	is_dataset_generated_at_runtime = False
 	if not is_dataset_generated_at_runtime and (is_trained or is_tested):
-		# Data generation.
-		#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+		if is_fine_tuned:
+			if 'posix' == os.name:
+				data_base_dir_path = '/home/sangwook/work/dataset'
+			else:
+				data_base_dir_path = 'D:/work/dataset'
 
-		data_dir_path = './text_line_samples_en_train_v11'
+			data_dir_path = data_base_dir_path + '/text/icdar2019_sorie_text_line_train'
+		else:
+			# Data generation.
+			#	REF [function] >> EnglishTextRecognitionDataGeneratorTextLineDataset_test() in TextRecognitionDataGenerator_data_test.py.
+
+			data_dir_path = './text_line_samples_en_train'
 	else:
 		data_dir_path = None
-	train_test_ratio = 0.8
 
 	#--------------------
 	if False:
@@ -712,7 +725,7 @@ def main():
 		inference_dir_path = os.path.join(output_dir_path, 'inference')
 
 	#--------------------
-	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, is_fine_tuned)
 
 	if is_trained:
 		if checkpoint_dir_path and checkpoint_dir_path.strip() and not os.path.exists(checkpoint_dir_path):
