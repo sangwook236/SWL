@@ -9,7 +9,134 @@ import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
-from TextRecognitionDataGenerator_data import EnglishTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
+import TextRecognitionDataGenerator_data
+
+#--------------------------------------------------------------------
+
+class MyEnglishTextLineDataset(TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+
+		#--------------------
+		#import imgaug as ia
+		from imgaug import augmenters as iaa
+
+		"""
+		self._augmenter = iaa.Sequential([
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.Affine(
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				),
+				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.OneOf([
+					iaa.GaussianBlur(sigma=(1.5, 2.5)),
+					iaa.AverageBlur(k=(3, 6)),
+					iaa.MedianBlur(k=(3, 5)),
+					iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+				]),
+				iaa.OneOf([
+					iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
+					#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
+					iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
+					iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
+				]),
+				#iaa.OneOf([
+				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+				#	iaa.Invert(p=1, per_channel=False),
+
+				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+				#]),
+			])),
+			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+		])
+		"""
+		self._augmenter = iaa.Sequential([
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
+				iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
+				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
+				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.Affine(
+					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
+					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
+					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
+					shear=(-5, 5),  # Shear by -5 to +5 degrees.
+					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
+					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
+					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
+					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
+				),
+				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
+				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
+				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
+			])),
+			iaa.Sometimes(0.5, iaa.OneOf([
+				iaa.OneOf([
+					iaa.GaussianBlur(sigma=(0.5, 1.5)),
+					iaa.AverageBlur(k=(2, 4)),
+					iaa.MedianBlur(k=(3, 3)),
+					iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
+				]),
+				iaa.Sequential([
+					iaa.OneOf([
+						iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+						#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
+						iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
+						iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
+						#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
+					]),
+					iaa.GaussianBlur(sigma=(0.7, 1.0)),
+				]),
+				#iaa.OneOf([
+				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
+				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
+				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
+
+				#	iaa.Invert(p=1, per_channel=False),
+
+				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
+				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
+				#]),
+			])),
+			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
+		])
+
+	def augment(self, inputs, outputs, *args, **kwargs):
+		if outputs is None:
+			return self._augmenter.augment_images(inputs), None
+		else:
+			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
+			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
 
 #--------------------------------------------------------------------
 
@@ -381,10 +508,13 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
-			# When using TextRecognitionDataGenerator_data.EnglishTextRecognitionDataGeneratorTextLineDataset.
-			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			self._dataset = MyEnglishTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+
+	@property
+	def dataset(self):
+		return self._dataset
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -723,13 +853,9 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(data_dir_path, train_test_ratio, num_epochs, batch_size):
+def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size):
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
 	default_value = -1
-
-	image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-	model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-	max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
-	dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
@@ -792,7 +918,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(data_dir_path, train_test_ratio, num_epochs, batch_size)
+		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 

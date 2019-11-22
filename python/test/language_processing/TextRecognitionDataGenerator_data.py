@@ -245,27 +245,47 @@ class TextRecognitionDataGeneratorTextLineDatasetBase(text_line_data.TextLineDat
 			np.random.shuffle(indices)
 
 		start_idx = 0
-		while True:
-			end_idx = start_idx + batch_size
-			batch_indices = indices[start_idx:end_idx]
-			if batch_indices.size > 0:  # If batch_indices is non-empty.
-				# FIXME [fix] >> Does not work correctly in time-major data.
-				batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
-				if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-				#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
-				#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
-					if is_data_augmented:
+		if is_data_augmented and hasattr(self, 'augment'):
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+					#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
+					#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
 						batch_data1, _ = self.augment(batch_data1, None)
-					batch_data1, _ = self.preprocess(batch_data1, None)
-					yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+						batch_data1, _ = self.preprocess(batch_data1, None)
+						yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+					else:
+						yield (None, None, None), 0
 				else:
 					yield (None, None, None), 0
-			else:
-				yield (None, None, None), 0
 
-			if end_idx >= num_examples:
-				break
-			start_idx = end_idx
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
+		else:
+			while True:
+				end_idx = start_idx + batch_size
+				batch_indices = indices[start_idx:end_idx]
+				if batch_indices.size > 0:  # If batch_indices is non-empty.
+					# FIXME [fix] >> Does not work correctly in time-major data.
+					batch_data1, batch_data2, batch_data3 = images[batch_indices], labels_str[batch_indices], labels_int[batch_indices]
+					if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3.size > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+					#batch_data3 = swl_ml_util.sequences_to_sparse(batch_data3, dtype=np.int32)  # Sparse tensor.
+					#if batch_data1.size > 0 and batch_data2.size > 0 and batch_data3[2][0] > 0:  # If batch_data1, batch_data2, and batch_data3 are non-empty.
+						batch_data1, _ = self.preprocess(batch_data1, None)
+						yield (batch_data1, batch_data2, batch_data3), batch_indices.size
+					else:
+						yield (None, None, None), 0
+				else:
+					yield (None, None, None), 0
+
+				if end_idx >= num_examples:
+					break
+				start_idx = end_idx
 
 class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGeneratorTextLineDatasetBase):
 	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
@@ -291,60 +311,6 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 
 		# NOTE [info] >> The largest value (num_classes - 1) is reserved for the blank label.
 		self._num_classes = len(self._labels) + 1  # Labels + blank label.
-
-		#--------------------
-		self._augmenter = iaa.Sequential([
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.Crop(px=(0, 100)),  # Crop images from each side by 0 to 16px (randomly chosen).
-				iaa.Crop(percent=(0, 0.1)),  # Crop images by 0-10% of their height/width.
-				#iaa.Fliplr(0.5),  # Horizontally flip 50% of the images.
-				#iaa.Flipud(0.5),  # Vertically flip 50% of the images.
-			])),
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.Affine(
-					scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-					translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-					rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-					shear=(-5, 5),  # Shear by -5 to +5 degrees.
-					#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-					order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-					#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-					#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-					#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-				),
-				#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-				iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-				iaa.ElasticTransformation(alpha=(15.0, 30.0), sigma=5.0),  # Move pixels locally around (with random strengths).
-			])),
-			iaa.Sometimes(0.5, iaa.OneOf([
-				iaa.OneOf([
-					iaa.GaussianBlur(sigma=(1.5, 2.5)),
-					iaa.AverageBlur(k=(3, 6)),
-					iaa.MedianBlur(k=(3, 5)),
-					iaa.MotionBlur(k=(3, 7), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-				]),
-				iaa.OneOf([
-					iaa.AdditiveGaussianNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.1 * 255, 0.3 * 255), per_channel=False),
-					#iaa.AdditivePoissonNoise(lam=(32, 64), per_channel=False),
-					iaa.CoarseSaltAndPepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseSalt(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					#iaa.CoarsePepper(p=(0.1, 0.3), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.05, 0.3), per_channel=False),
-				]),
-				#iaa.OneOf([
-				#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-				#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-				#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-				#	iaa.Invert(p=1, per_channel=False),
-
-				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-				#]),
-			])),
-			#iaa.Scale(size={'height': image_height, 'width': image_width})  # Resize.
-		])
 
 		#--------------------
 		if data_dir_path:
@@ -377,12 +343,8 @@ class EnglishTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			self._train_data, self._test_data = None, None
 			num_examples = 0
 
-	def augment(self, inputs, outputs, *args, **kwargs):
-		if outputs is None:
-			return self._augmenter.augment_images(inputs), None
-		else:
-			augmenter_det = self._augmenter.to_deterministic()  # Call this for each batch again, NOT only once at the start.
-			return augmenter_det.augment_images(inputs), augmenter_det.augment_images(outputs)
+	#def augment(self, inputs, outputs, *args, **kwargs):
+	#	raise NotImplementedError
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -490,8 +452,8 @@ class HangeulTextRecognitionDataGeneratorTextLineDataset(TextRecognitionDataGene
 			self._train_data, self._test_data = None, None
 			num_examples = 0
 
-	def augment(self, inputs, outputs, *args, **kwargs):
-		raise NotImplementedError
+	#def augment(self, inputs, outputs, *args, **kwargs):
+	#	raise NotImplementedError
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""
@@ -620,8 +582,8 @@ class HangeulJamoTextRecognitionDataGeneratorTextLineDataset(TextRecognitionData
 			print('[SWL] Error: Failed to decode a label: {}.'.format(label_int))
 			raise
 
-	def augment(self, inputs, outputs, *args, **kwargs):
-		raise NotImplementedError
+	#def augment(self, inputs, outputs, *args, **kwargs):
+	#	raise NotImplementedError
 
 	def preprocess(self, inputs, outputs, *args, **kwargs):
 		"""

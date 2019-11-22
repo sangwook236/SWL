@@ -11,7 +11,16 @@ from tensorflow.keras.layers import Conv2D, LSTM, MaxPooling2D, Reshape, Lambda,
 from tensorflow.keras.layers import Input, Dense, Activation, add, concatenate
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
-from TextRecognitionDataGenerator_data import HangeulTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
+import TextRecognitionDataGenerator_data
+
+#--------------------------------------------------------------------
+
+class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+
+	#def augment(self, inputs, outputs, *args, **kwargs):
+	#	raise NotImplementedError
 
 #--------------------------------------------------------------------
 
@@ -242,8 +251,8 @@ class MyRunner(object):
 			start_time = time.time()
 			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 			with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#korean_words = fd.readlines()
 				#korean_words = fd.read().strip('\n')
+				#korean_words = fd.readlines()
 				korean_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
@@ -254,8 +263,7 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000, 10000 #500000, 10000, 10000
 		else:
-			# When using TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.
-			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=self._max_label_len)
+			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=self._max_label_len)
 
 			self._train_examples_per_epoch, self._val_examples_per_epoch, self._test_examples_per_epoch = self._dataset.num_train_examples, self._dataset.num_test_examples, self._dataset.num_test_examples
 

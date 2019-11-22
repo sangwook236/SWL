@@ -9,7 +9,16 @@ import numpy as np
 import tensorflow as tf
 import swl.machine_learning.util as swl_ml_util
 import text_line_data
-from TextRecognitionDataGenerator_data import HangeulTextRecognitionDataGeneratorTextLineDataset as TextLineDataset
+import TextRecognitionDataGenerator_data
+
+#--------------------------------------------------------------------
+
+class MyHangeulTextLineDataset(TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset):
+	def __init__(self, data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle=True):
+		super().__init__(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len, shuffle)
+
+	#def augment(self, inputs, outputs, *args, **kwargs):
+	#	raise NotImplementedError
 
 #--------------------------------------------------------------------
 
@@ -372,8 +381,8 @@ class MyRunner(object):
 			start_time = time.time()
 			korean_dictionary_filepath = '../../data/language_processing/dictionary/korean_wordslistUnique.txt'
 			with open(korean_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-				#korean_words = fd.readlines()
 				#korean_words = fd.read().strip('\n')
+				#korean_words = fd.readlines()
 				korean_words = fd.read().splitlines()
 			print('[SWL] Info: End loading a Korean dictionary: {} secs.'.format(time.time() - start_time))
 
@@ -384,10 +393,13 @@ class MyRunner(object):
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000 #500000, 10000
 		else:
-			# When using TextRecognitionDataGenerator_data.HangeulTextRecognitionDataGeneratorTextLineDataset.
-			self._dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
+			self._dataset = MyHangeulTextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 			self._train_examples_per_epoch, self._test_examples_per_epoch = None, None
+
+	@property
+	def dataset(self):
+		return self._dataset
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -711,19 +723,15 @@ class MyRunner(object):
 
 #--------------------------------------------------------------------
 
-def check_data(data_dir_path, train_test_ratio, num_epochs, batch_size):
+def check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size):
+	runner = MyRunner(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio)
 	default_value = -1
-
-	image_height, image_width, image_channel = 64, 320, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-	model_output_time_steps = 320  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-	max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
-	dataset = TextLineDataset(data_dir_path, image_height, image_width, image_channel, train_test_ratio, max_label_len=max_label_len)
 
 	train_examples_per_epoch, test_examples_per_epoch = None, None
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
-	for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
+	for batch_step, (batch_data, num_batch_examples) in enumerate(runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
 		#batch_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 
 		if 0 == batch_step:
@@ -780,7 +788,7 @@ def main():
 	if False:
 		print('[SWL] Info: Start checking data...')
 		start_time = time.time()
-		check_data(data_dir_path, train_test_ratio, num_epochs, batch_size)
+		check_data(is_dataset_generated_at_runtime, data_dir_path, train_test_ratio, num_epochs, batch_size)
 		print('[SWL] Info: End checking data: {} secs.'.format(time.time() - start_time))
 		return
 

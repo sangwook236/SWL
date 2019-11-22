@@ -220,14 +220,20 @@ class MyRunner(object):
 				#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
 				#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
 				#]),
-			])
+			]),
 		])
 
 		#--------------------
 		# Create a dataset.
+		if True:
+			english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
+		elif False:
+			english_dictionary_filepath = '../../data/language_processing/wordlist_mono_clean.txt'
+		elif False:
+			english_dictionary_filepath = '../../data/language_processing/wordlist_bi_clean.txt'
+
 		print('[SWL] Info: Start loading an English dictionary...')
 		start_time = time.time()
-		english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
 		with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
 			#english_words = fd.readlines()
 			#english_words = fd.read().strip('\n')
@@ -242,6 +248,10 @@ class MyRunner(object):
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 500000, 10000
 		#self._train_examples_per_epoch, self._test_examples_per_epoch = 200000, 10000
 		self._train_examples_per_epoch, self._test_examples_per_epoch = 100000, 10000
+
+	@property
+	def dataset(self):
+		return self._dataset
 
 	def train(self, checkpoint_dir_path, num_epochs, batch_size, initial_epoch=0, is_training_resumed=False):
 		graph = tf.Graph()
@@ -533,87 +543,16 @@ class MyRunner(object):
 #--------------------------------------------------------------------
 
 def check_data(num_epochs, batch_size):
+	runner = MyRunner()
 	default_value = -1
 
-	image_height, image_width, image_channel = 64, 640, 1  # TODO [modify] >> image_height is hard-coded and image_channel is fixed.
-	model_output_time_steps = 80  # (image_height / width_downsample_factor) * (image_width / width_downsample_factor).
-	max_label_len = model_output_time_steps  # max_label_len <= model_output_time_steps.
-
-	#--------------------
-	#import imgaug as ia
-	from imgaug import augmenters as iaa
-
-	corrupter = iaa.Sequential([
-		#iaa.Sometimes(0.5, iaa.OneOf([
-		#	#iaa.Affine(
-		#	#	scale={'x': (0.8, 1.2), 'y': (0.8, 1.2)},  # Scale images to 80-120% of their size, individually per axis.
-		#	#	translate_percent={'x': (-0.1, 0.1), 'y': (-0.1, 0.1)},  # Translate by -10 to +10 percent (per axis).
-		#	#	rotate=(-10, 10),  # Rotate by -10 to +10 degrees.
-		#	#	shear=(-5, 5),  # Shear by -5 to +5 degrees.
-		#	#	#order=[0, 1],  # Use nearest neighbour or bilinear interpolation (fast).
-		#	#	order=0,  # Use nearest neighbour or bilinear interpolation (fast).
-		#	#	#cval=(0, 255),  # If mode is constant, use a cval between 0 and 255.
-		#	#	#mode=ia.ALL  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-		#	#	#mode='edge'  # Use any of scikit-image's warping modes (see 2nd image from the top for examples).
-		#	#),
-		#	#iaa.PiecewiseAffine(scale=(0.01, 0.05)),  # Move parts of the image around. Slow.
-		#	#iaa.PerspectiveTransform(scale=(0.01, 0.1)),
-		#	iaa.ElasticTransformation(alpha=(10.0, 30.0), sigma=(6.0, 8.0)),  # Move pixels locally around (with random strengths).
-		#])),
-		iaa.OneOf([
-			iaa.OneOf([
-				iaa.GaussianBlur(sigma=(0.5, 1.5)),
-				iaa.AverageBlur(k=(2, 4)),
-				iaa.MedianBlur(k=(3, 3)),
-				iaa.MotionBlur(k=(3, 4), angle=(0, 360), direction=(-1.0, 1.0), order=1),
-			]),
-			iaa.Sequential([
-				iaa.OneOf([
-					iaa.AdditiveGaussianNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-					#iaa.AdditiveLaplaceNoise(loc=0, scale=(0.05 * 255, 0.2 * 255), per_channel=False),
-					iaa.AdditivePoissonNoise(lam=(20, 30), per_channel=False),
-					iaa.CoarseSaltAndPepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarseSalt(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					iaa.CoarsePepper(p=(0.01, 0.1), size_percent=(0.2, 0.9), per_channel=False),
-					#iaa.CoarseDropout(p=(0.1, 0.3), size_percent=(0.8, 0.9), per_channel=False),
-				]),
-				iaa.GaussianBlur(sigma=(0.7, 1.0)),
-			]),
-			#iaa.OneOf([
-			#	#iaa.MultiplyHueAndSaturation(mul=(-10, 10), per_channel=False),
-			#	#iaa.AddToHueAndSaturation(value=(-255, 255), per_channel=False),
-			#	#iaa.LinearContrast(alpha=(0.5, 1.5), per_channel=False),
-
-			#	iaa.Invert(p=1, per_channel=False),
-
-			#	#iaa.Sharpen(alpha=(0, 1.0), lightness=(0.75, 1.5)),
-			#	iaa.Emboss(alpha=(0, 1.0), strength=(0, 2.0)),
-			#]),
-		])
-	])
-
-	def corrupt(inputs, *args, **kwargs):
-		return corrupter.augment_images(inputs)
-
-	print('[SWL] Info: Start loading an English dictionary...')
-	start_time = time.time()
-	english_dictionary_filepath = '../../data/language_processing/dictionary/english_words.txt'
-	with open(english_dictionary_filepath, 'r', encoding='UTF-8') as fd:
-		#english_words = fd.readlines()
-		#english_words = fd.read().strip('\n')
-		english_words = fd.read().splitlines()
-	print('[SWL] Info: End loading an English dictionary: {} secs.'.format(time.time() - start_time))
-
-	dataset = text_line_data.RunTimePairedCorruptedTextLineDataset(set(english_words), image_height, image_width, image_channel, max_label_len=max_label_len, use_NWHC=False, corrupt_functor=corrupt)
-
-	#--------------------
 	#train_examples_per_epoch, test_examples_per_epoch = 5000, 1000
 	#train_examples_per_epoch, test_examples_per_epoch = 2000, 1000
 	train_examples_per_epoch, test_examples_per_epoch = 1000, 1000
 	train_steps_per_epoch = None if train_examples_per_epoch is None else math.ceil(train_examples_per_epoch / batch_size)
 	test_steps_per_epoch = None if test_examples_per_epoch is None else math.ceil(test_examples_per_epoch / batch_size)
 
-	for batch_step, (batch_data, num_batch_examples) in enumerate(dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
+	for batch_step, (batch_data, num_batch_examples) in enumerate(runner.dataset.create_train_batch_generator(batch_size, train_steps_per_epoch, shuffle=False)):
 		#batch_corrupted_images (np.array), batch_clean_images (np.array), batch_labels_str (a list of strings), batch_labels_int (a list of sequences) = batch_data
 
 		if 0 == batch_step:
